@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from website.models import Contributor, GitHubIssue, Repo, UserProfile
+from website.models import GitHubIssue, Repo
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PaymentData:
     """Data structure to hold payment-related information."""
-
     contributor_username: str
     bounty_amount: int
     pr_number: int
@@ -107,14 +106,13 @@ def check_duplicate_payment(github_issue):
 
 def resolve_and_validate_contributor(contributor_username):
     """
-    Resolve contributor profile and validate existence.
-    Returns tuple: (contributor: Contributor or None, error_response: JsonResponse or None)
+    Validate contributor username exists (simplified for GitHub-only workflow).
+    Returns tuple: (contributor_username: str, error_response: JsonResponse or None)
     """
-    contributor = resolve_contributor(contributor_username)
-    if not contributor:
-        return None, JsonResponse({"status": "error", "message": "Contributor not found"}, status=404)
+    if not contributor_username or not contributor_username.strip():
+        return None, JsonResponse({"status": "error", "message": "Invalid contributor username"}, status=400)
 
-    return contributor, None
+    return contributor_username, None
 
 
 def process_payment_and_update_db(payment_data, github_issue):
@@ -140,6 +138,18 @@ def process_payment_and_update_db(payment_data, github_issue):
     github_issue.sponsors_tx_id = transaction_id
     github_issue.save()
 
+    # Add comment and labels to GitHub issue
+    github_success = add_github_comment_and_labels(
+        payment_data.owner_name,
+        payment_data.repo_name, 
+        payment_data.issue_number,
+        payment_data,
+        transaction_id
+    )
+    
+    if not github_success:
+        logger.warning(f"Payment processed but failed to update GitHub issue #{payment_data.issue_number}")
+
     success_response = JsonResponse(
         {
             "status": "success",
@@ -147,6 +157,7 @@ def process_payment_and_update_db(payment_data, github_issue):
             "transaction_id": transaction_id,
             "amount": payment_data.bounty_amount,
             "recipient": payment_data.contributor_username,
+            "github_updated": github_success,
         }
     )
 
@@ -203,23 +214,6 @@ def bounty_payout(request):
         logger.exception("Unexpected error in bounty_payout")
         return JsonResponse({"status": "error", "message": "An unexpected error occurred"}, status=500)
 
-
-def resolve_contributor(username):
-    """
-    Returns a contributor object or user profile match if exists.
-    """
-    contributor = Contributor.objects.filter(name=username).first()
-    if contributor:
-        return contributor
-
-    profile = UserProfile.objects.filter(github_url__icontains=f"github.com/{username}").first()
-    if profile:
-        contributor = Contributor.objects.create(
-            name=username,
-            email=profile.user.email if profile.user else None,
-        )
-        return contributor
-    return None
 
 
 def get_sponsor_tiers(sponsor_login):
@@ -403,3 +397,96 @@ def process_github_sponsors_payment(username, amount, note):
     except Exception as e:
         logger.exception("Exception during GitHub Sponsors payment processing")
         return None
+
+
+def add_github_comment_and_labels(owner_name, repo_name, issue_number, payment_data, transaction_id):
+    """
+    Add a comment to the GitHub issue with payment details and add appropriate labels.
+
+    Args:
+        owner_name: Repository owner name
+        repo_name: Repository name
+        issue_number: Issue number
+        payment_data: PaymentData instance containing payment details
+        transaction_id: The payment transaction ID
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    github_token = os.environ.get("GITHUB_TOKEN")
+    if not github_token:
+        logger.error("Missing GITHUB_TOKEN for GitHub API.")
+        return False
+
+    # Create comment with payment details
+    comment_success = create_payment_comment(
+        owner_name, repo_name, issue_number, payment_data, transaction_id, github_token
+    )
+
+    # Add labels to the issue
+    labels_success = add_issue_labels(
+        owner_name, repo_name, issue_number, github_token
+    )
+
+    return comment_success and labels_success
+
+
+def create_payment_comment(owner_name, repo_name, issue_number, payment_data, transaction_id, github_token):
+    """
+    Create a comment on the GitHub issue with payment details.
+    """
+    comment_body = f"""🎉 **Bounty Paid!** 🎉
+
+💰 **Amount:** ${payment_data.bounty_amount / 100:.2f}
+👤 **Recipient:** @{payment_data.contributor_username}
+🔗 **PR:** #{payment_data.pr_number}
+📋 **Transaction ID:** {transaction_id}
+
+Thank you for your contribution to this project!"""
+
+    url = f"https://api.github.com/repos/{owner_name}/{repo_name}/issues/{issue_number}/comments"
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+    }
+
+    data = {"body": comment_body}
+
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+        response.raise_for_status()
+        logger.info(f"Successfully added payment comment to issue #{issue_number} in {owner_name}/{repo_name}")
+        return True
+    except requests.RequestException as e:
+        logger.error(f"Failed to add comment to GitHub issue: {e}")
+        return False
+    except Exception as e:
+        logger.exception("Unexpected error adding GitHub comment")
+        return False
+
+
+def add_issue_labels(owner_name, repo_name, issue_number, github_token):
+    """
+    Add 'paid' and 'sponsors' labels to the GitHub issue.
+    """
+    url = f"https://api.github.com/repos/{owner_name}/{repo_name}/issues/{issue_number}/labels"
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+    }
+
+    labels = ["paid", "sponsors"]
+
+    try:
+        response = requests.post(url, headers=headers, json={"labels": labels}, timeout=10)
+        response.raise_for_status()
+        logger.info(f"Successfully added labels {labels} to issue #{issue_number} in {owner_name}/{repo_name}")
+        return True
+    except requests.RequestException as e:
+        logger.error(f"Failed to add labels to GitHub issue: {e}")
+        return False
+    except Exception as e:
+        logger.exception("Unexpected error adding GitHub labels")
+        return False
