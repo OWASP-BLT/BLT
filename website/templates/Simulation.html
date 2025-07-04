@@ -1,0 +1,96 @@
+<!-- website/templates/dashboard.html -->
+{% extends 'base.html' %}
+{% block content %}
+    <div class="min-h-screen bg-gray-100">
+        <!-- Header -->
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <h1 class="text-3xl font-bold text-gray-900">Security Labs</h1>
+            </div>
+        </header>
+        <!-- Main Content -->
+        <main>
+            <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <!-- Lab Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    {% for lab in labs %}
+                        <div class="bg-white overflow-hidden shadow-lg rounded-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+                            <div class="p-6">
+                                <!-- Card Header -->
+                                <div class="flex items-center justify-between mb-4">
+                                    <!-- Icon and Title -->
+                                    <div class="flex items-center">
+                                        {% if lab.icon == 'database' %}
+                                            <svg class="h-8 w-8 text-[#e74c3c]"
+                                                 xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                                            </svg>
+                                        {% elif lab.icon == 'code' %}
+                                            <svg class="h-8 w-8 text-[#e74c3c]"
+                                                 xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                            </svg>
+                                        {% elif lab.icon == 'shield-check' %}
+                                            <svg class="h-8 w-8 text-[#e74c3c]"
+                                                 xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                            </svg>
+                                        {% elif lab.icon == 'terminal' %}
+                                            <svg class="h-8 w-8 text-[#e74c3c]"
+                                                 xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        {% endif %}
+                                        <h2 class="ml-3 text-xl font-semibold text-gray-900">{{ lab.title }}</h2>
+                                    </div>
+                                    <!-- Task Count and Time -->
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ lab.total_tasks }} Tasks</span>
+                                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ lab.estimated_time }} min</span>
+                                    </div>
+                                </div>
+                                <!-- Description -->
+                                <p class="text-gray-600 mb-4">{{ lab.description }}</p>
+                                <!-- Progress Bar -->
+                                <div class="mb-4">
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-[#e74c3c] h-2.5 rounded-full"
+                                             style="width: {{ lab.progress }}%"></div>
+                                    </div>
+                                    <div class="mt-2 text-sm text-gray-600 text-right">Progress: {{ lab.progress }}%</div>
+                                </div>
+                                <!-- Start/Continue Button -->
+                                <button class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                    {% if lab.progress > 0 %}
+                                        Continue Lab
+                                    {% else %}
+                                        Start Lab
+                                    {% endif %}
+                                    <svg class="ml-2 -mr-1 h-4 w-4"
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+{% endblock %}
