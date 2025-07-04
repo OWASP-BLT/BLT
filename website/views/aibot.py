@@ -18,6 +18,9 @@ from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from jsonschema import ValidationError, validate
+from patchpy import DiffFile
+
+from parse_utils import chunk_python_file
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +34,10 @@ try:
         AIBOT_ISSUE_SCHEMA = json.load(f)
     with open("website/schemas/aibot_pr_schema.json", "r", encoding="utf-8") as f:
         AIBOT_PR_SCHEMA = json.load(f)
+    with open("embed_agent_prompt.md", "r", encoding="utf-8") as f:
+        EMBED_AGENT_PROMPT = f.read().strip()
 except (FileNotFoundError, json.JSONDecodeError) as e:
-    logger.error("Failed to load schema files: %s", str(e))
+    logger.error("Failed to load file: %s", str(e))
 
 
 def _get_setting(key_name: str) -> str:
@@ -72,6 +77,11 @@ def get_github_url() -> Optional[str]:
 def get_github_api_url() -> Optional[str]:
     """Retrieve the GitHub API URL from settings."""
     return _get_setting("GITHUB_API_URL")
+
+
+def get_github_raw_content_url() -> Optional[str]:
+    """Retrieve the GitHub raw content URL from settings."""
+    return _get_setting("GITHUB_RAW_BASE_URL")
 
 
 def get_github_aibot_webhook_url() -> Optional[str]:
@@ -347,6 +357,8 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
 
 def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     """Validate and handle pull request related events (opened, synchronize)."""
+    with open("event_pull_request.txt", "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
     validate_payload_schema(payload, AIBOT_PR_SCHEMA)
     action = payload.get("action")
     pr_data = payload.get("pull_request", {})
@@ -412,12 +424,14 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
     pr_number = pr.get("number")
     pr_title = pr.get("title", "No title")
     pr_body = pr.get("body", "No body")
-
-    context = f"PR Title: {pr_title}\nPR Body: {pr_body}\n"
+    head_ref = pr["head"]["ref"]
 
     pr_diff = _fetch_pr_diff(pr_number)
+
+    prompt = _prepare_prompt(pr_diff)
+
     if pr_diff:
-        cleaned_diff = _clean_diff(pr_diff)
+        cleaned_diff = _prepare_diff(pr_diff, head_ref)
         context += f"PR Diff:\n{cleaned_diff}...\n"
     else:
         context += "PR Diff: Unable to fetch diff.\n"
@@ -432,7 +446,9 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
 
     ai_response = f"{get_aibot_pr_analysis_comment_marker()}\n{ai_response}"
 
-    response = post_or_patch_github_comment(pr_number, ai_response)
+    reponse = None
+    # response = post_or_patch_github_comment(pr_number, ai_response)
+    reponse = None
     if response and response.status_code == 201:
         logger.info("AI Bot response posted successfully: %s", ai_response)
     else:
@@ -450,7 +466,7 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
 
     pr_diff = _fetch_pr_diff(pr_number)
     if pr_diff:
-        cleaned_diff = _clean_diff(pr_diff)
+        cleaned_diff = _prepare_diff(pr_diff)
         context += f"Changes in Update:\n{cleaned_diff}...\n"
     else:
         context += "Unable to fetch changes.\n"
@@ -782,32 +798,32 @@ def post_or_patch_github_comment(
     return None
 
 
-def _clean_diff(diff_text: str) -> str:
+def _prepare_diff(diff_text: str, head_ref: str) -> str:
     skip_diff_files = {"poetry.lock"}
-    skip_diff_lines = ("index", "---", "+++", "new file mode")
-    lines = diff_text.split("\n")
-    cleaned_lines = []
+    cleaned_sections = []
 
-    skip_current_file = False
+    diff_file = DiffFile.from_string(diff_text)
 
-    for line in lines:
-        if line.startswith("diff --git"):
-            file_path = line.split(" ")[-1]
-            file_name = file_path.split("/")[-1]
-            skip_current_file = file_name in skip_diff_files
-            if skip_current_file:
-                continue
-            file_path = file_path[2:]  # To remove leading 'b/' from eg b/blt/settings.py
-            line = f"Diff for: {file_path}"
-
-        if skip_current_file:
+    for mod in diff_file.modifications:
+        file_path = mod.target[2:]
+        file_name = file_path.split("/")[-1]
+        file_content = _fetch_file_content(head_ref, file_path)
+        source_lines = file_content.splitlines()
+        if not file_content.strip():
             continue
-
-        if line.startswith(skip_diff_lines):
+        if file_name in skip_diff_files:
             continue
+        chunks = chunk_python_file(file_content, file_path)
+        cleaned_sections.append(f"Diff for: {file_path}")
 
-        cleaned_lines.append(line)
-    return "\n".join(cleaned_lines)
+    return "\n".join(cleaned_sections)
+
+
+def _fetch_file_content(head_ref: str, file_path: str) -> Optional[str]:
+    content_url = get_github_raw_content_url()
+    url = f"{content_url}/{head_ref}/{file_path}"
+    response = requests.get(url, timeout=5)
+    return response.text
 
 
 def _fetch_pr_diff(pr_number: int) -> Optional[str]:

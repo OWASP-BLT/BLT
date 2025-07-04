@@ -5,7 +5,7 @@
             "type": "string",
             "enum": [
                 "opened",
-                "synchronized"
+                "synchronize"
             ]
         },
         "pull_request": {

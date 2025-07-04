@@ -56,6 +56,7 @@ FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/o
 TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/SahilDhillon21/BLT")
 GITHUB_API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com/repos/SahilDhillon21/BLT")
+GITHUB_RAW_BASE_URL = os.environ.get("GITHUB_RAW_BASE_URL", "https://raw.githubusercontent.com/SahilDhillon21/BLT")
 EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
 
 GITHUB_AIBOT_USERNAME = "blt-ai-bot"

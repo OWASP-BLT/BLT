@@ -1,0 +1,72 @@
+from patchpy.models import DiffFile, Modification, Hunk, Line
+
+diff_file = DiffFile(modifications=[
+    Modification(
+        source='a/app/utils.py',
+        target='b/app/utils.py',
+        hunks=[
+            Hunk(
+                old_start=1,
+                old_lines=3,
+                new_start=1,
+                new_lines=4,
+                changes=[
+                    Line(" ", "def add(a, b):"),
+                    Line("-", "    return a + b"),
+                    Line("+", "    result = a + b"),
+                    Line("+", "    return result"),
+                    Line(" ", ""),
+                    Line(" ", "def subtract(a, b):"),
+                    Line(" ", "    return a - b"),
+                ]
+            ),
+            Hunk(
+                old_start=7,
+                old_lines=2,
+                new_start=8,
+                new_lines=3,
+                changes=[
+                    Line(" ", "def multiply(a, b):"),
+                    Line("-", "    return a * b"),
+                    Line("+", "    print(\"Multiplying...\")"),
+                    Line("+", "    return a * b"),
+                ]
+            )
+        ]
+    ),
+    Modification(
+        source='a/app/old_module.py',
+        target='/dev/null',
+        hunks=[
+            Hunk(
+                old_start=1,
+                old_lines=3,
+                new_start=0,
+                new_lines=0,
+                changes=[
+                    Line("-", "def legacy_function():"),
+                    Line("-", "    print(\"Deprecated\")"),
+                    Line("-", "    return None"),
+                ]
+            )
+        ]
+    ),
+    Modification(
+        source='a/README.md',
+        target='b/README.md',
+        hunks=[
+            Hunk(
+                old_start=1,
+                old_lines=3,
+                new_start=1,
+                new_lines=4,
+                changes=[
+                    Line(" ", "# My Project"),
+                    Line(" ", "This is a sample README."),
+                    Line(" ", ""),
+                    Line("+", "Now with more features!"),
+                ]
+            )
+        ]
+    )
+])
