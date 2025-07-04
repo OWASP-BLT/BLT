@@ -164,7 +164,7 @@ ROOT_URLCONF = "blt.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "website", "templates")],
         "APP_DIRS": False,
         "OPTIONS": {
             "debug": DEBUG,
