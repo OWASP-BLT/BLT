@@ -30,7 +30,7 @@ def dashboard(request):
                 "icon": icon,
                 "total_tasks": lab.total_tasks,
                 "color": "#e74c3c",
-                "progress": 0,  # We'll implement progress tracking in the next PR
+                "progress": 0,  # We'll implement progress tracking in the next PR_forward
                 "estimated_time": lab.estimated_time,
             }
         )
