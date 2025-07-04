@@ -33,6 +33,8 @@ from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
+    BaconEarning,
+    BaconSubmission,
     Badge,
     Challenge,
     Contributor,
@@ -299,6 +301,17 @@ class UserProfileDetailView(DetailView):
 
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        # Add bacon earning data
+        bacon_earning = BaconEarning.objects.filter(user=user).first()
+        print(f"Bacon earning for {user.username}: {bacon_earning}")
+        context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
+
+        # Get bacon submission stats
+        context["bacon_submissions"] = {
+            "pending": BaconSubmission.objects.filter(user=user, transaction_status="pending").count(),
+            "completed": BaconSubmission.objects.filter(user=user, transaction_status="completed").count(),
+        }
+
         milestones = [7, 15, 30, 100, 180, 365]
         base_milestone = 0
         next_milestone = 0
