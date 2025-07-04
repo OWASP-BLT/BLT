@@ -35,9 +35,14 @@
               integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
+        <!-- Use a specific Tailwind CSS version (or self-host) to enable SRI -->
+        <script src="https://unpkg.com/tailwindcss@<VERSION>/dist/tailwind.min.js"
+                integrity="sha384-<COMPUTED_SRI_HASH>"
                 crossorigin="anonymous"></script>
+        {% if not debug %}
+            <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
+                    crossorigin="anonymous"></script>
+        {% endif %}
     </head>
     <body>
         <div class="mt-[75px]">
