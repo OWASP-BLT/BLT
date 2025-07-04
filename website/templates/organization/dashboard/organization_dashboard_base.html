@@ -35,9 +35,9 @@
               integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
-        <!-- Use a specific Tailwind CSS version (or self-host) to enable SRI -->
-        <script src="https://unpkg.com/tailwindcss@<VERSION>/dist/tailwind.min.js"
-                integrity="sha384-<COMPUTED_SRI_HASH>"
+        <!-- Pin a specific Tailwind build and its SRI hash -->
+        <script src="https://unpkg.com/tailwindcss@3.4.5/dist/tailwind.min.js"
+                integrity="sha384-Vb4ceB7M6T3n2bR2U0oG8iXtcg9u2gR8Yk4HpL4Cj9c="
                 crossorigin="anonymous"></script>
         {% if not debug %}
             <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
