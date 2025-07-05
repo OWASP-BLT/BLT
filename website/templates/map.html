@@ -4,16 +4,16 @@
 {% block extra_css %}{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0 bg-white dark:bg-gray-900">
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Location Map</h1>
-            <p class="mt-2 text-sm text-gray-600">View locations around the world</p>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Location Map</h1>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">View locations around the world</p>
         </div>
         <div class="mb-6">
             <div class="flex flex-wrap gap-4">
                 {% for type in marker_types %}
                     <a href="?type={{ type.id }}"
-                       class="inline-flex items-center px-4 py-2 rounded-lg {% if marker_type == type.id %}bg-[#e74c3c] text-white{% else %}bg-white text-gray-700 hover:bg-gray-50 border border-gray-200{% endif %} transition-colors duration-200">
+                       class="inline-flex items-center px-4 py-2 rounded-lg {% if marker_type == type.id %}bg-[#e74c3c] text-white dark:bg-red-900 dark:text-red-200{% else %}bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600{% endif %} transition-colors duration-200">
                         <i class="fas {{ type.icon }} mr-2"></i>
                         {{ type.name }}
                     </a>
@@ -22,26 +22,26 @@
         </div>
         <div class="relative z-0">
             <div id="map-loading" class="map-loading hidden">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-spinner fa-spin text-[#e74c3c]"></i>
+                <div class="flex items-center space-x-2 text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-spinner fa-spin text-[#e74c3c] dark:text-red-300"></i>
                     <span>Loading map...</span>
                 </div>
             </div>
             <div id="map"
-                 class="w-full h-[600px] rounded-lg shadow-lg mb-8 overflow-hidden relative z-0 border-2 border-black">
+                 class="w-full h-[600px] rounded-lg shadow-lg mb-8 overflow-hidden relative z-0 border-2 border-black dark:border-gray-700">
             </div>
         </div>
         <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Locations</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Locations</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for location in locations %}
                     {% if location.latitude and location.longitude %}
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-gray-800 border border-gray-200 dark:border-gray-600 p-4 hover:shadow-md dark:hover:shadow-gray-700 transition-shadow duration-200">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <h3 class="text-lg font-medium text-gray-900">{{ location.name }}</h3>
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ location.name }}</h3>
                                     {% if location.city or location.country %}
-                                        <p class="text-sm text-gray-600 mt-1">
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                             {% if location.city %}{{ location.city }}{% endif %}
                                             {% if location.city and location.country %},{% endif %}
                                             {% if location.country %}{{ location.country }}{% endif %}
@@ -59,7 +59,7 @@
                             <div class="mt-4">
                                 {% if marker_type == 'organizations' %}
                                     <a href="{% url 'organization_detail' slug=location.slug %}"
-                                       class="inline-flex items-center text-sm text-[#e74c3c] hover:text-red-700">
+                                       class="inline-flex items-center text-sm text-[#e74c3c] dark:text-red-300 hover:text-red-700 dark:hover:text-red-200">
                                         View Details
                                         <svg class="w-4 h-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -70,9 +70,9 @@
                         </div>
                     {% endif %}
                 {% empty %}
-                    <div class="col-span-full text-center py-12">
-                        <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                            <svg class="w-12 h-12 text-gray-400"
+                    <div class="col-span-full text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
+                            <svg class="w-12 h-12 text-gray-400 dark:text-gray-500"
                                  fill="none"
                                  viewBox="0 0 24 24"
                                  stroke="currentColor">
@@ -80,8 +80,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </div>
-                        <p class="text-gray-500 text-lg">No locations found</p>
-                        <p class="text-gray-400 mt-2">Try selecting a different location type</p>
+                        <p class="text-gray-500 dark:text-gray-300 text-lg">No locations found</p>
+                        <p class="text-gray-400 dark:text-gray-500 mt-2">Try selecting a different location type</p>
                     </div>
                 {% endfor %}
                 this map was inspired by the map on OWASP Nest

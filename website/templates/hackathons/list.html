@@ -4,16 +4,16 @@
 {% block title %}Hackathons - OWASP BLT{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-white dark:bg-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
                         <i class="fas fa-trophy text-[#e74c3c]"></i>
                         Hackathons
                     </h1>
-                    <p class="mt-2 text-gray-600">Join coding competitions, collaborate with others, and win prizes!</p>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300">Join coding competitions, collaborate with others, and win prizes!</p>
                 </div>
                 {% if request.user.is_authenticated %}
                     <div class="mt-4 md:mt-0">
@@ -26,7 +26,7 @@
                 {% endif %}
             </div>
             <!-- Filters Section -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
                 <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
                     <i class="fas fa-filter text-[#e74c3c]"></i>
                     Filter Hackathons
@@ -36,10 +36,11 @@
                       class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <!-- Status Filter -->
                     <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <label for="status"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Status</label>
                         <select id="status"
                                 name="status"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                                class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
                             <option value="">All</option>
                             <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
                             <option value="inactive"
@@ -48,10 +49,11 @@
                     </div>
                     <!-- Time Filter -->
                     <div>
-                        <label for="time" class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <label for="time"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Time</label>
                         <select id="time"
                                 name="time"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                                class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
                             <option value="">All</option>
                             <option value="upcoming"
                                     {% if time_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
@@ -70,36 +72,36 @@
                 </form>
                 <!-- Quick Stats -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
-                                <i class="fas fa-calendar-alt text-green-600"></i>
+                            <div class="flex-shrink-0 bg-green-100 dark:bg-green-900 rounded-md p-3">
+                                <i class="fas fa-calendar-alt text-green-600 dark:text-green-300"></i>
                             </div>
                             <div class="ml-4">
-                                <h3 class="text-sm font-medium text-gray-900">Upcoming</h3>
-                                <p class="text-2xl font-semibold text-gray-700">{{ upcoming_count }}</p>
+                                <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Upcoming</h3>
+                                <p class="text-2xl font-semibold text-gray-700 dark:text-gray-200">{{ upcoming_count }}</p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
-                                <i class="fas fa-play text-blue-600"></i>
+                            <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900 rounded-md p-3">
+                                <i class="fas fa-play text-blue-600 dark:text-blue-300"></i>
                             </div>
                             <div class="ml-4">
-                                <h3 class="text-sm font-medium text-gray-900">Ongoing</h3>
-                                <p class="text-2xl font-semibold text-gray-700">{{ ongoing_count }}</p>
+                                <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Ongoing</h3>
+                                <p class="text-2xl font-semibold text-gray-700 dark:text-gray-200">{{ ongoing_count }}</p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-gray-100 rounded-md p-3">
-                                <i class="fas fa-history text-gray-600"></i>
+                            <div class="flex-shrink-0 bg-gray-100 dark:bg-gray-600 rounded-md p-3">
+                                <i class="fas fa-history text-gray-600 dark:text-gray-300"></i>
                             </div>
                             <div class="ml-4">
-                                <h3 class="text-sm font-medium text-gray-900">Past</h3>
-                                <p class="text-2xl font-semibold text-gray-700">{{ past_count }}</p>
+                                <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Past</h3>
+                                <p class="text-2xl font-semibold text-gray-700 dark:text-gray-200">{{ past_count }}</p>
                             </div>
                         </div>
                     </div>
@@ -109,19 +111,19 @@
             {% if hackathons %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hackathon in hackathons %}
-                        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
                             {% if hackathon.banner_image %}
                                 <div class="h-40 bg-cover bg-center"
                                      style="background-image: url('{{ hackathon.banner_image.url }}')"></div>
                             {% else %}
-                                <div class="h-40 bg-gradient-to-r from-[#e74c3c] to-red-700 flex items-center justify-center">
+                                <div class="h-40 bg-gradient-to-r from-[#e74c3c] to-red-700 dark:from-[#b03a2e] dark:to-red-800 flex items-center justify-center">
                                     <i class="fas fa-code text-white text-5xl"></i>
                                 </div>
                             {% endif %}
                             <div class="p-6">
                                 <div class="flex justify-between items-start">
-                                    <h2 class="text-xl font-bold text-gray-900 mb-2">{{ hackathon.name }}</h2>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if hackathon.is_ongoing %} bg-green-100 text-green-800 {% elif hackathon.has_ended %} bg-gray-100 text-gray-800 {% else %} bg-blue-100 text-blue-800 {% endif %} ">
+                                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{{ hackathon.name }}</h2>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if hackathon.is_ongoing %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% elif hackathon.has_ended %} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 {% else %} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 {% endif %} ">
                                         {% if hackathon.is_ongoing %}
                                             Ongoing
                                         {% elif hackathon.has_ended %}
@@ -131,12 +133,12 @@
                                         {% endif %}
                                     </span>
                                 </div>
-                                <p class="text-gray-600 text-sm mb-4">
+                                <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">
                                     Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
-    class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
+    class="text-[#e74c3c] dark:text-red-400 hover:underline">{{ hackathon.organization.name }}</a>
                                 </p>
-                                <p class="text-gray-700 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
-                                <div class="flex items-center text-sm text-gray-500 mb-4">
+                                <p class="text-gray-700 dark:text-gray-200 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
+                                <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
                                     <i class="far fa-calendar mr-2"></i>
                                     <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
                                 </div>
@@ -154,16 +156,16 @@
                         <nav class="inline-flex rounded-md shadow">
                             {% if page_obj.has_previous %}
                                 <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if time_filter %}&time={{ time_filter }}{% endif %}{% if org_filter %}&organization={{ org_filter }}{% endif %}"
-                                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             {% endif %}
-                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200">
                                 Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                             </span>
                             {% if page_obj.has_next %}
                                 <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if time_filter %}&time={{ time_filter }}{% endif %}{% if org_filter %}&organization={{ org_filter }}{% endif %}"
-                                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             {% endif %}
@@ -171,12 +173,12 @@
                     </div>
                 {% endif %}
             {% else %}
-                <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-                    <div class="inline-block p-4 rounded-full bg-gray-100 mb-4">
-                        <i class="fas fa-trophy text-[#e74c3c] text-4xl"></i>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
+                    <div class="inline-block p-4 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                        <i class="fas fa-trophy text-[#e74c3c] dark:text-red-400 text-4xl"></i>
                     </div>
-                    <h3 class="text-xl font-medium text-gray-900 mb-2">No Hackathons Found</h3>
-                    <p class="text-gray-600 mb-6">There are no hackathons matching your filters.</p>
+                    <h3 class="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No Hackathons Found</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">There are no hackathons matching your filters.</p>
                     <a href="{% url 'hackathons' %}"
                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                         Clear Filters
