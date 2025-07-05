@@ -74,6 +74,7 @@ qdrant-client = "^1.14.3"
 google-generativeai = "^0.8.5"
 bandit = "^1.8.5"
 patchpy = "^2.0.4"
+unidiff = "^0.7.5"
 
 
 [tool.poetry.group.dev.dependencies]

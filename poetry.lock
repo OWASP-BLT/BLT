@@ -4343,6 +4343,18 @@ files = [
 ]
 
 [[package]]
+name = "unidiff"
+version = "0.7.5"
+description = "Unified diff parsing/metadata extraction library."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "unidiff-0.7.5-py2.py3-none-any.whl", hash = "sha256:c93bf2265cc1ba2a520e415ab05da587370bc2a3ae9e0414329f54f0c2fc09e8"},
+    {file = "unidiff-0.7.5.tar.gz", hash = "sha256:2e5f0162052248946b9f0970a40e9e124236bf86c82b70821143a6fc1dea2574"},
+]
+
+[[package]]
 name = "uritemplate"
 version = "4.1.1"
 description = "Implementation of RFC 6570 URI Templates"
@@ -4786,4 +4798,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "cd0fc00df80cd0fad67fd6b80c9d284e0454bb35701b564e563fc448c49dfd86"
+content-hash = "b98d3423d63ebc8f80f0edbf639f95226764a4c18483af3700909f48c581505b"

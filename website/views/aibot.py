@@ -18,9 +18,7 @@ from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from jsonschema import ValidationError, validate
-from patchpy import DiffFile
-
-from parse_utils import chunk_python_file
+from unidiff import PatchedFile, PatchSet
 
 logger = logging.getLogger(__name__)
 
@@ -428,16 +426,10 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
 
     pr_diff = _fetch_pr_diff(pr_number)
 
-    prompt = _prepare_prompt(pr_diff)
+    prompt = _prepare_prompt(pr_diff, head_ref)
 
-    if pr_diff:
-        cleaned_diff = _prepare_diff(pr_diff, head_ref)
-        context += f"PR Diff:\n{cleaned_diff}...\n"
-    else:
-        context += "PR Diff: Unable to fetch diff.\n"
-
-    logger.info("Context for AI Bot: %s", context)
-    ai_response = _generate_response(context)
+    logger.info("Context for AI Bot: %s", prompt)
+    ai_response = _generate_response(prompt)
     if not ai_response:
         logger.error("Failed to generate AI response for new PR.")
         return
@@ -446,9 +438,8 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
 
     ai_response = f"{get_aibot_pr_analysis_comment_marker()}\n{ai_response}"
 
-    reponse = None
+    response = None
     # response = post_or_patch_github_comment(pr_number, ai_response)
-    reponse = None
     if response and response.status_code == 201:
         logger.info("AI Bot response posted successfully: %s", ai_response)
     else:
@@ -461,12 +452,13 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
     pr = payload.get("pull_request", {})
     pr_number = pr.get("number")
     pr_title = pr.get("title", "No title")
+    head_ref = pr["head"]["ref"]
 
     context = f"PR Title: {pr_title}\n"
 
     pr_diff = _fetch_pr_diff(pr_number)
     if pr_diff:
-        cleaned_diff = _prepare_diff(pr_diff)
+        cleaned_diff = _prepare_prompt(pr_diff, head_ref)
         context += f"Changes in Update:\n{cleaned_diff}...\n"
     else:
         context += "Unable to fetch changes.\n"
@@ -798,25 +790,87 @@ def post_or_patch_github_comment(
     return None
 
 
-def _prepare_diff(diff_text: str, head_ref: str) -> str:
-    skip_diff_files = {"poetry.lock"}
-    cleaned_sections = []
+def _process_diff(diff_text: str, head_ref: str) -> str:
+    skip_files = {"package-lock.json", ".yarn.lock"}
+    skip_extensions = {
+        ".lock",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".svg",
+        ".pdf",
+        ".zip",
+        ".tar",
+        ".gz",
+        ".min.js",
+        ".map",
+        ".pyc",
+        ".log",
+        ".db",
+        ".coverage",
+        ".egg-info",
+    }
 
-    diff_file = DiffFile.from_string(diff_text)
+    main_diff = []
 
-    for mod in diff_file.modifications:
-        file_path = mod.target[2:]
-        file_name = file_path.split("/")[-1]
-        file_content = _fetch_file_content(head_ref, file_path)
-        source_lines = file_content.splitlines()
-        if not file_content.strip():
+    def should_skip(file: PatchedFile) -> bool:
+        return file.path in skip_files or file.path.endswith(tuple(skip_extensions)) or file.is_binary_file
+
+    patch = PatchSet.from_string(diff_text)
+
+    for file in patch:
+        # Case 1: File to be skipped
+        if should_skip(file):
             continue
-        if file_name in skip_diff_files:
-            continue
-        chunks = chunk_python_file(file_content, file_path)
-        cleaned_sections.append(f"Diff for: {file_path}")
 
-    return "\n".join(cleaned_sections)
+        # Case 2: File added
+        if file.is_added_file:
+            diff_section = f"New: {file.path}\n"
+            added_content = []
+            for hunk in file:
+                for line in hunk:
+                    if line.is_added:
+                        added_content.append(line.value.rstrip("\n"))
+            diff_section += "\n".join(added_content) + "\n"
+            main_diff.append(diff_section)
+
+        # Case 3: File removed
+        elif file.is_removed_file:
+            diff_section = f"Removed: {file.path}\n"
+            removed_content = []
+            for hunk in file:
+                for line in hunk:
+                    if line.is_removed:
+                        removed_content.append(line.value.rstrip("\n"))
+            diff_section += "\n".join(removed_content) + "\n"
+            main_diff.append(diff_section)
+
+        # Case 4: File renamed and/or modifed
+        elif file.is_rename:
+            hunk_output = []
+            for hunk in file:
+                hunk_output.append(str(hunk).rstrip("\n"))
+
+            if hunk_output:
+                diff_section = f"Renamed and Modified: {file.source_file[2:]} → {file.target_file[2:]}\n"
+                diff_section += "\n".join(hunk_output) + "\n"
+            else:
+                diff_section = f"Renamed: {file.source_file[2:]} → {file.target_file[2:]}\n"
+                diff_section += "\n"
+            main_diff.append(diff_section)
+
+        # Case 5: File modified only
+        elif file.is_modified_file:
+            diff_section = f"Modified: {file.path}\n"
+            hunk_contents = []
+            for hunk in file:
+                # hunk.diff includes headers, adjust if needed
+                hunk_contents.append(str(hunk).rstrip("\n"))
+            diff_section += "\n".join(hunk_contents) + "\n"
+            main_diff.append(diff_section)
+
+    return "\n".join(main_diff)
 
 
 def _fetch_file_content(head_ref: str, file_path: str) -> Optional[str]:
