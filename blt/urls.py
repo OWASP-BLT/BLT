@@ -39,6 +39,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.aibot import aibot_webhook_is_healthy, main_github_aibot_webhook_dispatcher
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -464,6 +465,8 @@ urlpatterns = [
         organization_dashboard_hunt_edit,
         name="organization_dashboard_hunt_edit",
     ),
+    path("aibot", main_github_aibot_webhook_dispatcher, name="main_github_aibot_webhook_dispatcher"),
+    path("aibot_webhook_is_healthy", aibot_webhook_is_healthy, name="aibot_webhook_is_healthy"),
     path(
         "dashboard/admin/organization/<int:pk>/",
         admin_organization_dashboard_detail,
