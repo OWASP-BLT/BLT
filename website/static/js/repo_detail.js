@@ -404,6 +404,57 @@ function attachPaginationListeners() {
     });
 }
 
+// --- AJAX Stargazers Pagination & Filter ---
+function attachStargazersListeners() {
+    // Pagination links
+    document.querySelectorAll('.stargazers-pagination-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            fetchStargazers(this.getAttribute('href'));
+        });
+    });
+    // Filter links
+    document.querySelectorAll('.stargazers-filter-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            fetchStargazers(this.getAttribute('href'));
+        });
+    });
+}
+
+function fetchStargazers(url) {
+    const stargazersSection = document.getElementById('stargazers-section');
+    if (!stargazersSection) return;
+    // Show loading state
+    stargazersSection.classList.add('opacity-50');
+    fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.text();
+    })
+    .then(html => {
+        // Parse the returned HTML and extract the stargazers section
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const newSection = tempDiv.querySelector('#stargazers-section');
+        if (newSection) {
+            stargazersSection.innerHTML = newSection.innerHTML;
+            // Update URL
+            window.history.pushState({}, '', url);
+            // Re-attach listeners
+            attachStargazersListeners();
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching stargazers:', error);
+    })
+    .finally(() => {
+        stargazersSection.classList.remove('opacity-50');
+    });
+}
+
 // Initialize everything when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {
     // Initialize progress bars
@@ -444,4 +495,6 @@ document.addEventListener('DOMContentLoaded', function () {
             refreshSection(this, section);
         });
     });
+
+    attachStargazersListeners();
 }); 
