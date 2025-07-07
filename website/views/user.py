@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
@@ -46,6 +47,7 @@ from website.models import (
     Monitor,
     Notification,
     Points,
+    Repo,
     Tag,
     Thread,
     User,
@@ -889,6 +891,43 @@ def handle_pull_request_event(payload):
         if pr_user_profile:
             pr_user_instance = pr_user_profile.user
             assign_github_badge(pr_user_instance, "First PR Merged")
+        # Check if PR closes any issues with bounties
+        try:
+            # Extract issue references from PR body
+            pr_body = payload["pull_request"]["body"] or ""
+            issue_refs = re.findall(
+                r"(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)", pr_body, re.IGNORECASE
+            )
+
+            if not issue_refs:
+                # return JsonResponse({"status": "success", "message": "No issue references found"}, status=200)
+                logger.info("No issue references found in the pull request body.")
+            else:
+                # Get repo details
+                repo_name = payload["repository"]["name"]
+                owner = payload["repository"]["owner"]["login"]
+
+            try:
+                repo = Repo.objects.get(name=repo_name, organization__name=owner)
+            except Repo.DoesNotExist:
+                return JsonResponse({"status": "success", "message": "Repository not tracked in BLT"}, status=200)
+
+            # Check if any referenced issues have bounties
+
+            issue_numbers = [int(n) for n in issue_refs]
+            issues_with_bounty = GitHubIssue.objects.filter(
+                repo=repo, issue_id__in=issue_numbers, has_dollar_tag=True
+            ).exclude(sponsors_tx_id__isnull=False)
+            for github_issue in issues_with_bounty:
+                logger.info(
+                    "Bounty issue #%s closed by PR #%s",
+                    github_issue.issue_id,
+                    payload["pull_request"]["number"],
+                )
+
+        except Exception as e:
+            logger.exception(f"Error checking for bounty issues: {e}")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
