@@ -18,13 +18,13 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="p-6 lg:p-8 bg-gray-50 min-h-screen">
+    <div class="p-6 lg:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
         <!-- Header -->
         <div class="max-w-7xl mx-auto">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
                 <div>
-                    <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Latest Bugs</h1>
-                    <p class="text-lg text-gray-600">Track and manage reported issues across all domains</p>
+                    <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">Latest Bugs</h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-300">Track and manage reported issues across all domains</p>
                 </div>
                 <div class="mt-4 sm:mt-0">
                     <a href="{% url 'report' %}"
@@ -51,20 +51,20 @@
                     <!-- Enhanced Pagination -->
                     {% if bugs.paginator %}
                         <div class="mt-8">
-                            <div class="flex items-center justify-between bg-white px-4 py-3 rounded-lg shadow-sm">
+                            <div class="flex items-center justify-between bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-sm">
                                 <div class="flex-1 flex justify-between sm:hidden">
                                     {% if bugs.has_previous %}
                                         <a href="?page={{ bugs.previous_page_number }}"
-                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Previous</a>
+                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">Previous</a>
                                     {% endif %}
                                     {% if bugs.has_next %}
                                         <a href="?page={{ bugs.next_page_number }}"
-                                           class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Next</a>
+                                           class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">Next</a>
                                     {% endif %}
                                 </div>
                                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                                     <div>
-                                        <p class="text-sm text-gray-700">
+                                        <p class="text-sm text-gray-700 dark:text-gray-300">
                                             Showing
                                             <span class="font-medium">{{ bugs.start_index }}</span>
                                             to
@@ -78,7 +78,7 @@
                                          aria-label="Pagination">
                                         {% if bugs.has_previous %}
                                             <a href="?page=1"
-                                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">
                                                 <span class="sr-only">First</span>
                                                 <svg class="h-5 w-5"
                                                      xmlns="http://www.w3.org/2000/svg"
@@ -95,14 +95,14 @@
                                                 </span>
                                             {% elif num > bugs.number|add:"-3" and num < bugs.number|add:"3" %}
                                                 <a href="?page={{ num }}"
-                                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
                                                     {{ num }}
                                                 </a>
                                             {% endif %}
                                         {% endfor %}
                                         {% if bugs.has_next %}
                                             <a href="?page={{ bugs.paginator.num_pages }}"
-                                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">
                                                 <span class="sr-only">Last</span>
                                                 <svg class="h-5 w-5"
                                                      xmlns="http://www.w3.org/2000/svg"
@@ -120,7 +120,7 @@
                 </div>
                 <!-- Sidebar with Enhanced Leaderboard -->
                 <div class="w-full lg:w-80 mt-8 lg:mt-0">
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
                         <div class="p-4 bg-[#e74c3c] bg-opacity-95">
                             <h2 class="text-xl font-bold text-white flex items-center">
                                 <svg class="w-6 h-6 mr-2"

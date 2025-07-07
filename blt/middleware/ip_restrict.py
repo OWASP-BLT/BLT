@@ -1,5 +1,4 @@
 import ipaddress
-import logging
 
 from django.core.cache import cache
 from django.db import models, transaction
@@ -9,12 +8,10 @@ from website.models import IP, Blocked
 
 MAX_COUNT = 2147483647
 
-logger = logging.getLogger(__name__)
-
 
 class IPRestrictMiddleware:
     """
-    Middleware to restrict access based on client IP addresses and user agent.
+    Middleware to restrict access based on client IP addresses and user agents.
     """
 
     def __init__(self, get_response):
@@ -48,8 +45,8 @@ class IPRestrictMiddleware:
             try:
                 network = ipaddress.ip_network(range_str, strict=False)
                 blocked_ip_network.append(network)
-            except ValueError as e:
-                logger.error(f"Invalid IP network {range_str}: {str(e)}")
+            except ValueError:
+                # Log the error or handle it as needed, but skip invalid networks
                 continue
 
         return blocked_ip_network
@@ -73,12 +70,7 @@ class IPRestrictMiddleware:
         """
         Check if the IP address is within any of the blocked IP networks.
         """
-        try:
-            ip_obj = ipaddress.ip_address(ip)
-        except ValueError as e:
-            logger.error(f"Invalid IP address {ip}: {str(e)}")
-            return False
-
+        ip_obj = ipaddress.ip_address(ip)
         return any(ip_obj in ip_range for ip_range in blocked_ip_network)
 
     def is_user_agent_blocked(self, user_agent, blocked_agents):
