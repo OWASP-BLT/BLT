@@ -15,14 +15,15 @@
                         <div class="px-2 py-2">
                             <span class="text-sm text-red-500 font-semibold uppercase tracking-wider">{% trans "Dashboard" %}</span>
                         </div>
-                        <!-- {% if request.resolver_match.kwargs.id %}
-                            <a href="{% url 'organization_dashboard' %}" class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_dashboard' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                        {% if request.resolver_match.kwargs.id %}
+                            <a href="{% url 'organization_dashboard' %}"
+                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_dashboard' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'organization_dashboard' %}bg-[#fde0dd] text-[#e74c3c]{% else %}bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                     <i class="fas fa-home"></i>
                                 </div>
                                 <span class="truncate">{% trans "Home" %}</span>
                             </a>
-                        {% endif %} -->
+                        {% endif %}
                         {% if request.resolver_match.kwargs.id %}
                             <a href="{% url 'organization_analytics' request.resolver_match.kwargs.id %}"
                                class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_analytics' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
