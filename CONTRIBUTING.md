@@ -104,7 +104,7 @@ Before you start contributing, you'll need to set up your development environmen
 
    ```bash
    pip install poetry
-   poetry shell
+   poetry env activate
    poetry install
    ```
 
