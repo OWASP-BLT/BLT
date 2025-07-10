@@ -32,6 +32,7 @@ class ThrottlingTests(TestCase):
         for i in range(get_limit + 10):
             request = self.factory.get("/some-path", REMOTE_ADDR=ip)
             response = self.middleware(request)
+            self.assertEqual(response.status_code, 200, f"Request {i+1} should be allowed during tests")
 
     def test_different_ips_not_throttled(self):
         """Test that different IPs are tracked separately."""
