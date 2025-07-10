@@ -2,7 +2,7 @@ name: CI/CD Optimized
 
 on:
   #merge_group:
-  #pull_request:
+  pull_request:
   push:
   workflow_dispatch:
   workflow_run:
