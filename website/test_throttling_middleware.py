@@ -62,6 +62,7 @@ class ThrottlingTests(TestCase):
             request = self.factory.get("/some-path", REMOTE_ADDR=ip)
             response = self.middleware(request)
             self.assertEqual(response.status_code, 200, f"Request {i+1} should be allowed during tests")
+
     def test_drf_views_not_throttled(self):
         """Test that DRF views are exempt from throttling."""
         ip = "192.168.1.1"
