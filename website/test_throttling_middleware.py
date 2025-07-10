@@ -57,7 +57,6 @@ class ThrottlingTests(TestCase):
     def test_throttling_skipped_during_tests(self):
         """Test that throttling is completely skipped when running tests."""
         ip = "192.168.1.1"
-        
         # Make way more requests than the limit (should all be allowed during tests)
         for i in range(200):
             request = self.factory.get("/some-path", REMOTE_ADDR=ip)
