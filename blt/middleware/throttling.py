@@ -52,7 +52,6 @@ class ThrottlingMiddleware:
         if "test" in sys.argv:
             logger.debug("Skipping throttling for test mode")
             return True
-        
         if any(request.path.startswith(p) for p in self.EXEMPT_PATHS):
             logger.debug("Skipping exempt path: %s", request.path)
             return True
