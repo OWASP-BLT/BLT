@@ -103,9 +103,10 @@ Before you start contributing, you'll need to set up your development environmen
 2. Set up Poetry and virtual environment:
 
    ```bash
-   pip install poetry
-   poetry shell
-   poetry install
+   pip install poetry                # requires Poetry ≥ 1.7.0  
+   poetry env use python3.11         # create or select the env  
+   eval $(poetry env activate)       # prints and runs the activation command  
+   poetry install 
    ```
 
 3. Set up the application:
