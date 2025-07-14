@@ -1,5 +1,6 @@
 """This module handles the GitHub AI Bot webhook events and interactions.
-It processes pull requests, issues, and comments, and interacts with the Gemini AI API to generate responses and post them on github.
+It processes pull requests, issues, and comments, and interacts with the
+Gemini AI API to generate responses and post them on github.
 """
 
 import hashlib
@@ -8,7 +9,7 @@ import json
 import logging
 import random
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import google.generativeai as genai
 import requests
@@ -19,6 +20,16 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from jsonschema import ValidationError, validate
 from unidiff import PatchedFile, PatchSet
+
+from clients import qdrant_client
+from parse_utils import (
+    chunk_file,
+    ensure_collection,
+    extract_json_block,
+    generate_embedding,
+    sanitize_backslash,
+    upsert_to_qdrant,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +170,7 @@ def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional
             logger.debug("Successfully generated AI response")
             return response.text
 
-        except (genai.APIError, requests.exceptions.RequestException) as e:
+        except requests.exceptions.RequestException as e:
             if "API key" in str(e):
                 logger.error("Authentication failed - check API key")
                 return None
@@ -422,11 +433,22 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
     pr_number = pr.get("number")
     pr_title = pr.get("title", "No title")
     pr_body = pr.get("body", "No body")
+    pr_diff = _fetch_pr_diff(pr_number)
     head_ref = pr["head"]["ref"]
 
-    pr_diff = _fetch_pr_diff(pr_number)
+    processed_diff = _process_diff(pr_diff, head_ref)
+    diff_query = _generate_diff_query(processed_diff)
+    cleaned_json = extract_json_block(diff_query)
+    diff_query_json = json.loads(cleaned_json)
 
-    prompt = _prepare_prompt(pr_diff, head_ref)
+    q = diff_query_json.get("query")
+    key_terms = diff_query_json.get("key_terms")
+    k = diff_query_json.get("k")
+
+    combined_query = q + key_terms
+    vector_query = generate_embedding(combined_query)
+
+    create_temp_pr_collection(head_ref)
 
     logger.info("Context for AI Bot: %s", prompt)
     ai_response = _generate_response(prompt)
@@ -458,7 +480,7 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
 
     pr_diff = _fetch_pr_diff(pr_number)
     if pr_diff:
-        cleaned_diff = _prepare_prompt(pr_diff, head_ref)
+        cleaned_diff = _process_diff(pr_diff, head_ref)
         context += f"Changes in Update:\n{cleaned_diff}...\n"
     else:
         context += "Unable to fetch changes.\n"
@@ -490,8 +512,6 @@ def aibot_handle_pr_comment(payload: Dict[str, Any]) -> None:
     pr_number = payload.get("issue", {}).get("number")
     comment_body = payload.get("comment", {}).get("body", "")
     commenter = payload.get("comment", {}).get("user", {}).get("login")
-
-    # TODO: Integrate with Gemini to generate a response
 
     logger.info(
         "AI Bot processing PR comment:\n- PR #%s\n- Comment by: %s\n- Content: %s...",
@@ -790,7 +810,25 @@ def post_or_patch_github_comment(
     return None
 
 
-def _process_diff(diff_text: str, head_ref: str) -> str:
+def create_temp_pr_collection(head_ref: str, pr_number: int, patch: PatchSet) -> None:
+    source_collection = "repo_embeddings"
+    sanitized_head_ref = sanitize_backslash(head_ref)
+    target_collection = f"temp_{sanitized_head_ref}_{pr_number}"
+    ensure_collection(qdrant_client, source_collection, 768)
+    ensure_collection(qdrant_client, target_collection, 768)
+
+    for file in patch:
+        if file.is_modified_file:
+            content = _fetch_file_content(head_ref, file.path)
+            chunks = chunk_file(content, file.source_file)
+
+            for chunk in chunks:
+                embedding = generate_embedding(chunk["chunk"], chunk.get("name"))
+                if embedding:
+                    upsert_to_qdrant(qdrant_client, target_collection, chunk, embedding)
+
+
+def _process_diff(diff_text: str) -> str:
     skip_files = {"package-lock.json", ".yarn.lock"}
     skip_extensions = {
         ".lock",
@@ -812,7 +850,7 @@ def _process_diff(diff_text: str, head_ref: str) -> str:
         ".egg-info",
     }
 
-    main_diff = []
+    processed_diff = []
 
     def should_skip(file: PatchedFile) -> bool:
         return file.path in skip_files or file.path.endswith(tuple(skip_extensions)) or file.is_binary_file
@@ -833,7 +871,7 @@ def _process_diff(diff_text: str, head_ref: str) -> str:
                     if line.is_added:
                         added_content.append(line.value.rstrip("\n"))
             diff_section += "\n".join(added_content) + "\n"
-            main_diff.append(diff_section)
+            processed_diff.append(diff_section)
 
         # Case 3: File removed
         elif file.is_removed_file:
@@ -844,7 +882,7 @@ def _process_diff(diff_text: str, head_ref: str) -> str:
                     if line.is_removed:
                         removed_content.append(line.value.rstrip("\n"))
             diff_section += "\n".join(removed_content) + "\n"
-            main_diff.append(diff_section)
+            processed_diff.append(diff_section)
 
         # Case 4: File renamed and/or modifed
         elif file.is_rename:
@@ -858,19 +896,25 @@ def _process_diff(diff_text: str, head_ref: str) -> str:
             else:
                 diff_section = f"Renamed: {file.source_file[2:]} → {file.target_file[2:]}\n"
                 diff_section += "\n"
-            main_diff.append(diff_section)
+            processed_diff.append(diff_section)
 
         # Case 5: File modified only
         elif file.is_modified_file:
             diff_section = f"Modified: {file.path}\n"
             hunk_contents = []
             for hunk in file:
-                # hunk.diff includes headers, adjust if needed
                 hunk_contents.append(str(hunk).rstrip("\n"))
             diff_section += "\n".join(hunk_contents) + "\n"
-            main_diff.append(diff_section)
+            processed_diff.append(diff_section)
 
-    return "\n".join(main_diff)
+    return "\n".join(processed_diff), patch
+
+
+def _generate_diff_query(processed_diff: str) -> List[float]:
+    print(processed_diff, type(processed_diff))
+    prompt = EMBED_AGENT_PROMPT.replace("<DIFF>", processed_diff)
+    response = _generate_response(prompt)
+    return response
 
 
 def _fetch_file_content(head_ref: str, file_path: str) -> Optional[str]:

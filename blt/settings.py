@@ -382,6 +382,9 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_ON_GET = True
 
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -391,12 +394,20 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
+            "level": "WARNING",
             "class": "logging.StreamHandler",
             "formatter": "simple",
             "stream": "ext://sys.stdout",  # Explicitly use stdout
         },
         "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
+        "aibot_file": {
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": os.path.join(LOG_DIR, "aibot.log"),
+            "when": "midnight",
+            "backupCount": 7,
+            "formatter": "verbose",
+            "encoding": "utf8",
+        },
     },
     "root": {
         "level": "DEBUG",  # Set to DEBUG to show all messages
@@ -416,6 +427,11 @@ LOGGING = {
         "website": {
             "handlers": ["console"],
             "level": "DEBUG",
+            "propagate": True,
+        },
+        "website.views.aibot": {
+            "handlers": ["aibot_file"],
+            "level": "INFO",
             "propagate": True,
         },
     },

@@ -29,7 +29,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: always
+    restart: on-failure
     volumes:
       - qdrant_db:/qdrant/storage
 

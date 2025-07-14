@@ -71,10 +71,15 @@ better-profanity = "^0.7.0"
 django-bleach = "^3.1.0"
 jsonschema = "^4.24.0"
 qdrant-client = "^1.14.3"
-google-generativeai = "^0.8.5"
 bandit = "^1.8.5"
 patchpy = "^2.0.4"
 unidiff = "^0.7.5"
+google-generativeai = "^0.8.5"
+html2text = "^2025.4.15"
+tqdm = "^4.67.1"
+pyyaml = "^6.0.2"
+unstructured = "^0.18.5"
+langchain = "^0.3.26"
 
 
 [tool.poetry.group.dev.dependencies]

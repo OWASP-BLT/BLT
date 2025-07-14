@@ -1,0 +1,13 @@
+{
+    "user": {
+        "name": "Alice",
+        "address": {
+            "city": "New York",
+            "zip": "10001"
+        },
+        "hobbies": [
+            "reading",
+            "hiking"
+        ]
+    }
+}
