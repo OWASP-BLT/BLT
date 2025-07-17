@@ -131,14 +131,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Calls the embedding generation process."""
         ensure_collection(self.qdrant_client, self.qdrant_collection, self.qdrant_vector_size)
-        qdrant_logger = logging.getLogger("qdrant_client")
-        original_level = qdrant_logger.getEffectiveLevel()
-        qdrant_logger.setLevel(logging.WARNING)
-        try:
-            with tqdm.external_write_mode():
-                self.process_repository_files()
-        finally:
-            qdrant_logger.setLevel(original_level)
+        self.process_repository_files()
 
     def process_repository_files(self):
         """Walks through the repository, collects valid files, and processes them."""

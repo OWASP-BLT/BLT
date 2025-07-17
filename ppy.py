@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import tempfile
 from typing import List, Optional
 
 import django
@@ -23,8 +24,8 @@ def _run_command(command: List[str], input_data: Optional[str] = None) -> str:
         return f"Error running {command}: {str(e)}"
 
 
-def _run_ruff(code: str) -> str:
-    command = ["ruff", "check", "--select=ALL", "--output-format", "json", "-"]
+def _run_ruff_on_code(code: str) -> str:
+    command = ["ruff", "check", "--select=ALL", "--output-format", "json"]
     return _run_command(command, input_data=code)
 
 
@@ -33,6 +34,18 @@ def _run_bandit_on_files(files: List[str]) -> str:
         return ""
     command = ["bandit", "-r", "--format", "json"] + files
     return _run_command(command)
+
+
+def _run_bandit_on_code(code: str) -> str:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmpfile:
+        tmpfile.write(code)
+        tmpfile_path = tmpfile.name
+
+    try:
+        command = ["bandit", "--format", "json", tmpfile_path]
+        return _run_command(command)
+    finally:
+        os.remove(tmpfile_path)
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
@@ -45,7 +58,7 @@ except AttributeError:
     exit()
 
 
-head_ref = "feature/new-file-structure"
+head_ref = "rinkitadhana:feature/new-file-structure"
 URL = "https://patch-diff.githubusercontent.com/raw/OWASP-BLT/BLT/pull/4396.diff"
 response = requests.get(URL, timeout=5)
 diff = response.text
@@ -73,63 +86,41 @@ print(combined_query)
 files_to_be_analyzed_statically = [file.source_file for file in patch if file.is_modified_file or file.is_added_file]
 
 vector_query = generate_embedding(combined_query)
+source_collection = "repo_embeddings"
+
+rename_mappings = {}
+
+for file in patch:
+    rename_mappings[file.source_file] = file.target_file
+
+import json
 
 try:
-    search_result = qdrant_client.search(collection_name=temp_collection, query_vector=vector_query, limit=k)
+    main_points = qdrant_client.query_points(collection_name=source_collection, query=vector_query, limit=k)
+    temp_points = qdrant_client.query_points(collection_name=temp_collection, query=vector_query, limit=k)
 
-    for point in search_result:
-        payload = point.payload
-        file_path = payload.get("file_path", "Unknown file")
-        if file_path in files_to_be_analyzed_statically:
-            if file_path.endswith(".py"):
-                ruff_output = _run_ruff([file_path])
-                bandit_output = _run_bandit_on_files([file_path])
+    relevant_chunks = {}
 
-    output_file = "search_results.txt"
+    for point in main_points.points:
+        chunk_data = point.payload
+        key = chunk_data["file_path"]
+        relevant_chunks[key] = chunk_data
 
-    with open(output_file, "w", encoding="utf-8") as f:
-        for idx, point in enumerate(search_result, start=1):
-            file_path = point.payload.get("file_path", "Unknown file")
-            start_line = point.payload.get("start_line", "?")
-            end_line = point.payload.get("end_line", "?")
-            chunk = point.payload.get("chunk", "").strip()
-            score = point.score
+    for point in temp_points.points:
+        chunk_data = point.payload
+        key = chunk_data["file_path"]
 
-            block = (
-                f"--- Match {idx} ---\n"
-                f"File: {file_path}\n"
-                f"Similarity Score: {score:.4f}\n"
-                f"Chunk:\n"
-                f"{chunk}\n"
-                f"{'-' * 80}\n\n"
-            )
+        if key in relevant_chunks:
+            print(f"Found existing key: {key}. Overwriting with: ")
+            print(chunk_data["chunk"])
+            key = rename_mappings.get(key, key)
 
-            print(block)
-            f.write(block)
-            if file_path.endswith(".py"):
-                ruff_output = _run_ruff_on_files([file_path])
-                bandit_output = _run_bandit_on_files([file_path])
+        relevant_chunks[key] = chunk_data
 
-                f.write("Ruff Output:\n")
-                f.write(ruff_output + "\n\n")
-                f.write("Bandit Output:\n")
-                f.write(bandit_output + "\n\n")
+    chunks = list(relevant_chunks.values())
 
-            elif file_path.endswith(".html"):
-                djlint_output = _run_djlint_on_files([file_path])
-
-                f.write("djLint Output:\n")
-                f.write(djlint_output + "\n\n")
-
-    print(f"Search results saved to '{output_file}'")
+    with open("merged_chunks.json", "w", encoding="utf-8") as f:
+        json.dump(chunks, f, indent=2, ensure_ascii=False)
 
 except Exception as e:
-    print(f"Error during search or writing results: {e}")
-
-
-try:
-    with open(output_filename, "w", encoding="utf-8") as f:
-        f.write(str(diff_query_json))
-    print(f"Successfully saved processed diff to {output_filename}")
-except IOError as e:
-    print(f"Error saving file {output_filename}: {e}")
+    raise e

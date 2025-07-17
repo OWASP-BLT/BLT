@@ -9,6 +9,7 @@ import json
 import logging
 import random
 import time
+from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 import google.generativeai as genai
@@ -22,7 +23,9 @@ from jsonschema import ValidationError, validate
 from unidiff import PatchedFile, PatchSet
 
 from clients import qdrant_client
+from github_api import fetch_pr_diff
 from parse_utils import (
+    ChunkType,
     chunk_file,
     ensure_collection,
     extract_json_block,
@@ -35,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 5
 RETRY_BACKOFF = 2
+VECTOR_SIZE = 768
 
 try:
     with open("website/schemas/aibot_comment_schema.json", "r", encoding="utf-8") as f:
@@ -43,8 +47,10 @@ try:
         AIBOT_ISSUE_SCHEMA = json.load(f)
     with open("website/schemas/aibot_pr_schema.json", "r", encoding="utf-8") as f:
         AIBOT_PR_SCHEMA = json.load(f)
-    with open("embed_agent_prompt.md", "r", encoding="utf-8") as f:
+    with open("aibot_prompts/EMBED_AGENT_PROMPT.txt", "r", encoding="utf-8") as f:
         EMBED_AGENT_PROMPT = f.read().strip()
+    with open("aibot_prompts/MAIN_PR_PROMPT.txt", "r", encoding="utf-8") as f:
+        MAIN_PR_PROMPT = f.read().strip()
 except (FileNotFoundError, json.JSONDecodeError) as e:
     logger.error("Failed to load file: %s", str(e))
 
@@ -189,6 +195,27 @@ def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional
             time.sleep(wait_time)
 
     return None
+
+
+class PullRequest:
+    def __init__(self, payload):
+        """Responsible for creating a PR object for convenience.
+        Doesn't check for keys in payload - it is assumed to have been verified beforehand.
+        """
+        self.action: str = payload["action"]
+        self.number: int = payload["number"]
+        self.api_url: str = payload["pull_request"]["url"]
+        self.diff_url: str = payload["pull_request"]["diff_url"]
+        self.files_url: str = self.api_url + "/files"
+        self.id: int = payload["pull_request"]["id"]
+        self.state: str = payload["pull_request"]["state"]
+        self.author: str = payload["pull_request"]["user"]["login"]
+        self.title: str = payload["pull_request"].get("title", "")
+        self.body: str = payload["pull_request"].get("body", "")
+        self.is_draft: bool = payload["pull_request"].get("draft", False)
+        self.head_branch: str = payload["pull_request"]["head"]["ref"]
+        self.base_branch: str = payload["pull_request"]["base"]["ref"]
+        self.repo_full_name: str = payload["pull_request"]["base"]["repo"]["full_name"]
 
 
 @require_GET
@@ -365,18 +392,19 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
 
 
 def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
-    """Validate and handle pull request related events (opened, synchronize)."""
-    with open("event_pull_request.txt", "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
+    """Validate and handle pull request related events (opened, synchronize, closed)."""
     validate_payload_schema(payload, AIBOT_PR_SCHEMA)
-    action = payload.get("action")
-    pr_data = payload.get("pull_request", {})
-    if action == "opened":
-        logger.info("New PR opened: #%s - %s", pr_data.get("number"), pr_data.get("title"))
-        aibot_handle_new_pr_opened(payload)
-    elif action == "synchronize":
-        logger.info("PR updated: #%s - New commits pushed", pr_data.get("number"))
-        aibot_handle_pr_update(payload)
+
+    pr_instance = PullRequest(payload)
+
+    if pr_instance.action == "opened":
+        logger.info("New PR opened: #%s - %s", pr_instance.number, pr_instance.title)
+        aibot_handle_new_pr_opened(pr_instance)
+    elif pr_instance.action == "synchronize":
+        logger.info("PR updated: #%s - New commits pushed", pr_instance.number)
+        aibot_handle_pr_update(pr_instance)
+    elif pr_instance.action == "closed":
+        logger.debug("Pr Closed. If no further activity in 3 days, it will deleted from db.")
     return JsonResponse({"status": "PR event processed"})
 
 
@@ -426,17 +454,12 @@ def handle_issue_event(payload: Dict[str, Any]) -> JsonResponse:
     return JsonResponse({"status": "Issue event processed"})
 
 
-def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
+def aibot_handle_new_pr_opened(pr_instance: PullRequest) -> None:
     """This function handles the logic when a new PR is opened."""
-    logger.info("Handling new PR opened.")
-    pr = payload.get("pull_request", {})
-    pr_number = pr.get("number")
-    pr_title = pr.get("title", "No title")
-    pr_body = pr.get("body", "No body")
-    pr_diff = _fetch_pr_diff(pr_number)
-    head_ref = pr["head"]["ref"]
 
-    processed_diff = _process_diff(pr_diff, head_ref)
+    pr_diff = fetch_pr_diff(pr_instance.diff_url)
+
+    processed_diff, patch = process_diff(pr_diff)
     diff_query = _generate_diff_query(processed_diff)
     cleaned_json = extract_json_block(diff_query)
     diff_query_json = json.loads(cleaned_json)
@@ -448,9 +471,20 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
     combined_query = q + key_terms
     vector_query = generate_embedding(combined_query)
 
-    create_temp_pr_collection(head_ref)
+    temp_collection = create_temp_pr_collection(head_ref, pr_number, patch)
 
-    logger.info("Context for AI Bot: %s", prompt)
+    rename_mappings = {}
+    for file in patch:
+        rename_mappings[file.source_file] = file.target_file
+
+    # TODO manage extraction of source repo or store it
+    source_collection = "repo_embeddings"
+
+    similar_chunks = get_similar_merged_chunks(source_collection, temp_collection, vector_query, k)
+
+    analysis_output = get_static_analysis_output(similar_chunks)
+
+    prompt = None
     ai_response = _generate_response(prompt)
     if not ai_response:
         logger.error("Failed to generate AI response for new PR.")
@@ -468,6 +502,10 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
         logger.error("Failed to post AI Bot response. Response: %s", getattr(response, "text", "No response"))
 
 
+def get_static_analysis_output(chunks: List[ChunkType]) -> json:
+    return
+
+
 def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
     """This function handles the logic when a PR is updated with new commits."""
     logger.info("Handling PR update.")
@@ -480,7 +518,7 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
 
     pr_diff = _fetch_pr_diff(pr_number)
     if pr_diff:
-        cleaned_diff = _process_diff(pr_diff, head_ref)
+        cleaned_diff = process_diff(pr_diff, head_ref)
         context += f"Changes in Update:\n{cleaned_diff}...\n"
     else:
         context += "Unable to fetch changes.\n"
@@ -732,103 +770,82 @@ def validate_payload_schema(payload: Dict[str, Any], schema: Dict[str, Any]) -> 
     validate(instance=payload, schema=schema)
 
 
-def post_or_patch_github_comment(
-    issue_number: str, comment: str, comment_id: Optional[str] = None
-) -> Optional[requests.Response]:
-    """
-    Post a new comment or patch an existing one on a GitHub issue/pull request.
-
-    Args:
-        issue_number (str): The issue or pull request number.
-        comment (str): The comment body to post or update.
-        comment_id (Optional[str]): If present, edits the existing comment with this ID.
-
-    Returns:
-        Optional[requests.Response]: The response object if the request succeeds, otherwise None.
-
-    Retries:
-        Retries up to MAX_RETRIES times on network errors or transient server errors (HTTP 502, 503, 504),
-        with exponential backoff.
-    """
-    if not issue_number or not comment.strip():
-        logger.error("Invalid input: empty issue number or comment.")
-        return None
-
-    if comment_id:
-        url = f"{get_github_api_url()}/issues/comments/{comment_id}"
-    else:
-        url = f"{get_github_api_url()}/issues/{issue_number}/comments"
-
-    headers = {
-        "Authorization": f"Bearer {get_github_aibot_token()}",
-        "Accept": "application/vnd.github+json",
-        "Content-Type": "application/json",
-        "User-Agent": f"{get_github_aibot_username()}/1.0",
-    }
-
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            method = requests.patch if comment_id else requests.post
-            response = method(url, json={"body": comment}, headers=headers, timeout=10)
-            logger.info("Attempt %d to %s comment on #%s", attempt, "update" if comment_id else "post", issue_number)
-
-            if response.status_code == 201 or (response.status_code == 200 and comment_id):
-                logger.info(
-                    "%s comment successfully posted/updated on #%s", "Updated" if comment_id else "Posted", issue_number
-                )
-                return response
-            if response.status_code in {502, 503, 504}:
-                logger.warning(
-                    "Transient error (%s). Retrying attempt %d/%d...", response.status_code, attempt, MAX_RETRIES
-                )
-            elif response.status_code == 403 and response.headers.get("X-RateLimit-Remaining") == "0":
-                reset_time = int(response.headers.get("X-RateLimit-Reset", "0"))
-                sleep_seconds = max(reset_time - int(time.time()), 0)
-                logger.warning("Rate limit exceeded. Sleeping for %d seconds...", sleep_seconds)
-                time.sleep(sleep_seconds)
-                continue
-            else:
-                logger.error(
-                    "Failed to %s comment. Status: %s, Response: %s",
-                    "update" if comment_id else "post",
-                    response.status_code,
-                    response.text,
-                )
-                return response
-
-        except requests.RequestException as e:
-            logger.exception("Network error on attempt %d/%d: %s", attempt, MAX_RETRIES, str(e))
-
-        if attempt < MAX_RETRIES:
-            wait_time = RETRY_BACKOFF * (2 ** (attempt - 1)) + random.uniform(0, 1)
-            logger.info("Retrying in %.1fs...", wait_time)
-            time.sleep(wait_time)
-
-    logger.error(
-        "All retry attempts failed for %s comment on #%s", "updating" if comment_id else "posting", issue_number
-    )
-    return None
-
-
 def create_temp_pr_collection(head_ref: str, pr_number: int, patch: PatchSet) -> None:
     source_collection = "repo_embeddings"
     sanitized_head_ref = sanitize_backslash(head_ref)
     target_collection = f"temp_{sanitized_head_ref}_{pr_number}"
-    ensure_collection(qdrant_client, source_collection, 768)
-    ensure_collection(qdrant_client, target_collection, 768)
+    ensure_collection(qdrant_client, source_collection, VECTOR_SIZE)
+    ensure_collection(qdrant_client, target_collection, VECTOR_SIZE)
 
     for file in patch:
         if file.is_modified_file:
-            content = _fetch_file_content(head_ref, file.path)
-            chunks = chunk_file(content, file.source_file)
+            fpath = file.source_file
+            if file.is_rename:
+                fpath = file.target_file
+            fpath = fpath[2:]
+            content = _fetch_file_content("https://raw.githubusercontent.com/OWASP-BLT/BLT", head_ref, fpath)
+            if not content:
+                continue
+            chunks = chunk_file(content, fpath)
 
             for chunk in chunks:
                 embedding = generate_embedding(chunk["chunk"], chunk.get("name"))
                 if embedding:
                     upsert_to_qdrant(qdrant_client, target_collection, chunk, embedding)
 
+    return target_collection
 
-def _process_diff(diff_text: str) -> str:
+
+def _fetch_file_content(content_url: str, head_ref: str, file_path: str) -> Optional[str]:
+    url = f"{content_url}/{head_ref}/{file_path}"
+    print("Making request to", url)
+
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred while fetching {file_path}: {http_err}")
+    except requests.exceptions.RequestException as req_err:
+        print(f"Request error occurred while fetching {file_path}: {req_err}")
+
+    return None
+
+
+def get_similar_merged_chunks(
+    source_collection: str, temp_collection: str, query: str, k: int, rename_mappings: Dict[str, str]
+) -> List[ChunkType]:
+    main_points = qdrant_client.query_points(collection_name=source_collection, query=query, limit=k)
+    temp_points = qdrant_client.query_points(collection_name=temp_collection, query=query, limit=k)
+
+    relevant_chunks = defaultdict(list)
+    overwrite_log = []
+
+    for point in main_points.points:
+        chunk_data = point.payload
+        key = chunk_data["file_path"]
+        relevant_chunks[key] = chunk_data
+
+    for point in temp_points.points:
+        chunk_data = point.payload
+        key = chunk_data["file_path"]
+        if relevant_chunks[key]:
+            log_entry = {
+                "original_key": key,
+                "action": "overwritten",
+                "new_key": rename_mappings.get(key, key),
+                "old_chunk_preview": relevant_chunks[key],
+            }
+            overwrite_log.append(log_entry)
+            print(f"Found existing key: {key}. Overwriting")
+            del relevant_chunks[key]
+            key = rename_mappings.get(key, key)
+        relevant_chunks[key] = chunk_data
+
+    return relevant_chunks
+
+
+def process_diff(diff_text: str) -> str:
     skip_files = {"package-lock.json", ".yarn.lock"}
     skip_extensions = {
         ".lock",
@@ -858,11 +875,9 @@ def _process_diff(diff_text: str) -> str:
     patch = PatchSet.from_string(diff_text)
 
     for file in patch:
-        # Case 1: File to be skipped
         if should_skip(file):
             continue
 
-        # Case 2: File added
         if file.is_added_file:
             diff_section = f"New: {file.path}\n"
             added_content = []
@@ -873,7 +888,6 @@ def _process_diff(diff_text: str) -> str:
             diff_section += "\n".join(added_content) + "\n"
             processed_diff.append(diff_section)
 
-        # Case 3: File removed
         elif file.is_removed_file:
             diff_section = f"Removed: {file.path}\n"
             removed_content = []
@@ -884,7 +898,6 @@ def _process_diff(diff_text: str) -> str:
             diff_section += "\n".join(removed_content) + "\n"
             processed_diff.append(diff_section)
 
-        # Case 4: File renamed and/or modifed
         elif file.is_rename:
             hunk_output = []
             for hunk in file:
@@ -898,7 +911,6 @@ def _process_diff(diff_text: str) -> str:
                 diff_section += "\n"
             processed_diff.append(diff_section)
 
-        # Case 5: File modified only
         elif file.is_modified_file:
             diff_section = f"Modified: {file.path}\n"
             hunk_contents = []
@@ -911,42 +923,9 @@ def _process_diff(diff_text: str) -> str:
 
 
 def _generate_diff_query(processed_diff: str) -> List[float]:
-    print(processed_diff, type(processed_diff))
     prompt = EMBED_AGENT_PROMPT.replace("<DIFF>", processed_diff)
     response = _generate_response(prompt)
     return response
-
-
-def _fetch_file_content(head_ref: str, file_path: str) -> Optional[str]:
-    content_url = get_github_raw_content_url()
-    url = f"{content_url}/{head_ref}/{file_path}"
-    response = requests.get(url, timeout=5)
-    return response.text
-
-
-def _fetch_pr_diff(pr_number: int) -> Optional[str]:
-    """
-    Fetches PR diff using GitHub API
-
-    Args:
-        pr_number: Pull request number
-
-    Returns:
-        Diff text or None if failed
-    """
-    api_url = f"{get_github_api_url()}/pulls/{pr_number}"
-    headers = {
-        "Authorization": f"Bearer {get_github_aibot_token()}",
-        "Accept": "application/vnd.github.v3.diff",
-    }
-
-    try:
-        response = requests.get(api_url, headers=headers, timeout=10)
-        response.raise_for_status()
-        return response.text
-    except requests.RequestException as e:
-        logger.error("Failed to fetch PR diff: %s", str(e))
-        return None
 
 
 def verify_github_signature(secret: str, payload_body: bytes, signature_header: str) -> bool:

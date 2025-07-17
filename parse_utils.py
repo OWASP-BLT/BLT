@@ -20,16 +20,17 @@ from clients import genai
 MAX_TOKENS = 1500
 OVERLAP_LINES = 7
 CHUNK_OVERLAP = 200
+CHUNK_SIZE = 1000
 
 logger = logging.getLogger(__name__)
 
 
 class ChunkType(TypedDict, total=False):
-    """Represents a chunk of code extracted from a Python file."""
+    """Represents a chunk of code extracted from code files."""
 
     type: str
     name: str
-    chunk: str
+    code: str
     file: str
     start_line: int
     end_line: int
@@ -112,12 +113,15 @@ def chunk_file(content: str, file_path: str) -> List[ChunkType]:
     }
     for pattern, chunker in chunkers.items():
         if file_name == pattern or file_path_lower.endswith(pattern):
+            logger.info("Chunking file: %s", file_path)
             return chunker(content, file_path)
     logger.warning(f"Unsupported file type: {file_path}")
     return []
 
 
-def chunk_text_file(content: str, file_path: str, chunk_size: int = 1000, chunk_overlap: int = 200) -> List[ChunkType]:
+def chunk_text_file(
+    content: str, file_path: str, chunk_size: int = CHUNK_SIZE, chunk_overlap: int = CHUNK_OVERLAP
+) -> List[ChunkType]:
     splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n", "\n", ". ", " "],
         chunk_size=chunk_size,
@@ -243,13 +247,15 @@ def chunk_json_file(content: str, file_path: str) -> List[ChunkType]:
 
 def chunk_yaml_file(content: str, file_path: str) -> List[ChunkType]:
     yml_json = cvt_yml_to_json(content, file_path)
+    if not yml_json:
+        return chunk_text_file(content, file_path)
     yml_string = generate_yml_string(yml_json, file_path)
 
     level_1_settings = []
     group_chunks = []
     groups = defaultdict(str)
     for line in yml_string:
-        main_key, value = line.split(":")
+        main_key, value = line.split(":", 1)
         keys = main_key.split(".")
         level = len(keys)
         if level == 1:
@@ -277,6 +283,7 @@ def chunk_yaml_file(content: str, file_path: str) -> List[ChunkType]:
 
     for group_name, group_content in groups.items():
         group_content = group_content.rstrip("\n")
+        group_content = f"File: {file_path}\n {group_name}:\n{group_content}"
         group_chunk = ChunkType(
             type="yaml",
             name=f"{group_name}",
@@ -293,22 +300,10 @@ def chunk_yaml_file(content: str, file_path: str) -> List[ChunkType]:
 
 
 def chunk_html_file(content: str, file_path: str) -> List[ChunkType]:
-    """As of now, there is no specific implementation for html files. It simply creates a chunk
-    of the entire file and returns it, so that it is directly handled by the postprocessing of chunks.
+    """As of now, there is no specific implementation for html files, though there is scope.
+    So, it treats it as a normal text file and chunks recursively.
     """
-    logger.debug("Chunking file: %s", file_path)
-    lines = content.splitlines()
-    chunk = ChunkType(
-        type="html",
-        name="html",
-        chunk=content,
-        file=file_path,
-        start_line=1,
-        end_line=len(lines),
-        part_index=0,
-        part_total=1,
-    )
-    return [chunk]
+    return chunk_text_file(content, file_path)
 
 
 def chunk_python_file(content: str, file_path: str) -> List[ChunkType]:
@@ -336,7 +331,8 @@ def chunk_python_file(content: str, file_path: str) -> List[ChunkType]:
         tree = ast.parse(content)
     except SyntaxError as e:
         logger.warning("Syntax error in %s: %s", file_path, e)
-        return []
+        logger.warning("Defaulting to basic text splitter for %s", file_path)
+        return chunk_text_file(content, file_path)
 
     lines = content.splitlines()
 
@@ -727,14 +723,13 @@ def approximate_token_count_char(text: str) -> int:
 
 
 def cvt_yml_to_json(content: str, file_path: str) -> str:
-    chunks = []
     try:
         yml = yaml.safe_load(content)
         yml_json = json.dumps(yml, indent=2)
         return yml_json
     except:
         print("Error converting yaml file to json: ", file_path)
-    return chunks
+    return ""
 
 
 def generate_yml_string(content: str, file_path: str, parent_key: str = ""):

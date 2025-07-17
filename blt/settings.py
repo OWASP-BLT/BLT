@@ -394,7 +394,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "WARNING",
+            "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "simple",
             "stream": "ext://sys.stdout",  # Explicitly use stdout
@@ -421,7 +421,7 @@ LOGGING = {
         },
         "django.server": {
             "handlers": ["console"],
-            "level": "INFO",
+            "level": "DEBUG",
             "propagate": True,  # Changed to True to show in root logger
         },
         "website": {

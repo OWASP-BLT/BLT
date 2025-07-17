@@ -5,7 +5,9 @@
             "type": "string",
             "enum": [
                 "opened",
-                "synchronize"
+                "synchronize",
+                "closed",
+                "reopened"
             ]
         },
         "pull_request": {
@@ -49,10 +51,7 @@
                             "type": "string"
                         },
                         "type": {
-                            "type": "string",
-                            "enum": [
-                                "User"
-                            ]
+                            "type": "string"
                         }
                     },
                     "required": [
