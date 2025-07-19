@@ -19,6 +19,7 @@ from django.views.decorators.http import require_GET
 from jsonschema import ValidationError, validate
 from unidiff import PatchedFile, PatchSet
 
+from website.aibot.aibot_env import configure_settings, load_prompts, load_validation_schemas, validate_settings
 from website.aibot.clients import qdrant_client
 from website.aibot.network import fetch_pr_diff, generate_embedding, generate_gemini_response
 from website.aibot.utils import (
@@ -30,10 +31,13 @@ from website.aibot.utils import (
     upsert_to_qdrant,
 )
 
-# configure_settings()
-# validate_settings()
+configure_settings()
+validate_settings()
 
 logger = logging.getLogger(__name__)
+
+schemas = load_validation_schemas()
+prompts = load_prompts()
 
 
 def _get_setting(key_name: str) -> str:

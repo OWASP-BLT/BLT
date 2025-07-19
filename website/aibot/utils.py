@@ -5,17 +5,14 @@ import logging
 import math
 import os
 import re
-import time
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Tuple, TypedDict
+from typing import Dict, List, Set, Tuple, TypedDict
 from uuid import UUID
 
 import yaml
 from langchain.text_splitter import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
-
-from clients import genai
 
 MAX_TOKENS = 1500
 OVERLAP_LINES = 7
@@ -574,67 +571,6 @@ def extract_try_blocks(tree: ast.AST, lines: List[str], file_path: str) -> Tuple
             )
 
     return try_blocks, covered_lines
-
-
-def generate_embedding(
-    text: str, title: str = None, embedding_model="models/text-embedding-004"
-) -> Optional[List[float]]:
-    max_retries = 3
-    last_error = None
-    for attempt in range(1, max_retries + 1):
-        try:
-            response = genai.embed_content(
-                model=embedding_model,
-                content=text,
-                task_type="retrieval_document",
-                title=title or "Untitled",
-            )
-            return response.get("embedding")
-        except Exception as e:
-            last_error = str(e)
-            error_message = last_error.lower()
-            if "rate limit" in error_message or "quota" in error_message or "timeout" in error_message:
-                logger.warning(
-                    "Embedding generation attempt %d/%d failed due to a temporary error. Retrying...",
-                    attempt,
-                    max_retries,
-                )
-                time.sleep(2**attempt)
-            else:
-                logger.error("Embedding generation failed due to a non-retryable error. The error was: %s", last_error)
-                break
-    logger.error(
-        "Embedding generation failed after %d attempts. The error was: %s",
-        max_retries,
-        last_error or "Unknown error",
-    )
-    return None
-
-
-def ensure_collection(qdrant_client: QdrantClient, qdrant_collection: str, qdrant_vector_size: int) -> None:
-    """
-    Ensure the Qdrant collection exists.
-
-    Checks if the specified Qdrant collection exists, and creates it with the given vector size
-    and cosine distance if it does not exist.
-    """
-    collections = [c.name for c in qdrant_client.get_collections().collections]
-    if qdrant_collection in collections:
-        logger.debug("Qdrant collection '%s' already exists.", qdrant_collection)
-        return
-    try:
-        qdrant_client.create_collection(
-            collection_name=qdrant_collection,
-            vectors_config={"size": int(qdrant_vector_size), "distance": "Cosine"},
-        )
-        logger.debug("Created Qdrant collection '%s'", qdrant_collection)
-    except Exception as e:
-        logger.error(
-            "Failed to create Qdrant collection. The collection could not be created."
-            "Please check your Qdrant server and configuration. Error: %s",
-            str(e),
-        )
-        raise
 
 
 def upsert_to_qdrant(qdrant_client: QdrantClient, qdrant_collection: str, chunk: Dict, embedding: List[float]) -> None:

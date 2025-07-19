@@ -23,13 +23,18 @@ print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
-GITHUB_AIBOT_WEBHOOK_URL = os.environ.get("GITHUB_AIBOT_WEBHOOK_URL", "blank")
-GITHUB_AIBOT_WEBHOOK_ID = os.environ.get("GITHUB_AIBOT_WEBHOOK_ID", "blank")
-GITHUB_AIBOT_TOKEN = os.environ.get("GITHUB_AIBOT_TOKEN", "blank")
-GITHUB_AIBOT_WEBHOOK_SECRET = os.environ.get("GITHUB_AIBOT_WEBHOOK_SECRET", "blank")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "blank")
+GITHUB_AIBOT_WEBHOOK_URL = os.environ.get("GITHUB_AIBOT_WEBHOOK_URL")
+GITHUB_AIBOT_WEBHOOK_ID = os.environ.get("GITHUB_AIBOT_WEBHOOK_ID")
+GITHUB_AIBOT_TOKEN = os.environ.get("GITHUB_AIBOT_TOKEN")
+GITHUB_AIBOT_WEBHOOK_SECRET = os.environ.get("GITHUB_AIBOT_WEBHOOK_SECRET")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_GENERATION_MODEL = os.environ.get("GEMINI_GENERATION_MODEL")
+GEMINI_EMBEDDING_MODEL = os.environ.get("GEMINI_EMBEDDING_MODEL")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
 
+QDRANT_HOST = os.environ.get("QDRANT_HOST")
+QDRANT_VECTOR_SIZE = os.environ.get("QDRANT_VECTOR_SIZE")
+QDRANT_HTTP_PORT = os.environ.get("QDRANT_HTTP_PORT")
 
 PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"

@@ -2,7 +2,7 @@ from typing import List
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from parse_utils import ChunkType
+from website.aibot.utils import ChunkType
 
 file_path = "sample.txt"
 

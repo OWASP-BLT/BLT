@@ -43,6 +43,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import ListView, TemplateView, View
 
+from website.aibot.aibot import aibot_webhook_is_healthy
 from website.models import (
     IP,
     Activity,
@@ -76,7 +77,6 @@ from website.utils import (
     safe_redirect_allowed,
     save_analysis_report,
 )
-from website.views.aibot import aibot_webhook_is_healthy
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 

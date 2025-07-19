@@ -6,7 +6,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
 django.setup()
 
-from website.views.aibot import PullRequest, _fetch_pr_diff
+from website.aibot.aibot import PullRequest, _fetch_pr_diff
 
 with open("webhook_pr_event.txt", "r", encoding="utf-8") as f:
     payload = f.read()

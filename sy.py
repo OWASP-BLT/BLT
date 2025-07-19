@@ -1,4 +1,4 @@
-from parse_utils import chunk_yaml_file, cvt_yml_to_json, generate_yml_string
+from website.aibot.utils import chunk_yaml_file, cvt_yml_to_json, generate_yml_string
 
 file = "coderabbit.yaml"
 

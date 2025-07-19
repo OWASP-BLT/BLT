@@ -12,97 +12,25 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from jsonschema import ValidationError, validate
 from unidiff import PatchedFile, PatchSet
 
-from website.aibot.clients import qdrant_client
+from website.aibot.aibot_env import configure_settings, load_prompts, load_validation_schemas, validate_settings
+from website.aibot.models import PullRequest
 from website.aibot.network import fetch_pr_diff, generate_embedding, generate_gemini_response
-from website.aibot.utils import (
-    ChunkType,
-    chunk_file,
-    ensure_collection,
-    extract_json_block,
-    sanitize_backslash,
-    upsert_to_qdrant,
-)
+from website.aibot.qdrant_utils import create_temp_pr_collection
+from website.aibot.utils import ChunkType, extract_json_block
 
-# configure_settings()
-# validate_settings()
+configure_settings()
+validate_settings()
 
 logger = logging.getLogger(__name__)
 
-
-def _get_setting(key_name: str) -> str:
-    """
-    Retrieve a required setting value by its key name from Django settings.
-
-    Args:
-        key_name: The name of the setting to retrieve.
-
-    Returns:
-        The value of the setting.
-
-    Raises:
-        ImproperlyConfigured: If the setting is missing or empty.
-    """
-    value = getattr(settings, key_name, None)
-    if not value:
-        raise ImproperlyConfigured(f"[CONFIG ERROR] Setting '{key_name}' is missing or empty.")
-    return value
-
-
-def get_gemini_api_key() -> Optional[str]:
-    """Retrieve the Gemini API key from settings."""
-    return _get_setting("GEMINI_API_KEY")
-
-
-def get_github_token() -> Optional[str]:
-    """Retrieve the GitHub token from settings."""
-    return _get_setting("GITHUB_TOKEN")
-
-
-def get_github_url() -> Optional[str]:
-    """Retrieve the GitHub URL from settings."""
-    return _get_setting("GITHUB_URL")
-
-
-def get_github_api_url() -> Optional[str]:
-    """Retrieve the GitHub API URL from settings."""
-    return _get_setting("GITHUB_API_URL")
-
-
-def get_github_raw_content_url() -> Optional[str]:
-    """Retrieve the GitHub raw content URL from settings."""
-    return _get_setting("GITHUB_RAW_BASE_URL")
-
-
-def get_github_aibot_webhook_url() -> Optional[str]:
-    """Retrieve the GitHub AI bot webhook URL from settings."""
-    return _get_setting("GITHUB_AIBOT_WEBHOOK_URL")
-
-
-def get_github_aibot_webhook_id() -> Optional[str]:
-    """Retrieve the GitHub AI bot webhook ID from settings."""
-    return _get_setting("GITHUB_AIBOT_WEBHOOK_ID")
-
-
-def get_github_aibot_webhook_secret() -> Optional[str]:
-    """Retrieve the GitHub AI bot webhook secret from settings."""
-    return _get_setting("GITHUB_AIBOT_WEBHOOK_SECRET")
-
-
-def get_github_aibot_token() -> Optional[str]:
-    """Retrieve the GitHub AI bot token from settings."""
-    return _get_setting("GITHUB_AIBOT_TOKEN")
-
-
-def get_github_aibot_username() -> Optional[str]:
-    """Retrieve the GitHub AI bot username from settings."""
-    return _get_setting("GITHUB_AIBOT_USERNAME")
+SCHEMAS = load_validation_schemas()
+PROMPTS = load_prompts()
 
 
 def get_aibot_pr_analysis_comment_marker() -> str:
@@ -110,7 +38,7 @@ def get_aibot_pr_analysis_comment_marker() -> str:
     Returns the marker used in PR analysis comments to identify them as AI Bot generated.
     This is used to differentiate AI Bot comments from user comments.
     """
-    return f"**PR Analysis by {get_github_aibot_username()}**"
+    return f"**PR Analysis by {settings.GITHUB_AIBOT_USERNAME}**"
 
 
 def get_aibot_issue_analysis_comment_marker() -> str:
@@ -118,28 +46,7 @@ def get_aibot_issue_analysis_comment_marker() -> str:
     Returns the marker used in issue analysis comments to identify them as AI Bot generated.
     This is used to differentiate AI Bot comments from user comments.
     """
-    return f"**Issue Analysis by {get_github_aibot_username()}**"
-
-
-class PullRequest:
-    def __init__(self, payload):
-        """Responsible for creating a PR object for convenience.
-        Doesn't check for keys in payload - it is assumed to have been verified beforehand.
-        """
-        self.action: str = payload["action"]
-        self.number: int = payload["number"]
-        self.api_url: str = payload["pull_request"]["url"]
-        self.diff_url: str = payload["pull_request"]["diff_url"]
-        self.files_url: str = self.api_url + "/files"
-        self.id: int = payload["pull_request"]["id"]
-        self.state: str = payload["pull_request"]["state"]
-        self.author: str = payload["pull_request"]["user"]["login"]
-        self.title: str = payload["pull_request"].get("title", "")
-        self.body: str = payload["pull_request"].get("body", "")
-        self.is_draft: bool = payload["pull_request"].get("draft", False)
-        self.head_branch: str = payload["pull_request"]["head"]["ref"]
-        self.base_branch: str = payload["pull_request"]["base"]["ref"]
-        self.repo_full_name: str = payload["pull_request"]["base"]["repo"]["full_name"]
+    return f"**Issue Analysis by {settings.GITHUB_AIBOT_USERNAME}**"
 
 
 @require_GET
@@ -153,19 +60,11 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
     Returns:
         JsonResponse with basic status information
     """
-    required_settings = ["GITHUB_TOKEN", "GITHUB_AIBOT_WEBHOOK_ID", "GITHUB_API_URL", "GITHUB_AIBOT_WEBHOOK_URL"]
 
-    missing_settings = [s for s in required_settings if not getattr(settings, s, None)]
-    if missing_settings:
-        logger.error("Configuration error - Missing settings: %s", missing_settings)
-        return JsonResponse(
-            {"health": "3", "status": "Configuration error", "message": "Required settings are missing"}, status=500
-        )
-
-    github_token = get_github_token()
-    webhook_id = get_github_aibot_webhook_id()
-    repo_api_url = get_github_api_url().rstrip("/")
-    webhook_url = get_github_aibot_webhook_url()
+    github_token = settings.GITHUB_AIBOT_TOKEN
+    webhook_id = settings.GITHUB_AIBOT_WEBHOOK_ID
+    repo_api_url = settings.GITHUB_API_URL
+    webhook_url = settings.GITHUB_AIBOT_WEBHOOK_URL
 
     try:
         ping_url = f"{repo_api_url}/hooks/{webhook_id}/pings"
@@ -208,7 +107,7 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
             {
                 "health": "1",
                 "status": "Webhook is reachable and delivery works",
-                "repo": get_github_url(),
+                "repo": settings.GITHUB_URL,
             }
         )
     except requests.RequestException as e:
@@ -287,7 +186,7 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
         logger.warning("Missing signature header in the request.")
         return JsonResponse({"error": "Missing webhook signature header."}, status=403)
 
-    webhook_secret = get_github_aibot_webhook_secret()
+    webhook_secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
     if not verify_github_signature(webhook_secret, request.body, signature_header):
         logger.warning("Invalid webhook signature received for the Github AIbot webhook.")
         return JsonResponse({"error": "Invalid webhook signature."}, status=403)
@@ -317,17 +216,18 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
 
 def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     """Validate and handle pull request related events (opened, synchronize, closed)."""
-    validate_payload_schema(payload, AIBOT_PR_SCHEMA)
+    validate_payload_schema(payload, SCHEMAS["PR_SCHEMA"])
 
     pr_instance = PullRequest(payload)
+    action = pr_instance.action
 
-    if pr_instance.action == "opened":
-        logger.info("New PR opened: #%s - %s", pr_instance.number, pr_instance.title)
+    if action == "opened" or "reopened":  # Reopened for dev purposes
+        logger.info("New PR %s: #%s - %s", action, pr_instance.number, pr_instance.title)
         aibot_handle_new_pr_opened(pr_instance)
-    elif pr_instance.action == "synchronize":
+    elif action == "synchronize":
         logger.info("PR updated: #%s - New commits pushed", pr_instance.number)
         aibot_handle_pr_update(pr_instance)
-    elif pr_instance.action == "closed":
+    elif action == "closed":
         logger.debug("Pr Closed. If no further activity in 3 days, it will deleted from db.")
     return JsonResponse({"status": "PR event processed"})
 
@@ -337,7 +237,8 @@ def handle_comment_event(payload: Dict[str, Any]) -> None:
     Validate and handle comments on PRs/issues where the bot might be mentioned.
     Ignores comments made by the bot itself (present in the validation schema).
     """
-    validate_payload_schema(payload, AIBOT_COMMENT_SCHEMA)
+    validate_payload_schema(payload, SCHEMAS["COMMENT_SCHEMA"])
+
     comment = payload.get("comment", {})
     comment_body = comment.get("body", "").lower()
 
@@ -348,11 +249,11 @@ def handle_comment_event(payload: Dict[str, Any]) -> None:
         comment.get("user", {}).get("login", "unknown"),
     )
 
-    if comment.get("user", {}).get("login") == get_github_aibot_username():
+    if comment.get("user", {}).get("login") == settings.GITHUB_AIBOT_USERNAME:
         logger.info("Ignoring comment made by the AI Bot itself.")
         return
 
-    if f"@{get_github_aibot_username()}" in comment_body:
+    if f"@{settings.GITHUB_AIBOT_USERNAME}" in comment_body:
         issue = payload.get("issue", {})
         if "pull_request" in issue:
             logger.info("Bot mentioned in PR comment - analyzing...")
@@ -366,7 +267,8 @@ def handle_comment_event(payload: Dict[str, Any]) -> None:
 
 def handle_issue_event(payload: Dict[str, Any]) -> JsonResponse:
     """Handle issue related events (opened, edited)."""
-    validate_payload_schema(payload, AIBOT_ISSUE_SCHEMA)
+    validate_payload_schema(payload, SCHEMAS["ISSUE_SCHEMA"])
+
     action = payload.get("action")
     issue_data = payload.get("issue", {})
     if action == "opened":
@@ -379,12 +281,12 @@ def handle_issue_event(payload: Dict[str, Any]) -> JsonResponse:
 
 
 def aibot_handle_new_pr_opened(pr_instance: PullRequest) -> None:
-    """This function handles the logic when a new PR is opened."""
+    """Handles the logic when a new PR is opened."""
 
     pr_diff = fetch_pr_diff(pr_instance.diff_url)
 
     processed_diff, patch = process_diff(pr_diff)
-    diff_query = generate_diff_query(processed_diff)
+    diff_query = get_diff_query(processed_diff)
     cleaned_json = extract_json_block(diff_query)
     diff_query_json = json.loads(cleaned_json)
 
@@ -575,6 +477,13 @@ def aibot_handle_new_issue(payload: Dict[str, Any]) -> None:
         )
 
 
+def generate_diff_query(processed_diff: str) -> List[float]:
+    template = PROMPTS["SEMANTIC_QUERY_GENERATOR_PROMPT"]
+    prompt = template.replace("<DIFF>", processed_diff)
+    response = generate_gemini_response(prompt)
+    return response
+
+
 def aibot_handle_issue_edited(payload: Dict[str, Any]) -> None:
     """
     Handle edited GitHub issues by analyzing the updated content and responding accordingly.
@@ -657,16 +566,16 @@ def find_bot_comment(issue_number: str, marker: str) -> Optional[dict]:
         Optional[dict]: The matching comment object if found, otherwise None.
     """
     try:
-        url = f"{get_github_api_url()}/issues/{issue_number}/comments"
+        url = f"{settings.GITHUB_API_URL}/issues/{issue_number}/comments"
         headers = {
-            "Authorization": f"Bearer {get_github_aibot_token()}",
+            "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
             "Accept": "application/vnd.github+json",
         }
         response = requests.get(url, headers=headers, timeout=10)
 
         if response.status_code == 200:
             comments = response.json()
-            bot_username = get_github_aibot_username().lower()
+            bot_username = settings.GITHUB_AIBOT_USERNAME.lower()
 
             for comment in comments:
                 author = comment.get("user", {}).get("login", "").lower()
@@ -693,48 +602,6 @@ def validate_payload_schema(payload: Dict[str, Any], schema: Dict[str, Any]) -> 
         None. Raises ValidationError if the payload does not conform to the schema, which is handled by the caller.
     """
     validate(instance=payload, schema=schema)
-
-
-def create_temp_pr_collection(head_ref: str, pr_number: int, patch: PatchSet) -> None:
-    source_collection = "repo_embeddings"
-    sanitized_head_ref = sanitize_backslash(head_ref)
-    target_collection = f"temp_{sanitized_head_ref}_{pr_number}"
-    ensure_collection(qdrant_client, source_collection, VECTOR_SIZE)
-    ensure_collection(qdrant_client, target_collection, VECTOR_SIZE)
-
-    for file in patch:
-        if file.is_modified_file:
-            fpath = file.source_file
-            if file.is_rename:
-                fpath = file.target_file
-            fpath = fpath[2:]
-            content = _fetch_file_content("https://raw.githubusercontent.com/OWASP-BLT/BLT", head_ref, fpath)
-            if not content:
-                continue
-            chunks = chunk_file(content, fpath)
-
-            for chunk in chunks:
-                embedding = generate_embedding(chunk["chunk"], chunk.get("name"))
-                if embedding:
-                    upsert_to_qdrant(qdrant_client, target_collection, chunk, embedding)
-
-    return target_collection
-
-
-def _fetch_file_content(content_url: str, head_ref: str, file_path: str) -> Optional[str]:
-    url = f"{content_url}/{head_ref}/{file_path}"
-    print("Making request to", url)
-
-    try:
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred while fetching {file_path}: {http_err}")
-    except requests.exceptions.RequestException as req_err:
-        print(f"Request error occurred while fetching {file_path}: {req_err}")
-
-    return None
 
 
 def get_similar_merged_chunks(
@@ -847,8 +714,9 @@ def process_diff(diff_text: str) -> str:
     return "\n".join(processed_diff), patch
 
 
-def generate_diff_query(processed_diff: str) -> List[float]:
-    prompt = EMBED_AGENT_PROMPT.replace("<DIFF>", processed_diff)
+def get_diff_query(processed_diff: str) -> List[float]:
+    template = PROMPTS["SEMANTIC_QUERY_GENERATOR_PROMPT"]
+    prompt = template.replace("<DIFF>", processed_diff)
     response = generate_gemini_response(prompt)
     return response
 

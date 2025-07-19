@@ -16,8 +16,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
-from clients import qdrant_client
-from parse_utils import (
+from website.aibot.clients import qdrant_client
+from website.aibot.utils import (
     chunk_file,
     ensure_collection,
     generate_embedding,

@@ -1,4 +1,4 @@
-from clients import qdrant_client
+from website.aibot.clients import qdrant_client
 
 source_collection = "repo_embeddings"
 k = 15

@@ -7,11 +7,12 @@ from typing import List, Optional
 import django
 import google.generativeai as genai
 import requests
-from django.conf import settings
 
-from clients import qdrant_client
-from parse_utils import extract_json_block, generate_embedding
-from website.views.aibot import _generate_diff_query, _process_diff, create_temp_pr_collection
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
+django.setup()
+
+from aibot import process_diff
+from website.aibot.network import fetch_pr_files
 
 
 def _run_command(command: List[str], input_data: Optional[str] = None) -> str:
@@ -48,11 +49,8 @@ def _run_bandit_on_code(code: str) -> str:
         os.remove(tmpfile_path)
 
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
-django.setup()
-
 try:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 except AttributeError:
     print("GEMINI_API_KEY not found in Django settings. Please add it.")
     exit()
@@ -64,63 +62,78 @@ response = requests.get(URL, timeout=5)
 diff = response.text
 
 output_filename = "embedding_agent_response.txt"
-processed_diff, patch = _process_diff(diff)
+processed_diff, patch = process_diff(diff)
 
 
-diff_query = _generate_diff_query(processed_diff)
-cleaned_json = extract_json_block(diff_query)
-diff_query_json = json.loads(cleaned_json)
-print(diff_query_json)
+files_url = "https://api.github.com/repos/OWASP-BLT/BLT/pulls/4396/files"
 
-print("creating temp pr collection...")
-temp_collection = create_temp_pr_collection(head_ref, 4396, patch)
-print("collection creation complete")
+pr_files = fetch_pr_files(files_url)
 
-q = diff_query_json.get("query")
-key_terms = diff_query_json.get("key_terms")
-k = diff_query_json.get("k")
+if pr_files:
+    pr_files_json = json.loads(pr_files)
 
-combined_query = q + key_terms
-print(combined_query)
+if pr_files_json:
+    raw_url_map = {}
 
-files_to_be_analyzed_statically = [file.source_file for file in patch if file.is_modified_file or file.is_added_file]
+    for file in pr_files_json:
+        raw_url_map[file["filename"]] = file["raw_url"]
 
-vector_query = generate_embedding(combined_query)
-source_collection = "repo_embeddings"
+print(raw_url_map)
 
-rename_mappings = {}
+# diff_query = _generate_diff_query(processed_diff)
+# cleaned_json = extract_json_block(diff_query)
+# diff_query_json = json.loads(cleaned_json)
+# print(diff_query_json)
 
-for file in patch:
-    rename_mappings[file.source_file] = file.target_file
+# print("creating temp pr collection...")
+# temp_collection = create_temp_pr_collection(head_ref, 4396, patch)
+# print("collection creation complete")
 
-import json
+# q = diff_query_json.get("query")
+# key_terms = diff_query_json.get("key_terms")
+# k = diff_query_json.get("k")
 
-try:
-    main_points = qdrant_client.query_points(collection_name=source_collection, query=vector_query, limit=k)
-    temp_points = qdrant_client.query_points(collection_name=temp_collection, query=vector_query, limit=k)
+# combined_query = q + key_terms
+# print(combined_query)
 
-    relevant_chunks = {}
+# files_to_be_analyzed_statically = [file.source_file for file in patch if file.is_modified_file or file.is_added_file]
 
-    for point in main_points.points:
-        chunk_data = point.payload
-        key = chunk_data["file_path"]
-        relevant_chunks[key] = chunk_data
+# vector_query = generate_embedding(combined_query)
+# source_collection = "repo_embeddings"
 
-    for point in temp_points.points:
-        chunk_data = point.payload
-        key = chunk_data["file_path"]
+# rename_mappings = {}
 
-        if key in relevant_chunks:
-            print(f"Found existing key: {key}. Overwriting with: ")
-            print(chunk_data["chunk"])
-            key = rename_mappings.get(key, key)
+# for file in patch:
+#     rename_mappings[file.source_file] = file.target_file
 
-        relevant_chunks[key] = chunk_data
+# import json
 
-    chunks = list(relevant_chunks.values())
+# try:
+#     main_points = qdrant_client.query_points(collection_name=source_collection, query=vector_query, limit=k)
+#     temp_points = qdrant_client.query_points(collection_name=temp_collection, query=vector_query, limit=k)
 
-    with open("merged_chunks.json", "w", encoding="utf-8") as f:
-        json.dump(chunks, f, indent=2, ensure_ascii=False)
+#     relevant_chunks = {}
 
-except Exception as e:
-    raise e
+#     for point in main_points.points:
+#         chunk_data = point.payload
+#         key = chunk_data["file_path"]
+#         relevant_chunks[key] = chunk_data
+
+#     for point in temp_points.points:
+#         chunk_data = point.payload
+#         key = chunk_data["file_path"]
+
+#         if key in relevant_chunks:
+#             print(f"Found existing key: {key}. Overwriting with: ")
+#             print(chunk_data["chunk"])
+#             key = rename_mappings.get(key, key)
+
+#         relevant_chunks[key] = chunk_data
+
+#     chunks = list(relevant_chunks.values())
+
+#     with open("merged_chunks.json", "w", encoding="utf-8") as f:
+#         json.dump(chunks, f, indent=2, ensure_ascii=False)
+
+# except Exception as e:
+#     raise e
