@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0179_update_challenge_bacon_rewards"),
         ("website", "0244_update_existing_challenges_bacon_rewards"),
