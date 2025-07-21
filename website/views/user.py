@@ -974,6 +974,11 @@ class UserChallengeListView(View):
                 # If the user is not participating, set progress to 0
                 challenge.progress = 0
 
+            # Calculate the progress circle offset (same as team challenges)
+            circumference = 125.6
+            challenge.stroke_dasharray = circumference
+            challenge.stroke_dashoffset = circumference - (circumference * challenge.progress / 100)
+
         return render(
             request,
             "user_challenges.html",
