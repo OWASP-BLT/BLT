@@ -18,8 +18,7 @@
             <!-- Open Graph Meta Tags for Social Sharing -->
             <meta property="og:title"
                   content="{% block og_title %} {% env 'PROJECT_NAME' %} | Your Hub for Secure Bug Bounty & Vulnerability Programs{% endblock og_title %}" />
-            <meta property="og:image"
-                  content="{% block og_image_url %}{% static 'images/OWASP_black_logo.svg' %}{% endblock og_image_url %}" />
+            {% comment %} <meta property="og:image" content="{% block og_image_url %}{% static 'images/OWASP_black_logo.svg' %}{% endblock og_image_url %}" /> {% endcomment %}
             <meta property="og:description"
                   content="{% block og_description %}Launch, manage, and scale your bug bounty programs with ease. {% env 'PROJECT_NAME' %} provides robust tools for submission, tracking, and remediation, ensuring your applications stay secure. Join the vanguard of cybersecurity.{% endblock og_description %}" />
             <meta property="og:type" content="website" />
