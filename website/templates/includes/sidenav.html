@@ -11,19 +11,10 @@
             <nav class="px-2 space-y-2 mb-8 mt-2">
                 <!-- Dashboard Section -->
                 {% if '/organization/' in request.path %}
-                    <div>
+                    <div class="flex flex-col gap-1">
                         <div class="px-2 py-2">
                             <span class="text-sm text-red-500 font-semibold uppercase tracking-wider">{% trans "Dashboard" %}</span>
                         </div>
-                        {% if request.resolver_match.kwargs.id %}
-                            <a href="{% url 'organization_dashboard' %}"
-                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_dashboard' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                                <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'organization_dashboard' %}bg-[#fde0dd] text-[#e74c3c]{% else %}bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                                    <i class="fas fa-home"></i>
-                                </div>
-                                <span class="truncate">{% trans "Home" %}</span>
-                            </a>
-                        {% endif %}
                         {% if request.resolver_match.kwargs.id %}
                             <a href="{% url 'organization_analytics' request.resolver_match.kwargs.id %}"
                                class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_analytics' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -181,42 +172,6 @@
                                 <i class="fas fa-registered"></i>
                             </div>
                             <span class="truncate">{% trans "Trademarks" %}</span>
-                        </a>
-                    </div>
-                </div>
-                <!-- Communication Section -->
-                <div>
-                    <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Communication" %}</span>
-                    </div>
-                    <div class="ml-2 mt-1 space-y-1">
-                        <a href="{% url 'similarity_scan' %}"
-                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'similarity_scan' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'similarity_scan' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                                <i class="fas fa-clone"></i>
-                            </div>
-                            <span class="truncate">{% trans "SimilarityScan" %}</span>
-                        </a>
-                        <a href="{% url 'rooms_list' %}"
-                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'rooms_list' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'rooms_list' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                                <i class="fas fa-door-open"></i>
-                            </div>
-                            <span class="truncate">{% trans "Rooms" %}</span>
-                        </a>
-                        <a href="{% url 'video_call' %}"
-                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'video_call' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'video_call' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                                <i class="fas fa-video"></i>
-                            </div>
-                            <span class="truncate">{% trans "Video Call" %}</span>
-                        </a>
-                        <a href="{% url 'banned_apps' %}"
-                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'banned_apps' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'banned_apps' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                                <i class="fas fa-ban"></i>
-                            </div>
-                            <span class="truncate">{% trans "Banned Apps" %}</span>
                         </a>
                     </div>
                 </div>
@@ -565,6 +520,40 @@
                         </a>
                     </div>
                 </div>
+                <!-- Communication Section -->
+                <div>
+                    <div class="px-2 py-2">
+                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Communication" %}</span>
+                    </div>
+                    <a href="{% url 'similarity_scan' %}"
+                       class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'similarity_scan' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                        <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'similarity_scan' %}bg-[#fde0dd] text-[#e74c3c]{% else %}bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <i class="fas fa-clone"></i>
+                        </div>
+                        <span class="truncate">{% trans "SimilarityScan" %}</span>
+                    </a>
+                    <a href="{% url 'rooms_list' %}"
+                       class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'rooms_list' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                        <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'rooms_list' %}bg-[#fde0dd] text-[#e74c3c]{% else %}bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <span class="truncate">{% trans "Rooms" %}</span>
+                    </a>
+                    <a href="{% url 'video_call' %}"
+                       class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'video_call' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                        <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'video_call' %}bg-[#fde0dd] text-[#e74c3c]{% else %}bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <span class="truncate">{% trans "Video Call" %}</span>
+                    </a>
+                    <a href="{% url 'banned_apps' %}"
+                       class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'banned_apps' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                        <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'banned_apps' %}bg-[#fde0dd] text-[#e74c3c]{% else %}bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <span class="truncate">{% trans "Banned Apps" %}</span>
+                    </a>
+                </div>
                 <!-- Apps Section -->
                 <div>
                     <div class="px-2 py-2">
@@ -716,7 +705,7 @@
                                     </option>
                                 {% endfor %}
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                            <div class="poinResourcester-events-none absolute inset-y-0 right-0 flex items-center pr-4">
                                 <i class="fas fa-chevron-down text-gray-400"></i>
                             </div>
                         </div>
