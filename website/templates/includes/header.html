@@ -7,7 +7,7 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<nav class="fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5 py-2 px-1">
+<nav class="fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-1.5 py-2 px-1">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
@@ -26,7 +26,7 @@
                     <button id="mega-menu-button"
                             aria-expanded="false"
                             aria-controls="mega-menu"
-                            class="hidden md:inline-flex group items-center gap-2 rounded-md p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500">
+                            class="hidden md:inline-flex group items-center gap-2 rounded-md p-2 text-gray-500 border-2 border-gray-300 hover:bg-red-500 hover:text-white text-red-500 border-red-500">
                         <span class="sr-only">Open menu</span>
                         <i class="fa fa-th-large md:text-xl text-lg"></i>
                     </button>
@@ -525,20 +525,21 @@
                 <div class="flex justify-center items-center gap-4">
                     <div class="relative">
                         <button id="notificationButton"
-                                class="relative p-2 rounded-full hover:bg-gray-200 transition-colors duration-200">
-                            <i class="fa fa-bell fa-lg"></i>
+                                class="relative py-2.5 px-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <i class="fa fa-bell fa-lg text-zinc-700"></i>
                             <!-- Badge is hidden by default -->
                             <span id="unreadCount"
                                   class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden">
                             </span>
                         </button>
                         <div id="notificationDropdown"
-                             class="hidden absolute right-0 mt-2 w-80 bg-white border shadow-md rounded-md z-50">
+                             class="hidden absolute right-0 mt-[20px] w-80 bg-white border border-gray-200 shadow-sm rounded-xl z-50">
                             <div class="p-4">
                                 <div class="flex justify-between items-center mb-4">
-                                    <h3 class="font-semibold">Notifications</h3>
+                                    <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
                                 </div>
-                                <div id="notificationList" class="space-y-2 max-h-128 overflow-y-auto">
+                                <div id="notificationList"
+                                     class="space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                                     <!-- Notifications will be dynamically inserted here -->
                                 </div>
                             </div>
@@ -546,90 +547,100 @@
                     </div>
                     <!-- Dropdown Button -->
                     <button id="dropdownButton"
-                            class="relative flex items-center sm:gap-2 md:px-4 md:py-2 bg-gray-200 md:rounded-lg rounded-full md:hover:bg-gray-200/70 transition-colors duration-200"
+                            class="relative flex items-center gap-3 px-2 py-1.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 group"
                             type="button">
-                        {% if request.user.userprofile.avatar %}
-                            <img src="{{ request.user.userprofile.avatar }}"
-                                 class="md:size-8 size-10 rounded-full"
-                                 alt="User Avatar"
-                                 width="30"
-                                 height="30">
-                        {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="md:size-8 size-10 rounded-full"
-                                 alt="User Avatar"
-                                 width="30"
-                                 height="30">
-                        {% else %}
-                            {% gravatar request.user.email 30 '' 'gravatar rounded-full size-10 md:size-8' %}
-                        {% endif %}
-                        <span class="absolute md:block hidden -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap">
-                            <span>@{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-                        </span>
+                        <div class="relative">
+                            {% if request.user.userprofile.avatar %}
+                                <img src="{{ request.user.userprofile.avatar }}"
+                                     class="size-10 rounded-lg object-cover ring-2 ring-white"
+                                     alt="User Avatar"
+                                     width="40"
+                                     height="40">
+                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                                     class="size-10 rounded-lg object-cover ring-2 ring-white"
+                                     alt="User Avatar"
+                                     width="40"
+                                     height="40">
+                            {% else %}
+                                {% gravatar request.user.email 40 '' 'gravatar rounded-lg size-10 object-cover ring-2 ring-white' %}
+                            {% endif %}
+                            <div class="absolute -bottom-1 -right-1 size-4 bg-green-500 rounded-md border-2 border-white"></div>
+                        </div>
+                        <div class="flex flex-col items-start">
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">@{{ request.user.username }}</span>
+                            <span class="text-xs font-medium text-[#e74c3c]">{{ request.user|score|default:"0" }} Points</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-700 ml-2"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
                     </button>
                     <!-- Dropdown Menu -->
                     <div id="dropdownMenu"
-                         class="z-50 hidden absolute bg-white md:w-[300px] top-[85px] right-5 border shadow-md rounded-md">
-                        <ul class="flex flex-col gap-1 px-4 py-4">
+                         class="z-50 hidden absolute bg-white md:w-[300px] top-[80px] right-5 border shadow-sm rounded-md">
+                        <ul class="flex flex-col gap-1 p-2.5">
                             <li>
                                 <a href="{% url 'account_profile' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                                 </a>
                             </li>
                             {% if user.is_superuser %}
                                 <li>
                                     <a href="{% url 'admin:index' %}"
-                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                         <i class="fa fa-cogs fa-fw"></i> {% trans "Admin Dashboard" %}
                                     </a>
                                 </li>
                             {% endif %}
                             <li>
                                 <a href="{% url 'start_hunt' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Bounty" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'social' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-share fa-fw"></i> {% trans "Social" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'reminder_settings' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fas fa-bell w-5"></i> {% trans "Reminder Settings" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'account_change_password' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'invite' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite an Organization" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'organization_view' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'organization_dashboard' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
                             <li class="border my-2 w-full"></li>
                             <li>
-                                <a class="flex items-center gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white rounded-md text-white transition-colors duration-200 font-bold"
+                                <a class="flex items-center gap-1.5 py-3 px-4 bg-[#e74c3c] hover:bg-[#c0392b] hover:text-white rounded-md text-white transition-colors duration-200 font-bold"
                                    href="{% url 'account_logout' %}?next={{ request.path }}">
                                     <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                                 </a>
