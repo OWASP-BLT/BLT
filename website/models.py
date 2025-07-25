@@ -1602,7 +1602,7 @@ class Challenge(models.Model):
         Organization, related_name="team_challenges", blank=True
     )  # For team challenges
     points = models.IntegerField(default=0)  # Points for completing the challenge
-    bacon_reward = models.IntegerField(default=5)  # BACON tokens earned for completing the challenge
+    bacon_reward = models.IntegerField(default=5, help_text="BACON tokens earned for completing the challenge")
     progress = models.IntegerField(default=0)  # Progress in percentage
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
