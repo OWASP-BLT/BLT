@@ -345,7 +345,7 @@ else:
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = "none"  # Set to 'mandatory' if you want to require email verification
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
