@@ -285,7 +285,6 @@ def create_sponsorship_mutation(sponsor_login, tier_id):
     if not github_token:
         logger.error("Missing GITHUB_TOKEN for GraphQL API.")
         return None
-
     mutation = """
     mutation($input: CreateSponsorshipInput!) {
         createSponsorship(input: $input) {
@@ -306,18 +305,15 @@ def create_sponsorship_mutation(sponsor_login, tier_id):
         }
     }
     """
-
     mutation_input = {
         "sponsorableLogin": sponsor_login,
         "tierId": tier_id,
         "privacyLevel": "PUBLIC",  # or "PRIVATE" based on preference
     }
-
     headers = {
         "Authorization": f"Bearer {github_token}",
         "Content-Type": "application/json",
     }
-
     try:
         response = requests.post(
             "https://api.github.com/graphql",
@@ -326,20 +322,15 @@ def create_sponsorship_mutation(sponsor_login, tier_id):
             timeout=10,
         )
         response.raise_for_status()
-
         data = response.json()
-
         if "errors" in data:
             logger.error(f"GraphQL mutation errors: {data['errors']}")
             return None
-
         sponsorship = data.get("data", {}).get("createSponsorship", {}).get("sponsorship")
         if sponsorship:
             return sponsorship.get("id")
-
         logger.error("No sponsorship created in GraphQL response")
         return None
-
     except requests.RequestException as e:
         logger.error(f"Failed to create sponsorship: {e}")
         return None
