@@ -348,7 +348,7 @@ def create_sponsorship_mutation(sponsor_login, tier_id):
         return None
 
 
-def process_github_sponsors_payment(username, amount, note):
+def process_github_sponsors_payment(username, amount):
     """
     Process GitHub Sponsors payment using the correct GraphQL API.
     Amount is expected in cents (e.g., 500 = $5.00).
