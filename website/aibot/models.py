@@ -37,6 +37,15 @@ class PullRequest:
         self._verify_branch()
         self._load_pr_files()
 
+    def _verify_branch(self):
+        if self.default_branch != self.base_branch:
+            logger.error(
+                "PR base branch '%s' does not match repo default branch '%s'", self.base_branch, self.default_branch
+            )
+            raise BranchMismatchError(
+                f"PR base branch '{self.base_branch}' does not match repo default branch '{self.default_branch}'"
+            )
+
     def _load_pr_files(self):
         pr_files = fetch_pr_files(self.files_url)
         self.pr_files_json = []
@@ -52,12 +61,3 @@ class PullRequest:
 
         for file in self.pr_files_json:
             self.raw_url_map[file["filename"]] = file["raw_url"]
-
-    def _verify_branch(self):
-        if self.default_branch != self.base_branch:
-            logger.error(
-                "PR base branch '%s' does not match repo default branch '%s'", self.base_branch, self.default_branch
-            )
-            raise BranchMismatchError(
-                f"PR base branch '{self.base_branch}' does not match repo default branch '{self.default_branch}'"
-            )

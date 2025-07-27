@@ -47,7 +47,7 @@ def fetch_pr_diff(pr_diff_url: str) -> Optional[str]:
         "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
     }
 
-    response = requests.get(pr_diff_url, headers=headers, timeout=10)
+    response = requests.get(pr_diff_url, headers=headers, timeout=5)
     if response.status_code in RETRY_HTTP_CODES:
         response.raise_for_status()
     if response.status_code == 200:
@@ -69,7 +69,29 @@ def fetch_pr_files(pr_files_url: str) -> Optional[str]:
         "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
     }
 
-    response = requests.get(pr_files_url, headers=headers, timeout=10)
+    response = requests.get(pr_files_url, headers=headers, timeout=5)
+    if response.status_code in RETRY_HTTP_CODES:
+        response.raise_for_status()
+    if response.status_code == 200:
+        return response.text
+
+    return None
+
+
+@retry(
+    stop=stop_after_attempt(MAX_RETRIES),
+    wait=_get_retry_wait_time,
+    retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
+    before_sleep=before_sleep_log(logger, logging.INFO),
+)
+def fetch_raw_content(f_raw_url: str) -> Optional[str]:
+    headers = {
+        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
+        "Accept": "application/vnd.github.v3",
+        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+    }
+
+    response = requests.get(f_raw_url, headers=headers, timeout=5)
     if response.status_code in RETRY_HTTP_CODES:
         response.raise_for_status()
     if response.status_code == 200:

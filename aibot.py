@@ -297,8 +297,13 @@ def aibot_handle_new_pr_opened(pr_instance: PullRequest) -> None:
     combined_query = q + key_terms
     vector_query = generate_embedding(combined_query)
 
-    if vector_query:
-        temp_collection = create_temp_pr_collection(head_ref, pr_number, patch)
+    if not vector_query:
+        logger.warning("Embedding generation failed for query: %s", combined_query)
+    elif not pr_instance.raw_url_map:
+        logger.warning("Missing raw URL map for PR instance: %s", pr_instance)
+    else:
+        temp_collection = create_temp_pr_collection(pr_instance, patch)
+        logger.info("Temporary collection created: %s", temp_collection)
 
     rename_mappings = {}
     for file in patch:
