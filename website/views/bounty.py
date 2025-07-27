@@ -373,7 +373,7 @@ def process_github_sponsors_payment(username, amount):
                 logger.error(f"No tier found for amount: {amount} cents. Available tiers: {list(tier_mapping.keys())}")
                 return None
 
-        transaction_id = create_sponsorship_mutation(sponsor_recipient, tier_id, amount)
+        transaction_id = create_sponsorship_mutation(sponsor_recipient, tier_id)
 
         if transaction_id:
             logger.info(f"Successfully created sponsorship {transaction_id} for {username} - ${amount/100:.2f}")
