@@ -900,8 +900,8 @@ def handle_pull_request_event(payload):
             )
 
             if not issue_refs:
-                # return JsonResponse({"status": "success", "message": "No issue references found"}, status=200)
                 logger.info("No issue references found in the pull request body.")
+                return JsonResponse({"status": "success", "message": "No issue references found"}, status=200)
             else:
                 # Get repo details
                 repo_name = payload["repository"]["name"]
