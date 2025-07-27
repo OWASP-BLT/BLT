@@ -1,58 +1,106 @@
 {% extends "base.html" %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="text-center mx-auto my-5 p-5 bg-gray-100 rounded-lg max-w-4xl shadow-md">
-        <h2 class="text-xl font-bold">Single User Challenges</h2>
-        {% if challenges %}
-            <div>
-                {% for challenge in challenges %}
-                    <div class="my-4 p-4 bg-white rounded-lg border border-gray-300 text-left cursor-pointer shadow-sm hover:shadow-md transition-shadow duration-300"
-                         onclick="toggleDetails({{ challenge.id }})">
-                        <div class="flex justify-between items-center">
-                            <span class="text-lg font-bold flex-grow">{{ challenge.title }}</span>
-                            <span class="text-sm text-gray-500 font-bold mr-1">{{ challenge.points }} pts</span>
-                            <span id="dropdown-icon-{{ challenge.id }}"
-                                  class="fas fa-chevron-down text-base transition-transform duration-300"></span>
-                        </div>
-                        <div id="challenge-details-{{ challenge.id }}"
-                             class="hidden mt-2 text-sm text-gray-600">
-                            <p>{{ challenge.description }}</p>
-                        </div>
-                        <!-- Progress Bar always visible -->
-                        <div class="relative w-full bg-gray-300 rounded mt-2 h-5">
-                            <div class="h-full bg-red-600 rounded transition-all duration-500"
-                                 id="progress-bar-{{ challenge.id }}"
-                                 data-progress="{{ challenge.progress }}"></div>
-                            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-bold text-gray-800">{{ challenge.progress|floatformat:0 }}%</span>
-                        </div>
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-check text-2xl text-white"></i>
                     </div>
-                {% endfor %}
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">Individual Challenges</h1>
+                        <p class="text-gray-600 mt-2">Complete personal challenges to earn points, BACON tokens, and showcase your skills</p>
+                    </div>
+                </div>
             </div>
-        {% else %}
-            <p class="text-gray-700">No challenges available.</p>
-        {% endif %}
+            {% if challenges %}
+                <div class="space-y-4">
+                    {% for challenge in challenges %}
+                        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
+                             x-data="{ open: false }">
+                            <!-- Challenge Header -->
+                            <div class="p-6 cursor-pointer" @click="open = !open">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 bg-[#e74c3c] bg-opacity-10 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-medal text-[#e74c3c] text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-lg font-bold text-gray-800">{{ challenge.title }}</h3>
+                                            <div class="flex items-center gap-4 mt-1">
+                                                <span class="text-sm font-medium text-[#e74c3c]">{{ challenge.points }} points</span>
+                                                <div class="flex items-center gap-1">
+                                                    <i class="fas fa-bacon text-[#e74c3c] text-sm"></i>
+                                                    <span class="text-sm font-medium text-[#e74c3c]">{{ challenge.bacon_reward }} BACON</span>
+                                                </div>
+                                                {% if challenge.progress >= 100 %}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        <i class="fas fa-check-circle mr-1"></i>
+                                                        Completed
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <!-- Progress Circle -->
+                                        <div class="relative w-12 h-12">
+                                            <svg class="w-12 h-12 transform -rotate-90">
+                                                <circle class="text-gray-200" stroke-width="3" stroke="currentColor" fill="transparent" r="20" cx="24" cy="24" />
+                                                <circle class="text-[#e74c3c]" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="transparent" r="20" cx="24" cy="24" style="stroke-dasharray: {{ challenge.stroke_dasharray }}; stroke-dashoffset: {{ challenge.stroke_dashoffset }}" />
+                                            </svg>
+                                            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium">
+                                                {{ challenge.progress|floatformat:0 }}%
+                                            </span>
+                                        </div>
+                                        <i class="fas fa-chevron-down text-gray-400 transform transition-transform duration-300"
+                                           :class="{ 'rotate-180': open }"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Challenge Details -->
+                            <div class="overflow-hidden transition-all duration-300 max-h-0"
+                                 x-ref="content"
+                                 x-bind:style="open ? 'max-height: ' + $refs.content.scrollHeight + 'px' : ''">
+                                <div class="p-6 pt-0 border-t border-gray-100">
+                                    <p class="text-gray-600">{{ challenge.description }}</p>
+                                    <div class="mt-4 flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-gray-400"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-700">Personal Challenge</span>
+                                        </div>
+                                        {% if challenge.progress < 100 %}
+                                            <button class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                                                Start Challenge
+                                            </button>
+                                        {% else %}
+                                            <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg">
+                                                <i class="fas fa-trophy mr-2"></i>
+                                                Challenge Completed!
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- No Challenges State -->
+                <div class="bg-white rounded-xl shadow-md p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-clipboard-list text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">No Challenges Available</h3>
+                    <p class="text-gray-600">There are no individual challenges available at the moment. Check back later!</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Set progress bar widths based on data-progress attribute
-    const progressBars = document.querySelectorAll('[data-progress]');
-    progressBars.forEach(bar => {
-        const progress = bar.getAttribute('data-progress');
-        bar.style.width = progress + '%';
-    });
-});
-
-function toggleDetails(challengeId) {
-    const detailsElement = document.getElementById(`challenge-details-${challengeId}`);
-    const iconElement = document.getElementById(`dropdown-icon-${challengeId}`);
-
-    if (detailsElement.classList.contains("hidden")) {
-        detailsElement.classList.remove("hidden");
-        iconElement.classList.add("transform", "rotate-180");
-    } else {
-        detailsElement.classList.add("hidden");
-        iconElement.classList.remove("transform", "rotate-180");
-    }
-}
-    </script>
+    <!-- Alpine.js for animations -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 {% endblock content %}

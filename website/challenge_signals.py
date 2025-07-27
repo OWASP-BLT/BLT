@@ -38,6 +38,13 @@ def update_challenge_progress(user, challenge_title, model_class, reason, thresh
 
                 team.team_points += challenge.points
                 team.save()
+
+                # Award BACON tokens to all team members
+                from website.feed_signals import giveBacon
+
+                for team_member in team.user_profiles.all():
+                    if team_member.user:
+                        giveBacon(team_member.user, amt=challenge.bacon_reward)
         else:
             if user not in challenge.participants.all():
                 challenge.participants.add(user)
@@ -55,6 +62,11 @@ def update_challenge_progress(user, challenge_title, model_class, reason, thresh
 
                 # Award points to the user
                 Points.objects.create(user=user, score=challenge.points, reason=reason)
+
+                # Award BACON tokens for completing the challenge
+                from website.feed_signals import giveBacon
+
+                giveBacon(user, amt=challenge.bacon_reward)
 
     except Challenge.DoesNotExist:
         pass
@@ -155,6 +167,11 @@ def handle_sign_in_challenges(user, user_profile):
                 reason=f"Completed '{challenge_title}' challenge",
             )
 
+            # Award BACON tokens for completing the challenge
+            from website.feed_signals import giveBacon
+
+            giveBacon(user, amt=challenge.bacon_reward)
+
     except Challenge.DoesNotExist:
         # Handle case when the challenge does not exist
         pass
@@ -194,6 +211,13 @@ def handle_team_sign_in_challenges(team):
             # Add points to the team
             team.team_points += challenge.points
             team.save()
+
+            # Award BACON tokens to all team members
+            from website.feed_signals import giveBacon
+
+            for team_member in team.user_profiles.all():
+                if team_member.user:
+                    giveBacon(team_member.user, amt=challenge.bacon_reward)
     except Challenge.DoesNotExist:
         print(f"Challenge '{challenge_title}' does not exist.")
         pass
