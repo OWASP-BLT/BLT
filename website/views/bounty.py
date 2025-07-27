@@ -276,7 +276,7 @@ def get_sponsor_tiers(sponsor_login):
         return {}
 
 
-def create_sponsorship_mutation(sponsor_login, tier_id, amount_cents):
+def create_sponsorship_mutation(sponsor_login, tier_id):
     """
     Create a sponsorship using GitHub GraphQL API.
     Returns the sponsorship ID if successful, None otherwise.
