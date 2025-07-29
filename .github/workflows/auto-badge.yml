@@ -1,0 +1,34 @@
+# Add to .github/workflows/auto-badge.yml
+name: Auto Badge Issues
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+jobs:
+  add-badge:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add Activity Badge
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const badgeUrl = `https://blt.owasp.org/issues/${issue.number}/badge/`;
+            const badgeMarkdown = `![Activity Badge](${badgeUrl})`;
+            
+            // Check if badge already exists
+            if (!issue.body || !issue.body.includes(badgeUrl)) {
+              const newBody = issue.body 
+                ? `${badgeMarkdown}\n\n${issue.body}`
+                : badgeMarkdown;
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: newBody
+              });
+            }

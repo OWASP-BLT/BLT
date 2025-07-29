@@ -269,6 +269,7 @@ from website.views.project import (
     ProjectView,
     RepoBadgeView,
     RepoDetailView,
+    GitHubIssueBadgeView,
     blt_tomato,
     create_project,
     distribute_bacon,
@@ -1099,6 +1100,9 @@ urlpatterns = [
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
+    
+    # Badge URLs
+    path("issues/<int:issue_number>/badge/", GitHubIssueBadgeView.as_view(), name="github-issue-badge"),
 ]
 
 if settings.DEBUG:

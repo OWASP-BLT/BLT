@@ -1705,6 +1705,8 @@ class GitHubIssue(models.Model):
         related_name="linked_issues",
         limit_choices_to={"type": "pull_request"},
     )
+    bounty_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
 
     class Meta:
         # Make the combination of issue_id and repo unique
@@ -1712,6 +1714,12 @@ class GitHubIssue(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username if self.user_profile else 'Unknown'} - {self.state}"
+
+    def save(self, *args, **kwargs):
+        # Auto-extract bounty from p2p_amount_usd if available
+        if self.p2p_amount_usd and not self.bounty_amount:
+            self.bounty_amount = self.p2p_amount_usd
+        super().save(*args, **kwargs)
 
     def get_comments(self):
         """

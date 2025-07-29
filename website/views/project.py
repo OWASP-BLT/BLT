@@ -21,6 +21,7 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
+from django.db import models
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse, JsonResponse
@@ -37,7 +38,7 @@ from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.filters import ProjectRepoFilter
-from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
+from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, GitHubIssue, Organization, Project, Repo
 from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -250,6 +251,127 @@ class ProjectBadgeView(APIView):
 
         return response
 
+class GitHubIssueBadgeView(APIView):
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0].strip()
+            return ip
+        x_real_ip = request.META.get("HTTP_X_REAL_IP")
+        if x_real_ip:
+            return x_real_ip.strip()
+        remote_addr = request.META.get("REMOTE_ADDR")
+        return remote_addr
+    
+    def get_bounty_amount(self, issue_number):
+        """Extract the bounty amount from the issue labels."""
+        try:
+            # Try to find existing GitHubIssue record first
+            github_issue = GitHubIssue.objects.filter(issue_number=issue_number,p2p_amount_usd__isnull=False).first()
+            if github_issue:
+                return f"${github_issue.p2p_amount_usd}"
+            # If not found, fetch from GitHub API and parse labels
+            from django.conf import settings
+            import requests
+            url = f"https://api.github.com/repos/{settings.GITHUB_REPO}/issues/{issue_number}"
+
+            headers = {
+                "Authorization" : f"token {settings.GITHUB_TOKEN}"}
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                issue_data = response.json()
+                for label in issue_data.get("labels", []):
+                    label_name = label.get("name", "")
+                    if "$" in label_name:
+                        # Extract number from label like "$5", "$10", etc.
+                        import re
+                        amount_match = re.search(r'\$(\d+)', label_name)
+                        if amount_match:
+                            return f"${amount_match.group(1)}"
+            return "$0"
+        except Exception as e:
+            return "$0"
+    def get_activity_count(self, issue_number):
+        """Get view count for the issue in past 30 days"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        
+        # Count IP visits to this issue's path
+        issue_path_patterns = [
+            f"/issues/{issue_number}",
+            f"/issues/{issue_number}/",
+            f"github.com/OWASP-BLT/BLT/issues/{issue_number}"
+        ]
+        
+        total_count = 0
+        for pattern in issue_path_patterns:
+            count = IP.objects.filter(
+                path__contains=pattern,
+                created__gte=thirty_days_ago
+            ).aggregate(total=models.Sum('count'))['total'] or 0
+            total_count += count
+        
+        return total_count
+    
+    def generate_badge_svg(self, activity_count, bounty_amount):
+        """Generate SVG badge with activity count and bounty amount"""
+        svg_template = '''
+        <svg xmlns="http://www.w3.org/2000/svg" width="180" height="20">
+            <linearGradient id="b" x2="0" y2="100%">
+                <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+                <stop offset="1" stop-opacity=".1"/>
+            </linearGradient>
+            <clipPath id="a">
+                <rect width="180" height="20" rx="3" fill="#fff"/>
+            </clipPath>
+            <g clip-path="url(#a)">
+                <path fill="#555" d="M0 0h63v20H0z"/>
+                <path fill="#4c1" d="M63 0h117v20H63z"/>
+                <path fill="url(#b)" d="M0 0h180v20H0z"/>
+            </g>
+            <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110">
+                <text x="325" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="530">Activity</text>
+                <text x="325" y="140" transform="scale(.1)" textLength="530">Activity</text>
+                <text x="1205" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="1070">{activity_count} views | {bounty_amount}</text>
+                <text x="1205" y="140" transform="scale(.1)" textLength="1070">{activity_count} views | {bounty_amount}</text>
+            </g>
+        </svg>
+        '''.format(activity_count=activity_count, bounty_amount=bounty_amount)
+        
+        return svg_template.strip()
+    
+    def get(self, request, issue_number):
+        # Track this badge view
+        client_ip = self.get_client_ip(request)
+        badge_path = f"/issues/{issue_number}/badge/"
+        
+        # Log the badge view
+        IP.objects.create(
+            address=client_ip,
+            path=badge_path,
+            method="GET",
+            agent=request.META.get("HTTP_USER_AGENT", "")[:255],
+            issuenumber=issue_number
+        )
+        
+        # Get metrics
+        activity_count = self.get_activity_count(issue_number)
+        bounty_amount = self.get_bounty_amount(issue_number)
+        
+        # Generate badge
+        svg_content = self.generate_badge_svg(activity_count, bounty_amount)
+        
+        return HttpResponse(
+            svg_content,
+            content_type="image/svg+xml",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache", 
+                "Expires": "0"
+            }
+        )
 
 class ProjectView(FilterView):
     model = Repo
