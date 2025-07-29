@@ -1,0 +1,231 @@
+{% extends "base.html" %} {% load static %} {% block title %}Create Staking Pool
+| OWASP BLT{% endblock %} {% block content %}
+<!-- Include Sidebar -->
+{% include "includes/sidenav.html" %}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+      <a
+        href="{% url 'staking_home' %}"
+        class="text-blue-600 hover:text-blue-800 font-medium"
+      >
+        ← Back to Staking
+      </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h1 class="text-2xl font-bold text-gray-900 mb-6">
+        Create Competitive Staking Pool
+      </h1>
+
+      <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div class="flex items-start">
+          <div class="text-yellow-600 text-xl mr-3">⚠️</div>
+          <div>
+            <h3 class="font-semibold text-yellow-800">How It Works</h3>
+            <p class="text-sm text-yellow-700 mt-1">
+              Create a competitive pool where players stake the same amount of
+              BACON. The first person to complete the challenge wins the entire
+              pot! You'll automatically join your own pool.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4 p-3 bg-orange-50 border border-orange-200 rounded">
+        <p class="text-sm text-orange-700">
+          <strong>Your BACON Balance:</strong> {{
+          user_bacon_balance|floatformat:0 }} BACON
+        </p>
+      </div>
+
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <div>
+          <label
+            for="name"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Pool Name *
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="e.g., XSS Hunter Duel"
+          />
+        </div>
+
+        <div>
+          <label
+            for="description"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Description *
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            rows="3"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="Describe the challenge and what players need to do to win..."
+          ></textarea>
+        </div>
+
+        <div>
+          <label
+            for="pool_type"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Pool Type
+          </label>
+          <select
+            id="pool_type"
+            name="pool_type"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          >
+            <option value="head_to_head">Head to Head (2 players)</option>
+            <option value="triple_threat">Triple Threat (3 players)</option>
+          </select>
+          <p class="text-sm text-gray-500 mt-1">
+            Choose how many players can compete
+          </p>
+        </div>
+
+        <div>
+          <label
+            for="challenge_id"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Challenge *
+          </label>
+          <select
+            id="challenge_id"
+            name="challenge_id"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          >
+            <option value="">Select a challenge...</option>
+            {% for challenge in challenges %}
+            <option value="{{ challenge.id }}">
+              {{ challenge.title }} ({{ challenge.points }} points)
+            </option>
+            {% endfor %}
+          </select>
+          <p class="text-sm text-gray-500 mt-1">
+            The challenge players must complete to win
+          </p>
+        </div>
+
+        <div>
+          <label
+            for="stake_amount"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Stake Amount (BACON) *
+          </label>
+          <input
+            type="number"
+            id="stake_amount"
+            name="stake_amount"
+            min="1"
+            max="{{ user_bacon_balance }}"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="50"
+          />
+          <p class="text-sm text-gray-500 mt-1">
+            Amount each player must stake to join
+          </p>
+        </div>
+
+        <div>
+          <label
+            for="days_duration"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Duration (Days)
+          </label>
+          <input
+            type="number"
+            id="days_duration"
+            name="days_duration"
+            min="1"
+            max="30"
+            value="7"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          />
+          <p class="text-sm text-gray-500 mt-1">
+            How long the pool stays open for joining
+          </p>
+        </div>
+
+        <!-- Pool Preview -->
+        <div class="border-t border-gray-200 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Pool Preview</h3>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-gray-600">Total Pot (Head-to-Head):</span>
+                <span id="pot-preview-2" class="font-semibold text-green-600"
+                  >100 BACON</span
+                >
+              </div>
+              <div>
+                <span class="text-gray-600">Total Pot (Triple Threat):</span>
+                <span id="pot-preview-3" class="font-semibold text-green-600"
+                  >150 BACON</span
+                >
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              Winner takes the entire pot! Your stake will be deducted
+              immediately when you create the pool.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex space-x-4">
+          <button
+            type="submit"
+            class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+          >
+            Create Pool & Join
+          </button>
+          <a
+            href="{% url 'staking_home' %}"
+            class="flex-1 text-center bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-4 rounded-lg font-medium transition-colors"
+          >
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const stakeAmountInput = document.getElementById("stake_amount");
+    const poolTypeSelect = document.getElementById("pool_type");
+    const potPreview2 = document.getElementById("pot-preview-2");
+    const potPreview3 = document.getElementById("pot-preview-3");
+
+    function updatePotPreviews() {
+      const stakeAmount = parseFloat(stakeAmountInput.value) || 0;
+      const pot2 = stakeAmount * 2;
+      const pot3 = stakeAmount * 3;
+
+      potPreview2.textContent = pot2.toFixed(0) + " BACON";
+      potPreview3.textContent = pot3.toFixed(0) + " BACON";
+    }
+
+    stakeAmountInput.addEventListener("input", updatePotPreviews);
+    updatePotPreviews();
+  });
+</script>
+{% endblock %}

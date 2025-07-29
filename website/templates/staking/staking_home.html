@@ -1,0 +1,319 @@
+{% extends "base.html" %} {% load static %} {% block title %}BACON Staking |
+OWASP BLT{% endblock %} {% block content %}
+<!-- Include Sidebar -->
+{% include "includes/sidenav.html" %}
+<div class="container mx-auto px-4 py-8">
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">BACON Staking</h1>
+    <div class="flex items-center space-x-4">
+      <div class="text-right">
+        <p class="text-sm text-gray-600">Your BACON Balance</p>
+        <p class="text-2xl font-bold text-orange-600">
+          {{ user_bacon_balance|floatformat:0 }} BACON
+        </p>
+      </div>
+      <a
+        href="{% url 'create_staking_pool' %}"
+        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+      >
+        Create Pool
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Staking Overview -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+          How Competitive Staking Works
+        </h2>
+        <div class="prose text-gray-600">
+          <p>
+            Challenge other players in high-stakes BACON competitions! All
+            players stake the same amount, and the winner takes everything.
+          </p>
+          <ul class="mt-4 space-y-2">
+            <li>
+              🎯 <strong>Join or create</strong> a staking pool with 2-3 players
+            </li>
+            <li>
+              💰 <strong>Stake BACON tokens</strong> - everyone stakes the same
+              amount
+            </li>
+            <li>⚡ <strong>Race to complete</strong> the challenge first</li>
+            <li>
+              🏆 <strong>Winner takes all</strong> - entire pot goes to the
+              fastest player
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Open Pools (Looking for Players) -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+          🔓 Open Pools (Join Now!)
+        </h2>
+        {% if open_pools %}
+        <div class="space-y-4">
+          {% for pool in open_pools %}
+          <div
+            class="border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-green-50"
+          >
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h3 class="font-semibold text-lg text-gray-900">
+                  {{ pool.name }}
+                </h3>
+                <p class="text-gray-600">{{ pool.description }}</p>
+                <p class="text-sm text-green-700 mt-1">
+                  Challenge: <strong>{{ pool.challenge.title }}</strong>
+                </p>
+              </div>
+              <span
+                class="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full"
+              >
+                Open for Players
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+              <div>
+                <p class="text-gray-500">Stake Required</p>
+                <p class="font-medium text-orange-600">
+                  {{ pool.stake_amount|floatformat:0 }} BACON
+                </p>
+              </div>
+              <div>
+                <p class="text-gray-500">Total Pot</p>
+                <p class="font-medium text-green-600">
+                  {{ pool.total_pot|floatformat:0 }} BACON
+                </p>
+              </div>
+              <div>
+                <p class="text-gray-500">Players</p>
+                <p class="font-medium">
+                  {{ pool.current_participants }}/{{ pool.max_participants }}
+                </p>
+              </div>
+              <div>
+                <p class="text-gray-500">Type</p>
+                <p class="font-medium">{{ pool.get_pool_type_display }}</p>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+              <a
+                href="{% url 'pool_detail' pool.id %}"
+                class="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                View Details →
+              </a>
+              {% if user.is_authenticated %} {% if pool.user_has_joined %}
+              <span
+                class="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium"
+              >
+                Already Joined
+              </span>
+              {% elif pool.user_can_join %}
+              <form
+                method="post"
+                action="{% url 'stake_in_pool' pool.id %}"
+                class="inline-block"
+              >
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Join Pool ({{ pool.stake_amount|floatformat:0 }} BACON)
+                </button>
+              </form>
+              {% else %}
+              <span
+                class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg font-medium cursor-not-allowed"
+              >
+                {{ pool.join_message }}
+              </span>
+              {% endif %} {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+          <div class="text-gray-400 text-4xl mb-4">🎯</div>
+          <p class="text-gray-600">No open pools available.</p>
+          <p class="text-sm text-gray-400 mt-2">Be the first to create one!</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Full Pools (Ready to Start) -->
+      {% if full_pools %}
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+          ⏳ Full Pools (Ready to Start)
+        </h2>
+        <div class="space-y-4">
+          {% for pool in full_pools %}
+          <div class="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h3 class="font-semibold text-lg text-gray-900">
+                  {{ pool.name }}
+                </h3>
+                <p class="text-sm text-yellow-700">
+                  Challenge: <strong>{{ pool.challenge.title }}</strong> | Pot:
+                  <strong>{{ pool.total_pot|floatformat:0 }} BACON</strong>
+                </p>
+              </div>
+              <span
+                class="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full"
+              >
+                Full - Starting Soon
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Active Competitions -->
+      {% if active_pools %}
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+          🔥 Active Competitions
+        </h2>
+        <div class="space-y-4">
+          {% for pool in active_pools %}
+          <div class="border border-red-200 rounded-lg p-4 bg-red-50">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h3 class="font-semibold text-lg text-gray-900">
+                  {{ pool.name }}
+                </h3>
+                <p class="text-sm text-red-700">
+                  Challenge: <strong>{{ pool.challenge.title }}</strong> | Pot:
+                  <strong>{{ pool.total_pot|floatformat:0 }} BACON</strong>
+                </p>
+              </div>
+              <span
+                class="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full"
+              >
+                Competition Active
+              </span>
+            </div>
+            <a
+              href="{% url 'pool_detail' pool.id %}"
+              class="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Watch Competition →
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Recent Winners -->
+      {% if completed_pools %}
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+          🏆 Recent Winners
+        </h2>
+        <div class="space-y-3">
+          {% for pool in completed_pools %}
+          <div
+            class="flex justify-between items-center p-3 border border-gray-200 rounded-lg"
+          >
+            <div>
+              <h4 class="font-medium text-gray-900">{{ pool.name }}</h4>
+              <p class="text-sm text-gray-600">
+                Winner: <strong>{{ pool.winner.username }}</strong> | Won:
+                <strong>{{ pool.total_pot|floatformat:0 }} BACON</strong>
+              </p>
+            </div>
+            <span class="text-xs text-gray-500">
+              {{ pool.completed_at|timesince }} ago
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <!-- User Stats -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Your Competition Stats
+        </h3>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Active Competitions</span>
+            <span class="font-medium">{{ user_active_stakes }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Total at Stake</span>
+            <span class="font-medium"
+              >{{ user_total_staked|floatformat:0 }} BACON</span
+            >
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Competitions Won</span>
+            <span class="font-medium text-green-600">{{ user_wins }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Competitions Lost</span>
+            <span class="font-medium text-red-600">{{ user_losses }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Total Winnings</span>
+            <span class="font-medium text-green-600"
+              >+{{ user_total_winnings|floatformat:0 }} BACON</span
+            >
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-200">
+          <a
+            href="{% url 'my_staking' %}"
+            class="block text-center bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
+          >
+            View My Competitions
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <div class="space-y-3">
+          <a
+            href="{% url 'create_staking_pool' %}"
+            class="block text-center bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+          >
+            Create Competition
+          </a>
+          <a
+            href="{% url 'staking_leaderboard' %}"
+            class="block text-center bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+          >
+            View Leaderboard
+          </a>
+          <a
+            href="{% url 'user_challenges' %}"
+            class="block text-center bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+          >
+            Browse Challenges
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

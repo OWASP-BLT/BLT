@@ -5,6 +5,29 @@ from django.utils import timezone
 from .models import Challenge, IpReport, Issue, Points, TimeLog, UserProfile
 
 
+def handle_staking_pool_completion(user, challenge):
+    """Handle staking pool completion when a user completes a challenge"""
+    from .models import StakingEntry  # Import here to avoid circular imports
+    from .views.staking_competitive import calculate_individual_user_progress  # Import progress function
+
+    # Find active staking entries for this user and challenge
+    active_entries = StakingEntry.objects.filter(
+        user=user, pool__challenge=challenge, pool__status="active", status="active", challenge_completed=False
+    )
+
+    # Check each staking entry individually with pool-specific progress
+    for entry in active_entries:
+        # Calculate progress only from when user joined this specific pool
+        pool_progress = calculate_individual_user_progress(user, challenge, pool_entry=entry)
+
+        # If user has completed the challenge for this specific pool, complete the entry
+        if pool_progress >= 100:
+            entry.complete_challenge()
+            print(
+                f"Staking pool completion for {user.username} in {entry.pool.name}: Challenge completed with {pool_progress}% progress"
+            )
+
+
 def update_challenge_progress(user, challenge_title, model_class, reason, threshold=None, team_threshold=None):
     if not user.is_authenticated:
         return
@@ -67,6 +90,9 @@ def update_challenge_progress(user, challenge_title, model_class, reason, thresh
                 from website.feed_signals import giveBacon
 
                 giveBacon(user, amt=challenge.bacon_reward)
+
+                # Handle staking pool completion
+                handle_staking_pool_completion(user, challenge)
 
     except Challenge.DoesNotExist:
         pass
@@ -171,6 +197,9 @@ def handle_sign_in_challenges(user, user_profile):
             from website.feed_signals import giveBacon
 
             giveBacon(user, amt=challenge.bacon_reward)
+
+            # Handle staking pool completion
+            handle_staking_pool_completion(user, challenge)
 
     except Challenge.DoesNotExist:
         # Handle case when the challenge does not exist
