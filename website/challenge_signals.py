@@ -68,6 +68,13 @@ def update_challenge_progress(user, challenge_title, model_class, reason, thresh
                 for team_member in team.user_profiles.all():
                     if team_member.user:
                         giveBacon(team_member.user, amt=challenge.bacon_reward)
+
+                # Award BACON tokens to all team members
+                from website.feed_signals import giveBacon
+
+                for team_member in team.user_profiles.all():
+                    if team_member.user:
+                        giveBacon(team_member.user, amt=challenge.bacon_reward)
         else:
             if user not in challenge.participants.all():
                 challenge.participants.add(user)

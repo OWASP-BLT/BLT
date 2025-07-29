@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0243_add_bacon_rewards_to_challenges"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

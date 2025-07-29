@@ -1,256 +1,178 @@
-{% extends "base.html" %} {% load static %} {% block title %}My Stakes - OWASP
-BLT{% endblock %} {% block content %}
-<!-- Include Sidebar -->
-{% include "includes/sidenav.html" %}
-<div class="min-h-screen bg-gray-50 py-8">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Header Section -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-gray-900 mb-4">My Stakes</h1>
-      <p class="text-xl text-gray-600">
-        Track your staking entries and earnings
-      </p>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="text-center">
-          <p class="text-sm text-gray-600">Total Staked</p>
-          <p class="text-2xl font-bold text-[#e74c3c]">
-            {{ total_staked }} BACON
-          </p>
-        </div>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="text-center">
-          <p class="text-sm text-gray-600">Active Stakes</p>
-          <p class="text-2xl font-bold text-blue-600">{{ active_stakes }}</p>
-        </div>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="text-center">
-          <p class="text-sm text-gray-600">Total Winnings</p>
-          <p class="text-2xl font-bold text-green-600">
-            {{ total_winnings }} BACON
-          </p>
-        </div>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="text-center">
-          <p class="text-sm text-gray-600">Available Balance</p>
-          <p class="text-2xl font-bold text-gray-900">
-            {{ user_balance }} BACON
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Navigation -->
-    <div class="flex space-x-4 mb-8">
-      <a
-        href="{% url 'staking_home' %}"
-        class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-      >
-        Browse Pools
-      </a>
-      <button
-        class="bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-semibold"
-      >
-        My Stakes
-      </button>
-      <a
-        href="{% url 'staking_leaderboard' %}"
-        class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-      >
-        Leaderboard
-      </a>
-    </div>
-
-    <!-- Active Stakes -->
-    <div class="bg-white rounded-lg shadow-md mb-8">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-xl font-semibold text-gray-900">Active Stakes</h2>
-      </div>
-      <div class="p-6">
-        {% if active_entries %}
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Pool
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Staked Amount
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Current Rank
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Points
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Status
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              {% for entry in active_entries %}
-              <tr>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ entry.pool.name }}
-                    </div>
-                    <div class="text-sm text-gray-500">
-                      Ends: {{ entry.pool.end_date|date:"M d, Y" }}
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-bold text-[#e74c3c]">
-                    {{ entry.amount }} BACON
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">
-                    #{{ entry.current_rank|default:"--" }}
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">
-                    {{ entry.points|default:0 }}
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span
-                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
-                  >
-                    Active
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <a
-                    href="{% url 'pool_detail' entry.pool.id %}"
-                    class="text-blue-600 hover:text-blue-900 mr-4"
-                    >View Pool</a
-                  >
-                  {% if entry.pool.allow_unstaking %}
-                  <form
-                    method="post"
-                    action="{% url 'unstake_from_pool' entry.id %}"
-                    class="inline"
-                  >
-                    {% csrf_token %}
-                    <button
-                      type="submit"
-                      class="text-red-600 hover:text-red-900"
-                      onclick="return confirm('Are you sure you want to unstake?')"
-                    >
-                      Unstake
-                    </button>
-                  </form>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <div class="text-center py-8">
-          <div class="text-6xl mb-4">🥓</div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            No Active Stakes
-          </h3>
-          <p class="text-gray-600 mb-4">
-            Start staking in pools to compete for BACON rewards!
-          </p>
-          <a
-            href="{% url 'staking_home' %}"
-            class="bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors"
-          >
-            Browse Pools
-          </a>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Recent Transactions -->
-    <div class="bg-white rounded-lg shadow-md">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-xl font-semibold text-gray-900">Recent Transactions</h2>
-      </div>
-      <div class="p-6">
-        {% if recent_transactions %}
-        <div class="space-y-4">
-          {% for transaction in recent_transactions %}
-          <div
-            class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-          >
-            <div class="flex items-center">
-              <div
-                class="w-10 h-10 rounded-full flex items-center justify-center {% if transaction.transaction_type == 'stake' %}bg-blue-100{% elif transaction.transaction_type == 'unstake' %}bg-red-100{% else %}bg-green-100{% endif %}"
-              >
-                {% if transaction.transaction_type == 'stake' %}
-                <span class="text-blue-600">📈</span>
-                {% elif transaction.transaction_type == 'unstake' %}
-                <span class="text-red-600">📉</span>
-                {% else %}
-                <span class="text-green-600">🏆</span>
-                {% endif %}
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-900">
-                  {{ transaction.get_transaction_type_display }}
-                </p>
-                <p class="text-sm text-gray-500">
-                  {{ transaction.description }}
-                </p>
-                <p class="text-xs text-gray-400">
-                  {{ transaction.created_at|date:"M d, Y H:i" }}
-                </p>
-              </div>
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    My Stakes - OWASP
+    BLT
+{% endblock %}
+{% block content %}
+    <!-- Include Sidebar -->
+    {% include "includes/sidenav.html" %}
+    <div class="min-h-screen bg-gray-50 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header Section -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">My Stakes</h1>
+                <p class="text-xl text-gray-600">Track your staking entries and earnings</p>
             </div>
-            <div class="text-right">
-              <p
-                class="text-sm font-bold {% if transaction.transaction_type == 'stake' %}text-red-600{% else %}text-green-600{% endif %}"
-              >
-                {% if transaction.transaction_type == 'stake' %}
-                  -
-                {% else %}
-                  +
-                {% endif %}
-                {{ transaction.amount }} BACON
-              </p>
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">Total Staked</p>
+                        <p class="text-2xl font-bold text-[#e74c3c]">{{ total_staked }} BACON</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">Active Stakes</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ active_stakes }}</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">Total Winnings</p>
+                        <p class="text-2xl font-bold text-green-600">{{ total_winnings }} BACON</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">Available Balance</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ user_balance }} BACON</p>
+                    </div>
+                </div>
             </div>
-          </div>
-          {% endfor %}
+            <!-- Navigation -->
+            <div class="flex space-x-4 mb-8">
+                <a href="{% url 'staking_home' %}"
+                   class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                    Browse Pools
+                </a>
+                <button class="bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-semibold">My Stakes</button>
+                <a href="{% url 'staking_leaderboard' %}"
+                   class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                    Leaderboard
+                </a>
+            </div>
+            <!-- Active Stakes -->
+            <div class="bg-white rounded-lg shadow-md mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">Active Stakes</h2>
+                </div>
+                <div class="p-6">
+                    {% if active_entries %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pool</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staked Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Rank</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for entry in active_entries %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <div class="text-sm font-medium text-gray-900">{{ entry.pool.name }}</div>
+                                                    <div class="text-sm text-gray-500">Ends: {{ entry.pool.end_date|date:"M d, Y" }}</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-bold text-[#e74c3c]">{{ entry.amount }} BACON</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">#{{ entry.current_rank|default:"--" }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">{{ entry.points|default:0 }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <a href="{% url 'pool_detail' entry.pool.id %}"
+                                                   class="text-blue-600 hover:text-blue-900 mr-4">View Pool</a>
+                                                {% if entry.pool.allow_unstaking %}
+                                                    <form method="post"
+                                                          action="{% url 'unstake_from_pool' entry.id %}"
+                                                          class="inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit"
+                                                                class="text-red-600 hover:text-red-900"
+                                                                onclick="return confirm('Are you sure you want to unstake?')">
+                                                            Unstake
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="text-6xl mb-4">🥓</div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No Active Stakes</h3>
+                            <p class="text-gray-600 mb-4">Start staking in pools to compete for BACON rewards!</p>
+                            <a href="{% url 'staking_home' %}"
+                               class="bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors">
+                                Browse Pools
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Recent Transactions -->
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">Recent Transactions</h2>
+                </div>
+                <div class="p-6">
+                    {% if recent_transactions %}
+                        <div class="space-y-4">
+                            {% for transaction in recent_transactions %}
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center {% if transaction.transaction_type == 'stake' %}bg-blue-100{% elif transaction.transaction_type == 'unstake' %}bg-red-100{% else %}bg-green-100{% endif %}">
+                                            {% if transaction.transaction_type == 'stake' %}
+                                                <span class="text-blue-600">📈</span>
+                                            {% elif transaction.transaction_type == 'unstake' %}
+                                                <span class="text-red-600">📉</span>
+                                            {% else %}
+                                                <span class="text-green-600">🏆</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-900">{{ transaction.get_transaction_type_display }}</p>
+                                            <p class="text-sm text-gray-500">{{ transaction.description }}</p>
+                                            <p class="text-xs text-gray-400">{{ transaction.created_at|date:"M d, Y H:i" }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-bold {% if transaction.transaction_type == 'stake' %}text-red-600{% else %}text-green-600{% endif %}">
+                                            {% if transaction.transaction_type == 'stake' %}
+                                                -
+                                            {% else %}
+                                                +
+                                            {% endif %}
+                                            {{ transaction.amount }} BACON
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <p class="text-gray-600">No transactions yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        {% else %}
-        <div class="text-center py-8">
-          <p class="text-gray-600">No transactions yet</p>
-        </div>
-        {% endif %}
-      </div>
     </div>
-  </div>
-</div>
 {% endblock %}
