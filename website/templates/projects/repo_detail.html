@@ -1265,6 +1265,84 @@
             Last updated: {{ repo.last_updated|date:"M d, Y H:i" }}
         </div>
     </div>
+    <!-- Repository Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Existing stats -->
+    </div>
+    <!-- Stargazers Section -->
+    <div id="stargazers-section">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Stargazers</h2>
+                <span class="text-gray-600">({{ total_stargazers|default:stargazers|length }} total)</span>
+            </div>
+            <!-- Filter Controls -->
+            <div class="flex gap-2 mb-6">
+                <a href="?filter=all"
+                   class="stargazers-filter-link px-4 py-2 rounded-lg {% if filter_type == 'all' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">All</a>
+                <a href="?filter=recent"
+                   class="stargazers-filter-link px-4 py-2 rounded-lg {% if filter_type == 'recent' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">Recent</a>
+            </div>
+            {% if stargazers_error %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{{ stargazers_error }}</div>
+            {% endif %}
+            {% if stargazers %}
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {% for stargazer in stargazers %}
+                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <img src="{{ stargazer.avatar_url }}"
+                                 alt="{{ stargazer.login }}'s avatar"
+                                 class="w-10 h-10 rounded-full"
+                                 height="40"
+                                 width="40">
+                            <div>
+                                <a href="{{ stargazer.html_url }}"
+                                   target="_blank"
+                                   class="text-[#e74c3c] hover:underline">{{ stargazer.login }}</a>
+                                {% if stargazer.starred_at %}
+                                    <p class="text-xs text-gray-500">Starred: {{ stargazer.starred_at|date:"M d, Y" }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <!-- Pagination Control -->
+                {% if total_pages > 1 %}
+                    <div class="flex flex-col items-center space-y-4 mt-8">
+                        <div class="flex justify-center items-center space-x-2">
+                            {% if current_page > 1 %}
+                                <a href="?filter={{ filter_type }}&page={{ current_page|add:'-1' }}"
+                                   class="stargazers-pagination-link px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">Previous</a>
+                            {% endif %}
+                            <div class="flex items-center space-x-2">
+                                {% for i in "1"|ljust:total_pages %}
+                                    {% with page_num=forloop.counter %}
+                                        {% if page_num == current_page %}
+                                            <span class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg">{{ page_num }}</span>
+                                        {% elif page_num == 1 or page_num == total_pages or page_num|add:"-2" <= current_page and page_num|add:"2" >= current_page %}
+                                            <a href="?filter={{ filter_type }}&page={{ page_num }}"
+                                               class="stargazers-pagination-link px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">{{ page_num }}</a>
+                                        {% elif page_num == 2 and current_page > 3 %}
+                                            <span class="px-2">...</span>
+                                        {% elif page_num == total_pages|add:"-1" and current_page < total_pages|add:"-2" %}
+                                            <span class="px-2">...</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+                            </div>
+                            {% if current_page < total_pages %}
+                                <a href="?filter={{ filter_type }}&page={{ current_page|add:'1' }}"
+                                   class="stargazers-pagination-link px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">Next</a>
+                            {% endif %}
+                        </div>
+                        <span class="text-gray-600">Page {{ current_page }} of {{ total_pages }}</span>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p class="text-gray-600 italic">No stargazers found for this repository.</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock content %}
 {% block after_js %}
     {{ block.super }}
