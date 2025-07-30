@@ -65,7 +65,6 @@ jobs:
             const bountyAmount = bountyMatch
               ? bountyMatch[1].replace(/,/g, '')
               : null;
-            const bountyAmount = bountyMatch ? bountyMatch[1] : null;
             if (!bountyAmount) {
               console.log('Could not extract bounty amount from label');
               return;
