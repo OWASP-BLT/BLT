@@ -49,7 +49,7 @@ from website.models import (
     Project,
     Repo,
 )
-from website.utils import admin_required
+from website.utils import admin_required, get_client_ip_from_request
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
@@ -132,21 +132,7 @@ def distribute_bacon(request, contribution_id):
 
 class ProjectBadgeView(APIView):
     def get_client_ip(self, request):
-        # Check X-Forwarded-For header first
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            # Return first IP in chain (real client IP)
-            ip = x_forwarded_for.split(",")[0].strip()
-            return ip
-
-        # Try X-Real-IP header next
-        x_real_ip = request.META.get("HTTP_X_REAL_IP")
-        if x_real_ip:
-            return x_real_ip
-
-        # Finally fall back to REMOTE_ADDR
-        remote_addr = request.META.get("REMOTE_ADDR")
-        return remote_addr
+        return get_client_ip_from_request(request)
 
     def get(self, request, slug):
         # Get the project or return 404
@@ -282,22 +268,22 @@ class GitHubIssueBadgeView(APIView):
             if github_issue:
                 return f"${github_issue.p2p_amount_usd}"
             # If not found, fetch from GitHub API and parse labels
-            import requests
-            from django.conf import settings
+            github_repo = getattr(settings, "GITHUB_REPO", None)
+            github_token = getattr(settings, "GITHUB_TOKEN", None)
+            if not github_repo or not github_token:
+                return "$0"
 
-            url = f"https://api.github.com/repos/{settings.GITHUB_REPO}/issues/{issue_number}"
+            url = f"https://api.github.com/repos/{github_repo}/issues/{issue_number}"
 
-            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"}
+            headers = {"Authorization": f"token {github_token}"}
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 issue_data = response.json()
                 for label in issue_data.get("labels", []):
                     label_name = label.get("name", "")
                     if "$" in label_name:
-                        # Extract number from label like "$5", "$10", etc.
-                        import re
-
-                        amount_match = re.search(r"\$(\d+)", label_name)
+                        # Extract number from label like "$5", "$10.50", etc.
+                        amount_match = re.search(r"\$(\d+(?:\.\d{2})?)", label_name)
                         if amount_match:
                             return f"${amount_match.group(1)}"
             return "$0"
@@ -306,23 +292,23 @@ class GitHubIssueBadgeView(APIView):
 
     def get_activity_count(self, issue_number):
         """Get view count for the issue in past 30 days"""
-        from datetime import timedelta
-
-        from django.utils import timezone
+        # Validate issue_number
+        if not isinstance(issue_number, int) or issue_number <= 0:
+            return 0
 
         thirty_days_ago = timezone.now() - timedelta(days=30)
 
         # Count IP visits to this issue's path
         issue_path_patterns = [
-            f"/issues/{issue_number}",
-            f"/issues/{issue_number}/",
-            f"github.com/OWASP-BLT/BLT/issues/{issue_number}",
+            f"/issues/{issue_number}$",
+            f"/issues/{issue_number}/$",
+            f"/issues/{issue_number}/badge/$",
         ]
 
         total_count = 0
         for pattern in issue_path_patterns:
             count = (
-                IP.objects.filter(path__contains=pattern, created__gte=thirty_days_ago).aggregate(
+                IP.objects.filter(path__regex=pattern, created__gte=thirty_days_ago).aggregate(
                     total=models.Sum("count")
                 )["total"]
                 or 0
