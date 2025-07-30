@@ -154,8 +154,8 @@ class Command(BaseCommand):
                     "table_structure": {
                         "users": ["id", "username", "password", "email"],
                         "products": ["id", "name", "price", "description"],
-                        "success_payload": "' UNION SELECT id, username, password, email FROM users--",
                     },
+                    "success_payload": "' UNION SELECT id, username, password, email FROM users--",
                     "success_criteria": "Extract all usernames and passwords from users table",
                     "hints": [
                         "First determine the number of columns using ORDER BY",

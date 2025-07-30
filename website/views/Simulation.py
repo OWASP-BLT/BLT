@@ -103,8 +103,7 @@ def submit_answer(request, lab_id, task_id):
         user_payload = request.POST.get("payload", "").strip()
 
         simulation_config = content.simulation_config
-        print(simulation_config)
-
+        expected_payload = None
         if "success_payload" in simulation_config:
             expected_payload = simulation_config["success_payload"]
             is_correct = user_payload.strip().lower() == expected_payload.strip().lower()
@@ -115,11 +114,9 @@ def submit_answer(request, lab_id, task_id):
             {
                 "correct": is_correct,
                 "user_payload": user_payload,
-                "expected_payload": expected_payload if "success_payload" in simulation_config else "Not defined",
-                "user_cleaned": user_payload.strip().lower() if "success_payload" in simulation_config else "N/A",
-                "expected_cleaned": expected_payload.strip().lower()
-                if "success_payload" in simulation_config
-                else "N/A",
+                "expected_payload": expected_payload if expected_payload else "Not defined",
+                "user_cleaned": user_payload.strip().lower() if expected_payload else "N/A",
+                "expected_cleaned": expected_payload.strip().lower() if expected_payload else "N/A",
                 "message": "Great job! You successfully completed the simulation."
                 if is_correct
                 else "Try a different approach. Check the hints for guidance.",
