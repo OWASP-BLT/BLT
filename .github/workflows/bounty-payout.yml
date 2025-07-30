@@ -21,7 +21,7 @@ jobs:
             const pr = context.payload.pull_request;
             const prBody = pr.body || '';
             // Look for issue closing keywords in PR body
-            const issueRefs = prBody.match(/(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi);
+            const issueRefs = prBody.match(/\b(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\b\s+#(\d+)/gi);
             if (!issueRefs) {
               console.log('No issue references found in PR');
               return;
