@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Slack Apps for {{ organization.name }}</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Workspace</th>
+                <th>Default Channel</th>
+                <th>Commands</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for integration in slack_integrations %}
+            <tr>
+                <td>{{ integration.workspace_name }}</td>
+                <td>{{ integration.default_channel_name }}</td>
+                <td>
+                    <ul>
+                        <li>/blt help</li>
+                        <li>/blt report</li>
+                    </ul>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

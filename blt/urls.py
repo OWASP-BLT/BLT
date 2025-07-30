@@ -329,6 +329,7 @@ from website.views.user import (
     users_view,
     view_thread,
 )
+from website.views.slack import slack_apps_view
 from website.views.video_call import video_call
 
 admin.autodiscover()
@@ -1044,6 +1045,7 @@ urlpatterns = [
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    path("organization/<slug:org_slug>/slack_apps/", slack_apps_view, name="slack_apps_view"),
     path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),

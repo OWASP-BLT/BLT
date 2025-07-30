@@ -122,6 +122,7 @@ class SlackIntegration(models.Model):
         blank=True,
         help_text="Custom welcome message for new members. Use Slack markdown formatting.",
     )
+    commands = models.JSONField(default=list, help_text="A list of available slash commands for the Slack app.")
 
     def __str__(self):
         return f"Slack Integration for {self.integration.organization.name}"
