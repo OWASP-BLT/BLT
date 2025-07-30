@@ -276,7 +276,7 @@ from website.views.project import (
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
-from website.views.Simulation import dashboard
+from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
 from website.views.teams import (
@@ -360,7 +360,10 @@ handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
 urlpatterns = [
-    path("simulation/", dashboard, name="dashboard"),
+    path("simulation/", dashboard, name="simulation_dashboard"),
+    path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
+    path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
+    path("simulation/lab/<int:lab_id>/task/<int:task_id>/submit/", submit_answer, name="submit_answer"),
     path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
     path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),

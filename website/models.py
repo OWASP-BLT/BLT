@@ -2483,6 +2483,49 @@ class Labs(models.Model):
         ordering = ["order"]
 
 
+class Tasks(models.Model):
+    TASK_TYPES = [
+        ("theory", "Theory"),
+        ("simulation", "Simulation"),
+    ]
+
+    lab = models.ForeignKey(Labs, on_delete=models.CASCADE, related_name="tasks")
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    task_type = models.CharField(max_length=20, choices=TASK_TYPES)
+    order = models.PositiveIntegerField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.lab.name} - {self.name}"
+
+    class Meta:
+        verbose_name = "Task"
+        verbose_name_plural = "Tasks"
+        ordering = ["lab", "order"]
+        unique_together = ["lab", "order"]
+
+
+class TaskContent(models.Model):
+    task = models.OneToOneField(Tasks, on_delete=models.CASCADE, related_name="content")
+    theory_content = models.TextField(blank=True)
+    mcq_question = models.TextField(blank=True)
+    mcq_options = models.JSONField(default=list, blank=True)
+    correct_answer = models.CharField(max_length=10, blank=True)  # "A", "B", "C", "D"
+
+    simulation_config = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Content for {self.task.name}"
+
+    class Meta:
+        verbose_name = "Task Content"
+        verbose_name_plural = "Task Contents"
+
+
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
     message = models.TextField()
