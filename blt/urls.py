@@ -279,6 +279,7 @@ from website.views.project import (
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard
+from website.views.slack import slack_apps_view
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
 from website.views.teams import (
@@ -329,7 +330,6 @@ from website.views.user import (
     users_view,
     view_thread,
 )
-from website.views.slack import slack_apps_view
 from website.views.video_call import video_call
 
 admin.autodiscover()
