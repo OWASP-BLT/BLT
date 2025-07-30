@@ -1106,6 +1106,3 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
-
-
-
