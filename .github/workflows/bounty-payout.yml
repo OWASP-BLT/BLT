@@ -85,21 +85,27 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const response = await fetch(`${process.env.API_BASE_URL}/bounty_payout/`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
-              },
-              body: JSON.stringify({
-                issue_number: parseInt(process.env.ISSUE_NUMBER),
-                repo: context.repo.repo,
-                owner: context.repo.owner,
-                bounty_amount: Math.round(parseFloat(process.env.BOUNTY_AMOUNT) * 100) / 100,
-                contributor_username: process.env.CONTRIBUTOR_USERNAME,
-                pr_number: parseInt(process.env.PR_NUMBER)
-              })
-            });
+            let response;
+            try {
+              response = await fetch(`${process.env.API_BASE_URL}/bounty_payout/`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
+                },
+                body: JSON.stringify({
+                  issue_number: parseInt(process.env.ISSUE_NUMBER),
+                  repo: context.repo.repo,
+                  owner: context.repo.owner,
+                  bounty_amount: Math.round(parseFloat(process.env.BOUNTY_AMOUNT) * 100) / 100,
+                  contributor_username: process.env.CONTRIBUTOR_USERNAME,
+                  pr_number: parseInt(process.env.PR_NUMBER)
+                })
+              });
+            } catch (err) {
+              core.setFailed(`Network error while contacting BLT API: ${err.message}`);
+              return;
+            }
             
             if (!response.ok) {
               throw new Error(`API request failed with status ${response.status}: ${await response.text()}`);
