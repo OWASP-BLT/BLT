@@ -102,3 +102,10 @@ jobs:
                 pr_number: parseInt(process.env.PR_NUMBER)
               })
             });
+            
+            if (!response.ok) {
+              throw new Error(`API request failed with status ${response.status}: ${await response.text()}`);
+            }
+            
+            const result = await response.json();
+            console.log('Bounty payout response:', result);
