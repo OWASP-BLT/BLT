@@ -3,7 +3,6 @@ name: Bounty Payout
 on:
   pull_request:
     types: [closed]
-
 jobs:
   process-bounty:
     permissions:
