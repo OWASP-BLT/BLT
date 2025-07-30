@@ -49,7 +49,7 @@ from website.models import (
     Project,
     Repo,
 )
-from website.utils import admin_required, get_client_ip_from_request
+from website.utils import admin_required, get_client_ip
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
@@ -132,7 +132,7 @@ def distribute_bacon(request, contribution_id):
 
 class ProjectBadgeView(APIView):
     def get_client_ip(self, request):
-        return get_client_ip_from_request(request)
+        return get_client_ip(request)
 
     def get(self, request, slug):
         # Get the project or return 404
