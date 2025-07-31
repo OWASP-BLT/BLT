@@ -24,6 +24,38 @@ from django.shortcuts import redirect
 from openai import OpenAI
 from PIL import Image
 
+# website/utils.py
+import requests
+from django.conf import settings
+
+def call_gemini(prompt: str) -> str:
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    headers = {"Content-Type": "application/json"}
+
+    # Add domain-specific context to act like a security assistant
+    context_prompt = (
+        "You are Gemini, a helpful, polite assistant integrated into OWASP BLT, a suite of security tools. "
+        "You help users understand cybersecurity, bug bounty, appsec, secure coding, OWASP Top 10, and other web security concerns. "
+        "Provide clear, well-formatted answers suitable for developers and researchers. Respond in markdown format."
+    )
+
+    full_prompt = f"{context_prompt}\n\nUser's question: {prompt}"
+
+    payload = {
+        "contents": [{"parts": [{"text": full_prompt}]}]
+    }
+
+    params = {"key": settings.GEMINI_API_KEY}
+    response = requests.post(url, headers=headers, json=payload, params=params)
+
+    data = response.json()
+    if "candidates" in data:
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    else:
+        return str(data)
+
+
+
 from website.models import DailyStats
 
 from .models import PRAnalysisReport

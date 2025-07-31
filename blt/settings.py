@@ -101,6 +101,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    
 )
 
 if DEBUG:
@@ -165,7 +166,7 @@ ROOT_URLCONF = "blt.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": ['templates'],   
         "APP_DIRS": False,
         "OPTIONS": {
             "debug": DEBUG,
@@ -629,3 +630,7 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+from dotenv import load_dotenv
+load_dotenv()
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")

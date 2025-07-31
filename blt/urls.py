@@ -358,8 +358,14 @@ router.register(r"organizations", OrganizationViewSet, basename="organizations")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
+    path('', include('website.urls')),
+    path(settings.ADMIN_URL + "/", admin.site.urls),
     path("simulation/", dashboard, name="dashboard"),
     path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
     path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
@@ -1106,3 +1112,7 @@ if settings.DEBUG:
         re_path(r"^__debug__/", include(debug_toolbar.urls)),
     ] + urlpatterns
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+
+    

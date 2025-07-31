@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ask Gemini</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-white text-gray-800 font-sans">
+  <nav class="bg-white shadow-md p-4">
+    <div class="text-red-600 font-bold text-2xl">OWASP BLT</div>
+  </nav>
+
+  <main class="max-w-3xl mx-auto mt-12 px-4">
+    <h1 class="text-3xl font-bold text-gray-900 mb-4">Ask Gemini</h1>
+    <form id="gemini-form" class="mb-6">
+      <textarea id="user-input" rows="4" class="w-full border rounded-md p-4 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Type your question..."></textarea>
+      <button type="submit" class="mt-4 bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600">Submit</button>
+    </form>
+
+    <div id="response-container" class="prose max-w-none"></div>
+  </main>
+
+  <script>
+    const form = document.getElementById('gemini-form');
+    const input = document.getElementById('user-input');
+    const responseContainer = document.getElementById('response-container');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompt = input.value.trim();
+      if (!prompt) return;
+
+      responseContainer.innerHTML = '<p class="text-gray-500">Loading...</p>';
+
+      const response = await fetch('/api/test-gemini/?prompt=' + encodeURIComponent(prompt));
+      const result = await response.json();
+
+      if (result.response) {
+        const formatted = marked.parse(result.response);
+        responseContainer.innerHTML = formatted;
+      } else {
+        responseContainer.innerHTML = '<p class="text-red-600">' + (result.error || 'Something went wrong.') + '</p>';
+      }
+    });
+  </script>
+</body>
+</html>
