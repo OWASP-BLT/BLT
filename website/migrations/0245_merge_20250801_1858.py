@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0244_stakingpool_stakingtransaction_stakingentry"),
         ("website", "0244_tasks_taskcontent"),
