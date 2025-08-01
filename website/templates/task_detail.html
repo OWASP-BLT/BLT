@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="min-h-screen bg-gray-100">
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center mb-2">
+                            <span class="text-sm text-gray-500 mr-2">{{ lab.name }} /</span>
+                            <h1 class="text-2xl font-bold text-gray-900">{{ task.name }}</h1>
+                        </div>
+                        {% if task.description %}<p class="text-gray-600">{{ task.description }}</p>{% endif %}
+                        <div class="mt-2 flex items-center space-x-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if task.task_type == 'theory' %}bg-blue-100 text-blue-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ task.get_task_type_display }}
+                            </span>
+                            <span class="text-sm text-gray-500">Task {{ task.order }} of {{ lab.total_tasks }}</span>
+                        </div>
+                    </div>
+                    <a href="{% url 'lab_detail' lab.id %}"
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        <svg class="w-4 h-4 mr-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to {{ lab.name }}
+                    </a>
+                </div>
+            </div>
+        </header>
+        <main>
+            <div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+                {% if content %}
+                    {% if task.task_type == 'theory' %}
+                        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                            <div class="px-4 py-5 sm:p-6">
+                                <div class="prose max-w-none">{{ content.theory_content|safe }}</div>
+                            </div>
+                        </div>
+                        {% if content.mcq_question %}
+                            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Knowledge Check</h3>
+                                    <div class="mb-6">
+                                        <p class="text-base text-gray-900 mb-4">{{ content.mcq_question }}</p>
+                                        <form id="mcq-form" class="space-y-3">
+                                            {% csrf_token %}
+                                            {% for option in content.mcq_options %}
+                                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                                    <input type="radio"
+                                                           name="answer"
+                                                           value="{{ option.0 }}"
+                                                           class="h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300">
+                                                    <span class="ml-3 text-sm text-gray-900">{{ option }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </form>
+                                        <div class="mt-6 flex justify-between items-center">
+                                            <button id="submit-mcq"
+                                                    class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[#e74c3c] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                                Submit Answer
+                                            </button>
+                                            <div id="mcq-result" class="hidden">
+                                                <div id="result-message" class="text-sm font-medium"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% elif task.task_type == 'simulation' %}
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Simulation Instructions</h3>
+                                    {% if content.simulation_config.scenario %}
+                                        <div class="mb-4">
+                                            <h4 class="text-sm font-medium text-gray-900 mb-2">Scenario:</h4>
+                                            <p class="text-sm text-gray-600">{{ content.simulation_config.scenario|title }}</p>
+                                        </div>
+                                    {% endif %}
+                                    {% if content.simulation_config.target_url %}
+                                        <div class="mb-4">
+                                            <h4 class="text-sm font-medium text-gray-900 mb-2">Target URL:</h4>
+                                            <code class="text-sm bg-gray-100 px-2 py-1 rounded">{{ content.simulation_config.target_url }}</code>
+                                        </div>
+                                    {% endif %}
+                                    {% if content.simulation_config.vulnerable_parameters %}
+                                        <div class="mb-4">
+                                            <h4 class="text-sm font-medium text-gray-900 mb-2">Vulnerable Parameters:</h4>
+                                            <ul class="text-sm text-gray-600">
+                                                {% for param in content.simulation_config.vulnerable_parameters %}<li>• {{ param }}</li>{% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                    {% if content.simulation_config.success_criteria %}
+                                        <div class="mb-4">
+                                            <h4 class="text-sm font-medium text-gray-900 mb-2">Success Criteria:</h4>
+                                            <p class="text-sm text-gray-600">{{ content.simulation_config.success_criteria }}</p>
+                                        </div>
+                                    {% endif %}
+                                    {% if content.simulation_config.hints %}
+                                        <div class="mb-4">
+                                            <h4 class="text-sm font-medium text-gray-900 mb-2">Hints:</h4>
+                                            <ul class="text-sm text-gray-600 space-y-1">
+                                                {% for hint in content.simulation_config.hints %}
+                                                    <li class="flex items-start">
+                                                        <span class="text-[#e74c3c] mr-2">💡</span>
+                                                        {{ hint }}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Try Your Payload</h3>
+                                    <form id="simulation-form">
+                                        {% csrf_token %}
+                                        <div class="mb-4">
+                                            <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your SQL injection payload:</label>
+                                            <textarea id="payload"
+                                                      name="payload"
+                                                      rows="4"
+                                                      class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                      placeholder="Enter your SQL injection payload here..."></textarea>
+                                        </div>
+                                        <button id="submit-simulation"
+                                                type="submit"
+                                                class="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[#e74c3c] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                            Test Payload
+                                        </button>
+                                    </form>
+                                    <div id="simulation-result" class="mt-4 hidden">
+                                        <div id="simulation-message" class="p-3 rounded-md"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <p class="text-gray-500">Task content is not available yet.</p>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="mt-8 flex justify-between">
+                    <!-- will update this in next PR -->
+                    <!-- {% if task.order > 1 %}
+                        <a href="#" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Previous Task
+                        </a>
+                    {% else %}
+                        <div></div>
+                    {% endif %}
+                    {% if task.order < lab.total_tasks %}
+                        <a href="#" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-opacity-90">
+                            Next Task
+                            <svg class="w-4 h-4 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    {% endif %} -->
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        document.getElementById('submit-mcq')?.addEventListener('click', function() {
+            const form = document.getElementById('mcq-form');
+            const formData = new FormData(form);
+            const selectedAnswer = formData.get('answer');
+            
+            if (!selectedAnswer) {
+                alert('Please select an answer');
+                return;
+            }
+            
+            fetch("{% url 'submit_answer' lab.id task.id %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'answer=' + encodeURIComponent(selectedAnswer)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('mcq-result');
+                const messageDiv = document.getElementById('result-message');
+                
+                resultDiv.classList.remove('hidden');
+                messageDiv.textContent = data.message;
+                
+                if (data.correct) {
+                    messageDiv.className = 'text-sm font-medium text-green-600';
+                } else {
+                    messageDiv.className = 'text-sm font-medium text-red-600';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+
+        document.getElementById('simulation-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const payload = document.getElementById('payload').value.trim();
+            
+            if (!payload) {
+                alert('Please enter a payload');
+                return;
+            }
+            
+            fetch("{% url 'submit_answer' lab.id task.id %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'payload=' + encodeURIComponent(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('simulation-result');
+                const messageDiv = document.getElementById('simulation-message');
+                
+                resultDiv.classList.remove('hidden');
+                messageDiv.textContent = data.message;
+                
+                if (data.correct) {
+                    messageDiv.className = 'p-3 rounded-md bg-green-100 text-green-800';
+                } else {
+                    messageDiv.className = 'p-3 rounded-md bg-red-100 text-red-800';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    </script>
+{% endblock %}
