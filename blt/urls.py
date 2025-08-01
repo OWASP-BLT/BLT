@@ -51,6 +51,7 @@ from website.views.bitcoin import (
     update_submission_status,
 )
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
+from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -263,6 +264,7 @@ from website.views.ossh import (
     ossh_results,
 )
 from website.views.project import (
+    GitHubIssueBadgeView,
     ProjectBadgeView,
     ProjectsDetailView,
     ProjectView,
@@ -277,6 +279,7 @@ from website.views.project import (
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard
+from website.views.slack import slack_apps_view
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
 from website.views.staking_competitive import (
@@ -1057,6 +1060,7 @@ urlpatterns = [
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    path("organization/<slug:org_slug>/slack_apps/", slack_apps_view, name="slack_apps_view"),
     path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
@@ -1112,6 +1116,9 @@ urlpatterns = [
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
+    path("bounty_payout/", bounty_payout, name="bounty_payout"),
+    # Badge URLs
+    path("issues/<int:issue_number>/badge/", GitHubIssueBadgeView.as_view(), name="github-issue-badge"),
 ]
 
 if settings.DEBUG:
