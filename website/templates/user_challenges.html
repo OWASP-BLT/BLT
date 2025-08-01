@@ -73,16 +73,18 @@
                                             </div>
                                             <span class="text-sm font-medium text-gray-700">Personal Challenge</span>
                                         </div>
-                                        {% if challenge.progress < 100 %}
-                                            <button class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
-                                                Start Challenge
-                                            </button>
-                                        {% else %}
-                                            <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg">
-                                                <i class="fas fa-trophy mr-2"></i>
-                                                Challenge Completed!
-                                            </div>
-                                        {% endif %}
+                                        <div class="flex items-center gap-3">
+                                            {% if challenge.progress < 100 %}
+                                                <button class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                                                    Start Challenge
+                                                </button>
+                                            {% else %}
+                                                <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg">
+                                                    <i class="fas fa-trophy mr-2"></i>
+                                                    Challenge Completed!
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

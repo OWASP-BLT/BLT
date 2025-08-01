@@ -28,7 +28,12 @@ from website.models import DailyStats
 
 from .models import PRAnalysisReport
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+# Only initialize OpenAI client if API key is available and valid
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if openai_api_key and openai_api_key.startswith("sk-"):
+    client = OpenAI(api_key=openai_api_key)
+else:
+    client = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -1024,6 +1029,13 @@ def analyze_contribution(instance, action_type):
     Analyze a contribution using OpenAI to determine BACON token reward.
     Returns a score between 1-50 based on complexity, impact, and quality.
     """
+    # If OpenAI client is not available, return default score
+    if client is None:
+        logging.warning("OpenAI client not available (missing or invalid API key), using default BACON score")
+        model_name = instance._meta.model_name
+        is_security = getattr(instance, "is_security", False)
+        return get_default_bacon_score(model_name, is_security)
+
     try:
         # Extract relevant data from the instance
         model_name = instance._meta.model_name

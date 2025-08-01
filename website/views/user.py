@@ -985,6 +985,106 @@ class UserChallengeListView(View):
             {"challenges": challenges, "user_challenges": user_challenges},
         )
 
+    def post(self, request):
+        """Handle manual challenge progress updates"""
+        import json
+
+        from django.http import JsonResponse
+
+        try:
+            data = json.loads(request.body)
+            challenge_id = data.get("challenge_id")
+            action = data.get("action")  # 'join', 'update_progress', 'complete'
+            progress_value = data.get("progress", 0)
+
+            challenge = get_object_or_404(Challenge, id=challenge_id, challenge_type="single")
+
+            if action == "join":
+                # Add user to challenge participants
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+                return JsonResponse({"success": True, "message": "Joined challenge successfully!"})
+
+            elif action == "update_progress":
+                # Update progress manually
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+
+                # Ensure progress is between 0 and 100
+                progress_value = max(0, min(100, int(progress_value)))
+                challenge.progress = progress_value
+                challenge.save()
+
+                # Check if challenge is now completed
+                if progress_value == 100 and not challenge.completed:
+                    challenge.completed = True
+                    challenge.completed_at = timezone.now()
+                    challenge.save()
+
+                    # Award points and BACON
+                    Points.objects.create(
+                        user=request.user, score=challenge.points, reason=f"Completed '{challenge.title}' challenge"
+                    )
+
+                    from website.feed_signals import giveBacon
+
+                    giveBacon(request.user, amt=challenge.bacon_reward)
+
+                    # Handle staking pool completion
+                    from website.challenge_signals import handle_staking_pool_completion
+
+                    handle_staking_pool_completion(request.user, challenge)
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": f"Challenge completed! Earned {challenge.points} points and {challenge.bacon_reward} BACON tokens!",
+                            "completed": True,
+                        }
+                    )
+
+                return JsonResponse({"success": True, "message": "Progress updated successfully!"})
+
+            elif action == "complete":
+                # Mark challenge as 100% complete
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+
+                if not challenge.completed:
+                    challenge.progress = 100
+                    challenge.completed = True
+                    challenge.completed_at = timezone.now()
+                    challenge.save()
+
+                    # Award points and BACON
+                    Points.objects.create(
+                        user=request.user, score=challenge.points, reason=f"Completed '{challenge.title}' challenge"
+                    )
+
+                    from website.feed_signals import giveBacon
+
+                    giveBacon(request.user, amt=challenge.bacon_reward)
+
+                    # Handle staking pool completion
+                    from website.challenge_signals import handle_staking_pool_completion
+
+                    handle_staking_pool_completion(request.user, challenge)
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": f"Challenge completed! Earned {challenge.points} points and {challenge.bacon_reward} BACON tokens!",
+                            "completed": True,
+                        }
+                    )
+                else:
+                    return JsonResponse({"success": False, "message": "Challenge already completed!"})
+
+            return JsonResponse({"success": False, "message": "Invalid action"})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": "An error occurred while updating the challenge"})
+
 
 @login_required
 def messaging_home(request):
