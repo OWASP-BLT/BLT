@@ -1035,7 +1035,7 @@ def analyze_contribution(instance, action_type):
         model_name = instance._meta.model_name
         is_security = getattr(instance, "is_security", False)
         return get_default_bacon_score(model_name, is_security)
-    
+
     try:
         # Extract relevant data from the instance
         model_name = instance._meta.model_name
