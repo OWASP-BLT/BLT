@@ -3,32 +3,32 @@ import os
 from typing import Dict, List
 
 from django.conf import settings
-from models import PullRequest
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
 from unidiff import PatchSet
 
 from website.aibot.chunk_utils import chunk_file
 from website.aibot.clients import q_client
+from website.aibot.models import ChunkType, PullRequest
 from website.aibot.network import fetch_raw_content, generate_embedding
-from website.aibot.utils import _generate_uuid, sanitize_backslash
+from website.aibot.utils import generate_uuid, sanitize_backslash
 
 logger = logging.getLogger(__name__)
 
 
-def ensure_collection(qdrant_client: QdrantClient, qdrant_collection: str, qdrant_vector_size: int) -> None:
+def ensure_collection(q_client: QdrantClient, qdrant_collection: str, qdrant_vector_size: int) -> None:
     """
     Ensure the Qdrant collection exists.
 
     Checks if the specified Qdrant collection exists, and creates it with the given vector size
     and cosine distance if it does not exist.
     """
-    collections = [c.name for c in qdrant_client.get_collections().collections]
+    collections = [c.name for c in q_client.get_collections().collections]
     if qdrant_collection in collections:
         logger.debug("Qdrant collection '%s' already exists.", qdrant_collection)
         return
     try:
-        qdrant_client.create_collection(
+        q_client.create_collection(
             collection_name=qdrant_collection,
             vectors_config={"size": int(qdrant_vector_size), "distance": "Cosine"},
         )
@@ -42,10 +42,10 @@ def ensure_collection(qdrant_client: QdrantClient, qdrant_collection: str, qdran
         raise
 
 
-def upsert_to_qdrant(qdrant_client: QdrantClient, qdrant_collection: str, chunk: Dict, embedding: List[float]) -> None:
+def upsert_to_qdrant(q_client: QdrantClient, qdrant_collection: str, chunk: Dict, embedding: List[float]) -> None:
     """Upsert the embedding in specified Qdrant collection."""
     point = PointStruct(
-        id=_generate_uuid(chunk["file"], chunk["start_line"], chunk["end_line"]),
+        id=generate_uuid(chunk["file"], chunk["start_line"], chunk["end_line"]),
         vector=embedding,
         payload={
             "file_path": chunk["file"],
@@ -55,7 +55,7 @@ def upsert_to_qdrant(qdrant_client: QdrantClient, qdrant_collection: str, chunk:
             "end_line": chunk["end_line"],
         },
     )
-    qdrant_client.upsert(
+    q_client.upsert(
         collection_name=qdrant_collection,
         points=[point],
     )
@@ -64,9 +64,9 @@ def upsert_to_qdrant(qdrant_client: QdrantClient, qdrant_collection: str, chunk:
 def create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet) -> None:
     source_collection = "repo_embeddings"
     sanitized_head_ref = sanitize_backslash(pr_instance.head_branch)
-    target_collection = f"temp_{sanitized_head_ref}_{pr_instance.number}"
+    temp_collection = f"temp_{sanitized_head_ref}_{pr_instance.number}"
     ensure_collection(q_client, source_collection, settings.QDRANT_VECTOR_SIZE)
-    ensure_collection(q_client, target_collection, settings.QDRANT_VECTOR_SIZE)
+    ensure_collection(q_client, temp_collection, settings.QDRANT_VECTOR_SIZE)
 
     for file in patch:
         if file.is_modified_file:
@@ -86,6 +86,44 @@ def create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet) -> None
             for chunk in chunks:
                 embedding = generate_embedding(chunk["chunk"], chunk.get("name"))
                 if embedding:
-                    upsert_to_qdrant(q_client, target_collection, chunk, embedding)
+                    upsert_to_qdrant(q_client, temp_collection, chunk, embedding)
 
-    return target_collection
+    return source_collection, temp_collection
+
+
+def get_similar_merged_chunks(
+    q_client: QdrantClient,
+    source_collection: str,
+    temp_collection: str,
+    query: str,
+    k: int,
+    rename_mappings: Dict[str, str],
+) -> List[ChunkType]:
+    main_points = q_client.query_points(collection_name=source_collection, query=query, limit=k)
+    temp_points = q_client.query_points(collection_name=temp_collection, query=query, limit=k)
+
+    relevant_chunks: Dict[str, ChunkType] = {}
+    overwrite_log = []
+
+    for point in main_points.points:
+        chunk_data = point.payload
+        key = chunk_data.get("file") or chunk_data.get("file_path")
+        relevant_chunks[key] = chunk_data
+
+    for point in temp_points.points:
+        chunk_data = point.payload
+        key = chunk_data.get("file") or chunk_data.get("file_path")
+        if key in relevant_chunks:
+            log_entry = {
+                "original_key": key,
+                "action": "overwritten",
+                "new_key": rename_mappings.get(key, key),
+                "old_chunk_preview": relevant_chunks[key],
+            }
+            overwrite_log.append(log_entry)
+            logger.info("Found existing key: %s. Overwriting", key)
+            del relevant_chunks[key]
+            key = rename_mappings.get(key, key)
+        relevant_chunks[key] = chunk_data
+
+    return list(relevant_chunks.values())

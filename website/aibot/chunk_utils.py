@@ -4,11 +4,12 @@ import logging
 import math
 import os
 from collections import defaultdict
-from typing import List, Set, Tuple, TypedDict
+from typing import List, Set, Tuple
 
 import yaml
 from langchain.text_splitter import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 
+from website.aibot.models import ChunkType
 from website.aibot.utils import approximate_token_count_char
 
 logger = logging.getLogger(__name__)
@@ -18,19 +19,6 @@ MAX_TOKENS = 1500
 OVERLAP_LINES = 7
 CHUNK_OVERLAP = 200
 CHUNK_SIZE = 1000
-
-
-class ChunkType(TypedDict, total=False):
-    """Represents a chunk of code extracted from code files."""
-
-    type: str
-    name: str
-    code: str
-    file: str
-    start_line: int
-    end_line: int
-    part_index: int
-    part_total: int
 
 
 def _split_chunk_lines(
@@ -95,7 +83,8 @@ def chunk_file(content: str, file_path: str) -> List[ChunkType]:
     file_path_lower = file_path.lower()
     file_name = os.path.basename(file_path_lower)
     chunkers = {
-        "settings.py": chunk_settings_files,
+        "settings.py": chunk_settings_file,
+        "urls.py": chunk_urls_file,
         ".py": chunk_python_file,
         ".html": chunk_html_file,
         ".htm": chunk_html_file,
@@ -373,7 +362,29 @@ def chunk_python_file(content: str, file_path: str) -> List[ChunkType]:
     return chunks
 
 
-def chunk_settings_files(content: str, file_path: str) -> List[ChunkType]:
+def chunk_urls_file(content: str, file_path: str) -> List[ChunkType]:
+    """
+    Splits the contents of a URL-related file into overlapping text chunks.
+
+    Args:
+        content (str): The raw string content of the file to be chunked.
+        file_path (str): Path to the original file, used for metadata or reference.
+
+    Returns:
+        List[ChunkType]: A list of processed text chunks, each containing
+        a portion of the file with specified overlap for context preservation.
+
+    Note:
+        This function wraps `chunk_text_file` with fixed parameters:
+        - chunk_size: 300 characters
+        - chunk_overlap: 50 characters
+    """
+    chunk_size = 300
+    chunk_overlap = 50
+    return chunk_text_file(content, file_path, chunk_size, chunk_overlap)
+
+
+def chunk_settings_file(content: str, file_path: str) -> List[ChunkType]:
     """
     Parse and split a Django settings.py file into meaningful logical chunks.
 

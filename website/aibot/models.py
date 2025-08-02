@@ -1,6 +1,7 @@
 import json
 import logging
 from json import JSONDecodeError
+from typing import TypedDict
 
 from website.aibot.network import fetch_pr_files
 
@@ -13,6 +14,19 @@ class BranchMismatchError(Exception):
     pass
 
 
+class ChunkType(TypedDict, total=False):
+    """Represents a chunk of code extracted from code files."""
+
+    type: str
+    name: str
+    chunk: str
+    file: str
+    start_line: int
+    end_line: int
+    part_index: int
+    part_total: int
+
+
 class PullRequest:
     def __init__(self, payload):
         """Responsible for creating a PR object for convenience.
@@ -23,6 +37,7 @@ class PullRequest:
         self.api_url: str = payload["pull_request"]["url"]
         self.diff_url: str = payload["pull_request"]["diff_url"]
         self.files_url: str = self.api_url + "/files"
+        self.comments_url: str = payload["pull_request"]["comments_url"]
         self.id: int = payload["pull_request"]["id"]
         self.state: str = payload["pull_request"]["state"]
         self.author: str = payload["pull_request"]["user"]["login"]
@@ -37,6 +52,7 @@ class PullRequest:
         self._verify_branch()
         self._load_pr_files()
 
+    # Make the error msg more readable, don't crash the entire app
     def _verify_branch(self):
         if self.default_branch != self.base_branch:
             logger.error(

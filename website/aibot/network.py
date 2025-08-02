@@ -14,6 +14,8 @@ MAX_RETRIES = 5
 INITIAL_DELAY = 2
 RETRY_HTTP_CODES = {500, 502, 503, 504, 429}
 
+# Retry based on criticality and dependency
+
 
 def _get_retry_wait_time(retry_state):
     """Custom wait function to respect GitHub's Retry-After header."""
@@ -97,6 +99,29 @@ def fetch_raw_content(f_raw_url: str) -> Optional[str]:
     if response.status_code == 200:
         return response.text
 
+    return None
+
+
+@retry(
+    stop=stop_after_attempt(MAX_RETRIES),
+    wait=_get_retry_wait_time,
+    retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
+    before_sleep=before_sleep_log(logger, logging.INFO),
+)
+def post_github_comment(comments_url: str, comment_body: str) -> Optional[str]:
+    headers = {
+        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+    }
+
+    payload = {"body": comment_body}
+
+    response = requests.post(comments_url, headers=headers, json=payload, timeout=5)
+    if response.status_code in RETRY_HTTP_CODES:
+        response.raise_for_status()
+    if response.status_code == 201:
+        return response.text
     return None
 
 

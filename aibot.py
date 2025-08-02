@@ -7,7 +7,6 @@ import hashlib
 import hmac
 import json
 import logging
-from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -19,10 +18,11 @@ from jsonschema import ValidationError, validate
 from unidiff import PatchedFile, PatchSet
 
 from website.aibot.aibot_env import configure_settings, load_prompts, load_validation_schemas, validate_settings
+from website.aibot.clients import q_client
 from website.aibot.models import PullRequest
 from website.aibot.network import fetch_pr_diff, generate_embedding, generate_gemini_response
-from website.aibot.qdrant_utils import create_temp_pr_collection
-from website.aibot.utils import ChunkType, extract_json_block
+from website.aibot.qdrant_utils import create_temp_pr_collection, get_similar_merged_chunks
+from website.aibot.utils import analyze_code_ruff_bandit, extract_json_block
 
 configure_settings()
 validate_settings()
@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 SCHEMAS = load_validation_schemas()
 PROMPTS = load_prompts()
+
+# Scalability
 
 
 def get_aibot_pr_analysis_comment_marker() -> str:
@@ -302,21 +304,47 @@ def aibot_handle_new_pr_opened(pr_instance: PullRequest) -> None:
     elif not pr_instance.raw_url_map:
         logger.warning("Missing raw URL map for PR instance: %s", pr_instance)
     else:
-        temp_collection = create_temp_pr_collection(pr_instance, patch)
+        source_collection, temp_collection = create_temp_pr_collection(pr_instance, patch)
+        source_collection = "repo_embeddings"
+        temp_collection = "temp_aibot-embedding_16"
         logger.info("Temporary collection created: %s", temp_collection)
 
-    rename_mappings = {}
-    for file in patch:
-        rename_mappings[file.source_file] = file.target_file
+        rename_mappings = {}
+        for file in patch:
+            rename_mappings[file.source_file] = file.target_file
 
-    # TODO manage extraction of source repo or store it
-    source_collection = "repo_embeddings"
+        if source_collection and temp_collection:
+            similar_chunks = get_similar_merged_chunks(
+                q_client, source_collection, temp_collection, vector_query, k, rename_mappings
+            )
+            analysis_output = analyze_code_ruff_bandit(similar_chunks)
+        else:
+            logger.warning("Missing collection names: source=%s, temp=%s", source_collection, temp_collection)
 
-    similar_chunks = get_similar_merged_chunks(source_collection, temp_collection, vector_query, k)
+        formatted_snippets = []
+        for snippet in similar_chunks:
+            file_path = snippet.get("file_path", "Unknown")
+            chunk = snippet.get("chunk", "")
+            start = snippet.get("start_line", "?")
+            end = snippet.get("end_line", "?")
 
-    analysis_output = get_static_analysis_output(similar_chunks)
+            formatted_snippet = f"File: {file_path}\n" f"Lines: {start}–{end}\n" f"```python\n{chunk}\n```"
+            formatted_snippets.append(formatted_snippet)
 
-    prompt = None
+        joined_snippets = "\n\n".join(formatted_snippets)
+
+        prompt = PROMPTS["PR_REVIEWER_PROMPT"]
+        placeholders = {
+            "<INSERT_PR_TITLE>": pr_instance.title or "Not found",
+            "<INSERT_PR_BODY>": pr_instance.body or "Not found",
+            "<INSERT_PR_DIFF>": processed_diff or "Not found",
+            "<INSERT_STATIC_ANALYSIS_OUTPUT>": analysis_output or "Not found",
+            "<INSERT_RELEVANT_SNIPPETS>": joined_snippets or "Not found",
+        }
+
+        for key, value in placeholders.items():
+            prompt = prompt.replace(key, str(value))
+
     ai_response = _generate_response(prompt)
     if not ai_response:
         logger.error("Failed to generate AI response for new PR.")
@@ -332,10 +360,6 @@ def aibot_handle_new_pr_opened(pr_instance: PullRequest) -> None:
         logger.info("AI Bot response posted successfully: %s", ai_response)
     else:
         logger.error("Failed to post AI Bot response. Response: %s", getattr(response, "text", "No response"))
-
-
-def get_static_analysis_output(chunks: List[ChunkType]) -> json:
-    return
 
 
 def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
@@ -607,39 +631,6 @@ def validate_payload_schema(payload: Dict[str, Any], schema: Dict[str, Any]) -> 
         None. Raises ValidationError if the payload does not conform to the schema, which is handled by the caller.
     """
     validate(instance=payload, schema=schema)
-
-
-def get_similar_merged_chunks(
-    source_collection: str, temp_collection: str, query: str, k: int, rename_mappings: Dict[str, str]
-) -> List[ChunkType]:
-    main_points = qdrant_client.query_points(collection_name=source_collection, query=query, limit=k)
-    temp_points = qdrant_client.query_points(collection_name=temp_collection, query=query, limit=k)
-
-    relevant_chunks = defaultdict(list)
-    overwrite_log = []
-
-    for point in main_points.points:
-        chunk_data = point.payload
-        key = chunk_data["file_path"]
-        relevant_chunks[key] = chunk_data
-
-    for point in temp_points.points:
-        chunk_data = point.payload
-        key = chunk_data["file_path"]
-        if relevant_chunks[key]:
-            log_entry = {
-                "original_key": key,
-                "action": "overwritten",
-                "new_key": rename_mappings.get(key, key),
-                "old_chunk_preview": relevant_chunks[key],
-            }
-            overwrite_log.append(log_entry)
-            print(f"Found existing key: {key}. Overwriting")
-            del relevant_chunks[key]
-            key = rename_mappings.get(key, key)
-        relevant_chunks[key] = chunk_data
-
-    return relevant_chunks
 
 
 def process_diff(diff_text: str) -> str:
