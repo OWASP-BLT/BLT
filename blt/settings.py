@@ -601,6 +601,9 @@ BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
 
+# OpenAI API Configuration
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
 ASGI_APPLICATION = "blt.asgi.application"
 
 CHANNEL_LAYERS = {
