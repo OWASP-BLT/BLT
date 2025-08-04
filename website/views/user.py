@@ -32,6 +32,8 @@ from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
+    BaconEarning,
+    BaconSubmission,
     Badge,
     Challenge,
     Contributor,
@@ -297,6 +299,17 @@ class UserProfileDetailView(DetailView):
 
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        # Add bacon earning data
+        bacon_earning = BaconEarning.objects.filter(user=user).first()
+        print(f"Bacon earning for {user.username}: {bacon_earning}")
+        context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
+
+        # Get bacon submission stats
+        context["bacon_submissions"] = {
+            "pending": BaconSubmission.objects.filter(user=user, transaction_status="pending").count(),
+            "completed": BaconSubmission.objects.filter(user=user, transaction_status="completed").count(),
+        }
+
         milestones = [7, 15, 30, 100, 180, 365]
         base_milestone = 0
         next_milestone = 0
@@ -960,6 +973,11 @@ class UserChallengeListView(View):
             else:
                 # If the user is not participating, set progress to 0
                 challenge.progress = 0
+
+            # Calculate the progress circle offset (same as team challenges)
+            circumference = 125.6
+            challenge.stroke_dasharray = circumference
+            challenge.stroke_dashoffset = circumference - (circumference * challenge.progress / 100)
 
         return render(
             request,
