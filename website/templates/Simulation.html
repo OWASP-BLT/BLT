@@ -72,7 +72,8 @@
                                     <div class="mt-2 text-sm text-gray-600 text-right">Progress: {{ lab.progress }}%</div>
                                 </div>
                                 <!-- Start/Continue Button -->
-                                <button class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                <a href="{% url 'lab_detail' lab.id %}"
+                                   class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                                     {% if lab.progress > 0 %}
                                         Continue Lab
                                     {% else %}
@@ -85,7 +86,7 @@
                                          stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                     </svg>
-                                </button>
+                                </a>
                             </div>
                         </div>
                     {% endfor %}
