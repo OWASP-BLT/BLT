@@ -762,7 +762,6 @@ class RepoDetailView(DetailView):
                 return response.json()
             return []
         except Exception as e:
-            print(f"Error fetching GitHub contributors: {e}")
             return []
 
     def fetch_activity_data(self, owner, repo_name):
@@ -807,7 +806,6 @@ class RepoDetailView(DetailView):
                 try:
                     data[key] = future.result()
                 except Exception as e:
-                    print(f"Error fetching {key}: {e}")
                     data[key] = []
 
         # Processing data for charts
@@ -1269,14 +1267,10 @@ class RepoDetailView(DetailView):
             filter_type = self.request.GET.get("filter", "all")
             page = int(self.request.GET.get("page", 1))
             per_page = 10
-            print(f"[DEBUG] repo.repo_url: {repo.repo_url}")
             repo_path = repo.repo_url.split("github.com/")[-1]
-            print(f"[DEBUG] repo_path: {repo_path}")
             owner, repo_name = repo_path.split("/")
-            print(f"[DEBUG] Owner: {owner}, Repo Name: {repo_name}")
 
             api_url = f"https://api.github.com/repos/{owner}/{repo_name}/stargazers"
-            print(f"[DEBUG] Stargazers API URL: {api_url}")
             headers = {"Accept": "application/vnd.github.v3+json"}
             if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
                 headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
@@ -1288,11 +1282,6 @@ class RepoDetailView(DetailView):
             while True:
                 paginated_url = f"{api_url}?page={current_page}&per_page={api_per_page}"
                 response = requests.get(paginated_url, headers=headers)
-                print(f"[DEBUG] Stargazers API page {current_page} status: {response.status_code}")
-                try:
-                    print(f"[DEBUG] Stargazers API response body (first 500 chars): {response.text[:500]}")
-                except Exception as debug_e:
-                    print(f"[DEBUG] Could not print response body: {debug_e}")
                 if response.status_code == 200:
                     page_stargazers = response.json()
                     if not page_stargazers:
@@ -1320,7 +1309,6 @@ class RepoDetailView(DetailView):
                 context["stargazers_error"] = "Unknown error fetching stargazers."
 
             if "stargazers" not in context:
-                # Apply filtering based on filter_type
                 if filter_type == "recent":
                     all_stargazers.reverse()
                 total_stargazers = len(all_stargazers)
@@ -1335,7 +1323,6 @@ class RepoDetailView(DetailView):
                 context["current_page"] = page
                 context["filter_type"] = filter_type
         except Exception as e:
-            print(f"[DEBUG] Exception in stargazers fetch: {e}")
             context["stargazers"] = []
             context["stargazers_error"] = "Error fetching stargazers"
             context["total_stargazers"] = 0
