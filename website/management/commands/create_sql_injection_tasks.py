@@ -13,7 +13,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("SQL Injection lab not found. Please run create_initial_labs first."))
             return
 
-        # Define the 10 SQL injection tasks
         tasks_data = [
             {
                 "name": "Introduction to SQL Injection",
