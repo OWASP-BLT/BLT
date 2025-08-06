@@ -16,20 +16,23 @@
     Set up your Bug Bounty contest by adding domain information, organization details, URLs, and uploading necessary images. Start your competition with all the right assets.
 {% endblock og_description %}
 {% block body %}
-    <div class="bg-[#F3F5F7] flex flex-col items-center">
-        <div class="w-full mt-5">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Add Domain</p>
+    <div class="bg-[#fdfeff] flex flex-col items-center md:max-w-[1700px] md:mx-auto mx-2">
+        <div class="w-full mt-5 px-8">
+            <h1 class="text-[#e74c3c] font-satoshi font-bold text-[35px] ">Add Domain</h1>
+            <p class="text-gray-600 text-sm ">
+                Create your new domain to start your bug bounty contest and begin receiving reports from security researchers.
+            </p>
         </div>
         <form method='post'
               action="#"
               enctype="multipart/form-data"
-              class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
+              class="w-[96%] bg-white p-10 my-10 border border-gray-200 rounded-xl shadow-md">
             {% csrf_token %}
             <div class="pb-12">
-                <h2 class="text-base font-semibold leading-7 text-gray-900">Domain Information</h2>
-                <p class="mt-1 text-sm leading-6 text-gray-600">Use a permanent address where you can receive mail.</p>
+                <h2 class="text-xl font-semibold text-gray-900">Domain Information</h2>
+                <p class="mt-1 text-sm text-gray-600">Use a permanent address where you can receive mail.</p>
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                    <div class="sm:col-span-3">
+                    <div class="sm:col-span-2">
                         <label for="domain_name"
                                class="block text-sm font-medium leading-6 text-gray-900">Domain Name</label>
                         <div class="mt-2">
@@ -39,12 +42,12 @@
                                    autocomplete="domain_name"
                                    placeholder="domain.xyz"
                                    required
-                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
-                    <div class="sm:col-span-3">
+                    <div class="sm:col-span-2">
                         <label for="domain_url"
-                               class="block text-sm font-medium leading-6 text-gray-900">Domain Url</label>
+                               class="block text-sm font-medium leading-6 text-gray-900">Domain URL</label>
                         <div class="mt-2">
                             <input type="text"
                                    name="domain_url"
@@ -52,24 +55,27 @@
                                    autocomplete="domain_url"
                                    placeholder="https://domain.xyz"
                                    required
-                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
-                    <div class="sm:col-span-3">
+                    <div class="sm:col-span-2">
                         <label for="organization"
-                               class="block text-sm font-medium leading-6 text-gray-900 ">Organization</label>
-                        <div class="mt-2">
+                               class="block text-sm font-medium leading-6 text-gray-900">
+                            Organization <span class="text-xs text-gray-500">(Choose the organization this domain belongs to)</span>
+                        </label>
+                        <div class="mt-2 w-full">
                             <select id="organization"
                                     name="organization"
                                     autocomplete="organization-name"
-                                    class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:max-w-xs sm:text-sm sm:leading-6">
+                                    class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 bg-white transition-colors duration-200 cursor-pointer sm:text-sm sm:leading-6">
+                                <option value="" disabled selected>Select an organization</option>
                                 {% for organization in organizations %}
-                                    <option value="{{ organization.organization_id }}">{{ organization.name }}</option>
+                                    <option value="{{ organization.organization_id }}" class="py-2">{{ organization.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
-                    <div class="sm:col-span-2 sm:col-start-1">
+                    <div class="sm:col-span-2">
                         <label for="github_url"
                                class="block text-sm font-medium leading-6 text-gray-900">
                             Github Repo URL (Optional)
@@ -80,27 +86,25 @@
                                    id="github_url"
                                    autocomplete="github"
                                    placeholder="https://github.com/repo"
-                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
                     <div class="sm:col-span-2">
                         <label for="twitter_url"
-                               class="block text-sm font-medium leading-6 text-gray-900">
-                            Domain Twitter URL (Optional)
-                        </label>
+                               class="block text-sm font-medium leading-6 text-gray-900">Twitter URL (Optional)</label>
                         <div class="mt-2">
                             <input type="text"
                                    name="twitter_url"
                                    id="twitter_url"
                                    autocomplete="twitter"
                                    placeholder="https://twitter.com/handle"
-                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
                     <div class="sm:col-span-2">
                         <label for="facebook_url"
                                class="block text-sm font-medium leading-6 text-gray-900">
-                            Domain Facebook URL (Optional)
+                            Facebook URL (Optional)
                         </label>
                         <div class="mt-2">
                             <input type="text"
@@ -108,7 +112,7 @@
                                    id="facebook_url"
                                    autocomplete="facebook"
                                    placeholder="https://facebook.com/handle"
-                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
                 </div>
@@ -116,52 +120,80 @@
             <div class="space-y-12">
                 <div class="border-b border-gray-900/10 pb-12">
                     <div class="col-span-full mb-5">
-                        <label for="domain_logo"
-                               class="block text-sm font-medium leading-6 text-gray-900">Domain Logo</label>
-                        <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
-                            <div id="previewLogoDiv"
-                                 class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
-                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
-                                </svg>
+                        <label for="logo" class="block text-sm font-medium leading-6 text-gray-900">Domain Logo</label>
+                        <div class="mt-2 flex flex-col gap-4">
+                            <div class="flex items-center gap-x-3">
+                                <label for="logo" class="relative cursor-pointer">
+                                    <div id="previewLogoDiv"
+                                         class="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 hover:border-[#e74c3c] transition-colors duration-200">
+                                        <img id="logoPreview"
+                                             height="128"
+                                             width="128"
+                                             class="absolute inset-0 h-full w-full object-cover hidden rounded-2xl"
+                                             alt="Logo preview" />
+                                        <div id="defaultLogoIcon"
+                                             class="absolute inset-0 flex items-center justify-center text-[#e74c3c]">
+                                            <svg class="h-16 w-16"
+                                                 viewBox="0 0 24 24"
+                                                 fill="currentColor"
+                                                 aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <input id="logo"
+                                           name="logo"
+                                           type="file"
+                                           accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                           class="sr-only"
+                                           onchange="previewUploadedImage(this, 'logoPreview', 'defaultLogoIcon', 'removeLogo')" />
+                                </label>
+                                <div class="flex flex-col gap-2">
+                                    <button type="button"
+                                            id="removeLogo"
+                                            onclick="removeUploadedImage('logo', 'logoPreview', 'defaultLogoIcon', 'removeLogo')"
+                                            class="hidden text-sm text-[#e74c3c] hover:text-red-700 px-4 py-2 border border-[#e74c3c] rounded-md hover:bg-red-50 transition-colors duration-200">
+                                        <span class="inline-flex items-center">
+                                            <svg class="w-5 h-5 mr-2"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Remove
+                                        </span>
+                                    </button>
+                                    <div id="logoError" class="hidden text-xs text-[#e74c3c] mt-1"></div>
+                                </div>
                             </div>
-                            <label for="logo"
-                                   class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                <span class="text-red-600">Upload logo</span>
-                                <input id="logo"
-                                       name="logo"
-                                       type="file"
-                                       class="sr-only"
-                                       onchange="displayLogoPreview()" />
-                            </label>
+                            <p class="text-sm text-gray-500">Recommended: Square image, JPG/PNG/GIF, max 5MB, at least 128x128px</p>
                         </div>
                     </div>
                     <div class="col-span-full">
                         <label for="webshot"
                                class="block text-sm font-medium leading-6 text-gray-900">Webshot</label>
-                        <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-red-500">
-                            <div class="text-center">
-                                <svg class="mx-auto h-12 w-12"
-                                     viewBox="0 0 24 24"
-                                     fill="currentColor"
-                                     aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
-                                </svg>
-                                <div class="mt-4 flex text-sm leading-6 text-gray-600">
-                                    <label for="webshot"
-                                           class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                        <span class="text-red-600">Upload a webshot</span>
-                                        <input id="webshot"
-                                               name="webshot"
-                                               type="file"
-                                               class="sr-only"
-                                               onchange="displayWebshotPreview()" />
-                                    </label>
-                                    <p class="pl-1">or drag and drop</p>
+                        <label for="webshot" class="cursor-pointer block">
+                            <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-[#e74c3c] hover:border-[#e74c3c] transition-colors duration-200">
+                                <div class="text-center">
+                                    <svg class="mx-auto h-12 w-12"
+                                         viewBox="0 0 24 24"
+                                         fill="currentColor"
+                                         aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    <div class="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
+                                        <span class="font-semibold text-[#e74c3c]">Upload a webshot</span>
+                                        <p class="pl-1">or drag and drop</p>
+                                    </div>
+                                    <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                                 </div>
-                                <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                             </div>
-                        </div>
+                            <input id="webshot"
+                                   name="webshot"
+                                   type="file"
+                                   class="sr-only"
+                                   onchange="displayWebshotPreview()" />
+                        </label>
                         <div id="webshotPreview" class="mt-4"></div>
                     </div>
                 </div>
@@ -174,7 +206,7 @@
                 </p>
                 <button onclick="add_user_selection()"
                         type="button"
-                        class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
+                        class="w-[120px] h-[40px] bg-[#e74c3c] text-white font-bold rounded-md mt-2 hover:bg-red-700 transition-all">
                     Add User
                 </button>
                 <div class="sm:col-span-4 mt-5" id="user-selection-container">
@@ -195,7 +227,7 @@
                                     <input id="comments"
                                            name="comments"
                                            type="checkbox"
-                                           class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-600" />
+                                           class="h-4 w-4 rounded border-gray-300 text-[#e74c3c] focus:ring-[#e74c3c]" />
                                 </div>
                                 <div class="text-sm leading-6">
                                     <label for="comments" class="font-medium text-gray-900">On Bug Report</label>
@@ -207,7 +239,7 @@
                                     <input id="candidates"
                                            name="candidates"
                                            type="checkbox"
-                                           class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-600" />
+                                           class="h-4 w-4 rounded border-gray-300 text-[#e74c3c] focus:ring-[#e74c3c]" />
                                 </div>
                                 <div class="text-sm leading-6">
                                     <label for="candidates" class="font-medium text-gray-900">On Bug Closed</label>
@@ -220,7 +252,7 @@
             </div>
             <div class="mt-6 flex items-center justify-end gap-x-6">
                 <button type="submit"
-                        class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                        class="rounded-md bg-[#e74c3c] px-12 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-red-700 transition-all duration-200">
                     Save
                 </button>
             </div>
@@ -240,7 +272,7 @@
             const user_selection_child_html = document.createElement('div');
             user_selection_child_html.classList.add('mt-2', 'flex', 'flex-row', 'items-center', 'w-[50%]', 'user-selection');
             user_selection_child_html.innerHTML = `
-                <select name="user" class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" onchange="updateUserSelections()">
+                <select name="user" class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6" onchange="updateUserSelections()">
                     ${getUserOptions([])}
                 </select>
                 <button type="button" onclick="remove_user_selection(event)">
@@ -272,29 +304,6 @@
                 select.innerHTML = getUserOptions(selectedUsers.filter(user => user !== currentValue));
                 select.value = currentValue;  // Preserve the current value after options are updated
             });
-        }
-
-
-
-        function displayLogoPreview() {
-            var fileInput = document.getElementById("logo");
-            var previewDiv = document.getElementById("previewLogoDiv");
-
-            if (fileInput.files.length > 0) {
-                var file = fileInput.files[0];
-                var reader = new FileReader();
-
-                reader.onload = function(event) {
-                var preview = document.createElement("img");
-                preview.src = event.target.result;
-                previewDiv.innerHTML = "";
-                previewDiv.appendChild(preview);
-                };
-
-                reader.readAsDataURL(file);
-            } else {
-                previewDiv.innerHTML = "";
-            }
         }
 
         function displayWebshotPreview() {
@@ -332,6 +341,141 @@
             } else {
                 previewDiv.innerHTML = "";
             }
+        }
+
+        function previewUploadedImage(input, previewId, defaultIconId, removeButtonId) {
+            console.log('Preview function called with:', {
+                previewId,
+                defaultIconId,
+                removeButtonId
+            });
+            
+            const preview = document.getElementById(previewId);
+            const defaultIcon = document.getElementById(defaultIconId);
+            const removeButton = document.getElementById(removeButtonId);
+            const errorDiv = document.getElementById('logoError');
+            
+            console.log('Elements found:', {
+                preview: preview !== null,
+                defaultIcon: defaultIcon !== null,
+                removeButton: removeButton !== null,
+                errorDiv: errorDiv !== null
+            });
+
+            // Clear any previous errors
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+            }
+
+            if (!preview || !defaultIcon || !removeButton) {
+                console.error('One or more required elements not found');
+                return;
+            }
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    console.log('Invalid file type:', file.type);
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Please select a valid image file (JPG, PNG, GIF, or WebP)';
+                        errorDiv.style.display = 'block';
+                    }
+                    input.value = '';
+                    return;
+                }
+                
+                // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    console.log('File too large:', file.size);
+                    if (errorDiv) {
+                        errorDiv.textContent = 'File size must be less than 5MB';
+                        errorDiv.style.display = 'block';
+                    }
+                    input.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    console.log('Image loaded, updating elements');
+                    
+                    // Set the image source
+                    preview.src = e.target.result;
+                    
+                    // Use style.display for more reliable showing/hiding
+                    preview.style.display = 'block';
+                    defaultIcon.style.display = 'none';
+                    removeButton.style.display = 'inline-flex';
+                    
+                    // Also use classList as backup
+                    preview.classList.remove('hidden');
+                    defaultIcon.classList.add('hidden');
+                    removeButton.classList.remove('hidden');
+                    
+                    console.log('Image preview updated successfully');
+                }
+                
+                reader.onerror = function() {
+                    console.error('Error reading file');
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Error reading the file. Please try again.';
+                        errorDiv.style.display = 'block';
+                    }
+                    input.value = '';
+                }
+                
+                reader.readAsDataURL(file);
+            } else {
+                console.log('No file selected');
+            }
+        }
+
+        function removeUploadedImage(inputId, previewId, defaultIconId, removeButtonId) {
+            console.log('Remove function called with:', {
+                inputId,
+                previewId,
+                defaultIconId,
+                removeButtonId
+            });
+            
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            const defaultIcon = document.getElementById(defaultIconId);
+            const removeButton = document.getElementById(removeButtonId);
+            const errorDiv = document.getElementById('logoError');
+
+            if (!input || !preview || !defaultIcon || !removeButton) {
+                console.error('One or more required elements not found');
+                return;
+            }
+            
+            // Clear the file input and preview
+            input.value = '';
+            preview.src = '';
+            
+            // Use style.display for more reliable showing/hiding
+            preview.style.display = 'none';
+            defaultIcon.style.display = 'flex';
+            removeButton.style.display = 'none';
+            
+            // Also use classList as backup
+            preview.classList.add('hidden');
+            defaultIcon.classList.remove('hidden');
+            removeButton.classList.add('hidden');
+            
+            // Clear any errors
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+            }
+            
+            console.log('Logo removed successfully');
         }
     </script>
 {% endblock js %}

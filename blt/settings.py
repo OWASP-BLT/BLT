@@ -122,6 +122,7 @@ MIDDLEWARE = (
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "blt.middleware.throttling.ThrottlingMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
@@ -599,6 +600,9 @@ BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
 
+# OpenAI API Configuration
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
 ASGI_APPLICATION = "blt.asgi.application"
 
 CHANNEL_LAYERS = {
@@ -619,3 +623,12 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
+
+# Throttling Middleware Configuration
+THROTTLE_LIMITS = {
+    "GET": 100,  # 100 GET requests per minute
+    "POST": 50,  # 50 POST requests per minute
+    "OTHER": 30,  # 30 other requests per minute
+}
+THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
+THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
