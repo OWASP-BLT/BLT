@@ -38,6 +38,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     JoinRequest,
+    Labs,
     Lecture,
     LectureStatus,
     Message,
@@ -60,6 +61,8 @@ from website.models import (
     SlackIntegration,
     Subscription,
     Tag,
+    TaskContent,
+    Tasks,
     TimeLog,
     Trademark,
     TrademarkOwner,
@@ -723,6 +726,46 @@ class QueueAdmin(admin.ModelAdmin):
 
     mark_as_launched.short_description = "Mark selected items as launched"
 
+
+class TaskContentAdmin(admin.ModelAdmin):
+    list_display = ("task", "get_content_preview", "created_at")
+    search_fields = ("task__name", "theory_content", "mcq_question")
+    list_filter = ("task__task_type", "task__lab__name", "created_at")
+    date_hierarchy = "created_at"
+
+    def get_content_preview(self, obj):
+        if obj.theory_content:
+            return obj.theory_content[:50] + "..." if len(obj.theory_content) > 50 else obj.theory_content
+        elif obj.mcq_question:
+            return obj.mcq_question[:50] + "..." if len(obj.mcq_question) > 50 else obj.mcq_question
+        elif obj.simulation_config:
+            return f"Simulation: {obj.simulation_config.get('type', 'Unknown')}"
+        return "No content"
+
+    get_content_preview.short_description = "Content Preview"
+
+
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "task_type", "order", "is_active", "created_at")
+    search_fields = ("name", "description")
+
+
+class LabsAdmin(admin.ModelAdmin):
+    list_display = ("name", "get_description_preview", "total_tasks", "estimated_time", "is_active", "created_at")
+    search_fields = ("name", "description")
+    list_filter = ("is_active", "created_at", "updated_at")
+    date_hierarchy = "created_at"
+    ordering = ("order", "-created_at")
+
+    def get_description_preview(self, obj):
+        return obj.description[:50] + "..." if len(obj.description) > 50 else obj.description
+
+    get_description_preview.short_description = "Description"
+
+
+admin.site.register(TaskContent, TaskContentAdmin)
+admin.site.register(Tasks, TaskAdmin)
+admin.site.register(Labs, LabsAdmin)
 
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)

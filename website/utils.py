@@ -28,7 +28,12 @@ from website.models import DailyStats
 
 from .models import PRAnalysisReport
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+# Only initialize OpenAI client if API key is available and valid
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if openai_api_key and openai_api_key.startswith("sk-"):
+    client = OpenAI(api_key=openai_api_key)
+else:
+    client = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -972,3 +977,143 @@ class twitter:
         except Exception as e:
             logging.error(f"Error sending to Slack: {str(e)}")
             return False
+
+
+def check_security_txt(domain_url):
+    """
+    Check if a domain has a security.txt file according to RFC 9116.
+    Checks both /.well-known/security.txt and /security.txt locations.
+
+    Args:
+        domain_url (str): URL of the domain to check
+
+    Returns:
+        bool: True if security.txt is found, False otherwise
+    """
+    import requests
+
+    # Ensure URL has a scheme
+    if not domain_url.startswith(("http://", "https://")):
+        domain_url = "https://" + domain_url
+
+    # Remove trailing slash if present
+    if domain_url.endswith("/"):
+        domain_url = domain_url[:-1]
+
+    # Check at well-known location first (/.well-known/security.txt)
+    well_known_url = f"{domain_url}/.well-known/security.txt"
+
+    try:
+        response = requests.head(well_known_url, timeout=5)
+        if response.status_code == 200:
+            return True
+    except requests.RequestException:
+        pass
+
+    # If not found, check at root location (/security.txt)
+    root_url = f"{domain_url}/security.txt"
+
+    try:
+        response = requests.head(root_url, timeout=5)
+        if response.status_code == 200:
+            return True
+    except requests.RequestException:
+        pass
+
+    # If we reach here, no security.txt was found
+    return False
+
+
+def analyze_contribution(instance, action_type):
+    """
+    Analyze a contribution using OpenAI to determine BACON token reward.
+    Returns a score between 1-50 based on complexity, impact, and quality.
+    """
+    # If OpenAI client is not available, return default score
+    if client is None:
+        logging.warning("OpenAI client not available (missing or invalid API key), using default BACON score")
+        model_name = instance._meta.model_name
+        is_security = getattr(instance, "is_security", False)
+        return get_default_bacon_score(model_name, is_security)
+
+    try:
+        # Extract relevant data from the instance
+        model_name = instance._meta.model_name
+        title = getattr(instance, "title", None) or getattr(instance, "description", None)
+        description = getattr(instance, "content", None) or getattr(instance, "body", None)
+        is_security = getattr(instance, "is_security", False)
+
+        # Construct the analysis prompt
+        prompt = f"""
+        Analyze this contribution and assign a BACON token reward score between 1 and 50.
+        
+        Contribution Details:
+        - Type: {model_name}
+        - Action: {action_type}
+        - Title: {title}
+        - Description: {description}
+        - Security Related: {is_security}
+
+        Scoring Guidelines:
+        - Basic contributions (simple issues, comments): 1-5 BACON
+        - Standard contributions (well-documented issues, blog posts): 5-15 BACON
+        - Valuable contributions (detailed bug reports, tutorials): 15-25 BACON
+        - High-impact contributions (security vulnerabilities, major features): 25-50 BACON
+
+        Evaluation Criteria:
+        1. Technical complexity
+        2. Documentation quality
+        3. Security impact
+        4. Community benefit
+        5. Overall effort
+
+        Return only a number between 1 and 50.
+        """
+
+        # Get response from OpenAI
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are evaluating contributions to determine BACON token rewards."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=10,
+        )
+
+        # Extract and validate the score
+        try:
+            score = int(float(response.choices[0].message.content.strip()))
+            # Ensure score is within bounds
+            score = max(1, min(50, score))
+            return score
+        except (ValueError, AttributeError):
+            # Default scores if parsing fails
+            return get_default_bacon_score(model_name, is_security)
+
+    except Exception as e:
+        logging.error(f"Error analyzing contribution for BACON score: {str(e)}")
+        return get_default_bacon_score(model_name, is_security)
+
+
+def get_default_bacon_score(model_name, is_security=False):
+    """
+    Get default BACON score based on contribution type.
+    """
+    base_scores = {
+        "issue": 5,
+        "post": 10,
+        "hunt": 15,
+        "ipreport": 3,
+        "organization": 10,
+        "forumpost": 2,
+    }
+
+    # Get base score or default to 5
+    score = base_scores.get(model_name.lower(), 5)
+
+    # Add bonus for security-related content
+    if is_security:
+        score += 3
+
+    return score

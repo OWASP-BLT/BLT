@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
@@ -35,7 +36,7 @@ from website.models import (
     UserProfile,
     Winner,
 )
-from website.utils import is_valid_https_url, rebuild_safe_url
+from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -481,7 +482,7 @@ class OrganizationDashboardAnalyticsView(View):
             "security_incidents_summary": self.get_security_incidents_summary(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
-        return render(request, "organization/organization_analytics.html", context=context)
+        return render(request, "organization/dashboard/organization_analytics.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):
@@ -516,7 +517,7 @@ class OrganizationDashboardIntegrations(View):
             "organization_obj": organization_obj,
             "slack_integration": slack_integration,
         }
-        return render(request, "organization/organization_integrations.html", context=context)
+        return render(request, "organization/dashboard/organization_integrations.html", context=context)
 
 
 class OrganizationDashboardTeamOverviewView(View):
@@ -597,7 +598,7 @@ class OrganizationDashboardTeamOverviewView(View):
             "current_direction": sort_direction,
         }
 
-        return render(request, "organization/organization_team_overview.html", context=context)
+        return render(request, "organization/dashboard/organization_team_overview.html", context=context)
 
 
 class OrganizationDashboardManageBugsView(View):
@@ -629,16 +630,36 @@ class OrganizationDashboardManageBugsView(View):
             "organization_obj": organization_obj,
             "issues": issues,
         }
-        return render(request, "organization/organization_manage_bugs.html", context=context)
+        return render(request, "organization/dashboard/organization_manage_bugs.html", context=context)
 
 
 class OrganizationDashboardManageDomainsView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # Get domains for this organization
-        domains = Domain.objects.values("id", "name", "url", "logo").filter(organization__id=id).order_by("modified")
+        organization = Organization.objects.filter(id=id).first()
+        if not organization:
+            raise Http404("Organization does not exist")
 
-        # For authenticated users, show organizations they have access to
+        # Get the filter parameter for security.txt
+        security_txt_filter = request.GET.get("security_txt")
+
+        # Base query for domains
+        domains_query = Domain.objects.filter(organization=organization)
+
+        # Apply filter if provided
+        if security_txt_filter:
+            if security_txt_filter == "yes":
+                domains_query = domains_query.filter(has_security_txt=True)
+            elif security_txt_filter == "no":
+                domains_query = domains_query.filter(Q(has_security_txt=False) | Q(has_security_txt__isnull=True))
+
+        # Get all domains for this organization
+        domains = domains_query.values(
+            "id", "name", "url", "logo", "has_security_txt", "security_txt_checked_at"
+        ).order_by("name")
+
+        # If user has access to organizations
         if request.user.is_authenticated:
             organizations = (
                 Organization.objects.values("name", "id")
@@ -646,23 +667,21 @@ class OrganizationDashboardManageDomainsView(View):
                 .distinct()
             )
         else:
-            # For unauthenticated users, don't show organization list
             organizations = []
-
-        # Get the organization object
-        organization_obj = Organization.objects.filter(id=id).first()
-        if not organization_obj:
-            messages.error(request, "Organization does not exist")
-            return redirect("home")
 
         context = {
             "organization": id,
-            "organizations": organizations,
-            "organization_obj": organization_obj,
+            "organization_object": organization,
             "domains": domains,
+            "organizations": organizations,
+            "security_txt_filter": security_txt_filter,
+            "security_txt_yes_count": Domain.objects.filter(organization=organization, has_security_txt=True).count(),
+            "security_txt_no_count": Domain.objects.filter(organization=organization)
+            .filter(Q(has_security_txt=False) | Q(has_security_txt__isnull=True))
+            .count(),
         }
 
-        return render(request, "organization/organization_manage_domains.html", context=context)
+        return render(request, "organization/dashboard/organization_manage_domains.html", context)
 
 
 class AddDomainView(View):
@@ -697,9 +716,9 @@ class AddDomainView(View):
         }
 
         if domain:
-            return render(request, "organization/edit_domain.html", context=context)
+            return render(request, "organization/dashboard/edit_domain.html", context=context)
         else:
-            return render(request, "organization/add_domain.html", context=context)
+            return render(request, "organization/dashboard/add_domain.html", context=context)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -712,23 +731,28 @@ class AddDomainView(View):
             "facebook": request.POST.get("facebook_url", None),
         }
 
-        if domain_data["url"]:
-            parsed_url = urlparse(domain_data["url"])
-            if parsed_url.hostname is None:
-                messages.error(request, "Invalid domain url")
-                return redirect("add_domain", id=id)
-            domain_data["url"] = parsed_url.netloc
-
-        if domain_data["name"] is None:
+        # Validate required fields first
+        if not domain_data["name"]:
             messages.error(request, "Enter domain name")
             return redirect("add_domain", id=id)
 
-        if domain_data["url"] is None:
+        if not domain_data["url"]:
             messages.error(request, "Enter domain url")
             return redirect("add_domain", id=id)
 
-        domain = (parsed_url.hostname).replace("www.", "")
+        # Parse and validate URL
+        try:
+            parsed_url = urlparse(domain_data["url"])
+            if not parsed_url.hostname:
+                messages.error(request, "Invalid domain url")
+                return redirect("add_domain", id=id)
+            domain_data["url"] = parsed_url.netloc
+        except Exception:
+            messages.error(request, "Invalid domain url format")
+            return redirect("add_domain", id=id)
 
+        # Extract domain hostname and normalize to lowercase
+        domain = parsed_url.hostname.replace("www.", "").lower()
         domain_data["name"] = domain_data["name"].lower()
 
         managers_list = request.POST.getlist("user")
@@ -754,22 +778,6 @@ class AddDomainView(View):
         except ValueError:
             messages.error(request, "URL validation error.")
             return redirect("add_domain", id=id)
-
-        # validate domain email
-        user_email_domain = request.user.email.split("@")[-1]
-
-        if not domain.endswith(f".{user_email_domain}") and domain != user_email_domain:
-            messages.error(request, "Your email does not match domain email. Action Denied!")
-            return redirect("add_domain", id=id)
-
-        for domain_manager_email in managers_list:
-            manager_email_domain = domain_manager_email.split("@")[-1]
-            if not domain.endswith(f".{manager_email_domain}") and domain != manager_email_domain:
-                messages.error(
-                    request,
-                    f"Manager: {domain_manager_email} does not match domain email.",
-                )
-                return redirect("add_domain", id=id)
 
         if request.FILES.get("logo"):
             domain_logo = request.FILES.get("logo")
@@ -797,7 +805,7 @@ class AddDomainView(View):
         if domain_data["twitter"]:
             if "twitter.com" not in domain_data["twitter"] and "x.com" not in domain_data["twitter"]:
                 messages.error(request, "Twitter url should contain twitter.com or x.com")
-            return redirect("add_domain", id=id)
+                return redirect("add_domain", id=id)
         if domain_data["github"] and "github.com" not in domain_data["github"]:
             messages.error(request, "Github url should contain github.com")
             return redirect("add_domain", id=id)
@@ -839,7 +847,8 @@ class AddDomainView(View):
             return redirect("edit_domain", id=id, domain_id=domain_id)
 
         parsed_url = urlparse(domain_data["url"])
-        domain_name = (parsed_url.hostname).replace("www.", "")
+        # Normalize domain name to lowercase for consistent validation
+        domain_name = (parsed_url.hostname).replace("www.", "").lower()
 
         domain_data["name"] = domain_data["name"].lower()
 
@@ -869,22 +878,6 @@ class AddDomainView(View):
         except ValueError:
             messages.error(request, "URL validation error.")
             return redirect("edit_domain", id=id, domain_id=domain_id)
-
-        # validate domain email
-        user_email_domain = request.user.email.split("@")[-1]
-
-        if not domain_name.endswith(f".{user_email_domain}") and domain_name != user_email_domain:
-            messages.error(request, "Your email does not match domain email. Action Denied!")
-            return redirect("edit_domain", id=id, domain_id=domain_id)
-
-        for domain_manager_email in managers_list:
-            manager_email_domain = domain_manager_email.split("@")[-1]
-            if not domain_name.endswith(f".{manager_email_domain}") and domain_name != manager_email_domain:
-                messages.error(
-                    request,
-                    f"Manager: {domain_manager_email} does not match domain email.",
-                )
-                return redirect("edit_domain", id=id, domain_id=domain_id)
 
         if request.FILES.get("logo"):
             domain_logo = request.FILES.get("logo")
@@ -959,7 +952,7 @@ class AddSlackIntegrationView(View):
             hours = range(24)
             return render(
                 request,
-                "organization/add_slack_integration.html",
+                "organization/dashboard/add_slack_integration.html",
                 context={
                     "organization": id,
                     "slack_integration": slack_integration,
@@ -1188,6 +1181,8 @@ class DomainView(View):
                 "github",
                 "logo",
                 "webshot",
+                "has_security_txt",
+                "security_txt_checked_at",
             )
             .filter(id=pk)
             .first()
@@ -1287,7 +1282,7 @@ class DomainView(View):
             "ongoing_bughunts": ongoing_bughunts,
         }
 
-        return render(request, "organization/view_domain.html", context)
+        return render(request, "organization/dashboard/view_domain.html", context)
 
 
 class OrganizationDashboardManageRolesView(View):
@@ -1353,7 +1348,7 @@ class OrganizationDashboardManageRolesView(View):
             "organization_users": organization_users_list,
         }
 
-        return render(request, "organization/organization_manage_roles.html", context)
+        return render(request, "organization/dashboard/organization_manage_roles.html", context)
 
     def post(self, request, id, *args, **kwargs):
         domain = Domain.objects.filter(
@@ -1374,18 +1369,7 @@ class OrganizationDashboardManageRolesView(View):
         domain_managers = User.objects.filter(username__in=managers_list, is_active=True)
 
         for manager in domain_managers:
-            user_email_domain = manager.email.split("@")[-1]
-            organization_url = domain.organization.url
-            parsed_url = urlparse(organization_url).netloc
-            organization_domain = parsed_url.replace("www.", "")
-            if user_email_domain == organization_domain:
-                domain.managers.add(manager.id)
-            else:
-                messages.error(
-                    request,
-                    f"Manager: {domain_manager_email} does not match domain email.",
-                )
-                return redirect("organization_manage_roles", id)
+            domain.managers.add(manager.id)
 
         messages.success(request, "successfully added the managers")
         return redirect("organization_manage_roles", id)
@@ -1816,3 +1800,52 @@ def delete_manager(request, manager_id, domain_id):
         return JsonResponse({"success": False, "message": "Domain not found."})
     except User.DoesNotExist:
         return JsonResponse({"success": False, "message": "User not found."})
+
+
+@login_required
+@require_http_methods(["POST"])
+def check_domain_security_txt(request):
+    domain_id = request.POST.get("domain_id")
+    if not domain_id:
+        messages.error(request, "Domain ID is required")
+        return redirect("organization_manage_domains", id=request.user.userprofile.team.id)
+
+    domain = get_object_or_404(Domain, id=domain_id)
+
+    # Check if the user has permission to manage this domain
+    has_permission = False
+    if request.user.is_superuser:
+        has_permission = True
+    elif domain.organization and (
+        domain.organization.admin == request.user or domain.organization.managers.filter(id=request.user.id).exists()
+    ):
+        has_permission = True
+    elif domain.managers.filter(id=request.user.id).exists():
+        has_permission = True
+
+    if not has_permission:
+        messages.error(request, "You don't have permission to check this domain")
+        return redirect("organization_manage_domains", id=request.user.userprofile.team.id)
+
+    try:
+        # Check for security.txt
+        has_security_txt = check_security_txt(domain.url)
+
+        # Update domain with status
+        domain.has_security_txt = has_security_txt
+        domain.security_txt_checked_at = timezone.now()
+        domain.save(update_fields=["has_security_txt", "security_txt_checked_at"])
+
+        if has_security_txt:
+            messages.success(request, f"Security.txt found for {domain.name}")
+        else:
+            messages.info(request, f"No security.txt found for {domain.name}")
+
+    except Exception as e:
+        messages.error(request, f"Error checking security.txt: {str(e)}")
+
+    # Redirect back to the manage domains page
+    if domain.organization:
+        return redirect("organization_manage_domains", id=domain.organization.id)
+    else:
+        return redirect("organization_manage_domains", id=request.user.userprofile.team.id)

@@ -1,3 +1,5 @@
+name: Enforce Issue Number in PR Description
+
 on:
   pull_request:
     types:

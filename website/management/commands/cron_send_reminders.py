@@ -115,7 +115,14 @@ class Command(LoggedBaseCommand):
                     # Create email message
                     email = EmailMessage(
                         subject="Daily Check-in Reminder",
-                        body="It's time for your daily check-in! Please log in to update your status.",
+                        body=f"""Hello,
+
+It's time for your daily check-in! Please click the link below to complete your daily check-in:
+
+{settings.SITE_URL}/add-sizzle-checkin/
+
+Best regards,
+The BLT Team""",
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         to=[settings.DEFAULT_FROM_EMAIL],  # Send to a single recipient
                         bcc=[user.email for user in user_batch],  # BCC all users in batch

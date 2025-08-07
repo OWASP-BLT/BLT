@@ -257,6 +257,8 @@ class Domain(models.Model):
     modified = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag, blank=True)
     is_active = models.BooleanField(default=True)
+    has_security_txt = models.BooleanField(default=False)
+    security_txt_checked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -1600,6 +1602,7 @@ class Challenge(models.Model):
         Organization, related_name="team_challenges", blank=True
     )  # For team challenges
     points = models.IntegerField(default=0)  # Points for completing the challenge
+    bacon_reward = models.IntegerField(default=5, help_text="BACON tokens earned for completing the challenge")
     progress = models.IntegerField(default=0)  # Progress in percentage
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -2452,6 +2455,77 @@ class BannedApp(models.Model):
         return f"{self.app_name} (Banned in {self.country_name})"
 
 
+class Labs(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    estimated_time = models.PositiveIntegerField(help_text="Estimated time in minutes")
+    total_tasks = models.PositiveIntegerField(default=0)  # Keep this field but default to 0
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def update_total_tasks(self):
+        """
+        Updates the total_tasks count based on related tasks.
+        This will be called when tasks are added/removed.
+        """
+        if hasattr(self, "tasks"):
+            self.total_tasks = self.tasks.count()
+            self.save()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Lab"
+        verbose_name_plural = "Labs"
+        ordering = ["order"]
+
+
+class Tasks(models.Model):
+    TASK_TYPES = [
+        ("theory", "Theory"),
+        ("simulation", "Simulation"),
+    ]
+
+    lab = models.ForeignKey(Labs, on_delete=models.CASCADE, related_name="tasks")
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    task_type = models.CharField(max_length=20, choices=TASK_TYPES)
+    order = models.PositiveIntegerField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.lab.name} - {self.name}"
+
+    class Meta:
+        verbose_name = "Task"
+        verbose_name_plural = "Tasks"
+        ordering = ["lab", "order"]
+        unique_together = ["lab", "order"]
+
+
+class TaskContent(models.Model):
+    task = models.OneToOneField(Tasks, on_delete=models.CASCADE, related_name="content")
+    theory_content = models.TextField(blank=True)
+    mcq_question = models.TextField(blank=True)
+    mcq_options = models.JSONField(default=list, blank=True)
+    correct_answer = models.CharField(max_length=10, blank=True)  # "A", "B", "C", "D"
+
+    simulation_config = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Content for {self.task.name}"
+
+    class Meta:
+        verbose_name = "Task Content"
+        verbose_name_plural = "Task Contents"
+
+
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
     message = models.TextField()
@@ -2519,3 +2593,257 @@ class ReminderSettings(models.Model):
         if not hasattr(cls, "_timezone_choices"):
             cls._timezone_choices = [(tz, tz) for tz in pytz.common_timezones]
         return cls._timezone_choices
+
+
+class StakingPool(models.Model):
+    """Model for competitive staking pools where 2-3 users compete head-to-head"""
+
+    POOL_STATUS_CHOICES = [
+        ("open", "Open for Players"),
+        ("full", "Full - Ready to Start"),
+        ("active", "Challenge Active"),
+        ("completed", "Completed"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    POOL_TYPE_CHOICES = [
+        ("head_to_head", "Head to Head (2 players)"),
+        ("triple_threat", "Triple Threat (3 players)"),
+    ]
+
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    pool_type = models.CharField(max_length=20, choices=POOL_TYPE_CHOICES, default="head_to_head")
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name="staking_pools")
+
+    # Fixed stake amount - all players stake the same amount
+    stake_amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Fixed amount each player must stake")
+
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=POOL_STATUS_CHOICES, default="open")
+
+    # Winner info
+    winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="won_staking_pools")
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    # Creator info
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_staking_pools")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Staking Pool"
+        verbose_name_plural = "Staking Pools"
+
+    def __str__(self):
+        return f"{self.name} - {self.get_pool_type_display()}"
+
+    @property
+    def max_participants(self):
+        """Maximum number of participants based on pool type"""
+        return 2 if self.pool_type == "head_to_head" else 3
+
+    @property
+    def total_pot(self):
+        """Total BACON in the pot"""
+        return self.stake_amount * self.max_participants
+
+    @property
+    def current_participants(self):
+        """Current number of participants"""
+        return self.entries.count()
+
+    @property
+    def is_full(self):
+        """Check if pool has maximum participants"""
+        return self.current_participants >= self.max_participants
+
+    @property
+    def is_active(self):
+        """Check if pool is currently active"""
+        from django.utils import timezone
+
+        now = timezone.now()
+        return self.status == "active" and self.start_date <= now <= self.end_date
+
+    @property
+    def can_join(self):
+        """Check if new players can join"""
+        return self.status == "open" and not self.is_full
+
+    def can_user_join(self, user):
+        """Check if a specific user can join this pool"""
+        if not self.can_join:
+            return False, "Pool is full or not accepting new players"
+
+        # Check if user already joined
+        if self.entries.filter(user=user).exists():
+            return False, "You have already joined this pool"
+
+        # Check if user has enough BACON
+        try:
+            bacon_earning = BaconEarning.objects.get(user=user)
+            if bacon_earning.tokens_earned < self.stake_amount:
+                return False, f"You need {self.stake_amount} BACON tokens to join"
+        except BaconEarning.DoesNotExist:
+            return False, "You don't have any BACON tokens"
+
+        return True, "Can join"
+
+    def join_pool(self, user):
+        """Add a user to the pool and deduct their BACON"""
+        can_join, message = self.can_user_join(user)
+        if not can_join:
+            return False, message
+
+        # Deduct BACON from user
+        bacon_earning = BaconEarning.objects.get(user=user)
+        bacon_earning.tokens_earned -= self.stake_amount
+        bacon_earning.save()
+
+        # Create staking entry
+        entry = StakingEntry.objects.create(user=user, pool=self, staked_amount=self.stake_amount, status="active")
+
+        # Create transaction record
+        StakingTransaction.objects.create(
+            user=user,
+            pool=self,
+            transaction_type="stake",
+            amount=self.stake_amount,
+            description=f"Joined staking pool: {self.name}",
+        )
+
+        # Check if pool is now full and should start
+        if self.is_full:
+            self.status = "full"
+            self.save()
+
+        return True, "Successfully joined the pool!"
+
+    def start_challenge(self):
+        """Start the challenge when pool is full"""
+        if self.status == "full":
+            self.status = "active"
+            self.save()
+            return True
+        return False
+
+    def complete_challenge(self, winner_user):
+        """Complete the challenge and award the entire pot to winner"""
+        if self.status != "active":
+            return False, "Pool is not active"
+
+        # Verify winner is a participant
+        winner_entry = self.entries.filter(user=winner_user).first()
+        if not winner_entry:
+            return False, "Winner is not a participant in this pool"
+
+        # Mark pool as completed
+        self.winner = winner_user
+        self.status = "completed"
+        self.completed_at = timezone.now()
+        self.save()
+
+        # Award the entire pot to the winner using giveBacon
+        from .feed_signals import giveBacon
+
+        total_winnings = self.total_pot
+        giveBacon(winner_user, total_winnings, f"Won staking pool: {self.name}")
+
+        # Update winner's entry
+        winner_entry.status = "won"
+        winner_entry.actual_reward = total_winnings
+        winner_entry.completion_time = timezone.now()
+        winner_entry.save()
+
+        # Update other entries to lost
+        self.entries.exclude(user=winner_user).update(status="lost")
+
+        # Create transaction record
+        StakingTransaction.objects.create(
+            user=winner_user,
+            pool=self,
+            transaction_type="win",
+            amount=total_winnings,
+            description=f"Won staking pool: {self.name} - Total pot: {total_winnings} BACON",
+        )
+
+        return True, f"Pool completed! {winner_user.username} won {total_winnings} BACON!"
+
+
+class StakingEntry(models.Model):
+    """Model for individual staking entries by users in competitive pools"""
+
+    ENTRY_STATUS_CHOICES = [
+        ("active", "Active - In Competition"),
+        ("won", "Won"),
+        ("lost", "Lost"),
+        ("refunded", "Refunded"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="staking_entries")
+    pool = models.ForeignKey(StakingPool, on_delete=models.CASCADE, related_name="entries")
+    staked_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    actual_reward = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    status = models.CharField(max_length=20, choices=ENTRY_STATUS_CHOICES, default="active")
+
+    # Challenge completion tracking
+    challenge_completed = models.BooleanField(default=False)
+    completion_time = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Staking Entry"
+        verbose_name_plural = "Staking Entries"
+        unique_together = ["user", "pool"]  # User can only have one entry per pool
+
+    def __str__(self):
+        return f"{self.user.username} - {self.pool.name} ({self.staked_amount} BACON)"
+
+    def complete_challenge(self):
+        """Mark this entry's challenge as completed"""
+        if not self.challenge_completed and self.pool.status == "active":
+            self.challenge_completed = True
+            self.completion_time = timezone.now()
+            self.save()
+
+            # Check if this user is the first to complete and should win
+            other_completed = self.pool.entries.filter(challenge_completed=True).exclude(id=self.id).exists()
+
+            if not other_completed:  # First to complete
+                success, message = self.pool.complete_challenge(self.user)
+                return success, message
+
+            return True, "Challenge completed but someone else finished first"
+
+        return False, "Challenge already completed or pool not active"
+
+
+class StakingTransaction(models.Model):
+    """Model to track all staking-related transactions"""
+
+    TRANSACTION_TYPES = [
+        ("stake", "Stake - Joined Pool"),
+        ("win", "Win - Won Pool"),
+        ("refund", "Refund - Pool Cancelled"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="staking_transactions")
+    pool = models.ForeignKey(StakingPool, on_delete=models.CASCADE, related_name="transactions")
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Staking Transaction"
+        verbose_name_plural = "Staking Transactions"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"

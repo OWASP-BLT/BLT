@@ -57,7 +57,7 @@ django-redis = "^5.4.0"
 uvicorn = "^0.34.0"
 channels = "^4.2.2"
 channels-redis = "^4.2.1"
-aiohttp = "^3.11.16"
+aiohttp = "^3.12.9"
 drf-yasg = "^1.21.10"
 slack-bolt = "^1.23.0"
 slack-sdk = "^3.35.0"
@@ -68,6 +68,7 @@ python-dateutil = "^2.9.0.post0"
 pyzipper = "^0.3.6"
 tweepy = "^4.15.0"
 better-profanity = "^0.7.0"
+django-bleach = "^3.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
