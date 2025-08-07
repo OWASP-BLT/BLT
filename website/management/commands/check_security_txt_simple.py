@@ -30,7 +30,7 @@ class Command(BaseCommand):
         updated = 0
         errors = 0
 
-        # Process in batches to avoid memory issues
+        # Process in batches to avoid memory issue
         for i in range(0, total, batch_size):
             batch = domains[i : i + batch_size]
             for domain in batch:
