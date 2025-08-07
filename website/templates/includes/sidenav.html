@@ -456,6 +456,13 @@
                             </div>
                             <span class="truncate">{% trans "Education" %}</span>
                         </a>
+                        <a href="{% url 'simulation_dashboard' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'simulation_dashboard' or 'simulation/' in request.path %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'simulation_dashboard' or 'simulation/' in request.path %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                <i class="fas fa-flask"></i>
+                            </div>
+                            <span class="truncate">{% trans "Security Labs" %}</span>
+                        </a>
                         <a href="{% url 'ossh_home' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'ossh_home' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                             <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'ossh_home' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
