@@ -1,13 +1,17 @@
 import hashlib
+import hmac
 import json
 import logging
 import os
 import re
 import subprocess
 import tempfile
+from typing import Any, Dict, Tuple
 from uuid import UUID
 
-from website.aibot.models import ChunkType
+from django.http import HttpRequest
+
+from website.aibot.types import ChunkType
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +33,52 @@ def generate_uuid(file: str, start: int, end: int) -> str:
     return str(UUID(hex=hash_str))
 
 
+def validate_github_request(request: HttpRequest) -> Tuple[bool, str]:
+    if not request.body:
+        return False, "Empty request body received."
+
+    event_type = request.headers.get("X-GitHub-Event", None)
+    if not event_type:
+        return False, "Missing X-GitHub-Event header."
+
+    return True, ""
+
+
+def sign_payload(secret: str, payload_body: bytes) -> str:
+    if not secret:
+        logger.error("Webhook secret is required to sign payload")
+        return None
+    if not isinstance(payload_body, bytes):
+        logger.error("payload_body must be bytes")
+        return None
+
+    mac = hmac.new(secret.encode("utf-8"), payload_body, hashlib.sha256)
+    hex_digest = mac.hexdigest()
+    return f"sha256={hex_digest}"
+
+
+def verify_github_signature(secret: str, payload_body: bytes, signature_header: str) -> Tuple[bool, str]:
+    if not signature_header or not signature_header.startswith("sha256="):
+        return False, "Missing/invalid signature"
+
+    if not secret:
+        return False, "Webhook secret not configured; cannot verify signature."
+
+    try:
+        received_signature = signature_header.split("=", 1)[1]
+    except IndexError:
+        return False, "Missing/invalid signature"
+
+    mac = hmac.new(secret.encode(), payload_body, hashlib.sha256)
+    expected_signature = mac.hexdigest()
+
+    matched = hmac.compare_digest(expected_signature, received_signature)
+    if not matched:
+        return False, "Missing/invalid signature"
+
+    return True, ""
+
+
 def get_git_root(path: str) -> str:
     """Returns the Git root directory for the given path."""
     if os.path.isfile(path):
@@ -47,6 +97,14 @@ def get_git_root(path: str) -> str:
         return path
 
     raise FileNotFoundError("Git root not found.")
+
+
+def parse_json(body: str):
+    try:
+        payload: Dict[str, Any] = json.loads(body)
+        return payload
+    except json.JSONDecodeError:
+        return None
 
 
 def extract_json_block(text: str) -> str:
@@ -139,3 +197,11 @@ def analyze_code_ruff_bandit(chunks: ChunkType):
 
         finally:
             os.unlink(temp_file_path)
+
+
+def pr_analysis_marker() -> str:
+    return "<!-- AIBOT PR Analysis Marker: v1 -->"
+
+
+def issue_analysis_marker() -> str:
+    return "<!-- AIBOT Issue Analysis Marker: v1 -->"

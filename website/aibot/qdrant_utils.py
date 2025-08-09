@@ -9,8 +9,9 @@ from unidiff import PatchSet
 
 from website.aibot.chunk_utils import chunk_file
 from website.aibot.clients import q_client
-from website.aibot.models import ChunkType, PullRequest
+from website.aibot.models import PullRequest
 from website.aibot.network import fetch_raw_content, generate_embedding
+from website.aibot.types import ChunkType
 from website.aibot.utils import generate_uuid, sanitize_backslash
 
 logger = logging.getLogger(__name__)

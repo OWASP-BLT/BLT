@@ -9,7 +9,7 @@ from typing import List, Set, Tuple
 import yaml
 from langchain.text_splitter import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 
-from website.aibot.models import ChunkType
+from website.aibot.types import ChunkType
 from website.aibot.utils import approximate_token_count_char
 
 logger = logging.getLogger(__name__)

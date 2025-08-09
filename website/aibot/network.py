@@ -125,6 +125,47 @@ def post_github_comment(comments_url: str, comment_body: str) -> Optional[str]:
     return None
 
 
+@retry(
+    stop=stop_after_attempt(MAX_RETRIES),
+    wait=_get_retry_wait_time,
+    retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
+    before_sleep=before_sleep_log(logger, logging.INFO),
+)
+def patch_github_comment(comments_url: str, comment_body: str, comment_marker: str) -> Optional[str]:
+    headers = {
+        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+    }
+
+    response = requests.get(comments_url, headers=headers, timeout=5)
+    if response.status_code != 200:
+        response.raise_for_status()
+    comments = response.json()
+
+    target_comment_id = None
+    for comment in comments:
+        if comment_marker in comment.get("body", ""):
+            target_comment_id = comment["id"]
+            break
+
+    if not target_comment_id:
+        logger.warning("No existing comment found with marker: %s", comment_marker)
+        return None
+
+    patch_url = f"{comments_url}/{target_comment_id}"
+    patch_payload = {"body": comment_body}
+    patch_response = requests.patch(patch_url, headers=headers, json=patch_payload, timeout=5)
+
+    if patch_response.status_code in RETRY_HTTP_CODES:
+        patch_response.raise_for_status()
+    if patch_response.status_code == 200:
+        return patch_response.text
+
+    logger.warning("Failed to patch comment: %s", comments_url)
+    return None
+
+
 def generate_gemini_response(prompt: str) -> Optional[str]:
     """
     Generates a response from the Gemini model for the given prompt.

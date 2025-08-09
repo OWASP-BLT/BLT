@@ -2521,3 +2521,86 @@ class ReminderSettings(models.Model):
         if not hasattr(cls, "_timezone_choices"):
             cls._timezone_choices = [(tz, tz) for tz in pytz.common_timezones]
         return cls._timezone_choices
+
+
+class GithubInstallation(models.Model):
+    installation_id = models.BigIntegerField(unique=True, primary_key=True)
+    app_id = models.BigIntegerField()
+    app_name = models.CharField(max_length=100)
+    account_login = models.CharField(max_length=100)
+    account_type = models.CharField(
+        max_length=12,
+        choices=[
+            ("User", "User"),
+            ("Organization", "Organization"),
+        ],
+    )
+    is_active = models.BooleanField(default=True)
+    suspended_at = models.DateTimeField(null=True, blank=True)
+    suspended_by_account_login = models.CharField(max_length=100, null=True, blank=True)
+    permissions = models.JSONField(help_text="Permissions granted to this installation", default=dict)
+    events = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Installation {self.installation_id} ({self.account_login})"
+
+
+class GithubAppRepo(models.Model):
+    installation = models.ForeignKey(GithubInstallation, on_delete=models.CASCADE, related_name="repositories")
+    repo_id = models.BigIntegerField()
+    name = models.CharField(max_length=200)
+    full_name = models.CharField(max_length=200)
+    url = models.URLField(max_length=500, blank=True, null=True)
+    is_active = models.BooleanField(default=False)
+    is_private = models.BooleanField(default=False)
+    default_branch = models.CharField(max_length=100, default="main")
+    permissions = models.JSONField(default=dict)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["installation", "repo_id"], name="unique_installation_repo")]
+
+    def __str__(self):
+        return f"{self.installation.account_login} installed {self.installation.app_name} on {self.full_name}"
+
+    def save(self, *args, **kwargs):
+        self.url = f"https://github.com/{self.full_name}"
+        super().save(*args, **kwargs)
+
+
+class AibotComment(models.Model):
+    installation = models.ForeignKey(
+        GithubInstallation, on_delete=models.CASCADE, help_text="The GitHub App installation that triggered this"
+    )
+    repository = models.ForeignKey(
+        GithubAppRepo, on_delete=models.CASCADE, help_text="The repo where the comment was made"
+    )
+    issue_number = models.BigIntegerField(help_text="Issue or PR number on GitHub")
+    comment_id = models.BigIntegerField(unique=True, null=True, blank=True)
+    comment_url = models.URLField(max_length=500, blank=True, null=True)
+    trigger_event = models.CharField(
+        max_length=50, db_index=True, help_text="e.g., 'issue_comment.created', 'pull_request.opened'"
+    )
+    triggered_by_username = models.CharField(max_length=100, help_text="GitHub user who triggered the bot")
+    trigger_comment_body = models.TextField(blank=True, null=True)
+    prompt = models.TextField(help_text="Full prompt sent to LLM")
+    response = models.TextField(help_text="AI-generated response")
+    model_used = models.CharField(max_length=50, default="gemini-2.0-flash")
+    prompt_tokens = models.PositiveIntegerField(default=0)
+    completion_tokens = models.PositiveIntegerField(default=0)
+    total_tokens = models.PositiveIntegerField(default=0)
+    estimated_cost_usd = models.DecimalField(
+        max_digits=10, decimal_places=6, null=True, blank=True, help_text="Estimated cost of this LLM call"
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"AI → {self.repository.full_name}#{self.issue_number} ({self.model_used})"
+
+    def save(self, *args, **kwargs):
+        self.total_tokens = self.prompt_tokens + self.completion_tokens
+        super().save(*args, **kwargs)

@@ -47,6 +47,11 @@ def validate_settings() -> None:
         raise ImproperlyConfigured(f"Missing critical settings: {', '.join(missing_settings)}")
 
 
+def configure_and_validate_settings() -> None:
+    validate_settings()
+    configure_settings()
+
+
 def load_validation_schemas() -> Dict[str, Any]:
     schemas = {}
     schema_files = {

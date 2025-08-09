@@ -19,7 +19,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 import comments.views
-from website.aibot.aibot import aibot_webhook_is_healthy, main_github_aibot_webhook_dispatcher
+from website.aibot.main import aibot_webhook_is_healthy, main_github_aibot_webhook_dispatcher
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,

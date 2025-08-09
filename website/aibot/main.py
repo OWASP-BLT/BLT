@@ -11,7 +11,7 @@ import requests
 from django.conf import settings
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from jsonschema import ValidationError, validate
 from unidiff import PatchedFile, PatchSet
 
@@ -24,7 +24,10 @@ from website.aibot.utils import (
     analyze_code_ruff_bandit,
     extract_json_block,
     issue_analysis_marker,
+    parse_json,
     pr_analysis_marker,
+    sign_payload,
+    validate_github_request,
     verify_github_signature,
 )
 
@@ -35,26 +38,16 @@ configure_and_validate_settings()
 
 SCHEMAS = load_validation_schemas()
 PROMPTS = load_prompts()
-
 # Scalability
 
 
 @require_GET
 def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
-    """
-    Full health check that ensures:
-    1. Django server is up
-    2. GitHub webhook endpoint is reachable
-    3. Webhook delivery actually works by sending a test payload
-
-    Returns:
-        JsonResponse with basic status information
-    """
-
     github_token = settings.GITHUB_AIBOT_TOKEN
     webhook_id = settings.GITHUB_AIBOT_WEBHOOK_ID
     repo_api_url = settings.GITHUB_API_URL
     webhook_url = settings.GITHUB_AIBOT_WEBHOOK_URL
+    webhook_secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
 
     try:
         ping_url = f"{repo_api_url}/hooks/{webhook_id}/pings"
@@ -78,7 +71,11 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
             )
 
         test_payload = {"test": "webhook_health_check"}
+        payload_bytes = json.dumps(test_payload).encode("utf-8")
+        signature = sign_payload(webhook_secret, payload_bytes)
         test_headers = {"X-GitHub-Event": "ping", "Content-Type": "application/json"}
+        if signature:
+            test_headers["X-Hub-Signature-256"] = signature
         logger.info("Testing webhook delivery to %s", webhook_url)
         delivery_response = requests.post(webhook_url, json=test_payload, headers=test_headers, timeout=5)
 
@@ -124,84 +121,14 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
         )
 
 
-@csrf_exempt
-def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
-    """
-    Main entry point for handling GitHub webhook events.
+def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
+    return
 
-    This function routes different GitHub webhook events to their respective handlers
-    based on the event type and action. Supported events include:
-    - Pull Request events (opened, synchronize)
-    - Issue comments (bot mentions in PRs or issues)
-    - Issue events (opened, mentioned)
 
-    Args:
-        request: The incoming HTTP request from GitHub webhook
-
-    Returns:
-        JsonResponse: A response indicating the webhook was received successfully,
-                      or an error response if the request is in.
-
-    Raises:
-        Status 400: If the request method is not POST, request body is empty or JSON is invalid
-        Status 403: If the webhook signature verification fails
-    """
-    if request.method != "POST":
-        logger.warning("Invalid request method: %s. Only POST requests are accepted.", request.method)
-        return JsonResponse({"error": "Invalid method: Only POST requests are accepted"}, status=400)
-
-    if not request.body:
-        logger.warning("Request body is empty.")
-        return JsonResponse({"error": "Empty request body received."}, status=400)
-
-    try:
-        payload: Dict[str, Any] = json.loads(request.body)
-    except json.JSONDecodeError:
-        logger.error("Invalid JSON payload received")
-        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
-
-    event_type = request.headers.get("X-GitHub-Event", None)
-    if not event_type:
-        logger.warning("Missing X-GitHub-Event header.")
-        return JsonResponse({"error": "Missing X-GitHub-Event header."}, status=400)
-
-    logger.info("Webhook received - Event: %s, Action: %s", event_type, payload.get("action", "unknown"))
-    if event_type == "ping":
-        zen = payload.get("zen", "No zen message received.")
-        logger.info("Webhook ping received: %s", zen)
-        return JsonResponse({"status": "pong", "zen": zen}, status=200)
-
-    signature_header = request.headers.get("X-Hub-Signature-256", None)
-    if not signature_header:
-        logger.warning("Missing signature header in the request.")
-        return JsonResponse({"error": "Missing webhook signature header."}, status=403)
-
-    webhook_secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
-    if not verify_github_signature(webhook_secret, request.body, signature_header):
-        logger.warning("Invalid webhook signature received for the Github AIbot webhook.")
-        return JsonResponse({"error": "Invalid webhook signature."}, status=403)
-
-    try:
-        if event_type == "pull_request":
-            logger.info("Processing pull request event")
-            handle_pull_request_event(payload)
-            return JsonResponse({"status": "Pull request event processed"}, status=200)
-
-        if event_type == "issue_comment":
-            logger.info("Processing issue comment event")
-            handle_comment_event(payload)
-            return JsonResponse({"status": "Comment event processed"}, status=200)
-
-        if event_type == "issues":
-            logger.info("Processing issue event")
-            handle_issue_event(payload)
-            return JsonResponse({"status": "Issue event processed"}, status=200)
-
-        logger.info("Ignoring unsupported event type: %s", event_type)
-        return JsonResponse({"status": "Unsupported event type - ignored"})
-    except Exception as e:
-        logger.error("Unexpected error occurred while processing the webhook request: %s", str(e), exc_info=True)
-        return JsonResponse({"error": "Unexpected error occurred while processing the webhook request"}, status=500)
+def handle_ping(payload: Dict[str, Any]) -> JsonResponse:
+    zen = payload.get("zen", "No zen message received.")
+    logger.info("Webhook ping received: %s", zen)
+    return JsonResponse({"status": "pong", "zen": zen}, status=200)
 
 
 def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
@@ -222,10 +149,6 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
 
 
 def handle_comment_event(payload: Dict[str, Any]) -> None:
-    """
-    Validate and handle comments on PRs/issues where the bot might be mentioned.
-    Ignores comments made by the bot itself (present in the validation schema).
-    """
     validate_payload_schema(payload, SCHEMAS["COMMENT_SCHEMA"])
 
     comment = payload.get("comment", {})
@@ -267,6 +190,54 @@ def handle_issue_event(payload: Dict[str, Any]) -> JsonResponse:
         logger.info("Issue edited: #%s - %s", issue_data.get("number"), issue_data.get("title"))
         aibot_handle_issue_edited(payload)
     return JsonResponse({"status": "Issue event processed"})
+
+
+EVENT_HANDLERS = {
+    "ping": handle_ping,
+    "pull_request": handle_pull_request_event,
+    "issue_comment": handle_comment_event,
+    "issue": handle_issue_event,
+}
+
+
+@csrf_exempt
+@require_POST
+def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
+    valid, err = validate_github_request(request)
+    if not valid:
+        logger.error("Error in validating github request: %s", err)
+        return JsonResponse({"error": err})
+
+    payload = parse_json(request.body)
+    if not payload:
+        return JsonResponse({"error": "Unable to parse payload."})
+    event_type = request.headers["X-GitHub-Event"]
+
+    signature_header = request.headers.get("X-Hub-Signature-256")
+    webhook_secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
+    valid_sig, err_sig = verify_github_signature(webhook_secret, request.body, signature_header)
+    if not valid_sig:
+        logger.error("Error in validating github request: %s", err_sig)
+        return JsonResponse({"error": err_sig})
+
+    logger.info("Webhook received - Event: %s, Action: %s", event_type, payload.get("action", "unknown"))
+    logger.debug("Payload: %s", json.dumps(payload, indent=2, sort_keys=True))
+
+    def get_handler(event_type):
+        handler = EVENT_HANDLERS.get(event_type)
+        if handler:
+            return handler
+        for key, h in EVENT_HANDLERS.items():
+            if isinstance(key, tuple) and event_type in key:
+                return h
+        return None
+
+    handler = get_handler(event_type)
+    if handler:
+        return handler(payload)
+    else:
+        logger.error("No handler found for event type %s", event_type)
+        return JsonResponse({"error": f"Unsupported event type {event_type}"})
 
 
 def aibot_pr_opened_or_synchronize(pr_instance: PullRequest) -> None:

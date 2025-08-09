@@ -13,7 +13,7 @@ django.setup()
 from website.aibot.aibot_env import load_prompts
 from website.aibot.clients import q_client
 from website.aibot.models import PullRequest
-from website.aibot.network import fetch_pr_diff, generate_embedding, generate_gemini_response, post_github_comment
+from website.aibot.network import fetch_pr_diff, generate_embedding
 from website.aibot.qdrant_utils import get_similar_merged_chunks
 from website.aibot.utils import analyze_code_ruff_bandit, extract_json_block
 
@@ -90,7 +90,3 @@ placeholders = {
 
 for key, value in placeholders.items():
     prompt = prompt.replace(key, str(value))
-
-bot_response = generate_gemini_response(prompt)
-
-post_github_comment(pr_instance.comments_url, bot_response)

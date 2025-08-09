@@ -1,30 +1,10 @@
 import json
 import logging
 from json import JSONDecodeError
-from typing import TypedDict
 
 from website.aibot.network import fetch_pr_files
 
 logger = logging.getLogger(__name__)
-
-
-class BranchMismatchError(Exception):
-    """Raised when the PR base branch is not the default branch."""
-
-    pass
-
-
-class ChunkType(TypedDict, total=False):
-    """Represents a chunk of code extracted from code files."""
-
-    type: str
-    name: str
-    chunk: str
-    file: str
-    start_line: int
-    end_line: int
-    part_index: int
-    part_total: int
 
 
 class PullRequest:
@@ -52,15 +32,43 @@ class PullRequest:
         self._verify_branch()
         self._load_pr_files()
 
+    def __repr__(self) -> str:
+        return (
+            f"<PullRequest "
+            f"#{self.number} '{self.title}' "
+            f"author={self.author} "
+            f"action={self.action} "
+            f"state={'draft' if self.is_draft else self.state} "
+            f"head={self.head_branch} base={self.base_branch} "
+            f"repo={self.repo_full_name}>"
+        )
+
     # Make the error msg more readable, don't crash the entire app
-    def _verify_branch(self):
-        if self.default_branch != self.base_branch:
-            logger.error(
-                "PR base branch '%s' does not match repo default branch '%s'", self.base_branch, self.default_branch
-            )
-            raise BranchMismatchError(
-                f"PR base branch '{self.base_branch}' does not match repo default branch '{self.default_branch}'"
-            )
+    def _verify_branch(self) -> bool:
+        """
+        Verify that the PR's base branch matches the repo's default branch.
+
+        This is critical because our semantic search index is based on the default branch.
+        If the base is different (e.g. 'feature'), the retrieved context may be outdated or incorrect.
+
+        Returns:
+            True if base matches default branch.
+            False if mismatch — caller should skip AI-powered review.
+        """
+        if self.default_branch == self.base_branch:
+            return True
+
+        logger.warning(
+            "PR #%d: Base branch '%s' != default branch '%s'. "
+            "Skipping AI-powered code review because semantic search is indexed on '%s'. "
+            "To enable AI review, target '%s' or rebase onto it. Support for non-default bases is coming.",
+            self.number,
+            self.base_branch,
+            self.default_branch,
+            self.default_branch,
+            self.default_branch,
+        )
+        return False
 
     def _load_pr_files(self):
         pr_files = fetch_pr_files(self.files_url)
