@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from django.conf import settings
 from django.http import HttpRequest, JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 from jsonschema import ValidationError, validate
@@ -30,6 +31,7 @@ from website.aibot.utils import (
     validate_github_request,
     verify_github_signature,
 )
+from website.models import GithubAppInstallation, GithubAppRepo, InstallationState, RepoState
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +124,97 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
 
 
 def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
+    # TODO Add validation schema and valdiate like other handlers
+    action = payload["action"]
+    installation_data = payload["installation"]
+    account_data = installation_data["account"]
+    sender_login = payload.get("sender", {}).get("login")
+    if action == "created":
+        installation = GithubAppInstallation.objects.create(
+            installation_id=installation_data["id"],
+            app_id=installation_data["app_id"],
+            app_name=payload.get("app_slug"),
+            account_login=account_data["login"],
+            account_type=account_data["type"],
+            state=InstallationState.ACTIVE,
+            activated_at=timezone.now(),
+            activated_by_account_login=sender_login,
+            permissions=installation_data.get("permissions", {}),
+            subscribed_events=installation_data.get("events", []),
+        )
+
+        repo_objects = []
+        for repo_data in payload.get("repositories", []):
+            repo_objects.append(
+                GithubAppRepo(
+                    installation=installation,
+                    repo_id=repo_data["id"],
+                    name=repo_data["name"],
+                    full_name=repo_data["full_name"],
+                    is_private=repo_data["private"],
+                    state=RepoState.PROCESSING,
+                    default_branch="main",
+                    permissions=installation.permissions,
+                )
+            )
+
+        GithubAppRepo.objects.bulk_create(repo_objects)
+        logger.info(
+            "Bulk created %d repositories for installation_id=%s, account_login=%s. Repos: %s",
+            len(repo_objects),
+            installation.installation_id,
+            installation.account_login,
+            [repo.full_name for repo in repo_objects],
+        )
+
+        # TODO Add logic for embedding and storing these repos in qdrant, confirm if there needs to be a set limit of number of repos per user
+
+        return JsonResponse({"success": "App installed successfully"})
+
+    elif action in ("deleted", "suspend", "unsuspend"):
+        try:
+            installation = GithubAppInstallation.objects.get(installation_id=installation_data["id"])
+        except GithubAppInstallation.DoesNotExist:
+            sender = sender_login or "unknown"
+            repo_full_name = installation_data.get("repository", {}).get("full_name", "unknown")
+            action_upper = action.upper()
+
+            logger.warning(
+                "%s webhook action received for unknown installation_id=%s from sender=%s targeting repo=%s. "
+                "No matching GithubAppInstallation found. Possible stale data or race condition. "
+                "Verify data integrity and installation lifecycle.",
+                action_upper,
+                installation_data["id"],
+                sender,
+                repo_full_name,
+            )
+            return JsonResponse({"error": "Installation not found"}, status=404)
+
+        state_mapping = {
+            "deleted": ("remove", RepoState.REMOVED),
+            "suspend": ("suspend", RepoState.SUSPENDED),
+            "unsuspend": ("activate", RepoState.ACTIVE),
+        }
+
+        webhook_action, repo_state = state_mapping[action]
+        installation.apply_webhook_state(webhook_action, sender_login)
+        installation.save()
+        installation.repositories.update(state=repo_state, updated_at=timezone.now())
+        return JsonResponse({"success": "App state modified successfully"})
+
+    else:
+        logger.warning(f"Unknown installation action received: {action}")
+        return JsonResponse({"error": "Unsupported action"}, status=400)
+
+
+def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonResponse:
+    # TODO Add validation schema and valdiate like other handlers
+    return
+
+
+def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
+    # TODO Add validation schema and valdiate like other handlers
+
     return
 
 
@@ -197,6 +290,9 @@ EVENT_HANDLERS = {
     "pull_request": handle_pull_request_event,
     "issue_comment": handle_comment_event,
     "issue": handle_issue_event,
+    "installation": handle_installation_event,
+    "installation_event": handle_installation_event,
+    "repository": handle_repository_event,
 }
 
 

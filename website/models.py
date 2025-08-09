@@ -2523,7 +2523,13 @@ class ReminderSettings(models.Model):
         return cls._timezone_choices
 
 
-class GithubInstallation(models.Model):
+class InstallationState(models.TextChoices):
+    ACTIVE = "active", "Active"
+    REMOVED = "removed", "Removed"
+    SUSPENDED = "suspended", "Suspended"
+
+
+class GithubAppInstallation(models.Model):
     installation_id = models.BigIntegerField(unique=True, primary_key=True)
     app_id = models.BigIntegerField()
     app_name = models.CharField(max_length=100)
@@ -2535,25 +2541,66 @@ class GithubInstallation(models.Model):
             ("Organization", "Organization"),
         ],
     )
-    is_active = models.BooleanField(default=True)
+    state = models.CharField(
+        max_length=20,
+        choices=InstallationState.choices,
+        default=InstallationState.ACTIVE,
+    )
+    activated_at = models.DateTimeField(null=True, blank=True)
+    activated_by_account_login = models.CharField(max_length=100, null=True, blank=True)
+    removed_at = models.DateTimeField(null=True, blank=True)
+    removed_by_account_login = models.CharField(max_length=100, null=True, blank=True)
     suspended_at = models.DateTimeField(null=True, blank=True)
     suspended_by_account_login = models.CharField(max_length=100, null=True, blank=True)
     permissions = models.JSONField(help_text="Permissions granted to this installation", default=dict)
-    events = models.JSONField(default=list, blank=True)
+    subscribed_events = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Installation {self.installation_id} ({self.account_login})"
 
+    def apply_webhook_state(self, action, sender_login=None):
+        now = timezone.now()
+
+        if action == "suspend":
+            self.state = InstallationState.SUSPENDED
+            self.suspended_at = now
+            self.suspended_by_account_login = sender_login
+
+        elif action == "remove":
+            self.state = InstallationState.REMOVED
+            self.removed_at = now
+            self.removed_by_account_login = sender_login
+
+        elif action == "activate":
+            self.state = InstallationState.ACTIVE
+            self.activated_at = now
+            self.activated_by_account_login = sender_login
+            self.suspended_at = None
+            self.suspended_by_account_login = None
+
+
+class RepoState(models.TextChoices):
+    ACTIVE = "active", "Active"
+    REMOVED = "removed", "Removed"
+    PROCESSING = "processing", "Processing"
+    ARCHIVED = "archived", "Archived"
+    DELETED = "deleted", "Deleted"
+    SUSPENDED = "suspended", "Suspended"
+
 
 class GithubAppRepo(models.Model):
-    installation = models.ForeignKey(GithubInstallation, on_delete=models.CASCADE, related_name="repositories")
+    installation = models.ForeignKey(GithubAppInstallation, on_delete=models.CASCADE, related_name="repositories")
     repo_id = models.BigIntegerField()
     name = models.CharField(max_length=200)
     full_name = models.CharField(max_length=200)
     url = models.URLField(max_length=500, blank=True, null=True)
-    is_active = models.BooleanField(default=False)
+    state = models.CharField(
+        max_length=20,
+        choices=RepoState.choices,
+        default=RepoState.PROCESSING,
+    )
     is_private = models.BooleanField(default=False)
     default_branch = models.CharField(max_length=100, default="main")
     permissions = models.JSONField(default=dict)
@@ -2573,7 +2620,7 @@ class GithubAppRepo(models.Model):
 
 class AibotComment(models.Model):
     installation = models.ForeignKey(
-        GithubInstallation, on_delete=models.CASCADE, help_text="The GitHub App installation that triggered this"
+        GithubAppInstallation, on_delete=models.CASCADE, help_text="The GitHub App installation that triggered this"
     )
     repository = models.ForeignKey(
         GithubAppRepo, on_delete=models.CASCADE, help_text="The repo where the comment was made"
