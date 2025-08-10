@@ -29,6 +29,8 @@ from website.models import (
     ForumComment,
     ForumPost,
     ForumVote,
+    GithubAppInstallation,
+    GithubAppRepo,
     GitHubIssue,
     GitHubReview,
     Hunt,
@@ -779,6 +781,8 @@ admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(JoinRequest, JoinRequestAdmin)
 admin.site.register(Notification)
+admin.site.register(GithubAppInstallation)
+admin.site.register(GithubAppRepo)
 
 
 @admin.register(BannedApp)

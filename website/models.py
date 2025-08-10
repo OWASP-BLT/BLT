@@ -2558,7 +2558,7 @@ class GithubAppInstallation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Installation {self.installation_id} ({self.account_login})"
+        return f"Installation ({self.installation_id}) of '{self.app_name}' by {self.account_login}"
 
     def apply_webhook_state(self, action, sender_login=None):
         now = timezone.now()
@@ -2592,10 +2592,9 @@ class RepoState(models.TextChoices):
 
 class GithubAppRepo(models.Model):
     installation = models.ForeignKey(GithubAppInstallation, on_delete=models.CASCADE, related_name="repositories")
-    repo_id = models.BigIntegerField()
+    repo_id = models.BigIntegerField(unique=True)
     name = models.CharField(max_length=200)
     full_name = models.CharField(max_length=200)
-    url = models.URLField(max_length=500, blank=True, null=True)
     state = models.CharField(
         max_length=20,
         choices=RepoState.choices,
@@ -2607,23 +2606,26 @@ class GithubAppRepo(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=["installation", "repo_id"], name="unique_installation_repo")]
-
     def __str__(self):
         return f"{self.installation.account_login} installed {self.installation.app_name} on {self.full_name}"
 
-    def save(self, *args, **kwargs):
-        self.url = f"https://github.com/{self.full_name}"
-        super().save(*args, **kwargs)
+    @property
+    def url(self) -> str:
+        return f"https://github.com/{self.full_name}"
 
 
 class AibotComment(models.Model):
     installation = models.ForeignKey(
-        GithubAppInstallation, on_delete=models.CASCADE, help_text="The GitHub App installation that triggered this"
+        GithubAppInstallation,
+        on_delete=models.CASCADE,
+        related_name="aibot_comments",
+        help_text="The GitHub App installation that triggered this",
     )
     repository = models.ForeignKey(
-        GithubAppRepo, on_delete=models.CASCADE, help_text="The repo where the comment was made"
+        GithubAppRepo,
+        on_delete=models.CASCADE,
+        related_name="aibot_comments",
+        help_text="The repo where the comment was made",
     )
     issue_number = models.BigIntegerField(help_text="Issue or PR number on GitHub")
     comment_id = models.BigIntegerField(unique=True, null=True, blank=True)

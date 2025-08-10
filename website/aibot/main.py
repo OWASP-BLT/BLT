@@ -130,44 +130,55 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
     account_data = installation_data["account"]
     sender_login = payload.get("sender", {}).get("login")
     if action == "created":
-        installation = GithubAppInstallation.objects.create(
+        installation, created = GithubAppInstallation.objects.get_or_create(
             installation_id=installation_data["id"],
-            app_id=installation_data["app_id"],
-            app_name=payload.get("app_slug"),
-            account_login=account_data["login"],
-            account_type=account_data["type"],
-            state=InstallationState.ACTIVE,
-            activated_at=timezone.now(),
-            activated_by_account_login=sender_login,
-            permissions=installation_data.get("permissions", {}),
-            subscribed_events=installation_data.get("events", []),
+            defaults={
+                "app_id": installation_data["app_id"],
+                "app_name": installation_data.get("app_slug"),
+                "account_login": account_data["login"],
+                "account_type": account_data["type"],
+                "state": InstallationState.ACTIVE,
+                "activated_at": timezone.now(),
+                "activated_by_account_login": sender_login,
+                "permissions": installation_data.get("permissions", {}),
+                "subscribed_events": installation_data.get("events", []),
+            },
         )
 
-        repo_objects = []
+        processed_repos = []
         for repo_data in payload.get("repositories", []):
-            repo_objects.append(
-                GithubAppRepo(
-                    installation=installation,
-                    repo_id=repo_data["id"],
-                    name=repo_data["name"],
-                    full_name=repo_data["full_name"],
-                    is_private=repo_data["private"],
-                    state=RepoState.PROCESSING,
-                    default_branch="main",
-                    permissions=installation.permissions,
-                )
+            repo_obj, created = GithubAppRepo.objects.update_or_create(
+                repo_id=repo_data["id"],
+                defaults={
+                    "installation": installation,
+                    "name": repo_data["name"],
+                    "full_name": repo_data["full_name"],
+                    "is_private": repo_data["private"],
+                    "state": RepoState.PROCESSING,
+                    "default_branch": "main",
+                    "permissions": installation.permissions,
+                },
             )
+            processed_repos.append((repo_obj.full_name, created))
 
-        GithubAppRepo.objects.bulk_create(repo_objects)
+        created_repos = [name for name, created in processed_repos if created]
+        updated_repos = [name for name, created in processed_repos if not created]
+
         logger.info(
-            "Bulk created %d repositories for installation_id=%s, account_login=%s. Repos: %s",
-            len(repo_objects),
+            "Processed %d repositories for app %s (id=%s) installation_id=%s, account_login=%s. "
+            "Created: %d, Updated: %d. Repos: %s",
+            len(processed_repos),
+            installation.app_name,
+            installation.app_id,
             installation.installation_id,
             installation.account_login,
-            [repo.full_name for repo in repo_objects],
+            len(created_repos),
+            len(updated_repos),
+            [name for name, _ in processed_repos],
         )
 
-        # TODO Add logic for embedding and storing these repos in qdrant, confirm if there needs to be a set limit of number of repos per user
+        # TODO Add logic for embedding and storing these repos in qdrant,
+        # confirm if there needs to be a set limit of number of repos per user
 
         return JsonResponse({"success": "App installed successfully"})
 
@@ -196,26 +207,172 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
             "unsuspend": ("activate", RepoState.ACTIVE),
         }
 
-        webhook_action, repo_state = state_mapping[action]
+        webhook_action, installation_state = state_mapping[action]
         installation.apply_webhook_state(webhook_action, sender_login)
         installation.save()
-        installation.repositories.update(state=repo_state, updated_at=timezone.now())
-        return JsonResponse({"success": "App state modified successfully"})
+        # installation.repositories.update(state=installation_state, updated_at=timezone.now())
+        logger.info(
+            "%s webhook action successfully applied for installation_id=%s by sender=%s on repo=%s. "
+            "State transitioned to '%s'.",
+            webhook_action.upper(),
+            installation_data["id"],
+            sender_login or "not found",
+            installation_data.get("repository", {}).get("full_name", "unknown"),
+            installation_state,
+        )
+        return JsonResponse({"success": "App state modified successfully."})
 
     else:
         logger.warning(f"Unknown installation action received: {action}")
-        return JsonResponse({"error": "Unsupported action"}, status=400)
+        return JsonResponse({"error": "Unsupported action."}, status=400)
 
 
 def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonResponse:
-    # TODO Add validation schema and valdiate like other handlers
-    return
+    installation_id = payload["installation"]["id"]
+    sender_login = payload.get("sender", {}).get("login")
+    repos_added = payload.get("repositories_added", [])
+    repos_removed = payload.get("repositories_removed", [])
+
+    try:
+        installation = GithubAppInstallation.objects.get(installation_id=installation_id)
+    except GithubAppInstallation.DoesNotExist:
+        logger.warning(
+            "installation_repositories webhook received for unknown installation_id=%s from sender=%s. "
+            "Repositories added: %s, removed: %s. No matching GithubAppInstallation found. "
+            "This may indicate stale data, delayed webhook delivery, or an untracked installation. ",
+            installation_id,
+            sender_login,
+            [repo.get("full_name") for repo in repos_added],
+            [repo.get("full_name") for repo in repos_removed],
+        )
+
+        return JsonResponse({"error": "Installation not found."}, status=404)
+    processed_repos = []
+
+    for repo_data in repos_added:
+        repo_obj, created = GithubAppRepo.objects.update_or_create(
+            repo_id=repo_data["id"],
+            defaults={
+                "installation": installation,
+                "name": repo_data["name"],
+                "full_name": repo_data["full_name"],
+                "is_private": repo_data["private"],
+                "state": RepoState.PROCESSING,
+                "default_branch": "main",
+                "permissions": installation.permissions,
+            },
+        )
+        processed_repos.append((repo_obj.full_name, created))
+
+    created_repos = [name for name, created in processed_repos if created]
+    updated_repos = [name for name, created in processed_repos if not created]
+
+    logger.info(
+        "Processed %d repositories for installation_id=%s. Created: %d, Updated: %d. Repos: %s",
+        len(processed_repos),
+        installation_id,
+        len(created_repos),
+        len(updated_repos),
+        [name for name, _ in processed_repos],
+    )
+
+    repo_ids_removed = [repo["id"] for repo in repos_removed]
+    if repo_ids_removed:
+        GithubAppRepo.objects.filter(installation=installation, repo_id__in=repo_ids_removed).update(
+            state=RepoState.REMOVED, updated_at=timezone.now()
+        )
+        if repo_ids_removed:
+            logger.info(
+                "Marked %d repositories as REMOVED for installation_id=%s. Repos: %s",
+                len(repo_ids_removed),
+                installation_id,
+                [repo.get("full_name") for repo in repos_removed],
+            )
+
+    return JsonResponse({"status": "Repository information updated."})
 
 
 def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
-    # TODO Add validation schema and valdiate like other handlers
+    action = payload["action"]
+    repo_data = payload["repository"]
+    sender_login = payload.get("sender", {}).get("login")
 
-    return
+    try:
+        repo = GithubAppRepo.objects.get(repo_id=repo_data["id"])
+    except GithubAppRepo.DoesNotExist:
+        logger.warning(
+            "Repository event received for untracked repo: %s (id=%s), action=%s, sender=%s",
+            repo_data["full_name"],
+            repo_data["id"],
+            action,
+            sender_login,
+        )
+        return JsonResponse({"error": "Repository not tracked"}, status=404)
+
+    state_changes = {
+        "deleted": RepoState.DELETED,
+        "archived": RepoState.ARCHIVED,
+        "unarchived": RepoState.ACTIVE,
+        "privatized": None,
+        "publicized": None,
+    }
+
+    if action in state_changes:
+        if state_changes[action]:
+            repo.state = state_changes[action]
+
+        if action in ("privatized", "publicized"):
+            repo.is_private = action == "privatized"
+
+        repo.save()
+        logger.info(
+            "Updated repo %s (id=%s) to state=%s after %s event by sender=%s",
+            repo.full_name,
+            repo.repo_id,
+            repo.state,
+            action,
+            sender_login,
+        )
+
+    elif action == "renamed":
+        old_name = repo.full_name
+        repo.name = repo_data["name"]
+        repo.full_name = repo_data["full_name"]
+        repo.save()
+        logger.info(
+            "Renamed repository from %s to %s (id=%s) by sender=%s",
+            old_name,
+            repo.full_name,
+            repo.repo_id,
+            sender_login,
+        )
+
+    elif action == "transferred":
+        # GitHub transfers can affect permissions - may want to re-check access
+        # For now just update the name if it changed. Need to learn about this in more detail,
+        # but it's an edge case so can be left like this for now
+        repo.name = repo_data["name"]
+        repo.full_name = repo_data["full_name"]
+        repo.save()
+        logger.info(
+            "Updated repository %s (id=%s) after transfer by sender=%s", repo.full_name, repo.repo_id, sender_login
+        )
+
+    elif action in ("created", "edited"):
+        # not relevant for our uscase
+        pass
+
+    else:
+        logger.warning(
+            "Unhandled repository action: %s for repo %s (id=%s) by sender=%s",
+            action,
+            repo.full_name,
+            repo.repo_id,
+            sender_login,
+        )
+        return JsonResponse({"error": "Unsupported action"}, status=400)
+
+    return JsonResponse({"status": "Repository updated successfully"})
 
 
 def handle_ping(payload: Dict[str, Any]) -> JsonResponse:
@@ -241,7 +398,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     return JsonResponse({"status": "PR event processed"})
 
 
-def handle_comment_event(payload: Dict[str, Any]) -> None:
+def handle_Issue_comment_event(payload: Dict[str, Any]) -> None:
     validate_payload_schema(payload, SCHEMAS["COMMENT_SCHEMA"])
 
     comment = payload.get("comment", {})
@@ -288,10 +445,10 @@ def handle_issue_event(payload: Dict[str, Any]) -> JsonResponse:
 EVENT_HANDLERS = {
     "ping": handle_ping,
     "pull_request": handle_pull_request_event,
-    "issue_comment": handle_comment_event,
+    "issue_comment": handle_Issue_comment_event,
     "issue": handle_issue_event,
     "installation": handle_installation_event,
-    "installation_event": handle_installation_event,
+    "installation_repositories": handle_installation_repositories_event,
     "repository": handle_repository_event,
 }
 
@@ -306,8 +463,13 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
 
     payload = parse_json(request.body)
     if not payload:
+        logger.debug("Failed to parse payload. Raw body: %s", request.body.decode("utf-8"))
         return JsonResponse({"error": "Unable to parse payload."})
+
     event_type = request.headers["X-GitHub-Event"]
+
+    logger.info("Received event: %s", event_type)
+    logger.debug("Payload: %s", json.dumps(payload, indent=2, sort_keys=True))
 
     signature_header = request.headers.get("X-Hub-Signature-256")
     webhook_secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
@@ -316,19 +478,7 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
         logger.error("Error in validating github request: %s", err_sig)
         return JsonResponse({"error": err_sig})
 
-    logger.info("Webhook received - Event: %s, Action: %s", event_type, payload.get("action", "unknown"))
-    logger.debug("Payload: %s", json.dumps(payload, indent=2, sort_keys=True))
-
-    def get_handler(event_type):
-        handler = EVENT_HANDLERS.get(event_type)
-        if handler:
-            return handler
-        for key, h in EVENT_HANDLERS.items():
-            if isinstance(key, tuple) and event_type in key:
-                return h
-        return None
-
-    handler = get_handler(event_type)
+    handler = EVENT_HANDLERS.get(event_type)
     if handler:
         return handler(payload)
     else:
