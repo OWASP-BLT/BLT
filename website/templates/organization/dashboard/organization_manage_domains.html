@@ -60,7 +60,9 @@
                                                          src="{{ MEDIA_URL }}{{ domain.logo }}"
                                                          alt="{{ domain.name }} Logo"
                                                          height="48"
-                                                         width="48">
+                                                         width="48"
+                                                         loading="lazy"
+                                                         decoding="async">
                                                 {% else %}
                                                     {{ domain.name|first|upper }}
                                                 {% endif %}
@@ -68,15 +70,20 @@
                                         </div>
                                         <div>
                                             <h3 class="text-lg font-semibold text-gray-900">{{ domain.name|capfirst }}</h3>
-                                            <a href="{% if domain.url|slice:':4' == 'http' %}{{ domain.url }}{% else %}https://{{ domain.url }}{% endif %}"
-                                               target="_blank"
-                                               class="text-sm text-[#e74c3c] hover:text-red-800 hover:underline flex items-center gap-1">
-                                                {{ domain.url }}
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
-                                                    </path>
-                                                </svg>
-                                            </a>
+                                            {% if domain.url %}
+                                                <a href="{% if domain.url|slice:':4' == 'http' %}{{ domain.url }}{% else %}https://{{ domain.url }}{% endif %}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="text-sm text-[#e74c3c] hover:text-red-800 hover:underline flex items-center gap-1">
+                                                    {{ domain.url|default_if_none:"" }}
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                                        </path>
+                                                    </svg>
+                                                </a>
+                                            {% else %}
+                                                <span class="text-sm text-gray-400">No URL provided</span>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div class="flex items-center space-x-2 select-none">
