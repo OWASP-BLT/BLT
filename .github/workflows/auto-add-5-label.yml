@@ -1,0 +1,90 @@
+name: Auto-add $5 Label for Sponsors
+
+# Trigger the workflow when a new issue is opened
+on:
+  issues:
+    types: [opened]
+
+# Set permissions to allow the workflow to add labels to issues
+permissions:
+  issues: write
+
+# Define the job that will run when triggered
+jobs:
+  add-sponsor-label:
+    # Name of the job for easy identification
+    name: Add $5 label for sponsor issues
+    
+    # Run on the latest Ubuntu runner
+    runs-on: ubuntu-latest
+    
+    # Define the steps for this job
+    steps:
+      # Step 1: Checkout the repository to access workflow files
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      # Step 2: Add $5 label if issue creator is a sponsor
+      - name: Add $5 label for sponsors
+        uses: actions/github-script@v7
+        with:
+          # Grant the script access to the GitHub API
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # The script that will run
+          script: |
+            // Get the issue context and actor information
+            const issue = context.issue;
+            const actor = context.actor;
+            
+            // Log the issue details for debugging
+            console.log(`Issue #${issue.number} opened by: ${actor}`);
+            console.log(`Issue title: ${issue.title}`);
+            
+            // Read the SPONSORS secret from repository secrets
+            const sponsorsSecret = process.env.SPONSORS;
+            
+            if (!sponsorsSecret) {
+              console.log('❌ SPONSORS secret not found. Please configure the SPONSORS repository secret.');
+              return;
+            }
+            
+            // Parse the comma-separated list of sponsor usernames
+            const sponsors = sponsorsSecret.split(',').map(username => username.trim());
+            console.log(`📋 Sponsors list: ${sponsors.join(', ')}`);
+            
+            // Check if the issue creator is in the sponsors list (case-sensitive match)
+            const isSponsor = sponsors.includes(actor);
+            console.log(`🔍 Is ${actor} a sponsor? ${isSponsor ? '✅ Yes' : '❌ No'}`);
+            
+            if (isSponsor) {
+              try {
+                // Add the $5 label to the issue using GitHub REST API
+                await github.rest.issues.addLabels({
+                  owner: issue.owner,
+                  repo: issue.repo,
+                  issue_number: issue.number,
+                  labels: ['$5']
+                });
+                
+                console.log(`✅ Successfully added $5 label to issue #${issue.number}`);
+                
+                // Add a comment to the issue indicating the label was added automatically
+                await github.rest.issues.createComment({
+                  owner: issue.owner,
+                  repo: issue.repo,
+                  issue_number: issue.number,
+                  body: `🎉 **Sponsor Issue Detected!**\n\nThis issue was automatically labeled with **$5** because it was opened by a sponsor (${actor}).\n\nThank you for your support! 🚀`
+                });
+                
+                console.log(`💬 Added sponsor comment to issue #${issue.number}`);
+                
+              } catch (error) {
+                console.error(`❌ Error adding $5 label: ${error.message}`);
+                console.error('Full error:', error);
+              }
+            } else {
+              console.log(`ℹ️ No action needed - ${actor} is not a sponsor`);
+            }
+        # Set environment variable to access the SPONSORS secret
+        env:
+          SPONSORS: ${{ secrets.SPONSORS }}
