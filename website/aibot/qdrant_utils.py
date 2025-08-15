@@ -7,14 +7,26 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
 from unidiff import PatchSet
 
-from website.aibot.chunk_utils import chunk_file
+from website.aibot.chunk_utils import chunk_file, postprocess_chunks
 from website.aibot.clients import q_client
 from website.aibot.models import PullRequest
-from website.aibot.network import fetch_raw_content, generate_embedding
+from website.aibot.network import fetch_raw_content, generate_embedding, github_api_get
 from website.aibot.types import ChunkType
-from website.aibot.utils import generate_uuid, sanitize_backslash
+from website.aibot.utils import generate_uuid, sanitize_name
 
 logger = logging.getLogger(__name__)
+
+EXTENSIONS_TO_PROCESS = {
+    ".py",
+    ".html",
+    ".yml",
+    ".yaml",
+    ".json",
+    ".md",
+    ".txt",
+}
+
+SKIP_DIRS = {"migrations", "__pycache__", "static", "staticfiles", "media"}
 
 
 def ensure_collection(q_client: QdrantClient, qdrant_collection: str, qdrant_vector_size: int) -> None:
@@ -128,3 +140,56 @@ def get_similar_merged_chunks(
         relevant_chunks[key] = chunk_data
 
     return list(relevant_chunks.values())
+
+
+def process_remote_repo(api_url: str, raw_content_url: str, repo_full_name: str, repo_id: str, branch="main"):
+    tree_url = f"{api_url}/git/trees/{branch}?recursive=1"
+    tree_data = github_api_get(tree_url)
+    r_name = sanitize_name(repo_full_name)
+    qdrant_collection = f"aibot-{r_name}-{repo_id}"
+
+    valid_items = []
+
+    def should_process_item(item: dict) -> bool:
+        """
+        Return True if the item is a file blob, not in a skipped directory,
+        and has an allowed extension.
+        """
+        if item.get("type") != "blob":
+            return False
+        path = item.get("path", "")
+        if not path:
+            return False
+        if any(path.startswith(skip_dir + "/") for skip_dir in SKIP_DIRS):
+            return False
+        _, ext = os.path.splitext(path)
+        return ext in EXTENSIONS_TO_PROCESS
+
+    for item in tree_data["tree"]:
+        if not should_process_item(item):
+            continue
+
+        valid_items.append(item)
+
+    for file_info in valid_items:
+        raw_url = f"{raw_content_url}/{branch}/{file_info['path']}"
+
+        content = fetch_raw_content(raw_url)
+
+        if not content:
+            continue
+
+        chunks = chunk_file(content, file_info["path"])
+        if not chunks:
+            continue
+
+        chunks = postprocess_chunks(chunks)
+        generate_and_store_embeddings(chunks, qdrant_collection)
+
+
+def generate_and_store_embeddings(chunks: List[ChunkType], qdrant_collection: str):
+    """Generates embeddings and stores them in Qdrant."""
+    for chunk in chunks:
+        embedding = generate_embedding(chunk["content"], chunk["chunk_type"])
+        if embedding:
+            upsert_to_qdrant(q_client, qdrant_collection, chunk, embedding)

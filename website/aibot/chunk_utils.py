@@ -21,18 +21,22 @@ CHUNK_OVERLAP = 200
 CHUNK_SIZE = 1000
 
 
+import math
+from typing import List
+
+
 def _split_chunk_lines(
     chunk: ChunkType, total_tokens: int, max_tokens: int = MAX_TOKENS, overlap: int = OVERLAP_LINES
 ) -> List[ChunkType]:
     """Returns a list of smaller, overlapping chunks."""
-    code_lines = chunk["chunk"].splitlines(keepends=True)
+    code_lines = chunk["content"].splitlines(keepends=True)
     n_parts = math.ceil(total_tokens / max_tokens)
     total_code_lines = len(code_lines)
     lines_per_part = math.ceil(total_code_lines / n_parts)
     mini_chunks: List[ChunkType] = []
 
     for part_idx in range(n_parts):
-        start_idx = part_idx * n_parts
+        start_idx = part_idx * lines_per_part
 
         if part_idx != 0:
             start_idx -= overlap
@@ -44,12 +48,13 @@ def _split_chunk_lines(
 
         mini_chunks.append(
             ChunkType(
-                type=chunk["type"],
-                name=chunk["name"],
-                chunk=snippet,
-                file=chunk["file"],
+                file_name=chunk["file_name"],
+                file_path=chunk["file_path"],
+                file_ext=chunk["file_ext"],
+                chunk_type=chunk["chunk_type"],
+                content=snippet,
                 start_line=chunk["start_line"] + start_idx + 1,
-                end_line=chunk["end_line"] + end_idx,
+                end_line=chunk["start_line"] + end_idx,
                 part_index=part_idx,
                 part_total=n_parts,
             )
@@ -65,10 +70,10 @@ def postprocess_chunks(chunks: List[ChunkType]) -> List[ChunkType]:
     processed_chunks: List[ChunkType] = []
 
     for chunk in chunks:
-        if not chunk["chunk"].strip():
+        if not chunk["content"].strip():
             continue
 
-        token_count = approximate_token_count_char(chunk["chunk"])
+        token_count = approximate_token_count_char(chunk["content"])
 
         if token_count <= MAX_TOKENS:
             processed_chunks.append(chunk)
@@ -140,17 +145,22 @@ def chunk_text_file(
     )
 
     chunks = splitter.split_text(content)
+    file_name = os.path.basename(file_path)
+    file_ext = os.path.splitext(file_path)[1].lower()
+
+    total_parts = len(chunks)
 
     return [
         ChunkType(
-            type="text_paragraph",
-            name=f"Text Chunk {i+1}",
-            chunk=chunk,
-            file=file_path,
+            file_name=file_name,
+            file_path=file_path,
+            file_ext=file_ext,
+            chunk_type="text_paragraph",
+            content=chunk,
             start_line=-1,
             end_line=-1,
-            part_index=0,
-            part_total=1,
+            part_index=i,
+            part_total=total_parts,
         )
         for i, chunk in enumerate(chunks)
     ]
@@ -178,10 +188,11 @@ def chunk_md_file(content: str, file_path: str) -> List[ChunkType]:
 
         chunks.append(
             ChunkType(
-                type="markdown_section",
-                name=name,
-                chunk=final_content,
-                file=file_path,
+                file_name=os.path.basename(file_path),
+                file_path=file_path,
+                file_ext=os.path.splitext(file_path)[1].lower(),
+                chunk_type="markdown_section",
+                content=final_content,
                 start_line=-1,
                 end_line=-1,
                 part_index=0,
@@ -206,16 +217,17 @@ def chunk_json_file(content: str, file_path: str) -> List[ChunkType]:
         for idx, item in enumerate(json_content):
             if isinstance(item, dict):
                 chunks.append(
-                    {
-                        "type": "json_array_item",
-                        "name": f"Item {idx + 1}",
-                        "chunk": json.dumps(item, indent=2),
-                        "file": file_path,
-                        "start_line": -1,
-                        "end_line": -1,
-                        "part_index": idx + 1,
-                        "part_total": len(json_content),
-                    }
+                    ChunkType(
+                        file_name=os.path.basename(file_path),
+                        file_path=file_path,
+                        file_ext=os.path.splitext(file_path)[1].lower(),
+                        chunk_type="json_array_item",
+                        content=json.dumps(item, indent=2),
+                        start_line=-1,
+                        end_line=-1,
+                        part_index=idx + 1,
+                        part_total=len(json_content),
+                    )
                 )
     elif isinstance(json_content, dict):
         items = list(json_content.items())
@@ -225,29 +237,31 @@ def chunk_json_file(content: str, file_path: str) -> List[ChunkType]:
             # Case 2: Nested object like {"k1": {}, "k2": {}}
             for idx, (key, value) in enumerate(items):
                 chunks.append(
-                    {
-                        "type": "json_nested_object",
-                        "name": key,
-                        "chunk": json.dumps(value, indent=2),
-                        "file": file_path,
-                        "start_line": -1,
-                        "end_line": -1,
-                        "part_index": idx + 1,
-                        "part_total": len(items),
-                    }
+                    ChunkType(
+                        file_name=os.path.basename(file_path),
+                        file_path=file_path,
+                        file_ext=os.path.splitext(file_path)[1].lower(),
+                        chunk_type="json_nested_object",
+                        content=json.dumps(value, indent=2),
+                        start_line=-1,
+                        end_line=-1,
+                        part_index=idx + 1,
+                        part_total=len(items),
+                    )
                 )
         else:
             chunks.append(
-                {
-                    "type": "json_full_object",
-                    "name": "Root Object",
-                    "chunk": json.dumps(json_content, indent=2),
-                    "file": file_path,
-                    "start_line": -1,
-                    "end_line": -1,
-                    "part_index": 1,
-                    "part_total": 1,
-                }
+                ChunkType(
+                    file_name=os.path.basename(file_path),
+                    file_path=file_path,
+                    file_ext=os.path.splitext(file_path)[1].lower(),
+                    chunk_type="json_full_object",
+                    content=json.dumps(json_content, indent=2),
+                    start_line=-1,
+                    end_line=-1,
+                    part_index=1,
+                    part_total=1,
+                )
             )
     else:
         pass
@@ -280,10 +294,11 @@ def chunk_yaml_file(content: str, file_path: str) -> List[ChunkType]:
 
     level_1_code = "\n".join(level_1_settings)
     level_1_chunk = ChunkType(
-        type="yaml",
-        name="level 1 settings",
-        chunk=level_1_code,
-        file=file_path,
+        file_name=os.path.basename(file_path),
+        file_path=file_path,
+        file_ext=os.path.splitext(file_path)[1].lower(),
+        chunk_type="yaml",
+        content=level_1_code,
         start_line=-1,
         end_line=-1,
         part_index=0,
@@ -295,10 +310,11 @@ def chunk_yaml_file(content: str, file_path: str) -> List[ChunkType]:
         group_content = group_content.rstrip("\n")
         group_content = f"File: {file_path}\n {group_name}:\n{group_content}"
         group_chunk = ChunkType(
-            type="yaml",
-            name=f"{group_name}",
-            chunk=group_content,
-            file=file_path,
+            file_name=os.path.basename(file_path),
+            file_path=file_path,
+            file_ext=os.path.splitext(file_path)[1].lower(),
+            chunk_type="yaml",
+            content=group_content,
             start_line=-1,
             end_line=-1,
             part_index=0,
@@ -450,14 +466,17 @@ def extract_functions_and_classes(tree: ast.AST, lines: List[str], file_path: st
             covered_lines.update(range(start_line, end_line))
 
             chunks.append(
-                {
-                    "type": "class" if isinstance(node, ast.ClassDef) else "function",
-                    "name": getattr(node, "name", None),
-                    "chunk": code_chunk,
-                    "file": file_path,
-                    "start_line": start_line + 1,
-                    "end_line": end_line,
-                }
+                ChunkType(
+                    file_name=os.path.basename(file_path),
+                    file_path=file_path,
+                    file_ext=os.path.splitext(file_path)[1].lower(),
+                    chunk_type="class" if isinstance(node, ast.ClassDef) else "function",
+                    content=code_chunk,
+                    start_line=start_line + 1,
+                    end_line=end_line,
+                    part_index=0,
+                    part_total=1,
+                )
             )
 
     return chunks, covered_lines
@@ -486,14 +505,15 @@ def extract_imports(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[Li
         return [], set()
 
     code_chunk = "\n".join(import_lines)
-    chunk = {
-        "type": "import_block",
-        "name": "import statements",
-        "chunk": code_chunk,
-        "file": file_path,
-        "start_line": start_line + 1,
-        "end_line": end_line,
-    }
+    chunk = ChunkType(
+        file_name=os.path.basename(file_path),
+        file_path=file_path,
+        file_ext=os.path.splitext(file_path)[1].lower(),
+        chunk_type="import_block",
+        content=code_chunk,
+        start_line=start_line + 1,
+        end_line=end_line,
+    )
 
     return [chunk], covered_lines
 
@@ -502,52 +522,40 @@ def extract_module_level_code(lines: List[str], covered_lines: Set[int], file_pa
     """
     Extract remaining top-level code that wasn't captured.
     """
-    chunks = []
+    chunks: List[ChunkType] = []
     current_block = []
+    file_name = os.path.basename(file_path)
+    file_ext = os.path.splitext(file_path)[1].lower()
+
+    def append_block(start_line: int, end_line: int, block_lines: List[str]):
+        if not block_lines:
+            return
+        chunks.append(
+            ChunkType(
+                file_name=file_name,
+                file_path=file_path,
+                file_ext=file_ext,
+                chunk_type="module-level-code",
+                content="\n".join(block_lines),
+                start_line=start_line,
+                end_line=end_line,
+            )
+        )
 
     for i, line in enumerate(lines):
         if i in covered_lines:
-            if current_block:
-                chunks.append(
-                    {
-                        "type": "module",
-                        "name": None,
-                        "chunk": "\n".join(current_block),
-                        "file": file_path,
-                        "start_line": i - len(current_block) + 1,
-                        "end_line": i,
-                    }
-                )
-                current_block = []
+            append_block(i - len(current_block) + 1, i, current_block)
+            current_block = []
             continue
 
         if line.strip() == "":
-            if current_block:
-                chunks.append(
-                    {
-                        "type": "module",
-                        "name": None,
-                        "chunk": "\n".join(current_block),
-                        "file": file_path,
-                        "start_line": i - len(current_block) + 1,
-                        "end_line": i,
-                    }
-                )
-                current_block = []
+            append_block(i - len(current_block) + 1, i, current_block)
+            current_block = []
         else:
             current_block.append(line)
 
     if current_block:
-        chunks.append(
-            {
-                "type": "module",
-                "name": None,
-                "chunk": "\n".join(current_block),
-                "file": file_path,
-                "start_line": len(lines) - len(current_block) + 1,
-                "end_line": len(lines),
-            }
-        )
+        append_block(len(lines) - len(current_block) + 1, len(lines), current_block)
 
     return chunks
 
@@ -556,8 +564,11 @@ def extract_if_blocks(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[
     """
     Extract top-level if-blocks and return as chunks along with covered line numbers.
     """
-    if_blocks = []
+    if_blocks: List[ChunkType] = []
     covered_lines = set()
+
+    file_name = os.path.basename(file_path)
+    file_ext = os.path.splitext(file_path)[1].lower()
 
     for node in ast.iter_child_nodes(tree):
         if isinstance(node, ast.If):
@@ -567,14 +578,15 @@ def extract_if_blocks(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[
             covered_lines.update(range(start_line, end_line))
 
             if_blocks.append(
-                {
-                    "type": "module",
-                    "name": "if_block",
-                    "chunk": code,
-                    "file": file_path,
-                    "start_line": start_line + 1,
-                    "end_line": end_line,
-                }
+                ChunkType(
+                    file_name=file_name,
+                    file_path=file_path,
+                    file_ext=file_ext,
+                    chunk_type="if-block",
+                    content=code,
+                    start_line=start_line + 1,
+                    end_line=end_line,
+                )
             )
 
     return if_blocks, covered_lines
@@ -584,8 +596,11 @@ def extract_try_blocks(tree: ast.AST, lines: List[str], file_path: str) -> Tuple
     """
     Extract try-except blocks and return as chunks along with covered line numbers.
     """
-    try_blocks = []
+    try_blocks: List[ChunkType] = []
     covered_lines = set()
+
+    file_name = os.path.basename(file_path)
+    file_ext = os.path.splitext(file_path)[1].lower()
 
     for node in ast.iter_child_nodes(tree):
         if isinstance(node, ast.Try):
@@ -595,14 +610,15 @@ def extract_try_blocks(tree: ast.AST, lines: List[str], file_path: str) -> Tuple
             covered_lines.update(range(start_line, end_line))
 
             try_blocks.append(
-                {
-                    "type": "try_block",
-                    "name": "try_except",
-                    "chunk": code,
-                    "file": file_path,
-                    "start_line": start_line + 1,
-                    "end_line": end_line,
-                }
+                ChunkType(
+                    file_name=file_name,
+                    file_path=file_path,
+                    file_ext=file_ext,
+                    chunk_type="try-block",
+                    content=code,
+                    start_line=start_line + 1,
+                    end_line=end_line,
+                )
             )
 
     return try_blocks, covered_lines

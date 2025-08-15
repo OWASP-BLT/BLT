@@ -2610,8 +2610,16 @@ class GithubAppRepo(models.Model):
         return f"{self.installation.account_login} installed {self.installation.app_name} on {self.full_name}"
 
     @property
-    def url(self) -> str:
+    def http_url(self) -> str:
         return f"https://github.com/{self.full_name}"
+
+    @property
+    def api_url(self) -> str:
+        return f"https://api.github.com/repos/{self.full_name}"
+
+    @property
+    def raw_content_url(self) -> str:
+        return f"https://raw.githubusercontent.com/{self.full_name}"
 
 
 class AibotComment(models.Model):

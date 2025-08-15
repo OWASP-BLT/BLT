@@ -1011,6 +1011,22 @@ Django = ">=1.11"
 six = "*"
 
 [[package]]
+name = "django-background-tasks"
+version = "1.2.8"
+description = "Database backed asynchronous task queue"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django_background_tasks-1.2.8-py3-none-any.whl", hash = "sha256:266b64316e364771afc3af73ae4c3e75f16782aa69e36c9e71d289cfd241347f"},
+    {file = "django_background_tasks-1.2.8.tar.gz", hash = "sha256:1ed5816f8d60f0ed436cd0435405e55e7b91e825fd69bcdada2d605ee1a97056"},
+]
+
+[package.dependencies]
+Django = ">=4.0"
+six = "*"
+
+[[package]]
 name = "django-bleach"
 version = "3.1.0"
 description = "Easily use bleach with Django models and templates"
@@ -1214,6 +1230,27 @@ redis = ">=3,<4.0.0 || >4.0.0,<4.0.1 || >4.0.1"
 
 [package.extras]
 hiredis = ["redis[hiredis] (>=3,!=4.0.0,!=4.0.1)"]
+
+[[package]]
+name = "django-rq"
+version = "3.1"
+description = "An app that provides django integration for RQ (Redis Queue)"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "django_rq-3.1-py3-none-any.whl", hash = "sha256:9c8a725aa3f43251a5571ec51d7b65a01613358574d01a5101861480963e59b7"},
+    {file = "django_rq-3.1.tar.gz", hash = "sha256:8d7b9137b85b8df18b1cdf06244eb71b39f43ad020c0a0c7d49723f8940074ae"},
+]
+
+[package.dependencies]
+django = ">=3.2"
+redis = ">=3.5"
+rq = ">=2"
+
+[package.extras]
+prometheus = ["prometheus-client (>=0.4.0)"]
+sentry = ["sentry-sdk (>=1.0.0)"]
 
 [[package]]
 name = "django-simple-captcha"
@@ -4753,6 +4790,22 @@ files = [
 ]
 
 [[package]]
+name = "rq"
+version = "2.4.1"
+description = "RQ is a simple, lightweight, library for creating background jobs, and processing them."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "rq-2.4.1-py3-none-any.whl", hash = "sha256:a3a0839ba3213a9be013b398670caf71d9360a0c8525f343687cf2c2199e5ec8"},
+    {file = "rq-2.4.1.tar.gz", hash = "sha256:40ba01af3edacc008ab376009a3a547278d2bfe02a77cd4434adc0b01788239f"},
+]
+
+[package.dependencies]
+click = ">=5"
+redis = ">=3.5,<6 || >6"
+
+[[package]]
 name = "rsa"
 version = "4.9"
 description = "Pure-Python RSA implementation"
@@ -6133,4 +6186,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "fb12bff1ab0e379e20104b1b503a4296ac3cc9f25535cd0e52f358c9a7e183f4"
+content-hash = "917314e9317eb24ea920c01b6208e07d84436e71320324e4911c2e557a152854"

@@ -40,7 +40,6 @@ configure_and_validate_settings()
 
 SCHEMAS = load_validation_schemas()
 PROMPTS = load_prompts()
-# Scalability
 
 
 @require_GET
@@ -210,7 +209,6 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
         webhook_action, installation_state = state_mapping[action]
         installation.apply_webhook_state(webhook_action, sender_login)
         installation.save()
-        # installation.repositories.update(state=installation_state, updated_at=timezone.now())
         logger.info(
             "%s webhook action successfully applied for installation_id=%s by sender=%s on repo=%s. "
             "State transitioned to '%s'.",
@@ -346,21 +344,6 @@ def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
             repo.repo_id,
             sender_login,
         )
-
-    elif action == "transferred":
-        # GitHub transfers can affect permissions - may want to re-check access
-        # For now just update the name if it changed. Need to learn about this in more detail,
-        # but it's an edge case so can be left like this for now
-        repo.name = repo_data["name"]
-        repo.full_name = repo_data["full_name"]
-        repo.save()
-        logger.info(
-            "Updated repository %s (id=%s) after transfer by sender=%s", repo.full_name, repo.repo_id, sender_login
-        )
-
-    elif action in ("created", "edited"):
-        # not relevant for our uscase
-        pass
 
     else:
         logger.warning(

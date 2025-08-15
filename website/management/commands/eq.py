@@ -98,22 +98,6 @@ class Command(BaseCommand):
     (with support for chunking and skipping non-relevant files), generates embeddings using
     the Gemini API, and stores the resulting vectors in a Qdrant vector database.
     It delegates chunking logic based on file type.
-
-    Attributes:
-        qdrant_client (QdrantClient): Client for interacting with the Qdrant vector database.
-        embedding_model (str): The embedding model used for generating text embeddings.
-
-    Methods:
-        handle(*args, **options): Initiates the embedding generation process.
-        process_repository_files(): Walks through the repository and processes each file.
-        process_file(file_path): Processes a single file by reading, chunking, and
-        storing embeddings.
-        _should_skip_file(file): Determines if a file should be skipped based on its extension.
-        _read_file(file_path): Reads the content of a file with error handling.
-        _store_embeddings(chunks): Generates embeddings for file chunks and stores them in Qdrant.
-        _generate_embedding(text, title): Calls the Gemini API to generate an embedding for
-        a text chunk.
-        _upsert_to_qdrant(chunk, embedding): Stores the embedding and associated metadata in Qdrant.
     """
 
     def __init__(self, *args, **kwargs):

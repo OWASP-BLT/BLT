@@ -102,6 +102,22 @@ def fetch_raw_content(f_raw_url: str) -> Optional[str]:
     return None
 
 
+def github_api_get(api_url: str) -> Optional[str]:
+    headers = {
+        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+    }
+
+    response = requests.get(api_url, headers=headers, timeout=5)
+    if response.status_code in RETRY_HTTP_CODES:
+        response.raise_for_status()
+    if response.status_code == 200:
+        return response.text
+
+    return None
+
+
 @retry(
     stop=stop_after_attempt(MAX_RETRIES),
     wait=_get_retry_wait_time,

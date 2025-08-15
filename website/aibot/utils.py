@@ -126,7 +126,7 @@ def extract_json_block(text: str) -> str:
     raise ValueError("No valid JSON found in response")
 
 
-def sanitize_backslash(name: str) -> str:
+def sanitize_name(name: str) -> str:
     """Replace any character that's not alphanumeric, underscore, or hyphen with '-'"""
     return re.sub(r"[^a-zA-Z0-9_\-]", "-", name)
 
