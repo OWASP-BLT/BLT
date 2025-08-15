@@ -986,6 +986,13 @@ class OwaspComplianceChecker(APIView):
 
     def check_vendor_neutrality(self, url):
         """Check vendor neutrality compliance"""
+        authorized_domains = ["example.com", "owasp.org"]
+        parsed_url = urlparse(url)
+        if parsed_url.netloc not in authorized_domains:
+            return {
+                "possible_paywall": None,
+                "details": {"url_checked": url, "error": "Unauthorized domain"},
+            }
         try:
             response = requests.get(url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
@@ -1006,6 +1013,11 @@ class OwaspComplianceChecker(APIView):
         url = request.data.get("url")
         if not url:
             return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        authorized_domains = ["example.com", "owasp.org"]
+        parsed_url = urlparse(url)
+        if parsed_url.netloc not in authorized_domains:
+            return Response({"error": "Unauthorized domain"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Run all compliance checks
         github_check = self.check_github_compliance(url)
