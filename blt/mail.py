@@ -125,7 +125,6 @@ class SlackNotificationEmailBackend(SMTPBackend):
                 # Prepare the message payload
                 payload = {"blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": email_text}}]}
 
-                # Send the message
                 response = requests.post(slack_webhook_url, json=payload)
                 response.raise_for_status()
 
