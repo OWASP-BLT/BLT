@@ -125,16 +125,16 @@
                                         <div class="mb-4">
                                             {% if lab.name == "SQL Injection" %}
                                                 <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">
-                                                {% if lab.name == "SQL Injection" %}
-                                                    Enter your SQL injection payload:
-                                                {% elif lab.name == "Cross-Site Scripting (XSS)" %}
-                                                    Enter your XSS payload:
-                                                {% elif lab.name == "Cross-Site Request Forgery" %}
-                                                    Enter your CSRF attack code:
-                                                {% else %}
-                                                    Enter your payload:
-                                                {% endif %}
-                                            </label>
+                                                    {% if lab.name == "SQL Injection" %}
+                                                        Enter your SQL injection payload:
+                                                    {% elif lab.name == "Cross-Site Scripting (XSS)" %}
+                                                        Enter your XSS payload:
+                                                    {% elif lab.name == "Cross-Site Request Forgery" %}
+                                                        Enter your CSRF attack code:
+                                                    {% else %}
+                                                        Enter your payload:
+                                                    {% endif %}
+                                                </label>
                                                 <textarea id="payload"
                                                           name="payload"
                                                           rows="4"
