@@ -280,7 +280,7 @@ class Command(BaseCommand):
         for task_data in tasks_data:
             task, created = Tasks.objects.update_or_create(
                 lab=csrf_lab,
-                order=task_data["order"], 
+                order=task_data["order"],
                 defaults={
                     "name": task_data["name"],
                     "description": task_data["description"],
