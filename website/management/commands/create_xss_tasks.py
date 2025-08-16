@@ -15,7 +15,6 @@ class Command(BaseCommand):
             )
             return
 
-        # Define the XSS lab tasks
         tasks_data = [
             {
                 "name": "Introduction to Cross-Site Scripting",
@@ -253,7 +252,6 @@ class Command(BaseCommand):
             },
         ]
 
-        # Create tasks and their content
         for task_data in tasks_data:
             task, created = Tasks.objects.get_or_create(
                 lab=xss_lab,
@@ -296,6 +294,5 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(self.style.SUCCESS(f'Updated content for task: "{task.name}"'))
 
-        # Update the total tasks count for the lab
         xss_lab.update_total_tasks()
         self.stdout.write(self.style.SUCCESS(f"XSS lab setup complete with {xss_lab.total_tasks} tasks"))
