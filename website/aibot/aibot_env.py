@@ -23,7 +23,6 @@ def configure_settings() -> None:
 
 def validate_settings() -> None:
     critical_settings = [
-        "GITHUB_AIBOT_TOKEN",
         "GITHUB_AIBOT_WEBHOOK_URL",
         "GITHUB_AIBOT_WEBHOOK_ID",
         "GITHUB_AIBOT_WEBHOOK_SECRET",
@@ -44,12 +43,13 @@ def validate_settings() -> None:
             missing_settings.append(key)
 
     if missing_settings:
+        logger.critical(f"Missing critical settings: {', '.join(missing_settings)}")
         raise ImproperlyConfigured(f"Missing critical settings: {', '.join(missing_settings)}")
 
 
 def configure_and_validate_settings() -> None:
-    validate_settings()
     configure_settings()
+    validate_settings()
 
 
 def load_validation_schemas() -> Dict[str, Any]:

@@ -2585,6 +2585,7 @@ class RepoState(models.TextChoices):
     ACTIVE = "active", "Active"
     REMOVED = "removed", "Removed"
     PROCESSING = "processing", "Processing"
+    ERROR = "error", "Error"
     ARCHIVED = "archived", "Archived"
     DELETED = "deleted", "Deleted"
     SUSPENDED = "suspended", "Suspended"
@@ -2595,6 +2596,7 @@ class GithubAppRepo(models.Model):
     repo_id = models.BigIntegerField(unique=True)
     name = models.CharField(max_length=200)
     full_name = models.CharField(max_length=200)
+
     state = models.CharField(
         max_length=20,
         choices=RepoState.choices,
@@ -2620,6 +2622,12 @@ class GithubAppRepo(models.Model):
     @property
     def raw_content_url(self) -> str:
         return f"https://raw.githubusercontent.com/{self.full_name}"
+
+    @property
+    def qdrant_collection_name(self) -> str:
+        # NOTE: Must stay in sync with `process_remote_repo` in `qdrant_utils`.
+        # The collection name format must match exactly for consistent indexing.
+        return f"aibot-{self.full_name}-{self.repo_id}"
 
 
 class AibotComment(models.Model):

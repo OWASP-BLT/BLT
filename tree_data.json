@@ -1,0 +1,1713 @@
+{
+  "sha": "028c0d9395e6e8b820243ce0d1694b5a1db2f968",
+  "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/028c0d9395e6e8b820243ce0d1694b5a1db2f968",
+  "tree": [
+    {
+      "path": "client",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "9d2fca9fc9afcd2ab2609c4a5773af0d29c57dbb",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/9d2fca9fc9afcd2ab2609c4a5773af0d29c57dbb"
+    },
+    {
+      "path": "client/.env",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "95fcb7cfa636775939eae3754387201db821d5de",
+      "size": 734,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/95fcb7cfa636775939eae3754387201db821d5de"
+    },
+    {
+      "path": "client/.eslintrc.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bffb357a7122523ec94045523758c4b825b448ef",
+      "size": 40,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/bffb357a7122523ec94045523758c4b825b448ef"
+    },
+    {
+      "path": "client/.gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e24173b78cd7845b1a5074ec2dcec4514f1a668f",
+      "size": 350,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e24173b78cd7845b1a5074ec2dcec4514f1a668f"
+    },
+    {
+      "path": "client/.prettierrc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b4bfed3579c4afed352be3bdd29abdb42c784e50",
+      "size": 49,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/b4bfed3579c4afed352be3bdd29abdb42c784e50"
+    },
+    {
+      "path": "client/LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3fa4566c3294283ed5194533b01da8009bae77c4",
+      "size": 1074,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/3fa4566c3294283ed5194533b01da8009bae77c4"
+    },
+    {
+      "path": "client/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "size": 1,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/8b137891791fe96927ad78e64b0aad7bded08bdc"
+    },
+    {
+      "path": "client/jsconfig.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c33383354d7fc75c7fd7313a7bcdd08c007548f",
+      "size": 93,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/9c33383354d7fc75c7fd7313a7bcdd08c007548f"
+    },
+    {
+      "path": "client/next-env.d.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4f11a03dc6cc37f2b5105c08f2e7b24c603ab2f4",
+      "size": 201,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/4f11a03dc6cc37f2b5105c08f2e7b24c603ab2f4"
+    },
+    {
+      "path": "client/next.config.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "90a907fceeb0e61f6bd4c2989180e8e3a5ee4cd5",
+      "size": 295,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/90a907fceeb0e61f6bd4c2989180e8e3a5ee4cd5"
+    },
+    {
+      "path": "client/package-lock.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5f33b926bb86350f3bd3160629e09ce32a2796b3",
+      "size": 240574,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/5f33b926bb86350f3bd3160629e09ce32a2796b3"
+    },
+    {
+      "path": "client/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "26c710668d279b24ac59dfae5a66084e07def643",
+      "size": 1328,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/26c710668d279b24ac59dfae5a66084e07def643"
+    },
+    {
+      "path": "client/postcss.config.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "33ad091d26d8a9dc95ebdf616e217d985ec215b8",
+      "size": 82,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/33ad091d26d8a9dc95ebdf616e217d985ec215b8"
+    },
+    {
+      "path": "client/prisma",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a123641c31312fe25523fb009711ac72035052d2",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/a123641c31312fe25523fb009711ac72035052d2"
+    },
+    {
+      "path": "client/prisma/migrations",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7e132ee4a36e6928d7f4cb5c421ab9dc203f3daf",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/7e132ee4a36e6928d7f4cb5c421ab9dc203f3daf"
+    },
+    {
+      "path": "client/prisma/migrations/20240822114345_init",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f7ad4614cb62e5b1843757ef94bd6d47cf23eacb",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/f7ad4614cb62e5b1843757ef94bd6d47cf23eacb"
+    },
+    {
+      "path": "client/prisma/migrations/20240822114345_init/migration.sql",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0504f9b8734243b5f030b38b41f7818fa1b7367f",
+      "size": 239,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/0504f9b8734243b5f030b38b41f7818fa1b7367f"
+    },
+    {
+      "path": "client/prisma/migrations/20240822123904_rename_name_to_username",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "faacf9f7229dd0850d3d32ed6ffa5c9d5afc3723",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/faacf9f7229dd0850d3d32ed6ffa5c9d5afc3723"
+    },
+    {
+      "path": "client/prisma/migrations/20240822123904_rename_name_to_username/migration.sql",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "468e8b91d4079789e244aba124b3c93defd7eb70",
+      "size": 526,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/468e8b91d4079789e244aba124b3c93defd7eb70"
+    },
+    {
+      "path": "client/prisma/migrations/20240822130549_add_created_at_updated_at_fields_to_user",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f2ff6dcd047a070c293a7ca798a660166bf1abae",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/f2ff6dcd047a070c293a7ca798a660166bf1abae"
+    },
+    {
+      "path": "client/prisma/migrations/20240822130549_add_created_at_updated_at_fields_to_user/migration.sql",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "15107d5381d2543e5adac562c059f2736d8c3bb7",
+      "size": 717,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/15107d5381d2543e5adac562c059f2736d8c3bb7"
+    },
+    {
+      "path": "client/prisma/migrations/20240822133031_user_for_oauth",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b2b23a6aba4f1a865060b3054a8ce25492ff866c",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/b2b23a6aba4f1a865060b3054a8ce25492ff866c"
+    },
+    {
+      "path": "client/prisma/migrations/20240822133031_user_for_oauth/migration.sql",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bad862f49355b02e4ee1f9d0fc86939eb908ccc3",
+      "size": 750,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/bad862f49355b02e4ee1f9d0fc86939eb908ccc3"
+    },
+    {
+      "path": "client/prisma/migrations/20240824143532_modified_user_field_with_brand",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2f2c8d7e39283ee14c2ff7cf7dcca2a2a2f673df",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/2f2c8d7e39283ee14c2ff7cf7dcca2a2a2f673df"
+    },
+    {
+      "path": "client/prisma/migrations/20240824143532_modified_user_field_with_brand/migration.sql",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "611d1880a13fc905a4b007874398cd57effb8c5f",
+      "size": 550,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/611d1880a13fc905a4b007874398cd57effb8c5f"
+    },
+    {
+      "path": "client/prisma/migrations/20240830194104_task_sponsor_model_added",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "73f01999e3bfa904524c7accbb998b035013dfeb",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/73f01999e3bfa904524c7accbb998b035013dfeb"
+    },
+    {
+      "path": "client/prisma/migrations/20240830194104_task_sponsor_model_added/migration.sql",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "edf9612dab3cd77d6861866b7930c0aabf8447fd",
+      "size": 2155,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/edf9612dab3cd77d6861866b7930c0aabf8447fd"
+    },
+    {
+      "path": "client/prisma/migrations/20240901142226_campaigns_added",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d509f7cf925b0cc21fb41f0d564805ed1715b3ea",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/d509f7cf925b0cc21fb41f0d564805ed1715b3ea"
+    },
+    {
+      "path": "client/prisma/migrations/20240901142226_campaigns_added/migration.sql",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e0925629f7d73b917b294161f62ed5efe1375256",
+      "size": 3535,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e0925629f7d73b917b294161f62ed5efe1375256"
+    },
+    {
+      "path": "client/prisma/migrations/migration_lock.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fbffa92c2bb7c748d6fc78f9f9dcac604dabb87d",
+      "size": 126,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/fbffa92c2bb7c748d6fc78f9f9dcac604dabb87d"
+    },
+    {
+      "path": "client/prisma/schema.prisma",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bb6afc3aa8c6bb1f5ed7cf4b4af46edc6f6e59df",
+      "size": 3093,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/bb6afc3aa8c6bb1f5ed7cf4b4af46edc6f6e59df"
+    },
+    {
+      "path": "client/public",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f2097388ab13a331721ec66397d466d85b847461",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/f2097388ab13a331721ec66397d466d85b847461"
+    },
+    {
+      "path": "client/public/favicon.ico",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f1eaf69e761e963f5a6331cd18ba8d4a0c20ab01",
+      "size": 15406,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/f1eaf69e761e963f5a6331cd18ba8d4a0c20ab01"
+    },
+    {
+      "path": "client/public/images",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "cbf04e238e083352c7c3540834fffbcf8200de72",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/cbf04e238e083352c7c3540834fffbcf8200de72"
+    },
+    {
+      "path": "client/public/images/404.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "07b9e82df39ede66a28b1ab8e2a00fbe655dfc8b",
+      "size": 2076,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/07b9e82df39ede66a28b1ab8e2a00fbe655dfc8b"
+    },
+    {
+      "path": "client/public/images/about",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f146e1e03d839efb54c87ac4829a4738273781aa",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/f146e1e03d839efb54c87ac4829a4738273781aa"
+    },
+    {
+      "path": "client/public/images/about/about-image-2-dark.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e1ad5e3c4a8c6b8ca0fd90fef0b276e68ab5da1e",
+      "size": 3838,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e1ad5e3c4a8c6b8ca0fd90fef0b276e68ab5da1e"
+    },
+    {
+      "path": "client/public/images/about/about-image-2.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ad082690561dd286da01c988874d472ebf06312e",
+      "size": 3201,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/ad082690561dd286da01c988874d472ebf06312e"
+    },
+    {
+      "path": "client/public/images/about/about-image-dark.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8fd5c233771d35531efc887f428ce48bd9d8b30b",
+      "size": 22179,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/8fd5c233771d35531efc887f428ce48bd9d8b30b"
+    },
+    {
+      "path": "client/public/images/about/about-image.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f7e92aaa98efbfb24f175f40aee2da3b94756af1",
+      "size": 21989,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/f7e92aaa98efbfb24f175f40aee2da3b94756af1"
+    },
+    {
+      "path": "client/public/images/blog",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5a13904a3f9f88a066f1f2dea789e80995683f6a",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/5a13904a3f9f88a066f1f2dea789e80995683f6a"
+    },
+    {
+      "path": "client/public/images/blog/author-01.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "beadd93ced88f5e3a40789de2ec2e22ade63af33",
+      "size": 2643,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/beadd93ced88f5e3a40789de2ec2e22ade63af33"
+    },
+    {
+      "path": "client/public/images/blog/author-02.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af12f24cc0e4ca155195b484d93804367d3f78f5",
+      "size": 4035,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/af12f24cc0e4ca155195b484d93804367d3f78f5"
+    },
+    {
+      "path": "client/public/images/blog/author-03.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5854d397e4506439fbee5964aa7da8ff2331eb66",
+      "size": 2990,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/5854d397e4506439fbee5964aa7da8ff2331eb66"
+    },
+    {
+      "path": "client/public/images/blog/blog-01.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a9cfea2adaeb2352d15692a7b204e10856350ecc",
+      "size": 95643,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/a9cfea2adaeb2352d15692a7b204e10856350ecc"
+    },
+    {
+      "path": "client/public/images/blog/blog-02.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a75bd872000c31c5f2ce77ced8e9721181d3d2fa",
+      "size": 94496,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/a75bd872000c31c5f2ce77ced8e9721181d3d2fa"
+    },
+    {
+      "path": "client/public/images/blog/blog-03.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bd013b700d2866f802f18716530404dbc49e40a8",
+      "size": 95239,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/bd013b700d2866f802f18716530404dbc49e40a8"
+    },
+    {
+      "path": "client/public/images/blog/blog-details-01.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7c249de94baa08af476a9d9c88483afcf9f8a947",
+      "size": 152127,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/7c249de94baa08af476a9d9c88483afcf9f8a947"
+    },
+    {
+      "path": "client/public/images/blog/blog-details-02.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "19b8ffbc76fc055a708db00a406172045234eea3",
+      "size": 136271,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/19b8ffbc76fc055a708db00a406172045234eea3"
+    },
+    {
+      "path": "client/public/images/blog/post-01.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fc36ac496f78c35fd9a5f78d09a43ce605f907d8",
+      "size": 11431,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/fc36ac496f78c35fd9a5f78d09a43ce605f907d8"
+    },
+    {
+      "path": "client/public/images/blog/post-02.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "db0298d7c0b3c342672467f9cd74278571b2dc41",
+      "size": 9375,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/db0298d7c0b3c342672467f9cd74278571b2dc41"
+    },
+    {
+      "path": "client/public/images/blog/post-03.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6f1f9309d15c31abcee1d523c72e5d490e66eb55",
+      "size": 7456,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/6f1f9309d15c31abcee1d523c72e5d490e66eb55"
+    },
+    {
+      "path": "client/public/images/brands",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7369acce5b7ce43d80a103c1f375659339405a0e",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/7369acce5b7ce43d80a103c1f375659339405a0e"
+    },
+    {
+      "path": "client/public/images/brands/formbold-light.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "41a5373349e18749e5242e7fd5cfea992e9c4e6e",
+      "size": 3069,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/41a5373349e18749e5242e7fd5cfea992e9c4e6e"
+    },
+    {
+      "path": "client/public/images/brands/formbold.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e79e7c3baac90b891061a3f26902c693f67079f8",
+      "size": 3078,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e79e7c3baac90b891061a3f26902c693f67079f8"
+    },
+    {
+      "path": "client/public/images/brands/graygrids-light.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e2bbfc4440e2eb552b575796898910804c2f628f",
+      "size": 12860,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e2bbfc4440e2eb552b575796898910804c2f628f"
+    },
+    {
+      "path": "client/public/images/brands/graygrids.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "07e4fa95b7e6fec4ad822926eec3c1b63958917f",
+      "size": 13246,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/07e4fa95b7e6fec4ad822926eec3c1b63958917f"
+    },
+    {
+      "path": "client/public/images/brands/lineicons-light.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e43f792e67e63cc4ae7a1b110d4c550456019191",
+      "size": 4198,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e43f792e67e63cc4ae7a1b110d4c550456019191"
+    },
+    {
+      "path": "client/public/images/brands/lineicons.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "76811971144975040514482e0f1a2a9a6c64d30b",
+      "size": 4392,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/76811971144975040514482e0f1a2a9a6c64d30b"
+    },
+    {
+      "path": "client/public/images/brands/plainadmin-light.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e7d65d41467ac7a08f792c385bde3e25c39477b7",
+      "size": 8180,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e7d65d41467ac7a08f792c385bde3e25c39477b7"
+    },
+    {
+      "path": "client/public/images/brands/plainadmin.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "710ea991bda4ceed2eb03006529ff6245ec23696",
+      "size": 8370,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/710ea991bda4ceed2eb03006529ff6245ec23696"
+    },
+    {
+      "path": "client/public/images/brands/tailadmin-light.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8fbdeff65abdf16dcdf39207bf060b8090467dea",
+      "size": 6509,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/8fbdeff65abdf16dcdf39207bf060b8090467dea"
+    },
+    {
+      "path": "client/public/images/brands/tailadmin.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "27fc640040e693bcc255c48f1fbf28170239ec83",
+      "size": 6493,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/27fc640040e693bcc255c48f1fbf28170239ec83"
+    },
+    {
+      "path": "client/public/images/brands/tailgrids-light.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9463a1d89149e9b7f27a5d34b68db435afcefe36",
+      "size": 8499,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/9463a1d89149e9b7f27a5d34b68db435afcefe36"
+    },
+    {
+      "path": "client/public/images/brands/tailgrids.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4314e847b553ecbc6ce0ab023a1ca24b95d4bd4a",
+      "size": 8504,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/4314e847b553ecbc6ce0ab023a1ca24b95d4bd4a"
+    },
+    {
+      "path": "client/public/images/brands/uideck-light.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "71effe3a4457a78ac2530342d03dea3dbab875d7",
+      "size": 6966,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/71effe3a4457a78ac2530342d03dea3dbab875d7"
+    },
+    {
+      "path": "client/public/images/brands/uideck.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f90bccd8a28002b1b47288ad4a720973bf04c95e",
+      "size": 7043,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/f90bccd8a28002b1b47288ad4a720973bf04c95e"
+    },
+    {
+      "path": "client/public/images/favicon.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eddd8a95d5966a1b52361de117d76740c541f03a",
+      "size": 326,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/eddd8a95d5966a1b52361de117d76740c541f03a"
+    },
+    {
+      "path": "client/public/images/gift-cards",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f8ca34a52a918c16eac155b971d76ae8f3f83d98",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/f8ca34a52a918c16eac155b971d76ae8f3f83d98"
+    },
+    {
+      "path": "client/public/images/gift-cards/GooglePlay",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "73b815681155a0d5b145e89e11ee60f33ac9efed",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/73b815681155a0d5b145e89e11ee60f33ac9efed"
+    },
+    {
+      "path": "client/public/images/gift-cards/GooglePlay/GooglePlayGiftCard.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "64cb6c90f27d4ca4663b1f905d1bb3d44047a43a",
+      "size": 13203,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/64cb6c90f27d4ca4663b1f905d1bb3d44047a43a"
+    },
+    {
+      "path": "client/public/images/gift-cards/GooglePlay/GooglePlayGiftCardDark.JPG",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "adb38150999af2ac6957a1858f26f1c99d63e0fd",
+      "size": 8703,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/adb38150999af2ac6957a1858f26f1c99d63e0fd"
+    },
+    {
+      "path": "client/public/images/gift-cards/GooglePlay/GooglePlayIcon.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bda96df076531a153c7bc3046af07d8dd95bfaf3",
+      "size": 1604,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/bda96df076531a153c7bc3046af07d8dd95bfaf3"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a933c8a1e894b6f7f07e85b28979cba95b44ff3f",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/a933c8a1e894b6f7f07e85b28979cba95b44ff3f"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-1250.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b4f5d003f979b9d855b2056b1506e28e0a382d15",
+      "size": 35372,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/b4f5d003f979b9d855b2056b1506e28e0a382d15"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-150-INR-India.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29ea96785b7f004ac837f27c9b24a6b1ff328a6c",
+      "size": 234521,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/29ea96785b7f004ac837f27c9b24a6b1ff328a6c"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-175.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "61ca970bd5ee67e227f17445af7e76019565f486",
+      "size": 34596,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/61ca970bd5ee67e227f17445af7e76019565f486"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-250-INR-India.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0d6805148824d88b72db70550e2c790ded58d85f",
+      "size": 53483,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/0d6805148824d88b72db70550e2c790ded58d85f"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-250.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "97c1ca4b70f5546a0f0fd1a9aafe2e6b57e00cd6",
+      "size": 34938,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/97c1ca4b70f5546a0f0fd1a9aafe2e6b57e00cd6"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-4000.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d18496ceef043b50af0fed5383ae97e54f468a1f",
+      "size": 34652,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/d18496ceef043b50af0fed5383ae97e54f468a1f"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-500-INR-India.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2edca6c25f5d361d0f95f547ba24e756e453eab9",
+      "size": 51914,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/2edca6c25f5d361d0f95f547ba24e756e453eab9"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-500.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8e4a485f5786e72890f8b3300b1fc4aa28283a8f",
+      "size": 24412,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/8e4a485f5786e72890f8b3300b1fc4aa28283a8f"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-99-INR-India.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4da8f854aab5911127e1ae5183084954e2ae920b",
+      "size": 28539,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/4da8f854aab5911127e1ae5183084954e2ae920b"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-99.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b8873d117ff21b2c935bd6121d5b30342be4e78",
+      "size": 511799,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/8b8873d117ff21b2c935bd6121d5b30342be4e78"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-99.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "982ada2c1b6d8a4c24e2c05b7254ac2e43717625",
+      "size": 28286,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/982ada2c1b6d8a4c24e2c05b7254ac2e43717625"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/Steam-999.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "08ebfb3ff1b9617aa6fc5c2e4d3aa4ba2d27c747",
+      "size": 35254,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/08ebfb3ff1b9617aa6fc5c2e4d3aa4ba2d27c747"
+    },
+    {
+      "path": "client/public/images/gift-cards/Steam/SteamIcon.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e3b4bc016f95f000f782bd239590a74f6cf8dd85",
+      "size": 140735,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e3b4bc016f95f000f782bd239590a74f6cf8dd85"
+    },
+    {
+      "path": "client/public/images/gift-cards/Valorant",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "31a02e1121eed84740330bd3196b19d1dd5f73e7",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/31a02e1121eed84740330bd3196b19d1dd5f73e7"
+    },
+    {
+      "path": "client/public/images/gift-cards/Valorant/ValorantGiftCard.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ad3f401af5d657bc3bd212615be0fe3a83d45adb",
+      "size": 43198,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/ad3f401af5d657bc3bd212615be0fe3a83d45adb"
+    },
+    {
+      "path": "client/public/images/gift-cards/Valorant/ValorantIcon.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8e7af37a715c1b4cf3228a5fd733d35906774b3a",
+      "size": 11298,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/8e7af37a715c1b4cf3228a5fd733d35906774b3a"
+    },
+    {
+      "path": "client/public/images/gift-cards/Valorant/ValorantIcon.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "642677ad9bda305859aafe1482c0bfa22480c54d",
+      "size": 4665,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/642677ad9bda305859aafe1482c0bfa22480c54d"
+    },
+    {
+      "path": "client/public/images/gift-cards/Valorant/ValorantIcon.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3e6b62aed244fb9e4cc3f3025f45d30f633a1bbf",
+      "size": 10318,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/3e6b62aed244fb9e4cc3f3025f45d30f633a1bbf"
+    },
+    {
+      "path": "client/public/images/hero",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "20e6cd5380326cb9bee9c94e4a04f09b41cd8eea",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/20e6cd5380326cb9bee9c94e4a04f09b41cd8eea"
+    },
+    {
+      "path": "client/public/images/hero/shape-01.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "086e35f4ed4025ca7a2c74a00ff4b777827de24a",
+      "size": 2199,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/086e35f4ed4025ca7a2c74a00ff4b777827de24a"
+    },
+    {
+      "path": "client/public/images/hero/shape-02.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1305706fc3593eb8e9141e89e4304257d64ab8da",
+      "size": 2159,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/1305706fc3593eb8e9141e89e4304257d64ab8da"
+    },
+    {
+      "path": "client/public/images/logo",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7622c552680822839c28d800d4bb2a000dba3646",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/7622c552680822839c28d800d4bb2a000dba3646"
+    },
+    {
+      "path": "client/public/images/logo/logo-2.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2413d889c935a64c95637cd7f797b724eecd534c",
+      "size": 2648,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/2413d889c935a64c95637cd7f797b724eecd534c"
+    },
+    {
+      "path": "client/public/images/logo/logo.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "75a42e0a82f530606fa5c86aad58e79394eecd84",
+      "size": 2645,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/75a42e0a82f530606fa5c86aad58e79394eecd84"
+    },
+    {
+      "path": "client/public/images/testimonials",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5debfe905001df359bf9160ddcd19ca28805345b",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/5debfe905001df359bf9160ddcd19ca28805345b"
+    },
+    {
+      "path": "client/public/images/testimonials/auth-01.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91cf04f3d9dd30596ed85b2916a1a7a4fdfc5f14",
+      "size": 5921,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/91cf04f3d9dd30596ed85b2916a1a7a4fdfc5f14"
+    },
+    {
+      "path": "client/public/images/testimonials/auth-02.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6aebb3750e6d9d160e9c17eb8b9e35563502835a",
+      "size": 4640,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/6aebb3750e6d9d160e9c17eb8b9e35563502835a"
+    },
+    {
+      "path": "client/public/images/testimonials/auth-03.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "64c15ea2ba7848ddd338ee818ed162a216a50aed",
+      "size": 4320,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/64c15ea2ba7848ddd338ee818ed162a216a50aed"
+    },
+    {
+      "path": "client/public/images/testimonials/author-01.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91cf04f3d9dd30596ed85b2916a1a7a4fdfc5f14",
+      "size": 5921,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/91cf04f3d9dd30596ed85b2916a1a7a4fdfc5f14"
+    },
+    {
+      "path": "client/public/images/testimonials/author-02.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6aebb3750e6d9d160e9c17eb8b9e35563502835a",
+      "size": 4640,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/6aebb3750e6d9d160e9c17eb8b9e35563502835a"
+    },
+    {
+      "path": "client/public/images/testimonials/author-03.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "64c15ea2ba7848ddd338ee818ed162a216a50aed",
+      "size": 4320,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/64c15ea2ba7848ddd338ee818ed162a216a50aed"
+    },
+    {
+      "path": "client/public/images/video",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "84f8ed5ff868dc652bbe52f340cc4bbe6e9e3e92",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/84f8ed5ff868dc652bbe52f340cc4bbe6e9e3e92"
+    },
+    {
+      "path": "client/public/images/video/shape.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9e12816cdf699e7f19ff4323f9d497e4c0d67ece",
+      "size": 1300,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/9e12816cdf699e7f19ff4323f9d497e4c0d67ece"
+    },
+    {
+      "path": "client/public/images/video/video.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6339ba8fd1a080a7d5d3e89b58512bc617904726",
+      "size": 259288,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/6339ba8fd1a080a7d5d3e89b58512bc617904726"
+    },
+    {
+      "path": "client/src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5567bc03c0fe46bc34dcbec709dd49298b83b589",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/5567bc03c0fe46bc34dcbec709dd49298b83b589"
+    },
+    {
+      "path": "client/src/app",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a83c5b7d96632d3db5352edda2cac74f20387af7",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/a83c5b7d96632d3db5352edda2cac74f20387af7"
+    },
+    {
+      "path": "client/src/app/about",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1c6dfd40249703ba0cf2da07c8fe2a7f636be371",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/1c6dfd40249703ba0cf2da07c8fe2a7f636be371"
+    },
+    {
+      "path": "client/src/app/about/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "20e8cba085945b0b222125f068a5ddf949f8ea0e",
+      "size": 765,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/20e8cba085945b0b222125f068a5ddf949f8ea0e"
+    },
+    {
+      "path": "client/src/app/api",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c0668bd56392d187abc3fc975ffde042ddf7bab5",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/c0668bd56392d187abc3fc975ffde042ddf7bab5"
+    },
+    {
+      "path": "client/src/app/api/auth",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c80304142061840793dab1937181b8e952920920",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/c80304142061840793dab1937181b8e952920920"
+    },
+    {
+      "path": "client/src/app/api/auth/[...nextauth]",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f4124a1cccdabe1f48a3aa021d22f2d6c6edd3f5",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/f4124a1cccdabe1f48a3aa021d22f2d6c6edd3f5"
+    },
+    {
+      "path": "client/src/app/api/auth/[...nextauth]/route.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a2bec1d6e9e049045c818c977b6e75dd63020460",
+      "size": 1472,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/a2bec1d6e9e049045c818c977b6e75dd63020460"
+    },
+    {
+      "path": "client/src/app/api/createSponsorAccount",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e52b2e710b2cc54a032accf624246991b30f16d3",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/e52b2e710b2cc54a032accf624246991b30f16d3"
+    },
+    {
+      "path": "client/src/app/api/createSponsorAccount/route.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f3b6181acc1967c937a322ccb729010d90d24129",
+      "size": 1061,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/f3b6181acc1967c937a322ccb729010d90d24129"
+    },
+    {
+      "path": "client/src/app/blog-details",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "855ada78f8d3f6901d0e9c3d74f4e2dab3a39a9d",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/855ada78f8d3f6901d0e9c3d74f4e2dab3a39a9d"
+    },
+    {
+      "path": "client/src/app/blog-details/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "606d905860b038336201fce822d4baac37a467c8",
+      "size": 21615,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/606d905860b038336201fce822d4baac37a467c8"
+    },
+    {
+      "path": "client/src/app/blog-sidebar",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d0159cf6a56e168345b7f39e16085ef7cd8558fc",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/d0159cf6a56e168345b7f39e16085ef7cd8558fc"
+    },
+    {
+      "path": "client/src/app/blog-sidebar/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "24c95cf7f8fd9143b2a126f5dd024b0d8799cbf8",
+      "size": 28138,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/24c95cf7f8fd9143b2a126f5dd024b0d8799cbf8"
+    },
+    {
+      "path": "client/src/app/blog",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c285d7e782fdfe811d380e8faf45cd4223ccbfd6",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/c285d7e782fdfe811d380e8faf45cd4223ccbfd6"
+    },
+    {
+      "path": "client/src/app/blog/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5d48d889d7eb0b187642218c2bf4d605e1c1b8ee",
+      "size": 4027,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/5d48d889d7eb0b187642218c2bf4d605e1c1b8ee"
+    },
+    {
+      "path": "client/src/app/contact",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "4c4b1fe76b2bc3d77840cec9d8d6480f6744e0ba",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/4c4b1fe76b2bc3d77840cec9d8d6480f6744e0ba"
+    },
+    {
+      "path": "client/src/app/contact/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9df15c119804befb33b1eac6d40c317b78cd1bf8",
+      "size": 654,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/9df15c119804befb33b1eac6d40c317b78cd1bf8"
+    },
+    {
+      "path": "client/src/app/error",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c9878088066eb6293fe54ea894d96efa557de871",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/c9878088066eb6293fe54ea894d96efa557de871"
+    },
+    {
+      "path": "client/src/app/error/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "06543c8a7868e1513a30bf8f53c43f4bb198e10a",
+      "size": 19756,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/06543c8a7868e1513a30bf8f53c43f4bb198e10a"
+    },
+    {
+      "path": "client/src/app/layout.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6cc946b3596a2145d122aae1fd41f26274728f3e",
+      "size": 1080,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/6cc946b3596a2145d122aae1fd41f26274728f3e"
+    },
+    {
+      "path": "client/src/app/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "60cde99d791ab8bcc4ca1fdfe232b10b0fd655dd",
+      "size": 1030,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/60cde99d791ab8bcc4ca1fdfe232b10b0fd655dd"
+    },
+    {
+      "path": "client/src/app/providers.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3161ba92019bbf3bab805dd71942f5d5a2528307",
+      "size": 269,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/3161ba92019bbf3bab805dd71942f5d5a2528307"
+    },
+    {
+      "path": "client/src/app/rewards",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a5f79227b16d66c02b431e4cde4b0d3c1b9461da",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/a5f79227b16d66c02b431e4cde4b0d3c1b9461da"
+    },
+    {
+      "path": "client/src/app/rewards/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c1ffe03a6295788132a68e1ffc00d2928dc07901",
+      "size": 4632,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/c1ffe03a6295788132a68e1ffc00d2928dc07901"
+    },
+    {
+      "path": "client/src/app/signin",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8f7b7fa7dd6ff69e92636f68c807d645847ad024",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/8f7b7fa7dd6ff69e92636f68c807d645847ad024"
+    },
+    {
+      "path": "client/src/app/signin/metadata.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eb226ac8c9393d8ac39ab142a175929b4cf6f947",
+      "size": 158,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/eb226ac8c9393d8ac39ab142a175929b4cf6f947"
+    },
+    {
+      "path": "client/src/app/signin/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d6ea5607c2dc73130b0964c3a9ced8478247640e",
+      "size": 7685,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/d6ea5607c2dc73130b0964c3a9ced8478247640e"
+    },
+    {
+      "path": "client/src/app/signin/validationSchema.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "82b3b2ac64b694c707b7ab983994a29fc4eaf2fd",
+      "size": 600,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/82b3b2ac64b694c707b7ab983994a29fc4eaf2fd"
+    },
+    {
+      "path": "client/src/app/sponsor_dashboard",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c3d5db545e80e1123bdff32c478cdfaddb8baef7",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/c3d5db545e80e1123bdff32c478cdfaddb8baef7"
+    },
+    {
+      "path": "client/src/app/sponsor_dashboard/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b030b05f2de5d39d1670b9d1585612db24646880",
+      "size": 940,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/b030b05f2de5d39d1670b9d1585612db24646880"
+    },
+    {
+      "path": "client/src/app/sponsorlp",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8d8ff74ace103e3f1d8e61e86a22bce607773460",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/8d8ff74ace103e3f1d8e61e86a22bce607773460"
+    },
+    {
+      "path": "client/src/app/sponsorlp/SponsorForm.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6c775f1ea80e48ec4a74bec3f1e47b178376ca5f",
+      "size": 3699,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/6c775f1ea80e48ec4a74bec3f1e47b178376ca5f"
+    },
+    {
+      "path": "client/src/app/sponsorlp/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e0e679856aa7ededb1d33127313e3fc8747ede01",
+      "size": 862,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e0e679856aa7ededb1d33127313e3fc8747ede01"
+    },
+    {
+      "path": "client/src/app/user-center",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e96ec23a21119734888a7195b29a4298c66a9ee0",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/e96ec23a21119734888a7195b29a4298c66a9ee0"
+    },
+    {
+      "path": "client/src/app/user-center/page.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0eaf821e48032c0d04225bba3e2d60f4cee8787d",
+      "size": 818,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/0eaf821e48032c0d04225bba3e2d60f4cee8787d"
+    },
+    {
+      "path": "client/src/app/user-center/sidebarLinks.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9093a63dab48e2ad71c85e7218a187d84163b2ef",
+      "size": 630,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/9093a63dab48e2ad71c85e7218a187d84163b2ef"
+    },
+    {
+      "path": "client/src/components",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b7d13c4b4e1b1ab0bd4733c275b350d0236008f6",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/b7d13c4b4e1b1ab0bd4733c275b350d0236008f6"
+    },
+    {
+      "path": "client/src/components/About",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7c9520a223a81710cdd6705624c8e8121ab19e06",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/7c9520a223a81710cdd6705624c8e8121ab19e06"
+    },
+    {
+      "path": "client/src/components/About/AboutSectionOne.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0f711d35dc4c6abddd769245d3df6a28932f272c",
+      "size": 3195,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/0f711d35dc4c6abddd769245d3df6a28932f272c"
+    },
+    {
+      "path": "client/src/components/About/AboutSectionTwo.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "05bf36b0a72f0d62979c193eacfeb9c62f6d8dbe",
+      "size": 2663,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/05bf36b0a72f0d62979c193eacfeb9c62f6d8dbe"
+    },
+    {
+      "path": "client/src/components/Blog",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0210a372a7f4afc5ad32c6a9011874884a2e4a53",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/0210a372a7f4afc5ad32c6a9011874884a2e4a53"
+    },
+    {
+      "path": "client/src/components/Blog/RelatedPost.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "86f3b7612ef7619c75ddae72448d72b2663d2844",
+      "size": 916,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/86f3b7612ef7619c75ddae72448d72b2663d2844"
+    },
+    {
+      "path": "client/src/components/Blog/SharePost.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9ba10ebb5a61f9353b72f9730322c7ffa742e848",
+      "size": 2895,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/9ba10ebb5a61f9353b72f9730322c7ffa742e848"
+    },
+    {
+      "path": "client/src/components/Blog/SingleBlog.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "26c04a9f834448af6eaa37eeeb117b10bc69f7ed",
+      "size": 2467,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/26c04a9f834448af6eaa37eeeb117b10bc69f7ed"
+    },
+    {
+      "path": "client/src/components/Blog/TagButton.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1dc21b271244fd3b5b280a432a9d252468e400e7",
+      "size": 404,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/1dc21b271244fd3b5b280a432a9d252468e400e7"
+    },
+    {
+      "path": "client/src/components/Blog/blogData.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "47b81b1218e42527995d8f4252436f0e979de9cd",
+      "size": 1377,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/47b81b1218e42527995d8f4252436f0e979de9cd"
+    },
+    {
+      "path": "client/src/components/Blog/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3b689c642cf90a300b20cd074b77bd11651d06e8",
+      "size": 878,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/3b689c642cf90a300b20cd074b77bd11651d06e8"
+    },
+    {
+      "path": "client/src/components/Brands",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c15185dd32e3800d52b650df1f473f22efc1df84",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/c15185dd32e3800d52b650df1f473f22efc1df84"
+    },
+    {
+      "path": "client/src/components/Brands/brandsData.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1a1e25111904c0c0c94ea5f680fa2762bbb1e4e3",
+      "size": 1139,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/1a1e25111904c0c0c94ea5f680fa2762bbb1e4e3"
+    },
+    {
+      "path": "client/src/components/Brands/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e25c36eeed9be90739cdc45e1eb31b3e0f62a09b",
+      "size": 1365,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e25c36eeed9be90739cdc45e1eb31b3e0f62a09b"
+    },
+    {
+      "path": "client/src/components/Common",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0f169888c6950e437957b81dc7d881f812f8576e",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/0f169888c6950e437957b81dc7d881f812f8576e"
+    },
+    {
+      "path": "client/src/components/Common/Breadcrumb.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ab52d02dc9341d2dcac2b8e2b8477494d66cc557",
+      "size": 4183,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/ab52d02dc9341d2dcac2b8e2b8477494d66cc557"
+    },
+    {
+      "path": "client/src/components/Common/Button.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3c74524fc23cab876e78cc889442dc3110bab4f3",
+      "size": 1111,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/3c74524fc23cab876e78cc889442dc3110bab4f3"
+    },
+    {
+      "path": "client/src/components/Common/ScrollUp.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "101d294e5e904d9238587fe72a03b85076d4661e",
+      "size": 179,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/101d294e5e904d9238587fe72a03b85076d4661e"
+    },
+    {
+      "path": "client/src/components/Common/SectionTitle.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "282610d1919eb8b8a6bf71b2ddf1a3f9f72ca2c4",
+      "size": 676,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/282610d1919eb8b8a6bf71b2ddf1a3f9f72ca2c4"
+    },
+    {
+      "path": "client/src/components/Contact",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d29a209ee4c4c800149dad550be9e40a3911dc84",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/d29a209ee4c4c800149dad550be9e40a3911dc84"
+    },
+    {
+      "path": "client/src/components/Contact/NewsLatterBox.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "efd22d0f430c53bd09498d250c1e336e776e07ac",
+      "size": 9743,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/efd22d0f430c53bd09498d250c1e336e776e07ac"
+    },
+    {
+      "path": "client/src/components/Contact/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "59d4f6c6d02b1ad85aa189dbb5a198533ec5fc8e",
+      "size": 4091,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/59d4f6c6d02b1ad85aa189dbb5a198533ec5fc8e"
+    },
+    {
+      "path": "client/src/components/ErrorMessage",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "93a2456d48a9b52921af6c84042b7aeb04874b81",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/93a2456d48a9b52921af6c84042b7aeb04874b81"
+    },
+    {
+      "path": "client/src/components/ErrorMessage/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e14e4ef1cf99313aef60c48cc955437d8ab00b4e",
+      "size": 315,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e14e4ef1cf99313aef60c48cc955437d8ab00b4e"
+    },
+    {
+      "path": "client/src/components/Features",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "298dfc0b99972b95cba65d8d5c229e7845efabec",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/298dfc0b99972b95cba65d8d5c229e7845efabec"
+    },
+    {
+      "path": "client/src/components/Features/SingleFeature.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "63d605b05b1b1362387b4999a6520c617a685dd9",
+      "size": 744,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/63d605b05b1b1362387b4999a6520c617a685dd9"
+    },
+    {
+      "path": "client/src/components/Features/featuresData.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b99a143f274f05405a5084fbc18454434f8bd041",
+      "size": 9557,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/b99a143f274f05405a5084fbc18454434f8bd041"
+    },
+    {
+      "path": "client/src/components/Features/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "51c2824f908e9d823358da9e0d7bc3e810e6128d",
+      "size": 1296,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/51c2824f908e9d823358da9e0d7bc3e810e6128d"
+    },
+    {
+      "path": "client/src/components/Footer",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0b7b6f56aa78afcfc8a46e6be792ea03b7894008",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/0b7b6f56aa78afcfc8a46e6be792ea03b7894008"
+    },
+    {
+      "path": "client/src/components/Footer/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5dedda677bbcec69bef72e6d666bef515dd55e36",
+      "size": 17700,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/5dedda677bbcec69bef72e6d666bef515dd55e36"
+    },
+    {
+      "path": "client/src/components/Header",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "343d4b3c83a52bca1c8f5e1cddb89d2d92069310",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/343d4b3c83a52bca1c8f5e1cddb89d2d92069310"
+    },
+    {
+      "path": "client/src/components/Header/ThemeToggler.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a7ede7400105eb4f6a6a5fe2169576e77e20194b",
+      "size": 10007,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/a7ede7400105eb4f6a6a5fe2169576e77e20194b"
+    },
+    {
+      "path": "client/src/components/Header/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "037bdaa2d25b7ff0e8f6fd50b4a904127f5a6c30",
+      "size": 8948,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/037bdaa2d25b7ff0e8f6fd50b4a904127f5a6c30"
+    },
+    {
+      "path": "client/src/components/Header/menuData.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "322a1f8127b5b76ebbde304209ae28fd53d249df",
+      "size": 1582,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/322a1f8127b5b76ebbde304209ae28fd53d249df"
+    },
+    {
+      "path": "client/src/components/Hero",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f69f023c0397049c15c65e2c3bb7665310f3c28a",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/f69f023c0397049c15c65e2c3bb7665310f3c28a"
+    },
+    {
+      "path": "client/src/components/Hero/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a5466210de216477f3642c10ca2106dfa4774a66",
+      "size": 11168,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/a5466210de216477f3642c10ca2106dfa4774a66"
+    },
+    {
+      "path": "client/src/components/Pricing",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6fc5e1f90a762dde281c21dcf3b56f87a83417f6",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/6fc5e1f90a762dde281c21dcf3b56f87a83417f6"
+    },
+    {
+      "path": "client/src/components/Pricing/OfferList.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "186ea7834cfb9ea40e6439cd1238c8d6d71e6547",
+      "size": 1735,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/186ea7834cfb9ea40e6439cd1238c8d6d71e6547"
+    },
+    {
+      "path": "client/src/components/Pricing/PricingBox.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2d099b4088d6496b291789cbbd9557f99fbfcf7a",
+      "size": 3166,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/2d099b4088d6496b291789cbbd9557f99fbfcf7a"
+    },
+    {
+      "path": "client/src/components/Pricing/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1b1e0d11eecfdbec6c05577e9bd903a578e02ea2",
+      "size": 5950,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/1b1e0d11eecfdbec6c05577e9bd903a578e02ea2"
+    },
+    {
+      "path": "client/src/components/Rewards",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d126a8f3de6f5d434f89db087ebcfb8d52f30ab3",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/d126a8f3de6f5d434f89db087ebcfb8d52f30ab3"
+    },
+    {
+      "path": "client/src/components/Rewards/SingleRewardCard.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5c29d41416c82b23f44c4ff18051500565ac2d90",
+      "size": 1935,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/5c29d41416c82b23f44c4ff18051500565ac2d90"
+    },
+    {
+      "path": "client/src/components/Rewards/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d03bc3e933c6dc5b0c479112684e14f335f80da1",
+      "size": 323,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/d03bc3e933c6dc5b0c479112684e14f335f80da1"
+    },
+    {
+      "path": "client/src/components/Rewards/rewardData.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "54aff3ae678b79472ce5428d235d3699aea0de3a",
+      "size": 1946,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/54aff3ae678b79472ce5428d235d3699aea0de3a"
+    },
+    {
+      "path": "client/src/components/ScrollToTop",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "03da938ba8b4569b6226b8feea3e3ff85fa2e305",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/03da938ba8b4569b6226b8feea3e3ff85fa2e305"
+    },
+    {
+      "path": "client/src/components/ScrollToTop/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ca665ecf4bdc796e14f700db795c5052d60dca11",
+      "size": 1241,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/ca665ecf4bdc796e14f700db795c5052d60dca11"
+    },
+    {
+      "path": "client/src/components/SponsorDashboard",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c50253554ccc2dacaae8ab14f5fa727b4e093c7f",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/c50253554ccc2dacaae8ab14f5fa727b4e093c7f"
+    },
+    {
+      "path": "client/src/components/SponsorDashboard/CampaignForm.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c067b2b97ce272e5d7e0d16e1c5751d3db2caf7a",
+      "size": 11843,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/c067b2b97ce272e5d7e0d16e1c5751d3db2caf7a"
+    },
+    {
+      "path": "client/src/components/SponsorDashboard/campaignOptions.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bce06fd86424e3804f1ab246896d2cef0f680f28",
+      "size": 319,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/bce06fd86424e3804f1ab246896d2cef0f680f28"
+    },
+    {
+      "path": "client/src/components/SponsorDashboard/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af54c3ff766f8d73307f568aea6e7785ccca0eb3",
+      "size": 2435,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/af54c3ff766f8d73307f568aea6e7785ccca0eb3"
+    },
+    {
+      "path": "client/src/components/Testimonials",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "44e2b2b0cd53b20e7d10c955310d800803209c04",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/44e2b2b0cd53b20e7d10c955310d800803209c04"
+    },
+    {
+      "path": "client/src/components/Testimonials/SingleTestimonial.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fcf13aa9495efc951abef7b2706d47a3454e9aea",
+      "size": 1761,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/fcf13aa9495efc951abef7b2706d47a3454e9aea"
+    },
+    {
+      "path": "client/src/components/Testimonials/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4a456b00bd75bf5e59a0968effcb61128d1dd71f",
+      "size": 6627,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/4a456b00bd75bf5e59a0968effcb61128d1dd71f"
+    },
+    {
+      "path": "client/src/components/UserCenter",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0ab20d50c9555c6d1ea8713c8c291ce7469142a7",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/0ab20d50c9555c6d1ea8713c8c291ce7469142a7"
+    },
+    {
+      "path": "client/src/components/UserCenter/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d22c0eaa718252bcb234f65abd9fffe1cb039c5b",
+      "size": 2447,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/d22c0eaa718252bcb234f65abd9fffe1cb039c5b"
+    },
+    {
+      "path": "client/src/components/UserCenter/profile.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9f5585ef3fae54f7e076aaa9acda3b906cd253f0",
+      "size": 449,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/9f5585ef3fae54f7e076aaa9acda3b906cd253f0"
+    },
+    {
+      "path": "client/src/components/UserCenter/sponsor.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d596ceaef2d59df1d5a562806db4fc69aee1528a",
+      "size": 4994,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/d596ceaef2d59df1d5a562806db4fc69aee1528a"
+    },
+    {
+      "path": "client/src/components/UserCenter/sponsorFormValidation.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f42dccd69e1799d365fffde2c920110bf38757c0",
+      "size": 322,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/f42dccd69e1799d365fffde2c920110bf38757c0"
+    },
+    {
+      "path": "client/src/components/Video",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "01fc5f7e5896bf802129e81498a325bbacd6ce8c",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/01fc5f7e5896bf802129e81498a325bbacd6ce8c"
+    },
+    {
+      "path": "client/src/components/Video/index.tsx",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0ce518bde161aa2c783f27789bf8721d63bd86be",
+      "size": 2389,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/0ce518bde161aa2c783f27789bf8721d63bd86be"
+    },
+    {
+      "path": "client/src/lib",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e20dbee8ac6cd3aef97990b303b359e903f42b58",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/e20dbee8ac6cd3aef97990b303b359e903f42b58"
+    },
+    {
+      "path": "client/src/lib/prisma.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dc1135f76420cd29e8bc3968d67d3ce4c3db1234",
+      "size": 332,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/dc1135f76420cd29e8bc3968d67d3ce4c3db1234"
+    },
+    {
+      "path": "client/src/services",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8057b34d373201b2f0747a1ff2b25c5234ed0de2",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/8057b34d373201b2f0747a1ff2b25c5234ed0de2"
+    },
+    {
+      "path": "client/src/services/userService.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e1f65ef4ed28f516bfa5fc6fb8059cbb34cd6310",
+      "size": 1413,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/e1f65ef4ed28f516bfa5fc6fb8059cbb34cd6310"
+    },
+    {
+      "path": "client/src/styles",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "137e06d93dbc5096e54e77a8b74ed0ecdc255453",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/137e06d93dbc5096e54e77a8b74ed0ecdc255453"
+    },
+    {
+      "path": "client/src/styles/index.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8addbe045672c42d58952b07eee84f67bc2cfbd1",
+      "size": 606,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/8addbe045672c42d58952b07eee84f67bc2cfbd1"
+    },
+    {
+      "path": "client/src/types",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "31cabef8ea8c04f09dfb7179314ce998a5bac844",
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/trees/31cabef8ea8c04f09dfb7179314ce998a5bac844"
+    },
+    {
+      "path": "client/src/types/blog.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "520b898349d053de1c3022f109aea9dea401b19d",
+      "size": 228,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/520b898349d053de1c3022f109aea9dea401b19d"
+    },
+    {
+      "path": "client/src/types/brand.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ea504f0f58dc4b86045e11bfe2d8c96d6b9392a5",
+      "size": 111,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/ea504f0f58dc4b86045e11bfe2d8c96d6b9392a5"
+    },
+    {
+      "path": "client/src/types/feature.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83ed24855b042944a36e81298cba0977bc289f93",
+      "size": 100,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/83ed24855b042944a36e81298cba0977bc289f93"
+    },
+    {
+      "path": "client/src/types/menu.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "28adb37b8cebcabc2eeda10f95fbfc6cf4a85d8d",
+      "size": 111,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/28adb37b8cebcabc2eeda10f95fbfc6cf4a85d8d"
+    },
+    {
+      "path": "client/src/types/reward.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83633e5ffcb7f684fb93a0ba6e44f6c75ad1bf4a",
+      "size": 247,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/83633e5ffcb7f684fb93a0ba6e44f6c75ad1bf4a"
+    },
+    {
+      "path": "client/src/types/testimonial.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "be93e097d37569e7b0300b855ee1bbd74b4da6fa",
+      "size": 136,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/be93e097d37569e7b0300b855ee1bbd74b4da6fa"
+    },
+    {
+      "path": "client/startup-pro.webp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ffd2c743be7055e9344aa81a62c759a3bf6b670",
+      "size": 287674,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/6ffd2c743be7055e9344aa81a62c759a3bf6b670"
+    },
+    {
+      "path": "client/tailwind.config.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "21580c7c9e5417d0239bf1bcc60f2b7901488105",
+      "size": 2150,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/21580c7c9e5417d0239bf1bcc60f2b7901488105"
+    },
+    {
+      "path": "client/tsconfig.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2a2486c42aa3646dec88d249d2f5250831227798",
+      "size": 637,
+      "url": "https://api.github.com/repos/SahilDhillon21/task-treasure/git/blobs/2a2486c42aa3646dec88d249d2f5250831227798"
+    }
+  ],
+  "truncated": false
+}

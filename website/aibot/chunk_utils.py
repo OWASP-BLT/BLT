@@ -84,9 +84,10 @@ def postprocess_chunks(chunks: List[ChunkType]) -> List[ChunkType]:
 
 
 def chunk_file(content: str, file_path: str) -> List[ChunkType]:
-    """Delegates to appropriate chunker based on file type."""
+    """Delegates to appropriate chunker based on file type, defaults to chunk_text_file."""
     file_path_lower = file_path.lower()
     file_name = os.path.basename(file_path_lower)
+
     chunkers = {
         "settings.py": chunk_settings_file,
         "urls.py": chunk_urls_file,
@@ -100,12 +101,14 @@ def chunk_file(content: str, file_path: str) -> List[ChunkType]:
         ".md": chunk_md_file,
         ".txt": chunk_text_file,
     }
+
     for pattern, chunker in chunkers.items():
         if file_name == pattern or file_path_lower.endswith(pattern):
             logger.info("Chunking file: %s", file_path)
             return chunker(content, file_path)
-    logger.warning(f"Unsupported file type: {file_path}")
-    return []
+
+    logger.info("No specific chunker matched for file: %s, using default text chunker", file_path)
+    return chunk_text_file(content, file_path)
 
 
 def cvt_yml_to_json(content: str, file_path: str) -> str:

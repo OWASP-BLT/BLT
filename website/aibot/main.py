@@ -19,8 +19,22 @@ from unidiff import PatchedFile, PatchSet
 from website.aibot.aibot_env import configure_and_validate_settings, load_prompts, load_validation_schemas
 from website.aibot.clients import q_client
 from website.aibot.models import PullRequest
-from website.aibot.network import fetch_pr_diff, generate_embedding, generate_gemini_response, post_github_comment
-from website.aibot.qdrant_utils import create_temp_pr_collection, get_similar_merged_chunks
+from website.aibot.network import (
+    fetch_pr_diff,
+    generate_embedding,
+    generate_gemini_response,
+    github_api_get,
+    post_github_comment,
+)
+from website.aibot.qdrant_utils import (
+    create_temp_pr_collection,
+    get_similar_merged_chunks,
+    q_collection_exists,
+    q_get_collection_name,
+    q_process_changed_files,
+    q_process_remote_repote_repo,
+    rename_qdrant_collection_with_alias,
+)
 from website.aibot.utils import (
     analyze_code_ruff_bandit,
     extract_json_block,
@@ -123,13 +137,13 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
 
 
 def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
-    # TODO Add validation schema and valdiate like other handlers
     action = payload["action"]
     installation_data = payload["installation"]
     account_data = installation_data["account"]
     sender_login = payload.get("sender", {}).get("login")
+
     if action == "created":
-        installation, created = GithubAppInstallation.objects.get_or_create(
+        installation, _ = GithubAppInstallation.objects.get_or_create(
             installation_id=installation_data["id"],
             defaults={
                 "app_id": installation_data["app_id"],
@@ -145,8 +159,10 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
         )
 
         processed_repos = []
+        failed_repos = []
+
         for repo_data in payload.get("repositories", []):
-            repo_obj, created = GithubAppRepo.objects.update_or_create(
+            repo_obj, _ = GithubAppRepo.objects.update_or_create(
                 repo_id=repo_data["id"],
                 defaults={
                     "installation": installation,
@@ -158,28 +174,25 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
                     "permissions": installation.permissions,
                 },
             )
-            processed_repos.append((repo_obj.full_name, created))
 
-        created_repos = [name for name, created in processed_repos if created]
-        updated_repos = [name for name, created in processed_repos if not created]
+            try:
+                q_process_remote_repote_repo(q_client, repo_obj.full_name, repo_obj.repo_id, repo_obj.default_branch)
+                repo_obj.state = RepoState.READY
+                repo_obj.save(update_fields=["state"])
+                processed_repos.append(repo_obj.full_name)
+            except Exception as e:
+                logger.error("Failed to process repo %s: %s", repo_obj.full_name, e, exc_info=True)
+                repo_obj.state = RepoState.ERROR
+                repo_obj.save(update_fields=["state"])
+                failed_repos.append(repo_obj.full_name)
 
-        logger.info(
-            "Processed %d repositories for app %s (id=%s) installation_id=%s, account_login=%s. "
-            "Created: %d, Updated: %d. Repos: %s",
-            len(processed_repos),
-            installation.app_name,
-            installation.app_id,
-            installation.installation_id,
-            installation.account_login,
-            len(created_repos),
-            len(updated_repos),
-            [name for name, _ in processed_repos],
+        return JsonResponse(
+            {
+                "success": True,
+                "processed_repos": processed_repos,
+                "failed_repos": failed_repos,
+            }
         )
-
-        # TODO Add logic for embedding and storing these repos in qdrant,
-        # confirm if there needs to be a set limit of number of repos per user
-
-        return JsonResponse({"success": "App installed successfully"})
 
     elif action in ("deleted", "suspend", "unsuspend"):
         try:
@@ -243,8 +256,8 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
             [repo.get("full_name") for repo in repos_added],
             [repo.get("full_name") for repo in repos_removed],
         )
-
         return JsonResponse({"error": "Installation not found."}, status=404)
+
     processed_repos = []
 
     for repo_data in repos_added:
@@ -260,20 +273,29 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
                 "permissions": installation.permissions,
             },
         )
+
+        collection_name = q_get_collection_name(repo_data["full_name"], repo_data["id"])
+
+        if created or not q_collection_exists(q_client, collection_name):
+            logger.info("Repo collection for %s not found. Processing now.", repo_data["full_name"])
+            q_process_remote_repote_repo(q_client, repo_data["full_name"], repo_data["id"])
+
         processed_repos.append((repo_obj.full_name, created))
 
     created_repos = [name for name, created in processed_repos if created]
     updated_repos = [name for name, created in processed_repos if not created]
 
-    logger.info(
-        "Processed %d repositories for installation_id=%s. Created: %d, Updated: %d. Repos: %s",
-        len(processed_repos),
-        installation_id,
-        len(created_repos),
-        len(updated_repos),
-        [name for name, _ in processed_repos],
-    )
+    if processed_repos:
+        logger.info(
+            "Processed %d repositories for installation_id=%s. Created: %d, Updated: %d. Repos: %s",
+            len(processed_repos),
+            installation_id,
+            len(created_repos),
+            len(updated_repos),
+            [name for name, _ in processed_repos],
+        )
 
+    # TODO: Create jobs to routinely remove stale repositories from qdrant
     repo_ids_removed = [repo["id"] for repo in repos_removed]
     if repo_ids_removed:
         GithubAppRepo.objects.filter(installation=installation, repo_id__in=repo_ids_removed).update(
@@ -337,6 +359,15 @@ def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
         repo.name = repo_data["name"]
         repo.full_name = repo_data["full_name"]
         repo.save()
+
+        try:
+            rename_qdrant_collection_with_alias(q_client, old_name, repo.full_name)
+            logger.info("Renamed Qdrant collection from '%s' to '%s' using alias.", old_name, repo.full_name)
+        except ValueError as e:
+            logger.error("Failed to rename Qdrant collection: %s", str(e))
+        except Exception as e:
+            logger.error("Unexpected error while renaming Qdrant collection: %s", str(e))
+
         logger.info(
             "Renamed repository from %s to %s (id=%s) by sender=%s",
             old_name,
@@ -356,6 +387,34 @@ def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
         return JsonResponse({"error": "Unsupported action"}, status=400)
 
     return JsonResponse({"status": "Repository updated successfully"})
+
+
+def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
+    # TODO: Add payload validation for required fields
+    repo_full_name = payload["repository"]["full_name"]
+    repo_id = payload["repository"]["id"]
+    before = payload.get["before"]
+    after = payload.get["after"]
+
+    compare_url = f"https://api.github.com/repos/{repo_full_name}/compare/{before}...{after}"
+
+    compare_response = github_api_get(compare_url)
+    if not compare_response:
+        logger.error("Failed to fetch compare data via %s", compare_url)
+        return JsonResponse({"error": "Failed to fetch compare data"}, status=500)
+
+    compare_data = json.loads(compare_response)
+
+    changed_files = []
+    for file in compare_data.get("files", []):
+        entry = {"path": file["filename"], "status": file["status"]}
+        if file["status"] == "renamed":
+            entry["previous_path"] = file.get("previous_filename")
+        changed_files.append(entry)
+
+    q_process_changed_files(changed_files, repo_full_name, repo_id)
+
+    return JsonResponse({"success": "Processed push event successfully"})
 
 
 def handle_ping(payload: Dict[str, Any]) -> JsonResponse:
@@ -433,6 +492,7 @@ EVENT_HANDLERS = {
     "installation": handle_installation_event,
     "installation_repositories": handle_installation_repositories_event,
     "repository": handle_repository_event,
+    "push": handle_push_event,
 }
 
 

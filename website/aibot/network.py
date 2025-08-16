@@ -102,6 +102,12 @@ def fetch_raw_content(f_raw_url: str) -> Optional[str]:
     return None
 
 
+@retry(
+    stop=stop_after_attempt(MAX_RETRIES),
+    wait=_get_retry_wait_time,
+    retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
+    before_sleep=before_sleep_log(logger, logging.INFO),
+)
 def github_api_get(api_url: str) -> Optional[str]:
     headers = {
         "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
