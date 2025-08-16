@@ -278,11 +278,11 @@ class Command(BaseCommand):
         ]
 
         for task_data in tasks_data:
-            task, created = Tasks.objects.get_or_create(
+            task, created = Tasks.objects.update_or_create(
                 lab=csrf_lab,
-                name=task_data["name"],
-                order=task_data["order"],
+                order=task_data["order"],  # key on unique pair
                 defaults={
+                    "name": task_data["name"],
                     "description": task_data["description"],
                     "task_type": task_data["task_type"],
                     "is_active": True,

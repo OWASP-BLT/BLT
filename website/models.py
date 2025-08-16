@@ -2577,11 +2577,18 @@ class UserLabProgress(models.Model):
             user=self.user, task__lab=self.lab, task__is_active=True, completed=True
         ).count()
 
-        return round((completed_tasks / total_tasks) * 100)
+        # Use floor to avoid prematurely displaying 100% before truly complete
+        return int((completed_tasks / total_tasks) * 100)
 
     def is_completed(self):
         """Check if all tasks in the lab are completed"""
-        return self.calculate_progress_percentage() == 100
+        total_tasks = self.lab.tasks.filter(is_active=True).count()
+        if total_tasks == 0:
+            return False
+        completed_tasks = UserTaskProgress.objects.filter(
+            user=self.user, task__lab=self.lab, task__is_active=True, completed=True
+        ).count()
+        return completed_tasks == total_tasks
 
     def __str__(self):
         progress = self.calculate_progress_percentage()
