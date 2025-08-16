@@ -2576,7 +2576,6 @@ class ReminderSettings(models.Model):
         return f"Reminder Settings for {self.user.username}"
 
     def save(self, *args, **kwargs):
-        # Convert reminder_time to UTC before saving
         if self.reminder_time and self.timezone:
             user_tz = pytz.timezone(self.timezone)
             # Create a datetime with today's date and the reminder time
