@@ -2533,6 +2533,75 @@ class TaskContent(models.Model):
         verbose_name_plural = "Task Contents"
 
 
+class UserTaskProgress(models.Model):
+    """Track individual user progress on specific tasks"""
+
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="task_progress")
+    task = models.ForeignKey(Tasks, on_delete=models.CASCADE, related_name="user_progress")
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    last_attempt_at = models.DateTimeField(auto_now=True)
+    user_answer = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["user", "task"]
+        verbose_name = "User Task Progress"
+        verbose_name_plural = "User Task Progress"
+
+    def __str__(self):
+        status = "Completed" if self.completed else "In Progress"
+        return f"{self.user.username} - {self.task.name} ({status})"
+
+
+class UserLabProgress(models.Model):
+    """Track user progress on entire labs"""
+
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="lab_progress")
+    lab = models.ForeignKey(Labs, on_delete=models.CASCADE, related_name="user_progress")
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    last_accessed = models.DateTimeField(auto_now=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["user", "lab"]
+        verbose_name = "User Lab Progress"
+        verbose_name_plural = "User Lab Progress"
+
+    def calculate_progress_percentage(self):
+        """Calculate completion percentage for this lab"""
+        total_tasks = self.lab.tasks.filter(is_active=True).count()
+        if total_tasks == 0:
+            return 0
+
+        completed_tasks = UserTaskProgress.objects.filter(
+            user=self.user, task__lab=self.lab, task__is_active=True, completed=True
+        ).count()
+
+        # Use floor to avoid prematurely displaying 100% before truly complete
+        return int((completed_tasks / total_tasks) * 100)
+
+    def is_completed(self):
+        """Check if all tasks in the lab are completed"""
+        total_tasks = self.lab.tasks.filter(is_active=True).count()
+        if total_tasks == 0:
+            return False
+        completed_tasks = UserTaskProgress.objects.filter(
+            user=self.user, task__lab=self.lab, task__is_active=True, completed=True
+        ).count()
+        return completed_tasks == total_tasks
+
+    def __str__(self):
+        progress = self.calculate_progress_percentage()
+        return f"{self.user.username} - {self.lab.name} ({progress}%)"
+
+
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
     message = models.TextField()

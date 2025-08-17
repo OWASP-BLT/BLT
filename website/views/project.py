@@ -883,7 +883,6 @@ class RepoDetailView(DetailView):
                 return response.json()
             return []
         except Exception as e:
-            print(f"Error fetching GitHub contributors: {e}")
             return []
 
     def fetch_activity_data(self, owner, repo_name):
@@ -928,7 +927,6 @@ class RepoDetailView(DetailView):
                 try:
                     data[key] = future.result()
                 except Exception as e:
-                    print(f"Error fetching {key}: {e}")
                     data[key] = []
 
         # Processing data for charts
@@ -1384,6 +1382,74 @@ class RepoDetailView(DetailView):
             "next_page": milestone_page + 1 if milestone_page < total_pages else None,
             "page_range": range(1, total_pages + 1),
         }
+
+        # Fetch stargazers for this repo (with pagination and filter)
+        try:
+            filter_type = self.request.GET.get("filter", "all")
+            page = int(self.request.GET.get("page", 1))
+            per_page = 10
+            repo_path = repo.repo_url.split("github.com/")[-1]
+            owner, repo_name = repo_path.split("/")
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo_name}/stargazers"
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+            # Fetch all stargazers using pagination
+            all_stargazers = []
+            current_page = 1
+            api_per_page = 100
+            while True:
+                paginated_url = f"{api_url}?page={current_page}&per_page={api_per_page}"
+                response = requests.get(paginated_url, headers=headers)
+                if response.status_code == 200:
+                    page_stargazers = response.json()
+                    if not page_stargazers:
+                        break
+                    all_stargazers.extend(page_stargazers)
+                    current_page += 1
+                elif response.status_code == 404:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Repository not found. Please check the URL and try again."
+                    break
+                elif response.status_code == 403:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Rate limit exceeded. Please try again later."
+                    break
+                elif response.status_code == 401:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Authentication failed. Please contact the administrator."
+                    break
+                else:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = f"Error fetching stargazers (Status code: {response.status_code})"
+                    break
+            else:
+                context["stargazers"] = []
+                context["stargazers_error"] = "Unknown error fetching stargazers."
+
+            if "stargazers" not in context:
+                if filter_type == "recent":
+                    all_stargazers.reverse()
+                total_stargazers = len(all_stargazers)
+                total_pages = (total_stargazers + per_page - 1) // per_page
+                page = max(1, min(page, total_pages)) if total_pages > 0 else 1
+                start_idx = (page - 1) * per_page
+                end_idx = start_idx + per_page
+                context["stargazers"] = all_stargazers[start_idx:end_idx]
+                context["stargazers_error"] = None
+                context["total_stargazers"] = total_stargazers
+                context["total_pages"] = total_pages
+                context["current_page"] = page
+                context["filter_type"] = filter_type
+        except Exception as e:
+            context["stargazers"] = []
+            context["stargazers_error"] = "Error fetching stargazers"
+            context["total_stargazers"] = 0
+            context["total_pages"] = 0
+            context["current_page"] = 1
+            context["filter_type"] = "all"
 
         return context
 
