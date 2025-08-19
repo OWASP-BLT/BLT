@@ -10,13 +10,14 @@ from typing import Any, Dict, Tuple
 from uuid import UUID
 
 from django.http import HttpRequest
+from unidiff import PatchedFile, PatchSet
 
 from website.aibot.types import ChunkType
 
 logger = logging.getLogger(__name__)
 
 
-def generate_uuid(file: str, start: int, end: int) -> str:
+def generate_chunk_uuid(chunk: ChunkType) -> str:
     """
     Generate a deterministic UUID from file path and line numbers.
 
@@ -28,7 +29,7 @@ def generate_uuid(file: str, start: int, end: int) -> str:
     Returns:
         str: A UUID string generated from the input values.
     """
-    raw = f"{file}:{start}:{end}"
+    raw = f"{chunk['file_path']}:{chunk['start_line']}:{chunk['end_line']}:{chunk['part_index']}:{chunk['part_total']}"
     hash_str = hashlib.sha256(raw.encode()).hexdigest()[:32]
     return str(UUID(hex=hash_str))
 
@@ -126,6 +127,22 @@ def extract_json_block(text: str) -> str:
     raise ValueError("No valid JSON found in response")
 
 
+def format_chunks_to_string(chunks: ChunkType) -> str:
+    formatted_snippets = []
+    for snippet in chunks:
+        file_path = snippet.get("file_path", "Unknown")
+        content = snippet.get("content", "")
+
+        start = snippet.get("start_line", "?")
+        end = snippet.get("end_line", "?")
+
+        formatted_snippet = f"File: {file_path}\n" f"Lines: {start}–{end}\n" f"```python\n{content}\n```"
+        formatted_snippets.append(formatted_snippet)
+
+    joined_snippets = "\n\n".join(formatted_snippets)
+    return joined_snippets
+
+
 def sanitize_name(name: str) -> str:
     """Replace any character that's not alphanumeric, underscore, or hyphen with '-'"""
     return re.sub(r"[^a-zA-Z0-9_\-]", "-", name)
@@ -197,6 +214,75 @@ def analyze_code_ruff_bandit(chunks: ChunkType):
 
         finally:
             os.unlink(temp_file_path)
+
+
+def process_diff(diff_text: str) -> tuple[str, PatchSet]:
+    skip_files = {"package-lock.json", ".yarn.lock"}
+    skip_text_extensions = {
+        ".lock",
+        ".min.js",
+        ".map",
+        ".pyc",
+        ".log",
+        ".db",
+        ".coverage",
+        ".egg-info",
+    }
+    binary_extensions = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".pdf", ".zip", ".tar", ".gz"}
+
+    processed_diff = []
+    binary_changes = []
+
+    def is_skippable_text(file: PatchedFile) -> bool:
+        return file.path in skip_files or file.path.endswith(tuple(skip_text_extensions))
+
+    def is_binary_by_extension(file: PatchedFile) -> bool:
+        return file.path.endswith(tuple(binary_extensions))
+
+    patch = PatchSet.from_string(diff_text)
+
+    for file in patch:
+        if is_skippable_text(file):
+            continue
+
+        if file.is_binary_file or is_binary_by_extension(file):
+            if file.is_added_file:
+                binary_changes.append(f"Binary Added: {file.path}")
+            elif file.is_removed_file:
+                binary_changes.append(f"Binary Removed: {file.path}")
+            elif file.is_rename:
+                binary_changes.append(f"Binary Renamed: {file.source_file[2:]} → {file.target_file[2:]}")
+            continue
+
+        if file.is_added_file:
+            diff_section = f"New: {file.path}\n"
+            added_content = [line.value.rstrip("\n") for hunk in file for line in hunk if line.is_added]
+            diff_section += "\n".join(added_content) + "\n"
+            processed_diff.append(diff_section)
+
+        elif file.is_removed_file:
+            diff_section = f"Removed: {file.path}\n"
+            removed_content = [line.value.rstrip("\n") for hunk in file for line in hunk if line.is_removed]
+            diff_section += "\n".join(removed_content) + "\n"
+            processed_diff.append(diff_section)
+
+        elif file.is_rename:
+            hunk_output = [str(hunk).rstrip("\n") for hunk in file]
+            if hunk_output:
+                diff_section = f"Renamed and Modified: {file.source_file[2:]} → {file.target_file[2:]}\n"
+                diff_section += "\n".join(hunk_output) + "\n"
+            else:
+                diff_section = f"Renamed: {file.source_file[2:]} → {file.target_file[2:]}\n\n"
+            processed_diff.append(diff_section)
+
+        elif file.is_modified_file:
+            diff_section = f"Modified: {file.path}\n"
+            hunk_contents = [str(hunk).rstrip("\n") for hunk in file]
+            diff_section += "\n".join(hunk_contents) + "\n"
+            processed_diff.append(diff_section)
+
+    final_output = "\n".join(binary_changes + processed_diff)
+    return final_output, patch
 
 
 def pr_analysis_marker() -> str:

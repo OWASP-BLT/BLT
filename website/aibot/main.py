@@ -5,7 +5,7 @@ Gemini AI API to generate responses and post them on github.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 from django.conf import settings
@@ -14,7 +14,6 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 from jsonschema import ValidationError, validate
-from unidiff import PatchedFile, PatchSet
 
 from website.aibot.aibot_env import configure_and_validate_settings, load_prompts, load_validation_schemas
 from website.aibot.clients import q_client
@@ -24,28 +23,33 @@ from website.aibot.network import (
     generate_embedding,
     generate_gemini_response,
     github_api_get,
+    patch_github_comment,
     post_github_comment,
 )
 from website.aibot.qdrant_utils import (
     create_temp_pr_collection,
-    get_similar_merged_chunks,
     q_collection_exists,
     q_get_collection_name,
+    q_get_similar_chunks,
+    q_get_similar_merged_chunks,
     q_process_changed_files,
     q_process_remote_repote_repo,
     rename_qdrant_collection_with_alias,
 )
 from website.aibot.utils import (
     analyze_code_ruff_bandit,
+    approximate_token_count_char,
     extract_json_block,
+    format_chunks_to_string,
     issue_analysis_marker,
     parse_json,
     pr_analysis_marker,
+    process_diff,
     sign_payload,
     validate_github_request,
     verify_github_signature,
 )
-from website.models import GithubAppInstallation, GithubAppRepo, InstallationState, RepoState
+from website.models import AibotComment, GithubAppInstallation, GithubAppRepo, InstallationState, RepoState
 
 logger = logging.getLogger(__name__)
 
@@ -393,17 +397,15 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
     # TODO: Add payload validation for required fields
     repo_full_name = payload["repository"]["full_name"]
     repo_id = payload["repository"]["id"]
-    before = payload.get["before"]
-    after = payload.get["after"]
+    before = payload["before"]
+    after = payload["after"]
 
     compare_url = f"https://api.github.com/repos/{repo_full_name}/compare/{before}...{after}"
 
-    compare_response = github_api_get(compare_url)
-    if not compare_response:
+    compare_data = github_api_get(compare_url)
+    if not compare_data:
         logger.error("Failed to fetch compare data via %s", compare_url)
         return JsonResponse({"error": "Failed to fetch compare data"}, status=500)
-
-    compare_data = json.loads(compare_response)
 
     changed_files = []
     for file in compare_data.get("files", []):
@@ -412,7 +414,7 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
             entry["previous_path"] = file.get("previous_filename")
         changed_files.append(entry)
 
-    q_process_changed_files(changed_files, repo_full_name, repo_id)
+    q_process_changed_files(q_client, changed_files, repo_full_name, repo_id)
 
     return JsonResponse({"success": "Processed push event successfully"})
 
@@ -424,15 +426,97 @@ def handle_ping(payload: Dict[str, Any]) -> JsonResponse:
 
 
 def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
-    validate_payload_schema(payload, SCHEMAS["PR_SCHEMA"])
+    validate_payload_schema(payload, {})
 
     pr_instance = PullRequest(payload)
     action = pr_instance.action
 
-    if action in ("opened", "reopened", "synchronize"):
+    if action in ("opened", "reopened", "synchronize"):  # TODO: Remove reopened onc dev testing done
         logger.info("Processing PR event: %r", pr_instance)
         if pr_instance._verify_branch():
-            aibot_pr_opened_or_synchronize(pr_instance)
+            pr_diff = fetch_pr_diff(pr_instance.diff_url)
+            processed_diff, patch = process_diff(pr_diff)
+            diff_query = generate_diff_query(processed_diff)
+            cleaned_json = extract_json_block(diff_query)
+            diff_query_json = json.loads(cleaned_json)
+
+            q = diff_query_json.get("query")
+            key_terms = diff_query_json.get("key_terms")
+            k = diff_query_json.get("k")
+
+            combined_query = q + key_terms
+            vector_query = generate_embedding(combined_query)
+
+            snippets = None
+            analysis_output = None
+
+            if not vector_query:
+                logger.warning("Embedding generation failed for query: %s", combined_query)
+            elif not pr_instance.raw_url_map:
+                logger.warning("Missing raw URL map for PR instance: %s", pr_instance)
+            else:
+                source_collection, temp_collection = create_temp_pr_collection(pr_instance, patch)
+                logger.info("Temporary collection created: %s", temp_collection)
+
+                rename_mappings = {}
+                for file in patch:
+                    rename_mappings[file.source_file] = file.target_file
+
+                if source_collection and temp_collection:
+                    similar_chunks = q_get_similar_merged_chunks(
+                        None, source_collection, temp_collection, vector_query, k, rename_mappings
+                    )
+                    snippets = format_chunks_to_string(similar_chunks)
+                    analysis_output = analyze_code_ruff_bandit(similar_chunks)
+                else:
+                    logger.warning("Missing collection names: source=%s, temp=%s", source_collection, temp_collection)
+
+            prompt = PROMPTS["PR_REVIEWER"].format(
+                pr_title=pr_instance.title or not_provided,
+                pr_body=pr_instance.body or not_provided,
+                pr_diff=processed_diff or not_provided,
+                static_analysis_output=analysis_output or not_provided,
+                relevant_snippets=snippets or not_provided,
+            )
+            not_provided = "Not provided"
+
+            bot_response_raw = generate_gemini_response(prompt)
+            bot_response = bot_response_raw.get("text", "")
+
+            if not bot_response:
+                logger.error(
+                    "Failed to generate AI review response for new PR: %s created in %s",
+                    pr_instance.title,
+                    pr_instance.repo_full_name,
+                )
+            ai_response = f"{pr_analysis_marker()}\n{bot_response}"
+
+            gh_comment = post_github_comment(pr_instance.comments_url, bot_response)
+
+            installation_data = payload.get("installation", {})
+            repository_data = payload.get("repository", {})
+            issue_data_for_comment = payload.get("pull_request", {})
+
+            AibotComment.objects.create(
+                installation=installation_data,
+                repository=repository_data,
+                issue_number=pr_instance.number,
+                comment_id=gh_comment["id"],
+                comment_url=gh_comment["html_url"],
+                trigger_event=f"issues.{action}",
+                triggered_by_username=issue_data_for_comment["user"]["login"],
+                trigger_comment_body=issue_data_for_comment.get("body") or "",
+                prompt=prompt,
+                response=ai_response,
+                model_used=bot_response_raw["model"],
+                prompt_tokens=bot_response_raw["prompt_tokens"] or approximate_token_count_char(prompt),
+                completion_tokens=bot_response_raw["completion_tokens"] or approximate_token_count_char(bot_response),
+            )
+
+            if not gh_comment:
+                logger.error("Failed to post github comment to URL: %s", pr_instance.comments_url)
+            else:
+                logger.info("Completed review for %r", pr_instance)
         else:
             logger.info("Skipping AI review due to branch mismatch for: %r", pr_instance)
     elif action == "closed":
@@ -440,55 +524,202 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     return JsonResponse({"status": "PR event processed"})
 
 
-def handle_Issue_comment_event(payload: Dict[str, Any]) -> None:
+def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
     validate_payload_schema(payload, SCHEMAS["COMMENT_SCHEMA"])
+    logger.debug("Received issue comment event: \n %s", json.dumps(payload, indent=2))
 
-    comment = payload.get("comment", {})
-    comment_body = comment.get("body", "").lower()
+    installation_id = payload["installation"]["id"]
+    repo_data = payload["repository"]
+    action = payload["action"]
+    issue = payload["issue"]
+    issue_body = issue["body"]
 
-    logger.info(
-        "Processing comment event:\n- Comment ID: %s\n- Body: %s\n- User: %s",
-        comment.get("id"),
-        comment_body[:50],
-        comment.get("user", {}).get("login", "unknown"),
-    )
+    bot_username = settings.GITHUB_AIBOT_USERNAME.lower()
+    if bot_username not in issue_body:
+        logger.debug("%s was not mentioned in comment. Ignoring", bot_username)
+        return JsonResponse({"status": f"{bot_username} was not mentioned in comment. Ignoring"})
 
-    if comment.get("user", {}).get("login") == settings.GITHUB_AIBOT_USERNAME:
-        logger.info("Ignoring comment made by the AI Bot itself.")
-        return
+    issue_type = "Pull request" if issue.get("pull_request") else "Issue"
+    comments_url = issue["comments_url"]
+    if action == "created":
+        # More advanced handling could also include another semantic code retreival from the conversaton,
+        # however the blt bot's pr review comment has sufficient context for now
+        logger.debug("Handling %s action with url: %s", action, issue["url"])
+        try:
+            installation = GithubAppInstallation.objects.get(installation_id=installation_id)
+            installation_state = installation.state
 
-    if f"@{settings.GITHUB_AIBOT_USERNAME}" in comment_body:
-        issue = payload.get("issue", {})
-        if "pull_request" in issue:
-            logger.info("Bot mentioned in PR comment - analyzing...")
-            aibot_handle_pr_comment(payload)
-        else:
-            logger.info("Bot mentioned in issue comment - analyzing...")
-            aibot_handle_issue_comment(payload)
+            if installation_state != "active":
+                logger.error(
+                    "Received 'issues' event for installation id %s with invalid state: %s",
+                    installation.installation_id,
+                    installation_state,
+                )
+                return JsonResponse({"error": f"Invalid installation state: {installation_state}"})
+
+            repo = GithubAppRepo.objects.get(installation=installation, repo_id=repo_data["id"])
+            if repo.state != "active":
+                return JsonResponse({"error": f"Invalid repo state: {repo.state}"})
+
+            comments = github_api_get(comments_url)
+
+            logger.debug("Processing for following comments: %s", json.dump(comments, indent=2))
+
+            conversation_parts = []
+
+            conversation_parts.append(f"[ISSUE by {issue['user']['login']}]: {issue['title']}\n{issue['body'] or ''}")
+
+            for comment in comments:
+                author = comment["user"]["login"]
+                body = comment["body"]
+                conversation_parts.append(f"[COMMENT by {author}]: {body}")
+
+            conversation = "\n\n".join(conversation_parts)
+            logger.debug("Built conversation:\n%s", conversation)
+
+            prompt = PROMPTS["ISSUE_COMMENT_RESPONDER"].format(
+                issue_type=issue_type, issue_title=issue["title"], issue_body=issue_body, conversation=conversation
+            )
+
+            ai_response = generate_gemini_response(prompt)
+
+            if not ai_response:
+                logger.error("Did not receive a valid LLM response for issue #%s", issue["number"])
+                return JsonResponse({"error": "Did not receive a valid LLM response"}, status=500)
+
+            ai_response_body = ai_response["text"]
+            gh_comment = post_github_comment(comments_url, ai_response_body)
+
+            if not gh_comment:
+                logger.error("Failed to post/patch GitHub comment for issue #%s", issue["number"])
+                return JsonResponse({"error": "Failed to post GitHub comment"}, status=500)
+
+            logger.info("Posted AI response to issue #%s in %s", issue["number"], repo.full_name)
+
+            AibotComment.objects.create(
+                installation=installation,
+                repository=repo,
+                issue_number=issue["number"],
+                comment_id=gh_comment["id"],
+                comment_url=gh_comment["html_url"],
+                trigger_event=f"issue_comment.{action}",
+                triggered_by_username=issue["user"]["login"],
+                trigger_comment_body=issue.get("body") or "",
+                prompt=prompt,
+                response=ai_response_body,
+                model_used=ai_response["model"],
+                prompt_tokens=ai_response["prompt_tokens"] or approximate_token_count_char(prompt),
+                completion_tokens=ai_response["completion_tokens"] or approximate_token_count_char(ai_response_body),
+            )
+
+        except GithubAppInstallation.DoesNotExist:
+            logger.error("Installation %s not found", installation_id)
+            return JsonResponse({"error": "Installation not found"}, status=404)
+        except GithubAppRepo.DoesNotExist:
+            logger.error("Repo %s not found in db", repo_data["full_name"])
+            return JsonResponse({"error": f"Repo not found: {repo_data['full_name']}"}, status=404)
     else:
-        logger.info("Comment does not mention the bot. Ignoring.")
+        logger.debug("Ignoring issue event with action=%s", action)
+    return
 
 
-def handle_issue_event(payload: Dict[str, Any]) -> JsonResponse:
-    """Handle issue related events (opened, edited)."""
+def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
+    logger.debug("Received payload of 'issues' event: \n %s", json.dumps(payload, indent=2))
     validate_payload_schema(payload, SCHEMAS["ISSUE_SCHEMA"])
 
-    action = payload.get("action")
-    issue_data = payload.get("issue", {})
-    if action == "opened":
-        logger.info("New issue opened: #%s - %s", issue_data.get("number"), issue_data.get("title"))
-        aibot_handle_new_issue(payload)
-    elif action == "edited":
-        logger.info("Issue edited: #%s - %s", issue_data.get("number"), issue_data.get("title"))
-        aibot_handle_issue_edited(payload)
-    return JsonResponse({"status": "Issue event processed"})
+    installation_id = payload["installation"]["id"]
+    repo_data = payload["repository"]
+    action = payload["action"]
+    issue_data = payload["issue"]
+
+    if action in {"opened", "edited"}:
+        try:
+            installation = GithubAppInstallation.objects.get(installation_id=installation_id)
+            installation_state = installation.state
+            if installation_state != "active":
+                logger.error(
+                    "Received 'issues' event for installation id %s with invalid state: %s",
+                    installation.installation_id,
+                    installation_state,
+                )
+                return JsonResponse({"error": f"Invalid installation state: {installation_state}"})
+
+            repo = GithubAppRepo.objects.get(installation=installation, repo_id=repo_data["id"])
+            if repo.state != "active":
+                return JsonResponse({"error": f"Invalid repo state: {repo.state}"})
+
+            issue_data["body"] = issue_data.get("body") or ""
+
+            issue_query = generate_issue_query(issue_data)
+            issue_cleaned_json = extract_json_block(issue_query)
+            issue_query_json = json.loads(issue_cleaned_json)
+            query = issue_query_json.get("query")
+            k = issue_query_json.get("k")
+
+            semantically_relevant_chunks = q_get_similar_chunks(
+                q_client, q_get_collection_name(repo.full_name, repo.repo_id), query, k
+            )
+            snippets = format_chunks_to_string(semantically_relevant_chunks)
+
+            prompt = PROMPTS["ISSUE_PLANNER"].format(
+                issue_title=issue_data["title"],
+                issue_body=issue_data["body"] or "Not provided",
+                code_chunks=snippets or "Not provided",
+            )
+
+            ai_response = generate_gemini_response(prompt)
+            if not ai_response:
+                logger.error("Did not receive a valid LLM response for issue #%s", issue_data["number"])
+                return JsonResponse({"error": "Did not receive a valid LLM response"}, status=500)
+
+            ai_response_body = ai_response["text"]
+            final_text = issue_analysis_marker() + ai_response_body
+
+            comments_url = issue_data["comments_url"]
+            if action == "opened":
+                gh_comment = post_github_comment(comments_url, final_text)
+            else:
+                gh_comment = patch_github_comment(comments_url, final_text, issue_analysis_marker())
+
+            if not gh_comment:
+                logger.error("Failed to post/patch GitHub comment for issue #%s", issue_data["number"])
+                return JsonResponse({"error": "Failed to post GitHub comment"}, status=500)
+
+            logger.info("Posted AI response to issue #%s in %s", issue_data["number"], repo.full_name)
+
+            AibotComment.objects.create(
+                installation=installation,
+                repository=repo,
+                issue_number=issue_data["number"],
+                comment_id=gh_comment["id"],
+                comment_url=gh_comment["html_url"],
+                trigger_event=f"issues.{action}",
+                triggered_by_username=issue_data["user"]["login"],
+                trigger_comment_body=issue_data.get("body") or "",
+                prompt=prompt,
+                response=final_text,
+                model_used=ai_response["model"],
+                prompt_tokens=ai_response["prompt_tokens"] or approximate_token_count_char(prompt),
+                completion_tokens=ai_response["completion_tokens"] or approximate_token_count_char(ai_response_body),
+            )
+
+        except GithubAppInstallation.DoesNotExist:
+            logger.error("Installation %s not found", installation_id)
+            return JsonResponse({"error": "Installation not found"}, status=404)
+        except GithubAppRepo.DoesNotExist:
+            logger.error("Repo %s not found in db", repo_data["full_name"])
+            return JsonResponse({"error": f"Repo not found: {repo_data['full_name']}"}, status=404)
+    else:
+        logger.debug("Ignoring issue event with action=%s", action)
+
+    return JsonResponse({"success": "processed"})
 
 
 EVENT_HANDLERS = {
     "ping": handle_ping,
     "pull_request": handle_pull_request_event,
-    "issue_comment": handle_Issue_comment_event,
-    "issue": handle_issue_event,
+    "issue_comment": handle_issue_comment_event,
+    "issues": handle_issues_event,
     "installation": handle_installation_event,
     "installation_repositories": handle_installation_repositories_event,
     "repository": handle_repository_event,
@@ -529,396 +760,17 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"error": f"Unsupported event type {event_type}"})
 
 
-def aibot_pr_opened_or_synchronize(pr_instance: PullRequest) -> None:
-    """Handles the logic when a new PR is opened."""
-
-    pr_diff = fetch_pr_diff(pr_instance.diff_url)
-
-    processed_diff, patch = process_diff(pr_diff)
-    diff_query = get_diff_query(processed_diff)
-    cleaned_json = extract_json_block(diff_query)
-    diff_query_json = json.loads(cleaned_json)
-
-    q = diff_query_json.get("query")
-    key_terms = diff_query_json.get("key_terms")
-    k = diff_query_json.get("k")
-
-    combined_query = q + key_terms
-    vector_query = generate_embedding(combined_query)
-
-    if not vector_query:
-        logger.warning("Embedding generation failed for query: %s", combined_query)
-    elif not pr_instance.raw_url_map:
-        logger.warning("Missing raw URL map for PR instance: %s", pr_instance)
-    else:
-        source_collection, temp_collection = create_temp_pr_collection(pr_instance, patch)
-        logger.info("Temporary collection created: %s", temp_collection)
-
-        rename_mappings = {}
-        for file in patch:
-            rename_mappings[file.source_file] = file.target_file
-
-        if source_collection and temp_collection:
-            similar_chunks = get_similar_merged_chunks(
-                q_client, source_collection, temp_collection, vector_query, k, rename_mappings
-            )
-            analysis_output = analyze_code_ruff_bandit(similar_chunks)
-        else:
-            logger.warning("Missing collection names: source=%s, temp=%s", source_collection, temp_collection)
-
-        formatted_snippets = []
-        for snippet in similar_chunks:
-            file_path = snippet.get("file_path", "Unknown")
-            chunk = snippet.get("chunk", "")
-            start = snippet.get("start_line", "?")
-            end = snippet.get("end_line", "?")
-
-            formatted_snippet = f"File: {file_path}\n" f"Lines: {start}–{end}\n" f"```python\n{chunk}\n```"
-            formatted_snippets.append(formatted_snippet)
-
-        joined_snippets = "\n\n".join(formatted_snippets)
-
-        prompt = PROMPTS["PR_REVIEWER_PROMPT"]
-        placeholders = {
-            "<INSERT_PR_TITLE>": pr_instance.title or "Not found",
-            "<INSERT_PR_BODY>": pr_instance.body or "Not found",
-            "<INSERT_PR_DIFF>": processed_diff or "Not found",
-            "<INSERT_STATIC_ANALYSIS_OUTPUT>": analysis_output or "Not found",
-            "<INSERT_RELEVANT_SNIPPETS>": joined_snippets or "Not found",
-        }
-
-        for key, value in placeholders.items():
-            prompt = prompt.replace(key, str(value))
-
-    bot_response = generate_gemini_response(prompt)
-
-    if not bot_response:
-        logger.error(
-            "Failed to generate AI review response for new PR: %s created in %s",
-            pr_instance.title,
-            pr_instance.repo_full_name,
-        )
-    bot_response = f"{pr_analysis_marker()}\n{bot_response}"
-
-    response = post_github_comment(pr_instance.comments_url, bot_response)
-
-    if not response:
-        logger.error("Failed to post github comment to URL: %s", pr_instance.comments_url)
-    else:
-        logger.info("Completed review for %r", pr_instance)
-
-
-def aibot_handle_pr_comment(payload: Dict[str, Any]) -> None:
-    """Handle PR comments where the bot is mentioned."""
-    pr_number = payload.get("issue", {}).get("number")
-    comment_body = payload.get("comment", {}).get("body", "")
-    commenter = payload.get("comment", {}).get("user", {}).get("login")
-
-    logger.info(
-        "AI Bot processing PR comment:\n- PR #%s\n- Comment by: %s\n- Content: %s...",
-        pr_number,
-        commenter,
-        comment_body[:50],
-    )
-
-    ai_response = f"Hi @{commenter}, thanks for tagging me! This is a sample response to your PR comment."
-    response = post_github_comment(pr_number, ai_response)
-
-    if response and response.status_code == 201:
-        logger.info("AI Bot response posted successfully to PR comment.")
-    else:
-        logger.error(
-            "Failed to post AI Bot response to PR comment. Response: %s", getattr(response, "text", "No response")
-        )
-
-
-def aibot_handle_issue_comment(payload: Dict[str, Any]) -> None:
-    """Handle issue comments where the bot is mentioned."""
-    issue_number = payload.get("issue", {}).get("number")
-    comment_body = payload.get("comment", {}).get("body", "")
-    commenter = payload.get("comment", {}).get("user", {}).get("login")
-
-    logger.info(
-        "AI Bot processing issue comment:\n- Issue #%s\n- Comment by: %s\n- Content: %s...",
-        issue_number,
-        commenter,
-        comment_body[:50],
-    )
-    prompt = f"""Context:
-    - This is a comment on GitHub issue #{issue_number}
-    - The commenter is: @{commenter}
-    - Their message was: "{comment_body}
-    Generate a response for this
-    """
-    ai_response = generate_gemini_response(prompt)
-    response = post_github_comment(issue_number, ai_response)
-
-    if response and response.status_code == 201:
-        logger.info("AI Bot response posted successfully to issue comment.")
-    else:
-        logger.error(
-            "Failed to post AI Bot response to issue comment. Response: %s", getattr(response, "text", "No response")
-        )
-
-
-def aibot_handle_new_issue(payload: Dict[str, Any]) -> None:
-    """
-    Handle newly opened GitHub issues.
-    Generates a contextual AI response using Gemini.
-    """
-    issue_number = payload.get("issue", {}).get("number")
-    issue_title = payload.get("issue", {}).get("title", "No title")
-    issue_body = payload.get("issue", {}).get("body", "No body")
-
-    logger.info(
-        "AI Bot processing new issue:\n- Issue #%s\n- Title: %s\n- Content: %s...",
-        issue_number,
-        issue_title,
-        issue_body[:100],
-    )
-
-    prompt = f"""
-        You are an AI assistant responding to a newly opened GitHub issue.
-
-        Issue Title: {issue_title}
-        Issue Description: {issue_body}
-
-        Your task:
-        - Briefly acknowledge the issue
-        - Summarize what the issue seems to be about
-        - Offer help or ask clarifying questions if needed
-        - Keep it friendly and professional
-
-        Generate a short, helpful response:
-        """
-
-    ai_response = generate_gemini_response(prompt)
-
-    if not ai_response:
-        logger.error("Failed to generate AI response for new issue.")
-        return
-
-    logger.info("Generated AI response for new issue: %s", ai_response[:150] + "...")
-
-    full_ai_response = f"{issue_analysis_marker()}\n{ai_response}"
-    response = post_github_comment(issue_number, full_ai_response)
-
-    if response and response.status_code == 201:
-        logger.info("AI Bot response posted successfully to new issue #%s.", issue_number)
-    else:
-        logger.error(
-            "Failed to post AI Bot response to new issue #%s. Response: %s",
-            issue_number,
-            getattr(response, "text", "No response"),
-        )
-
-
-def generate_diff_query(processed_diff: str) -> List[float]:
-    template = PROMPTS["SEMANTIC_QUERY_GENERATOR_PROMPT"]
-    prompt = template.replace("<DIFF>", processed_diff)
+def generate_diff_query(processed_diff: str) -> str:
+    prompt = PROMPTS["SEMANTIC_QUERY_GENERATOR"].format(diff=processed_diff)
     response = generate_gemini_response(prompt)
     return response
 
 
-def aibot_handle_issue_edited(payload: Dict[str, Any]) -> None:
-    """
-    Handle edited GitHub issues by analyzing the updated content and responding accordingly.
-
-    This function:
-    - Extracts the issue number, title, and body from the webhook payload.
-    - Checks if the AI Bot has already commented on this issue.
-    - If a comment exists, updates it with a new analysis.
-    - Otherwise, posts a new comment.
-    - Logs the result of the posting operation.
-
-    Args:
-        payload (Dict[str, Any]): The JSON payload from the GitHub webhook for the edited issue event.
-    """
-    issue_number = payload.get("issue", {}).get("number")
-    issue_title = payload.get("issue", {}).get("title", "No title")
-    issue_body = payload.get("issue", {}).get("body", "No body")
-
-    logger.info(
-        "AI Bot processing edited issue:\n- Issue #%s\n- Title: %s\n- Content: %s...",
-        issue_number,
-        issue_title,
-        issue_body[:100],
-    )
-
-    prompt = f"""
-        You are an AI assistant responding to an updated GitHub issue.
-
-        Issue Title: {issue_title}
-        Updated Description: {issue_body}
-
-        Your task:
-        - Acknowledge the update
-        - Briefly summarize what changed
-        - Ask clarifying questions if needed
-        - Keep it friendly and professional
-
-        Generate a short, helpful response:
-        """
-
-    ai_response = generate_gemini_response(prompt)
-
-    if not ai_response:
-        logger.error("Failed to generate AI response for edited issue.")
-        return
-
-    logger.info("Generated AI response for edited issue: %s", ai_response[:150] + "...")
-
-    full_ai_response = f"{issue_analysis_marker()}\n{ai_response}"
-
-    existing_comment = find_bot_comment(issue_number, issue_analysis_marker())
-
-    if existing_comment:
-        comment_id = existing_comment["id"]
-        logger.info("Found existing bot comment. Updating it with new analysis.")
-        response = post_github_comment(issue_number, full_ai_response, comment_id)
-    else:
-        logger.info("No existing bot comment found. Posting a new issue analysis comment.")
-        response = post_github_comment(issue_number, full_ai_response)
-
-    if response and response.status_code == 201:
-        logger.info("AI Bot response posted successfully to edited issue #%s.", issue_number)
-    else:
-        logger.error(
-            "Failed to post AI Bot response to edited issue #%s. Response: %s",
-            issue_number,
-            getattr(response, "text", "No response"),
-        )
-
-
-def find_bot_comment(issue_number: str, marker: str) -> Optional[dict]:
-    """
-    Find an existing comment made by the bot in a GitHub issue or pull request.
-
-    Args:
-        issue_number (str): The number of the GitHub issue or PR.
-        marker (str): A unique string used to identify the specific bot comment.
-
-    Returns:
-        Optional[dict]: The matching comment object if found, otherwise None.
-    """
-    try:
-        url = f"{settings.GITHUB_API_URL}/issues/{issue_number}/comments"
-        headers = {
-            "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
-            "Accept": "application/vnd.github+json",
-        }
-        response = requests.get(url, headers=headers, timeout=10)
-
-        if response.status_code == 200:
-            comments = response.json()
-            bot_username = settings.GITHUB_AIBOT_USERNAME.lower()
-
-            for comment in comments:
-                author = comment.get("user", {}).get("login", "").lower()
-                body = comment.get("body", "").lower()
-                if author == bot_username and marker.lower() in body:
-                    return comment
-        else:
-            logger.warning("GitHub API returned status %s while fetching comments.", response.status_code)
-        return None
-    except Exception as e:
-        logger.error("Failed to fetch comments: %s", str(e))
-        return None
+def generate_issue_query(issue_content: str) -> List[float]:
+    prompt = PROMPTS["ISSUE_QUERY"].format(issue_title=issue_content["title"], issue_body=issue_content["body"])
+    response = generate_gemini_response(prompt)
+    return response
 
 
 def validate_payload_schema(payload: Dict[str, Any], schema: Dict[str, Any]) -> None:
-    """
-    Validate the payload against the provided schema.
-
-    Args:
-        payload (Dict[str, Any]): The payload to validate.
-        schema (Dict[str, Any]): The JSON schema to validate against.
-
-    Returns:
-        None. Raises ValidationError if the payload does not conform to the schema, which is handled by the caller.
-    """
     validate(instance=payload, schema=schema)
-
-
-def process_diff(diff_text: str) -> str:
-    skip_files = {"package-lock.json", ".yarn.lock"}
-    skip_extensions = {
-        ".lock",
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".svg",
-        ".pdf",
-        ".zip",
-        ".tar",
-        ".gz",
-        ".min.js",
-        ".map",
-        ".pyc",
-        ".log",
-        ".db",
-        ".coverage",
-        ".egg-info",
-    }
-
-    processed_diff = []
-
-    def should_skip(file: PatchedFile) -> bool:
-        return file.path in skip_files or file.path.endswith(tuple(skip_extensions)) or file.is_binary_file
-
-    patch = PatchSet.from_string(diff_text)
-
-    for file in patch:
-        if should_skip(file):
-            continue
-
-        if file.is_added_file:
-            diff_section = f"New: {file.path}\n"
-            added_content = []
-            for hunk in file:
-                for line in hunk:
-                    if line.is_added:
-                        added_content.append(line.value.rstrip("\n"))
-            diff_section += "\n".join(added_content) + "\n"
-            processed_diff.append(diff_section)
-
-        elif file.is_removed_file:
-            diff_section = f"Removed: {file.path}\n"
-            removed_content = []
-            for hunk in file:
-                for line in hunk:
-                    if line.is_removed:
-                        removed_content.append(line.value.rstrip("\n"))
-            diff_section += "\n".join(removed_content) + "\n"
-            processed_diff.append(diff_section)
-
-        elif file.is_rename:
-            hunk_output = []
-            for hunk in file:
-                hunk_output.append(str(hunk).rstrip("\n"))
-
-            if hunk_output:
-                diff_section = f"Renamed and Modified: {file.source_file[2:]} → {file.target_file[2:]}\n"
-                diff_section += "\n".join(hunk_output) + "\n"
-            else:
-                diff_section = f"Renamed: {file.source_file[2:]} → {file.target_file[2:]}\n"
-                diff_section += "\n"
-            processed_diff.append(diff_section)
-
-        elif file.is_modified_file:
-            diff_section = f"Modified: {file.path}\n"
-            hunk_contents = []
-            for hunk in file:
-                hunk_contents.append(str(hunk).rstrip("\n"))
-            diff_section += "\n".join(hunk_contents) + "\n"
-            processed_diff.append(diff_section)
-
-    return "\n".join(processed_diff), patch
-
-
-def get_diff_query(processed_diff: str) -> List[float]:
-    template = PROMPTS["SEMANTIC_QUERY_GENERATOR_PROMPT"]
-    prompt = template.replace("<DIFF>", processed_diff)
-    response = generate_gemini_response(prompt)
-    return response

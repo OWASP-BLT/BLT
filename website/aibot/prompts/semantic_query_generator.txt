@@ -68,4 +68,4 @@ You MUST provide your response in the following exact format. Do not add any ext
 ```
 
 INPUT DIFF:
-<DIFF>
+{diff}

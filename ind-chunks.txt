@@ -1,0 +1,22 @@
+{
+  "file_name": ".lgtm.yml",
+  "file_path": ".lgtm.yml",
+  "file_ext": ".yml",
+  "chunk_type": "yaml",
+  "content": "path_classifiers:\ngenerated: [{'exclude': '**/*.py'}]\ntest: ['website/tests/**/*.py', 'website/test_*.py', '**/tests/**/*.py', '**/test_*.py']",
+  "start_line": 1,
+  "end_line": 3,
+  "part_index": 1,
+  "part_total": 2
+}
+{
+  "file_name": ".lgtm.yml",
+  "file_path": ".lgtm.yml",
+  "file_ext": ".yml",
+  "chunk_type": "yaml",
+  "content": "extraction.python:\npython_setup.version: 3\nindex.include: ['website', 'blt', 'blog', 'company', 'comments', 'BACON', 'manage.py']\nindex.exclude: ['website/migrations/**/*.py', '**/migrations/**/*.py', '**/__pycache__/**', '**/.venv/**', '**/tests/**/*.py', '**/test_*.py']",
+  "start_line": 5,
+  "end_line": 8,
+  "part_index": 2,
+  "part_total": 2
+}

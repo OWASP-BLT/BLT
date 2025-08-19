@@ -89,26 +89,24 @@ def load_validation_schemas() -> Dict[str, Any]:
 
 
 def load_prompts() -> Dict[str, str]:
+    """Automatically load all .txt prompts from PROMPT_PATH into a dict."""
     prompts = {}
-    prompt_files = {
-        "PR_REVIEWER_PROMPT": "pr_reviewer.txt",
-        "SEMANTIC_QUERY_GENERATOR_PROMPT": "semantic_query_generator.txt",
-    }
 
-    for prompt_name, file_name in prompt_files.items():
-        file_path = PROMPT_PATH / file_name
+    for file_path in PROMPT_PATH.glob("*.txt"):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
+                prompt_name = file_path.stem.upper()
                 prompts[prompt_name] = f.read().strip()
-        except FileNotFoundError:
-            logger.critical("CRITICAL ERROR: Prompt file not found: %s. Application cannot start.", file_path)
-            raise
         except Exception as e:
             logger.critical(
-                "CRITICAL ERROR: An unexpected error occurred while loading prompt %s from %s: %s. Application cannot start.",
-                prompt_name,
+                "CRITICAL ERROR: Failed to load prompt from %s: %s. Application cannot start.",
                 file_path,
                 e,
             )
             raise
+
+    if not prompts:
+        logger.critical("CRITICAL ERROR: No prompts found in %s. Application cannot start.", PROMPT_PATH)
+        raise RuntimeError("No prompts loaded")
+
     return prompts

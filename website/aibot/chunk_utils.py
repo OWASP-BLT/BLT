@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import List, Set, Tuple
 
 import yaml
-from langchain.text_splitter import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from website.aibot.types import ChunkType
 from website.aibot.utils import approximate_token_count_char
@@ -55,7 +55,7 @@ def _split_chunk_lines(
                 content=snippet,
                 start_line=chunk["start_line"] + start_idx + 1,
                 end_line=chunk["start_line"] + end_idx,
-                part_index=part_idx,
+                part_index=part_idx + 1,
                 part_total=n_parts,
             )
         )
@@ -98,7 +98,7 @@ def chunk_file(content: str, file_path: str) -> List[ChunkType]:
         ".yaml": chunk_yaml_file,
         ".yml": chunk_yaml_file,
         ".json": chunk_json_file,
-        ".md": chunk_md_file,
+        ".md": chunk_text_file,
         ".txt": chunk_text_file,
     }
 
@@ -152,135 +152,161 @@ def chunk_text_file(
     file_ext = os.path.splitext(file_path)[1].lower()
 
     total_parts = len(chunks)
+    result = []
+    char_pos = 0
 
-    return [
-        ChunkType(
-            file_name=file_name,
-            file_path=file_path,
-            file_ext=file_ext,
-            chunk_type="text_paragraph",
-            content=chunk,
-            start_line=-1,
-            end_line=-1,
-            part_index=i,
-            part_total=total_parts,
-        )
-        for i, chunk in enumerate(chunks)
-    ]
+    for i, chunk in enumerate(chunks):
+        chunk_start_pos = content.find(chunk, char_pos)
+        if chunk_start_pos == -1:
+            chunk_start_pos = char_pos
 
+        chunk_end_pos = chunk_start_pos + len(chunk)
+        char_pos = chunk_start_pos + 1
 
-def chunk_md_file(content: str, file_path: str) -> List[ChunkType]:
-    """Split markdown content by headings and return structured chunks."""
-    headers_to_split_on = [
-        ("#", "Section"),
-        ("##", "Subsection"),
-    ]
+        start_line = content[:chunk_start_pos].count("\n") + 1
+        end_line = content[:chunk_end_pos].count("\n") + 1
 
-    try:
-        splitter = MarkdownHeaderTextSplitter(headers_to_split_on)
-        document_chunks = splitter.split_text(content)
-    except Exception as e:
-        print(f"Error processing markdown in {file_path}: {e}")
-        return []
-
-    chunks: List[ChunkType] = []
-
-    for doc in document_chunks:
-        name = doc.metadata.get("Subsection") or doc.metadata.get("Section") or "Root Content"
-        final_content = f"{name} \n {doc.page_content}"
-
-        chunks.append(
+        result.append(
             ChunkType(
-                file_name=os.path.basename(file_path),
+                file_name=file_name,
                 file_path=file_path,
-                file_ext=os.path.splitext(file_path)[1].lower(),
-                chunk_type="markdown_section",
-                content=final_content,
-                start_line=-1,
-                end_line=-1,
-                part_index=0,
-                part_total=1,
+                file_ext=file_ext,
+                chunk_type="text_paragraph",
+                content=chunk,
+                start_line=start_line,
+                end_line=end_line,
+                part_index=i + 1,
+                part_total=total_parts,
             )
         )
+    return result
 
-    return chunks
+
+# def chunk_md_file(content: str, file_path: str) -> List[ChunkType]:
+#     TODO: Need to solve the problem of tracking accurate start_line and end_line,
+#           however not critical right now so can be defaulted to use text splitter
+#     headers_to_split_on = [
+#         ("#", "Section"),
+#         ("##", "Subsection"),
+#     ]
+
+#     try:
+#         splitter = MarkdownHeaderTextSplitter(headers_to_split_on)
+#         document_chunks = splitter.split_text(content)
+#     except Exception as e:
+#         print(f"Error processing markdown in {file_path}: {e}")
+#         return []
+
+#     lines = content.splitlines()
+#     chunks: List[ChunkType] = []
+
+#     for doc in document_chunks:
+#         name = doc.metadata.get("Subsection") or doc.metadata.get("Section") or "Root Content"
+#         final_content = f"{name} \n {doc.page_content}"
+
+#         doc_lines = doc.page_content.splitlines()
+#         if not doc_lines:
+#             continue
+
+#         # find exact start line by scanning
+#         start_line = -1
+#         for i in range(len(lines) - len(doc_lines) + 1):
+#             if lines[i : i + len(doc_lines)] == doc_lines:
+#                 start_line = i + 1
+#                 break
+
+#         end_line = start_line + len(doc_lines) - 1 if start_line != -1 else -1
+
+#         chunks.append(
+#             ChunkType(
+#                 file_name=os.path.basename(file_path),
+#                 file_path=file_path,
+#                 file_ext=os.path.splitext(file_path)[1].lower(),
+#                 chunk_type="markdown_section",
+#                 content=final_content,
+#                 start_line=start_line,
+#                 end_line=end_line,
+#                 part_index=1,
+#                 part_total=1,
+#             )
+#         )
+
+#     return chunks
 
 
 def chunk_json_file(content: str, file_path: str) -> List[ChunkType]:
-    try:
-        json_content = json.loads(content)
-    except json.JSONDecodeError as e:
-        print(f"Invalid JSON in {file_path}: {e}")
-        return []
+    content_json = json.loads(content)
+    if isinstance(content_json, dict):
+        # Requires more complex tracking, to be implemented later.
+        # Default to text chunker, good enough for now.
+        return chunk_text_file(content, file_path)
 
     chunks: List[ChunkType] = []
+    lines = content.splitlines()
 
-    if isinstance(json_content, list):
-        # Case 1: It's an array of objects
-        for idx, item in enumerate(json_content):
-            if isinstance(item, dict):
-                chunks.append(
-                    ChunkType(
-                        file_name=os.path.basename(file_path),
-                        file_path=file_path,
-                        file_ext=os.path.splitext(file_path)[1].lower(),
-                        chunk_type="json_array_item",
-                        content=json.dumps(item, indent=2),
-                        start_line=-1,
-                        end_line=-1,
-                        part_index=idx + 1,
-                        part_total=len(json_content),
-                    )
-                )
-    elif isinstance(json_content, dict):
-        items = list(json_content.items())
-        values_are_objects = all(isinstance(v, dict) for v in json_content.values())
+    brace_count = 0
+    current_chunk = []
+    start_line = None
 
-        if values_are_objects and len(json_content) > 0:
-            # Case 2: Nested object like {"k1": {}, "k2": {}}
-            for idx, (key, value) in enumerate(items):
-                chunks.append(
-                    ChunkType(
-                        file_name=os.path.basename(file_path),
-                        file_path=file_path,
-                        file_ext=os.path.splitext(file_path)[1].lower(),
-                        chunk_type="json_nested_object",
-                        content=json.dumps(value, indent=2),
-                        start_line=-1,
-                        end_line=-1,
-                        part_index=idx + 1,
-                        part_total=len(items),
-                    )
-                )
-        else:
+    file_name = os.path.basename(file_path)
+    file_ext = os.path.splitext(file_name)[1]
+
+    for i, line in enumerate(lines, start=1):
+        open_count = line.count("{")
+        close_count = line.count("}")
+
+        if brace_count == 0 and open_count > 0:
+            start_line = i
+
+        if brace_count > 0 or open_count > 0:
+            current_chunk.append(line)
+
+        brace_count += open_count - close_count
+
+        if brace_count == 0 and current_chunk:
+            chunk_str = "\n".join(current_chunk).strip().rstrip(",")
+
             chunks.append(
                 ChunkType(
-                    file_name=os.path.basename(file_path),
+                    file_name=file_name,
                     file_path=file_path,
-                    file_ext=os.path.splitext(file_path)[1].lower(),
-                    chunk_type="json_full_object",
-                    content=json.dumps(json_content, indent=2),
-                    start_line=-1,
-                    end_line=-1,
-                    part_index=1,
-                    part_total=1,
+                    file_ext=file_ext,
+                    chunk_type="json_object",
+                    content=chunk_str,
+                    start_line=start_line,
+                    end_line=i,
+                    part_index=len(chunks) + 1,
+                    part_total=0,
                 )
             )
-    else:
-        pass
+            current_chunk = []
+            start_line = None
+
+    total = len(chunks)
+    for chunk in chunks:
+        chunk["part_total"] = total
 
     return chunks
 
 
+import os
+from collections import defaultdict
+from typing import List
+
+
 def chunk_yaml_file(content: str, file_path: str) -> List[ChunkType]:
+    # NOTE: Uses a fake line counter (ensures uniqueness of start/end lines).
+    # These are not the actual YAML file line numbers, just unique placeholders
+    # so that chunk IDs generated later remain distinct.
+    # Tracking line numbers would require more complex logic, thus right now the chunk quality is preferred
     yml_json = cvt_yml_to_json(content, file_path)
     if not yml_json:
         return chunk_text_file(content, file_path)
     yml_string = generate_yml_string(yml_json, file_path)
 
     level_1_settings = []
-    group_chunks = []
     groups = defaultdict(str)
+
     for line in yml_string:
         main_key, value = line.split(":", 1)
         keys = main_key.split(".")
@@ -295,37 +321,55 @@ def chunk_yaml_file(content: str, file_path: str) -> List[ChunkType]:
             remainder_keys = ".".join(keys[2:])
             groups[level_2_key] += remainder_keys + ":" + value + "\n"
 
-    level_1_code = "\n".join(level_1_settings)
-    level_1_chunk = ChunkType(
-        file_name=os.path.basename(file_path),
-        file_path=file_path,
-        file_ext=os.path.splitext(file_path)[1].lower(),
-        chunk_type="yaml",
-        content=level_1_code,
-        start_line=-1,
-        end_line=-1,
-        part_index=0,
-        part_total=1,
-    )
-    group_chunks = []
+    file_name = os.path.basename(file_path)
+    file_ext = os.path.splitext(file_path)[1].lower()
+
+    chunks: List[ChunkType] = []
+
+    line_counter = 1
+
+    if level_1_settings:
+        level_1_code = "\n".join(level_1_settings)
+        chunks.append(
+            ChunkType(
+                file_name=file_name,
+                file_path=file_path,
+                file_ext=file_ext,
+                chunk_type="yaml",
+                content=level_1_code,
+                start_line=line_counter,
+                end_line=line_counter + len(level_1_settings) - 1,
+                part_index=1,
+                part_total=0,
+            )
+        )
+        line_counter += len(level_1_settings) + 1
 
     for group_name, group_content in groups.items():
         group_content = group_content.rstrip("\n")
-        group_content = f"File: {file_path}\n {group_name}:\n{group_content}"
-        group_chunk = ChunkType(
-            file_name=os.path.basename(file_path),
-            file_path=file_path,
-            file_ext=os.path.splitext(file_path)[1].lower(),
-            chunk_type="yaml",
-            content=group_content,
-            start_line=-1,
-            end_line=-1,
-            part_index=0,
-            part_total=1,
+        group_content = f"{group_name}:\n{group_content}"
+        line_count = group_content.count("\n") + 1
+        chunks.append(
+            ChunkType(
+                file_name=file_name,
+                file_path=file_path,
+                file_ext=file_ext,
+                chunk_type="yaml",
+                content=group_content,
+                start_line=line_counter,
+                end_line=line_counter + line_count - 1,
+                part_index=0,
+                part_total=0,
+            )
         )
-        group_chunks.append(group_chunk)
+        line_counter += line_count + 1
 
-    return [level_1_chunk] + group_chunks
+    total = len(chunks)
+    for idx, chunk in enumerate(chunks, start=1):
+        chunk["part_index"] = idx
+        chunk["part_total"] = total
+
+    return chunks
 
 
 def chunk_html_file(content: str, file_path: str) -> List[ChunkType]:
@@ -477,7 +521,7 @@ def extract_functions_and_classes(tree: ast.AST, lines: List[str], file_path: st
                     content=code_chunk,
                     start_line=start_line + 1,
                     end_line=end_line,
-                    part_index=0,
+                    part_index=1,
                     part_total=1,
                 )
             )
@@ -516,6 +560,8 @@ def extract_imports(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[Li
         content=code_chunk,
         start_line=start_line + 1,
         end_line=end_line,
+        part_index=1,
+        part_total=1,
     )
 
     return [chunk], covered_lines
@@ -542,6 +588,8 @@ def extract_module_level_code(lines: List[str], covered_lines: Set[int], file_pa
                 content="\n".join(block_lines),
                 start_line=start_line,
                 end_line=end_line,
+                part_index=1,
+                part_total=1,
             )
         )
 
@@ -589,6 +637,8 @@ def extract_if_blocks(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[
                     content=code,
                     start_line=start_line + 1,
                     end_line=end_line,
+                    part_index=1,
+                    part_total=1,
                 )
             )
 
@@ -621,6 +671,8 @@ def extract_try_blocks(tree: ast.AST, lines: List[str], file_path: str) -> Tuple
                     content=code,
                     start_line=start_line + 1,
                     end_line=end_line,
+                    part_index=1,
+                    part_total=1,
                 )
             )
 

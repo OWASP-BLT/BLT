@@ -1,6 +1,7 @@
+import base64
 import logging
 import random
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from django.conf import settings
@@ -119,8 +120,34 @@ def github_api_get(api_url: str) -> Optional[str]:
     if response.status_code in RETRY_HTTP_CODES:
         response.raise_for_status()
     if response.status_code == 200:
-        return response.text
+        return response.json()
 
+    return None
+
+
+@retry(
+    stop=stop_after_attempt(MAX_RETRIES),
+    wait=_get_retry_wait_time,
+    retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
+    before_sleep=before_sleep_log(logger, logging.INFO),
+)
+def fetch_file_content_via_api(repo_full_name: str, path: str, ref: str) -> Optional[str]:
+    """
+    Fetch file content from GitHub API for a specific commit ref.
+    Always returns the content at that commit (avoids CDN lag).
+    """
+    url = f"https://api.github.com/repos/{repo_full_name}/contents/{path}?ref={ref}"
+    response = github_api_get(url)
+    if not response:
+        logger.error("Failed to fetch file content from %s", url)
+        return None
+
+    if response.get("encoding") == "base64" and "content" in response:
+        try:
+            return base64.b64decode(response["content"]).decode("utf-8", errors="replace")
+        except Exception as e:
+            logger.error("Failed to decode base64 content for %s: %s", path, e)
+            return None
     return None
 
 
@@ -143,7 +170,7 @@ def post_github_comment(comments_url: str, comment_body: str) -> Optional[str]:
     if response.status_code in RETRY_HTTP_CODES:
         response.raise_for_status()
     if response.status_code == 201:
-        return response.text
+        return response.json()
     return None
 
 
@@ -182,41 +209,39 @@ def patch_github_comment(comments_url: str, comment_body: str, comment_marker: s
     if patch_response.status_code in RETRY_HTTP_CODES:
         patch_response.raise_for_status()
     if patch_response.status_code == 200:
-        return patch_response.text
+        return patch_response.json()
 
     logger.warning("Failed to patch comment: %s", comments_url)
     return None
 
 
-def generate_gemini_response(prompt: str) -> Optional[str]:
+def generate_gemini_response(prompt: str) -> Optional[Dict[str, Any]]:
     """
     Generates a response from the Gemini model for the given prompt.
-    Handles internal errors by returning None and logging the issue.
-
-    Args:
-        prompt: The input string prompt for the Gemini model.
-
-    Returns:
-        The generated text response as a string, or None if:
-        - The prompt is invalid (not a non-empty string).
-        - An error occurs during the Gemini API call.
-        - The Gemini model returns an empty response.
+    Returns structured data including text, model info, and token usage.
     """
+
     if not prompt or not isinstance(prompt, str):
         raise ValueError(f"Invalid prompt provided: {prompt}. Prompt must be a non-empty string.")
 
     try:
         response = gemini_model.generate_content(prompt)
+
         if response and response.text:
-            return response.text
-        else:
-            logger.warning(
-                f"Gemini model returned an empty or non-text response for prompt: '{prompt}'. Response: {response}"
-            )
-            return None
+            return {
+                "text": response.text,
+                "model": getattr(response, "model", "gemini-2.0-flash"),
+                "prompt_tokens": getattr(response, "usage", {}).get("prompt_tokens", 0),
+                "completion_tokens": getattr(response, "usage", {}).get("completion_tokens", 0),
+            }
+
+        logger.warning(
+            "Gemini model returned an empty or non-text response for prompt: '%s'. Response: %s", prompt, response
+        )
+        return None
 
     except Exception as e:
-        logger.error(f"An error occurred during Gemini API call for prompt '{prompt}': {e}")
+        logger.error("Gemini API error for prompt '%s': %s", prompt, e)
         return None
 
 

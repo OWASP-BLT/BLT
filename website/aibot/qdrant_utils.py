@@ -1,18 +1,18 @@
-import json
 import logging
 import os
+import re
 from typing import Dict, List
 
 from django.conf import settings
 from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct
+from qdrant_client.models import FieldCondition, Filter, MatchValue, PointStruct
 from unidiff import PatchSet
 
 from website.aibot.chunk_utils import chunk_file, postprocess_chunks
 from website.aibot.models import PullRequest
 from website.aibot.network import fetch_raw_content, generate_embedding, github_api_get
 from website.aibot.types import ChunkType
-from website.aibot.utils import generate_uuid, sanitize_name
+from website.aibot.utils import generate_chunk_uuid, sanitize_name
 
 logger = logging.getLogger(__name__)
 
@@ -114,8 +114,8 @@ def ensure_collection(q_client: QdrantClient, qdrant_collection: str, qdrant_vec
         logger.debug("Created Qdrant collection '%s'", qdrant_collection)
     except Exception as e:
         logger.error(
-            "Failed to create Qdrant collection. The collection could not be created."
-            "Please check your Qdrant server and configuration. Error: %s",
+            "Failed to create Qdrant collection %s." "Please check your Qdrant server and configuration. Error: %s",
+            qdrant_collection,
             str(e),
         )
         raise
@@ -124,7 +124,7 @@ def ensure_collection(q_client: QdrantClient, qdrant_collection: str, qdrant_vec
 def upsert_to_qdrant(q_client: QdrantClient, qdrant_collection: str, chunk: ChunkType, embedding: List[float]) -> None:
     """Upsert the embedding in specified Qdrant collection."""
     point = PointStruct(
-        id=generate_uuid(chunk["file_path"], chunk["start_line"], chunk["end_line"]),
+        id=generate_chunk_uuid(chunk),
         vector=embedding,
         payload={
             "file_path": chunk["file_path"],
@@ -174,7 +174,7 @@ def create_temp_pr_collection(q_client: QdrantClient, pr_instance: PullRequest, 
     return source_collection, temp_collection
 
 
-def get_similar_merged_chunks(
+def q_get_similar_merged_chunks(
     q_client: QdrantClient,
     source_collection: str,
     temp_collection: str,
@@ -186,25 +186,17 @@ def get_similar_merged_chunks(
     temp_points = q_client.query_points(collection_name=temp_collection, query=query, limit=k)
 
     relevant_chunks: Dict[str, ChunkType] = {}
-    overwrite_log = []
 
     for point in main_points.points:
         chunk_data = point.payload
-        key = chunk_data.get("file") or chunk_data.get("file_path")
+        key = chunk_data.get("file_path")
         relevant_chunks[key] = chunk_data
 
     for point in temp_points.points:
         chunk_data = point.payload
-        key = chunk_data.get("file") or chunk_data.get("file_path")
+        key = chunk_data.get("file_path")
         if key in relevant_chunks:
-            log_entry = {
-                "original_key": key,
-                "action": "overwritten",
-                "new_key": rename_mappings.get(key, key),
-                "old_chunk_preview": relevant_chunks[key],
-            }
-            overwrite_log.append(log_entry)
-            logger.info("Found existing key: %s. Overwriting", key)
+            logger.debug("Found existing key: %s. Overwriting", key)
             del relevant_chunks[key]
             key = rename_mappings.get(key, key)
         relevant_chunks[key] = chunk_data
@@ -212,8 +204,27 @@ def get_similar_merged_chunks(
     return list(relevant_chunks.values())
 
 
+def q_get_similar_chunks(
+    q_client: QdrantClient,
+    collection: str,
+    query: str,
+    k: int,
+) -> List[ChunkType]:
+    result = q_client.query_points(collection_name=collection, query=query, limit=k)
+    chunks = []
+    for point in result.points:
+        chunks.append(point.payload)
+
+    return chunks
+
+
 def q_get_collection_name(repo_full_name: str, repo_id: str) -> str:
-    return f"aibot-{repo_full_name}-{repo_id}"
+    """
+    Create a Qdrant-safe collection name from repo_full_name and repo_id.
+    Only allows alphanumeric, dash, and underscore.
+    """
+    safe_name = re.sub(r"[^a-zA-Z0-9_-]", "-", repo_full_name)
+    return f"aibot-{safe_name}-{repo_id}"
 
 
 def q_collection_exists(q_client: QdrantClient, collection_name: str) -> bool:
@@ -243,7 +254,6 @@ def q_process_remote_repote_repo(
         logger.error("Malformed tree data for repo: %s", repo_full_name)
         raise ValueError("Invalid tree data received from GitHub API")
 
-    tree_data = json.loads(tree_data)
     repo_full_name = sanitize_name(repo_full_name)
 
     qdrant_collection = q_get_collection_name(repo_full_name, repo_id)
@@ -309,7 +319,7 @@ def q_process_remote_repote_repo(
             logger.error("Failed embeddings for file %s: %s", file_info["path"], e, exc_info=True)
             continue
 
-    logger.info("Completed processing repo: %s → Qdrant collection: %s", repo_full_name, qdrant_collection)
+    logger.info("Completed processing repo: %s -> Qdrant collection: %s", repo_full_name, qdrant_collection)
     return qdrant_collection
 
 
@@ -318,6 +328,7 @@ def generate_and_store_embeddings(q_client: QdrantClient, chunks: List[ChunkType
     for chunk in chunks:
         embedding = generate_embedding(chunk["content"], chunk["chunk_type"])
         if embedding:
+            logger.info("Upserting chunk from %s", chunk["file_path"])
             upsert_to_qdrant(q_client, qdrant_collection, chunk, embedding)
 
 
@@ -355,36 +366,25 @@ def q_process_changed_files(
         path = file["path"]
         status = file["status"]
 
-        if status == "removed":
+        def delete_by_path(delete_path: str, reason: str):
             try:
                 q_client.delete(
                     collection_name=collection_name,
-                    points_selector={"filter": {"must": [{"key": "file_path", "match": {"value": path}}]}},
+                    points_selector=Filter(must=[FieldCondition(key="file_path", match=MatchValue(value=delete_path))]),
                 )
-                logger.info("Deleted embeddings for removed file: %s", path)
+                logger.info("Deleted embeddings for %s file: %s", reason, delete_path)
             except Exception as e:
-                logger.error("Failed to delete removed file %s from Qdrant: %s", path, str(e))
+                logger.error("Failed to delete %s file %s from Qdrant: %s", reason, delete_path, str(e))
+
+        if status == "removed":
+            delete_by_path(path, "removed")
             continue
 
         if status == "renamed" and file.get("previous_path"):
             old_path = file["previous_path"]
-            try:
-                q_client.delete(
-                    collection_name=collection_name,
-                    points_selector={"filter": {"must": [{"key": "file_path", "match": {"value": old_path}}]}},
-                )
-                logger.info("Deleted embeddings for renamed file (old path): %s", old_path)
-            except Exception as e:
-                logger.error("Failed to delete old path %s in Qdrant: %s", old_path, str(e))
+            delete_by_path(old_path, "renamed (old path)")
 
-        try:
-            q_client.delete(
-                collection_name=collection_name,
-                points_selector={"filter": {"must": [{"key": "file_path", "match": {"value": path}}]}},
-            )
-            logger.info("Deleted old embeddings for file: %s", path)
-        except Exception as e:
-            logger.error("Failed to delete embeddings for %s: %s", path, str(e))
+        delete_by_path(path, "existing")
 
         raw_url = f"https://raw.githubusercontent.com/{repo_full_name}/main/{path}"
         content = fetch_raw_content(raw_url)
@@ -393,9 +393,7 @@ def q_process_changed_files(
             continue
 
         chunks = chunk_file(content, path)
-        for chunk in chunks:
-            embedding = generate_embedding(chunk["chunk"], chunk.get("name"))
-            if embedding:
-                upsert_to_qdrant(q_client, collection_name, chunk, embedding)
+        logger.debug("Chunking complete, now storing embeddings.")
+        generate_and_store_embeddings(q_client, chunks, collection_name)
 
     return
