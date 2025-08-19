@@ -26,7 +26,7 @@ from website.aibot.network import (
     patch_github_comment,
     post_github_comment,
 )
-from website.aibot.qdrant_utils import (
+from website.aibot.qdrant_api import (
     create_temp_pr_collection,
     q_collection_exists,
     q_get_collection_name,
@@ -64,7 +64,6 @@ PROMPTS = load_prompts()
 def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
     github_token = settings.GITHUB_AIBOT_TOKEN
     webhook_id = settings.GITHUB_AIBOT_WEBHOOK_ID
-    repo_api_url = settings.GITHUB_API_URL
     webhook_url = settings.GITHUB_AIBOT_WEBHOOK_URL
     webhook_secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
 
@@ -113,7 +112,7 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
             {
                 "health": "1",
                 "status": "Webhook is reachable and delivery works",
-                "repo": settings.GITHUB_URL,
+                # "repo": settings.GITHUB_URL,
             }
         )
     except requests.RequestException as e:
@@ -182,12 +181,12 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
             try:
                 q_process_remote_repote_repo(q_client, repo_obj.full_name, repo_obj.repo_id, repo_obj.default_branch)
                 repo_obj.state = RepoState.READY
-                repo_obj.save(update_fields=["state"])
+                repo_obj.save()
                 processed_repos.append(repo_obj.full_name)
             except Exception as e:
                 logger.error("Failed to process repo %s: %s", repo_obj.full_name, e, exc_info=True)
                 repo_obj.state = RepoState.ERROR
-                repo_obj.save(update_fields=["state"])
+                repo_obj.save()
                 failed_repos.append(repo_obj.full_name)
 
         return JsonResponse(
@@ -452,8 +451,6 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
 
             if not vector_query:
                 logger.warning("Embedding generation failed for query: %s", combined_query)
-            elif not pr_instance.raw_url_map:
-                logger.warning("Missing raw URL map for PR instance: %s", pr_instance)
             else:
                 source_collection, temp_collection = create_temp_pr_collection(pr_instance, patch)
                 logger.info("Temporary collection created: %s", temp_collection)
@@ -534,16 +531,19 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
     issue = payload["issue"]
     issue_body = issue["body"]
 
-    bot_username = settings.GITHUB_AIBOT_USERNAME.lower()
-    if bot_username not in issue_body:
-        logger.debug("%s was not mentioned in comment. Ignoring", bot_username)
-        return JsonResponse({"status": f"{bot_username} was not mentioned in comment. Ignoring"})
+    comment_body = payload["comment"]["body"]
+    bot_name = settings.GITHUB_AIBOT_APP_NAME.lower()
+    mention_string = f"@{bot_name}"
+    if mention_string not in comment_body:
+        logger.debug("%s was not mentioned in comment. Ignoring", bot_name)
+        return JsonResponse({"status": f"{bot_name} was not mentioned in comment. Ignoring"})
 
     issue_type = "Pull request" if issue.get("pull_request") else "Issue"
     comments_url = issue["comments_url"]
     if action == "created":
+        # Can add logic for edited comments as well, will require patch with a separate marker
         # More advanced handling could also include another semantic code retreival from the conversaton,
-        # however the blt bot's pr review comment has sufficient context for now
+        # however the blt bot's pr review comment is assumed to be present with sufficient context for now
         logger.debug("Handling %s action with url: %s", action, issue["url"])
         try:
             installation = GithubAppInstallation.objects.get(installation_id=installation_id)
@@ -563,7 +563,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
 
             comments = github_api_get(comments_url)
 
-            logger.debug("Processing for following comments: %s", json.dump(comments, indent=2))
+            logger.debug("Processing for following comments: %s", json.dumps(comments, indent=2))
 
             conversation_parts = []
 
@@ -574,7 +574,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
                 body = comment["body"]
                 conversation_parts.append(f"[COMMENT by {author}]: {body}")
 
-            conversation = "\n\n".join(conversation_parts)
+            conversation = "\n".join(conversation_parts)
             logger.debug("Built conversation:\n%s", conversation)
 
             prompt = PROMPTS["ISSUE_COMMENT_RESPONDER"].format(

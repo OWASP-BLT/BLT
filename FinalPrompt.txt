@@ -37,7 +37,7 @@ Modified: blt/settings.py
 +GITHUB_API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com/repos/SahilDhillon21/BLT")
  EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
  
-+GITHUB_AIBOT_USERNAME = "blt-ai-bot"
++GITHUB_AIBOT_APP_NAME = "blt-ai-bot"
 +
  ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
  
@@ -1198,7 +1198,7 @@ def get_github_aibot_token() -> Optional[str]:
 
 def get_github_aibot_username() -> Optional[str]:
     """Retrieve the GitHub AI bot username from settings."""
-    return _get_setting("GITHUB_AIBOT_USERNAME")
+    return _get_setting("GITHUB_AIBOT_APP_NAME")
 
 
 def get_aibot_pr_analysis_comment_marker() -> str:

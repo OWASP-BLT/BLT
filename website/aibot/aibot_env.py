@@ -23,11 +23,8 @@ def configure_settings() -> None:
 
 def validate_settings() -> None:
     critical_settings = [
-        "GITHUB_AIBOT_WEBHOOK_URL",
-        "GITHUB_AIBOT_WEBHOOK_ID",
         "GITHUB_AIBOT_WEBHOOK_SECRET",
-        "GITHUB_AIBOT_USERNAME",
-        "GITHUB_URL",
+        "GITHUB_AIBOT_APP_NAME",
         "GEMINI_API_KEY",
         "GEMINI_GENERATION_MODEL",
         "GEMINI_EMBEDDING_MODEL",
@@ -43,7 +40,6 @@ def validate_settings() -> None:
             missing_settings.append(key)
 
     if missing_settings:
-        logger.critical(f"Missing critical settings: {', '.join(missing_settings)}")
         raise ImproperlyConfigured(f"Missing critical settings: {', '.join(missing_settings)}")
 
 

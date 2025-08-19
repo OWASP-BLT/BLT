@@ -2412,6 +2412,25 @@ files = [
 referencing = ">=0.31.0"
 
 [[package]]
+name = "jwt"
+version = "1.4.0"
+description = "JSON Web Token library for Python 3."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "jwt-1.4.0-py3-none-any.whl", hash = "sha256:7560a7f1de4f90de94ac645ee0303ac60c95b9e08e058fb69f6c330f71d71b11"},
+    {file = "jwt-1.4.0.tar.gz", hash = "sha256:f6f789128ac247142c79ee10f3dba6e366ec4e77c9920d18c1592e28aa0a7952"},
+]
+
+[package.dependencies]
+cryptography = ">=3.1,<3.4.0 || >3.4.0"
+
+[package.extras]
+dev = ["black", "isort", "mypy", "types-freezegun"]
+test = ["freezegun", "pytest (>=6.0,<7.0)", "pytest-cov"]
+
+[[package]]
 name = "langchain"
 version = "0.3.26"
 description = "Building applications with LLMs through composability"
@@ -6186,4 +6205,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "917314e9317eb24ea920c01b6208e07d84436e71320324e4911c2e557a152854"
+content-hash = "77443a79d11ebbf14666db82b027adad48e2a9dcd0d0d9f8161148097b2c3c12"

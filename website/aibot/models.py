@@ -1,8 +1,4 @@
-import json
 import logging
-from json import JSONDecodeError
-
-from website.aibot.network import fetch_pr_files
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +26,6 @@ class PullRequest:
         self.default_branch: str = payload["pull_request"]["base"]["repo"]["default_branch"]
 
         self._verify_branch()
-        self._load_pr_files()
 
     def __repr__(self) -> str:
         return (
@@ -69,19 +64,3 @@ class PullRequest:
             self.default_branch,
         )
         return False
-
-    def _load_pr_files(self):
-        pr_files = fetch_pr_files(self.files_url)
-        self.pr_files_json = []
-        self.raw_url_map = {}
-
-        if pr_files:
-            try:
-                self.pr_files_json = json.loads(pr_files)
-            except JSONDecodeError as e:
-                logger.error("Invalid JSON format for pr files: %s", e)
-        else:
-            logger.error("Could not fetch the pull request files for: %s", self.files_url)
-
-        for file in self.pr_files_json:
-            self.raw_url_map[file["filename"]] = file["raw_url"]

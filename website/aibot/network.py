@@ -47,7 +47,7 @@ def fetch_pr_diff(pr_diff_url: str) -> Optional[str]:
     headers = {
         "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
         "Accept": "application/vnd.github.v3.diff",
-        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+        "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
 
     response = requests.get(pr_diff_url, headers=headers, timeout=5)
@@ -69,7 +69,7 @@ def fetch_pr_files(pr_files_url: str) -> Optional[str]:
     headers = {
         "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
         "Accept": "application/vnd.github.v3",
-        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+        "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
 
     response = requests.get(pr_files_url, headers=headers, timeout=5)
@@ -87,20 +87,34 @@ def fetch_pr_files(pr_files_url: str) -> Optional[str]:
     retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
     before_sleep=before_sleep_log(logger, logging.INFO),
 )
-def fetch_raw_content(f_raw_url: str) -> Optional[str]:
+def fetch_file_content(repo_full_name: str, path: str, ref: str) -> Optional[str]:
+    # NOTE: Initially implemented using raw.githubuser content, however it often takes time
+    # to synchronize, leading to stale file content being fetched. The API is guaranteed to
+    # be the latest, thus more realiable
+    url = f"https://api.github.com/repos/{repo_full_name}/contents/{path}?ref={ref}"
     headers = {
         "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
-        "Accept": "application/vnd.github.v3",
-        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
 
-    response = requests.get(f_raw_url, headers=headers, timeout=5)
+    response = requests.get(url, headers=headers, timeout=5)
     if response.status_code in RETRY_HTTP_CODES:
         response.raise_for_status()
-    if response.status_code == 200:
-        return response.text
+    if response.status_code != 200:
+        logger.warning("GitHub API failed for %s: %s", path, response.text)
+        return None
 
-    return None
+    data = response.json()
+    if data.get("encoding") != "base64":
+        logger.error("Unexpected encoding for file %s", path)
+        return None
+
+    try:
+        return base64.b64decode(data["content"]).decode("utf-8")
+    except Exception as e:
+        logger.error("Failed to decode content for %s: %s", path, str(e))
+        return None
 
 
 @retry(
@@ -113,7 +127,7 @@ def github_api_get(api_url: str) -> Optional[str]:
     headers = {
         "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+        "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
 
     response = requests.get(api_url, headers=headers, timeout=5)
@@ -161,7 +175,7 @@ def post_github_comment(comments_url: str, comment_body: str) -> Optional[str]:
     headers = {
         "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
         "Accept": "application/vnd.github+json",
-        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+        "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
 
     payload = {"body": comment_body}
@@ -184,7 +198,7 @@ def patch_github_comment(comments_url: str, comment_body: str, comment_marker: s
     headers = {
         "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
         "Accept": "application/vnd.github+json",
-        "User-Agent": f"{settings.GITHUB_AIBOT_USERNAME}/1.0",
+        "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
 
     response = requests.get(comments_url, headers=headers, timeout=5)
