@@ -131,6 +131,8 @@
                                                         Enter your XSS payload:
                                                     {% elif lab.name == "Cross-Site Request Forgery" %}
                                                         Enter your CSRF attack code:
+                                                    {% elif lab.name == "Command Injection" %}
+                                                        Enter your command injection payload:
                                                     {% else %}
                                                         Enter your payload:
                                                     {% endif %}
@@ -139,7 +141,7 @@
                                                           name="payload"
                                                           rows="4"
                                                           class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
-                                                          placeholder="{% if lab.name == 'SQL Injection' %}Enter your SQL injection payload here...{% elif lab.name == 'Cross-Site Scripting (XSS)' %}Enter your XSS payload here...{% elif lab.name == 'Cross-Site Request Forgery' %}Enter your CSRF attack code here...{% else %}Enter your payload here...{% endif %}"></textarea>
+                                                          placeholder="{% if lab.name == 'SQL Injection' %}Enter your SQL injection payload here...{% elif lab.name == 'Cross-Site Scripting (XSS)' %}Enter your XSS payload here...{% elif lab.name == 'Cross-Site Request Forgery' %}Enter your CSRF attack code here...{% elif lab.name == 'Command Injection' %}Enter your command injection payload here...{% else %}Enter your payload here...{% endif %}"></textarea>
                                             {% elif lab.name == "Cross-Site Scripting (XSS)" %}
                                                 <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your XSS payload:</label>
                                                 <textarea id="payload"
@@ -147,6 +149,13 @@
                                                           rows="4"
                                                           class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
                                                           placeholder="Enter your XSS payload here... (e.g., &lt;script&gt;alert('XSS')&lt;/script&gt;)"></textarea>
+                                            {% elif lab.name == "Command Injection" %}
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your command injection payload:</label>
+                                                <textarea id="payload"
+                                                          name="payload"
+                                                          rows="4"
+                                                          class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                          placeholder="Enter your command injection payload here... (e.g., 127.0.0.1; ls)"></textarea>
                                             {% else %}
                                                 <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your payload:</label>
                                                 <textarea id="payload"
