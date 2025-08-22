@@ -7,13 +7,12 @@ import json
 import logging
 from typing import Any, Dict, List
 
-import requests
 from django.conf import settings
 from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
-from jsonschema import ValidationError, validate
+from django.views.decorators.http import require_POST
+from jsonschema import validate
 
 from website.aibot.aibot_env import configure_and_validate_settings, load_prompts, load_validation_schemas
 from website.aibot.clients import q_client
@@ -45,7 +44,6 @@ from website.aibot.utils import (
     parse_json,
     pr_analysis_marker,
     process_diff,
-    sign_payload,
     validate_github_request,
     verify_github_signature,
 )
@@ -60,88 +58,13 @@ SCHEMAS = load_validation_schemas()
 PROMPTS = load_prompts()
 
 
-@require_GET
-def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
-    github_token = settings.GITHUB_AIBOT_TOKEN
-    webhook_id = settings.GITHUB_AIBOT_WEBHOOK_ID
-    webhook_url = settings.GITHUB_AIBOT_WEBHOOK_URL
-    webhook_secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
-
-    try:
-        ping_url = f"{repo_api_url}/hooks/{webhook_id}/pings"
-        headers = {
-            "Authorization": f"Bearer {github_token}",
-            "Accept": "application/vnd.github.v3+json",
-        }
-
-        logger.info("Attempting to ping GitHub webhook at %s", ping_url)
-        ping_response = requests.post(ping_url, headers=headers, timeout=5)
-
-        if ping_response.status_code != 204:
-            logger.error(
-                "Webhook ping failed. Status: %s, Response: %s",
-                ping_response.status_code,
-                ping_response.text,
-            )
-            return JsonResponse(
-                {"health": "0", "status": "Webhook ping failed", "message": "Could not verify webhook connectivity"},
-                status=500,
-            )
-
-        test_payload = {"test": "webhook_health_check"}
-        payload_bytes = json.dumps(test_payload).encode("utf-8")
-        signature = sign_payload(webhook_secret, payload_bytes)
-        test_headers = {"X-GitHub-Event": "ping", "Content-Type": "application/json"}
-        if signature:
-            test_headers["X-Hub-Signature-256"] = signature
-        logger.info("Testing webhook delivery to %s", webhook_url)
-        delivery_response = requests.post(webhook_url, json=test_payload, headers=test_headers, timeout=5)
-
-        if delivery_response.status_code != 200:
-            logger.error(
-                "Webhook delivery failed. Status: %s, Response: %s",
-                delivery_response.status_code,
-                delivery_response.text,
-            )
-            return JsonResponse(
-                {"health": "0", "status": "Webhook delivery failed", "message": "Could not verify webhook delivery"},
-                status=500,
-            )
-        logger.info("Webhook health check successful. Response from delivery: %s", delivery_response.json())
-        return JsonResponse(
-            {
-                "health": "1",
-                "status": "Webhook is reachable and delivery works",
-                # "repo": settings.GITHUB_URL,
-            }
-        )
-    except requests.RequestException as e:
-        logger.error("Request error during webhook health check: %s", str(e), exc_info=True)
-        return JsonResponse(
-            {
-                "health": "2",
-                "status": "Error contacting GitHub API or webhook endpoint",
-                "message": "Network communication error",
-            },
-            status=500,
-        )
-    except ValidationError as ve:
-        logger.error("Validation error during webhook health check: %s", str(ve), exc_info=True)
-        return JsonResponse(
-            {"health": "2", "status": "Validation error", "message": "Error during request validation"},
-            status=400,
-        )
-    except Exception as e:
-        logger.error("Unexpected error during webhook health check: %s", str(e), exc_info=True)
-        return JsonResponse(
-            {"health": "2", "status": "Unexpected error during health check", "message": "Internal server error"},
-            status=500,
-        )
+# TODO: Create health function/api
 
 
 def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
     action = payload["action"]
     installation_data = payload["installation"]
+    installation_id = installation_data["id"]
     account_data = installation_data["account"]
     sender_login = payload.get("sender", {}).get("login")
 
@@ -179,7 +102,9 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
             )
 
             try:
-                q_process_remote_repote_repo(q_client, repo_obj.full_name, repo_obj.repo_id, repo_obj.default_branch)
+                q_process_remote_repote_repo(
+                    q_client, repo_obj.full_name, repo_obj.repo_id, repo_obj.default_branch, installation_token
+                )
                 repo_obj.state = RepoState.READY
                 repo_obj.save()
                 processed_repos.append(repo_obj.full_name)

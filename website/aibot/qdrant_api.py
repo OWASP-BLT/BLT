@@ -202,7 +202,9 @@ def upsert_to_qdrant(q_client: QdrantClient, qdrant_collection: str, chunk: Chun
         return False
 
 
-def create_temp_pr_collection(q_client: QdrantClient, pr_instance: PullRequest, patch: PatchSet) -> Tuple[str, str]:
+def create_temp_pr_collection(
+    q_client: QdrantClient, pr_instance: PullRequest, patch: PatchSet, installation_token: str
+) -> Tuple[str, str]:
     source_collection = "repo_embeddings"
     sanitized_head_ref = sanitize_name(pr_instance.head_branch)
     temp_collection = f"temp_{sanitized_head_ref}_{pr_instance.number}"
@@ -221,7 +223,7 @@ def create_temp_pr_collection(q_client: QdrantClient, pr_instance: PullRequest, 
         fpath = fpath[2:]
 
         logger.debug("Processing file '%s' from patch", fpath)
-        content = fetch_file_content(pr_instance.repo_full_name, fpath, pr_instance.head_branch)
+        content = fetch_file_content(pr_instance.repo_full_name, fpath, pr_instance.head_branch, installation_token)
 
         if not content:
             logger.warning("No content fetched for file '%s'", fpath)
@@ -315,11 +317,15 @@ def q_collection_exists(q_client: QdrantClient, collection_name: str) -> bool:
 
 
 def q_process_remote_repote_repo(
-    q_client: QdrantClient, repo_full_name: str, repo_id: str, target_branch="main"
+    q_client: QdrantClient,
+    repo_full_name: str,
+    repo_id: str,
+    installation_token: str,
+    target_branch: str = "main",
 ) -> str:
     repo_api_url = f"https://api.github.com/repos/{repo_full_name}"
     tree_url = f"{repo_api_url}/git/trees/{target_branch}?recursive=1"
-    tree_data = github_api_get(tree_url)
+    tree_data = github_api_get(tree_url, installation_token)
 
     logger.info("Fetching tree data for repo: %s (branch: %s)", repo_full_name, target_branch)
     logger.debug("Received tree data: %s", json.dumps(tree_data, indent=2))
@@ -351,7 +357,7 @@ def q_process_remote_repote_repo(
         logger.debug("Fetching content for file: %s (branch: %s)", file_info["path"], target_branch)
 
         try:
-            content = fetch_file_content(repo_full_name, file_info["path"], target_branch)
+            content = fetch_file_content(repo_full_name, file_info["path"], target_branch, installation_token)
         except Exception as e:
             logger.warning(
                 "Remote repo processing - failed to fetch raw content for %s: %s", file_info["path"], e, exc_info=True
@@ -462,7 +468,7 @@ def rename_qdrant_collection_with_alias(q_client: QdrantClient, old_name: str, n
 
 
 def q_process_changed_files(
-    q_client: QdrantClient, changed_files: List[Dict], repo_full_name: str, repo_id: str
+    q_client: QdrantClient, changed_files: List[Dict], repo_full_name: str, repo_id: str, installation_token: str
 ) -> None:
     collection_name = q_get_collection_name(repo_full_name, repo_id)
     ensure_collection(q_client, collection_name, settings.QDRANT_VECTOR_SIZE)
@@ -504,7 +510,7 @@ def q_process_changed_files(
 
         delete_by_path(path, "existing")
 
-        content = fetch_file_content(repo_full_name, path, ref="main")
+        content = fetch_file_content(repo_full_name, path, "main", installation_token)
         logger.debug("Received content: %s", content)
         if not content:
             logger.warning("Could not fetch content for file: %s", path)

@@ -1,8 +1,10 @@
 import base64
 import logging
 import random
+import time
 from typing import Any, Dict, List, Optional
 
+import jwt
 import requests
 from django.conf import settings
 from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
@@ -34,29 +36,36 @@ def _get_retry_wait_time(retry_state):
     retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
     before_sleep=before_sleep_log(logger, logging.INFO),
 )
-def fetch_pr_diff(pr_diff_url: str) -> Optional[str]:
+def get_github_installation_token(installation_id: str) -> str:
     """
-    Fetches PR diff using GitHub API with custom retry logic for error codes and rate limits.
-
-    Args:
-        pr_diff_url (str): URL to fetch the diff from
-
-    Returns:
-        str: Diff text if successful, None otherwise
+    Generates a JWT and fetches a GitHub App installation token.
     """
+    app_client_id = settings.GITHUB_AIBOT_APP_CLIENT_ID
+    private_key = settings.GITHUB_AIBOT_PRIVATE_KEY.replace("\\n", "\n")
+
+    now = int(time.time())
+    payload = {
+        "iat": now - 60,  # suggested in github docs
+        "exp": now + (10 * 60),
+        "iss": app_client_id,
+    }
+    jwt_token = jwt.encode(payload, private_key, algorithm="RS256")
+
     headers = {
-        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
-        "Accept": "application/vnd.github.v3.diff",
+        "Authorization": f"Bearer {jwt_token}",
+        "Accept": "application/vnd.github+json",
         "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
 
-    response = requests.get(pr_diff_url, headers=headers, timeout=5)
+    url = f"https://api.github.com/app/installations/{installation_id}/access_tokens"
+    response = requests.post(url, headers=headers, timeout=5)
+
     if response.status_code in RETRY_HTTP_CODES:
         response.raise_for_status()
-    if response.status_code == 200:
-        return response.text
+    if response.status_code == 201:
+        return response.json()["token"]
 
-    return None
+    raise Exception(f"Failed to get installation token: {response.status_code} - {response.text}")
 
 
 @retry(
@@ -65,35 +74,13 @@ def fetch_pr_diff(pr_diff_url: str) -> Optional[str]:
     retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
     before_sleep=before_sleep_log(logger, logging.INFO),
 )
-def fetch_pr_files(pr_files_url: str) -> Optional[str]:
-    headers = {
-        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
-        "Accept": "application/vnd.github.v3",
-        "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
-    }
-
-    response = requests.get(pr_files_url, headers=headers, timeout=5)
-    if response.status_code in RETRY_HTTP_CODES:
-        response.raise_for_status()
-    if response.status_code == 200:
-        return response.text
-
-    return None
-
-
-@retry(
-    stop=stop_after_attempt(MAX_RETRIES),
-    wait=_get_retry_wait_time,
-    retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
-    before_sleep=before_sleep_log(logger, logging.INFO),
-)
-def fetch_file_content(repo_full_name: str, path: str, ref: str) -> Optional[str]:
+def fetch_file_content(repo_full_name: str, path: str, ref: str, installation_token: str) -> Optional[str]:
     # NOTE: Initially implemented using raw.githubuser content, however it often takes time
     # to synchronize, leading to stale file content being fetched. The API is guaranteed to
-    # be the latest, thus more realiable
+    # be the latest (avoids CDN lag), thus more realiable
     url = f"https://api.github.com/repos/{repo_full_name}/contents/{path}?ref={ref}"
     headers = {
-        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
+        "Authorization": f"Bearer {installation_token}",
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
@@ -123,9 +110,9 @@ def fetch_file_content(repo_full_name: str, path: str, ref: str) -> Optional[str
     retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
     before_sleep=before_sleep_log(logger, logging.INFO),
 )
-def github_api_get(api_url: str) -> Optional[str]:
+def github_api_get(api_url: str, installation_token: str) -> Optional[str]:
     headers = {
-        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
+        "Authorization": f"Bearer {installation_token}",
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
@@ -145,24 +132,29 @@ def github_api_get(api_url: str) -> Optional[str]:
     retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
     before_sleep=before_sleep_log(logger, logging.INFO),
 )
-def fetch_file_content_via_api(repo_full_name: str, path: str, ref: str) -> Optional[str]:
+def fetch_pr_diff(pr_diff_url: str, installation_token: str) -> Optional[str]:
     """
-    Fetch file content from GitHub API for a specific commit ref.
-    Always returns the content at that commit (avoids CDN lag).
+    Fetches the raw diff for a pull request using the GitHub App installation token.
+    Returns the diff as a string, or None if the request fails.
     """
-    url = f"https://api.github.com/repos/{repo_full_name}/contents/{path}?ref={ref}"
-    response = github_api_get(url)
-    if not response:
-        logger.error("Failed to fetch file content from %s", url)
-        return None
+    headers = {
+        "Authorization": f"Bearer {installation_token}",
+        "Accept": "application/vnd.github.v3.diff",
+        "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
+    }
 
-    if response.get("encoding") == "base64" and "content" in response:
-        try:
-            return base64.b64decode(response["content"]).decode("utf-8", errors="replace")
-        except Exception as e:
-            logger.error("Failed to decode base64 content for %s: %s", path, e)
-            return None
-    return None
+    response = requests.get(pr_diff_url, headers=headers, timeout=5)
+    if response.status_code in RETRY_HTTP_CODES:
+        response.raise_for_status()
+    if response.status_code == 200:
+        return response.text
+
+    logger.warning(
+        "Failed to fetch PR diff from %s. Status code: %s. Response: %s",
+        pr_diff_url,
+        response.status_code,
+        response.text,
+    )
 
 
 @retry(
@@ -171,9 +163,9 @@ def fetch_file_content_via_api(repo_full_name: str, path: str, ref: str) -> Opti
     retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
     before_sleep=before_sleep_log(logger, logging.INFO),
 )
-def post_github_comment(comments_url: str, comment_body: str) -> Optional[str]:
+def post_github_comment(comments_url: str, comment_body: str, installation_token: str) -> Optional[str]:
     headers = {
-        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
+        "Authorization": f"Bearer {installation_token}",
         "Accept": "application/vnd.github+json",
         "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }
@@ -194,9 +186,11 @@ def post_github_comment(comments_url: str, comment_body: str) -> Optional[str]:
     retry=(retry_if_exception_type((requests.exceptions.RequestException,))),
     before_sleep=before_sleep_log(logger, logging.INFO),
 )
-def patch_github_comment(comments_url: str, comment_body: str, comment_marker: str) -> Optional[str]:
+def patch_github_comment(
+    comments_url: str, comment_body: str, comment_marker: str, installation_token: str
+) -> Optional[str]:
     headers = {
-        "Authorization": f"Bearer {settings.GITHUB_AIBOT_TOKEN}",
+        "Authorization": f"Bearer {installation_token}",
         "Accept": "application/vnd.github+json",
         "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
     }

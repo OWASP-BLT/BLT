@@ -25,6 +25,7 @@ def validate_settings() -> None:
     critical_settings = [
         "GITHUB_AIBOT_WEBHOOK_SECRET",
         "GITHUB_AIBOT_APP_NAME",
+        "GITHUB_AIBOT_PRIVATE_KEY",
         "GEMINI_API_KEY",
         "GEMINI_GENERATION_MODEL",
         "GEMINI_EMBEDDING_MODEL",

@@ -23,6 +23,10 @@ print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
+GITHUB_AIBOT_APP_NAME = os.environ.get("GITHUB_AIBOT_APP_NAME")
+GITHUB_AIBOT_APP_CLIENT_ID = os.environ.get("GITHUB_AIBOT_APP_CLIENT_ID")
+GITHUB_AIBOT_PRIVATE_KEY = os.environ.get("GITHUB_AIBOT_PRIVATE_KEY")
+GITHUB_AIBOT_INSTALLATION_ID = os.environ.get("GITHUB_AIBOT_INSTALLATION_ID")
 GITHUB_AIBOT_WEBHOOK_SECRET = os.environ.get("GITHUB_AIBOT_WEBHOOK_SECRET")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GEMINI_GENERATION_MODEL = os.environ.get("GEMINI_GENERATION_MODEL")
@@ -57,8 +61,6 @@ BLOG_URL = os.environ.get("BLOG_URL", FQDN + "/blog/")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
 TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
 EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
-
-GITHUB_AIBOT_APP_NAME = os.environ.get("GITHUB_AIBOT_APP_NAME")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
@@ -443,61 +445,65 @@ AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
 
-if DEBUG or TESTING:
-    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
-else:
-    if os.environ.get("MEMCACHIER_SERVERS", ""):
-        os.environ["MEMCACHE_SERVERS"] = os.environ.get("MEMCACHIER_SERVERS", "").replace(",", ";")
-        os.environ["MEMCACHE_USERNAME"] = os.environ.get("MEMCACHIER_USERNAME", "")
-        os.environ["MEMCACHE_PASSWORD"] = os.environ.get("MEMCACHIER_PASSWORD", "")
+# if DEBUG or TESTING:
+#     CACHES = {
+#         "default": {
+#             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+#             "LOCATION": "unique-snowflake",
+#         }
+#     }
+# elif os.environ.get("MEMCACHIER_SERVERS"):
+#     os.environ["MEMCACHE_SERVERS"] = os.environ["MEMCACHIER_SERVERS"].replace(",", ";")
+#     os.environ["MEMCACHE_USERNAME"] = os.environ.get("MEMCACHIER_USERNAME", "")
+#     os.environ["MEMCACHE_PASSWORD"] = os.environ.get("MEMCACHIER_PASSWORD", "")
 
-        CACHES = {
-            "default": {
-                "BACKEND": "django_pylibmc.memcached.PyLibMCCache",
-                "BINARY": True,
-                "TIMEOUT": None,
-                "OPTIONS": {
-                    "tcp_nodelay": True,
-                    "tcp_keepalive": True,
-                    "connect_timeout": 2000,
-                    "send_timeout": 750 * 1000,
-                    "receive_timeout": 750 * 1000,
-                    "_poll_timeout": 2000,
-                    "ketama": True,
-                    "remove_failed": 1,
-                    "retry_timeout": 2,
-                    "dead_timeout": 30,
-                },
-            }
-        }
-    else:
-        CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+#     CACHES = {
+#         "default": {
+#             "BACKEND": "django_pylibmc.memcached.PyLibMCCache",
+#             "BINARY": True,
+#             "TIMEOUT": None,
+#             "OPTIONS": {
+#                 "tcp_nodelay": True,
+#                 "tcp_keepalive": True,
+#                 "connect_timeout": 2000,
+#                 "send_timeout": 750 * 1000,
+#                 "receive_timeout": 750 * 1000,
+#                 "_poll_timeout": 2000,
+#                 "ketama": True,
+#                 "remove_failed": 1,
+#                 "retry_timeout": 2,
+#                 "dead_timeout": 30,
+#             },
+#         }
+#     }
+# else:
+#     CACHES = {
+#         "default": {
+#             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+#             "LOCATION": "unique-snowflake",
+#         }
+#     }
 
-if DEBUG or TESTING:
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": os.environ.get("REDISCLOUD_URL"),
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         },
+#     }
+# }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://redis:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
-else:
-    # temp to check memory usage
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
+}
 
-    # CACHES = {
-    #     "default": {
-    #         "BACKEND": "django_redis.cache.RedisCache",
-    #         "LOCATION": os.environ.get("REDISCLOUD_URL"),
-    #         "OPTIONS": {
-    #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-    #         },
-    #     }
-    # }
 
 if DEBUG or TESTING:
     anon_throttle = 100000
