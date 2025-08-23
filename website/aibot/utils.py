@@ -10,8 +10,16 @@ from typing import Any, Dict, Tuple
 from uuid import UUID
 
 from django.http import HttpRequest
-from unidiff import PatchedFile, PatchSet
+from unidiff import PatchSet
 
+from website.aibot.constants import (
+    BINARY_EXTENSIONS,
+    EXTENSIONS_TO_PROCESS,
+    FILES_TO_PROCESS_WITHOUT_EXT,
+    SKIP_DIRS,
+    SKIP_EXTENSIONS,
+    SKIP_FILES,
+)
 from website.aibot.types import ChunkType
 
 logger = logging.getLogger(__name__)
@@ -216,36 +224,65 @@ def analyze_code_ruff_bandit(chunks: ChunkType):
             os.unlink(temp_file_path)
 
 
-def process_diff(diff_text: str) -> tuple[str, PatchSet]:
-    skip_files = {"package-lock.json", ".yarn.lock"}
-    skip_text_extensions = {
-        ".lock",
-        ".min.js",
-        ".map",
-        ".pyc",
-        ".log",
-        ".db",
-        ".coverage",
-        ".egg-info",
-    }
-    binary_extensions = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".pdf", ".zip", ".tar", ".gz"}
+def should_skip_file(file_path: str, keep_binary: bool = False) -> bool:
+    """
+    Determines if a file should be skipped based on centralized rules.
 
+    Args:
+        file_path: The full path to the file.
+        keep_binary: If True, binary files will not be skipped.
+
+    Returns:
+        True if the file should be skipped, False otherwise.
+    """
+    filename = os.path.basename(file_path)
+
+    if filename in SKIP_FILES:
+        return True
+
+    if filename in FILES_TO_PROCESS_WITHOUT_EXT:
+        return False
+
+    if any(f"/{skip_dir}/" in file_path or file_path.startswith(f"{skip_dir}/") for skip_dir in SKIP_DIRS):
+        return True
+
+    _, ext = os.path.splitext(file_path)
+    ext = ext.lower()
+
+    if ext in BINARY_EXTENSIONS:
+        if not keep_binary:
+            return True
+
+    if ext in SKIP_EXTENSIONS:
+        return True
+
+    if ext not in EXTENSIONS_TO_PROCESS:
+        return True
+
+    return False
+
+
+def process_diff(diff_text: str) -> tuple[str, PatchSet]:
+    """
+    Processes a unified diff string and returns a human-readable summary and the parsed PatchSet.
+
+    Args:
+        diff_text: The raw unified diff string.
+        keep_binary: If True, binary files will be included in the summary.
+
+    Returns:
+        A tuple of (summary string, PatchSet object).
+    """
     processed_diff = []
     binary_changes = []
-
-    def is_skippable_text(file: PatchedFile) -> bool:
-        return file.path in skip_files or file.path.endswith(tuple(skip_text_extensions))
-
-    def is_binary_by_extension(file: PatchedFile) -> bool:
-        return file.path.endswith(tuple(binary_extensions))
 
     patch = PatchSet.from_string(diff_text)
 
     for file in patch:
-        if is_skippable_text(file):
+        if should_skip_file(file.path, keep_binary=True):
             continue
 
-        if file.is_binary_file or is_binary_by_extension(file):
+        if file.is_binary_file:
             if file.is_added_file:
                 binary_changes.append(f"Binary Added: {file.path}")
             elif file.is_removed_file:

@@ -1,0 +1,12 @@
+sdk_http_response=HttpResponse(
+  headers=<dict len=11>
+) embeddings=[ContentEmbedding(
+  values=[
+    0.0045051677,
+    -0.0070939953,
+    -0.055249248,
+    -0.022958111,
+    -0.00198496,
+    <... 763 more items ...>,
+  ]
+)] metadata=None

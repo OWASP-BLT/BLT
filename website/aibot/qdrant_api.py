@@ -1,102 +1,26 @@
 import json
 import logging
-import os
 import re
 from typing import Dict, List, Tuple
 
 from django.conf import settings
-from qdrant_client import QdrantClient
 from qdrant_client.http.models import UpdateStatus
 from qdrant_client.models import FieldCondition, Filter, MatchValue, PointStruct
 from unidiff import PatchSet
 
 from website.aibot.chunk_utils import chunk_file, postprocess_chunks
+from website.aibot.clients import q_client
+from website.aibot.constants import MAX_FILE_SIZE
+from website.aibot.gemini_api import generate_embedding
+from website.aibot.github_api import GitHubClient
 from website.aibot.models import PullRequest
-from website.aibot.network import fetch_file_content, generate_embedding, github_api_get
-from website.aibot.types import ChunkType
-from website.aibot.utils import generate_chunk_uuid, sanitize_name
+from website.aibot.types import ChunkType, EmbeddingTaskType
+from website.aibot.utils import generate_chunk_uuid, sanitize_name, should_skip_file
 
 logger = logging.getLogger(__name__)
 
-EXTENSIONS_TO_PROCESS = {
-    # Code files
-    ".py",
-    ".js",
-    ".ts",
-    ".tsx",
-    ".java",
-    ".go",
-    ".rs",
-    ".c",
-    ".cpp",
-    ".h",
-    ".cs",
-    ".swift",
-    ".php",
-    ".rb",
-    ".sh",
-    # Web files
-    ".html",
-    ".htm",
-    ".css",
-    ".scss",
-    ".less",
-    # Config & data files
-    ".yml",
-    ".yaml",
-    ".json",
-    ".ini",
-    ".env",
-    ".csv",
-    ".xml",
-    # Documentation
-    ".md",
-    ".txt",
-    # Build/config (small, text-based)
-    "Dockerfile",
-    ".dockerfile",
-    ".gitignore",
-    ".gitattributes",
-}
 
-SKIP_DIRS = {
-    # Dependency & runtime dirs (large, useless for RAG)
-    "__pycache__",
-    "node_modules",
-    "venv",
-    ".venv",
-    "env",
-    "vendor",
-    "dist",
-    "build",
-    "target",
-    # Cache & generated files
-    ".cache",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    "coverage",
-    # Static assets (non-text)
-    "static",
-    "staticfiles",
-    "media",
-    "assets",
-    "images",
-    "fonts",
-    # Version control & IDE
-    ".git",
-    ".idea",
-    ".vscode",
-    ".vs",
-    # OS metadata
-    ".DS_Store",
-    "Thumbs.db",
-}
-
-MAX_FILE_SIZE = 1 * 1024 * 1024  # (1 MB)
-
-
-def ensure_collection(q_client: QdrantClient, qdrant_collection: str, qdrant_vector_size: int) -> None:
+def ensure_collection(qdrant_collection: str, qdrant_vector_size: int) -> None:
     """
     Ensure the Qdrant collection exists.
 
@@ -123,7 +47,7 @@ def ensure_collection(q_client: QdrantClient, qdrant_collection: str, qdrant_vec
         raise
 
 
-def q_delete_collection(q_client: QdrantClient, qdrant_collection: str) -> bool:
+def q_delete_collection(qdrant_collection: str) -> bool:
     try:
         collections = [c.name for c in q_client.get_collections().collections]
         if qdrant_collection not in collections:
@@ -144,7 +68,7 @@ def q_delete_collection(q_client: QdrantClient, qdrant_collection: str) -> bool:
         return False
 
 
-def upsert_to_qdrant(q_client: QdrantClient, qdrant_collection: str, chunk: ChunkType, embedding: List[float]) -> bool:
+def upsert_to_qdrant(qdrant_collection: str, chunk: ChunkType, embedding: List[float]) -> bool:
     """Upsert the embedding in the specified Qdrant collection."""
     point_id = generate_chunk_uuid(chunk)
     point = PointStruct(
@@ -202,16 +126,14 @@ def upsert_to_qdrant(q_client: QdrantClient, qdrant_collection: str, chunk: Chun
         return False
 
 
-def create_temp_pr_collection(
-    q_client: QdrantClient, pr_instance: PullRequest, patch: PatchSet, installation_token: str
-) -> Tuple[str, str]:
+def create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet, gh_client: GitHubClient) -> Tuple[str, str]:
     source_collection = "repo_embeddings"
     sanitized_head_ref = sanitize_name(pr_instance.head_branch)
     temp_collection = f"temp_{sanitized_head_ref}_{pr_instance.number}"
 
     logger.debug("Ensuring source collection '%s' and temp collection '%s'", source_collection, temp_collection)
-    ensure_collection(q_client, source_collection, settings.QDRANT_VECTOR_SIZE)
-    ensure_collection(q_client, temp_collection, settings.QDRANT_VECTOR_SIZE)
+    ensure_collection(source_collection, settings.QDRANT_VECTOR_SIZE)
+    ensure_collection(temp_collection, settings.QDRANT_VECTOR_SIZE)
 
     for file in patch:
         if not file.is_modified_file:
@@ -223,18 +145,18 @@ def create_temp_pr_collection(
         fpath = fpath[2:]
 
         logger.debug("Processing file '%s' from patch", fpath)
-        content = fetch_file_content(pr_instance.repo_full_name, fpath, pr_instance.head_branch, installation_token)
+        content = gh_client.fetch_file_content(pr_instance.repo_full_name, fpath, pr_instance.head_branch)
 
         if not content:
             logger.warning("No content fetched for file '%s'", fpath)
             continue
 
-        chunks = chunk_file(content, fpath)
+        chunks: List[ChunkType] = chunk_file(content, fpath)
         logger.debug("Chunked file '%s' into %d chunks", fpath, len(chunks))
 
         for chunk in chunks:
             try:
-                embedding = generate_embedding(chunk["chunk"], chunk.get("name"))
+                embedding = generate_embedding(chunk["content"], EmbeddingTaskType.RETRIEVAL_DOCUMENT)
             except Exception as e:
                 logger.error("Failed to generate embedding for chunk in file '%s': %s", fpath, str(e))
                 continue
@@ -243,14 +165,13 @@ def create_temp_pr_collection(
                 logger.warning("No embedding generated for chunk in file '%s'", fpath)
                 continue
 
-            _ = upsert_to_qdrant(q_client, temp_collection, chunk, embedding)
+            _ = upsert_to_qdrant(temp_collection, chunk, embedding)
 
     logger.debug("Finished creating temp collection '%s' for PR #%s", temp_collection, pr_instance.number)
     return source_collection, temp_collection
 
 
 def q_get_similar_merged_chunks(
-    q_client: QdrantClient,
     source_collection: str,
     temp_collection: str,
     query: str,
@@ -280,7 +201,6 @@ def q_get_similar_merged_chunks(
 
 
 def q_get_similar_chunks(
-    q_client: QdrantClient,
     collection: str,
     query: str,
     k: int,
@@ -303,7 +223,7 @@ def q_get_collection_name(repo_full_name: str, repo_id: str) -> str:
     return f"aibot-{safe_name}-{repo_id}"
 
 
-def q_collection_exists(q_client: QdrantClient, collection_name: str) -> bool:
+def q_collection_exists(collection_name: str) -> bool:
     """
     Check if a collection exists in Qdrant.
     Returns True if the collection exists, False otherwise.
@@ -316,17 +236,16 @@ def q_collection_exists(q_client: QdrantClient, collection_name: str) -> bool:
         return False
 
 
-def q_process_remote_repote_repo(
-    q_client: QdrantClient,
+def q_process_remote_repo(
     repo_full_name: str,
     repo_id: str,
-    installation_token: str,
+    gh_client: GitHubClient,
     target_branch: str = "main",
 ) -> str:
     repo_api_url = f"https://api.github.com/repos/{repo_full_name}"
     tree_url = f"{repo_api_url}/git/trees/{target_branch}?recursive=1"
-    tree_data = github_api_get(tree_url, installation_token)
-
+    tree_data = gh_client.get(tree_url)
+    tree_data = tree_data.json()
     logger.info("Fetching tree data for repo: %s (branch: %s)", repo_full_name, target_branch)
     logger.debug("Received tree data: %s", json.dumps(tree_data, indent=2))
 
@@ -338,10 +257,10 @@ def q_process_remote_repote_repo(
         )
         raise ValueError("Invalid tree data received from GitHub API: %s", json.dumps(tree_data, indent=2))
 
-    repo_full_name = sanitize_name(repo_full_name)
+    q_repo_name = sanitize_name(repo_full_name)
 
-    qdrant_collection = q_get_collection_name(repo_full_name, repo_id)
-    ensure_collection(q_client, qdrant_collection, settings.QDRANT_VECTOR_SIZE)
+    qdrant_collection = q_get_collection_name(q_repo_name, repo_id)
+    ensure_collection(qdrant_collection, settings.QDRANT_VECTOR_SIZE)
 
     valid_items = filter_files_to_process(
         tree_data["tree"],
@@ -357,7 +276,7 @@ def q_process_remote_repote_repo(
         logger.debug("Fetching content for file: %s (branch: %s)", file_info["path"], target_branch)
 
         try:
-            content = fetch_file_content(repo_full_name, file_info["path"], target_branch, installation_token)
+            content = gh_client.fetch_file_content(repo_full_name, file_info["path"], target_branch)
         except Exception as e:
             logger.warning(
                 "Remote repo processing - failed to fetch raw content for %s: %s", file_info["path"], e, exc_info=True
@@ -369,7 +288,7 @@ def q_process_remote_repote_repo(
             continue
 
         try:
-            chunks = chunk_file(content, file_info["path"])
+            chunks: List[ChunkType] = chunk_file(content, file_info["path"])
             if not chunks:
                 logger.warning("No chunks generated for file: %s", file_info["path"])
                 continue
@@ -381,12 +300,12 @@ def q_process_remote_repote_repo(
 
         try:
             logger.info("Storing embeddings for file: %s", file_info["path"])
-            generate_and_store_embeddings(q_client, chunks, qdrant_collection)
+            generate_and_store_embeddings(chunks, qdrant_collection)
         except Exception as e:
             logger.error("Failed embeddings for file %s: %s", file_info["path"], e, exc_info=True)
             continue
 
-    logger.info("Completed processing repo: %s -> Qdrant collection: %s", repo_full_name, qdrant_collection)
+    logger.info("Completed processing repo: %s -> Qdrant collection: %s", q_repo_name, qdrant_collection)
     return qdrant_collection
 
 
@@ -398,52 +317,39 @@ def filter_files_to_process(
     skip_type_check: bool = False,
     skip_size_check: bool = False,
 ) -> List[Dict]:
-    """
-    Filters files based on extension, size, and excluded directories.
-
-    :param file_items: List of file dicts
-    :param path_key: Key to use for file path
-    :param size_key: Key to use for file size (ignored if skip_size_check=True)
-    :param type_key: Key to use for type (ignored if skip_type_check=True)
-    :param skip_type_check: Skip blob/file type check
-    :param skip_size_check: Skip file size check
-    :return: List of filtered file paths (or full items)
-    """
     valid_items = []
     for item in file_items:
-        if not skip_type_check:
-            if item.get(type_key) != "blob":
-                continue
-
         path = item.get(path_key, "")
         if not path:
             continue
-        if any(path.startswith(skip_dir + "/") or f"/{skip_dir}/" in path for skip_dir in SKIP_DIRS):
-            logger.debug("Skipping (excluded dir): %s", path)
+
+        if should_skip_file(path):
+            logger.debug("Skipping (from rules) %s", path)
             continue
-        _, ext = os.path.splitext(path)
-        if ext.lower() not in EXTENSIONS_TO_PROCESS:
-            logger.debug("Skipping (unsupported ext): %s", path)
+
+        if not skip_type_check and item.get(type_key) != "blob":
             continue
+
         if not skip_size_check:
             size = item.get(size_key, 0)
             if size > MAX_FILE_SIZE:
                 logger.debug("Skipping (too large %d): %s", size, path)
                 continue
+
         valid_items.append(item)
     return valid_items
 
 
-def generate_and_store_embeddings(q_client: QdrantClient, chunks: List[ChunkType], qdrant_collection: str):
+def generate_and_store_embeddings(chunks: List[ChunkType], qdrant_collection: str):
     """Generates embeddings and stores them in Qdrant."""
     for chunk in chunks:
-        embedding = generate_embedding(chunk["content"], chunk["chunk_type"])
+        embedding = generate_embedding(chunk["content"], EmbeddingTaskType.RETRIEVAL_QUERY)
         if embedding:
             logger.info("Upserting chunk from %s", chunk["file_path"])
-            upsert_to_qdrant(q_client, qdrant_collection, chunk, embedding)
+            upsert_to_qdrant(qdrant_collection, chunk, embedding)
 
 
-def rename_qdrant_collection_with_alias(q_client: QdrantClient, old_name: str, new_name: str) -> None:
+def rename_qdrant_collection_with_alias(old_name: str, new_name: str) -> None:
     """
     Rename a Qdrant collection by creating an alias for the new name.
 
@@ -468,10 +374,10 @@ def rename_qdrant_collection_with_alias(q_client: QdrantClient, old_name: str, n
 
 
 def q_process_changed_files(
-    q_client: QdrantClient, changed_files: List[Dict], repo_full_name: str, repo_id: str, installation_token: str
+    changed_files: List[Dict], repo_full_name: str, repo_id: str, gh_client: GitHubClient
 ) -> None:
     collection_name = q_get_collection_name(repo_full_name, repo_id)
-    ensure_collection(q_client, collection_name, settings.QDRANT_VECTOR_SIZE)
+    ensure_collection(collection_name, settings.QDRANT_VECTOR_SIZE)
 
     relevant_files = [f for f in changed_files if f["status"] in ("added", "modified", "renamed")]
 
@@ -484,7 +390,7 @@ def q_process_changed_files(
     filtered_paths = {f["path"] for f in filtered_files}
 
     for file in changed_files:
-        path = file["path"]
+        fpath = file["path"]
         status = file["status"]
 
         def delete_by_path(delete_path: str, reason: str):
@@ -498,30 +404,30 @@ def q_process_changed_files(
                 logger.error("Failed to delete %s file %s: %s", reason, delete_path, str(e))
 
         if status == "removed":
-            delete_by_path(path, "removed")
+            delete_by_path(fpath, "removed")
             continue
 
         if status == "renamed" and file.get("previous_path"):
             delete_by_path(file["previous_path"], "renamed (old path)")
 
-        if path not in filtered_paths:
-            logger.debug("Skipping unprocessed file (filtered out): %s", path)
+        if fpath not in filtered_paths:
+            logger.debug("Skipping unprocessed file (filtered out): %s", fpath)
             continue
 
-        delete_by_path(path, "existing")
+        delete_by_path(fpath, "existing")
 
-        content = fetch_file_content(repo_full_name, path, "main", installation_token)
+        content = gh_client.fetch_file_content(repo_full_name, fpath, "main")
         logger.debug("Received content: %s", content)
         if not content:
-            logger.warning("Could not fetch content for file: %s", path)
+            logger.warning("Could not fetch content for file: %s", fpath)
             continue
 
         try:
-            chunks = chunk_file(content, path)
+            chunks: ChunkType = chunk_file(content, fpath)
             if not chunks:
-                logger.warning("No chunks for file: %s", path)
+                logger.warning("No chunks for file: %s", fpath)
                 continue
             chunks = postprocess_chunks(chunks)
-            generate_and_store_embeddings(q_client, chunks, collection_name)
+            generate_and_store_embeddings(chunks, collection_name)
         except Exception as e:
-            logger.error("Failed processing file %s: %s", path, e, exc_info=True)
+            logger.error("Failed processing file %s: %s", fpath, e, exc_info=True)

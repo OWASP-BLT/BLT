@@ -1,0 +1,32 @@
+sdk_http_response=HttpResponse(
+  headers=<dict len=11>
+)
+candidates=[Candidate(                 # Gemini can return multiple "candidates" (like completions)
+  content=Content(
+    parts=[
+      Part(
+        text='**AI learns patterns from data.**'  # The actual text output
+      ),
+    ],
+    role='model'
+  ),
+  finish_reason=<FinishReason.STOP: 'STOP'>,     # Why the model stopped
+  index=0
+)]
+create_time=None
+model_version='gemini-2.5-flash'                # Exact model version
+prompt_feedback=None
+response_id='B2ipaPWnMduLqtsP6LeK-QM'           # Unique response ID
+usage_metadata=GenerateContentResponseUsageMetadata(
+  candidates_token_count=7,                     # Tokens in the response
+  prompt_token_count=9,                         # Tokens in your prompt
+  prompt_tokens_details=[
+    ModalityTokenCount(
+      modality=<MediaModality.TEXT: 'TEXT'>,
+      token_count=9
+    ),
+  ],
+  total_token_count=16
+)
+automatic_function_calling_history=[]           # Gemini AFC calls (none here)
+parsed=None

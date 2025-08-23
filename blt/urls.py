@@ -19,7 +19,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 import comments.views
-from website.aibot.main import aibot_webhook_is_healthy, main_github_aibot_webhook_dispatcher
+from website.aibot.main import main_github_aibot_webhook_dispatcher  # + aibot_webhook_is_healthy
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -466,7 +466,7 @@ urlpatterns = [
         name="organization_dashboard_hunt_edit",
     ),
     path("aibot", main_github_aibot_webhook_dispatcher, name="main_github_aibot_webhook_dispatcher"),
-    path("aibot_webhook_is_healthy", aibot_webhook_is_healthy, name="aibot_webhook_is_healthy"),
+    # path("aibot_webhook_is_healthy", aibot_webhook_is_healthy, name="aibot_webhook_is_healthy"),
     path(
         "dashboard/admin/organization/<int:pk>/",
         admin_organization_dashboard_detail,
