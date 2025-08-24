@@ -144,7 +144,7 @@ def format_chunks_to_string(chunks: ChunkType) -> str:
         start = snippet.get("start_line", "?")
         end = snippet.get("end_line", "?")
 
-        formatted_snippet = f"File: {file_path}\n" f"Lines: {start}–{end}\n" f"```python\n{content}\n```"
+        formatted_snippet = f"File: {file_path}\n" f"Lines: {start}–{end}\n" f"\n{content}\n"
         formatted_snippets.append(formatted_snippet)
 
     joined_snippets = "\n\n".join(formatted_snippets)

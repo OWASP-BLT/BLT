@@ -1,19 +1,11 @@
-import json
 import logging
 import os
-from pathlib import Path
-from typing import Any, Dict
 
 import django
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
 logger = logging.getLogger(__name__)
-
-
-BASE_PATH = Path("website/aibot")
-SCHEMA_PATH = BASE_PATH / "schemas"
-PROMPT_PATH = BASE_PATH / "prompts"
 
 
 def configure_settings() -> None:
@@ -47,63 +39,3 @@ def validate_settings() -> None:
 def configure_and_validate_settings() -> None:
     configure_settings()
     validate_settings()
-
-
-def load_validation_schemas() -> Dict[str, Any]:
-    schemas = {}
-    schema_files = {
-        "COMMENT_SCHEMA": "comment_schema.json",
-        "ISSUE_SCHEMA": "issue_schema.json",
-        "PR_SCHEMA": "pr_schema.json",
-    }
-
-    for schema_name, file_name in schema_files.items():
-        file_path = SCHEMA_PATH / file_name
-
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                schemas[schema_name] = json.load(f)
-        except FileNotFoundError:
-            logger.critical("CRITICAL ERROR: Schema file not found: %s. Application cannot start.", file_path)
-            raise
-        except json.JSONDecodeError as e:
-            logger.critical(
-                "CRITICAL ERROR: Failed to parse JSON for schema %s from %s: %s. Application cannot start.",
-                schema_name,
-                file_path,
-                e,
-            )
-            raise
-        except Exception as e:
-            logger.critical(
-                "CRITICAL ERROR: An unexpected error occurred while loading schema %s from %s: %s. Application cannot start.",
-                schema_name,
-                file_path,
-                e,
-            )
-            raise
-    return schemas
-
-
-def load_prompts() -> Dict[str, str]:
-    """Automatically load all .txt prompts from PROMPT_PATH into a dict."""
-    prompts = {}
-
-    for file_path in PROMPT_PATH.glob("*.txt"):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                prompt_name = file_path.stem.upper()
-                prompts[prompt_name] = f.read().strip()
-        except Exception as e:
-            logger.critical(
-                "CRITICAL ERROR: Failed to load prompt from %s: %s. Application cannot start.",
-                file_path,
-                e,
-            )
-            raise
-
-    if not prompts:
-        logger.critical("CRITICAL ERROR: No prompts found in %s. Application cannot start.", PROMPT_PATH)
-        raise RuntimeError("No prompts loaded")
-
-    return prompts

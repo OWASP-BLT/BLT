@@ -5,7 +5,7 @@ Gemini AI API to generate responses and post them on github.
 
 import json
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from django.conf import settings
 from django.http import HttpRequest, JsonResponse
@@ -14,12 +14,19 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from jsonschema import validate
 
-from website.aibot.aibot_env import configure_and_validate_settings, load_prompts, load_validation_schemas
-from website.aibot.clients import q_client
+from website.aibot.aibot_env import configure_and_validate_settings
 from website.aibot.constants import INSTALLATION_STATE_MAPPING, REPO_STATE_CHANGES
 from website.aibot.gemini_api import generate_embedding, generate_gemini_response
 from website.aibot.github_api import GitHubClient, GitHubTokenManager
 from website.aibot.models import PullRequest
+from website.aibot.prompt_templates import (
+    CONVERSATION_QUERY_GENERATOR,
+    ISSUE_COMMENT_RESPONDER,
+    ISSUE_PLANNER,
+    ISSUE_QUERY,
+    PR_QUERY_GENERATOR,
+    PR_REVIEWER,
+)
 from website.aibot.qdrant_api import (
     create_temp_pr_collection,
     q_collection_exists,
@@ -43,27 +50,37 @@ from website.aibot.utils import (
     validate_github_request,
     verify_github_signature,
 )
+from website.aibot.validation_schemas import (
+    INSTALLATION_REPOSITORIES_SCHEMA,
+    INSTALLATION_SCHEMA,
+    ISSUE_COMMENT_SCHEMA,
+    ISSUE_SCHEMA,
+    PR_SCHEMA,
+    PUSH_SCHEMA,
+    REPOSITORY_SCHEMA,
+)
 from website.models import AibotComment, GithubAppInstallation, GithubAppRepo, InstallationState, RepoState
 
 logger = logging.getLogger(__name__)
 
 configure_and_validate_settings()
 
+_token_manager = None
 
-SCHEMAS = load_validation_schemas()
-PROMPTS = load_prompts()
 
-APP_ID = settings.GITHUB_AIBOT_APP_ID
-APP_NAME = settings.GITHUB_AIBOT_APP_NAME
-PRIVATE_KEY_B64 = settings.GITHUB_AIBOT_PRIVATE_KEY_B64
-token_manager = GitHubTokenManager(APP_ID, APP_NAME, PRIVATE_KEY_B64)
+def get_token_manager():
+    global _token_manager
+    if _token_manager is None:
+        _token_manager = GitHubTokenManager(
+            settings.GITHUB_AIBOT_APP_ID, settings.GITHUB_AIBOT_APP_NAME, settings.GITHUB_AIBOT_PRIVATE_KEY_B64
+        )
+    return _token_manager
 
 
 # TODO: Create health function/api
 
 
 def handle_ping_event(payload: Dict[str, Any]) -> JsonResponse:
-    logger.debug("Received ping event: %s", json.dumps(payload, indent=2))
     zen = payload.get("zen", "No zen provided")
     hook_id = payload.get("hook_id", "No hook_id provided")
     return JsonResponse(
@@ -77,11 +94,13 @@ def handle_ping_event(payload: Dict[str, Any]) -> JsonResponse:
 
 
 def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
+    validate(payload, INSTALLATION_SCHEMA)
+
     action = payload["action"]
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
     sender_login = payload.get("sender", {}).get("login")
-    gh_client = GitHubClient(installation_id, installation_data["app_slug"], token_manager)
+    gh_client = GitHubClient(installation_id, installation_data["app_slug"], get_token_manager())
 
     if action == "created":
         installation, _ = GithubAppInstallation.objects.get_or_create(
@@ -120,13 +139,15 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
 
 
 def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonResponse:
+    validate(payload, INSTALLATION_REPOSITORIES_SCHEMA)
+
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
     sender_login = payload.get("sender", {}).get("login")
     repos_added = payload.get("repositories_added", [])
     repos_removed = payload.get("repositories_removed", [])
 
-    gh_client = GitHubClient(installation_id, installation_data["app_slug"], token_manager)
+    gh_client = GitHubClient(installation_id, installation_data["app_slug"], get_token_manager())
     event = "installation_repositories"
 
     installation = get_installation_or_404(installation_id, sender_login, event)
@@ -166,6 +187,8 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
 
 
 def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
+    validate(payload, REPOSITORY_SCHEMA)
+
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
     action = payload["action"]
@@ -203,7 +226,7 @@ def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
 
 
 def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
-    # TODO: payload validation
+    validate(payload, PUSH_SCHEMA)
 
     installation_id = payload["installation"]["id"]
     action = payload["action"]
@@ -227,7 +250,7 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
     if not validate_repo_state(repo, sender_login, action):
         return JsonResponse({"error": f"Invalid repository state: {repo.state}"}, status=404)
 
-    gh_client = GitHubClient(installation_id, payload["installation"]["app_slug"], token_manager)
+    gh_client = GitHubClient(installation_id, payload["installation"]["app_slug"], get_token_manager())
     compare_url = f"https://api.github.com/repos/{repo_full_name}/compare/{before}...{after}"
 
     response = gh_client.get(compare_url)
@@ -256,7 +279,7 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
 
 
 def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
-    validate_payload_schema(payload, {})
+    validate(payload, PR_SCHEMA)
 
     action = payload["action"]
     installation_data = payload["installation"]
@@ -279,7 +302,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     if not validate_repo_state(repo, sender_login, action):
         return JsonResponse({"error": f"Invalid repository state: {repo.state}"}, status=404)
 
-    gh_client = GitHubClient(installation_id, installation_data["app_slug"], token_manager)
+    gh_client = GitHubClient(installation_id, installation_data["app_slug"], get_token_manager())
 
     pr_instance = PullRequest(payload)
 
@@ -291,6 +314,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
 
         pr_diff = gh_client.fetch_pr_diff(pr_instance.diff_url)
         processed_diff, patch = process_diff(pr_diff)
+
         diff_query = generate_diff_query(processed_diff)
         cleaned_json = extract_json_block(diff_query)
         diff_query_json = json.loads(cleaned_json)
@@ -325,7 +349,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
                 logger.warning("Missing collection names: source=%s, temp=%s", source_collection, temp_collection)
 
         NOT_PROVIDED = "Not provided"
-        prompt = PROMPTS["PR_REVIEWER"].format(
+        prompt = PR_REVIEWER.format(
             pr_title=pr_instance.title or NOT_PROVIDED,
             pr_body=pr_instance.body or NOT_PROVIDED,
             pr_diff=processed_diff or NOT_PROVIDED,
@@ -352,7 +376,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
             return
 
         issue_data_for_comment = payload.get("pull_request", {})
-
+        gh_comment = gh_comment.json()
         AibotComment.objects.create(
             installation=installation,
             repository=repo,
@@ -387,12 +411,16 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
 
 
 def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
-    logger.debug("Received issue comment event: \n %s", json.dumps(payload, indent=2))
-    validate_payload_schema(payload, SCHEMAS["COMMENT_SCHEMA"])
+    validate(payload, ISSUE_COMMENT_SCHEMA)
 
     installation_id = payload["installation"]["id"]
     repo_data = payload["repository"]
     sender_login = payload["sender"]["login"]
+
+    if sender_login == f"{settings.GITHUB_AIBOT_APP_NAME}[bot]":
+        logger.debug("This event is by blt-aibot's comment. Ignoring")
+        return JsonResponse({"status": "Ignoring blt-aibot's own comment"})
+
     action = payload["action"]
     issue = payload["issue"]
     issue_type = "Pull request" if issue.get("pull_request") else "Issue"
@@ -420,7 +448,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
         logger.debug("%s was not mentioned in comment. Ignoring", bot_name)
         return JsonResponse({"status": f"{bot_name} was not mentioned in comment. Ignoring"})
 
-    gh_client = GitHubClient(installation_id, settings.GITHUB_AIBOT_APP_NAME, token_manager)
+    gh_client = GitHubClient(installation_id, settings.GITHUB_AIBOT_APP_NAME, get_token_manager())
 
     comments_url = issue["comments_url"]
     if action == "created":
@@ -436,12 +464,31 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
             conversation_parts.append(f"[COMMENT by {author}]: {body}")
 
         conversation = "\n".join(conversation_parts)
-        logger.debug("Built conversation:\n%s", conversation)
 
-        prompt = PROMPTS["ISSUE_COMMENT_RESPONDER"].format(
-            issue_type=issue_type, issue_title=issue["title"], issue_body=issue_body, conversation=conversation
+        response = generate_conversation_query(conversation)
+        logger.debug("Recieved conv query response: %s", response)
+        conversation_cleaned_json = extract_json_block(response["text"])
+        conversation_query_json = json.loads(conversation_cleaned_json)
+        query = conversation_query_json["query"]
+        k = conversation_query_json["k"]
+
+        vector_query = generate_embedding(query, EmbeddingTaskType.RETRIEVAL_QUERY)
+
+        semantically_relevant_chunks: ChunkType = q_get_similar_chunks(
+            q_get_collection_name(repo.full_name, repo.repo_id), vector_query, k
         )
 
+        snippets = format_chunks_to_string(semantically_relevant_chunks)
+
+        prompt = ISSUE_COMMENT_RESPONDER.format(
+            issue_type=issue_type,
+            issue_title=issue["title"],
+            issue_body=issue_body,
+            conversation=conversation,
+            relevant_snippets=snippets,
+        )
+
+        logger.debug("Built prompt: \n %s", prompt)
         bot_response_raw = generate_gemini_response(prompt)
 
         if not bot_response_raw:
@@ -449,12 +496,13 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
             return JsonResponse({"error": "Did not receive a valid LLM response"}, status=500)
 
         ai_response_body = bot_response_raw["text"]
-        gh_comment = gh_client.post(comments_url, ai_response_body)
+        gh_comment = gh_client.post_comment(comments_url, ai_response_body)
 
         if not gh_comment:
             logger.error("Failed to post/patch GitHub comment for issue #%s", issue["number"])
             return JsonResponse({"error": "Failed to post GitHub comment"}, status=500)
 
+        gh_comment = gh_comment.json()
         logger.info("Posted AI response to issue #%s in %s", issue["number"], repo.full_name)
 
         AibotComment.objects.create(
@@ -491,8 +539,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
 
 
 def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
-    logger.debug("Received payload of 'issues' event: \n %s", json.dumps(payload, indent=2))
-    validate_payload_schema(payload, SCHEMAS["ISSUE_SCHEMA"])
+    validate(payload, ISSUE_SCHEMA)
 
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
@@ -519,18 +566,21 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
     if action in {"opened", "edited"}:
         issue_data["body"] = issue_data.get("body") or ""
 
-        issue_query = generate_issue_query(issue_data)
-        issue_cleaned_json = extract_json_block(issue_query)
+        response = generate_issue_query(issue_data)
+        logger.debug("Received issue query response: \n %s", response)
+        issue_cleaned_json = extract_json_block(response["text"])
         issue_query_json = json.loads(issue_cleaned_json)
-        query = issue_query_json.get("query")
-        k = issue_query_json.get("k")
+        query = issue_query_json["query"]
+        k = issue_query_json["k"]
 
-        semantically_relevant_chunks = q_get_similar_chunks(
-            q_client, q_get_collection_name(repo.full_name, repo.repo_id), query, k
+        vector_query = generate_embedding(query, EmbeddingTaskType.RETRIEVAL_QUERY)
+        semantically_relevant_chunks: ChunkType = q_get_similar_chunks(
+            q_get_collection_name(repo.full_name, repo.repo_id), vector_query, k
         )
+
         snippets = format_chunks_to_string(semantically_relevant_chunks)
 
-        prompt = PROMPTS["ISSUE_PLANNER"].format(
+        prompt = ISSUE_PLANNER.format(
             issue_title=issue_data["title"],
             issue_body=issue_data["body"] or "Not provided",
             code_chunks=snippets or "Not provided",
@@ -545,7 +595,7 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
         final_text = issue_analysis_marker() + ai_response_body
 
         comments_url = issue_data["comments_url"]
-        gh_client = GitHubClient(installation_id, installation_data["app_slug"], token_manager)
+        gh_client = GitHubClient(installation_id, installation_data["app_slug"], get_token_manager())
         if action == "opened":
             gh_comment = gh_client.post_comment(comments_url, final_text)
         else:
@@ -555,6 +605,7 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
             logger.error("Failed to post/patch GitHub comment for issue #%s", issue_data["number"])
             return JsonResponse({"error": "Failed to post GitHub comment"}, status=500)
 
+        gh_comment = gh_comment.json()
         logger.info("Posted AI response to issue #%s in %s", issue_data["number"], repo.full_name)
 
         AibotComment.objects.create(
@@ -578,16 +629,19 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
     return JsonResponse({"success": "processed"})
 
 
-EVENT_HANDLERS = {
-    "ping": handle_ping_event,
-    "pull_request": handle_pull_request_event,
-    "issue_comment": handle_issue_comment_event,
-    "issues": handle_issues_event,
-    "installation": handle_installation_event,
-    "installation_repositories": handle_installation_repositories_event,
-    "repository": handle_repository_event,
-    "push": handle_push_event,
-}
+def get_handler(event_type: str):
+    EVENT_HANDLERS = {
+        "ping": handle_ping_event,
+        "pull_request": handle_pull_request_event,
+        "issue_comment": handle_issue_comment_event,
+        "issues": handle_issues_event,
+        "installation": handle_installation_event,
+        "installation_repositories": handle_installation_repositories_event,
+        "repository": handle_repository_event,
+        "push": handle_push_event,
+    }
+
+    return EVENT_HANDLERS.get(event_type)
 
 
 @csrf_exempt
@@ -615,7 +669,7 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
         logger.error("Error in validating github request: %s", err_sig)
         return JsonResponse({"error": err_sig})
 
-    handler = EVENT_HANDLERS.get(event_type)
+    handler = get_handler(event_type)
     if handler:
         return handler(payload)
     else:
@@ -623,7 +677,9 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"error": f"Unsupported event type {event_type}"})
 
 
-def process_repository(repo_data, installation, gh_client):
+def process_repository(
+    repo_data: Dict[str, Any], installation: GithubAppInstallation, gh_client: GitHubClient
+) -> Tuple[str | None, str | None]:
     repo_obj, _ = GithubAppRepo.objects.update_or_create(
         repo_id=repo_data["id"],
         defaults={
@@ -648,13 +704,13 @@ def process_repository(repo_data, installation, gh_client):
         repo_obj.save()
         return repo_obj.full_name, None
     except Exception as e:
-        logger.error("Failed to process repo %s: %s", repo_obj.full_name, e, exc_info=True)
+        logger.error("Failed to process repo %s: failed to process repository", repo_obj.full_name, exc_info=True)
         repo_obj.state = RepoState.ERROR
         repo_obj.save()
         return None, repo_obj.full_name
 
 
-def get_installation_or_404(installation_id, sender_login, action_desc):
+def get_installation_or_404(installation_id: str, sender_login: str, action_desc: str) -> GithubAppInstallation | None:
     try:
         return GithubAppInstallation.objects.get(installation_id=installation_id)
     except GithubAppInstallation.DoesNotExist:
@@ -667,7 +723,7 @@ def get_installation_or_404(installation_id, sender_login, action_desc):
         return None
 
 
-def get_repo_or_404(repo_id, repo_full_name, action, sender_login):
+def get_repo_or_404(repo_id: str, repo_full_name: str, action: str, sender_login: str) -> GithubAppRepo | None:
     try:
         return GithubAppRepo.objects.get(repo_id=repo_id)
     except GithubAppRepo.DoesNotExist:
@@ -708,7 +764,7 @@ def validate_repo_state(repo: GithubAppRepo, sender_login: str, action: str) -> 
     return True
 
 
-def handle_repo_rename(repo: GithubAppRepo, repo_data, sender_login):
+def handle_repo_rename(repo: GithubAppRepo, repo_data: Dict[str, Any], sender_login: str) -> None:
     old_name = repo.full_name
     repo.name = repo_data["name"]
     repo.full_name = repo_data["full_name"]
@@ -729,9 +785,12 @@ def handle_repo_rename(repo: GithubAppRepo, repo_data, sender_login):
         repo.repo_id,
         sender_login,
     )
+    return
 
 
-def ensure_repo_entry(repo_data, installation, gh_client):
+def ensure_repo_entry(
+    repo_data: Dict[str, Any], installation: GithubAppInstallation, gh_client: GitHubClient
+) -> Tuple[GithubAppRepo, bool]:
     repo_obj, created = GithubAppRepo.objects.update_or_create(
         repo_id=repo_data["id"],
         defaults={
@@ -753,7 +812,9 @@ def ensure_repo_entry(repo_data, installation, gh_client):
     return repo_obj, created
 
 
-def apply_state_change(installation, action, sender_login, installation_data):
+def apply_state_change(
+    installation: GithubAppInstallation, action: str, sender_login: str, installation_data: Dict[str, Any]
+) -> JsonResponse:
     webhook_action, installation_state = INSTALLATION_STATE_MAPPING[action]
     installation.apply_webhook_state(webhook_action, sender_login)
     installation.save()
@@ -766,7 +827,7 @@ def apply_state_change(installation, action, sender_login, installation_data):
     return JsonResponse({"success": "App state modified successfully."})
 
 
-def handle_repo_state_change(repo, action, sender_login):
+def handle_repo_state_change(repo: GithubAppRepo, action: str, sender_login: str) -> None:
     if REPO_STATE_CHANGES[action]:
         repo.state = REPO_STATE_CHANGES[action]
     if action in ("privatized", "publicized"):
@@ -780,19 +841,22 @@ def handle_repo_state_change(repo, action, sender_login):
         action,
         sender_login,
     )
+    return
 
 
 def generate_diff_query(processed_diff: str) -> str:
-    prompt = PROMPTS["SEMANTIC_QUERY_GENERATOR"].format(diff=processed_diff)
+    prompt = PR_QUERY_GENERATOR.format(diff=processed_diff)
     response = generate_gemini_response(prompt)
     return response
 
 
 def generate_issue_query(issue_content: str) -> List[float]:
-    prompt = PROMPTS["ISSUE_QUERY"].format(issue_title=issue_content["title"], issue_body=issue_content["body"])
+    prompt = ISSUE_QUERY.format(issue_title=issue_content["title"], issue_body=issue_content["body"])
     response = generate_gemini_response(prompt)
     return response
 
 
-def validate_payload_schema(payload: Dict[str, Any], schema: Dict[str, Any]) -> None:
-    validate(instance=payload, schema=schema)
+def generate_conversation_query(conversation: str) -> List[float]:
+    prompt = CONVERSATION_QUERY_GENERATOR.format(conversation=conversation)
+    response = generate_gemini_response(prompt)
+    return response

@@ -35,14 +35,15 @@ class GitHubTokenManager:
         self.private_key = private_key.replace("\\n", "\n")
 
     def _generate_jwt(self) -> str:
-        """Generate a GitHub App JWT (takin 9 minutes for buffer)."""
         now = datetime.now(timezone.utc)
         payload = {
             "iat": int(now.timestamp()),
             "exp": int((now + timedelta(minutes=9)).timestamp()),
             "iss": self.app_id,
         }
-        return jwt.encode(payload, self.private_key, algorithm="RS256")
+        token = jwt.encode(payload, self.private_key, algorithm="RS256")
+        logger.debug("Generated new JWT for GitHub App authentication")
+        return token
 
     @retry(
         stop=stop_after_attempt(MAX_RETRIES),
@@ -59,7 +60,7 @@ class GitHubTokenManager:
             "Accept": "application/vnd.github+json",
             "User-Agent": f"{settings.GITHUB_AIBOT_APP_NAME}/1.0",
         }
-
+        logger.info("Requesting new installation token for ID %s via %s", installation_id, url)
         response = requests.post(url, headers=headers, timeout=5)
 
         if response.status_code in RETRY_HTTP_CODES:
@@ -84,6 +85,7 @@ class GitHubTokenManager:
         ttl_seconds = int((expiry - datetime.now(timezone.utc)).total_seconds()) - 60
 
         if ttl_seconds > 0:
+            logger.info(f"Cached token for installation {installation_id} with TTL {ttl_seconds}s")
             cache.set(cache_key, token, timeout=ttl_seconds)
 
         return token
