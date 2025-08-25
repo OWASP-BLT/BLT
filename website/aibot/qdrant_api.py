@@ -127,7 +127,7 @@ def upsert_to_qdrant(qdrant_collection: str, chunk: ChunkType, embedding: List[f
 
 
 def create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet, gh_client: GitHubClient) -> Tuple[str, str]:
-    source_collection = "repo_embeddings"
+    source_collection = q_get_collection_name(pr_instance.repo_full_name, pr_instance.repo_id)
     sanitized_head_ref = sanitize_name(pr_instance.head_branch)
     temp_collection = f"temp_{sanitized_head_ref}_{pr_instance.number}"
 
@@ -181,23 +181,24 @@ def q_get_similar_merged_chunks(
     main_points = q_client.query_points(collection_name=source_collection, query=query, limit=k)
     temp_points = q_client.query_points(collection_name=temp_collection, query=query, limit=k)
 
-    relevant_chunks: Dict[str, ChunkType] = {}
+    relevant_chunks: List[ChunkType] = []
+
+    pr_file_paths = set()
+    for point in temp_points.points:
+        chunk_data = point.payload
+        file_path = chunk_data.get("file_path")
+        renamed_path = rename_mappings.get(file_path, file_path)
+        chunk_data["file_path"] = renamed_path
+        pr_file_paths.add(renamed_path)
+        relevant_chunks.append(chunk_data)
 
     for point in main_points.points:
         chunk_data = point.payload
-        key = chunk_data.get("file_path")
-        relevant_chunks[key] = chunk_data
+        file_path = chunk_data.get("file_path")
+        if file_path not in pr_file_paths:
+            relevant_chunks.append(chunk_data)
 
-    for point in temp_points.points:
-        chunk_data = point.payload
-        key = chunk_data.get("file_path")
-        if key in relevant_chunks:
-            logger.debug("Found existing key: %s. Overwriting", key)
-            del relevant_chunks[key]
-            key = rename_mappings.get(key, key)
-        relevant_chunks[key] = chunk_data
-
-    return list(relevant_chunks.values())
+    return relevant_chunks
 
 
 def q_get_similar_chunks(

@@ -14,6 +14,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
+    AibotComment,
     BannedApp,
     Bid,
     Blocked,
@@ -783,6 +784,7 @@ admin.site.register(JoinRequest, JoinRequestAdmin)
 admin.site.register(Notification)
 admin.site.register(GithubAppInstallation)
 admin.site.register(GithubAppRepo)
+admin.site.register(AibotComment)
 
 
 @admin.register(BannedApp)

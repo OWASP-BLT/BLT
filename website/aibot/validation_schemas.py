@@ -51,7 +51,7 @@ INSTALLATION_SCHEMA = {
         },
         "sender": {"type": "object", "properties": {"login": {"type": "string"}}, "required": ["login"]},
     },
-    "required": ["action", "installation", "repositories", "sender"],
+    "required": ["action", "installation", "sender"],
 }
 
 INSTALLATION_REPOSITORIES_SCHEMA = {

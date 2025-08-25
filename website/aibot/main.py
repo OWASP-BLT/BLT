@@ -21,6 +21,7 @@ from website.aibot.github_api import GitHubClient, GitHubTokenManager
 from website.aibot.models import PullRequest
 from website.aibot.prompt_templates import (
     CONVERSATION_QUERY_GENERATOR,
+    GUARDRAIL,
     ISSUE_COMMENT_RESPONDER,
     ISSUE_PLANNER,
     ISSUE_QUERY,
@@ -30,6 +31,7 @@ from website.aibot.prompt_templates import (
 from website.aibot.qdrant_api import (
     create_temp_pr_collection,
     q_collection_exists,
+    q_delete_collection,
     q_get_collection_name,
     q_get_similar_chunks,
     q_get_similar_merged_chunks,
@@ -158,6 +160,9 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
 
     for repo_data in repos_added:
         repo_obj, created = ensure_repo_entry(repo_data, installation, gh_client)
+
+        GithubAppRepo.objects.filter(id=repo_obj.id).update(state=RepoState.ACTIVE, updated_at=timezone.now())
+
         (created_repos if created else updated_repos).append(repo_obj.full_name)
 
     if created_repos or updated_repos:
@@ -182,6 +187,9 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
             installation_id,
             [repo["full_name"] for repo in repos_removed],
         )
+
+        for repo in repos_removed:
+            q_delete_collection(q_get_collection_name(repo["full_name"], repo["id"]))
 
     return JsonResponse({"status": "Repository information updated."})
 
@@ -285,6 +293,11 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
     repo_data = payload["repository"]
+
+    if payload["pull_request"]["draft"]:
+        logger.debug("PR #%s is draft, not posting review.", payload["pull_request"]["id"])
+        return JsonResponse({"status": "Ignored due to draft PR."}, status=404)
+
     sender_login = payload["sender"]["login"]
     event = "pull_request"
 
@@ -302,11 +315,16 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     if not validate_repo_state(repo, sender_login, action):
         return JsonResponse({"error": f"Invalid repository state: {repo.state}"}, status=404)
 
-    gh_client = GitHubClient(installation_id, installation_data["app_slug"], get_token_manager())
+    gh_client = GitHubClient(installation_id, installation.app_name, get_token_manager())
 
     pr_instance = PullRequest(payload)
 
-    if action in {"opened", "reopened", "synchronize"}:  # TODO: Remove reopened onc dev testing done
+    if action in {
+        "opened",
+        "reopened",
+        "ready_for_review",
+        "synchronize",
+    }:  # TODO: Remove reopened onc dev testing done
         logger.info("Processing PR event: %r", pr_instance)
         if not pr_instance._verify_branch():
             logger.info("Skipping AI review due to branch mismatch for: %r", pr_instance)
@@ -315,11 +333,12 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
         pr_diff = gh_client.fetch_pr_diff(pr_instance.diff_url)
         processed_diff, patch = process_diff(pr_diff)
 
-        diff_query = generate_diff_query(processed_diff)
-        cleaned_json = extract_json_block(diff_query)
+        response = generate_diff_query(processed_diff)
+        logger.debug("Received diff query response: %s", response)
+        cleaned_json = extract_json_block(response["text"])
         diff_query_json = json.loads(cleaned_json)
 
-        q = diff_query_json["quer"]
+        q = diff_query_json["query"]
         key_terms = diff_query_json["key_terms"]
         k = diff_query_json["k"]
 
@@ -344,7 +363,8 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
                     source_collection, temp_collection, vector_query, k, rename_mappings
                 )
                 snippets = format_chunks_to_string(similar_chunks)
-                analysis_output = analyze_code_ruff_bandit(similar_chunks)
+                py_chunks = [chunk for chunk in similar_chunks if chunk["file_ext"] == ".py"]
+                analysis_output = analyze_code_ruff_bandit(py_chunks)
             else:
                 logger.warning("Missing collection names: source=%s, temp=%s", source_collection, temp_collection)
 
@@ -357,7 +377,11 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
             relevant_snippets=snippets or NOT_PROVIDED,
         )
 
-        bot_response_raw = generate_gemini_response(prompt)
+        prompt_with_guardrail = f"{GUARDRAIL} \n {prompt}"
+
+        logger.debug("Full prompt for review: \n %s", prompt_with_guardrail)
+
+        bot_response_raw = generate_gemini_response(prompt_with_guardrail)
         bot_response = bot_response_raw.get("text", "") if bot_response_raw else ""
 
         if not bot_response:
@@ -375,6 +399,8 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
             logger.error("Failed to post GitHub comment for PR #%s", pr_instance.number)
             return
 
+        q_delete_collection(temp_collection)
+
         issue_data_for_comment = payload.get("pull_request", {})
         gh_comment = gh_comment.json()
         AibotComment.objects.create(
@@ -386,7 +412,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
             trigger_event=f"pull_request.{action}",
             triggered_by_username=issue_data_for_comment["user"]["login"],
             trigger_comment_body=issue_data_for_comment.get("body") or "",
-            prompt=prompt,
+            prompt=prompt_with_guardrail,
             response=ai_response,
             model_used=(
                 bot_response_raw.get("model", settings.GEMINI_GENERATION_MODEL)
@@ -394,9 +420,9 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
                 else settings.GEMINI_GENERATION_MODEL
             ),
             prompt_tokens=(
-                bot_response_raw.get("prompt_tokens", approximate_token_count_char(prompt))
+                bot_response_raw.get("prompt_tokens", approximate_token_count_char(prompt_with_guardrail))
                 if bot_response_raw
-                else approximate_token_count_char(prompt)
+                else approximate_token_count_char(prompt_with_guardrail)
             ),
             completion_tokens=(
                 bot_response_raw.get("completion_tokens", approximate_token_count_char(bot_response))
@@ -488,8 +514,10 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
             relevant_snippets=snippets,
         )
 
-        logger.debug("Built prompt: \n %s", prompt)
-        bot_response_raw = generate_gemini_response(prompt)
+        prompt_with_guardrail = f"{GUARDRAIL} \n {prompt}"
+
+        logger.debug("Built prompt: \n %s", prompt_with_guardrail)
+        bot_response_raw = generate_gemini_response(prompt_with_guardrail)
 
         if not bot_response_raw:
             logger.error("Did not receive a valid LLM response for issue #%s", issue["number"])
@@ -514,7 +542,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
             trigger_event="issue_comment",
             triggered_by_username=sender_login,
             trigger_comment_body=issue_body,
-            prompt=prompt,
+            prompt=prompt_with_guardrail,
             response=ai_response_body,
             model_used=(
                 bot_response_raw.get("model", settings.GEMINI_GENERATION_MODEL)
@@ -522,9 +550,9 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
                 else settings.GEMINI_GENERATION_MODEL
             ),
             prompt_tokens=(
-                bot_response_raw.get("prompt_tokens", approximate_token_count_char(prompt))
+                bot_response_raw.get("prompt_tokens", approximate_token_count_char(prompt_with_guardrail))
                 if bot_response_raw
-                else approximate_token_count_char(prompt)
+                else approximate_token_count_char(prompt_with_guardrail)
             ),
             completion_tokens=(
                 bot_response_raw.get("completion_tokens", approximate_token_count_char(ai_response_body))
@@ -586,7 +614,9 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
             code_chunks=snippets or "Not provided",
         )
 
-        ai_response = generate_gemini_response(prompt)
+        prompt_with_guardrail = f"{GUARDRAIL} \n {prompt}"
+
+        ai_response = generate_gemini_response(prompt_with_guardrail)
         if not ai_response:
             logger.error("Did not receive a valid LLM response for issue #%s", issue_data["number"])
             return JsonResponse({"error": "Did not receive a valid LLM response"}, status=500)
@@ -617,10 +647,10 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
             trigger_event=f"issues.{action}",
             triggered_by_username=issue_data["user"]["login"],
             trigger_comment_body=issue_data.get("body") or "",
-            prompt=prompt,
+            prompt=prompt_with_guardrail,
             response=final_text,
             model_used=ai_response["model"],
-            prompt_tokens=ai_response["prompt_tokens"] or approximate_token_count_char(prompt),
+            prompt_tokens=ai_response["prompt_tokens"] or approximate_token_count_char(prompt_with_guardrail),
             completion_tokens=ai_response["completion_tokens"] or approximate_token_count_char(ai_response_body),
         )
     else:

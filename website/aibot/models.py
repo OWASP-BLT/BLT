@@ -23,6 +23,7 @@ class PullRequest:
         self.head_branch: str = payload["pull_request"]["head"]["ref"]
         self.base_branch: str = payload["pull_request"]["base"]["ref"]
         self.repo_full_name: str = payload["pull_request"]["base"]["repo"]["full_name"]
+        self.repo_id: str = payload["pull_request"]["base"]["repo"]["id"]
         self.default_branch: str = payload["pull_request"]["base"]["repo"]["default_branch"]
 
         self._verify_branch()

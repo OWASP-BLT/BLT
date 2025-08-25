@@ -167,7 +167,10 @@ def analyze_code_ruff_bandit(chunks: ChunkType):
     return a clean, natural-language report for LLM consumption.
     """
     for chunk in chunks:
-        code_string = chunk["chunk"]
+        if chunk["file_ext"] != ".py":
+            logger.debug("Received a non python file for static analysis. Ignoring")
+            return
+        code_string = chunk["content"]
         filename = chunk.get("file") or chunk.get("file_path")
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmpfile:

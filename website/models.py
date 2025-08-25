@@ -2558,7 +2558,7 @@ class GithubAppInstallation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Installation ({self.installation_id}) of '{self.app_name}' by {self.account_login}"
+        return f"{self.app_name} by {self.account_login} ({self.installation_id}) [{self.account_type}]"
 
     def apply_webhook_state(self, action, sender_login=None):
         now = timezone.now()
@@ -2609,7 +2609,7 @@ class GithubAppRepo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.installation.account_login} installed {self.installation.app_name} on {self.full_name}"
+        return f"{self.installation.app_name} on {self.full_name} [{self.state}]"
 
     @property
     def http_url(self) -> str:
@@ -2633,15 +2633,17 @@ class GithubAppRepo(models.Model):
 class AibotComment(models.Model):
     installation = models.ForeignKey(
         GithubAppInstallation,
-        on_delete=models.CASCADE,
+        on_delete=models.SET,
         related_name="aibot_comments",
         help_text="The GitHub App installation that triggered this",
+        null=True,
     )
     repository = models.ForeignKey(
         GithubAppRepo,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="aibot_comments",
         help_text="The repo where the comment was made",
+        null=True,
     )
     issue_number = models.BigIntegerField(help_text="Issue or PR number on GitHub")
     comment_id = models.BigIntegerField(unique=True, null=True, blank=True)
