@@ -56,7 +56,7 @@ ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
 SECRET_KEY = "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s"
 
-DEBUG = False
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
 
 SITE_ID = 1
@@ -318,8 +318,7 @@ else:
         },
     }
     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-    if not TESTING:
-        DEBUG = True
+    # Removed DEBUG override - DEBUG should be controlled by environment variable
 
     # use this to debug emails locally
     # python -m smtpd -n -c DebuggingServer localhost:1025
