@@ -8,6 +8,7 @@ import logging
 from typing import Any, Dict, List, Tuple
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -39,6 +40,7 @@ from website.aibot.qdrant_api import (
     q_process_remote_repo,
     rename_qdrant_collection_with_alias,
 )
+from website.aibot.tasks import process_repos_added_task
 from website.aibot.types import ChunkType, EmbeddingTaskType
 from website.aibot.utils import (
     analyze_code_ruff_bandit,
@@ -65,7 +67,13 @@ from website.models import AibotComment, GithubAppInstallation, GithubAppRepo, I
 
 logger = logging.getLogger(__name__)
 
-configure_and_validate_settings()
+try:
+    configure_and_validate_settings()
+except ImproperlyConfigured as e:
+    logger.error("Couldn't setup and validate the Aibot app: %s", e)
+    logger.error(
+        "Due to improper configuration, the bot will not work as expected. Please view the settings and apply them."
+    )
 
 _token_manager = None
 
@@ -101,7 +109,7 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
     action = payload["action"]
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
-    sender_login = payload.get("sender", {}).get("login")
+    sender_login = payload["sender"]["login"]
     gh_client = GitHubClient(installation_id, installation_data["app_slug"], get_token_manager())
 
     if action == "created":
@@ -120,21 +128,16 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
             },
         )
 
-        processed_repos, failed_repos = [], []
-        for repo in payload.get("repositories", []):
-            success, failed = process_repository(repo, installation, gh_client)
-            if success:
-                processed_repos.append(success)
-            if failed:
-                failed_repos.append(failed)
+        process_repos_added_task.delay(payload["repositories"], installation, gh_client)
 
-        return JsonResponse({"success": True, "processed_repos": processed_repos, "failed_repos": failed_repos})
+        return JsonResponse({"status": "Processed installation"})
 
     elif action in INSTALLATION_STATE_MAPPING:
         installation = get_installation_or_404(installation_id, sender_login, action)
         if not installation:
             return JsonResponse({"error": "Installation not found"}, status=404)
-        return apply_state_change(installation, action, sender_login, installation_data)
+        apply_state_change(installation, action, sender_login, installation_data)
+        return JsonResponse({"success": "App state modified successfully."})
 
     logger.warning(f"Unknown installation action received: {action}")
     return JsonResponse({"error": "Unsupported action."}, status=400)
@@ -707,39 +710,6 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"error": f"Unsupported event type {event_type}"})
 
 
-def process_repository(
-    repo_data: Dict[str, Any], installation: GithubAppInstallation, gh_client: GitHubClient
-) -> Tuple[str | None, str | None]:
-    repo_obj, _ = GithubAppRepo.objects.update_or_create(
-        repo_id=repo_data["id"],
-        defaults={
-            "installation": installation,
-            "name": repo_data["name"],
-            "full_name": repo_data["full_name"],
-            "is_private": repo_data["private"],
-            "state": RepoState.PROCESSING,
-            "default_branch": "main",
-            "permissions": installation.permissions,
-        },
-    )
-
-    try:
-        q_process_remote_repo(
-            repo_obj.full_name,
-            repo_obj.repo_id,
-            gh_client,
-            repo_obj.default_branch,
-        )
-        repo_obj.state = RepoState.ACTIVE
-        repo_obj.save()
-        return repo_obj.full_name, None
-    except Exception as e:
-        logger.error("Failed to process repo %s: failed to process repository", repo_obj.full_name, exc_info=True)
-        repo_obj.state = RepoState.ERROR
-        repo_obj.save()
-        return None, repo_obj.full_name
-
-
 def get_installation_or_404(installation_id: str, sender_login: str, action_desc: str) -> GithubAppInstallation | None:
     try:
         return GithubAppInstallation.objects.get(installation_id=installation_id)
@@ -854,7 +824,6 @@ def apply_state_change(
         installation_data["id"],
         installation_state,
     )
-    return JsonResponse({"success": "App state modified successfully."})
 
 
 def handle_repo_state_change(repo: GithubAppRepo, action: str, sender_login: str) -> None:

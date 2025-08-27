@@ -84,6 +84,7 @@ django-rq = "^3.1"
 django-background-tasks = "^1.2.8"
 google-genai = "^1.31.0"
 pyjwt = "^2.10.1"
+celery = {extras = ["redis"], version = "^5.5.3"}
 
 
 [tool.poetry.group.dev.dependencies]

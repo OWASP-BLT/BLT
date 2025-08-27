@@ -38,7 +38,13 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-    restart: on-failure
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
   app:
     build: .
@@ -57,6 +63,21 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     command: ./entrypoint.sh
+
+  celery_worker:
+    build: .
+    container_name: celery-worker
+    command: celery -A blt worker -l info
+    depends_on:
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - .:/blt
+    restart: on-failure
 
   init:
     profiles:

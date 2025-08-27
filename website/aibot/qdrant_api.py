@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from django.conf import settings
 from qdrant_client.http.models import UpdateStatus
@@ -16,6 +16,7 @@ from website.aibot.github_api import GitHubClient
 from website.aibot.models import PullRequest
 from website.aibot.types import ChunkType, EmbeddingTaskType
 from website.aibot.utils import generate_chunk_uuid, sanitize_name, should_skip_file
+from website.models import GithubAppInstallation, GithubAppRepo, RepoState
 
 logger = logging.getLogger(__name__)
 
@@ -308,6 +309,38 @@ def q_process_remote_repo(
 
     logger.info("Completed processing repo: %s -> Qdrant collection: %s", q_repo_name, qdrant_collection)
     return qdrant_collection
+
+
+def q_process_repository(
+    repo_data: Dict[str, Any], installation: GithubAppInstallation, gh_client: GitHubClient
+) -> Tuple[str | None, str | None]:
+    repo_obj, _ = GithubAppRepo.objects.update_or_create(
+        repo_id=repo_data["id"],
+        defaults={
+            "installation": installation,
+            "name": repo_data["name"],
+            "full_name": repo_data["full_name"],
+            "is_private": repo_data["private"],
+            "state": RepoState.PROCESSING,
+            "default_branch": "main",
+            "permissions": installation.permissions,
+        },
+    )
+    try:
+        q_process_remote_repo(
+            repo_obj.full_name,
+            repo_obj.repo_id,
+            gh_client,
+            repo_obj.default_branch,
+        )
+        repo_obj.state = RepoState.ACTIVE
+        repo_obj.save()
+        return repo_obj.full_name, None
+    except Exception:
+        logger.error("Failed to process repo %s: failed to process repository", repo_obj.full_name, exc_info=True)
+        repo_obj.state = RepoState.ERROR
+        repo_obj.save()
+        return None, repo_obj.full_name
 
 
 def filter_files_to_process(
