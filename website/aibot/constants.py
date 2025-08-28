@@ -131,10 +131,13 @@ INSTALLATION_STATE_MAPPING = {
     "unsuspend": ("activate", InstallationState.ACTIVE),
 }
 
-REPO_STATE_CHANGES = {
+REPO_STATE_UPDATES = {
     "deleted": RepoState.DELETED,
     "archived": RepoState.ARCHIVED,
     "unarchived": RepoState.ACTIVE,
-    "privatized": None,
-    "publicized": None,
+}
+
+REPO_PRIVACY_UPDATES = {
+    "privatized": True,
+    "publicized": False,
 }

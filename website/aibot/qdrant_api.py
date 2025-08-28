@@ -16,7 +16,7 @@ from website.aibot.github_api import GitHubClient
 from website.aibot.models import PullRequest
 from website.aibot.types import ChunkType, EmbeddingTaskType
 from website.aibot.utils import generate_chunk_uuid, sanitize_name, should_skip_file
-from website.models import GithubAppInstallation, GithubAppRepo, RepoState
+from website.models import GithubAppInstallation, RepoState
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +127,7 @@ def upsert_to_qdrant(qdrant_collection: str, chunk: ChunkType, embedding: List[f
         return False
 
 
-def create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet, gh_client: GitHubClient) -> Tuple[str, str]:
+def q_create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet, gh_client: GitHubClient) -> Tuple[str, str]:
     source_collection = q_get_collection_name(pr_instance.repo_full_name, pr_instance.repo_id)
     sanitized_head_ref = sanitize_name(pr_instance.head_branch)
     temp_collection = f"temp_{sanitized_head_ref}_{pr_instance.number}"
@@ -312,20 +312,8 @@ def q_process_remote_repo(
 
 
 def q_process_repository(
-    repo_data: Dict[str, Any], installation: GithubAppInstallation, gh_client: GitHubClient
+    repo_obj: Dict[str, Any], installation: GithubAppInstallation, gh_client: GitHubClient
 ) -> Tuple[str | None, str | None]:
-    repo_obj, _ = GithubAppRepo.objects.update_or_create(
-        repo_id=repo_data["id"],
-        defaults={
-            "installation": installation,
-            "name": repo_data["name"],
-            "full_name": repo_data["full_name"],
-            "is_private": repo_data["private"],
-            "state": RepoState.PROCESSING,
-            "default_branch": "main",
-            "permissions": installation.permissions,
-        },
-    )
     try:
         q_process_remote_repo(
             repo_obj.full_name,
