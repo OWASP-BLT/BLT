@@ -43,6 +43,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import ListView, TemplateView, View
 
+from website.aibot.main import aibot_health_check
+
 # from website.aibot.main import aibot_webhook_is_healthy
 from website.models import (
     IP,
@@ -139,7 +141,7 @@ def status_page(request):
     CHECK_BITCOIN = False
     CHECK_SENDGRID = True
     CHECK_GITHUB = True
-    CHECK_GITHUB_AIBOT_WEBHOOK = True
+    CHECK_AIBOT_WEBHOOK_ENTRYPOINT = True
     CHECK_OPENAI = True
     CHECK_MEMORY = True
     CHECK_DATABASE = True
@@ -169,7 +171,7 @@ def status_page(request):
                 else {}
             ),
             "github_aibot_webhook": {
-                "health": None if not CHECK_GITHUB_AIBOT_WEBHOOK else "3",
+                "health": None if not CHECK_AIBOT_WEBHOOK_ENTRYPOINT else 1,
                 "status": "Not checked",
             },
             "slack_bot": {},
@@ -334,20 +336,18 @@ def status_page(request):
                     print(f"GitHub API Error: {e}")
                     status_data["github_rate_limit"] = None
 
-        # GitHub AI Bot Webhook check
-        # if CHECK_GITHUB_AIBOT_WEBHOOK:
-        #     try:
-        #         webhook_resp = aibot_webhook_is_healthy(request)
-        #         webhook_data = json.loads(webhook_resp.content)
-        #         status_data["github_aibot_webhook"] = webhook_data
-        #         status_data["github_aibot_webhook"]["last_checked"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        #     except Exception as e:
-        #         status_data["github_aibot_webhook"] = {
-        #             "health": "2",
-        #             "status": "Error during health check",
-        #             "error": str(e),
-        #             "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        #         }
+        if CHECK_AIBOT_WEBHOOK_ENTRYPOINT:
+            try:
+                response = aibot_health_check(request)
+                webhook_data = json.loads(response.content)
+                status_data["github_aibot_webhook"] = webhook_data
+            except Exception as e:
+                status_data["github_aibot_webhook"] = {
+                    "health": 2,
+                    "status": "Health check failed",
+                    "error": str(e),
+                    "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                }
 
         # OpenAI API check
         if CHECK_OPENAI:

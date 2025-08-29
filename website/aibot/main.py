@@ -5,14 +5,16 @@ Gemini AI API to generate responses and post them on github.
 
 import json
 import logging
+from datetime import datetime
 from typing import Any, Dict
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, JsonResponse
+from django.test import RequestFactory
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from jsonschema import validate
 
 from website.aibot.aibot_env import configure_and_validate_settings
@@ -26,7 +28,7 @@ from website.aibot.tasks import (
     process_repos_added_task,
     process_repos_removed_task,
 )
-from website.aibot.utils import parse_json, validate_github_request, verify_github_signature
+from website.aibot.utils import parse_json, sign_payload, validate_github_request, verify_github_signature
 from website.aibot.validation_schemas import (
     INSTALLATION_REPOSITORIES_SCHEMA,
     INSTALLATION_SCHEMA,
@@ -47,9 +49,6 @@ except ImproperlyConfigured as e:
     logger.error(
         "Due to improper configuration, the bot will not work as expected. Please review the settings and apply them."
     )
-
-
-# TODO: Create health function/api
 
 
 def handle_ping_event(payload: Dict[str, Any]) -> JsonResponse:
@@ -371,7 +370,7 @@ def get_handler(event_type: str):
 
 @csrf_exempt
 @require_POST
-def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
+def aibot_webhook_entrypoint(request: HttpRequest) -> JsonResponse:
     valid, err = validate_github_request(request)
     if not valid:
         logger.error("Error in validating github request: %s", err)
@@ -400,6 +399,91 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
     else:
         logger.error("No handler found for event type %s", event_type)
         return JsonResponse({"error": f"Unsupported event type {event_type}"})
+
+
+@csrf_exempt
+@require_GET
+def aibot_health_check(request: HttpRequest) -> JsonResponse:
+    """
+    Health check endpoint that simulates a GitHub ping event and calls
+    aibot_webhook_entrypoint to verify end-to-end functionality.
+    Returns:
+        JsonResponse with:
+        - health: 1 (ok), 2 (error)
+        - status: user-friendly message
+        - last_checked: timestamp
+        - error: if any
+    """
+    try:
+        test_payload = {"zen": "Keep it logically awesome", "hook_id": "health-check"}
+        payload_bytes = json.dumps(test_payload).encode("utf-8")
+
+        secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
+        signature = sign_payload(secret, payload_bytes)
+        if not signature:
+            return JsonResponse(
+                {
+                    "health": 2,
+                    "status": "Failed to sign payload",
+                    "error": "Webhook secret missing or signing failed",
+                    "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                },
+                status=500,
+            )
+
+        factory = RequestFactory()
+        fake_request = factory.post(
+            "/webhooks/github/aibot/",
+            data=payload_bytes,
+            content_type="application/json",
+            **{
+                "HTTP_X_GITHUB_EVENT": "ping",
+                "HTTP_X_HUB_SIGNATURE_256": signature,
+            },
+        )
+
+        webhook_response = aibot_webhook_entrypoint(fake_request)
+
+        try:
+            webhook_data = json.loads(webhook_response.content)
+        except Exception as e:
+            return JsonResponse(
+                {
+                    "health": 2,
+                    "status": "Invalid response from webhook",
+                    "error": f"Failed to parse webhook response: {str(e)}",
+                    "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                },
+                status=500,
+            )
+        if webhook_response.status_code != 200:
+            return JsonResponse(
+                {
+                    "health": 2,
+                    "status": "Webhook endpoint returned error",
+                    "error": f"Status {webhook_response.status_code}: {webhook_data.get('error', 'Unknown error')}",
+                    "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                },
+                status=500,
+            )
+        return JsonResponse(
+            {
+                "health": 1,
+                "status": "Webhook is operational and responded successfully",
+                "webhook_response": webhook_data,
+                "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        )
+    except Exception as e:
+        return JsonResponse(
+            {
+                "health": 2,
+                "status": "Health check failed",
+                "error": str(e),
+                "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            },
+            status=500,
+        )
 
 
 def get_installation_or_404(installation_id: str, sender_login: str, action_desc: str) -> GithubAppInstallation | None:
