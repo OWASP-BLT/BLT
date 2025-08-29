@@ -19,7 +19,7 @@ def reminder_settings(request):
         defaults={
             "reminder_time": timezone.now().time(),  # Set default time to current time
             "timezone": "UTC",  # Set default timezone
-            "is_active": False,  # Set default active
+            "is_active": False,  # Set default active state
         },
     )
 

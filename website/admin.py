@@ -41,6 +41,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     JoinRequest,
+    Labs,
     Lecture,
     LectureStatus,
     Message,
@@ -63,11 +64,15 @@ from website.models import (
     SlackIntegration,
     Subscription,
     Tag,
+    TaskContent,
+    Tasks,
     TimeLog,
     Trademark,
     TrademarkOwner,
     Transaction,
+    UserLabProgress,
     UserProfile,
+    UserTaskProgress,
     Wallet,
     Winner,
 )
@@ -726,6 +731,71 @@ class QueueAdmin(admin.ModelAdmin):
 
     mark_as_launched.short_description = "Mark selected items as launched"
 
+
+class TaskContentAdmin(admin.ModelAdmin):
+    list_display = ("task", "get_content_preview", "created_at")
+    search_fields = ("task__name", "theory_content", "mcq_question")
+    list_filter = ("task__task_type", "task__lab__name", "created_at")
+    date_hierarchy = "created_at"
+
+    def get_content_preview(self, obj):
+        if obj.theory_content:
+            return obj.theory_content[:50] + "..." if len(obj.theory_content) > 50 else obj.theory_content
+        elif obj.mcq_question:
+            return obj.mcq_question[:50] + "..." if len(obj.mcq_question) > 50 else obj.mcq_question
+        elif obj.simulation_config:
+            return f"Simulation: {obj.simulation_config.get('type', 'Unknown')}"
+        return "No content"
+
+    get_content_preview.short_description = "Content Preview"
+
+
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "task_type", "order", "is_active", "created_at")
+    search_fields = ("name", "description")
+
+
+class LabsAdmin(admin.ModelAdmin):
+    list_display = ("name", "get_description_preview", "total_tasks", "estimated_time", "is_active", "created_at")
+    search_fields = ("name", "description")
+    list_filter = ("is_active", "created_at", "updated_at")
+    date_hierarchy = "created_at"
+    ordering = ("order", "-created_at")
+
+    def get_description_preview(self, obj):
+        return obj.description[:50] + "..." if len(obj.description) > 50 else obj.description
+
+    get_description_preview.short_description = "Description"
+
+
+admin.site.register(TaskContent, TaskContentAdmin)
+admin.site.register(Tasks, TaskAdmin)
+admin.site.register(Labs, LabsAdmin)
+
+
+class UserTaskProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "task", "completed", "attempts", "completed_at", "last_attempt_at")
+    list_filter = ("completed", "task__lab", "task__task_type", "completed_at")
+    search_fields = ("user__username", "task__name", "task__lab__name")
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("user", "task")
+
+
+class UserLabProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "lab", "get_progress", "started_at", "completed_at", "last_accessed")
+    list_filter = ("lab", "completed_at", "started_at")
+    search_fields = ("user__username", "lab__name")
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("user", "lab")
+
+    def get_progress(self, obj):
+        return f"{obj.calculate_progress_percentage()}%"
+
+    get_progress.short_description = "Progress"
+
+
+admin.site.register(UserTaskProgress, UserTaskProgressAdmin)
+admin.site.register(UserLabProgress, UserLabProgressAdmin)
 
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
