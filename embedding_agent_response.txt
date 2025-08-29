@@ -1,1 +1,0 @@
-{'query': 'Module for rendering and managing the user interface components for organization dashboards, including navigation and base templates.', 'key_terms': 'organization dashboard, user interface, navigation, templates, base template, UI components, tailwind CSS', 'k': '15'}
