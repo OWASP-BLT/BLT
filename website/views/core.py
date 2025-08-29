@@ -147,7 +147,6 @@ def status_page(request):
     CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
-    # status_data = cache.get("service_status")
     status_data = None
 
     if not status_data:
