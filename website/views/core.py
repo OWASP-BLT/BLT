@@ -44,8 +44,6 @@ from django.views.decorators.http import require_GET
 from django.views.generic import ListView, TemplateView, View
 
 from website.aibot.main import aibot_health_check
-
-# from website.aibot.main import aibot_webhook_is_healthy
 from website.models import (
     IP,
     Activity,
