@@ -118,7 +118,6 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
-from website.views.cqueue import queue_list, update_txid
 from website.views.daily_reminders import reminder_settings, send_test_reminder
 from website.views.education import (
     add_lecture,
@@ -276,6 +275,7 @@ from website.views.project import (
     repo_activity_data,
     select_contribution,
 )
+from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
