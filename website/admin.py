@@ -67,7 +67,9 @@ from website.models import (
     Trademark,
     TrademarkOwner,
     Transaction,
+    UserLabProgress,
     UserProfile,
+    UserTaskProgress,
     Wallet,
     Winner,
 )
@@ -766,6 +768,31 @@ class LabsAdmin(admin.ModelAdmin):
 admin.site.register(TaskContent, TaskContentAdmin)
 admin.site.register(Tasks, TaskAdmin)
 admin.site.register(Labs, LabsAdmin)
+
+
+class UserTaskProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "task", "completed", "attempts", "completed_at", "last_attempt_at")
+    list_filter = ("completed", "task__lab", "task__task_type", "completed_at")
+    search_fields = ("user__username", "task__name", "task__lab__name")
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("user", "task")
+
+
+class UserLabProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "lab", "get_progress", "started_at", "completed_at", "last_accessed")
+    list_filter = ("lab", "completed_at", "started_at")
+    search_fields = ("user__username", "lab__name")
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("user", "lab")
+
+    def get_progress(self, obj):
+        return f"{obj.calculate_progress_percentage()}%"
+
+    get_progress.short_description = "Progress"
+
+
+admin.site.register(UserTaskProgress, UserTaskProgressAdmin)
+admin.site.register(UserLabProgress, UserLabProgressAdmin)
 
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
