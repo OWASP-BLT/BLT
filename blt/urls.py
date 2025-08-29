@@ -19,7 +19,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 import comments.views
-from website.aibot.main import aibot_health_check, aibot_webhook_entrypoint
+from website.aibot.main import aibot_webhook_entrypoint
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -479,7 +479,6 @@ urlpatterns = [
         name="organization_dashboard_hunt_edit",
     ),
     path("aibot", aibot_webhook_entrypoint, name="aibot_webhook_entrypoint"),
-    path("aibot_health_check", aibot_health_check, name="aibot_health_check"),
     path(
         "dashboard/admin/organization/<int:pk>/",
         admin_organization_dashboard_detail,

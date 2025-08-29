@@ -33,7 +33,8 @@ def validate_settings() -> None:
             missing_settings.append(key)
 
     if missing_settings:
-        raise ImproperlyConfigured(f"Missing critical settings: {', '.join(missing_settings)}")
+        missing_settings_str = "\n".join(missing_settings)
+        raise ImproperlyConfigured(f"Missing critical settings: \n{missing_settings_str}")
 
 
 def configure_and_validate_settings() -> None:
