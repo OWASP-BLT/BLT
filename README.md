@@ -8,7 +8,7 @@
 
 Everything is on our <a href="https://owaspblt.org">homepage</a>
 
-## Star History
+## Star History test
 
 <a href="https://star-history.com/#OWASP-BLT/BLT&Date">
  <picture>
