@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 try:
     configure_and_validate_settings()
+    logger.info("All settings loaded from env (Aibot App ready)")
 except ImproperlyConfigured as e:
     logger.error("Couldn't setup and validate the Aibot app: %s", e)
     logger.error(
@@ -70,9 +71,8 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
     action = payload["action"]
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
-    app_name = installation_data["app_slug"]
+    app_name = settings.GITHUB_AIBOT_APP_NAME
     sender_login = payload["sender"]["login"]
-    repos_added = payload["repositories"]
 
     if action == "created":
         installation, _ = GithubAppInstallation.objects.get_or_create(
@@ -89,6 +89,8 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
                 "subscribed_events": installation_data.get("events", []),
             },
         )
+
+        repos_added = payload["repositories"]
 
         task = process_repos_added_task.delay(installation_id, app_name, repos_added)
         logger.info(
@@ -116,7 +118,7 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
 
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
-    app_name = installation_data["app_slug"]
+    app_name = settings.GITHUB_AIBOT_APP_NAME
     sender_login = payload["sender"]["login"]
     repos_added = payload.get("repositories_added", [])
     repos_removed = payload.get("repositories_removed", [])
@@ -155,7 +157,7 @@ def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
     installation_id = installation_data["id"]
     action = payload["action"]
     repo_data = payload["repository"]
-    sender_login = payload.get("sender", {}).get("login")
+    sender_login = payload["sender"]["login"]
     event = "repository"
 
     installation = get_installation_or_404(installation_id, sender_login, event)
@@ -184,7 +186,7 @@ def handle_repository_event(payload: Dict[str, Any]) -> JsonResponse:
             repo.repo_id,
             sender_login,
         )
-        return JsonResponse({"error": "Unsupported action"}, status=400)
+        return JsonResponse({"error": "Received unsupported action"}, status=400)
 
     return JsonResponse({"status": "Repository updated successfully"})
 
@@ -196,7 +198,7 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
     action = payload["action"]
     repo_data = payload["repository"]
     repo_full_name = repo_data["full_name"]
-    app_name = payload["installation"]["app_slug"]
+    app_name = settings.GITHUB_AIBOT_APP_NAME
     base_commit_sha, head_commit_sha = payload["before"], payload["after"]
     sender_login = payload["sender"]["login"]
     event = "push"
@@ -229,7 +231,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     installation_id = installation_data["id"]
     repo_data = payload["repository"]
     repo_id = repo_data["id"]
-    app_name = payload["app_slug"]
+    app_name = settings.GITHUB_AIBOT_APP_NAME
     sender_login = payload["sender"]["login"]
     event = "pull_request"
 
@@ -281,7 +283,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
         return JsonResponse({"status": "Ignoring blt-aibot's own comment"})
 
     action = payload["action"]
-    app_name = payload["app_slug"]
+    app_name = settings.GITHUB_AIBOT_APP_NAME
     comment_body = payload["comment"]["body"]
     issue = payload["issue"]
 
@@ -326,7 +328,7 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
     installation_id = installation_data["id"]
     repo_data = payload["repository"]
     repo_id = payload["id"]
-    app_name = payload["app_slug"]
+    app_name = settings.GITHUB_AIBOT_APP_NAME
     sender_login = payload["sender"]["login"]
     action = payload["action"]
     issue = payload["issue"]

@@ -2698,7 +2698,7 @@ class GithubAppInstallation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.app_name} by {self.account_login} ({self.installation_id}) [{self.account_type}]"
+        return f"{self.app_name} by {self.account_login} [{self.account_type} account] ({self.state})"
 
     def apply_webhook_state(self, action, sender_login=None):
         now = timezone.now()
@@ -2773,7 +2773,7 @@ class GithubAppRepo(models.Model):
 class AibotComment(models.Model):
     installation = models.ForeignKey(
         GithubAppInstallation,
-        on_delete=models.SET,
+        on_delete=models.SET_NULL,
         related_name="aibot_comments",
         help_text="The GitHub App installation that triggered this",
         null=True,

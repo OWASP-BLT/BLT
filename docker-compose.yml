@@ -21,7 +21,7 @@ services:
     image: qdrant/qdrant:v1.14.1
     container_name: qdrant
     ports:
-      - "${QDRANT_HTTP_PORT}:6333"
+      - "6333:6333"
     environment:
       - QDRANT__SERVICE__HTTP_PORT=6333
     healthcheck:
