@@ -42,12 +42,14 @@ from website.models import AibotComment, GithubAppInstallation, GithubAppRepo, R
 
 logger = logging.getLogger(__name__)
 
+APP_NAME = settings.GITHUB_AIBOT_APP_NAME
+
 
 @shared_task
-def process_repos_added_task(installation_id: str, app_name: str, repos_added: List[Dict]) -> None:
+def process_repos_added_task(installation_id: str, repos_added: List[Dict]) -> None:
     processed_repos, failed_repos = [], []
     installation = GithubAppInstallation.objects.get(installation_id=installation_id)
-    gh_client = GitHubClient(installation_id, app_name, get_token_manager())
+    gh_client = GitHubClient(installation_id, APP_NAME, get_token_manager())
     for repo_data in repos_added:
         repo_obj, _ = upsert_repo_db(repo_data, installation)
         try:
@@ -77,7 +79,7 @@ def process_repos_added_task(installation_id: str, app_name: str, repos_added: L
 
 
 @shared_task
-def process_repos_removed_task(installation_id: str, app_name: str, repos_removed: List[Dict]) -> None:
+def process_repos_removed_task(installation_id: str, repos_removed: List[Dict]) -> None:
     removed_repos, failed_repos = [], []
     installation = GithubAppInstallation.objects.get(installation_id=installation_id)
 
@@ -101,7 +103,7 @@ def process_repos_removed_task(installation_id: str, app_name: str, repos_remove
         installation_id,
         len(removed_repos),
         len(failed_repos),
-        app_name,
+        APP_NAME,
         [r["full_name"] for r in removed_repos],
         [r["full_name"] for r in failed_repos],
     )
@@ -110,9 +112,9 @@ def process_repos_removed_task(installation_id: str, app_name: str, repos_remove
 
 @shared_task
 def process_push_task(
-    installation_id: str, app_name: str, repo_id: str, repo_full_name: str, base_commit_sha: str, head_commit_sha: str
+    installation_id: str, repo_id: str, repo_full_name: str, base_commit_sha: str, head_commit_sha: str
 ) -> None:
-    gh_client = GitHubClient(installation_id, app_name, get_token_manager())
+    gh_client = GitHubClient(installation_id, APP_NAME, get_token_manager())
     compare_url = f"https://api.github.com/repos/{repo_full_name}/compare/{base_commit_sha}...{head_commit_sha}"
     response = gh_client.get(compare_url)
     if not response:
@@ -138,7 +140,7 @@ def process_push_task(
 
 
 @shared_task
-def process_pr_task(installation_id: str, repo_id: str, action: str, app_name: str, payload: Dict[str, Any]) -> None:
+def process_pr_task(installation_id: str, repo_id: str, action: str, payload: Dict[str, Any]) -> None:
     installation = GithubAppInstallation.objects.get(installation_id=installation_id)
     repo = GithubAppRepo.objects.get(repo_id=repo_id)
     pr_instance = PullRequest(payload)
@@ -148,7 +150,7 @@ def process_pr_task(installation_id: str, repo_id: str, action: str, app_name: s
         logger.error("Skipping AI review due to branch mismatch for PR %r", pr_instance)
         return
 
-    gh_client = GitHubClient(installation_id, app_name, get_token_manager())
+    gh_client = GitHubClient(installation_id, APP_NAME, get_token_manager())
 
     pr_diff = gh_client.fetch_pr_diff(pr_instance.diff_url)
     processed_diff, patch = process_diff(pr_diff)
@@ -257,12 +259,10 @@ def process_pr_task(installation_id: str, repo_id: str, action: str, app_name: s
 
 
 @shared_task
-def process_issue_comment_task(
-    installation_id: str, repo_id: str, app_name: str, issue: Dict[str, Any], sender_login: str
-) -> None:
+def process_issue_comment_task(installation_id: str, repo_id: str, issue: Dict[str, Any], sender_login: str) -> None:
     installation = GithubAppInstallation.objects.get(installation_id=installation_id)
     repo = GithubAppRepo.objects.get(repo_id=repo_id)
-    gh_client = GitHubClient(installation_id, app_name, get_token_manager())
+    gh_client = GitHubClient(installation_id, APP_NAME, get_token_manager())
     issue_type = "Pull request" if issue.get("pull_request") else "Issue"
     issue_body = issue["body"]
     comments_url = issue["comments_url"]
@@ -353,11 +353,11 @@ def process_issue_comment_task(
 
 @shared_task
 def process_issue_task(
-    installation_id: str, repo_id: str, action: str, app_name: str, issue: Dict[str, Any], sender_login: str
+    installation_id: str, repo_id: str, action: str, issue: Dict[str, Any], sender_login: str
 ) -> None:
     installation = GithubAppInstallation.objects.get(installation_id=installation_id)
     repo = GithubAppRepo.objects.get(repo_id=repo_id)
-    gh_client = GitHubClient(installation_id, app_name, get_token_manager())
+    gh_client = GitHubClient(installation_id, APP_NAME, get_token_manager())
 
     issue_body = issue.get("body") or ""
     response = generate_issue_query(issue)
@@ -391,7 +391,7 @@ def process_issue_task(
     final_text = issue_analysis_marker() + ai_response_body
 
     comments_url = issue["comments_url"]
-    gh_client = GitHubClient(installation_id, app_name, get_token_manager())
+    gh_client = GitHubClient(installation_id, APP_NAME, get_token_manager())
     if action == "opened":
         gh_comment = gh_client.post_comment(comments_url, final_text)
     else:

@@ -42,6 +42,9 @@ from website.models import GithubAppInstallation, GithubAppRepo, InstallationSta
 
 logger = logging.getLogger(__name__)
 
+APP_NAME = settings.GITHUB_AIBOT_APP_NAME
+
+
 try:
     configure_and_validate_settings()
     logger.info("All settings loaded from env (Aibot App ready)")
@@ -71,15 +74,14 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
     action = payload["action"]
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
-    app_name = settings.GITHUB_AIBOT_APP_NAME
     sender_login = payload["sender"]["login"]
 
     if action == "created":
         installation, _ = GithubAppInstallation.objects.get_or_create(
             installation_id=installation_id,
             defaults={
-                "app_id": installation_data["app_id"],
-                "app_name": installation_data["app_slug"],
+                "app_id": settings.GITHUB_AIBOT_APP_ID,
+                "app_name": APP_NAME,
                 "account_login": installation_data["account"]["login"],
                 "account_type": installation_data["account"]["type"],
                 "state": InstallationState.ACTIVE,
@@ -92,7 +94,7 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
 
         repos_added = payload["repositories"]
 
-        task = process_repos_added_task.delay(installation_id, app_name, repos_added)
+        task = process_repos_added_task.delay(installation_id, repos_added)
         logger.info(
             "Queued process_repos_added_task: task_id=%s, installation_id=%s, repos_count=%s",
             task.id,
@@ -120,7 +122,6 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
 
     installation_data = payload["installation"]
     installation_id = installation_data["id"]
-    app_name = settings.GITHUB_AIBOT_APP_NAME
     sender_login = payload["sender"]["login"]
     repos_added = payload.get("repositories_added", [])
     repos_removed = payload.get("repositories_removed", [])
@@ -136,15 +137,15 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
     logger.debug(
         "Offloading process_repos_added_task to Celery: installation_id=%s, app_name=%s, repos_count=%s",
         installation_id,
-        app_name,
+        APP_NAME,
         len(repos_added),
     )
-    process_repos_added_task.delay(installation_id, app_name, repos_added)
+    process_repos_added_task.delay(installation_id, APP_NAME, repos_added)
 
     logger.debug(
         "Offloading process_repos_removed_task to Celery: installation_id=%s, app_name=%s, repos_count=%s",
         installation_id,
-        app_name,
+        APP_NAME,
         len(repos_removed),
     )
     process_repos_removed_task.delay(installation_id, app_name, repos_removed)
@@ -200,7 +201,6 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
     action = payload["action"]
     repo_data = payload["repository"]
     repo_full_name = repo_data["full_name"]
-    app_name = settings.GITHUB_AIBOT_APP_NAME
     base_commit_sha, head_commit_sha = payload["before"], payload["after"]
     sender_login = payload["sender"]["login"]
     event = "push"
@@ -220,7 +220,7 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
         return JsonResponse({"error": f"Invalid repository state: {repo.state}"}, status=404)
 
     logger.info("Offloading process_push_task to Celery: installation_id=%s, repo_full_name=%s")
-    process_push_task.delay(installation_id, app_name, repo_full_name, base_commit_sha, head_commit_sha)
+    process_push_task.delay(installation_id, repo_full_name, base_commit_sha, head_commit_sha)
 
     return JsonResponse({"success": "Processed push event successfully"})
 
@@ -233,7 +233,6 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     installation_id = installation_data["id"]
     repo_data = payload["repository"]
     repo_id = repo_data["id"]
-    app_name = settings.GITHUB_AIBOT_APP_NAME
     sender_login = payload["sender"]["login"]
     event = "pull_request"
 
@@ -266,7 +265,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
             installation_id,
             repo_data["full_name"],
         )
-        process_pr_task.delay(installation_id, repo_id, action, app_name, payload)
+        process_pr_task.delay(installation_id, repo_id, action, payload)
     elif action == "closed":
         logger.debug("PR was closed: %s in %s", repo_data["pull_request"]["id"], repo_data["full_name"])
     return JsonResponse({"status": "PR event processed"})
@@ -280,12 +279,11 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
     repo_id = repo_data["id"]
     sender_login = payload["sender"]["login"]
 
-    if sender_login == f"{settings.GITHUB_AIBOT_APP_NAME}[bot]":
+    if sender_login == f"{APP_NAME}[bot]":
         logger.debug("This event is by blt-aibot's comment. Ignoring")
         return JsonResponse({"status": "Ignoring blt-aibot's own comment"})
 
     action = payload["action"]
-    app_name = settings.GITHUB_AIBOT_APP_NAME
     comment_body = payload["comment"]["body"]
     issue = payload["issue"]
 
@@ -305,7 +303,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
     if not validate_repo_state(repo, sender_login, action):
         return JsonResponse({"error": f"Invalid repository state: {repo.state}"}, status=404)
 
-    bot_name = settings.GITHUB_AIBOT_APP_NAME.lower()
+    bot_name = APP_NAME.lower()
     mention_string = f"@{bot_name}"
     if mention_string not in comment_body:
         logger.debug("%s was not mentioned in comment. Ignoring", bot_name)
@@ -317,7 +315,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
             installation_id,
             repo_data["full_name"],
         )
-        process_issue_comment_task.delay(installation_id, repo_id, app_name, issue, sender_login)
+        process_issue_comment_task.delay(installation_id, repo_id, issue, sender_login)
     else:
         logger.debug("Ignoring issue event with action=%s", action)
     return JsonResponse({"status": "Processed issue comment event"})
@@ -330,7 +328,6 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
     installation_id = installation_data["id"]
     repo_data = payload["repository"]
     repo_id = payload["id"]
-    app_name = settings.GITHUB_AIBOT_APP_NAME
     sender_login = payload["sender"]["login"]
     action = payload["action"]
     issue = payload["issue"]
@@ -351,7 +348,7 @@ def handle_issues_event(payload: Dict[str, Any]) -> JsonResponse:
         return JsonResponse({"error": f"Invalid repository state: {repo.state}"}, status=404)
 
     if action in {"opened", "edited"}:
-        process_issue_task.delay(installation_id, repo_id, action, app_name, issue, sender_login)
+        process_issue_task.delay(installation_id, repo_id, action, issue, sender_login)
     else:
         logger.debug("Ignoring issue event with action=%s", action)
     return JsonResponse({"success": "processed"})
@@ -595,7 +592,7 @@ def propagate_installation_state_change(installation: GithubAppInstallation, web
             for r in repos
         ]
 
-        process_repos_removed_task.delay(installation.installation_id, installation.app_name, repo_payloads)
+        process_repos_removed_task.delay(installation.installation_id, repo_payloads)
         logger.info(
             "Triggered %s for %s repositories on installation %s.",
             "removal" if webhook_action == "remove" else "suspension",
@@ -619,7 +616,7 @@ def propagate_installation_state_change(installation: GithubAppInstallation, web
             for r in to_process
         ]
         if repo_payloads:
-            process_repos_added_task.delay(installation.installation_id, installation.app_name, repo_payloads)
+            process_repos_added_task.delay(installation.installation_id, repo_payloads)
         logger.info("Triggered reprocessing for %s repos on activation.", len(repo_payloads))
 
 
