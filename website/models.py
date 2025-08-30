@@ -2698,7 +2698,7 @@ class GithubAppInstallation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.app_name} by {self.account_login} [{self.account_type} account] ({self.state})"
+        return f"{self.app_name} by {self.account_login} [{self.account_type} account] ({self.state}) id={self.installation_id}"
 
     def apply_webhook_state(self, action, sender_login=None):
         now = timezone.now()

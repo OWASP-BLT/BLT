@@ -106,7 +106,9 @@ def handle_installation_event(payload: Dict[str, Any]) -> JsonResponse:
         installation = get_installation_or_404(installation_id, sender_login, action)
         if not installation:
             return JsonResponse({"error": "Installation not found"}, status=404)
+
         apply_state_change(installation, action, sender_login, installation_data)
+
         return JsonResponse({"success": "App state modified successfully."})
 
     logger.warning(f"Unknown installation action received: {action}")
@@ -566,18 +568,67 @@ def handle_repo_rename(repo: GithubAppRepo, repo_data: Dict[str, Any], sender_lo
     return
 
 
+def propagate_installation_state_change(installation: GithubAppInstallation, webhook_action: str):
+    repos = installation.repositories.all()
+
+    if webhook_action in ["remove", "suspend"]:
+        repo_payloads = [
+            {
+                "id": r.repo_id,
+                "name": r.name,
+                "full_name": r.full_name,
+                "private": r.is_private,
+                "default_branch": r.default_branch,
+            }
+            for r in repos
+        ]
+
+        process_repos_removed_task.delay(installation.installation_id, installation.app_name, repo_payloads)
+        logger.info(
+            "Triggered %s for %s repositories on installation %s.",
+            "removal" if webhook_action == "remove" else "suspension",
+            len(repo_payloads),
+            installation.installation_id,
+        )
+
+        # NOTE: the process_repos_removed_task marks all repos as REMOVED even if event was SUSPENDED.
+        # For more accurate status, can make it flexible with state updates by passing the actual action.
+
+    elif webhook_action == "activate":
+        to_process = repos.exclude(state=RepoState.ACTIVE)
+        repo_payloads = [
+            {
+                "id": r.repo_id,
+                "name": r.name,
+                "full_name": r.full_name,
+                "private": r.is_private,
+                "default_branch": r.default_branch,
+            }
+            for r in to_process
+        ]
+        if repo_payloads:
+            process_repos_added_task.delay(installation.installation_id, installation.app_name, repo_payloads)
+        logger.info("Triggered reprocessing for %s repos on activation.", len(repo_payloads))
+
+
 def apply_state_change(
     installation: GithubAppInstallation, action: str, sender_login: str, installation_data: Dict[str, Any]
 ) -> JsonResponse:
     webhook_action, installation_state = INSTALLATION_STATE_MAPPING[action]
+
     installation.apply_webhook_state(webhook_action, sender_login)
     installation.save()
+
     logger.info(
         "%s webhook action applied for installation_id=%s. State: '%s'.",
         webhook_action.upper(),
         installation_data["id"],
         installation_state,
     )
+
+    propagate_installation_state_change(installation, webhook_action)
+
+    return JsonResponse({"status": "ok"})
 
 
 def handle_repo_state_change(repo: GithubAppRepo, action: str, sender_login: str) -> None:

@@ -80,18 +80,20 @@ def process_repos_added_task(installation_id: str, app_name: str, repos_added: L
 def process_repos_removed_task(installation_id: str, app_name: str, repos_removed: List[Dict]) -> None:
     removed_repos, failed_repos = [], []
     installation = GithubAppInstallation.objects.get(installation_id=installation_id)
-    repo_ids_removed = [repo["id"] for repo in repos_removed]
-
-    GithubAppRepo.objects.filter(installation=installation, repo_id__in=repo_ids_removed).update(
-        state=RepoState.REMOVED, updated_at=timezone.now()
-    )
 
     for repo_data in repos_removed:
+        repo_id = repo_data["id"]
+        full_name = repo_data["full_name"]
+
+        GithubAppRepo.objects.filter(installation=installation, repo_id=repo_id).update(
+            state=RepoState.REMOVED, updated_at=timezone.now()
+        )
+
         try:
-            q_delete_collection(q_get_collection_name(repo_data["full_name"], repo_data["id"]))
+            q_delete_collection(q_get_collection_name(full_name, repo_id))
             removed_repos.append(repo_data)
         except Exception:
-            logger.error("Failed to delete collection for repo %s", repo_data["full_name"], exc_info=True)
+            logger.error("Failed to delete collection for repo %s", full_name, exc_info=True)
             failed_repos.append(repo_data)
 
     logger.info(
