@@ -4,6 +4,7 @@ import re
 from typing import Any, Dict, List, Tuple
 
 from django.conf import settings
+from qdrant_client.http import models
 from qdrant_client.http.models import UpdateStatus
 from qdrant_client.models import FieldCondition, Filter, MatchValue, PointStruct
 from unidiff import PatchSet
@@ -371,28 +372,44 @@ def generate_and_store_embeddings(chunks: List[ChunkType], qdrant_collection: st
             upsert_to_qdrant(qdrant_collection, chunk, embedding)
 
 
-def rename_qdrant_collection_with_alias(old_name: str, new_name: str) -> None:
+def q_rename_collection_alias(old_name: str, new_name: str, repo_id: str) -> None:
     """
-    Rename a Qdrant collection by creating an alias for the new name.
+    Rename a Qdrant collection alias using `update_collection_aliases`.
+    This does NOT rename the actual collection (which is immutable), but
+    changes the alias pointing to it.
+
 
     Args:
-        q_client (QdrantClient): The Qdrant client instance.
-        old_name (str): The current name of the collection.
-        new_name (str): The new name for the collection.
+        old_name: The old full repo name (alias).
+        new_name: The new full repo name (alias).
+        repo_id: The repository ID used to build collection name.
 
     Raises:
-        ValueError: If the old collection does not exist.
+        ValueError: If the target collection doesn't exist.
     """
+    old_q_name = q_get_collection_name(old_name, repo_id)
+    new_q_name = q_get_collection_name(new_name, repo_id)
+
     collections = [c.name for c in q_client.get_collections().collections]
+    if old_q_name not in collections:
+        raise ValueError(f"Collection '{old_q_name}' does not exist in Qdrant.")
 
-    if old_name not in collections:
-        raise ValueError(f"Collection '{old_name}' does not exist in Qdrant.")
-
-    q_client.create_alias(alias_name=new_name, collection_name=old_name)
-    logger.info("Created alias '%s' for collection '%s'.", new_name, old_name)
-
-    q_client.delete_alias(alias_name=old_name)
-    logger.info("Removed alias '%s'.", old_name)
+    try:
+        q_client.update_collection_aliases(
+            change_aliases_operations=[
+                models.DeleteAliasOperation(delete_alias=models.DeleteAlias(alias_name=old_q_name)),
+                models.CreateAliasOperation(
+                    create_alias=models.CreateAlias(
+                        collection_name=old_q_name,
+                        alias_name=new_q_name,
+                    )
+                ),
+            ]
+        )
+        logger.info("Renamed alias from '%s' to '%s' (collection: %s).", old_q_name, new_q_name, old_q_name)
+    except Exception as e:
+        logger.error("Failed to rename Qdrant alias from '%s' to '%s': %s", old_q_name, new_q_name, e)
+        raise
 
 
 def q_process_changed_files(

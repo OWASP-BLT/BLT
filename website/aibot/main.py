@@ -19,7 +19,7 @@ from jsonschema import validate
 
 from website.aibot.aibot_env import configure_and_validate_settings
 from website.aibot.constants import INSTALLATION_STATE_MAPPING, REPO_PRIVACY_UPDATES, REPO_STATE_UPDATES
-from website.aibot.qdrant_api import rename_qdrant_collection_with_alias
+from website.aibot.qdrant_api import q_rename_collection_alias
 from website.aibot.tasks import (
     process_issue_comment_task,
     process_issue_task,
@@ -545,27 +545,39 @@ def validate_repo_state(repo: GithubAppRepo, sender_login: str, action: str) -> 
 
 
 def handle_repo_rename(repo: GithubAppRepo, repo_data: Dict[str, Any], sender_login: str) -> None:
+    """
+    Handle repository rename events:
+    - Update the repo object in DB.
+    - Rename the Qdrant alias pointing to its collection.
+
+    Args:
+        repo: Repo model instance.
+        repo_data: Incoming data containing new name and full_name.
+        sender_login: User who triggered the rename.
+    """
     old_name = repo.full_name
+
     repo.name = repo_data["name"]
     repo.full_name = repo_data["full_name"]
     repo.save()
 
     try:
-        rename_qdrant_collection_with_alias(old_name, repo_data["full_name"])
-        logger.info("Renamed Qdrant collection from '%s' to '%s' using alias.", old_name, repo_data["full_name"])
+        q_rename_collection_alias(
+            old_name=old_name,
+            new_name=repo_data["full_name"],
+            repo_id=repo_data["id"],
+        )
+        logger.info(
+            "Renamed repository from '%s' to '%s' (id=%s) by sender=%s",
+            old_name,
+            repo_data["full_name"],
+            repo_data["id"],
+            sender_login,
+        )
     except ValueError as e:
-        logger.error("Failed to rename Qdrant collection: %s", e)
+        logger.warning("No Qdrant collection to rename for repo '%s': %s", old_name, e)
     except Exception as e:
         logger.error("Unexpected error renaming Qdrant collection: %s", e)
-
-    logger.info(
-        "Renamed repository from %s to %s (id=%s) by sender=%s",
-        old_name,
-        repo.full_name,
-        repo.repo_id,
-        sender_login,
-    )
-    return
 
 
 def propagate_installation_state_change(installation: GithubAppInstallation, webhook_action: str):
