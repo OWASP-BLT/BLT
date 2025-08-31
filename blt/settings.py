@@ -25,6 +25,25 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
 
+GITHUB_AIBOT_APP_NAME = os.environ.get("GITHUB_AIBOT_APP_NAME")
+GITHUB_AIBOT_APP_ID = os.environ.get("GITHUB_AIBOT_APP_ID")
+GITHUB_AIBOT_PRIVATE_KEY_B64 = os.environ.get("GITHUB_AIBOT_PRIVATE_KEY_B64")
+GITHUB_AIBOT_WEBHOOK_SECRET = os.environ.get("GITHUB_AIBOT_WEBHOOK_SECRET")
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "blank")
+GEMINI_GENERATION_MODEL = os.environ.get("GEMINI_GENERATION_MODEL")
+GEMINI_EMBEDDING_MODEL = os.environ.get("GEMINI_EMBEDDING_MODEL")
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+QDRANT_HOST = os.environ.get("QDRANT_HOST")
+QDRANT_VECTOR_SIZE = os.environ.get("QDRANT_VECTOR_SIZE")
+QDRANT_HTTP_PORT = os.environ.get("QDRANT_HTTP_PORT")
 
 PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
@@ -129,7 +148,7 @@ MIDDLEWARE = (
 )
 
 if DEBUG:
-    MIDDLEWARE += ["livereload.middleware.LiveReloadScript"]
+    MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
@@ -474,6 +493,15 @@ else:
     #         },
     #     }
     # }
+
+CACHES["redis"] = {
+    "BACKEND": "django_redis.cache.RedisCache",
+    "LOCATION": os.environ.get("REDIS_URL", "redis://redis:6379/0"),
+    "OPTIONS": {
+        "CLIENT_CLASS": "django_redis.client.DefaultClient",
+    },
+}
+
 
 if DEBUG or TESTING:
     anon_throttle = 100000

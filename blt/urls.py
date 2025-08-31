@@ -19,6 +19,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 import comments.views
+from website.aibot.main import aibot_webhook_entrypoint
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -406,6 +407,7 @@ urlpatterns = [
         name="slack_oauth_callback",
     ),
     path("slack/commands/", slack_commands, name="slack_commands"),
+    path("aibot", aibot_webhook_entrypoint, name="aibot_webhook_entrypoint"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
