@@ -458,7 +458,7 @@ def aibot_health_check(request: HttpRequest) -> JsonResponse:
                 {
                     "health": 2,
                     "status": "Invalid response from webhook",
-                    "error": f"Failed to parse webhook response: {str(e)}",
+                    "error": "Failed to parse webhook response",
                     "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 },
                 status=500,
@@ -486,7 +486,7 @@ def aibot_health_check(request: HttpRequest) -> JsonResponse:
             {
                 "health": 2,
                 "status": "Health check failed",
-                "error": str(e),
+                "error": "Unknown error",
                 "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             },
             status=500,
