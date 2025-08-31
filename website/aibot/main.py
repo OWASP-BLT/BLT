@@ -453,7 +453,7 @@ def aibot_health_check(request: HttpRequest) -> JsonResponse:
 
         try:
             webhook_data = json.loads(webhook_response.content)
-        except Exception as e:
+        except Exception:
             return JsonResponse(
                 {
                     "health": 2,
@@ -481,7 +481,7 @@ def aibot_health_check(request: HttpRequest) -> JsonResponse:
                 "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
         )
-    except Exception as e:
+    except Exception:
         return JsonResponse(
             {
                 "health": 2,
