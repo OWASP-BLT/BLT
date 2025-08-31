@@ -186,8 +186,14 @@ def process_pr_task(installation_id: str, repo_id: str, action: str, payload: Di
                 source_collection, temp_collection, vector_query, k, rename_mappings
             )
             snippets = format_chunks_to_string(similar_chunks)
-            py_chunks = [chunk for chunk in similar_chunks if chunk["file_ext"] == ".py"]
-            analysis_output = analyze_code_ruff_bandit(py_chunks)
+            py_chunks: ChunkType = [chunk for chunk in similar_chunks if chunk["file_ext"] == ".py"]
+            changed_files = {
+                file.path
+                for file in patch
+                if not file.is_binary_file and (file.is_added_file or file.is_removed_file or file.is_modified_file)
+            }
+            analyzable_py_chunks: ChunkType = [chunk for chunk in py_chunks if chunk["file_path"] in changed_files]
+            analysis_output = analyze_code_ruff_bandit(analyzable_py_chunks)
         else:
             logger.warning("Missing collection names: source=%s, temp=%s", source_collection, temp_collection)
 
@@ -217,21 +223,27 @@ def process_pr_task(installation_id: str, repo_id: str, action: str, payload: Di
 
     ai_response = f"{pr_analysis_marker()}\n{bot_response}"
 
-    gh_comment = gh_client.post_comment(pr_instance.comments_url, bot_response)
-    if not gh_comment:
-        logger.error("Failed to post GitHub comment for PR #%s", pr_instance.number)
-        return
+    result = gh_client.upsert_comment(pr_instance.comments_url, ai_response, pr_analysis_marker())
+    if not result:
+        raise RuntimeError(f"Failed to post GitHub comment for PR #{pr_instance.number}")
 
+    gh_comment, comment_action = result
+    if not gh_comment:
+        msg = f"Failed to post GitHub comment for PR #{pr_instance.number}"
+        logger.error(msg)
+        raise RuntimeError(msg)
+
+    gh_comment = gh_comment.json()
     q_delete_collection(temp_collection)
 
-    issue_data_for_comment = payload.get("pull_request", {})
-    gh_comment = gh_comment.json()
+    issue_data_for_comment = payload["pull_request"]
     AibotComment.objects.create(
         installation=installation,
         repository=repo,
         issue_number=pr_instance.number,
         comment_id=gh_comment["id"],
         comment_url=gh_comment["html_url"],
+        comment_action=comment_action,
         trigger_event=f"pull_request.{action}",
         triggered_by_username=issue_data_for_comment["user"]["login"],
         trigger_comment_body=issue_data_for_comment.get("body") or "",
@@ -312,12 +324,13 @@ def process_issue_comment_task(installation_id: str, repo_id: str, issue: Dict[s
         return
 
     ai_response_body = bot_response_raw["text"]
-    gh_comment = gh_client.post_comment(comments_url, ai_response_body)
+    gh_comment_data = gh_client.upsert_comment(comments_url, ai_response_body)
+    if not gh_comment_data:
+        msg = f"Failed to post/patch GitHub comment for issue #{issue['number']}"
+        logger.error(msg)
+        raise RuntimeError(msg)
 
-    if not gh_comment:
-        logger.error("Failed to post/patch GitHub comment for issue #%s", issue["number"])
-        return
-
+    gh_comment, comment_action = gh_comment_data
     gh_comment = gh_comment.json()
     logger.info("Posted AI response to issue #%s in %s", issue["number"], repo.full_name)
 
@@ -327,6 +340,7 @@ def process_issue_comment_task(installation_id: str, repo_id: str, issue: Dict[s
         issue_number=issue["number"],
         comment_id=gh_comment["id"],
         comment_url=gh_comment["html_url"],
+        comment_action=comment_action,
         trigger_event="issue_comment",
         triggered_by_username=sender_login,
         trigger_comment_body=issue_body,
@@ -388,21 +402,24 @@ def process_issue_task(
         return
 
     ai_response_body = ai_response["text"]
-    final_text = issue_analysis_marker() + ai_response_body
+    final_text = f"{issue_analysis_marker()}\n{ai_response_body}"
 
     comments_url = issue["comments_url"]
     gh_client = GitHubClient(installation_id, APP_NAME, get_token_manager())
-    if action == "opened":
-        gh_comment = gh_client.post_comment(comments_url, final_text)
-    else:
-        gh_comment = gh_client.patch_comment(comments_url, final_text, issue_analysis_marker())
+    gh_comment_data = gh_client.upsert_comment(comments_url, final_text, issue_analysis_marker())
+    if not gh_comment_data:
+        msg = f"Failed to post GitHub comment for issue {issue_body}"
+        logger.error(msg)
+        raise RuntimeError(msg)
 
-    if not gh_comment:
-        logger.error("Failed to post/patch GitHub comment for issue #%s", issue["number"])
-        return
-
+    gh_comment, comment_action = gh_comment_data
     gh_comment = gh_comment.json()
-    logger.info("Posted AI response to issue #%s in %s", issue["number"], repo.full_name)
+    logger.info(
+        "%s AI response to issue #%s in %s",
+        "Patched" if comment_action == "patched" else "Posted",
+        issue["number"],
+        repo.full_name,
+    )
 
     AibotComment.objects.create(
         installation=installation,
@@ -410,6 +427,7 @@ def process_issue_task(
         issue_number=issue["number"],
         comment_id=gh_comment["id"],
         comment_url=gh_comment["html_url"],
+        comment_action=comment_action,
         trigger_event=f"issues.{action}",
         triggered_by_username=sender_login,
         trigger_comment_body=issue_body,

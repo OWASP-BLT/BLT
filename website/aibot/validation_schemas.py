@@ -156,11 +156,12 @@ PR_SCHEMA = {
 PUSH_SCHEMA = {
     "type": "object",
     "properties": {
-        "action": {"type": "string"},
         "installation": {
             "type": "object",
-            "properties": {"id": {"type": "integer"}, "app_slug": {"type": "string"}},
-            "required": ["id", "app_slug"],
+            "properties": {
+                "id": {"type": "integer"},
+            },
+            "required": ["id"],
         },
         "repository": {
             "type": "object",

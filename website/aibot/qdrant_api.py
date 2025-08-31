@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Tuple
 
 from django.conf import settings
 from qdrant_client.http import models
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import UpdateStatus
 from qdrant_client.models import FieldCondition, Filter, MatchValue, PointStruct
 from unidiff import PatchSet
@@ -21,32 +22,23 @@ from website.models import GithubAppInstallation, RepoState
 
 logger = logging.getLogger(__name__)
 
+QDRANT_VECTOR_SIZE = settings.QDRANT_VECTOR_SIZE
+
 
 def ensure_collection(qdrant_collection: str, qdrant_vector_size: int) -> None:
-    """
-    Ensure the Qdrant collection exists.
-
-    Checks if the specified Qdrant collection exists, and creates it with the given vector size
-    and cosine distance if it does not exist.
-    """
-    collections = [c.name for c in q_client.get_collections().collections]
-    if qdrant_collection in collections:
-        logger.debug("Qdrant collection '%s' already exists. Skipping creation.", qdrant_collection)
-        return
-
+    logger.debug("---------------- ENSURING COLLECTION %s -----------", qdrant_collection)
     try:
         q_client.create_collection(
             collection_name=qdrant_collection,
             vectors_config={"size": int(qdrant_vector_size), "distance": "Cosine"},
         )
-        logger.info(
-            "Created Qdrant collection '%s' with vector size %s",
-            qdrant_collection,
-            qdrant_vector_size,
-        )
-    except Exception as e:
-        logger.error("Failed to create Qdrant collection '%s'. Error: %s", qdrant_collection, str(e))
-        raise
+        logger.info("Created Qdrant collection '%s'", qdrant_collection)
+    except UnexpectedResponse as e:
+        if "already exists" in str(e):
+            logger.debug("Collection or alias '%s' already exists. Skipping creation.", qdrant_collection)
+        else:
+            logger.error("Failed to create Qdrant collection '%s'. Error: %s", qdrant_collection, str(e))
+            raise
 
 
 def q_delete_collection(qdrant_collection: str) -> bool:
@@ -134,8 +126,8 @@ def q_create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet, gh_cl
     temp_collection = f"temp_{sanitized_head_ref}_{pr_instance.number}"
 
     logger.debug("Ensuring source collection '%s' and temp collection '%s'", source_collection, temp_collection)
-    ensure_collection(source_collection, settings.QDRANT_VECTOR_SIZE)
-    ensure_collection(temp_collection, settings.QDRANT_VECTOR_SIZE)
+    ensure_collection(source_collection, QDRANT_VECTOR_SIZE)
+    ensure_collection(temp_collection, QDRANT_VECTOR_SIZE)
 
     for file in patch:
         if not file.is_modified_file:
@@ -263,7 +255,7 @@ def q_process_remote_repo(
     q_repo_name = sanitize_name(repo_full_name)
 
     qdrant_collection = q_get_collection_name(q_repo_name, repo_id)
-    ensure_collection(qdrant_collection, settings.QDRANT_VECTOR_SIZE)
+    ensure_collection(qdrant_collection, QDRANT_VECTOR_SIZE)
 
     valid_items = filter_files_to_process(
         tree_data["tree"],
@@ -374,39 +366,55 @@ def generate_and_store_embeddings(chunks: List[ChunkType], qdrant_collection: st
 
 def q_rename_collection_alias(old_name: str, new_name: str, repo_id: str) -> None:
     """
-    Rename a Qdrant collection alias using `update_collection_aliases`.
-    This does NOT rename the actual collection (which is immutable), but
-    changes the alias pointing to it.
-
+    Rename a Qdrant collection alias safely.
+    - Detects if `old_name` is an alias or a collection.
+    - Handles renaming even if the new name matches an existing alias or collection.
 
     Args:
-        old_name: The old full repo name (alias).
+        old_name: The old full repo name (alias or collection name).
         new_name: The new full repo name (alias).
         repo_id: The repository ID used to build collection name.
 
     Raises:
-        ValueError: If the target collection doesn't exist.
+        ValueError: If neither a collection nor alias for `old_name` exists.
     """
     old_q_name = q_get_collection_name(old_name, repo_id)
     new_q_name = q_get_collection_name(new_name, repo_id)
 
-    collections = [c.name for c in q_client.get_collections().collections]
-    if old_q_name not in collections:
-        raise ValueError(f"Collection '{old_q_name}' does not exist in Qdrant.")
+    logger.debug("RENAMING %s to %s", old_q_name, new_q_name)
+
+    collections = {c.name for c in q_client.get_collections().collections}
+    aliases_info = q_client.get_aliases().aliases
+    aliases = {alias.alias_name: alias.collection_name for alias in aliases_info}
+
+    if old_q_name in collections:
+        collection_name = old_q_name
+    elif old_q_name in aliases:
+        collection_name = aliases[old_q_name]
+    else:
+        raise ValueError(f"No collection or alias named '{old_q_name}' exists in Qdrant.")
+
+    ops = []
+
+    if new_q_name in aliases:
+        ops.append(models.DeleteAliasOperation(delete_alias=models.DeleteAlias(alias_name=new_q_name)))
+
+    if new_q_name == collection_name:
+        logger.info("New alias name '%s' is same as the collection; skipping alias creation.", new_q_name)
+        return
+
+    if old_q_name in aliases:
+        ops.append(models.DeleteAliasOperation(delete_alias=models.DeleteAlias(alias_name=old_q_name)))
+
+    ops.append(
+        models.CreateAliasOperation(
+            create_alias=models.CreateAlias(collection_name=collection_name, alias_name=new_q_name)
+        )
+    )
 
     try:
-        q_client.update_collection_aliases(
-            change_aliases_operations=[
-                models.DeleteAliasOperation(delete_alias=models.DeleteAlias(alias_name=old_q_name)),
-                models.CreateAliasOperation(
-                    create_alias=models.CreateAlias(
-                        collection_name=old_q_name,
-                        alias_name=new_q_name,
-                    )
-                ),
-            ]
-        )
-        logger.info("Renamed alias from '%s' to '%s' (collection: %s).", old_q_name, new_q_name, old_q_name)
+        q_client.update_collection_aliases(change_aliases_operations=ops)
+        logger.info("Renamed alias from '%s' to '%s' (collection: %s).", old_q_name, new_q_name, collection_name)
     except Exception as e:
         logger.error("Failed to rename Qdrant alias from '%s' to '%s': %s", old_q_name, new_q_name, e)
         raise
@@ -416,7 +424,7 @@ def q_process_changed_files(
     changed_files: List[Dict], repo_full_name: str, repo_id: str, gh_client: GitHubClient
 ) -> None:
     collection_name = q_get_collection_name(repo_full_name, repo_id)
-    ensure_collection(collection_name, settings.QDRANT_VECTOR_SIZE)
+    ensure_collection(collection_name, QDRANT_VECTOR_SIZE)
 
     relevant_files = [f for f in changed_files if f["status"] in ("added", "modified", "renamed")]
 

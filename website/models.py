@@ -2786,8 +2786,12 @@ class AibotComment(models.Model):
         null=True,
     )
     issue_number = models.BigIntegerField(help_text="Issue or PR number on GitHub")
-    comment_id = models.BigIntegerField(unique=True, null=True, blank=True)
+    comment_id = models.BigIntegerField(null=True, blank=True)
     comment_url = models.URLField(max_length=500, blank=True, null=True)
+    comment_action = models.CharField(
+        max_length=10, choices=[("posted", "Posted"), ("patched", "Patched")], default="posted"
+    )
+    revision = models.IntegerField(default=1)
     trigger_event = models.CharField(
         max_length=50, db_index=True, help_text="e.g., 'issue_comment.created', 'pull_request.opened'"
     )
@@ -2810,6 +2814,8 @@ class AibotComment(models.Model):
 
     def save(self, *args, **kwargs):
         self.total_tokens = self.prompt_tokens + self.completion_tokens
+        if self.pk and self.comment_action == "patched":
+            self.revision += 1
         super().save(*args, **kwargs)
 
 

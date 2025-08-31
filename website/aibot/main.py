@@ -148,7 +148,7 @@ def handle_installation_repositories_event(payload: Dict[str, Any]) -> JsonRespo
         APP_NAME,
         len(repos_removed),
     )
-    process_repos_removed_task.delay(installation_id, app_name, repos_removed)
+    process_repos_removed_task.delay(installation_id, APP_NAME, repos_removed)
 
     return JsonResponse({"status": "Repository information updated."})
 
@@ -198,12 +198,13 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
     validate(payload, PUSH_SCHEMA)
 
     installation_id = payload["installation"]["id"]
-    action = payload["action"]
     repo_data = payload["repository"]
+    repo_id = repo_data["id"]
     repo_full_name = repo_data["full_name"]
     base_commit_sha, head_commit_sha = payload["before"], payload["after"]
     sender_login = payload["sender"]["login"]
     event = "push"
+    action = event  # Push event doesn't have action field
 
     installation = get_installation_or_404(installation_id, sender_login, event)
     if not installation:
@@ -220,7 +221,7 @@ def handle_push_event(payload: Dict[str, Any]) -> JsonResponse:
         return JsonResponse({"error": f"Invalid repository state: {repo.state}"}, status=404)
 
     logger.info("Offloading process_push_task to Celery: installation_id=%s, repo_full_name=%s")
-    process_push_task.delay(installation_id, repo_full_name, base_commit_sha, head_commit_sha)
+    process_push_task.delay(installation_id, repo_id, repo_full_name, base_commit_sha, head_commit_sha)
 
     return JsonResponse({"success": "Processed push event successfully"})
 
@@ -233,11 +234,14 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     installation_id = installation_data["id"]
     repo_data = payload["repository"]
     repo_id = repo_data["id"]
+    repo_full_name = repo_data["full_name"]
+    pr_number = payload["number"]
     sender_login = payload["sender"]["login"]
     event = "pull_request"
+    is_draft = payload["pull_request"]["draft"]
 
-    if payload["pull_request"]["draft"]:
-        logger.debug("PR #%s is draft, not posting review.", payload["pull_request"]["id"])
+    if is_draft:
+        logger.debug("PR #%s is draft, not posting review.", pr_number)
         return JsonResponse({"status": "Ignored due to draft PR."}, status=404)
 
     installation = get_installation_or_404(installation_id, sender_login, event)
@@ -247,7 +251,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     if not validate_installation_state(installation, sender_login, event):
         return JsonResponse({"error": f"Invalid installation state: {installation.state}"})
 
-    repo = get_repo_or_404(repo_id, repo_data["full_name"], action, sender_login)
+    repo = get_repo_or_404(repo_id, repo_full_name, action, sender_login)
     if not repo:
         return JsonResponse({"error": "Repository not tracked"}, status=404)
 
@@ -256,18 +260,19 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
 
     if action in {
         "opened",
-        "reopened",
         "ready_for_review",
         "synchronize",
-    }:  # TODO: Remove reopened onc dev testing done
+    }:
         logger.info(
             "Offloading pr analysis task to Celery: installation_id=%s, repo_full_name=%s",
             installation_id,
-            repo_data["full_name"],
+            repo_full_name,
         )
         process_pr_task.delay(installation_id, repo_id, action, payload)
     elif action == "closed":
-        logger.debug("PR was closed: %s in %s", repo_data["pull_request"]["id"], repo_data["full_name"])
+        logger.debug("PR was closed: %s in %s", pr_number, repo_full_name)
+    else:
+        logger.debug("Ignoring unhandled PR action: %s for pr #%s in %s", action, pr_number, repo_full_name)
     return JsonResponse({"status": "PR event processed"})
 
 
@@ -396,6 +401,7 @@ def aibot_webhook_entrypoint(request: HttpRequest) -> JsonResponse:
 
     handler = get_handler(event_type)
     if handler:
+        logger.debug("Dispatching event '%s' to handler '%s'", event_type, handler.__name__)
         return handler(payload)
     else:
         logger.error("No handler found for event type %s", event_type)

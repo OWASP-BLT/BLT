@@ -120,10 +120,25 @@ class GitHubClient:
         before_sleep=before_sleep_log(logger, logging.INFO),
     )
     def _request(self, method: str, url: str, headers: Optional[Dict[str, str]] = None, **kwargs):
+        """
+        Perform an HTTP request with retries for transient errors and raise for all non-2xx responses.
+        Logs errors with full response details for easier debugging.
+        """
         final_headers = {**self._headers(), **(headers or {})}
+
         resp = requests.request(method, url, headers=final_headers, timeout=10, **kwargs)
+
         if resp.status_code in RETRY_HTTP_CODES:
+            logger.warning(
+                "Transient error from GitHub API: %s %s | Status: %s | Retrying...", method, url, resp.status_code
+            )
             resp.raise_for_status()
+
+        else:
+            logger.error(
+                "GitHub API request failed: %s %s | Status: %s | Response: %s", method, url, resp.status_code, resp.text
+            )
+
         return resp
 
     def get(self, url: str, **kwargs):
@@ -180,40 +195,29 @@ class GitHubClient:
             )
             return None
 
-    def post_comment(self, comments_url: str, comment_body: str) -> Optional[requests.Response]:
-        """Post a new comment to the specified URL."""
+    def upsert_comment(
+        self, comments_url: str, comment_body: str, comment_marker: Optional[str] = None
+    ) -> Optional[tuple[requests.Response, str]]:
         try:
-            resp = self.post(comments_url, json={"body": comment_body})
-            return resp
+            target_comment_url = None
+
+            if comment_marker:
+                resp = self.get(comments_url)
+                resp.raise_for_status()
+                comments = resp.json()
+                target_comment_url = next(
+                    (c["url"] for c in comments if comment_marker in c.get("body", "")),
+                    None,
+                )
+
+            if target_comment_url:
+                return self.patch(target_comment_url, json={"body": comment_body}), "patched"
+            else:
+                return self.post(comments_url, json={"body": comment_body}), "posted"
+
         except Exception as e:
             logger.error(
-                "Failed to post comment. Installation: %s, URL: %s, Error: %s",
-                self.installation_id,
-                comments_url,
-                str(e),
-            )
-            return None
-
-    def patch_comment(self, comments_url: str, comment_body: str, comment_marker: str) -> Optional[requests.Response]:
-        """Find an existing comment with marker and patch it."""
-        try:
-            resp = self.get(comments_url)
-            comments = resp.json()
-
-            target_comment_id = next(
-                (c["id"] for c in comments if comment_marker in c.get("body", "")),
-                None,
-            )
-            if not target_comment_id:
-                logger.warning("No comment found with marker=%s", comment_marker)
-                return None
-
-            patch_url = f"{comments_url}/{target_comment_id}"
-            resp = self.patch(patch_url, json={"body": comment_body})
-            return resp
-        except Exception as e:
-            logger.error(
-                "Failed to patch comment. Installation: %s, URL: %s, Marker: %s, Error: %s",
+                "Failed to upsert comment. Installation: %s, URL: %s, Marker: %s, Error: %s",
                 self.installation_id,
                 comments_url,
                 comment_marker,
