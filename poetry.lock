@@ -877,18 +877,18 @@ with-social = ["django-allauth (>=0.56.0,<0.58.0)"]
 
 [[package]]
 name = "django"
-version = "5.1.8"
+version = "5.2.6"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "Django-5.1.8-py3-none-any.whl", hash = "sha256:11b28fa4b00e59d0def004e9ee012fefbb1065a5beb39ee838983fd24493ad4f"},
-    {file = "Django-5.1.8.tar.gz", hash = "sha256:42e92a1dd2810072bcc40a39a212b693f94406d0ba0749e68eb642f31dc770b4"},
+    {file = "django-5.2.6-py3-none-any.whl", hash = "sha256:60549579b1174a304b77e24a93d8d9fafe6b6c03ac16311f3e25918ea5a20058"},
+    {file = "django-5.2.6.tar.gz", hash = "sha256:da5e00372763193d73cecbf71084a3848458cecf4cee36b9a1e8d318d114a87b"},
 ]
 
 [package.dependencies]
-asgiref = ">=3.8.1,<4"
+asgiref = ">=3.8.1"
 sqlparse = ">=0.3.1"
 tzdata = {version = "*", markers = "sys_platform == \"win32\""}
 
@@ -1322,7 +1322,6 @@ files = [
     {file = "faiss_cpu-1.11.0-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:72165263bbc3bf4026276b9df4227bb2871823b23af6546cd41a90bcd08d5f25"},
     {file = "faiss_cpu-1.11.0-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:760a4f0ce612c5ddaf4862d32ec13d5b8e609c983d391d419ea5ea50d5557dd9"},
     {file = "faiss_cpu-1.11.0-cp39-cp39-win_amd64.whl", hash = "sha256:a2ad3b2aadd490d15d2d19586679ad2f4e821c1a9597af8086ba543bef4d6e1f"},
-    {file = "faiss_cpu-1.11.0.tar.gz", hash = "sha256:44877b896a2b30a61e35ea4970d008e8822545cb340eca4eff223ac7f40a1db9"},
 ]
 
 [package.dependencies]
@@ -4106,4 +4105,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "fb19d27847ff638bf46ba41a64fe6bca674e20d00ded1ac3ca1fc5cbb6cf0ae5"
+content-hash = "f35453ce454b86ee701b1dadd7eb6a51c00d0d903b09ffc439a7d32e9bff2f21"
