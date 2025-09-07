@@ -54,7 +54,7 @@ def validate_github_request(request: HttpRequest) -> Tuple[bool, str]:
     return True, ""
 
 
-def sign_payload(secret: str, payload_body: bytes) -> str:
+def sign_payload(secret: str, payload_body: bytes) -> str | None:
     if not secret:
         logger.error("Webhook secret is required to sign payload")
         return None

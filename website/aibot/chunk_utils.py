@@ -21,10 +21,6 @@ CHUNK_OVERLAP = 200
 CHUNK_SIZE = 1000
 
 
-import math
-from typing import List
-
-
 def _split_chunk_lines(
     chunk: ChunkType, total_tokens: int, max_tokens: int = MAX_TOKENS, overlap: int = OVERLAP_LINES
 ) -> List[ChunkType]:
@@ -289,11 +285,6 @@ def chunk_json_file(content: str, file_path: str) -> List[ChunkType]:
         chunk["part_total"] = total
 
     return chunks
-
-
-import os
-from collections import defaultdict
-from typing import List
 
 
 def chunk_yaml_file(content: str, file_path: str) -> List[ChunkType]:
