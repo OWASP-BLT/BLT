@@ -27,7 +27,6 @@ EXTENSIONS_TO_PROCESS = {
     ".yaml",
     ".json",
     ".ini",
-    ".env",
     ".csv",
     ".xml",
     ".md",
@@ -59,6 +58,11 @@ SKIP_FILES = {
     ".coverage",
     "coverage.xml",
     ".yarn.lock",
+    ".env",
+    ".env.local",
+    ".env.development",
+    ".env.production",
+    ".env.test",
 }
 
 # Directories to skip entirely to avoid large, irrelevant content.

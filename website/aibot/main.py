@@ -276,7 +276,7 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
     return JsonResponse({"status": "PR event processed"})
 
 
-def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
+def handle_issue_comment_event(payload: Dict[str, Any]) -> JsonResponse:
     validate(payload, ISSUE_COMMENT_SCHEMA)
 
     installation_id = payload["installation"]["id"]
@@ -284,7 +284,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
     repo_id = repo_data["id"]
     sender_login = payload["sender"]["login"]
 
-    if sender_login == f"{APP_NAME}[bot]":
+    if sender_login.lower() == f"{APP_NAME}[bot]".lower():
         logger.debug("This event is by blt-aibot's comment. Ignoring")
         return JsonResponse({"status": "Ignoring blt-aibot's own comment"})
 
@@ -310,7 +310,7 @@ def handle_issue_comment_event(payload: Dict[str, Any]) -> None:
 
     bot_name = APP_NAME.lower()
     mention_string = f"@{bot_name}"
-    if mention_string not in comment_body:
+    if mention_string not in (comment_body or "").lower():
         logger.debug("%s was not mentioned in comment. Ignoring", bot_name)
         return JsonResponse({"status": f"{bot_name} was not mentioned in comment. Ignoring"})
 
@@ -382,15 +382,7 @@ def aibot_webhook_entrypoint(request: HttpRequest) -> JsonResponse:
         logger.error("Error in validating github request: %s", err)
         return JsonResponse({"error": err})
 
-    payload = parse_json(request.body)
-    if not payload:
-        logger.debug("Failed to parse payload. Raw body: %s", request.body.decode("utf-8"))
-        return JsonResponse({"error": "Unable to parse payload."})
-
     event_type = request.headers["X-GitHub-Event"]
-
-    logger.info("Received event: %s", event_type)
-    logger.debug("Received payload: %s", json.dumps(payload, indent=2, sort_keys=True))
 
     signature_header = request.headers.get("X-Hub-Signature-256")
     webhook_secret = settings.GITHUB_AIBOT_WEBHOOK_SECRET
@@ -398,6 +390,14 @@ def aibot_webhook_entrypoint(request: HttpRequest) -> JsonResponse:
     if not valid_sig:
         logger.error("Error in validating github request: %s", err_sig)
         return JsonResponse({"error": err_sig})
+
+    payload = parse_json(request.body)
+    if not payload:
+        logger.debug("Failed to parse payload. Raw body: %s", request.body.decode("utf-8"))
+        return JsonResponse({"error": "Unable to parse payload."})
+
+    logger.info("Received event: %s", event_type)
+    logger.debug("Received payload: %s", json.dumps(payload, indent=2, sort_keys=True))
 
     handler = get_handler(event_type)
     if handler:

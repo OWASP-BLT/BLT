@@ -3020,8 +3020,9 @@ class GithubAppRepo(models.Model):
     @property
     def qdrant_collection_name(self) -> str:
         # NOTE: Must stay in sync with `process_remote_repo` in `qdrant_utils`.
-        # The collection name format must match exactly for consistent indexing.
-        return f"aibot-{self.full_name}-{self.repo_id}"
+        # Use a filesystem/URL-safe token: owner__repo, lowercase.
+        safe_full = self.full_name.replace("/", "__").lower()
+        return f"aibot-{safe_full}-{self.repo_id}"
 
 
 class AibotComment(models.Model):
@@ -3064,7 +3065,8 @@ class AibotComment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"AI → {self.repository.full_name}#{self.issue_number} ({self.model_used})"
+        repo = self.repository.full_name if self.repository else "unknown-repo"
+        return f"AI → {repo}#{self.issue_number} ({self.model_used})"
 
     def save(self, *args, **kwargs):
         self.total_tokens = self.prompt_tokens + self.completion_tokens

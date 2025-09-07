@@ -6,7 +6,7 @@ ISSUE_COMMENT_SCHEMA = {
             "type": "object",
             "properties": {
                 "body": {"type": "string", "minLength": 1},
-                "user": {"type": "object", "properties": {"login": {"type": "string"}}, "required": ["login", "type"]},
+                "user": {"type": "object", "properties": {"login": {"type": "string"}}, "required": ["login"]},
             },
             "required": ["body", "user"],
         },
@@ -57,6 +57,7 @@ INSTALLATION_SCHEMA = {
 INSTALLATION_REPOSITORIES_SCHEMA = {
     "type": "object",
     "properties": {
+        "action": {"type": "string", "enum": ["added", "removed"]},
         "installation": {
             "type": "object",
             "properties": {"id": {"type": "integer"}, "app_slug": {"type": "string"}},
@@ -92,7 +93,7 @@ INSTALLATION_REPOSITORIES_SCHEMA = {
             "default": [],
         },
     },
-    "required": ["installation", "sender", "repositories_added", "repositories_removed"],
+    "required": ["action", "installation", "sender", "repositories_added", "repositories_removed"],
 }
 
 

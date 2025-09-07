@@ -19,6 +19,8 @@ def generate_gemini_response(prompt: str, model: str = settings.GEMINI_GENERATIO
         raise ValueError(f"Invalid prompt provided: {prompt}. Prompt must be a non-empty string.")
 
     try:
+        if not model:
+            raise ValueError("GEMINI_GENERATION_MODEL setting is not configured.")
         response = g_client.models.generate_content(
             model=model,
             contents=prompt,

@@ -70,6 +70,9 @@ class GitHubTokenManager:
 
         if response.status_code in RETRY_HTTP_CODES:
             response.raise_for_status()
+        elif response.status_code >= 400:
+            logger.error("Failed to fetch installation token: %s %s", response.status_code, response.text)
+            response.raise_for_status()
 
         data = response.json()
 
@@ -140,9 +143,8 @@ class GitHubClient:
             resp.raise_for_status()
 
         elif resp.status_code >= 400:
-            logger.error(
-                "GitHub API request failed: %s %s | Status: %s | Response: %s", method, url, resp.status_code, resp.text
-            )
+            logger.error("GitHub API request failed: %s %s | Status: %s", method, url, resp.status_code)
+            logger.debug("GitHub API error response: %s", resp.text)
             resp.raise_for_status()
 
         else:

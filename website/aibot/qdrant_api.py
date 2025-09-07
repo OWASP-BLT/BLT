@@ -146,7 +146,8 @@ def q_create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet, gh_cl
             continue
 
         chunks: List[ChunkType] = chunk_file(content, fpath)
-        logger.debug("Chunked file '%s' into %d chunks", fpath, len(chunks))
+        chunks = postprocess_chunks(chunks)
+        logger.debug("Chunked file '%s' into %d chunks (postprocessed)", fpath, len(chunks))
 
         for chunk in chunks:
             try:
@@ -168,12 +169,12 @@ def q_create_temp_pr_collection(pr_instance: PullRequest, patch: PatchSet, gh_cl
 def q_get_similar_merged_chunks(
     source_collection: str,
     temp_collection: str,
-    query: str,
+    vector_query: str,
     k: int,
     rename_mappings: Dict[str, str],
 ) -> List[ChunkType]:
-    main_points = q_client.query_points(collection_name=source_collection, query=query, limit=k)
-    temp_points = q_client.query_points(collection_name=temp_collection, query=query, limit=k)
+    main_points = q_client.query_points(collection_name=source_collection, query=vector_query, limit=k)
+    temp_points = q_client.query_points(collection_name=temp_collection, query=vector_query, limit=k)
 
     relevant_chunks: List[ChunkType] = []
 
@@ -250,7 +251,7 @@ def q_process_remote_repo(
             repo_full_name,
             target_branch,
         )
-        raise ValueError("Invalid tree data received from GitHub API: %s", json.dumps(tree_data, indent=2))
+        raise ValueError(f"Invalid tree data received from GitHub API: {json.dumps(tree_data, indent=2)}")
 
     q_repo_name = sanitize_name(repo_full_name)
 
@@ -358,7 +359,7 @@ def filter_files_to_process(
 def generate_and_store_embeddings(chunks: List[ChunkType], qdrant_collection: str):
     """Generates embeddings and stores them in Qdrant."""
     for chunk in chunks:
-        embedding = generate_embedding(chunk["content"], EmbeddingTaskType.RETRIEVAL_QUERY)
+        embedding = generate_embedding(chunk["content"], EmbeddingTaskType.RETRIEVAL_DOCUMENT)
         if embedding:
             logger.info("Upserting chunk from %s", chunk["file_path"])
             upsert_to_qdrant(qdrant_collection, chunk, embedding)
@@ -464,7 +465,7 @@ def q_process_changed_files(
         delete_by_path(fpath, "existing")
 
         content = gh_client.fetch_file_content(repo_full_name, fpath, "main")
-        logger.debug("Received content: %s", content)
+        logger.debug("Fetched content for %s (%d chars)", fpath, len(content))
         if not content:
             logger.warning("Could not fetch content for file: %s", fpath)
             continue

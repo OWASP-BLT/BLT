@@ -37,10 +37,12 @@ def _split_chunk_lines(
 
     for part_idx in range(n_parts):
         start_idx = part_idx * lines_per_part
-
         if part_idx != 0:
-            start_idx -= overlap
+            start_idx = max(0, start_idx - overlap)
+        if start_idx >= total_code_lines:
+            break
         end_idx = min(start_idx + lines_per_part + overlap, total_code_lines)
+
         snippet = "".join(code_lines[start_idx:end_idx])
 
         if not snippet.strip():
@@ -54,7 +56,7 @@ def _split_chunk_lines(
                 chunk_type=chunk["chunk_type"],
                 content=snippet,
                 start_line=chunk["start_line"] + start_idx + 1,
-                end_line=chunk["start_line"] + end_idx,
+                end_line=chunk["start_line"] + end_idx - 1,
                 part_index=part_idx + 1,
                 part_total=n_parts,
             )
@@ -116,8 +118,8 @@ def cvt_yml_to_json(content: str, file_path: str) -> str:
         yml = yaml.safe_load(content)
         yml_json = json.dumps(yml, indent=2)
         return yml_json
-    except:
-        print("Error converting yaml file to json: ", file_path)
+    except yaml.YAMLError as e:
+        logger.warning("Error converting YAML to JSON for %s: %s", file_path, e)
     return ""
 
 
@@ -249,7 +251,7 @@ def chunk_json_file(content: str, file_path: str) -> List[ChunkType]:
     start_line = None
 
     file_name = os.path.basename(file_path)
-    file_ext = os.path.splitext(file_name)[1]
+    file_ext = os.path.splitext(file_name)[1].lower()
 
     for i, line in enumerate(lines, start=1):
         open_count = line.count("{")
@@ -473,7 +475,8 @@ def chunk_settings_file(content: str, file_path: str) -> List[ChunkType]:
         tree = ast.parse(content)
     except SyntaxError as e:
         logger.warning("Syntax error in %s: %s", file_path, e)
-        return []
+        logger.warning("Defaulting to text chunker.")
+        return chunk_text_file(content, file_path)
     lines = content.splitlines()
 
     imports, import_lines = extract_imports(tree, lines, file_path)

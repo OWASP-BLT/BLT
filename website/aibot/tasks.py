@@ -170,32 +170,39 @@ def process_pr_task(installation_id: str, repo_id: str, action: str, payload: Di
 
     snippets: List[ChunkType] = []
     analysis_output: str = ""
+    temp_collection = None
 
     if not vector_query:
         logger.warning("Embedding generation failed for query: %s", combined_query)
     else:
-        source_collection, temp_collection = q_create_temp_pr_collection(pr_instance, patch, gh_client)
-        logger.info("Temporary collection created: %s", temp_collection)
+        try:
+            source_collection, temp_collection = q_create_temp_pr_collection(pr_instance, patch, gh_client)
+            logger.info("Temporary collection created: %s", temp_collection)
 
-        rename_mappings = {}
-        for file in patch:
-            rename_mappings[file.source_file] = file.target_file
+            rename_mappings = {file.source_file: file.target_file for file in patch}
 
-        if source_collection and temp_collection:
-            similar_chunks = q_get_similar_merged_chunks(
-                source_collection, temp_collection, vector_query, k, rename_mappings
-            )
-            snippets = format_chunks_to_string(similar_chunks)
-            py_chunks: ChunkType = [chunk for chunk in similar_chunks if chunk["file_ext"] == ".py"]
-            changed_files = {
-                file.path
-                for file in patch
-                if not file.is_binary_file and (file.is_added_file or file.is_removed_file or file.is_modified_file)
-            }
-            analyzable_py_chunks: ChunkType = [chunk for chunk in py_chunks if chunk["file_path"] in changed_files]
-            analysis_output = analyze_code_ruff_bandit(analyzable_py_chunks)
-        else:
-            logger.warning("Missing collection names: source=%s, temp=%s", source_collection, temp_collection)
+            if source_collection and temp_collection:
+                similar_chunks = q_get_similar_merged_chunks(
+                    source_collection, temp_collection, vector_query, k, rename_mappings
+                )
+                snippets = format_chunks_to_string(similar_chunks)
+
+                py_chunks: ChunkType = [chunk for chunk in similar_chunks if chunk["file_ext"] == ".py"]
+                changed_files = {
+                    file.path
+                    for file in patch
+                    if not file.is_binary_file and (file.is_added_file or file.is_removed_file or file.is_modified_file)
+                }
+                analyzable_py_chunks: ChunkType = [chunk for chunk in py_chunks if chunk["file_path"] in changed_files]
+                analysis_output = analyze_code_ruff_bandit(analyzable_py_chunks)
+            else:
+                logger.warning("Missing collection names: source=%s, temp=%s", source_collection, temp_collection)
+        finally:
+            if temp_collection:
+                try:
+                    q_delete_collection(temp_collection)
+                except Exception:
+                    logger.warning("Failed to delete temporary collection %s", temp_collection, exc_info=True)
 
     NOT_PROVIDED = "Not provided"
     prompt = PR_REVIEWER.format(
@@ -207,7 +214,6 @@ def process_pr_task(installation_id: str, repo_id: str, action: str, payload: Di
     )
 
     prompt_with_guardrail = f"{GUARDRAIL} \n {prompt}"
-
     logger.debug("Full prompt for review: \n %s", prompt_with_guardrail)
 
     bot_response_raw = generate_gemini_response(prompt_with_guardrail)
@@ -234,7 +240,6 @@ def process_pr_task(installation_id: str, repo_id: str, action: str, payload: Di
         raise RuntimeError(msg)
 
     gh_comment = gh_comment.json()
-    q_delete_collection(temp_collection)
 
     issue_data_for_comment = payload["pull_request"]
     AibotComment.objects.create(
@@ -299,10 +304,13 @@ def process_issue_comment_task(installation_id: str, repo_id: str, issue: Dict[s
     k = conversation_query_json["k"]
 
     vector_query = generate_embedding(query, EmbeddingTaskType.RETRIEVAL_QUERY)
-
-    semantically_relevant_chunks: ChunkType = q_get_similar_chunks(
-        q_get_collection_name(repo.full_name, repo.repo_id), vector_query, k
-    )
+    if not vector_query:
+        logger.warning("Embedding generation failed; skipping semantic retrieval")
+        semantically_relevant_chunks = []
+    else:
+        semantically_relevant_chunks: ChunkType = q_get_similar_chunks(
+            q_get_collection_name(repo.full_name, repo.repo_id), vector_query, k
+        )
 
     snippets = format_chunks_to_string(semantically_relevant_chunks)
 
@@ -382,9 +390,13 @@ def process_issue_task(
     k = issue_query_json["k"]
 
     vector_query = generate_embedding(query, EmbeddingTaskType.RETRIEVAL_QUERY)
-    semantically_relevant_chunks: ChunkType = q_get_similar_chunks(
-        q_get_collection_name(repo.full_name, repo.repo_id), vector_query, k
-    )
+    if not vector_query:
+        logger.warning("Embedding generation failed; skipping semantic retrieval")
+        semantically_relevant_chunks = []
+    else:
+        semantically_relevant_chunks: ChunkType = q_get_similar_chunks(
+            q_get_collection_name(repo.full_name, repo.repo_id), vector_query, k
+        )
 
     snippets = format_chunks_to_string(semantically_relevant_chunks)
 

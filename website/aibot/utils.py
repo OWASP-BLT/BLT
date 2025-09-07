@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 from typing import Any, Dict, Tuple
@@ -166,65 +167,68 @@ def analyze_code_ruff_bandit(chunks: ChunkType):
     Analyze Python code string with Bandit and Ruff,
     return a clean, natural-language report for LLM consumption.
     """
-    for chunk in chunks:
-        if chunk["file_ext"] != ".py":
-            logger.debug("Received a non python file for static analysis. Ignoring")
-            return
+    py_chunks = [c for c in chunks if c.get("file_ext") == ".py"]
+    if not py_chunks:
+        return
+    if not shutil.which("bandit") or not shutil.which("ruff"):
+        logger.warning("Bandit or Ruff not installed; skipping static analysis")
+        return
+    report_lines = []
+
+    for chunk in py_chunks:
         code_string = chunk["content"]
         filename = chunk.get("file") or chunk.get("file_path")
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmpfile:
-            tmpfile.write(code_string)
-            temp_file_path = tmpfile.name
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmpfile:
+        tmpfile.write(code_string)
+        temp_file_path = tmpfile.name
 
+    try:
+        bandit_result = subprocess.run(
+            ["bandit", "-r", temp_file_path, "--format", "json"], capture_output=True, text=True, timeout=60
+        )
         try:
-            bandit_result = subprocess.run(
-                ["bandit", "-r", temp_file_path, "--format", "json"], capture_output=True, text=True
-            )
-            try:
-                bandit_data = json.loads(bandit_result.stdout)
-                bandit_issues = bandit_data.get("results", [])
-            except json.JSONDecodeError:
-                bandit_issues = []
-                logger.warning("Warning: Failed to parse Bandit output. Received: %s", bandit_result)
+            bandit_data = json.loads(bandit_result.stdout)
+            bandit_issues = bandit_data.get("results", [])
+        except json.JSONDecodeError:
+            bandit_issues = []
+            logger.warning("Warning: Failed to parse Bandit output. Received: %s", bandit_result)
 
-            ruff_result = subprocess.run(
-                ["ruff", "check", temp_file_path, "--output-format", "json"], capture_output=True, text=True
-            )
-            try:
-                ruff_issues = json.loads(ruff_result.stdout)
-            except json.JSONDecodeError:
-                ruff_issues = []
-                logger.warning("Warning: Failed to parse Ruff output. Received: %s", ruff_result)
+        ruff_result = subprocess.run(
+            ["ruff", "check", temp_file_path, "--output-format", "json"], capture_output=True, text=True, timeout=60
+        )
+        try:
+            ruff_issues = json.loads(ruff_result.stdout)
+        except json.JSONDecodeError:
+            ruff_issues = []
+            logger.warning("Warning: Failed to parse Ruff output. Received: %s", ruff_result)
 
-            report_lines = []
-            if bandit_issues or ruff_issues:
-                report_lines.append(f"File: `{filename}`\n")
+        if bandit_issues or ruff_issues:
+            report_lines.append(f"File: `{filename}`\n")
 
-            if bandit_issues:
-                report_lines.append("Security Issues (Bandit)")
-                for issue in bandit_issues:
-                    line = issue.get("line_number", "?")
-                    test_name = issue.get("test_name", "Unknown issue").replace("_", " ").title()
-                    severity = issue.get("issue_severity", "Unknown").capitalize()
-                    snippet = issue.get("code", "").strip() or "N/A"
-                    report_lines.append(f"- Line {line}: {test_name} — {severity} severity.")
-                    if snippet != "N/A":
-                        report_lines.append(f"  - Code: `{snippet}`")
-                    report_lines.append("\n")
+        if bandit_issues:
+            report_lines.append("Security Issues (Bandit)")
+            for issue in bandit_issues:
+                line = issue.get("line_number", "?")
+                test_name = issue.get("test_name", "Unknown issue").replace("_", " ").title()
+                severity = issue.get("issue_severity", "Unknown").capitalize()
+                snippet = issue.get("code", "").strip() or "N/A"
+                report_lines.append(f"- Line {line}: {test_name} — {severity} severity.")
+                if snippet != "N/A":
+                    report_lines.append(f"  - Code: `{snippet}`")
+                report_lines.append("\n")
 
-            if ruff_issues:
-                report_lines.append("Code Quality Issues (Ruff)")
-                for issue in ruff_issues:
-                    line = issue.get("location", {}).get("row", "?")
-                    code = issue.get("code", "")
-                    message = issue.get("message", "")
-                    report_lines.append(f"- Line {line}: {message} (`{code}`)")
+        if ruff_issues:
+            report_lines.append("Code Quality Issues (Ruff)")
+            for issue in ruff_issues:
+                line = issue.get("location", {}).get("row", "?")
+                code = issue.get("code", "")
+                message = issue.get("message", "")
+                report_lines.append(f"- Line {line}: {message} (`{code}`)")
 
-            return "\n".join(report_lines)
-
-        finally:
-            os.unlink(temp_file_path)
+        return "\n".join(report_lines) if report_lines else None
+    finally:
+        os.unlink(temp_file_path)
 
 
 def should_skip_file(file_path: str, keep_binary: bool = False) -> bool:

@@ -41,9 +41,9 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 
-QDRANT_HOST = os.environ.get("QDRANT_HOST")
-QDRANT_VECTOR_SIZE = os.environ.get("QDRANT_VECTOR_SIZE")
-QDRANT_HTTP_PORT = os.environ.get("QDRANT_HTTP_PORT")
+QDRANT_HOST = os.environ.get("QDRANT_HOST", "qdrant")
+QDRANT_VECTOR_SIZE = int(os.environ.get("QDRANT_VECTOR_SIZE", "768"))
+QDRANT_HTTP_PORT = int(os.environ.get("QDRANT_HTTP_PORT", "6333"))
 
 PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
