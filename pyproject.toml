@@ -18,7 +18,7 @@ django-import-export = "^4.3.7"
 django-annoying = "^0.10.7"
 dj-rest-auth = "^5.0.2"
 user-agents = "^2.2.0"
-whitenoise = "^6.9.0"
+whitenoise = "^6.10.0"
 
 pylibmc = "^1.6.1"
 psycopg2-binary = "^2.9.10"
