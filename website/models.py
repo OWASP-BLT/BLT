@@ -975,6 +975,17 @@ class Monitor(models.Model):
 
 
 class Bid(models.Model):
+    BID_STATUS_CHOICES = [
+        ('Open', 'Open'),
+        ('Accepted', 'Accepted'), 
+        ('Funded', 'Funded'),
+        ('InProgress', 'In Progress'),
+        ('Submitted', 'Submitted'),
+        ('Completed', 'Completed'),
+        ('Disputed', 'Disputed'),
+        ('Cancelled', 'Cancelled'),
+    ]
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     github_username = models.CharField(max_length=100, blank=True, null=True)
     # link this to our issue model
@@ -982,9 +993,109 @@ class Bid(models.Model):
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(default=timezone.now)
     amount_bch = models.DecimalField(max_digits=16, decimal_places=8, default=0)
-    status = models.CharField(default="Open", max_length=10)
+    status = models.CharField(default="Open", max_length=15, choices=BID_STATUS_CHOICES)
     pr_link = models.URLField(blank=True, null=True)
     bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
+    
+    # Escrow/transaction management
+    escrow_address = models.CharField(max_length=100, blank=True, null=True, help_text="Generated BCH address for escrow")
+    funding_tx_hash = models.CharField(max_length=64, blank=True, null=True, help_text="Transaction hash when repo owner funds the bid")
+    release_tx_hash = models.CharField(max_length=64, blank=True, null=True, help_text="Transaction hash when funds are released to coder")
+    funded_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    
+    # Repository owner who accepts/funds the bid  
+    accepted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='accepted_bids')
+    accepted_at = models.DateTimeField(blank=True, null=True)
+    
+    # Dynamic image URL for GitHub embedding
+    dynamic_image_token = models.CharField(max_length=32, blank=True, null=True, help_text="Unique token for dynamic image")
+    
+    # PR review and completion
+    pr_reviewed_at = models.DateTimeField(blank=True, null=True)
+    review_comments = models.TextField(blank=True, null=True)
+    
+    def get_highest_bid_for_issue(self):
+        """Get the highest bid amount for the same issue"""
+        return Bid.objects.filter(issue_url=self.issue_url).aggregate(
+            models.Max('amount_bch')
+        )['amount_bch__max'] or 0
+    
+    def generate_escrow_address(self):
+        """Generate a unique BCH address for escrow (placeholder implementation)"""
+        import uuid
+        # In production, this would generate a real BCH address
+        self.escrow_address = f"bitcoincash:q{uuid.uuid4().hex[:32]}"
+        return self.escrow_address
+    
+    def generate_dynamic_image_token(self):
+        """Generate unique token for dynamic image"""
+        import uuid
+        self.dynamic_image_token = uuid.uuid4().hex[:32]
+        return self.dynamic_image_token
+    
+    def get_dynamic_image_url(self):
+        """Get URL for dynamic image to embed in GitHub"""
+        if not self.dynamic_image_token:
+            self.generate_dynamic_image_token()
+            self.save()
+        return f"https://blt.owasp.org/bid/image/{self.dynamic_image_token}.png"
+    
+    def get_github_snippet(self):
+        """Get markdown snippet to embed in GitHub issue"""
+        image_url = self.get_dynamic_image_url()
+        return f"![Bid Status]({image_url})"
+
+    def __str__(self):
+        return f"{self.github_username or self.user} - {self.amount_bch} BCH on {self.issue_url}"
+
+
+class BidTransaction(models.Model):
+    """Track Bitcoin Cash transactions for bids"""
+    TRANSACTION_TYPES = [
+        ('funding', 'Funding'),
+        ('release', 'Release'),
+        ('refund', 'Refund'),
+    ]
+    
+    TRANSACTION_STATUS = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('failed', 'Failed'),
+    ]
+    
+    bid = models.ForeignKey(Bid, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    tx_hash = models.CharField(max_length=64, unique=True)
+    from_address = models.CharField(max_length=100)
+    to_address = models.CharField(max_length=100)
+    amount_bch = models.DecimalField(max_digits=16, decimal_places=8)
+    status = models.CharField(max_length=10, choices=TRANSACTION_STATUS, default='pending')
+    confirmations = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.transaction_type} - {self.amount_bch} BCH - {self.status}"
+
+
+class RepoOwner(models.Model):
+    """Repository owners who can accept and fund bids"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    github_username = models.CharField(max_length=100)
+    verified_repos = models.JSONField(default=list, help_text="List of repository URLs this owner has access to")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.github_username} (Repository Owner)"
+    
+    def can_manage_repo(self, repo_url):
+        """Check if this repo owner can manage the given repository"""
+        # Simple check - in production this would verify against GitHub API
+        for repo in self.verified_repos:
+            if repo in repo_url or repo_url in repo:
+                return True
+        return False
 
     # def save(self, *args, **kwargs):
     #     if (

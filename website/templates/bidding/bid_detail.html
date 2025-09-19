@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}
+    Bid #{{ bid.id }} - {{ bid.amount_bch }} BCH - OWASP BLT
+{% endblock title %}
+
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    
+    <div class="min-h-screen bg-gray-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Header -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                            <i class="fas fa-gavel text-[#e74c3c]"></i>
+                            Bid #{{ bid.id }}
+                        </h1>
+                        <p class="text-gray-600 mt-2">{{ bid.amount_bch }} BCH bid on GitHub issue</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-4 py-2 rounded-full text-sm font-semibold
+                            {% if bid.status == 'Open' %}bg-green-100 text-green-800
+                            {% elif bid.status == 'Accepted' %}bg-blue-100 text-blue-800
+                            {% elif bid.status == 'Funded' %}bg-purple-100 text-purple-800
+                            {% elif bid.status == 'Submitted' %}bg-yellow-100 text-yellow-800
+                            {% elif bid.status == 'Completed' %}bg-emerald-100 text-emerald-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ bid.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Content -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Bid Details Card -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-info-circle text-[#e74c3c]"></i>
+                            Bid Details
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Amount</label>
+                                <p class="text-2xl font-bold text-[#e74c3c]">{{ bid.amount_bch }} BCH</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Bidder</label>
+                                <p class="text-lg">
+                                    {% if bid.user %}
+                                        <a href="{{ bid.user.get_absolute_url }}" class="text-blue-600 hover:underline">
+                                            {{ bid.user.username }}
+                                        </a>
+                                    {% else %}
+                                        {{ bid.github_username }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Created</label>
+                                <p class="text-gray-900">{{ bid.created|date:"M j, Y g:i A" }}</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Last Modified</label>
+                                <p class="text-gray-900">{{ bid.modified|date:"M j, Y g:i A" }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">GitHub Issue</label>
+                            <a href="{{ bid.issue_url }}" target="_blank" class="text-blue-600 hover:underline break-all">
+                                {{ bid.issue_url }}
+                            </a>
+                        </div>
+
+                        {% if bid.bch_address %}
+                        <div class="mt-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">BCH Address</label>
+                            <code class="text-sm bg-gray-100 p-2 rounded break-all">{{ bid.bch_address }}</code>
+                        </div>
+                        {% endif %}
+
+                        {% if bid.pr_link %}
+                        <div class="mt-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Pull Request</label>
+                            <a href="{{ bid.pr_link }}" target="_blank" class="text-blue-600 hover:underline break-all">
+                                {{ bid.pr_link }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Escrow & Transaction Details -->
+                    {% if bid.escrow_address or bid.funding_tx_hash or bid.release_tx_hash %}
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-shield-alt text-green-600"></i>
+                            Escrow & Transactions
+                        </h2>
+                        
+                        {% if bid.escrow_address %}
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Escrow Address</label>
+                            <code class="text-sm bg-gray-100 p-3 rounded block break-all">{{ bid.escrow_address }}</code>
+                        </div>
+                        {% endif %}
+
+                        {% if bid.funding_tx_hash %}
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Funding Transaction</label>
+                            <code class="text-sm bg-blue-50 p-3 rounded block break-all">{{ bid.funding_tx_hash }}</code>
+                            {% if bid.funded_at %}
+                            <p class="text-sm text-gray-500 mt-1">Funded on {{ bid.funded_at|date:"M j, Y g:i A" }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if bid.release_tx_hash %}
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Release Transaction</label>
+                            <code class="text-sm bg-green-50 p-3 rounded block break-all">{{ bid.release_tx_hash }}</code>
+                            {% if bid.completed_at %}
+                            <p class="text-sm text-gray-500 mt-1">Completed on {{ bid.completed_at|date:"M j, Y g:i A" }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Transaction History -->
+                    {% if transactions %}
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-history text-blue-600"></i>
+                            Transaction History
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            {% for transaction in transactions %}
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold text-gray-900 capitalize">{{ transaction.transaction_type }}</span>
+                                    <span class="px-2 py-1 text-xs rounded-full
+                                        {% if transaction.status == 'confirmed' %}bg-green-100 text-green-800
+                                        {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ transaction.status|title }}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <p><strong>Amount:</strong> {{ transaction.amount_bch }} BCH</p>
+                                    <p><strong>From:</strong> <code>{{ transaction.from_address }}</code></p>
+                                    <p><strong>To:</strong> <code>{{ transaction.to_address }}</code></p>
+                                    <p><strong>TX Hash:</strong> <code>{{ transaction.tx_hash }}</code></p>
+                                    <p><strong>Date:</strong> {{ transaction.created_at|date:"M j, Y g:i A" }}</p>
+                                    {% if transaction.confirmations > 0 %}
+                                    <p><strong>Confirmations:</strong> {{ transaction.confirmations }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Actions Sidebar -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-lg p-6 sticky top-8">
+                        <h3 class="text-lg font-bold mb-4">Actions</h3>
+                        
+                        {% if can_accept %}
+                        <a href="{% url 'accept_bid' bid.id %}" 
+                           class="w-full bg-[#e74c3c] text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition-colors mb-3 block text-center">
+                            <i class="fas fa-check mr-2"></i>
+                            Accept Bid
+                        </a>
+                        {% endif %}
+
+                        {% if can_fund %}
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 mb-3">Send {{ bid.amount_bch }} BCH to:</p>
+                            <code class="text-xs bg-gray-100 p-2 rounded block break-all mb-3">{{ bid.escrow_address }}</code>
+                            
+                            <form method="post" action="{% url 'fund_bid' bid.id %}">
+                                {% csrf_token %}
+                                <input type="text" name="tx_hash" placeholder="Transaction Hash" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3" required>
+                                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="fas fa-coins mr-2"></i>
+                                    Confirm Funding
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+
+                        {% if can_complete %}
+                        <form method="post" action="{% url 'complete_bid' bid.id %}">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors mb-3"
+                                    onclick="return confirm('Are you sure you want to complete this bid and release the funds?')">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Complete & Release Funds
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <!-- Dynamic Image Preview -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-semibold mb-3">Dynamic Badge</h4>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <img src="{{ bid.get_dynamic_image_url }}" alt="Dynamic Bid Status" class="w-full rounded">
+                            </div>
+                            <div class="mt-3">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Markdown to embed:</label>
+                                <textarea readonly class="w-full text-xs bg-gray-100 p-2 rounded border" rows="2">{{ bid.get_github_snippet }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Quick Links -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-semibold mb-3">Quick Links</h4>
+                            <div class="space-y-2">
+                                <a href="{{ bid.issue_url }}" target="_blank" 
+                                   class="flex items-center gap-2 text-blue-600 hover:underline text-sm">
+                                    <i class="fab fa-github"></i>
+                                    View GitHub Issue
+                                </a>
+                                {% if bid.pr_link %}
+                                <a href="{{ bid.pr_link }}" target="_blank" 
+                                   class="flex items-center gap-2 text-blue-600 hover:underline text-sm">
+                                    <i class="fas fa-code-branch"></i>
+                                    View Pull Request
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'enhanced_bidding' %}" 
+                                   class="flex items-center gap-2 text-gray-600 hover:underline text-sm">
+                                    <i class="fas fa-arrow-left"></i>
+                                    Back to Bidding
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
