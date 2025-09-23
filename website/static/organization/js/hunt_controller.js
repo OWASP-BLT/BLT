@@ -266,6 +266,8 @@
     }
     
     function displayLogoPreview() {
+        // This function is kept for backward compatibility
+        // The new template uses previewUploadedImage function
         const fileInput = document.getElementById("logo");
         const previewDiv = document.getElementById("previewLogoDiv");
         
