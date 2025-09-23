@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{# Shared header, sidebar, and layout for all account pages #}
+
+{% block title %}{% block account_title %}{% endblock account_title %}{% endblock title %}
+{% block description %}{% block account_description %}{% endblock account_description %}{% endblock description %}
+{% block keywords %}{% block account_keywords %}{% endblock account_keywords %}{% endblock keywords %}
+{% block og_title %}{% block account_og_title %}{% endblock account_og_title %}{% endblock og_title %}
+{% block og_description %}{% block account_og_description %}{% endblock account_og_description %}{% endblock og_description %}
+
+{% block content %}
+    <div class="min-h-screen bg-gray-100 flex flex-col">
+        {% include "includes/header.html" %}
+        <div class="flex flex-1">
+            {% include "includes/sidenav.html" %}
+            <main class="flex-1 p-6">
+                {% block account_content %}{% endblock account_content %}
+            </main>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block extra_css %}
+    {{ block.super }}
+    {% block account_extra_css %}{% endblock account_extra_css %}
+{% endblock extra_css %}
+
+{% block extra_js %}
+    {{ block.super }}
+    {% block account_extra_js %}{% endblock account_extra_js %}
+{% endblock extra_js %}

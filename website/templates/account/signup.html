@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "account/base_account.html" %}
 {% load static %}
 {% load custom_tags %}
 {% block title %}
@@ -18,8 +18,7 @@
 {% endblock og_description %}
 {% load i18n %}
 {% load custom_tags %}
-{% block natural_content %}
-    {% include "includes/sidenav.html" %}
+{% block account_content %}
     <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 h-full">
         <div class="flex flex-col w-full max-w-md bg-white rounded-md shadow-lg md:flex-row md:max-w-2xl lg:max-w-4xl">
             <!-- Left Section -->
@@ -188,7 +187,7 @@
             .then(response => response.json())
             .then(data => {
                 captchaContainer.innerHTML = `
-                    <input type="hidden" name="captcha_0" value="${data.key}">
+                {% endblock account_content %}
                     <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 rounded">
                 `;
             })
