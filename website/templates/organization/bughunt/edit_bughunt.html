@@ -16,19 +16,27 @@
     Make changes to your Bug Bounty contest. Update timelines, prizes, and upload new logos and banners to keep your competition engaging.
 {% endblock og_description %}
 {% block body %}
-    <div class="bg-[#F3F5F7] flex flex-col items-center">
-        <div class="w-full mt-5">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Edit Bug Bounty</p>
-        </div>
-        <form method='post'
-              action="#"
-              id="add_bughunt_form"
-              enctype="multipart/form-data"
-              class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
+    <div class="w-full bg-[#fdfeff]">
+        <div class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-[#e74c3c] font-satoshi font-bold text-[35px]">Edit Bug Bounty</h1>
+                <p class="text-gray-600 text-sm mt-2">
+                    Update your bug bounty program details, timeline, and rewards to keep your security program current.
+                </p>
+            </div>
+            
+            <!-- Form Container -->
+            <form method="post"
+                  action="#"
+                  id="add_bughunt_form"
+                  enctype="multipart/form-data">
             {% csrf_token %}
             <input type="text" name="hunt_id" id="hunt_id" hidden value="{{ hunt.id }}">
+            <div class="bg-white p-10 border border-gray-200 rounded-xl shadow-md ">
             <div class="pb-12">
-                <h2 class="text-base font-semibold leading-7 text-gray-900">Create new online Bug Bounty</h2>
+                <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Information</h2>
+                <p class="mt-1 text-sm text-gray-600">Update details about your bug bounty program and adjust the timeline for researchers.</p>
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-3">
                         <label for="bughunt_name"
@@ -59,15 +67,17 @@
                                    class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
-                    <div class="sm:col-span-3">
+                    <div class="sm:col-span-2">
                         <label for="domain"
-                               class="block text-sm font-medium leading-6 text-gray-900 ">Domain</label>
-                        <div class="mt-2">
+                               class="block text-sm font-medium leading-6 text-gray-900">
+                            Domain <span class="text-xs text-gray-500">(Select the domain for this bug bounty)</span>
+                        </label>
+                        <div class="mt-2 w-full">
                             <select id="domain"
                                     name="domain"
-                                    value="{{ hunt.domain.id }}"
                                     autocomplete="domain-name"
-                                    class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:max-w-xs sm:text-sm sm:leading-6">
+                                    required
+                                    class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 bg-white transition-colors duration-200 cursor-pointer sm:text-sm sm:leading-6">
                                 {% for domain in domains %}
                                     <option value="{{ domain.id }}"
                                             {% if domain.id == hunt.domain.id %}selected{% endif %}>
@@ -77,13 +87,10 @@
                             </select>
                         </div>
                     </div>
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.7.0/datepicker.min.js"
-                            integrity="sha384-sMp3hQy59Ay78X8c2o+5dDPZUFdUdYUKT8tbVKVfeyA735e1vIlRsH5vsjbHMDLX"
-                            crossorigin="anonymous"></script>
-                    <div class="sm:col-span-3">
-                        <label for="domain_url"
-                               class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Timeline</label>
-                        <div date-rangepicker class="flex items-center">
+                    <div class="sm:col-span-2">
+                        <label for="start_date"
+                               class="block text-sm font-medium leading-6 text-gray-900">Start Date</label>
+                        <div class="mt-2">
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                     <svg class="w-4 h-4 text-gray-500"
@@ -94,15 +101,21 @@
                                         <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
                                     </svg>
                                 </div>
-                                <input {% if hunt.is_published %}disabled{% endif %}
-                                       name="start_date"
+                                <input name="start_date"
+                                       id="start_date"
                                        required
                                        type="text"
                                        value="{{ hunt.starts_on }}"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  "
-                                       placeholder="Select date start">
+                                       {% if hunt.is_published %}disabled{% endif %}
+                                       class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
+                                       placeholder="MM/DD/YYYY">
                             </div>
-                            <span class="mx-4 text-gray-500">to</span>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="end_date"
+                               class="block text-sm font-medium leading-6 text-gray-900">End Date</label>
+                        <div class="mt-2">
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                     <svg class="w-4 h-4 text-gray-500"
@@ -114,50 +127,87 @@
                                     </svg>
                                 </div>
                                 <input name="end_date"
+                                       id="end_date"
                                        required
                                        type="text"
                                        value="{{ hunt.end_on }}"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  "
-                                       placeholder="Select date end">
+                                       class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
+                                       placeholder="MM/DD/YYYY">
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="space-y-12">
-                    <div class="border-b border-gray-900/10 pb-12">
-                        <div class="col-span-full my-5">
-                            <label for="bughunt_logo"
-                                   class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Logo</label>
-                            <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
+                <div class="border-b border-gray-900/10 pb-12 mt-10">
+                    <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Assets</h2>
+                    <p class="mt-1 text-sm text-gray-600">Upload logo and banner images for your bug bounty program.</p>
+                    
+                    <div class="col-span-full mt-8">
+                        <label for="logo" class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Logo</label>
+                        <div class="mt-2 flex flex-col gap-4">
+                            <div class="flex items-center gap-x-3">
+                                <label for="logo" class="relative cursor-pointer">
                                 <div id="previewLogoDiv"
-                                     class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
-                                    {% if hunt.logo %}
-                                        <img src="{{ MEDIA_URL }}/{{ hunt.logo }}"
-                                             alt=""
-                                             width="100%"
-                                             height="100%">
-                                    {% else %}
-                                        <img src="https://via.placeholder.com/100?text=No+Logo"
-                                             alt=""
-                                             width="100%"
-                                             height="100%">
-                                    {% endif %}
+                                         class="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 hover:border-[#e74c3c] transition-colors duration-200">
+                                        {% if hunt.logo %}
+                                        <img id="logoPreview"
+                                             src="{{ MEDIA_URL }}/{{ hunt.logo }}"
+                                             height="128"
+                                             width="128"
+                                             class="absolute inset-0 h-full w-full object-cover rounded-2xl"
+                                             alt="Logo preview" />
+                                        <div id="defaultLogoIcon"
+                                             class="absolute inset-0 items-center justify-center text-[#e74c3c] hidden">
+                                        {% else %}
+                                        <img id="logoPreview"
+                                             height="128"
+                                             width="128"
+                                             class="absolute inset-0 h-full w-full object-cover hidden rounded-2xl"
+                                             alt="Logo preview" />
+                                        <div id="defaultLogoIcon"
+                                             class="absolute inset-0 flex items-center justify-center text-[#e74c3c]">
+                                        {% endif %}
+                                            <svg class="h-16 w-16"
+                                                 viewBox="0 0 24 24"
+                                                 fill="currentColor"
+                                                 aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
+                                    </svg>
                                 </div>
-                                <label for="logo"
-                                       class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                    <span class="text-red-600">Upload logo</span>
+                                    </div>
                                     <input id="logo"
                                            name="logo"
                                            type="file"
+                                           accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                                            class="sr-only"
-                                           onchange="displayLogoPreview()" />
+                                           onchange="previewUploadedImage(this, 'logoPreview', 'defaultLogoIcon', 'removeLogo')" />
                                 </label>
+                                <div class="flex flex-col gap-2">
+                                    <button type="button"
+                                            id="removeLogo"
+                                            onclick="removeUploadedImage('logo', 'logoPreview', 'defaultLogoIcon', 'removeLogo')"
+                                            class="{% if not hunt.logo %}hidden{% endif %} text-sm text-[#e74c3c] hover:text-red-700 px-4 py-2 border border-[#e74c3c] rounded-md hover:bg-red-50 transition-colors duration-200">
+                                        <span class="inline-flex items-center">
+                                            <svg class="w-5 h-5 mr-2"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Remove
+                                        </span>
+                                    </button>
+                                    <div id="logoError" class="hidden text-xs text-[#e74c3c] mt-1"></div>
+                                </div>
                             </div>
+                            <p class="text-sm text-gray-500">Recommended: Square image, JPG/PNG/GIF, max 5MB, at least 128x128px</p>
                         </div>
-                        <div class="col-span-full">
+                    </div>
+                    <div class="col-span-full mt-8">
                             <label for="banner"
-                                   class="block text-sm font-medium leading-6 text-gray-900">Banner</label>
-                            <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-red-500">
+                               class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Banner</label>
+                        <label for="banner" class="cursor-pointer block">
+                            <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-[#e74c3c] hover:border-[#e74c3c] transition-colors duration-200">
                                 <div class="text-center">
                                     <svg class="mx-auto h-12 w-12"
                                          viewBox="0 0 24 24"
@@ -165,21 +215,20 @@
                                          aria-hidden="true">
                                         <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
                                     </svg>
-                                    <div class="mt-4 flex text-sm leading-6 text-gray-600">
-                                        <label for="banner"
-                                               class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                            <span class="text-red-600">Upload a Banner</span>
-                                            <input id="banner"
-                                                   name="banner"
-                                                   type="file"
-                                                   class="sr-only"
-                                                   onchange="displayBannerPreview()" />
-                                        </label>
+                                    <div class="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
+                                        <span class="font-semibold text-[#e74c3c]">Upload a banner</span>
                                         <p class="pl-1">or drag and drop</p>
                                     </div>
                                     <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                                 </div>
                             </div>
+                            <input id="banner"
+                                   name="banner"
+                                   type="file"
+                                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                   class="sr-only"
+                                   onchange="displayBannerPreview()" />
+                        </label>
                             <div id="bannerPreview" class="mt-4">
                                 {% if hunt.banner %}
                                     <img class="m-auto"
@@ -189,16 +238,24 @@
                                          height="25%">
                                 {% endif %}
                             </div>
-                        </div>
                     </div>
                 </div>
-                <div class="w-full ">{% include "organization/organization_includes/md_editor.html" %}</div>
-                <div class="border-b border-gray-900/10 pb-12 mt-5">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">Bug Bounty Prizes</h2>
-                    <div class="bg-gray-100 w-full p-7">
-                        <h2 class="text-base font-semibold leading-7 text-gray-900 mb-4">
-                            click on the add prize button after filling the prize details
-                        </h2>
+            </div>
+            <div class="border-b border-gray-900/10 pb-12 mt-10">
+                <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Description</h2>
+                <p class="mt-1 text-sm text-gray-600">Provide a detailed description of your bug bounty program, scope, and rules.</p>
+                <div class="mt-6">
+                    {% include "organization/organization_includes/md_editor.html" %}
+                </div>
+            </div>
+            
+            <div class="border-b border-gray-900/10 pb-12 mt-10">
+                <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Prizes</h2>
+                <p class="mt-1 text-sm text-gray-600">Define the prizes and rewards for security researchers who find valid vulnerabilities.</p>
+                    <div class="bg-gray-50 w-full p-7 mt-6 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-4">
+                            Fill in the prize details below and click "Add Prize" to add it to your bug bounty program.
+                        </p>
                         <div>
                             <label for="prize_name" class="font-bold">
                                 <span class="text-red-500 mr-1">*</span>Prize Name
@@ -234,7 +291,9 @@
                                    name="every_valid_submissions"
                                    id="every_valid_submissions"
                                    class="w-4 h-4">
-                            <label for="every_valid_submissions" class="ml-2">Every Valid Submissions are eligible for this prize</label>
+                            <label for="every_valid_submissions" class="ml-2">
+                                Every Valid Submissions are eligible for this prize (Cash Value Per Accepted Bug)
+                            </label>
                         </div>
                         <div class="mt-3">
                             <label for="prize_description" class="font-bold">Prize Description</label>
@@ -257,73 +316,248 @@
                             </div>
                         </div>
                         <button onclick="add_prize()"
-                                id="add_prize_button"
                                 type="button"
-                                class="w-[120px] h-[40px] mt-8 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-all">
+                                id="add_prize_button"
+                                class="mt-8 bg-[#e74c3c] text-white font-semibold px-6 py-2.5 rounded-md hover:bg-red-700 transition-all duration-200">
                             Add Prize
                         </button>
                     </div>
                     <div class="sm:col-span-4 flex overflow-x-scroll"
                          id="list-prize-container">
                         {% for prize in prizes %}
-                            <div>
-                                <div id="prize-container-{{ prize.id }}"
-                                     class="bg-white rounded-lg shadow-lg p-6 w-72 mr-5 relative">
-                                    <!-- edit button for edit existing stuff -->
-                                    <button id="EditPrizeButton"
-                                            type="button"
-                                            onclick="editPrize(event, {{ prize.id }}, '{{ prize.name }}', {{ prize.value }}, {{ prize.no_of_eligible_projects }}, {{ prize.valid_submissions_eligible|yesno:"true,false" }}, '{{ prize.description }}', {{ organization }})"
-                                            class="absolute top-2 left-2 text-red-500">Edit</button>
-                                    <button onclick="removePrize(event, {{ prize.id }}, {{ organization }})"
-                                            class="absolute top-2 right-2 text-red-500">x</button>
-                                    <br>
-                                    <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ prize.name|slice:8 }}...</h2>
-                                    <div class="mb-4">
-                                        <p class="text-red-500 font-bold">Cash Value (USD)</p>
-                                        <p class="text-gray-800">${{ prize.value }}</p>
+                            <div id="prize-container-{{ prize.id }}"
+                                 class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 p-6 w-80 mr-4 mb-4 mt-6 relative group">
+                                <!-- Header with remove and edit buttons -->
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="flex-1 pr-2">
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                                            {% if prize.name|length > 12 %}
+                                                {{ prize.name|slice:":12" }}...
+                                            {% else %}
+                                                {{ prize.name }}
+                                            {% endif %}
+                                        </h3>
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-dollar-sign mr-1"></i>
+                                                ${{ prize.value }}
+                                            </span>
+                                            {% if prize.valid_submissions_eligible %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    <i class="fas fa-infinity mr-1"></i>All Valid
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    <i class="fas fa-trophy mr-1"></i>{{ prize.no_of_eligible_projects }} Winners
+                                                </span>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    <div class="mb-4">
-                                        <p class="text-gray-800 font-bold">Number of Winning Projects</p>
-                                        {% if prize.valid_submissions_eligible %}
-                                            <p class="text-gray-600">All Valid Submissions</p>
-                                        {% else %}
-                                            <p class="text-gray-600">{{ prize.no_of_eligible_projects }}</p>
-                                        {% endif %}
+                                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                        <!-- Edit button -->
+                                        <button type="button"
+                                                onclick="editPrize(event, {{ prize.id }}, '{{ prize.name }}', {{ prize.value }}, {{ prize.no_of_eligible_projects }}, {{ prize.valid_submissions_eligible|yesno:"true,false" }}, '{{ prize.description }}', {{ organization }})"
+                                                class="p-1.5 text-gray-400 hover:text-[#e74c3c] hover:bg-red-50 rounded-md transition-all duration-150 text-sm"
+                                                title="Edit Prize">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <!-- Remove button -->
+                                        <button type="button"
+                                                onclick="if(confirm('Are you sure you want to delete this prize?')) { removePrize(event, {{ prize.id }}, {{ organization }}); }"
+                                                class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-sm"
+                                                title="Delete Prize">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
                                     </div>
-                                    <div class="mb-4">
-                                        <p class="text-gray-800 font-bold">Reward Valid Submissions</p>
-                                        <p class="text-gray-600">{{ prize.valid_submissions_eligible }}</p>
+                                </div>
+                                
+                                <!-- Content -->
+                                <div class="space-y-3">
+                                    <div class="bg-gray-50 rounded-lg p-3">
+                                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Description</p>
+                                        <p class="text-sm text-gray-700">
+                                            {% if prize.description %}
+                                                {% if prize.description|length > 60 %}
+                                                    {{ prize.description|slice:":60" }}...
+                                                {% else %}
+                                                    {{ prize.description }}
+                                                {% endif %}
+                                            {% else %}
+                                                No description provided
+                                            {% endif %}
+                                        </p>
                                     </div>
-                                    <div class="mb-4">
-                                        <p class="text-red-500 font-bold">Prize Description</p>
-                                        <p class="text-gray-800">{{ prize.description|slice:55 }}...</p>
-                                    </div>
+                                    
+                                    {% if prize.paid_in_cryptocurrency %}
+                                        <div class="flex items-center gap-2 text-xs text-amber-600">
+                                            <i class="fas fa-coins"></i>
+                                            <span>Paid in cryptocurrency</span>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
                 </div>
-                <div class="mt-6 flex items-center justify-end gap-x-6">
+                <!-- Action Buttons -->
+            <div class=" py-6 ">
+                <div class="flex items-center justify-end gap-x-6">
                     <button type="button"
                             onclick="cancelForm()"
-                            class="text-md font-semibold leading-6 text-gray-900">Cancel</button>
+                            class="text-md font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+                        Cancel
+                    </button>
                     {% if not hunt.is_published %}
-                        <button type="submit"
-                                onclick="PublishBughunt('false')"
-                                class="rounded-md bg-gray-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600">
-                            Draft
-                        </button>
+                    <button type="button"
+                            onclick="PublishBughunt('false')"
+                            class="rounded-md bg-gray-600 px-12 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-gray-700 transition-all duration-200">
+                        Save as Draft
+                    </button>
                     {% endif %}
                     <button type="button"
                             onclick="PublishBughunt('true')"
-                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                            class="rounded-md bg-[#e74c3c] px-12 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-red-700 transition-all duration-200">
                         Publish
                     </button>
                 </div>
             </div>
+            </div>
+            
+            
         </form>
+        </div>
     </div>
 {% endblock body %}
-{% block js %}
-    <script src="{% static 'organization/js/hunt_controller.js' %}"></script>
-{% endblock js %}
+{% block scripts %}
+    <!-- No external datepicker scripts to avoid style conflicts -->
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Hunt Controller Script -->
+    <script src="{% static 'organization/js/hunt_controller.js' %}?v=2.8"></script>
+    
+    <script>
+        // Set organization ID for JavaScript access
+        window.organizationId = {{ organization.id }};
+        
+        // Debug CSRF token and form data on page load
+        console.log('[Debug] Page loaded, checking CSRF token...');
+        const form = document.getElementById('add_bughunt_form');
+        const csrfInput = form ? form.querySelector('input[name="csrfmiddlewaretoken"]') : null;
+        if (csrfInput) {
+            console.log('[Debug] CSRF token found on page load:', csrfInput.value.substring(0, 10) + '...');
+        } else {
+            console.error('[Debug] CSRF token NOT found on page load!');
+        }
+        
+        // Date inputs are now plain text with MM/DD/YYYY format
+        console.log('[Date] Using plain text inputs for manual date entry');
+        
+        // Image preview functions from add domain page
+        function previewUploadedImage(input, previewId, defaultIconId, removeButtonId) {
+            const preview = document.getElementById(previewId);
+            const defaultIcon = document.getElementById(defaultIconId);
+            const removeButton = document.getElementById(removeButtonId);
+            const errorDiv = document.getElementById('logoError');
+            
+            // Clear any previous errors
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+            }
+
+            if (!preview || !defaultIcon || !removeButton) {
+                console.error('One or more required elements not found');
+                return;
+            }
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Please select a valid image file (JPG, PNG, GIF, or WebP)';
+                        errorDiv.style.display = 'block';
+                    }
+                    input.value = '';
+                    return;
+                }
+                
+                // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    if (errorDiv) {
+                        errorDiv.textContent = 'File size must be less than 5MB';
+                        errorDiv.style.display = 'block';
+                    }
+                    input.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // Set the image source
+                    preview.src = e.target.result;
+                    
+                    // Use style.display for more reliable showing/hiding
+                    preview.style.display = 'block';
+                    defaultIcon.style.display = 'none';
+                    removeButton.style.display = 'inline-flex';
+                    
+                    // Also use classList as backup
+                    preview.classList.remove('hidden');
+                    defaultIcon.classList.add('hidden');
+                    removeButton.classList.remove('hidden');
+                }
+                
+                reader.onerror = function() {
+                    console.error('Error reading file');
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Error reading the file. Please try again.';
+                        errorDiv.style.display = 'block';
+                    }
+                    input.value = '';
+                }
+                
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeUploadedImage(inputId, previewId, defaultIconId, removeButtonId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            const defaultIcon = document.getElementById(defaultIconId);
+            const removeButton = document.getElementById(removeButtonId);
+            const errorDiv = document.getElementById('logoError');
+
+            if (!input || !preview || !defaultIcon || !removeButton) {
+                console.error('One or more required elements not found');
+                return;
+            }
+            
+            // Clear the file input and preview
+            input.value = '';
+            preview.src = '';
+            
+            // Use style.display for more reliable showing/hiding
+            preview.style.display = 'none';
+            defaultIcon.style.display = 'flex';
+            removeButton.style.display = 'none';
+            
+            // Also use classList as backup
+            preview.classList.add('hidden');
+            defaultIcon.classList.remove('hidden');
+            removeButton.classList.add('hidden');
+            
+            // Clear any errors
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+            }
+        }
+    </script>
+{% endblock scripts %}
