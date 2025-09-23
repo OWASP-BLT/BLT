@@ -1,6 +1,7 @@
 {% extends "account/base_account.html" %}
 {% load static %}
 {% load custom_tags %}
+{% load captcha %}
 {% block account_title %}Sign Up | {% env 'PROJECT_NAME' %}{% endblock account_title %}
 {% block account_description %}Create an account to join the community. Sign up with your email and username to start discovering and reporting bugs.{% endblock account_description %}
 {% block account_keywords %}Sign Up, Create Account, Join Community, Email, Username, Discover Bugs, Report Bugs{% endblock account_keywords %}
@@ -30,43 +31,53 @@
             </div>
             <!-- Right Section -->
             <div class="p-5 bg-white md:flex-1">
-                <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans "Account SignUp" %}</h3>
+                <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans "Sign up" %}</h3>
                 <form class="flex flex-col space-y-5 login"
                       method="post"
                       action="{% url 'account_signup' %}">
                     {% csrf_token %}
                     <!-- Username Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="id_username" class="text-sm font-semibold text-gray-500">Username</label>
-                        <input autofocus
-                               type="text"
-                               id="id_username"
-                               name="username"
-                               value="{{ form.username.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
-                        <span class="help-block">{{ form.username.errors }}</span>
+               <label for="id_username" class="text-sm font-semibold text-gray-500">{% trans "Username" %}</label>
+               <input autofocus
+                   autocomplete="username"
+                   required
+                   aria-describedby="username-errors"
+                   type="text"
+                   id="id_username"
+                   name="username"
+                   value="{{ form.username.value|default:'' }}"
+                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+               <span id="username-errors" class="help-block">{{ form.username.errors }}</span>
                     </div>
                     <!-- Email Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="id_email" class="text-sm font-semibold text-gray-500">Email</label>
-                        <input type="email"
-                               id="id_email"
-                               name="email"
-                               value="{{ form.email.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
-                        <span class="help-block">{{ form.email.errors }}</span>
+               <label for="id_email" class="text-sm font-semibold text-gray-500">{% trans "Email" %}</label>
+               <input type="email"
+                   inputmode="email"
+                   autocomplete="email"
+                   required
+                   aria-describedby="email-errors"
+                   id="id_email"
+                   name="email"
+                   value="{{ form.email.value|default:'' }}"
+                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+               <span id="email-errors" class="help-block">{{ form.email.errors }}</span>
                     </div>
                     <!-- Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="id_password" class="text-sm font-semibold text-gray-500">Password</label>
+                            <label for="id_password" class="text-sm font-semibold text-gray-500">{% trans "Password" %}</label>
                         </div>
                         <div class="relative">
-                            <input type="password"
-                                   id="id_password"
-                                   name="password1"
-                                   value="{{ form.password1.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                <input type="password"
+                    id="id_password"
+                    name="password1"
+                    autocomplete="new-password"
+                    required
+                    aria-describedby="password1-errors"
+                    value="{{ form.password1.value|default:'' }}"
+                    class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                 <button type="button"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
                                     data-target="id_password">
@@ -80,19 +91,22 @@
                                 </svg>
                             </button>
                         </div>
-                        <span class="help-block">{{ form.password1.errors }}</span>
+                        <span id="password1-errors" class="help-block">{{ form.password1.errors }}</span>
                     </div>
                     <!-- Confirm Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="id_password2" class="text-sm font-semibold text-gray-500">Confirm Password</label>
+                            <label for="id_password2" class="text-sm font-semibold text-gray-500">{% trans "Confirm password" %}</label>
                         </div>
                         <div class="relative">
-                            <input type="password"
-                                   id="id_password2"
-                                   name="password2"
-                                   value="{{ form.password2.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                <input type="password"
+                    id="id_password2"
+                    name="password2"
+                    autocomplete="new-password"
+                    required
+                    aria-describedby="password2-errors"
+                    value="{{ form.password2.value|default:'' }}"
+                    class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                 <button type="button"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
                                     data-target="id_password2">
@@ -106,41 +120,13 @@
                                 </svg>
                             </button>
                         </div>
-                        <span class="help-block">{{ form.password2.errors }}</span>
+                        <span id="password2-errors" class="help-block">{{ form.password2.errors }}</span>
                     </div>
                     <!-- Captcha Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="id_captcha_1" class="text-sm font-semibold text-gray-500">Captcha</label>
-                        <div class="flex items-center">
-                            <div class="captcha-container">
-                                <input type="hidden" name="captcha_0" value="{{ form.captcha.value.key }}">
-                                <img id="captcha-image"
-                                     src="{{ form.captcha.image_url }}"
-                                     alt="Captcha Image"
-                                     width="150"
-                                     height="50"
-                                     class="border border-gray-300 rounded">
-                            </div>
-                            <button type="button"
-                                    onclick="refreshCaptcha()"
-                                    class="ml-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke-width="1.5"
-                                     stroke="currentColor"
-                                     class="w-6 h-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                </svg>
-                            </button>
-                        </div>
-               <input type="text"
-                   id="id_captcha_1"
-                               name="captcha_1"
-                               placeholder="Enter Captcha"
-                               class="px-2 py-1 mt-2 border border-gray-300 rounded focus:ring-red-200 w-1/2"
-                               required>
-                        <span class="help-block">{{ form.captcha.errors }}</span>
+                        <label for="id_captcha_1" class="text-sm font-semibold text-gray-500">{% trans "Captcha" %}</label>
+                        {{ form.captcha }}
+                        <span id="captcha-errors" class="help-block">{{ form.captcha.errors }}</span>
                     </div>
                     <!-- Hidden Redirect Field -->
                     {% if redirect_field_value %}
@@ -160,31 +146,41 @@
             </div>
         </div>
     </div>
-    <!-- Captcha Refresh Script -->
-    <script>
-        function refreshCaptcha() {
-            const captchaContainer = document.querySelector('.captcha-container');
-            
-            fetch('/captcha/refresh/', {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                captchaContainer.innerHTML = `
-                    <input type="hidden" name="captcha_0" value="${data.key}">
-                    <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 rounded">
-                `;
-            })
-            .catch(error => console.error('Error:', error));
-        }
-        
-        window.addEventListener('load', function() {
-            const captchaImg = document.getElementById('captcha-image');
-            if (!captchaImg || !captchaImg.getAttribute('src').trim()) {
-                refreshCaptcha();
-            }
+{% endblock account_content %}
+
+{% block account_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Captcha refresh
+    const container = document.querySelector('.captcha-container');
+    const hidden = () => container && container.querySelector('input[name="captcha_0"]');
+    const img = () => container && container.querySelector('#captcha-image');
+
+    async function refreshCaptcha() {
+        try {
+            const res = await fetch("{% url 'captcha-refresh' %}", { headers: { "X-Requested-With": "XMLHttpRequest" }});
+            const data = await res.json();
+            if (hidden()) hidden().value = data.key;
+            if (img()) img().src = `${data.image_url}?${Date.now()}`;
+        } catch (e) { console.error(e); }
+    }
+
+    refreshCaptcha();
+    const btn = document.querySelector('button[onclick="refreshCaptcha()"]');
+    if (btn) {
+        btn.addEventListener('click', (ev) => { ev.preventDefault(); refreshCaptcha(); });
+    }
+
+    // Password toggle
+    document.querySelectorAll('.password-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-target');
+            const input = document.getElementById(id);
+            if (!input) return;
+            input.type = input.type === 'password' ? 'text' : 'password';
         });
-    </script>
+    });
+});
+</script>
+{% endblock account_extra_js %}
 {% endblock account_content %}
