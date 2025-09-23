@@ -10,12 +10,28 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
     container_name: postgres-db
     restart: always
+
+  qdrant:
+    image: qdrant/qdrant:v1.14.1
+    container_name: qdrant
+    ports:
+      - "${QDRANT_HTTP_PORT}:6333"
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:6333/readyz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    volumes:
+      - qdrant_db:/qdrant/storage
 
   app:
     build: .
@@ -53,3 +69,4 @@ services:
 
 volumes:
   postgres_db:
+  qdrant_db:
