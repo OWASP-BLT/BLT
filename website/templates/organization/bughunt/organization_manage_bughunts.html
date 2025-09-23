@@ -16,124 +16,315 @@
     Access and manage all your bug bounties effortlessly. Filter by status, view details, and edit or delete hunts with ease.
 {% endblock og_description %}
 {% block body %}
-    <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
-        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bug Bounties</p>
-            <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <a href="{% url 'add_bughunt' organization %}"
-                   class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
-                    <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
-                </a>
-            </div>
-        </div>
-        <div class="w-[96%] h-[70vh] overflow-y-scroll flow-root my-10">
-            <div class="relative overflow-x-auto shadow-md sm:rounded-lg h-full bg-white">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <caption class="p-5 text-xl font-semibold text-left text-gray-900 bg-white">
-                        <div class="flex w-full justify-between">
-                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Bug Bounties</h2>
-                            <button id="dropdownDefaultButton"
-                                    data-dropdown-toggle="dropdown"
-                                    class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
-                                    type="button">
-                                Filter Bug Bounties
-                                <svg class="w-2.5 h-2.5 ml-2.5"
-                                     aria-hidden="true"
-                                     xmlns="http://www.w3.org/2000/svg"
-                                     fill="none"
-                                     viewBox="0 0 10 6">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <!-- Header Section -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Manage Bug Bounties</h1>
+                        <p class="mt-1 text-sm text-gray-500">Organize and control your bug bounty programs</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <!-- Filter Dropdown -->
+                        <div class="relative">
+                            <button id="filterButton"
+                                    type="button"
+                                    class="inline-flex items-center px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 select-none">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 2v-6.586a1 1 0 00-.293-.707L3.293 5.293A1 1 0 013 4.586V4z"></path>
+                                </svg>
+                                Filter
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                            <!-- Dropdown menu -->
-                            <div id="dropdown"
-                                 class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
-                                <ul class="py-2 text-sm text-gray-700 dark:text-gray-200"
-                                    aria-labelledby="dropdownDefaultButton">
-                                    <li>
-                                        <a href="{% url 'organization_manage_bughunts' organization %}"
-                                           class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">All</a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=ongoing"
-                                           class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ongoing</a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=draft"
-                                           class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Draft</a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=ended"
-                                           class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ended</a>
-                                    </li>
-                                </ul>
+                            <div id="filterDropdown"
+                                 class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-10">
+                                <div class="py-2">
+                                    <a href="{% url 'organization_manage_bughunts' organization %}"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">All Bounties</a>
+                                    <a href="{% url 'organization_manage_bughunts' organization %}?filter=ongoing"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ongoing</a>
+                                    <a href="{% url 'organization_manage_bughunts' organization %}?filter=draft"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Draft</a>
+                                    <a href="{% url 'organization_manage_bughunts' organization %}?filter=ended"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ended</a>
+                                </div>
                             </div>
                         </div>
-                        <p class="mt-1 text-sm font-normal text-gray-500">Filter, view, edit or delete. Manage your bug bounties easily</p>
-                    </caption>
-                    <thead class="text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Hunt</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Start Date</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">End Date</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Status</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">
-                                <span class="sr-only">View</span>
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-lg">
-                                <span class="sr-only">Edit</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if bughunts %}
-                            {% for hunt in bughunts %}
-                                <tr class="bg-white border-b">
-                                    <th scope="row"
-                                        class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                        {{ hunt.name }}
-                                    </th>
-                                    <td class="px-6 py-4">{{ hunt.starts_on__day }}/{{ hunt.starts_on__month }}/{{ hunt.starts_on__year }}</td>
-                                    <td class="px-6 py-4">{{ hunt.end_on__day }}/{{ hunt.end_on__month }}/{{ hunt.end_on__year }}</td>
-                                    <td class="px-6 py-4">
-                                        {% if not hunt.is_published %}
-                                            <p class="text-gray-500">Draft</p>
-                                        {% elif not hunt.result_published %}
-                                            <p class="text-green-500">Ongoing</p>
-                                        {% else %}
-                                            <p class="text-red-500">Ended</p>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
+                        <!-- Add New Button -->
+                        <a href="{% url 'add_bughunt' organization %}"
+                           class="inline-flex items-center px-4 py-2.5 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 select-none">
+                            <svg class="w-5 h-5 mr-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add New Bounty
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
+            {% if bughunts %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">All Bug Bounties</h2>
+                    </div>
+                    <div class="divide-y divide-gray-200" id="bughuntsList">
+                        {% for hunt in bughunts %}
+                            <div class="bughunt-item p-6 hover:bg-gray-50 transition-all duration-200"
+                                 data-name="{{ hunt.name|lower }}"
+                                 data-status="{% if not hunt.is_published %}draft{% elif not hunt.result_published %}ongoing{% else %}ended{% endif %}">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 truncate">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-12 h-12 select-none rounded-lg bg-gradient-to-br from-[#e74c3c] to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                                {% if hunt.logo %}
+                                                    <img class="w-full h-full rounded-lg object-cover"
+                                                         src="{{ MEDIA_URL }}{{ hunt.logo }}"
+                                                         alt="{{ hunt.name }} Logo"
+                                                         height="48"
+                                                         width="48"
+                                                         loading="lazy"
+                                                         decoding="async">
+                                                {% else %}
+                                                    {{ hunt.name|first|upper }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-3">
+                                                <h3 class="text-lg font-semibold text-gray-900 truncate">{{ hunt.name }}</h3>
+                                                <!-- Status Badge -->
+                                                {% if not hunt.is_published %}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                        <svg class="w-1.5 h-1.5 mr-1.5" fill="currentColor" viewBox="0 0 8 8">
+                                                            <circle cx="4" cy="4" r="3"/>
+                                                        </svg>
+                                                        Draft
+                                                    </span>
+                                                {% elif not hunt.result_published %}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        <svg class="w-1.5 h-1.5 mr-1.5" fill="currentColor" viewBox="0 0 8 8">
+                                                            <circle cx="4" cy="4" r="3"/>
+                                                        </svg>
+                                                        Ongoing
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        <svg class="w-1.5 h-1.5 mr-1.5" fill="currentColor" viewBox="0 0 8 8">
+                                                            <circle cx="4" cy="4" r="3"/>
+                                                        </svg>
+                                                        Ended
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="mt-1 flex items-center gap-4 text-sm text-gray-500">
+                                                {% if hunt.url %}
+                                                    <a href="{% if hunt.url|slice:':4' == 'http' %}{{ hunt.url }}{% else %}https://{{ hunt.url }}{% endif %}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="flex items-center gap-1 text-[#e74c3c] hover:text-red-800 hover:underline">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                                        </svg>
+                                                        {{ hunt.url|truncatechars:40 }}
+                                                    </a>
+                                                {% endif %}
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    {{ hunt.starts_on__day }}/{{ hunt.starts_on__month }}/{{ hunt.starts_on__year }} - {{ hunt.end_on__day }}/{{ hunt.end_on__month }}/{{ hunt.end_on__year }}
+                                                </span>
+                                                {% if hunt.prize %}
+                                                    <span class="flex items-center gap-1 text-green-600">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                                        </svg>
+                                                        ${{ hunt.prize }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2 select-none">
                                         <a href="{% url 'show_bughunt' hunt.id %}"
-                                           class="font-medium text-blue-600 hover:underline">View</a>
-                                    </td>
-                                    {% if hunt.result_published %}
-                                        <td class="px-6 py-4 text-right">
-                                            <a class="font-medium text-gray-600 hover:underline cursor-pointer">Edit</a>
-                                        </td>
-                                    {% else %}
-                                        <td class="px-6 py-4 text-right">
+                                           class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all"
+                                           title="View Bug Bounty">
+                                            <svg class="w-4 h-4 mr-1.5"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            View
+                                        </a>
+                                        {% if hunt.result_published %}
+                                            <span class="inline-flex items-center px-3 py-1.5 bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed"
+                                                  title="Hunt Ended - Cannot Edit">
+                                                <svg class="w-4 h-4 mr-1.5"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                                Edit
+                                            </span>
+                                        {% else %}
                                             <a href="{% url 'add_bughunt' organization %}?hunt={{ hunt.id }}"
-                                               class="font-medium text-blue-600 hover:underline">Edit</a>
-                                        </td>
-                                    {% endif %}
-                                </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr class="bg-white border-b">
-                                <th scope="row"
-                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">
-                                    No Bug Bounties found
-                                </th>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
+                                               class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all"
+                                               title="Edit Bug Bounty">
+                                                <svg class="w-4 h-4 mr-1.5"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                                Edit
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="bg-white rounded-lg border border-gray-200 p-8">
+                    <div class="text-center">
+                        <svg class="mx-auto h-16 w-16 text-gray-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900">No bug bounties yet</h3>
+                        <p class="mt-2 text-gray-500">Start securing your applications by creating your first bug bounty program.</p>
+                        <div class="mt-6">
+                            <a href="{% url 'add_bughunt' organization %}"
+                               class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600">
+                                <svg class="w-5 h-5 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Create Bug Bounty
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+         class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+                <svg class="animate-spin h-5 w-5 text-[#e74c3c]"
+                     fill="none"
+                     viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-gray-700">Loading...</span>
             </div>
         </div>
     </div>
 {% endblock body %}
 {% block js %}
-    <script src="https://unpkg.com/@themesberg/flowbite@latest/dist/flowbite.bundle.js"></script>
+    <script>
+        // Modern JavaScript for enhanced UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filter dropdown functionality
+            const filterButton = document.getElementById('filterButton');
+            const filterDropdown = document.getElementById('filterDropdown');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            if (filterButton && filterDropdown) {
+                filterButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    filterDropdown.classList.toggle('hidden');
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!filterButton.contains(e.target) && !filterDropdown.contains(e.target)) {
+                        filterDropdown.classList.add('hidden');
+                    }
+                });
+                
+                // Close dropdown when pressing Escape
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        filterDropdown.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Add hover effects to bug bounty items
+            const bughuntItems = document.querySelectorAll('.bughunt-item');
+            bughuntItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(4px)';
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0)';
+                });
+            });
+            
+            // Show loading overlay for navigation links
+            const navigationLinks = document.querySelectorAll('a[href*="add_bughunt"], a[href*="show_bughunt"]');
+            navigationLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.remove('hidden');
+                    }
+                });
+            });
+            
+            // Filter functionality (client-side)
+            function filterBounties(status) {
+                const items = document.querySelectorAll('.bughunt-item');
+                items.forEach(item => {
+                    const itemStatus = item.dataset.status;
+                    if (status === 'all' || itemStatus === status) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Add click handlers for filter options
+            const filterLinks = document.querySelectorAll('#filterDropdown a');
+            filterLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href.includes('filter=')) {
+                        e.preventDefault();
+                        const status = href.split('filter=')[1];
+                        filterBounties(status);
+                        filterDropdown.classList.add('hidden');
+                        
+                        // Update filter button text
+                        const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+                        filterButton.innerHTML = filterButton.innerHTML.replace(/Filter|All Bounties|Ongoing|Draft|Ended/, statusText === 'All' ? 'All Bounties' : statusText);
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock js %}
