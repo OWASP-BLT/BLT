@@ -1,5 +1,8 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
 {% block title %}
     Manage Organizations
 {% endblock title %}
@@ -28,6 +31,9 @@
                         {% if organization.is_active %}
                             <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
                                class="list-group-item">{{ organization.name }}</a>
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
                         {% else %}
                             <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
                                class="list-group-item list-group-item-danger ">{{ organization.name }}</a>
