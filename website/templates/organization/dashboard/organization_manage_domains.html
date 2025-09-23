@@ -204,17 +204,6 @@
                 });
             });
             
-            // Add hover effects
-            const domainItems = document.querySelectorAll('.domain-item');
-            domainItems.forEach(item => {
-                item.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateX(4px)';
-                });
-                
-                item.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateX(0)';
-                });
-            });
         });
     </script>
 {% endblock body %}
