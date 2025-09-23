@@ -48,7 +48,7 @@
                     {% csrf_token %}
                     <!-- Username Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="email" class="text-sm font-semibold text-gray-500">Username</label>
+                        <label for="id_username" class="text-sm font-semibold text-gray-500">Username</label>
                         <input autofocus
                                type="text"
                                id="id_username"
@@ -59,7 +59,7 @@
                     </div>
                     <!-- Email Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="email" class="text-sm font-semibold text-gray-500">Email</label>
+                        <label for="id_email" class="text-sm font-semibold text-gray-500">Email</label>
                         <input type="email"
                                id="id_email"
                                name="email"
@@ -70,7 +70,7 @@
                     <!-- Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="password" class="text-sm font-semibold text-gray-500">Password</label>
+                            <label for="id_password" class="text-sm font-semibold text-gray-500">Password</label>
                         </div>
                         <div class="relative">
                             <input type="password"
@@ -78,8 +78,7 @@
                                    name="password1"
                                    value="{{ form.password1.value|default:'' }}"
                                    class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
-                            <button type="button"
-                                    id="togglePassword"
+                <button type="button"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
                                     data-target="id_password">
                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -98,7 +97,7 @@
                     <!-- Confirm Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="password" class="text-sm font-semibold text-gray-500">Confirm Password</label>
+                            <label for="id_password2" class="text-sm font-semibold text-gray-500">Confirm Password</label>
                         </div>
                         <div class="relative">
                             <input type="password"
@@ -106,8 +105,7 @@
                                    name="password2"
                                    value="{{ form.password2.value|default:'' }}"
                                    class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
-                            <button type="button"
-                                    id="togglePassword"
+                <button type="button"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
                                     data-target="id_password2">
                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -187,7 +185,7 @@
             .then(response => response.json())
             .then(data => {
                 captchaContainer.innerHTML = `
-                {% endblock account_content %}
+                    <input type="hidden" name="captcha_0" value="${data.key}">
                     <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 rounded">
                 `;
             })
@@ -201,4 +199,5 @@
             }
         });
     </script>
-{% endblock natural_content %}
+    </script>
+{% endblock account_content %}
