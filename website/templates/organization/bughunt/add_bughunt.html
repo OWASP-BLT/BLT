@@ -24,13 +24,13 @@
                 <p class="text-gray-600 text-sm mt-2">
                     Create a new bug bounty program to engage security researchers and strengthen your application security.
                 </p>
-            </div>
+        </div>
             
             <!-- Form Container -->
-            <form method='post'
+            <form method="post"
                   action="{% url 'add_bughunt' organization %}"
-                  id="add_bughunt_form"
-                  enctype="multipart/form-data"
+              id="add_bughunt_form"
+                  enctype="multipart/form-data">
             {% csrf_token %}
             <div class="bg-white p-10 border border-gray-200 rounded-xl shadow-md ">
             <div class="pb-12">
@@ -94,10 +94,11 @@
                                     </svg>
                                 </div>
                                 <input name="start_date"
+                                       id="start_date"
                                        required
                                        type="text"
                                        class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
-                                       placeholder="Select start date">
+                                       placeholder="MM/DD/YYYY">
                             </div>
                         </div>
                     </div>
@@ -112,20 +113,20 @@
                                          xmlns="http://www.w3.org/2000/svg"
                                          fill="currentColor"
                                          viewBox="0 0 20 20">
-                                        <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
+                                        <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0-2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
                                     </svg>
                                 </div>
                                 <input name="end_date"
+                                       id="end_date"
                                        required
                                        type="text"
                                        class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
-                                       placeholder="Select end date">
+                                       placeholder="MM/DD/YYYY">
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="space-y-12">
+                <div class="space-y-12">
                 <div class="border-b border-gray-900/10 pb-12 mt-10">
                     <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Assets</h2>
                     <p class="mt-1 text-sm text-gray-600">Upload logo and banner images for your bug bounty program.</p>
@@ -135,7 +136,7 @@
                         <div class="mt-2 flex flex-col gap-4">
                             <div class="flex items-center gap-x-3">
                                 <label for="logo" class="relative cursor-pointer">
-                                    <div id="previewLogoDiv"
+                                <div id="previewLogoDiv"
                                          class="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 hover:border-[#e74c3c] transition-colors duration-200">
                                         <img id="logoPreview"
                                              height="128"
@@ -148,9 +149,9 @@
                                                  viewBox="0 0 24 24"
                                                  fill="currentColor"
                                                  aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
+                                        <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
                                     </div>
                                     <input id="logo"
                                            name="logo"
@@ -181,7 +182,7 @@
                         </div>
                     </div>
                     <div class="col-span-full mt-8">
-                        <label for="banner"
+                            <label for="banner"
                                class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Banner</label>
                         <label for="banner" class="cursor-pointer block">
                             <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-[#e74c3c] hover:border-[#e74c3c] transition-colors duration-200">
@@ -206,7 +207,7 @@
                                    class="sr-only"
                                    onchange="displayBannerPreview()" />
                         </label>
-                        <div id="bannerPreview" class="mt-4"></div>
+                            <div id="bannerPreview" class="mt-4"></div>
                     </div>
                 </div>
             </div>
@@ -317,44 +318,32 @@
             </div>
             
             
-            </form>
+        </form>
         </div>
     </div>
 {% endblock body %}
 {% block scripts %}
-    <!-- Datepicker styles and scripts -->
-    <style>
-        /* Minimal datepicker styles to avoid header conflicts */
-        [datepicker] { position: relative; }
-        .datepicker { z-index: 50; }
-        .datepicker-dropdown { background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.7.0/datepicker.min.js"></script>
+    <!-- No external datepicker scripts to avoid style conflicts -->
     
     <!-- Hunt Controller Script -->
-    <script src="{% static 'organization/js/hunt_controller.js' %}"></script>
+    <script src="{% static 'organization/js/hunt_controller.js' %}?v=2.8"></script>
     
     <script>
-        // Initialize datepicker for proper date formatting
-        document.addEventListener('DOMContentLoaded', function() {
-            const startDateInput = document.querySelector('input[name="start_date"]');
-            const endDateInput = document.querySelector('input[name="end_date"]');
-            
-            if (startDateInput && endDateInput && typeof Datepicker !== 'undefined') {
-                // Initialize Flowbite datepicker
-                const startPicker = new Datepicker(startDateInput, {
-                    format: 'mm/dd/yyyy',
-                    autohide: true,
-                    minDate: new Date()
-                });
-                
-                const endPicker = new Datepicker(endDateInput, {
-                    format: 'mm/dd/yyyy',
-                    autohide: true,
-                    minDate: new Date()
-                });
-            }
-        });
+        // Set organization ID for JavaScript access
+        window.organizationId = {{ organization.id }};
+        
+        // Debug CSRF token and form data on page load
+        console.log('[Debug] Page loaded, checking CSRF token...');
+        const form = document.getElementById('add_bughunt_form');
+        const csrfInput = form ? form.querySelector('input[name="csrfmiddlewaretoken"]') : null;
+        if (csrfInput) {
+            console.log('[Debug] CSRF token found on page load:', csrfInput.value.substring(0, 10) + '...');
+        } else {
+            console.error('[Debug] CSRF token NOT found on page load!');
+        }
+        
+        // Date inputs are now plain text with MM/DD/YYYY format
+        console.log('[Date] Using plain text inputs for manual date entry');
         
         // Image preview functions from add domain page
         function previewUploadedImage(input, previewId, defaultIconId, removeButtonId) {
