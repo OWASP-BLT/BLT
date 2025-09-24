@@ -1580,14 +1580,16 @@ class AddHuntView(View):
             messages.error(request, "Domain Does not exists")
             return redirect("add_bughunt", id)
 
+        # Expect dates in MM/DD/YYYY format from the form
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
 
         try:
+            # Parse MM/DD/YYYY format and convert to database format
             start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
         except ValueError:
-            messages.error(request, "Invalid Date Format")
+            messages.error(request, "Please enter dates in MM/DD/YYYY format (e.g., 12/25/2024)")
             return redirect("add_bughunt", id)
 
         # apply validation for date not valid

@@ -559,6 +559,112 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
         console.log('[updatePrize] Prize updated successfully');
     }
     
+    // Image preview functions for logo/banner uploads
+    function previewUploadedImage(input, previewId, defaultIconId, removeButtonId) {
+        const preview = document.getElementById(previewId);
+        const defaultIcon = document.getElementById(defaultIconId);
+        const removeButton = document.getElementById(removeButtonId);
+        const errorDiv = document.getElementById('logoError');
+        
+        // Clear any previous errors
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+        }
+
+        if (!preview || !defaultIcon || !removeButton) {
+            console.error('One or more required elements not found');
+            return;
+        }
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Please select a valid image file (JPG, PNG, GIF, or WebP)';
+                    errorDiv.style.display = 'block';
+                }
+                input.value = '';
+                return;
+            }
+            
+            // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'File size must be less than 5MB';
+                    errorDiv.style.display = 'block';
+                }
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // Set the image source
+                preview.src = e.target.result;
+                
+                // Use style.display for more reliable showing/hiding
+                preview.style.display = 'block';
+                defaultIcon.style.display = 'none';
+                removeButton.style.display = 'inline-flex';
+                
+                // Also use classList as backup
+                preview.classList.remove('hidden');
+                defaultIcon.classList.add('hidden');
+                removeButton.classList.remove('hidden');
+            }
+            
+            reader.onerror = function() {
+                console.error('Error reading file');
+                if (errorDiv) {
+                    errorDiv.textContent = 'Error reading the file. Please try again.';
+                    errorDiv.style.display = 'block';
+                }
+                input.value = '';
+            }
+            
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeUploadedImage(inputId, previewId, defaultIconId, removeButtonId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        const defaultIcon = document.getElementById(defaultIconId);
+        const removeButton = document.getElementById(removeButtonId);
+        const errorDiv = document.getElementById('logoError');
+
+        if (!input || !preview || !defaultIcon || !removeButton) {
+            console.error('One or more required elements not found');
+            return;
+        }
+        
+        // Clear the file input and preview
+        input.value = '';
+        preview.src = '';
+        
+        // Use style.display for more reliable showing/hiding
+        preview.style.display = 'none';
+        defaultIcon.style.display = 'flex';
+        removeButton.style.display = 'none';
+        
+        // Also use classList as backup
+        preview.classList.add('hidden');
+        defaultIcon.classList.remove('hidden');
+        removeButton.classList.add('hidden');
+        
+        // Clear any errors
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+        }
+    }
+    
     // Expose functions globally
 
     window.add_prize = add_prize;
@@ -566,6 +672,8 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
     window.cancelForm = cancelForm;
     window.displayLogoPreview = displayLogoPreview;
     window.displayBannerPreview = displayBannerPreview;
+    window.previewUploadedImage = previewUploadedImage;
+    window.removeUploadedImage = removeUploadedImage;
     window.remove_prize = remove_prize;
     window.removePrize = removePrize;
     window.editPrize = editPrize;
