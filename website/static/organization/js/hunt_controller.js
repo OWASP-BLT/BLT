@@ -75,12 +75,12 @@ let prize_array = [];
 
             // Create prize data object
             const prize_data = {
-        id: prize_array.length,
-                prize_name: elements.prize_name.value,
-                cash_value: elements.cash_value.value,
-                number_of_winning_projects: elements.number_of_winning_projects.value,
+                id: `prize_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+                prize_name: elements.prize_name.value.trim(),
+                cash_value: Number(elements.cash_value.value),
+                number_of_winning_projects: Number(elements.number_of_winning_projects.value),
                 every_valid_submissions: elements.every_valid_submissions.checked,
-                prize_description: elements.prize_description.value,
+                prize_description: elements.prize_description.value.trim(),
                 paid_in_cryptocurrency: elements.paid_in_cryptocurrency.checked,
                 organization_id: window.organizationId || null
             };
@@ -174,7 +174,7 @@ prizeContainer.id = `prize-container-${prize_data.id}`;
         editBtn.innerHTML = '<i class="fas fa-edit"></i>';
         editBtn.title = "Edit Prize";
         editBtn.onclick = function() { 
-            editPrize(event, prize_data.id, prize_data.prize_name, prize_data.cash_value, 
+            editPrize(e, prize_data.id, prize_data.prize_name, prize_data.cash_value, 
                      prize_data.number_of_winning_projects, prize_data.every_valid_submissions, 
                      prize_data.prize_description, prize_data.organization_id); 
         };
@@ -233,9 +233,11 @@ function remove_prize(prize_id) {
         return;
     }
         
-        // Remove from array
-    prize_array = prize_array.filter(prize => prize.id !== prize_id);
-        
+        // Remove from array (mutate in place to keep window.prize_array in sync)
+       const idx = prize_array.findIndex(prize => prize.id === prize_id);
+        if (idx !== -1) {
+           prize_array.splice(idx, 1);
+       }
         // Remove from DOM
         const prize_container = document.getElementById(`prize-container-${prize_id}`);
         if (prize_container) {
@@ -263,7 +265,8 @@ function remove_prize(prize_id) {
             }
             
             // Validate that at least one prize is added
-            if (prize_array.length === 0) {
+            const existingPrizeCards = document.querySelectorAll('[id^="prize-container-"]').length;
+            if (prize_array.length === 0 && existingPrizeCards === 0) {
                 alert("Please add at least one prize before publishing!");
                 return;
             }
@@ -557,6 +560,7 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
     }
     
     // Expose functions globally
+
     window.add_prize = add_prize;
     window.PublishBughunt = PublishBughunt;
     window.cancelForm = cancelForm;

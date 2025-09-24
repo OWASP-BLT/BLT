@@ -27,7 +27,7 @@
             </div>
             <!-- Form Container -->
             <form method="post"
-                  action="#"
+                  action="{% url 'add_bughunt' organization %}?hunt={{ hunt.id }}"
                   id="add_bughunt_form"
                   enctype="multipart/form-data">
                 {% csrf_token %}
@@ -359,7 +359,7 @@
                                                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                                     <!-- Edit button -->
                                                     <button type="button"
-                                                            onclick="editPrize(event, {{ prize.id }}, '{{ prize.name }}', {{ prize.value }}, {{ prize.no_of_eligible_projects }}, {{ prize.valid_submissions_eligible|yesno:"true,false" }}, '{{ prize.description }}', {{ organization }})"
+                                                            onclick="editPrize(event, {{ prize.id }}, '{{ prize.name|escapejs }}', {{ prize.value }}, {{ prize.no_of_eligible_projects }}, {{ prize.valid_submissions_eligible|yesno:"true,false" }}, '{{ prize.description|escapejs }}', {{ organization }})"
                                                             class="p-1.5 text-gray-400 hover:text-[#e74c3c] hover:bg-red-50 rounded-md transition-all duration-150 text-sm"
                                                             title="Edit Prize">
                                                         <i class="fas fa-edit"></i>
