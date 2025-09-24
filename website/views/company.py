@@ -1693,6 +1693,8 @@ class OrganizationDashboardManageBughuntView(View):
             "end_on__day",
             "end_on__month",
             "end_on__year",
+            "url",
+            "logo",
         ).filter(domain__organization__id=id)
         filtered_bughunts = {
             "all": query,
