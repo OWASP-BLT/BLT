@@ -173,7 +173,7 @@ prizeContainer.id = `prize-container-${prize_data.id}`;
         );
         editBtn.innerHTML = '<i class="fas fa-edit"></i>';
         editBtn.title = "Edit Prize";
-        editBtn.onclick = function() { 
+        editBtn.onclick = function(e) { 
             editPrize(e, prize_data.id, prize_data.prize_name, prize_data.cash_value, 
                      prize_data.number_of_winning_projects, prize_data.every_valid_submissions, 
                      prize_data.prize_description, prize_data.organization_id); 
@@ -229,9 +229,7 @@ list_prize_container.appendChild(prizeContainer);
 function remove_prize(prize_id) {
         console.log('[remove_prize] Removing prize:', prize_id);
         
-        if (!confirm("Are you sure you want to delete this prize?")) {
-        return;
-    }
+        // Remove from array (mutate in place to keep window.prize_array in sync)
         
         // Remove from array (mutate in place to keep window.prize_array in sync)
        const idx = prize_array.findIndex(prize => prize.id === prize_id);
@@ -352,47 +350,6 @@ function remove_prize(prize_id) {
     }
 }
 
-    function displayBannerPreview() {
-        const fileInput = document.getElementById("banner");
-        const previewDiv = document.getElementById("bannerPreview");
-        
-        if (!fileInput || !previewDiv) {
-            console.error('[displayBannerPreview] Required elements not found');
-            return;
-        }
-
-    if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-
-        reader.onload = function(event) {
-                const img = new Image();
-            img.src = event.target.result;
-
-            img.onload = function() {
-                    const canvas = document.createElement("canvas");
-                    const ctx = canvas.getContext("2d");
-
-                    const maxDim = 300;
-                    const scale = Math.min(maxDim / img.width, maxDim / img.height);
-
-                canvas.width = img.width * scale;
-                canvas.height = img.height * scale;
-
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                previewDiv.innerHTML = "";
-                previewDiv.style.display = "flex";
-                previewDiv.style.justifyContent = "center";
-                previewDiv.appendChild(canvas);
-            };
-        };
-
-        reader.readAsDataURL(file);
-    } else {
-        previewDiv.innerHTML = "";
-    }
-}
 
     function getCookie(name) {
         let cookieValue = null;
@@ -559,18 +516,21 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
         console.log('[updatePrize] Prize updated successfully');
     }
     
-    // Image preview functions for logo/banner uploads
-    function previewUploadedImage(input, previewId, defaultIconId, removeButtonId) {
-        const preview = document.getElementById(previewId);
-        const defaultIcon = document.getElementById(defaultIconId);
-        const removeButton = document.getElementById(removeButtonId);
-        const errorDiv = document.getElementById('logoError');
-        
-        // Clear any previous errors
-        if (errorDiv) {
-            errorDiv.style.display = 'none';
-            errorDiv.textContent = '';
-        }
+     // Image preview functions for logo/banner uploads
+     function previewUploadedImage(input, previewId, defaultIconId, removeButtonId) {
+         const preview = document.getElementById(previewId);
+         const defaultIcon = document.getElementById(defaultIconId);
+         const removeButton = document.getElementById(removeButtonId);
+         
+         // Determine error div based on preview type (logo vs banner)
+         const errorDivId = previewId.includes('logo') ? 'logoError' : 'bannerError';
+         const errorDiv = document.getElementById(errorDivId);
+         
+         // Clear any previous errors
+         if (errorDiv) {
+             errorDiv.style.display = 'none';
+             errorDiv.textContent = '';
+         }
 
         if (!preview || !defaultIcon || !removeButton) {
             console.error('One or more required elements not found');
@@ -632,12 +592,15 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
         }
     }
 
-    function removeUploadedImage(inputId, previewId, defaultIconId, removeButtonId) {
-        const input = document.getElementById(inputId);
-        const preview = document.getElementById(previewId);
-        const defaultIcon = document.getElementById(defaultIconId);
-        const removeButton = document.getElementById(removeButtonId);
-        const errorDiv = document.getElementById('logoError');
+     function removeUploadedImage(inputId, previewId, defaultIconId, removeButtonId) {
+         const input = document.getElementById(inputId);
+         const preview = document.getElementById(previewId);
+         const defaultIcon = document.getElementById(defaultIconId);
+         const removeButton = document.getElementById(removeButtonId);
+         
+         // Determine error div based on input type (logo vs banner)
+         const errorDivId = inputId.includes('logo') ? 'logoError' : 'bannerError';
+         const errorDiv = document.getElementById(errorDivId);
 
         if (!input || !preview || !defaultIcon || !removeButton) {
             console.error('One or more required elements not found');
@@ -671,7 +634,6 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
     window.PublishBughunt = PublishBughunt;
     window.cancelForm = cancelForm;
     window.displayLogoPreview = displayLogoPreview;
-    window.displayBannerPreview = displayBannerPreview;
     window.previewUploadedImage = previewUploadedImage;
     window.removeUploadedImage = removeUploadedImage;
     window.remove_prize = remove_prize;

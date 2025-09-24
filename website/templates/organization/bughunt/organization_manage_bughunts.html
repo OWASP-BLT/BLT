@@ -309,22 +309,7 @@
             }
             
             // Add click handlers for filter options
-            const filterLinks = document.querySelectorAll('#filterDropdown a');
-            filterLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    const href = this.getAttribute('href');
-                    if (href.includes('filter=')) {
-                        e.preventDefault();
-                        const status = href.split('filter=')[1];
-                        filterBounties(status);
-                        filterDropdown.classList.add('hidden');
-                        
-                        // Update filter button text
-                        const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-                        filterButton.innerHTML = filterButton.innerHTML.replace(/Filter|All Bounties|Ongoing|Draft|Ended/, statusText === 'All' ? 'All Bounties' : statusText);
-                    }
-                });
-            });
+
         });
     </script>
 {% endblock js %}
