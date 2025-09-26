@@ -253,13 +253,13 @@ class HackathonDetailView(DetailView):
         # Get the path for this hackathon
         hackathon_path = f"/hackathons/{hackathon.slug}/"
 
-        # Get the last 14 days of view data
+        # Get the last 30 days of view data to match the page stats widget
         today = timezone.now().date()
-        fourteen_days_ago = today - timedelta(days=14)
+        thirty_days_ago = today - timedelta(days=30)
 
         # Query IP table for view counts by date
         view_data = (
-            IP.objects.filter(path=hackathon_path, created__date__gte=fourteen_days_ago)
+            IP.objects.filter(path=hackathon_path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
             .annotate(count=Sum("count"))
@@ -268,7 +268,7 @@ class HackathonDetailView(DetailView):
 
         # Prepare data for the sparkline chart
         date_counts = {item["date"]: item["count"] for item in view_data}
-        dates, counts = self._get_date_range_data(fourteen_days_ago, today, date_counts)
+        dates, counts = self._get_date_range_data(thirty_days_ago, today, date_counts)
 
         context["view_dates"] = json.dumps(dates)
         context["view_counts"] = json.dumps(counts)

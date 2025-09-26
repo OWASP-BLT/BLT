@@ -102,7 +102,7 @@ def get_page_views(url_path, days=30):
 
     # Query the IP table for views of this page
     daily_views = (
-        IP.objects.filter(path__contains=url_path, created__gte=start_date, created__lte=end_date)
+        IP.objects.filter(path=url_path, created__gte=start_date, created__lte=end_date)
         .values("created__date")
         .annotate(total_views=models.Sum("count"))
         .order_by("created__date")
