@@ -490,11 +490,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
         )
-        
-        # Add debugging to see what data we have
-        print(f"Code review leaderboard query count: {reviewed_pr_leaderboard.count()}")
-        for item in reviewed_pr_leaderboard:
-            print(f"Reviewer: {item.get('reviewer__user__username', 'N/A')}, Reviews: {item.get('total_reviews', 0)}")
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         # Top visitors leaderboard

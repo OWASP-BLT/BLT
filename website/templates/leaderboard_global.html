@@ -26,10 +26,10 @@
     <div class="flex flex-col md:gap-10 px-4  gap-2 md:px-0">
         <div class="flex justify-center gap-6 flex-wrap">
             <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Points Leaderboard</div>
+                <div class="text-center text-3xl font-bold py-4 border-2 border-[#e74c3c] rounded-t-lg">Points Leaderboard</div>
                 <div class=" list-group w-full p-4">
                     {% if not leaderboard %}
-                        <p class="text-red-500 text-center font-medium">No data for this month!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No data for this month!</p>
                     {% else %}
                         <div class="flex flex-col gap-2">
                             {% for leader in leaderboard %}
@@ -74,7 +74,7 @@
                 </div>
             </div>
             <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class=" text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Pull Request Leaderboard</div>
+                <div class=" text-center text-3xl font-bold py-4 border-2 border-[#e74c3c] rounded-t-lg">Pull Request Leaderboard</div>
                 <div class=" list-group w-full p-4">
                     {% if pr_leaderboard %}
                         <div class="flex flex-col gap-2">
@@ -108,12 +108,12 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No pull request data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No pull request data available!</p>
                     {% endif %}
                 </div>
             </div>
             <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Code Review Leaderboard</div>
+                <div class="text-center text-3xl font-bold py-4 border-2 border-[#e74c3c] rounded-t-lg">Code Review Leaderboard</div>
                 <div class="list-group p-4">
                     {% if code_review_leaderboard %}
                         <div class="flex flex-col gap-2">
@@ -149,14 +149,14 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No code review data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No code review data available!</p>
                     {% endif %}
                 </div>
             </div>
         </div>
         <div class="flex justify-center gap-6 flex-wrap">
             <div class="flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Top Visitors</div>
+                <div class="text-center text-3xl font-bold py-4 border-2 border-[#e74c3c] rounded-t-lg">Top Visitors</div>
                 <div class="list-group w-full p-4">
                     {% if top_visitors %}
                         <div class="flex flex-col gap-2">
@@ -188,24 +188,24 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No visitor data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No visitor data available!</p>
                     {% endif %}
                 </div>
             </div>
             <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Issue Bounties</div>
+                <div class="text-center text-3xl font-bold py-4 border-2 border-[#e74c3c] rounded-t-lg">Issue Bounties</div>
                 <div class=" list-group w-full p-4">
                     {% if not issue_bounties %}
-                        <p class="text-red-500 text-center font-medium">No issue bounties data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No issue bounties data available!</p>
                     {% else %}
                     {% endif %}
                 </div>
             </div>
             <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Bug Bounties</div>
+                <div class="text-center text-3xl font-bold py-4 border-2 border-[#e74c3c] rounded-t-lg">Bug Bounties</div>
                 <div class=" list-group w-full p-4">
                     {% if not bug_bounties %}
-                        <p class="text-red-500 text-center font-medium">No bug bounties data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No bug bounties data available!</p>
                     {% else %}
                     {% endif %}
                 </div>
