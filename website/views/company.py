@@ -751,9 +751,14 @@ class AddDomainView(View):
             messages.error(request, "Invalid domain url format")
             return redirect("add_domain", id=id)
 
-        # Extract domain hostname and normalize to lowercase
-        domain = parsed_url.hostname.replace("www.", "").lower()
-        domain_data["name"] = domain_data["name"].lower()
+        # Extract domain hostname and normalize to lowercase for consistency
+        normalized_domain = parsed_url.hostname.replace("www.", "").lower()
+        # Ensure the domain name is consistent with the URL processing
+        # If user didn't provide a custom name, use the normalized domain
+        if domain_data["name"].lower().replace("www.", "") == normalized_domain:
+            domain_data["name"] = normalized_domain
+        else:
+            domain_data["name"] = domain_data["name"].lower()
 
         managers_list = request.POST.getlist("user")
         organization_obj = Organization.objects.get(id=id)

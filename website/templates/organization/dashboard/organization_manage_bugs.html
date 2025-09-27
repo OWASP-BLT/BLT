@@ -16,75 +16,109 @@
     View and manage all bugs in your system. Easily filter, view, and update bug statuses to maintain efficient operations.
 {% endblock og_description %}
 {% block body %}
-    <div class="fixed bottom-2.5 right-3.75">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html">
-            <i class="fab fa-github"></i>
-        </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma"></i>
-        </a>
-    </div>
-    <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
-        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bugs</p>
-            <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <a href="{% url 'report' %}"
-                   class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
-                    <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
-                </a>
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <!-- Header Section -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Manage Bugs</h1>
+                        <p class="mt-1 text-sm text-gray-500">Track and manage all reported security issues</p>
+                    </div>
+                    <a href="{% url 'report' %}"
+                       class="inline-flex items-center px-4 py-2.5 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 select-none">
+                        <svg class="w-5 h-5 mr-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Report New Bug
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="w-[96%] h-[70vh] overflow-y-scroll flow-root my-10">
-            <div class="relative overflow-x-auto shadow-md sm:rounded-lg h-full bg-white">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <caption class="p-5 text-xl font-semibold text-left text-gray-900 bg-white">
-                        <div class="flex w-full justify-between">
-                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Bugs</h2>
-                        </div>
-                    </caption>
-                    <thead class="text-gray-700 uppercase bg-gray-50">
+        <!-- Main Content -->
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
+
+            <!-- Bugs List -->
+            {% if issues %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">All Bugs</h2>
+                    </div>
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Description</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Created On</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Bug Type</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Status</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">
-                                <span class="sr-only">View</span>
-                            </th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Description</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Created</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                            <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-200">
                         {% if issues %}
                             {% for issue in issues %}
-                                <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
-                                    <th scope="row"
-                                        class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                        {{ issue.description|slice:":25" }}...
-                                    </th>
-                                    <td class="px-6 py-4">{{ issue.created|date:"F j, Y" }}</td>
-                                    <td class="px-6 py-4">{{ issue.get_label_display }}</td>
+                                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ issue.description|slice:":50" }}{% if issue.description|length > 50 %}...{% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-600">{{ issue.created|date:"M j, Y" }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-600">{{ issue.get_label_display }}</div>
+                                    </td>
                                     <td class="px-6 py-4">
                                         {% if issue.status == 'open' %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Open</span>
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Open</span>
                                         {% else %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Closed</span>
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">Closed</span>
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="{% url 'issue_view' issue.pk %}"
-                                           class="font-medium text-blue-600 hover:underline">View</a>
+                                        <a href="{% url 'issue_view' issue.pk %}" 
+                                           class="text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm transition-colors duration-200">
+                                            View
+                                        </a>
                                     </td>
                                 </tr>
                             {% endfor %}
-                        {% else %}
-                            <tr class="bg-white border-b">
-                                <th scope="row"
-                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">No Issues Found</th>
-                            </tr>
                         {% endif %}
                     </tbody>
                 </table>
-            </div>
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="bg-white rounded-lg border border-gray-200 p-8">
+                    <div class="text-center">
+                        <svg class="mx-auto h-16 w-16 text-gray-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900">No bugs yet</h3>
+                        <p class="mt-2 text-gray-500">Get started by reporting your first security issue.</p>
+                        <div class="mt-6">
+                            <a href="{% url 'report' %}"
+                               class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600">
+                                <svg class="w-5 h-5 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Report Bug
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% endblock body %}
