@@ -869,30 +869,36 @@ class IssueCreate(IssueBaseCreate, CreateView):
             except Exception as e:
                 # Add debugging to understand URL validation issues
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.warning(f"URL accessibility check failed for {url}: {str(e)}")
-                
+
                 # Check if domain exists in our database before rejecting
                 try:
                     parsed_url = urlparse("https://" + url)
                     clean_domain = parsed_url.netloc.replace("www.", "").lower()
-                    
+
                     # Try to find existing domain in database
                     domain_exists = Domain.objects.filter(
-                        Q(name__iexact=clean_domain) | 
-                        Q(url__iexact=clean_domain) |
-                        Q(name__iexact=parsed_url.netloc) |
-                        Q(url__iexact=parsed_url.netloc)
+                        Q(name__iexact=clean_domain)
+                        | Q(url__iexact=clean_domain)
+                        | Q(name__iexact=parsed_url.netloc)
+                        | Q(url__iexact=parsed_url.netloc)
                     ).exists()
-                    
+
                     if domain_exists:
-                        logger.info(f"Domain {clean_domain} exists in database, allowing despite URL accessibility issue")
+                        logger.info(
+                            f"Domain {clean_domain} exists in database, allowing despite URL accessibility issue"
+                        )
                         # Domain exists in our system, allow the bug report even if URL isn't accessible
                         # This handles cases where site is temporarily down or has access restrictions
                         pass  # Continue with normal flow
                     else:
                         logger.warning(f"Domain {clean_domain} not found in database and URL not accessible")
-                        messages.error(request, "Domain is not accessible and not found in our system. Please ensure the URL is correct or contact support to add the domain.")
+                        messages.error(
+                            request,
+                            "Domain is not accessible and not found in our system. Please ensure the URL is correct or contact support to add the domain.",
+                        )
 
                         captcha_form = CaptchaForm(request.POST)
                         return render(
@@ -903,7 +909,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 except Exception as parse_error:
                     logger.error(f"Error parsing URL for domain check: {str(parse_error)}")
                     messages.error(request, "Invalid URL format provided")
-                    
+
                     captcha_form = CaptchaForm(request.POST)
                     return render(
                         self.request,
@@ -1026,51 +1032,52 @@ class IssueCreate(IssueBaseCreate, CreateView):
             parsed_url = urlparse(obj.url)
             clean_domain = parsed_url.netloc
             clean_domain_no_www = clean_domain.replace("www.", "")
-            
+
             # Debug logging to help identify the issue
             import logging
+
             logger = logging.getLogger(__name__)
             logger.info(f"Bug creation - Looking for domain: netloc={clean_domain}, no_www={clean_domain_no_www}")
-            
+
             # Try multiple domain lookup strategies to match domain creation logic
             domain = None
-            
+
             # Strategy 1: Exact URL match
             domain = Domain.objects.filter(url=clean_domain).first()
             if domain:
                 logger.info(f"Found domain by exact URL match: {domain.name}")
-            
+
             # Strategy 2: URL match without www
             if not domain:
                 domain = Domain.objects.filter(url=clean_domain_no_www).first()
                 if domain:
                     logger.info(f"Found domain by URL without www: {domain.name}")
-            
+
             # Strategy 3: Name match with netloc
             if not domain:
                 domain = Domain.objects.filter(name=clean_domain).first()
                 if domain:
                     logger.info(f"Found domain by name match with netloc: {domain.name}")
-            
+
             # Strategy 4: Name match without www
             if not domain:
                 domain = Domain.objects.filter(name=clean_domain_no_www).first()
                 if domain:
                     logger.info(f"Found domain by name match without www: {domain.name}")
-            
+
             # Strategy 5: Case-insensitive matches
             if not domain:
                 domain = Domain.objects.filter(url__iexact=clean_domain).first()
                 if domain:
                     logger.info(f"Found domain by case-insensitive URL: {domain.name}")
-            
+
             if not domain:
                 domain = Domain.objects.filter(name__iexact=clean_domain_no_www).first()
                 if domain:
                     logger.info(f"Found domain by case-insensitive name: {domain.name}")
-            
+
             domain_exists = domain is not None
-            
+
             if not domain_exists:
                 logger.warning(f"Domain not found, creating new: name={clean_domain_no_www}, url={clean_domain}")
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)

@@ -40,56 +40,67 @@
         </div>
         <!-- Main Content -->
         <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
-
             <!-- Bugs List -->
             {% if issues %}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <h2 class="text-lg font-semibold text-gray-900">All Bugs</h2>
                     </div>
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Description</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Created</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                            <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        {% if issues %}
-                            {% for issue in issues %}
-                                <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ issue.description|slice:":50" }}{% if issue.description|length > 50 %}...{% endif %}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-600">{{ issue.created|date:"M j, Y" }}</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-600">{{ issue.get_label_display }}</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        {% if issue.status == 'open' %}
-                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Open</span>
-                                        {% else %}
-                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">Closed</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <a href="{% url 'issue_view' issue.pk %}" 
-                                           class="text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm transition-colors duration-200">
-                                            View
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% endif %}
-                    </tbody>
-                </table>
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Description</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Created</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                                <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% if issues %}
+                                {% for issue in issues %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                {{ issue.description|slice:":50" }}
+                                                {% if issue.description|length > 50 %}...{% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-600">{{ issue.created|date:"M j, Y" }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-600">{{ issue.get_label_display }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {% if issue.status == 'open' %}
+                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Open</span>
+                                            {% else %}
+                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">Closed</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex items-center justify-end space-x-2">
+                                                <a href="{% url 'issue_view' issue.pk %}"
+                                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
+                                                   title="View Bug Details">
+                                                    <svg class="w-4 h-4 mr-1.5"
+                                                         fill="none"
+                                                         stroke="currentColor"
+                                                         viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                        </path>
+                                                    </svg>
+                                                    View
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             {% else %}
                 <!-- Empty State -->

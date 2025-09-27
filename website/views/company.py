@@ -1686,21 +1686,25 @@ class OrganizationDashboardManageBughuntView(View):
             messages.error(request, "Organization does not exist")
             return redirect("home")
 
-        query = Hunt.objects.values(
-            "id",
-            "name",
-            "prize",
-            "is_published",
-            "result_published",
-            "starts_on__day",
-            "starts_on__month",
-            "starts_on__year",
-            "end_on__day",
-            "end_on__month",
-            "end_on__year",
-            "url",
-            "logo",
-        ).filter(domain__organization__id=id)
+        query = (
+            Hunt.objects.values(
+                "id",
+                "name",
+                "prize",
+                "is_published",
+                "result_published",
+                "starts_on__day",
+                "starts_on__month",
+                "starts_on__year",
+                "end_on__day",
+                "end_on__month",
+                "end_on__year",
+                "url",
+                "logo",
+            )
+            .annotate(total_prize=Sum("huntprize__value"))
+            .filter(domain__organization__id=id)
+        )
         filtered_bughunts = {
             "all": query,
             "ongoing": query.filter(result_published=False, is_published=True),
