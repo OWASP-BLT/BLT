@@ -1,0 +1,78 @@
+{% load static %}
+
+<!-- Tag Cloud Component -->
+<div class="tag-cloud-container">
+    {% if title %}
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ title }}</h3>
+    {% endif %}
+    
+    {% if tags %}
+        <div class="flex flex-wrap gap-2">
+            {% for tag in tags %}
+                <a href="{% if base_url %}{{ base_url }}?tag={{ tag.slug }}{% else %}{% url 'tag_search' %}?q={{ tag.name }}{% endif %}"
+                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white hover:opacity-80 transition-all duration-200 shadow-sm transform hover:scale-105"
+                   style="background-color: {{ tag.color }}; font-size: {% if tag.usage_count %}{{ tag.usage_count|add:8|floatformat:0 }}px{% else %}12px{% endif %};"
+                   title="{{ tag.name }}{% if tag.description %} - {{ tag.description }}{% endif %} ({{ tag.usage_count|default:0 }} use{{ tag.usage_count|default:0|pluralize }})">
+                    {% if tag.icon %}<i class="{{ tag.icon }} mr-1"></i>{% endif %}
+                    {{ tag.name }}
+                    {% if show_count and tag.usage_count %}
+                        <span class="ml-1 opacity-75">({{ tag.usage_count }})</span>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+        
+        {% if show_more_link %}
+            <div class="mt-4 text-center">
+                <a href="{% url 'tag_search' %}" 
+                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">
+                    View all tags →
+                </a>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-tags text-2xl mb-2"></i>
+            <p class="text-sm">No tags available</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* Dynamic font sizing for tag cloud effect */
+.tag-cloud-container a {
+    animation: fadeInScale 0.3s ease-out;
+}
+
+.tag-cloud-container a:nth-child(odd) {
+    animation-delay: 0.1s;
+}
+
+.tag-cloud-container a:nth-child(even) {
+    animation-delay: 0.2s;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive tag sizing */
+@media (max-width: 640px) {
+    .tag-cloud-container a {
+        font-size: 12px !important;
+        padding: 6px 12px;
+    }
+}
+
+/* Hover effects */
+.tag-cloud-container a:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+</style>

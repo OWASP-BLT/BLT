@@ -357,6 +357,44 @@ def tag_search(request):
     return render(request, template_name, context)
 
 
+def get_popular_tags_context(request, limit=20, category=None):
+    """
+    Get popular tags for use in templates
+    
+    Args:
+        request: Django request object
+        limit: Maximum number of tags to return
+        category: Optional category filter
+        
+    Returns:
+        dict: Context with popular tags
+    """
+    from website.models import Tag
+    
+    # Get popular tags with usage counts 
+    tags = Tag.objects.filter(is_active=True).annotate(
+        total_usage=models.Count('organization', distinct=True) +
+                   models.Count('issue', distinct=True) +
+                   models.Count('courses', distinct=True) +
+                   models.Count('lectures', distinct=True) +
+                   models.Count('communities', distinct=True)
+    ).filter(total_usage__gt=0)
+    
+    if category:
+        tags = tags.filter(category=category)
+    
+    tags = tags.order_by('-total_usage')[:limit]
+    
+    # Add usage_count attribute for template use
+    for tag in tags:
+        tag.usage_count = tag.total_usage
+    
+    return {
+        'popular_tags': tags,
+        'popular_tags_count': tags.count(),
+    }
+
+
 @staff_member_required
 def merge_tags(request):
     """Merge multiple tags into one"""
