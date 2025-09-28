@@ -62,10 +62,10 @@ RUN apt-get update && \
 COPY . /blt
 
 # Convert line endings and set permissions
-RUN dos2unix Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
+RUN dos2unix Dockerfile config/docker/docker-compose.yml config/docker/entrypoint.sh ./blt/settings.py
 # Check if .env exists and run dos2unix on it, otherwise skip
 RUN if [ -f /blt/.env ]; then dos2unix /blt/.env; fi
-RUN chmod +x /blt/entrypoint.sh
+RUN chmod +x /blt/config/docker/entrypoint.sh
 
-ENTRYPOINT ["/blt/entrypoint.sh"]
+ENTRYPOINT ["/blt/config/docker/entrypoint.sh"]
 CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]

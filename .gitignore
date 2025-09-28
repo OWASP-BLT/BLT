@@ -21,3 +21,6 @@ requirements.txt
 .vs
 .qodo
 ssl
+.pytest_cache/
+__pycache__/
+*.coverage
