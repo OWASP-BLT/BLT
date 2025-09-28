@@ -183,6 +183,12 @@ class Command(LoggedBaseCommand):
             user.contribution_rank = rank
 
         UserProfile.objects.bulk_update(sorted_users, ["contribution_rank"])
+        
+        # Calculate club memberships for all users with GitHub profiles
+        self.stdout.write("Calculating club memberships...")
+        for user in sorted_users:
+            user.calculate_club_memberships()
+        self.stdout.write(self.style.SUCCESS("Club memberships updated!"))
 
         self.stdout.write("-" * 50)
         self.stdout.write(self.style.SUCCESS("GitHub data fetch completed!"))

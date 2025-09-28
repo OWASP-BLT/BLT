@@ -21,3 +21,4 @@ requirements.txt
 .vs
 .qodo
 ssl
+.env

@@ -750,6 +750,13 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    
+    # Contributor clubs based on PR activity
+    weekly_club_member = models.BooleanField(default=False, help_text="Has at least 1 merged PR per week")
+    monthly_club_member = models.BooleanField(default=False, help_text="Has at least 1 merged PR per month") 
+    ten_club_member = models.BooleanField(default=False, help_text="Has 10+ merged PRs")
+    fifty_club_member = models.BooleanField(default=False, help_text="Has 50+ merged PRs")
+    hundred_club_member = models.BooleanField(default=False, help_text="Has 100+ merged PRs")
 
     def check_team_membership(self):
         return self.team is not None
@@ -872,6 +879,46 @@ class UserProfile(models.Model):
                 # Avoid duplicate badge awards
                 if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
                     UserBadge.objects.create(user=self.user, badge=badge)
+
+    def calculate_club_memberships(self):
+        """
+        Calculate and update club memberships based on merged PR activity
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Milestone clubs based on total merged PRs
+        self.ten_club_member = self.merged_pr_count >= 10
+        self.fifty_club_member = self.merged_pr_count >= 50
+        self.hundred_club_member = self.merged_pr_count >= 100
+        
+        # Time-based clubs - check recent PR activity
+        if self.github_url:
+            now = timezone.now()
+            one_week_ago = now - timedelta(weeks=1)
+            one_month_ago = now - timedelta(days=30)
+            
+            # Get merged PRs for this user from the last week and month
+            user_merged_prs = GitHubIssue.objects.filter(
+                user_profile=self,
+                type='pull_request',
+                is_merged=True
+            )
+            
+            recent_weekly_prs = user_merged_prs.filter(merged_at__gte=one_week_ago)
+            recent_monthly_prs = user_merged_prs.filter(merged_at__gte=one_month_ago)
+            
+            self.weekly_club_member = recent_weekly_prs.exists()
+            self.monthly_club_member = recent_monthly_prs.exists()
+        else:
+            # No GitHub URL means no PRs
+            self.weekly_club_member = False
+            self.monthly_club_member = False
+            
+        self.save(update_fields=[
+            'ten_club_member', 'fifty_club_member', 'hundred_club_member',
+            'weekly_club_member', 'monthly_club_member'
+        ])
 
     def __str__(self):
         return self.user.username
