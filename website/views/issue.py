@@ -1386,6 +1386,8 @@ class AllIssuesView(ListView):
 
     def get_queryset(self):
         username = self.request.GET.get("user")
+        tag_slug = self.request.GET.get("tag")
+        
         if username is None:
             self.activities = Issue.objects.filter(hunt=None).exclude(
                 Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
@@ -1394,6 +1396,11 @@ class AllIssuesView(ListView):
             self.activities = Issue.objects.filter(user__username=username, hunt=None).exclude(
                 Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
             )
+        
+        # Add tag filtering
+        if tag_slug:
+            self.activities = self.activities.filter(tags__slug=tag_slug)
+            
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
@@ -1425,6 +1432,22 @@ class AllIssuesView(ListView):
             .order_by("-issue_count")[:10]
         )
         context["top_users"] = top_users
+        
+        # Add tag filtering data
+        from website.models import Tag
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            try:
+                context["selected_tag"] = Tag.objects.get(slug=tag_slug)
+            except Tag.DoesNotExist:
+                pass
+        
+        # Get top tags used in issues
+        context["top_issue_tags"] = (
+            Tag.objects.annotate(issue_count=Count("issue"))
+            .filter(issue_count__gt=0, is_active=True)
+            .order_by("-issue_count")[:15]
+        )
 
         return context
 

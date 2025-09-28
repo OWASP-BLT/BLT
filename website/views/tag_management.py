@@ -1,3 +1,4 @@
+import json
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -211,6 +212,149 @@ def tag_autocomplete(request):
     ]
     
     return JsonResponse({'results': results})
+
+
+@login_required
+def recommend_tags_api(request):
+    """API endpoint for tag recommendations based on issue content"""
+    from website.utils import recommend_tags_for_issue
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST request required'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        description = data.get('description', '')
+        url = data.get('url', '')
+        max_tags = min(int(data.get('max_tags', 5)), 10)  # Limit to 10
+        
+        if not description:
+            return JsonResponse({'error': 'Description is required'}, status=400)
+        
+        # Get recommendations
+        recommended_tag_names = recommend_tags_for_issue(description, url, max_tags)
+        
+        # Get tag objects for the recommendations
+        recommendations = []
+        for tag_name in recommended_tag_names:
+            # Try to find existing tag
+            tag = Tag.objects.filter(name__iexact=tag_name, is_active=True).first()
+            if tag:
+                recommendations.append({
+                    'id': tag.id,
+                    'name': tag.name,
+                    'slug': tag.slug,
+                    'category': tag.category,
+                    'color': tag.color,
+                    'icon': tag.icon,
+                    'exists': True,
+                })
+            else:
+                # Suggest new tag
+                normalized_name = Tag.normalize_name(tag_name)
+                recommendations.append({
+                    'id': None,
+                    'name': normalized_name,
+                    'slug': None,
+                    'category': 'general',
+                    'color': '#e74c3c',
+                    'icon': '',
+                    'exists': False,
+                })
+        
+        return JsonResponse({
+            'recommendations': recommendations,
+            'count': len(recommendations)
+        })
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+@login_required  
+def tag_search(request):
+    """Search functionality for tags across different models"""
+    template_name = 'tag_management/search.html'
+    
+    query = request.GET.get('q', '').strip()
+    category = request.GET.get('category', '')
+    model_type = request.GET.get('type', 'all')  # all, issues, organizations, etc.
+    
+    context = {
+        'query': query,
+        'category': category,
+        'model_type': model_type,
+    }
+    
+    if query:
+        # Search tags
+        tags = Tag.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query),
+            is_active=True
+        )
+        
+        if category:
+            tags = tags.filter(category=category)
+        
+        tags = tags.order_by('name')[:50]
+        
+        # Get entities tagged with these tags
+        search_results = {}
+        
+        for tag in tags:
+            tag_results = {
+                'tag': tag,
+                'issues': [],
+                'organizations': [],
+                'repos': [],
+                'courses': [],
+                'total_count': 0,
+            }
+            
+            if model_type in ['all', 'issues']:
+                issues = tag.issue_set.filter(
+                    ~Q(is_hidden=True) | Q(user=request.user)
+                ).order_by('-created')[:10]
+                tag_results['issues'] = issues
+                
+            if model_type in ['all', 'organizations']:
+                organizations = tag.organization_set.all()[:10]
+                tag_results['organizations'] = organizations
+                
+            if model_type in ['all', 'repos']:
+                repos = tag.repo_set.all()[:10]
+                tag_results['repos'] = repos
+                
+            if model_type in ['all', 'courses']:
+                courses = tag.courses.all()[:10]
+                tag_results['courses'] = courses
+            
+            # Calculate total count
+            tag_results['total_count'] = (
+                len(tag_results['issues']) +
+                len(tag_results['organizations']) +
+                len(tag_results['repos']) +
+                len(tag_results['courses'])
+            )
+            
+            if tag_results['total_count'] > 0:
+                search_results[tag.id] = tag_results
+        
+        context['search_results'] = search_results
+        context['tags_found'] = len(search_results)
+    
+    context['category_choices'] = Tag.CATEGORY_CHOICES
+    context['model_type_choices'] = [
+        ('all', 'All Types'),
+        ('issues', 'Issues'),
+        ('organizations', 'Organizations'), 
+        ('repos', 'Repositories'),
+        ('courses', 'Courses'),
+    ]
+    
+    return render(request, template_name, context)
 
 
 @staff_member_required

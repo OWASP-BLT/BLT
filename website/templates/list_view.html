@@ -35,7 +35,7 @@
                     <!-- Filter Pills -->
                     <div class="flex flex-wrap gap-2">
                         <a href="{% url 'all_activity' %}"
-                           class="inline-flex items-center px-3 py-1 rounded-full text-sm {% if not label and not user %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">
+                           class="inline-flex items-center px-3 py-1 rounded-full text-sm {% if not label and not user and not selected_tag %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">
                             All Issues
                         </a>
                         {% if label %}
@@ -52,7 +52,31 @@
                                 <span class="ml-1.5">×</span>
                             </a>
                         {% endif %}
+                        {% if selected_tag %}
+                            <a href="{% url 'all_activity' %}?tag={{ selected_tag.slug }}"
+                               class="inline-flex items-center px-3 py-1 rounded-full text-sm text-white transition-colors"
+                               style="background-color: {{ selected_tag.color }};">
+                                {% if selected_tag.icon %}<i class="{{ selected_tag.icon }} mr-1"></i>{% endif %}{{ selected_tag.name }}
+                                <span class="ml-1.5">×</span>
+                            </a>
+                        {% endif %}
                     </div>
+                    
+                    <!-- Tag Cloud -->
+                    {% if top_issue_tags %}
+                        <div class="mt-6">
+                            <h3 class="text-sm font-medium text-gray-700 mb-3">Filter by Tags</h3>
+                            <div class="flex flex-wrap gap-2">
+                                {% for tag in top_issue_tags %}
+                                    <a href="{% url 'all_activity' %}?tag={{ tag.slug }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                                       class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white hover:opacity-80 transition-all duration-200 shadow-sm"
+                                       style="background-color: {{ tag.color }};">
+                                        {% if tag.icon %}<i class="{{ tag.icon }} mr-1"></i>{% endif %}{{ tag.name }} ({{ tag.issue_count }})
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
                 <!-- Issues Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -66,7 +90,7 @@
                         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
                              aria-label="Pagination">
                             {% if page_obj.has_previous %}
-                                <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                                <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
                                    class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
                                     First
                                 </a>
@@ -77,14 +101,14 @@
                                         {{ num }}
                                     </span>
                                 {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
-                                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
                                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                                         {{ num }}
                                     </a>
                                 {% endif %}
                             {% endfor %}
                             {% if page_obj.has_next %}
-                                <a href="?page={{ page_obj.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                                <a href="?page={{ page_obj.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
                                    class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
                                     Last
                                 </a>

@@ -106,7 +106,79 @@ class Tag(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        
+        # Normalize the tag name to prevent duplicates
+        self.name = self.normalize_name(self.name)
+        
         super(Tag, self).save(*args, **kwargs)
+    
+    @staticmethod
+    def normalize_name(name):
+        """
+        Normalize tag names to prevent duplicates like 'bug' vs 'bugs', 'Bug' vs 'BUG'
+        """
+        import re
+        
+        # Convert to lowercase
+        normalized = name.lower().strip()
+        
+        # Remove extra whitespace
+        normalized = re.sub(r'\s+', ' ', normalized)
+        
+        # Define common normalizations
+        normalizations = {
+            # Plural to singular
+            'bugs': 'bug',
+            'issues': 'issue', 
+            'features': 'feature',
+            'tests': 'test',
+            'docs': 'documentation',
+            'ui/ux': 'ui_ux',
+            'ui-ux': 'ui_ux',
+            'perf': 'performance',
+            'sec': 'security',
+            'infra': 'infrastructure',
+            'backend': 'back-end',
+            'frontend': 'front-end',
+            'db': 'database',
+            'api': 'api',
+            'css': 'css',
+            'js': 'javascript',
+            'html': 'html',
+            'python': 'python',
+            'java': 'java',
+            'node': 'nodejs',
+            'react': 'reactjs',
+            'vue': 'vuejs',
+            'angular': 'angularjs',
+        }
+        
+        # Apply normalizations
+        if normalized in normalizations:
+            normalized = normalizations[normalized]
+        
+        # Convert back to title case for display
+        return normalized.replace('_', ' ').title().replace(' ', '_').lower()
+    
+    @classmethod
+    def get_or_create_normalized(cls, name, **kwargs):
+        """
+        Get or create a tag with normalized name to prevent duplicates
+        """
+        normalized_name = cls.normalize_name(name)
+        slug = slugify(normalized_name)
+        
+        # Try to find existing tag with same normalized name
+        existing_tag = cls.objects.filter(
+            Q(name__iexact=normalized_name) | Q(slug=slug)
+        ).first()
+        
+        if existing_tag:
+            return existing_tag, False
+        
+        # Create new tag
+        tag = cls.objects.create(name=normalized_name, **kwargs)
+        return tag, True
 
     def __str__(self):
         return self.name

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Tag Search{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    {% include "includes/sidenav.html" %}
+    
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Tag Search</h1>
+                    <p class="text-gray-600">Search for tags and tagged content across the platform</p>
+                </div>
+                <div class="flex gap-3 mt-4 sm:mt-0">
+                    <a href="{% url 'tag_management_dashboard' %}" 
+                       class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <form method="GET" class="space-y-4 sm:space-y-0 sm:flex sm:items-end sm:gap-4">
+                <!-- Search Query -->
+                <div class="flex-1">
+                    <label for="q" class="block text-sm font-medium text-gray-700 mb-1">Search Tags</label>
+                    <input type="text" 
+                           id="q" 
+                           name="q" 
+                           value="{{ query }}"
+                           placeholder="Search by tag name or description..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                </div>
+                
+                <!-- Category Filter -->
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select id="category" name="category" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        <option value="">All Categories</option>
+                        {% for value, label in category_choices %}
+                            <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Model Type Filter -->
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Content Type</label>
+                    <select id="type" name="type" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        {% for value, label in model_type_choices %}
+                            <option value="{{ value }}" {% if model_type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <button type="submit" class="bg-[#e74c3c] text-white px-6 py-2 rounded-md hover:bg-[#c0392b] transition-colors">
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <!-- Search Results -->
+        {% if query %}
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">
+                    Search Results for "{{ query }}"
+                    {% if tags_found %}<span class="text-gray-500 font-normal">({{ tags_found }} tag{{ tags_found|pluralize }} found)</span>{% endif %}
+                </h2>
+                
+                {% if search_results %}
+                    <div class="space-y-6">
+                        {% for tag_id, result in search_results.items %}
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                <!-- Tag Header -->
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 rounded border border-gray-300 mr-4" style="background-color: {{ result.tag.color }};"></div>
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-gray-900">{{ result.tag.name }}</h3>
+                                            {% if result.tag.description %}
+                                                <p class="text-sm text-gray-600">{{ result.tag.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            {{ result.tag.get_category_display }}
+                                        </span>
+                                        <div class="text-sm text-gray-500 mt-1">{{ result.total_count }} item{{ result.total_count|pluralize }}</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tagged Content -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Issues -->
+                                    {% if result.issues %}
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                                <i class="fas fa-bug mr-2 text-[#e74c3c]"></i>
+                                                Issues ({{ result.issues|length }})
+                                            </h4>
+                                            <div class="space-y-2">
+                                                {% for issue in result.issues %}
+                                                    <div class="p-3 bg-gray-50 rounded-lg">
+                                                        <a href="{{ issue.get_absolute_url }}" 
+                                                           class="text-sm font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                                                            {{ issue.description|truncatechars:80 }}
+                                                        </a>
+                                                        <div class="text-xs text-gray-500 mt-1">
+                                                            by {{ issue.user|default:"Anonymous" }} • {{ issue.created|timesince }} ago
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Organizations -->
+                                    {% if result.organizations %}
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                                <i class="fas fa-building mr-2 text-blue-600"></i>
+                                                Organizations ({{ result.organizations|length }})
+                                            </h4>
+                                            <div class="space-y-2">
+                                                {% for org in result.organizations %}
+                                                    <div class="p-3 bg-gray-50 rounded-lg">
+                                                        <a href="{% url 'organization_detail' slug=org.slug %}" 
+                                                           class="text-sm font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                                                            {{ org.name }}
+                                                        </a>
+                                                        <div class="text-xs text-gray-500 mt-1">
+                                                            {{ org.domain_count }} domain{{ org.domain_count|pluralize }} • {{ org.created|timesince }} ago
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Repositories -->
+                                    {% if result.repos %}
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                                <i class="fab fa-github mr-2 text-gray-800"></i>
+                                                Repositories ({{ result.repos|length }})
+                                            </h4>
+                                            <div class="space-y-2">
+                                                {% for repo in result.repos %}
+                                                    <div class="p-3 bg-gray-50 rounded-lg">
+                                                        <a href="{% url 'repo_detail' slug=repo.slug %}" 
+                                                           class="text-sm font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                                                            {{ repo.name }}
+                                                        </a>
+                                                        <div class="text-xs text-gray-500 mt-1">
+                                                            {{ repo.stars }} stars • {{ repo.created|timesince }} ago
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Courses -->
+                                    {% if result.courses %}
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                                <i class="fas fa-graduation-cap mr-2 text-green-600"></i>
+                                                Courses ({{ result.courses|length }})
+                                            </h4>
+                                            <div class="space-y-2">
+                                                {% for course in result.courses %}
+                                                    <div class="p-3 bg-gray-50 rounded-lg">
+                                                        <a href="{% url 'view_course' id=course.id %}" 
+                                                           class="text-sm font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                                                            {{ course.title }}
+                                                        </a>
+                                                        <div class="text-xs text-gray-500 mt-1">
+                                                            by {{ course.instructor.user.username }} • {{ course.created_at|timesince }} ago
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <div class="text-gray-500">
+                            <i class="fas fa-search text-4xl mb-4"></i>
+                            <p class="text-lg font-medium">No results found</p>
+                            <p class="text-sm">Try adjusting your search terms or filters.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- Search Help -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <div class="text-center">
+                    <div class="text-gray-500">
+                        <i class="fas fa-tags text-4xl mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Search Tags and Tagged Content</h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            Enter a search term above to find tags and the content they're associated with.
+                        </p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                            <div>
+                                <h4 class="font-medium text-gray-900 mb-2">Search Tips:</h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• Search for specific tag names</li>
+                                    <li>• Use partial matches (e.g., "sec" for security)</li>
+                                    <li>• Filter by category to narrow results</li>
+                                    <li>• Filter by content type to focus on specific models</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 mb-2">Content Types:</h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• <i class="fas fa-bug mr-2 text-[#e74c3c]"></i>Issues and bug reports</li>
+                                    <li>• <i class="fas fa-building mr-2 text-blue-600"></i>Organizations and companies</li>
+                                    <li>• <i class="fab fa-github mr-2 text-gray-800"></i>Code repositories</li>
+                                    <li>• <i class="fas fa-graduation-cap mr-2 text-green-600"></i>Educational courses</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
