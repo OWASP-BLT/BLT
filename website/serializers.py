@@ -69,9 +69,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    usage_count = serializers.ReadOnlyField()
+    
     class Meta:
         model = Tag
-        fields = "__all__"
+        fields = ["id", "name", "slug", "description", "category", "color", "icon", "is_active", "usage_count", "created"]
 
 
 class IssueScreenshotSerializer(serializers.ModelSerializer):

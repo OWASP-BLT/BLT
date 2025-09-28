@@ -541,8 +541,31 @@ class ContributorStatsAdmin(admin.ModelAdmin):
 
 
 class TagAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "created")
+    list_display = ("name", "category", "color_display", "usage_count_display", "is_active", "created")
+    list_filter = ("category", "is_active", "created")
+    search_fields = ("name", "description")
     prepopulated_fields = {"slug": ("name",)}
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'slug', 'description', 'is_active')
+        }),
+        ('Categorization', {
+            'fields': ('category', 'color', 'icon')
+        }),
+    )
+    
+    def color_display(self, obj):
+        return format_html(
+            '<span style="display: inline-block; width: 20px; height: 20px; background-color: {}; border-radius: 3px; border: 1px solid #ccc;"></span> {}',
+            obj.color,
+            obj.get_color_display()
+        )
+    color_display.short_description = "Color"
+    
+    def usage_count_display(self, obj):
+        count = obj.usage_count
+        return format_html('<strong>{}</strong>', count)
+    usage_count_display.short_description = "Usage Count"
 
 
 class TimeLogAdmin(admin.ModelAdmin):

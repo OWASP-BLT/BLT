@@ -287,6 +287,13 @@ from website.views.staking_competitive import (
     staking_home,
     staking_leaderboard,
 )
+from website.views.tag_management import (
+    TagManagementDashboard,
+    bulk_tag_actions,
+    merge_tags,
+    tag_analytics,
+    tag_autocomplete,
+)
 from website.views.teams import (
     GiveKudosView,
     TeamChallenges,
@@ -530,6 +537,12 @@ urlpatterns = [
         user_dashboard,
         name="user",
     ),
+    # Tag Management URLs
+    path("admin/tag-management/", TagManagementDashboard.as_view(), name="tag_management_dashboard"),
+    path("admin/tag-management/analytics/", tag_analytics, name="tag_analytics"),
+    path("admin/tag-management/bulk-actions/", bulk_tag_actions, name="bulk_tag_actions"),
+    path("admin/tag-management/merge/", merge_tags, name="merge_tags"),
+    path("api/tags/autocomplete/", tag_autocomplete, name="tag_autocomplete"),
     path(settings.ADMIN_URL + "/", admin.site.urls),
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
     re_path(
