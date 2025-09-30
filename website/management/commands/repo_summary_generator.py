@@ -3,7 +3,7 @@ from django.conf import settings
 
 from website.management.base import LoggedBaseCommand
 from website.models import Repo
-from website.utils import ai_summary, markdown_to_text
+from website.core.utils import ai_summary, markdown_to_text
 
 
 class Command(LoggedBaseCommand):

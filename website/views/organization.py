@@ -65,7 +65,7 @@ from website.models import (
     Winner,
 )
 from website.services.blue_sky_service import BlueSkyService
-from website.utils import format_timedelta, get_client_ip, get_github_issue_title, rebuild_safe_url, validate_file_type
+from website.core.utils import format_timedelta, get_client_ip, get_github_issue_title, rebuild_safe_url, validate_file_type
 
 logger = logging.getLogger(__name__)
 

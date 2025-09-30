@@ -36,7 +36,7 @@ from website.models import (
     UserProfile,
     Winner,
 )
-from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
+from website.core.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)

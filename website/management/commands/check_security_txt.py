@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from website.models import Domain
-from website.utils import check_security_txt
+from website.core.utils import check_security_txt
 
 logger = logging.getLogger(__name__)
 

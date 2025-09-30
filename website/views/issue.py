@@ -73,7 +73,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import (
+from website.core.utils import (
     get_client_ip,
     get_email_from_domain,
     get_page_votes,

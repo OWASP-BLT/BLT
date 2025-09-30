@@ -16,7 +16,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from website.models import Message, Room, Thread
-from website.utils import (
+from website.core.utils import (
     compare_model_fields,
     cosine_similarity,
     extract_django_models,

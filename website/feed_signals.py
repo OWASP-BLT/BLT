@@ -18,7 +18,7 @@ from .models import (
     UserBadge,
     UserProfile,
 )
-from .utils import analyze_contribution
+from .core.utils import analyze_contribution
 
 # Default BACON rewards for different contribution types
 DEFAULT_BACON_REWARDS = {

@@ -69,7 +69,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import (
+from website.core.utils import (
     analyze_pr_content,
     fetch_github_data,
     rebuild_safe_url,

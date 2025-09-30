@@ -57,7 +57,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import image_validator
+from website.core.utils import image_validator
 from website.views.user import LeaderboardBase
 
 # API's
