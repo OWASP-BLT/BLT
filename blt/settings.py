@@ -129,7 +129,7 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
-    MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
+    MIDDLEWARE += ["livereload.middleware.LiveReloadScript"]
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
