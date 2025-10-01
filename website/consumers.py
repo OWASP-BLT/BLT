@@ -15,7 +15,6 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from website.models import Message, Room, Thread
 from website.core.utils import (
     compare_model_fields,
     cosine_similarity,
@@ -24,6 +23,7 @@ from website.core.utils import (
     generate_embedding,
     git_url_to_zip_url,
 )
+from website.models import Message, Room, Thread
 
 logger = logging.getLogger(__name__)
 

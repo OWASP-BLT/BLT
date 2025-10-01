@@ -10,8 +10,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.core.decorators import instructor_required
-from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.core.utils import validate_file_type
+from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 
 
 def is_valid_url(url, url_type):

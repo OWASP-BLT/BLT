@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
+from .core.utils import analyze_contribution
 from .models import (
     Activity,
     BaconEarning,
@@ -18,7 +19,6 @@ from .models import (
     UserBadge,
     UserProfile,
 )
-from .core.utils import analyze_contribution
 
 # Default BACON rewards for different contribution types
 DEFAULT_BACON_REWARDS = {

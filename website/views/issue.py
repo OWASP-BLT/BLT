@@ -55,6 +55,16 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
+from website.core.utils import (
+    get_client_ip,
+    get_email_from_domain,
+    get_page_votes,
+    image_validator,
+    is_valid_https_url,
+    rebuild_safe_url,
+    safe_redirect_request,
+    validate_screenshot_hash,
+)
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
     IP,
@@ -72,16 +82,6 @@ from website.models import (
     User,
     UserProfile,
     Wallet,
-)
-from website.core.utils import (
-    get_client_ip,
-    get_email_from_domain,
-    get_page_votes,
-    image_validator,
-    is_valid_https_url,
-    rebuild_safe_url,
-    safe_redirect_request,
-    validate_screenshot_hash,
 )
 
 from .constants import GSOC25_PROJECTS

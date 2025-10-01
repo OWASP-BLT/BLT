@@ -5,7 +5,6 @@ import requests
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from website.models import Domain
 from website.core.utils import check_security_txt
 
 logger = logging.getLogger(__name__)

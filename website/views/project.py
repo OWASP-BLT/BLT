@@ -37,8 +37,8 @@ from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.core.filters import ProjectRepoFilter
-from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
 from website.core.utils import admin_required
+from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 

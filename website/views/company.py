@@ -22,6 +22,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from slack_bolt import App
 
+from website.core.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
 from website.models import (
     DailyStatusReport,
     Domain,
@@ -36,7 +37,6 @@ from website.models import (
     UserProfile,
     Winner,
 )
-from website.core.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
