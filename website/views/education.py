@@ -9,9 +9,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from website.decorators import instructor_required
+from website.core.decorators import instructor_required
+from website.core.utils import validate_file_type
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
-from website.utils import validate_file_type
 
 
 def is_valid_url(url, url_type):

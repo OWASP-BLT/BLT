@@ -24,9 +24,7 @@ from django.shortcuts import redirect
 from openai import OpenAI
 from PIL import Image
 
-from website.models import DailyStats
-
-from .models import PRAnalysisReport
+from website.models import DailyStats, PRAnalysisReport
 
 # Only initialize OpenAI client if API key is available and valid
 openai_api_key = os.getenv("OPENAI_API_KEY")

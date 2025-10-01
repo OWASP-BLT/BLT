@@ -8,8 +8,8 @@ from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import render
 
+from website.core.utils import fetch_github_user_data
 from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Repo
-from website.utils import fetch_github_user_data
 
 from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES, TAG_NORMALIZATION
 

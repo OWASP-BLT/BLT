@@ -17,8 +17,8 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
+from website.core.utils import ai_summary, markdown_to_text
 from website.models import Organization, Repo
-from website.utils import ai_summary, markdown_to_text
 
 
 class RepoListView(ListView):
