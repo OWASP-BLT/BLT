@@ -484,7 +484,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             GitHubReview.objects.filter(pull_request__type="pull_request")
             .values(
                 "reviewer__user__username",
-                "reviewer__user__email", 
+                "reviewer__user__email",
                 "reviewer__github_url",
             )
             .annotate(total_reviews=Count("id"))
