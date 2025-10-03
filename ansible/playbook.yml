@@ -1,0 +1,271 @@
+---
+- name: Deploy BLT Django App
+  hosts: blt_server
+  become: true
+  vars:
+    python_version: "3.11"
+    env_file: .env.production
+    service_name: blt-uvicorn
+    django_settings: blt.settings
+    listen_interface: 127.0.0.1
+    enable_remote_postgres: "{{ enable_remote_postgres | default(true) }}"
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Ensure system packages (app + PostgreSQL)
+      apt:
+        name:
+          - git
+          - python3-pip
+          - python3-venv
+          - build-essential
+          - libpq-dev
+          - python3-psycopg2
+          - postgresql
+          - postgresql-contrib
+          - nginx
+          - ufw
+          - curl
+        state: present
+
+    - name: Add app user with home
+      user:
+        name: "{{ app_user }}"
+        system: yes
+        create_home: yes
+        shell: /bin/bash
+
+  tasks:
+    - name: Create app directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+      loop:
+        - "{{ app_dir }}"
+        - "{{ app_dir }}/shared"
+        - "{{ app_dir }}/shared/logs"
+        - "{{ app_dir }}/shared/media"
+
+    - name: Clone or update repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}/current"
+        version: "{{ branch }}"
+        force: yes
+      register: git_result
+
+    - name: Ensure virtualenv
+      command: python3 -m venv {{ venv_dir }}
+      args:
+        creates: "{{ venv_dir }}/bin/activate"
+
+    - name: Upgrade pip/setuptools/wheel
+      pip:
+        name:
+          - pip
+          - setuptools
+          - wheel
+        state: latest
+        virtualenv: "{{ venv_dir }}"
+
+    - name: Install Python dependencies (poetry export)
+      shell: |
+        if command -v poetry >/dev/null 2>&1; then
+          cd {{ app_dir }}/current && poetry export -f requirements.txt --without-hashes -o /tmp/requirements.txt
+        else
+          cd {{ app_dir }}/current && pip install poetry && poetry export -f requirements.txt --without-hashes -o /tmp/requirements.txt
+        fi
+        {{ venv_dir }}/bin/pip install -r /tmp/requirements.txt
+      args:
+        executable: /bin/bash
+
+    - name: Create production env file (.env.production)
+      copy:
+        dest: "{{ app_dir }}/current/{{ env_file }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0600'
+        content: |
+          DEBUG=False
+          ALLOWED_HOSTS=.{{ domain }},{{ domain }},127.0.0.1,localhost
+          SECRET_KEY={{ lookup('password', '/dev/null', length=64, chars='ascii_letters,digits') }}
+          DATABASE_URL=postgres://{{ postgres_db_user }}:{{ postgres_db_password }}@127.0.0.1:5432/{{ postgres_db_name }}
+          PORT=8000
+          # Add any extra environment variables below
+          # SENTRY_DSN=
+          # OPENAI_API_KEY=
+      notify: Restart app
+
+    - name: Symlink .env -> .env.production
+      file:
+        src: "{{ app_dir }}/current/{{ env_file }}"
+        dest: "{{ app_dir }}/current/.env"
+        state: link
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+      notify: Restart app
+
+    - name: Collect static files
+      shell: "{{ venv_dir }}/bin/python manage.py collectstatic --noinput"
+      args:
+        chdir: "{{ app_dir }}/current"
+      environment:
+        DJANGO_SETTINGS_MODULE: blt.settings
+
+    - name: Apply migrations
+      shell: "{{ venv_dir }}/bin/python manage.py migrate --noinput"
+      args:
+        chdir: "{{ app_dir }}/current"
+      environment:
+        DJANGO_SETTINGS_MODULE: blt.settings
+
+    - name: Ensure PostgreSQL service is started
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Set fact for PostgreSQL main directory
+      shell: ls -d /etc/postgresql/*/main | head -n1
+      register: pg_main_dir
+      changed_when: false
+
+    - name: Register postgres conf paths
+      set_fact:
+        postgres_conf_dir: "{{ pg_main_dir.stdout }}"
+        postgres_conf_file: "{{ pg_main_dir.stdout }}/postgresql.conf"
+        postgres_hba_file: "{{ pg_main_dir.stdout }}/pg_hba.conf"
+
+    - name: Create PostgreSQL role if absent
+      become_user: postgres
+      shell: |
+        psql -tc "SELECT 1 FROM pg_roles WHERE rolname='{{ postgres_db_user }}'" | grep -q 1 || psql -c "CREATE ROLE {{ postgres_db_user }} LOGIN PASSWORD '{{ postgres_db_password }}';"
+      changed_when: false
+
+    - name: Create PostgreSQL database if absent
+      become_user: postgres
+      shell: |
+        psql -tc "SELECT 1 FROM pg_database WHERE datname='{{ postgres_db_name }}'" | grep -q 1 || psql -c "CREATE DATABASE {{ postgres_db_name }} OWNER {{ postgres_db_user }};"
+      changed_when: false
+
+    - name: Allow PostgreSQL to listen on all addresses (listen_addresses)
+      lineinfile:
+        path: "{{ postgres_conf_file }}"
+        regexp: '^#?listen_addresses'
+        line: "listen_addresses = '*'"
+      when: enable_remote_postgres | bool
+      notify: Restart postgres
+
+    - name: Add remote access rule to pg_hba.conf
+      lineinfile:
+        path: "{{ postgres_hba_file }}"
+        insertafter: EOF
+        line: 'host    all             all             0.0.0.0/0               md5'
+      when: enable_remote_postgres | bool
+      notify: Restart postgres
+
+    - name: Create systemd service for uvicorn (ASGI)
+      copy:
+        dest: /etc/systemd/system/{{ service_name }}.service
+        content: |
+          [Unit]
+          Description=BLT ASGI (uvicorn)
+          After=network.target postgresql.service
+
+          [Service]
+          WorkingDirectory={{ app_dir }}/current
+          User={{ app_user }}
+          Group={{ app_user }}
+          Environment=DJANGO_SETTINGS_MODULE={{ django_settings }}
+          ExecStart={{ venv_dir }}/bin/uvicorn blt.asgi:application --host {{ listen_interface }} --port 8000 --workers {{ uvicorn_workers }}
+          Restart=always
+          KillSignal=SIGQUIT
+          TimeoutStopSec=30
+          SyslogIdentifier={{ service_name }}
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: Restart app
+
+    - name: Configure Nginx site
+      copy:
+        dest: /etc/nginx/sites-available/blt.conf
+        content: |
+          server {
+              listen 80;
+              server_name {{ domain }} *.{{ domain }};
+
+              proxy_buffering off;
+
+              location /static/ {
+                  alias {{ app_dir }}/current/static/;
+              }
+              location /media/ {
+                  alias {{ app_dir }}/shared/media/;
+              }
+              location / {
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_pass http://127.0.0.1:8000;
+              }
+          }
+      notify: Reload nginx
+
+    - name: Enable nginx site
+      file:
+        src: /etc/nginx/sites-available/blt.conf
+        dest: /etc/nginx/sites-enabled/blt.conf
+        state: link
+      notify: Reload nginx
+
+    - name: Disable default nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Reload nginx
+
+    - name: Open firewall ports
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+      loop:
+        - '22'
+        - '80'
+        - '443'
+        - '5432'
+
+    - name: Enable UFW if not enabled
+      command: ufw --force enable
+      register: ufw_enable
+      changed_when: ufw_enable.rc == 0
+
+  handlers:
+    - name: Restart app
+      systemd:
+        name: "{{ service_name }}"
+        state: restarted
+        daemon_reload: yes
+
+    - name: Restart postgres
+      systemd:
+        name: postgresql
+        state: restarted
+
+    - name: Reload nginx
+      systemd:
+        name: nginx
+        state: restarted
+
+  post_tasks:
+    - name: Display deployment summary
+      debug:
+        msg: "Deployment completed. Access http://{{ domain }} (wildcard subdomains enabled). PostgreSQL remote access={{ enable_remote_postgres }}"
