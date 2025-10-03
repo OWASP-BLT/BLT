@@ -19,15 +19,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pr_number="${{ github.event.pull_request.number }}"
+          repo="${{ github.repository }}"
+          
+          echo "Checking PR #$pr_number in repository $repo"
           
           # Check if PR is already approved
-          reviews=$(gh pr view $pr_number --json reviews --jq '.reviews[] | select(.state=="APPROVED") | .state' | wc -l)
+          reviews=$(gh pr view $pr_number --repo $repo --json reviews --jq '.reviews[] | select(.state=="APPROVED") | .state' | wc -l)
           
           if [ "$reviews" -gt 0 ]; then
             echo "PR #$pr_number is approved, enabling auto-merge"
             
             # Enable auto-merge with squash strategy
-            gh pr merge $pr_number --auto --squash --delete-branch
+            gh pr merge $pr_number --repo $repo --auto --squash --delete-branch
             
             echo "Auto-merge enabled for dependabot PR #$pr_number"
           else

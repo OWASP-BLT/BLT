@@ -8,16 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
     permissions: 
-      issues: write
+      contents: read
       pull-requests: write
     steps:
       - name: Auto approve dependabot
-        uses: cognitedata/auto-approve-dependabot-action@v3.0.1
-        if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Auto approve as second user
-        uses: cognitedata/auto-approve-dependabot-action@v3.0.1
+        uses: hmarr/auto-approve-action@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
