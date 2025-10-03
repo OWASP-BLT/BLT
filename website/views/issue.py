@@ -2021,7 +2021,7 @@ class GitHubIssuesView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = GitHubIssue.objects.all().select_related('repo').order_by("-created_at")
+        queryset = GitHubIssue.objects.all().select_related("repo").order_by("-created_at")
 
         # Filter by type (issue/pr)
         issue_type = self.request.GET.get("type")
