@@ -1,6 +1,11 @@
 import json
+import logging
+import os
+import re
 from urllib.parse import urlparse
 
+import requests
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
@@ -10,8 +15,20 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
-from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
+from website.forms import VideoSubmissionForm
+from website.models import (
+    Course,
+    EducationalVideo,
+    Enrollment,
+    Lecture,
+    LectureStatus,
+    Section,
+    Tag,
+    UserProfile,
+)
 from website.utils import validate_file_type
+
+logger = logging.getLogger(__name__)
 
 
 def is_valid_url(url, url_type):
@@ -577,3 +594,205 @@ def create_or_update_course(request):
     except Exception as e:
         print(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def add_video(request):
+    try:
+        form = VideoSubmissionForm(request.POST)
+        if form.is_valid():
+            video_url = form.cleaned_data["video_url"]
+
+            # Parse and validate the URL
+            try:
+                parsed_url = urlparse(video_url)
+                hostname = parsed_url.hostname or ""
+                # Check if hostname contains youtube.com, youtu.be or vimeo.com
+                if not any(domain in hostname for domain in ["youtube.com", "youtu.be", "vimeo.com"]):
+                    return JsonResponse(
+                        {"success": False, "message": "Only YouTube or Vimeo URLs are allowed."}, status=400
+                    )
+            except Exception:
+                return JsonResponse({"success": False, "message": "Invalid URL format."}, status=400)
+
+            # Fetch the video title and description
+            video_data = fetch_video_data(video_url)
+            if not video_data:
+                return JsonResponse(
+                    {"success": False, "message": "Failed to fetch video data. Please check the URL and try again."},
+                    status=400,
+                )
+
+            # Check if the video is educational
+            if not is_educational_video(video_data["title"], video_data["description"]):
+                return JsonResponse(
+                    {"success": False, "message": "The video does not appear to be educational content."}, status=400
+                )
+
+            # Save the video details to the database
+            EducationalVideo.objects.create(
+                url=video_url,
+                title=video_data["title"],
+                description=video_data["description"],
+                is_educational=True,
+                submitted_by=request.user,
+            )
+
+            return JsonResponse({"success": True, "message": "Video added successfully."}, status=201)
+
+        # Form validation errors
+        errors = dict(form.errors.items())
+        error_message = next(iter(errors.values()))[0] if errors else "Invalid form data."
+        return JsonResponse({"success": False, "message": error_message}, status=400)
+    except Exception as e:
+        logger.error(f"Error in add_video: {str(e)}")
+        return JsonResponse({"success": False, "message": "An unexpected error occurred."}, status=500)
+
+
+def fetch_video_data(video_url):
+    parsed_url = urlparse(video_url)
+    host = parsed_url.hostname
+    if host and (host.endswith("youtube.com") or host == "youtu.be"):
+        return fetch_youtube_video_data(video_url)
+    elif host and (host == "vimeo.com" or host.endswith(".vimeo.com")):
+        return fetch_vimeo_video_data(video_url)
+    return None
+
+
+def fetch_youtube_video_data(video_url):
+    api_key = os.environ.get("YOUTUBE_API_KEY", getattr(settings, "YOUTUBE_API_KEY", None))
+    if not api_key:
+        logger.error("YouTube API key is missing")
+        return None
+
+    video_id = extract_youtube_video_id(video_url)
+    if not video_id:
+        logger.warning(f"Could not extract YouTube video ID from URL: {video_url}")
+        return None
+
+    api_url = f"https://www.googleapis.com/youtube/v3/videos?id={video_id}&key={api_key}&part=snippet"
+    try:
+        response = requests.get(api_url, timeout=10)
+        if response.status_code != 200:
+            logger.error(
+                f"YouTube API error: {response.status_code} - {response.text if hasattr(response, 'text') else ''}"
+            )
+            return None
+
+        data = response.json()
+        if "items" not in data or not data["items"]:
+            logger.warning(f"No video data found for YouTube video ID: {video_id}")
+            return None
+
+        snippet = data["items"][0]["snippet"]
+        return {"title": snippet["title"], "description": snippet["description"]}
+    except Exception as e:
+        logger.error(f"Error fetching YouTube data: {str(e)}")
+        return None
+
+
+def extract_youtube_video_id(video_url):
+    # Handle youtu.be/VIDEO_ID format
+    if "youtu.be" in video_url:
+        match = re.search(r"youtu\.be\/([0-9A-Za-z_-]{11})", video_url)
+        if match:
+            return match.group(1)
+
+    # Handle youtube.com/watch?v=VIDEO_ID format
+    match = re.search(r"(?:v=)([0-9A-Za-z_-]{11})", video_url)
+    if match:
+        return match.group(1)
+
+    # Handle youtube.com/embed/VIDEO_ID format
+    match = re.search(r"(?:embed\/)([0-9A-Za-z_-]{11})", video_url)
+    if match:
+        return match.group(1)
+
+    return None
+
+
+def fetch_vimeo_video_data(video_url):
+    video_id = extract_vimeo_video_id(video_url)
+    if not video_id:
+        logger.warning(f"Could not extract Vimeo video ID from URL: {video_url}")
+        return None
+
+    api_url = f"https://api.vimeo.com/videos/{video_id}"
+    access_token = os.environ.get("VIMEO_ACCESS_TOKEN", getattr(settings, "VIMEO_ACCESS_TOKEN", None))
+    if not access_token:
+        logger.error("Vimeo access token is missing")
+        return None
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    try:
+        response = requests.get(api_url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            logger.error(
+                f"Vimeo API error: {response.status_code} - {response.text if hasattr(response, 'text') else ''}"
+            )
+            return None
+
+        data = response.json()
+        return {"title": data["name"], "description": data["description"]}
+    except Exception as e:
+        logger.error(f"Error fetching Vimeo data: {str(e)}")
+        return None
+
+
+def extract_vimeo_video_id(video_url):
+    match = re.search(r"vimeo\.com\/(\d+)", video_url)
+    return match.group(1) if match else None
+
+
+def is_educational_video(title, description):
+    openai_api_key = os.environ.get("OPENAI_API_KEY", getattr(settings, "OPENAI_API_KEY", None))
+
+    if not openai_api_key:
+        logger.warning("OpenAI API key is missing, falling back to keyword-based validation")
+        # Fallback to basic keyword checking if API key is not available
+        educational_keywords = [
+            "learn",
+            "education",
+            "tutorial",
+            "how to",
+            "course",
+            "lesson",
+            "training",
+            "skills",
+            "knowledge",
+            "academic",
+        ]
+        content = (title + " " + description).lower()
+        for keyword in educational_keywords:
+            if keyword in content:
+                return True
+        return False
+
+    prompt = f"Is the following video educational?\n\nTitle: {title}\n\nDescription: {description}\n\nAnswer with 'yes' or 'no'."
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {openai_api_key}"},
+            json={
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You determine if content is educational. Respond with only 'yes' or 'no'.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "max_tokens": 5,
+            },
+            timeout=10,
+        )
+        if response.status_code != 200:
+            logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
+            return False
+
+        answer = response.json()["choices"][0]["message"]["content"].strip().lower()
+        return answer == "yes"
+    except Exception as e:
+        logger.error(f"Error calling OpenAI API: {str(e)}")
+        return False
