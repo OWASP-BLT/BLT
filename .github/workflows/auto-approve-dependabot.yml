@@ -7,7 +7,7 @@ jobs:
     name: Approve dependabot
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
-    permissions: 
+    permissions:
       contents: read
       pull-requests: write
     steps:
