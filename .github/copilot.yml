@@ -1,0 +1,228 @@
+# GitHub Copilot Workspace Configuration for BLT (Bug Logging Tool)
+# This file helps GitHub Copilot understand the project structure and setup process
+
+project:
+  name: "OWASP BLT"
+  description: "Bug Logging Tool - A community-driven bug bounty and security testing platform"
+  type: "Django Web Application"
+  language: "Python"
+  framework: "Django 5.1+"
+  
+setup:
+  prerequisites:
+    - "Python 3.11.2 or higher (recommended: 3.11.2)"
+    - "Docker and Docker Compose (recommended for development)"
+    - "Poetry (Python dependency management)"
+    - "PostgreSQL (for database)"
+    - "Git"
+    
+  environment_setup:
+    description: "Configure environment variables before starting"
+    steps:
+      - step: "Copy environment template"
+        command: "cp .env.example .env"
+        description: "Create .env file from template"
+      - step: "Configure environment variables"
+        description: "Edit .env file with your local settings"
+        variables:
+          - "DATABASE_URL: PostgreSQL connection string"
+          - "DEBUG: Set to True for development"
+          - "GITHUB_TOKEN: GitHub API token"
+          - "OPENAI_API_KEY: OpenAI API key (optional)"
+          - "POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB: Database credentials"
+          
+  setup_methods:
+    recommended: "docker"
+    
+    docker:
+      description: "Docker-based setup (recommended)"
+      prerequisites:
+        - "Docker"
+        - "Docker Compose"
+      steps:
+        - step: "Ensure LF line endings"
+          description: "Make sure entrypoint.sh uses LF (not CRLF) line endings"
+          commands:
+            - "git config --global core.autocrlf input"
+            - "dos2unix entrypoint.sh  # if dos2unix is available"
+        - step: "Build Docker images"
+          command: "docker-compose build"
+        - step: "Start containers"
+          command: "docker-compose up"
+        - step: "Access application"
+          url: "http://localhost:8000"
+      notes:
+        - "The application runs on port 8000 over HTTP"
+        - "Database runs on port specified in .env (default: 5432)"
+        - "Use incognito mode if browser redirects to HTTPS"
+        
+    poetry:
+      description: "Poetry-based virtual environment setup"
+      prerequisites:
+        - "Python 3.11.2+"
+        - "Poetry"
+        - "PostgreSQL"
+      steps:
+        - step: "Install dependencies"
+          command: "poetry install"
+        - step: "Activate virtual environment"
+          command: "poetry shell"
+        - step: "Run migrations"
+          command: "poetry run python manage.py migrate"
+        - step: "Load initial data"
+          command: "poetry run python manage.py loaddata website/fixtures/initial_data.json"
+        - step: "Create superuser"
+          command: "poetry run python manage.py createsuperuser"
+        - step: "Collect static files"
+          command: "poetry run python manage.py collectstatic"
+        - step: "Run development server"
+          command: "poetry run python manage.py runserver"
+        - step: "Access application"
+          url: "http://localhost:8000"
+          
+    vagrant:
+      description: "Vagrant-based VM setup"
+      prerequisites:
+        - "Vagrant"
+        - "VirtualBox"
+      steps:
+        - step: "Start Vagrant VM"
+          command: "vagrant up"
+        - step: "SSH into VM"
+          command: "vagrant ssh"
+        - step: "Navigate to project"
+          command: "cd BLT"
+        - step: "Run migrations"
+          command: "python manage.py migrate"
+        - step: "Create superuser"
+          command: "python manage.py createsuperuser"
+        - step: "Collect static files"
+          command: "python manage.py collectstatic"
+        - step: "Run server"
+          command: "python manage.py runserver"
+        - step: "Access application"
+          url: "http://localhost:8000"
+
+  post_setup:
+    description: "Additional configuration after initial setup"
+    steps:
+      - step: "Configure social authentication"
+        url: "http://127.0.0.1:8000/admin/socialaccount/socialapp/"
+        description: "Add social auth provider information"
+      - step: "Add domain"
+        url: "http://127.0.0.1:8000/admin/website/domain/"
+        description: "Add domain 'owasp.org'"
+
+development:
+  commands:
+    start_server:
+      docker: "docker-compose up"
+      poetry: "poetry run python manage.py runserver"
+      description: "Start the development server"
+      
+    run_migrations:
+      docker: "docker exec -it app python manage.py migrate"
+      poetry: "poetry run python manage.py migrate"
+      description: "Apply database migrations"
+      
+    create_superuser:
+      docker: "docker exec -it app python manage.py createsuperuser"
+      poetry: "poetry run python manage.py createsuperuser"
+      description: "Create an admin user"
+      
+    run_tests:
+      docker: "docker exec -it app python manage.py test"
+      poetry: "poetry run python manage.py test"
+      description: "Run test suite"
+      
+    collect_static:
+      docker: "docker exec -it app python manage.py collectstatic --noinput"
+      poetry: "poetry run python manage.py collectstatic --noinput"
+      description: "Collect static files"
+      
+    format_code:
+      command: "pre-commit run --all-files"
+      description: "Run pre-commit hooks to format code"
+      
+  code_style:
+    - "Use Tailwind CSS for styling (no inline styles or <style> tags)"
+    - "Keep JavaScript in separate files (not in HTML templates)"
+    - "Use Poetry for dependency management (not pip)"
+    - "Run pre-commit before committing changes"
+    - "Use red color #e74c3c for colored elements"
+    - "Avoid installing unnecessary packages"
+    - "Fix root causes of issues, not just symptoms"
+    
+  key_files:
+    - path: "manage.py"
+      description: "Django management script"
+    - path: "blt/settings.py"
+      description: "Django settings and configuration"
+    - path: "website/"
+      description: "Main Django application"
+    - path: "docker-compose.yml"
+      description: "Docker Compose configuration"
+    - path: "pyproject.toml"
+      description: "Python project and Poetry configuration"
+    - path: ".env.example"
+      description: "Environment variables template"
+    - path: "docs/Setup.md"
+      description: "Detailed setup documentation"
+      
+troubleshooting:
+  common_issues:
+    - issue: "Cannot install nltk, distlib, certifi"
+      solution: "Run 'poetry cache clear --all pypi' then rebuild"
+      
+    - issue: "entrypoint.sh permission denied"
+      solution: "Run 'chmod +x ./entrypoint.sh'"
+      
+    - issue: "entrypoint.sh not found"
+      solution: "Ensure file uses LF line endings, not CRLF"
+      
+    - issue: "ERR_SSL_PROTOCOL_ERROR on localhost"
+      solution: "Set SECURE_SSL_REDIRECT=False in blt/settings.py (local only), use incognito mode, or ensure URL uses http:// not https://"
+      
+    - issue: "Docker build fails"
+      solution: "Check that all script files use LF line endings"
+      
+    - issue: "PostgreSQL connection error"
+      solution: "Ensure DATABASE_URL in .env matches your PostgreSQL configuration"
+      
+  support:
+    - resource: "Documentation"
+      url: "docs/Setup.md"
+    - resource: "OWASP Slack"
+      url: "https://owasp.org/slack/invite"
+    - resource: "GitHub Repository"
+      url: "https://github.com/OWASP-BLT/BLT"
+    - resource: "Setup Video"
+      url: "https://www.youtube.com/watch?v=IYBRVRfPCK8"
+
+architecture:
+  type: "Monolithic Django Application"
+  database: "PostgreSQL"
+  frontend: "Django Templates with Tailwind CSS"
+  backend: "Django 5.1+ with Python 3.11+"
+  deployment: "Docker containers"
+  
+  components:
+    - name: "website"
+      description: "Main Django app with views, models, templates"
+    - name: "blt"
+      description: "Django project settings and configuration"
+    - name: "static"
+      description: "Static files (CSS, JS, images)"
+    - name: "docs"
+      description: "Project documentation"
+    - name: "BACON"
+      description: "Bitcoin-related functionality"
+      
+testing:
+  framework: "Django TestCase"
+  command: "python manage.py test"
+  coverage: "Use coverage.py for test coverage"
+  
+  test_locations:
+    - "website/tests.py"
+    - "*/tests/"
