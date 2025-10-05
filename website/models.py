@@ -1116,6 +1116,9 @@ class Project(models.Model):
     url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
+    slack = models.URLField(null=True, blank=True)
+    slack_channel = models.CharField(max_length=255, blank=True, null=True)
+    slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
