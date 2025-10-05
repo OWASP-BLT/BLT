@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
 import { Search, Filter, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+
 
 interface FilterOption {
   label: string;
@@ -32,8 +33,17 @@ export default function SearchAndFilter({
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
 
-  // debounce search to avoid frequent reloads/requests
   const debounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+  
+  // debounce search to avoid frequent reloads/requests
   const handleSearchChange = (value: string) => {
     setSearch(value);
     if (debounceRef.current) {

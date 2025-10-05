@@ -186,9 +186,15 @@ export default function UserManagementPage() {
 
       {/* Edit Role Modal */}
       {editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-user-title"
+          onKeyDown={(e) => e.key === 'Escape' && setEditingUser(null)}
+        >
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit User</h3>
+            <h3 id="edit-user-title" className="text-lg font-semibold text-gray-900 mb-4">Edit User</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
@@ -214,11 +220,17 @@ export default function UserManagementPage() {
 
       {/* Delete Confirmation */}
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-user-title"
+          onKeyDown={(e) => e.key === 'Escape' && setDeleteTarget(null)}
+        >
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="flex items-center space-x-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Delete User</h3>
+              <h3 id="delete-user-title" className="text-lg font-semibold text-gray-900">Delete User</h3>
             </div>
             <p className="text-gray-600 mb-6">Are you sure you want to delete {deleteTarget.name}? This action cannot be undone.</p>
             <div className="flex justify-end space-x-3">

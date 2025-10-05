@@ -61,19 +61,6 @@
 }
 
 @layer utilities {
-  /* Loading spinner */
-  .animate-spin {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
 
   /* Table row hover effects */
   tbody tr {
@@ -93,10 +80,6 @@
     50% {
       opacity: 0.5;
     }
-  }
-
-  .animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   /* Fade in animation */

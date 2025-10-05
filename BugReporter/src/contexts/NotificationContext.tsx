@@ -26,21 +26,41 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    const newNotification = { ...notification, id };
-    
-    setNotifications(prev => [...prev, newNotification]);
+  // track pending timeouts so we can clear them
+  const timeoutsRef = React.useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
-    // Auto remove after duration
-    const duration = notification.duration || 5000;
-    setTimeout(() => {
-      removeNotification(id);
-    }, duration);
+  const clearNotificationTimeout = useCallback((id: string) => {
+    const timeoutId = timeoutsRef.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutsRef.current.delete(id);
+    }
   }, []);
 
   const removeNotification = useCallback((id: string) => {
+    clearNotificationTimeout(id);
     setNotifications(prev => prev.filter(n => n.id !== id));
+  }, [clearNotificationTimeout]);
+
+  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
+    const id = Math.random().toString(36).substring(2, 11);
+    const newNotification = { ...notification, id };
+
+    setNotifications(prev => [...prev, newNotification]);
+
+    const duration = notification.duration || 5000;
+    const timeoutId = setTimeout(() => {
+      removeNotification(id);
+    }, duration);
+    timeoutsRef.current.set(id, timeoutId);
+  }, [removeNotification]);
+
+  // on unmount, clear any remaining timeouts
+  React.useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current.clear();
+    };
   }, []);
 
   const success = useCallback((title: string, message?: string) => {

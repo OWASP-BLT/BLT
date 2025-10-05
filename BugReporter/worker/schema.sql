@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS projects (
   name TEXT NOT NULL,
   description TEXT,
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'archived')),
-  created_by INTEGER REFERENCES users(id),
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -27,10 +27,10 @@ CREATE TABLE IF NOT EXISTS repositories (
   name TEXT NOT NULL,
   url TEXT NOT NULL,
   language TEXT,
-  project_id INTEGER REFERENCES projects(id),
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'scanning', 'completed')),
   last_scan DATETIME,
-  vulnerabilities_count INTEGER DEFAULT 0,
+  vulnerabilities_count INTEGER DEFAULT 0 CHECK (vulnerabilities_count >= 0),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -42,10 +42,10 @@ CREATE TABLE IF NOT EXISTS bugs (
   description TEXT,
   severity TEXT NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
   status TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
-  reporter_id INTEGER REFERENCES users(id),
-  assignee_id INTEGER REFERENCES users(id),
-  project_id INTEGER REFERENCES projects(id),
-  repository_id INTEGER REFERENCES repositories(id),
+  reporter_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  assignee_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+  repository_id INTEGER REFERENCES repositories(id) ON DELETE SET NULL,
   screenshot_url TEXT,
   steps_to_reproduce TEXT,
   expected_behavior TEXT,
@@ -57,8 +57,8 @@ CREATE TABLE IF NOT EXISTS bugs (
 -- Bug comments table
 CREATE TABLE IF NOT EXISTS bug_comments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  bug_id INTEGER REFERENCES bugs(id),
-  user_id INTEGER REFERENCES users(id),
+  bug_id INTEGER REFERENCES bugs(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   comment TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

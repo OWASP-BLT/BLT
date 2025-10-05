@@ -16,12 +16,11 @@ node_modules/
 # Build directories
 dist/
 build/
+*.backup
 
 # Wrangler
 .wrangler/
 worker/.wrangler/
-wrangler.toml
-wrangler-worker.toml
 
 # Environment variables
 .env

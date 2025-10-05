@@ -39,6 +39,7 @@ export default function RepositoriesPage() {
 
   const handleRepositoryDeleted = (repositoryId: number) => {
     setRepositories(prev => prev.filter(r => r.id !== repositoryId));
+    setSelectedRepoId(null);
   };
 
   const getStatusColor = (status: string) => {
