@@ -61,10 +61,6 @@ class Command(BaseCommand):
                         updated_count += 1
                         self.stdout.write(f"Updated project: {project_name}")
                 else:
-                    self.stdout.write(
-                        self.style.WARNING(f"No project found with name: {project_name}")
-                    )
+                    self.stdout.write(self.style.WARNING(f"No project found with name: {project_name}"))
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Successfully processed CSV. Updated {updated_count} projects.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Successfully processed CSV. Updated {updated_count} projects."))
