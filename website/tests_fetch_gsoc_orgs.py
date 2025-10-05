@@ -36,10 +36,23 @@ class FetchGsocOrgsCommandTest(TestCase):
     @patch("website.management.commands.fetch_gsoc_orgs.requests.get")
     def test_fetch_creates_new_organization(self, mock_get):
         """Test that fetching creates a new organization"""
-        mock_response = MagicMock()
-        mock_response.json.return_value = self.mock_org_data
-        mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
+        # Mock the API call
+        mock_api_response = MagicMock()
+        mock_api_response.json.return_value = self.mock_org_data
+        mock_api_response.raise_for_status = MagicMock()
+
+        # Mock the logo download call
+        mock_logo_response = MagicMock()
+        mock_logo_response.content = b"fake logo data"
+        mock_logo_response.raise_for_status = MagicMock()
+
+        # Return different responses based on the URL
+        def get_side_effect(url, *args, **kwargs):
+            if "logo" in url:
+                return mock_logo_response
+            return mock_api_response
+
+        mock_get.side_effect = get_side_effect
 
         out = StringIO()
         call_command("fetch_gsoc_orgs", "--years", "2024", stdout=out)
@@ -65,10 +78,23 @@ class FetchGsocOrgsCommandTest(TestCase):
             gsoc_years="2023",
         )
 
-        mock_response = MagicMock()
-        mock_response.json.return_value = self.mock_org_data
-        mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
+        # Mock the API call
+        mock_api_response = MagicMock()
+        mock_api_response.json.return_value = self.mock_org_data
+        mock_api_response.raise_for_status = MagicMock()
+
+        # Mock the logo download call
+        mock_logo_response = MagicMock()
+        mock_logo_response.content = b"fake logo data"
+        mock_logo_response.raise_for_status = MagicMock()
+
+        # Return different responses based on the URL
+        def get_side_effect(url, *args, **kwargs):
+            if "logo" in url:
+                return mock_logo_response
+            return mock_api_response
+
+        mock_get.side_effect = get_side_effect
 
         out = StringIO()
         call_command("fetch_gsoc_orgs", "--years", "2024", stdout=out)
@@ -89,10 +115,23 @@ class FetchGsocOrgsCommandTest(TestCase):
     @patch("website.management.commands.fetch_gsoc_orgs.requests.get")
     def test_fetch_prevents_duplicate_years(self, mock_get):
         """Test that fetching the same year twice doesn't duplicate years"""
-        mock_response = MagicMock()
-        mock_response.json.return_value = self.mock_org_data
-        mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
+        # Mock the API call
+        mock_api_response = MagicMock()
+        mock_api_response.json.return_value = self.mock_org_data
+        mock_api_response.raise_for_status = MagicMock()
+
+        # Mock the logo download call
+        mock_logo_response = MagicMock()
+        mock_logo_response.content = b"fake logo data"
+        mock_logo_response.raise_for_status = MagicMock()
+
+        # Return different responses based on the URL
+        def get_side_effect(url, *args, **kwargs):
+            if "logo" in url:
+                return mock_logo_response
+            return mock_api_response
+
+        mock_get.side_effect = get_side_effect
 
         out = StringIO()
         # Fetch twice for the same year
@@ -115,10 +154,23 @@ class FetchGsocOrgsCommandTest(TestCase):
             gsoc_years="2022",
         )
 
-        mock_response = MagicMock()
-        mock_response.json.return_value = self.mock_org_data
-        mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
+        # Mock the API call
+        mock_api_response = MagicMock()
+        mock_api_response.json.return_value = self.mock_org_data
+        mock_api_response.raise_for_status = MagicMock()
+
+        # Mock the logo download call
+        mock_logo_response = MagicMock()
+        mock_logo_response.content = b"fake logo data"
+        mock_logo_response.raise_for_status = MagicMock()
+
+        # Return different responses based on the URL
+        def get_side_effect(url, *args, **kwargs):
+            if "logo" in url:
+                return mock_logo_response
+            return mock_api_response
+
+        mock_get.side_effect = get_side_effect
 
         out = StringIO()
         # Add years 2024 and 2023
@@ -137,10 +189,23 @@ class FetchGsocOrgsCommandTest(TestCase):
         org_data_no_url = self.mock_org_data[0].copy()
         org_data_no_url["website_url"] = ""
 
-        mock_response = MagicMock()
-        mock_response.json.return_value = [org_data_no_url]
-        mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
+        # Mock the API call
+        mock_api_response = MagicMock()
+        mock_api_response.json.return_value = [org_data_no_url]
+        mock_api_response.raise_for_status = MagicMock()
+
+        # Mock the logo download call
+        mock_logo_response = MagicMock()
+        mock_logo_response.content = b"fake logo data"
+        mock_logo_response.raise_for_status = MagicMock()
+
+        # Return different responses based on the URL
+        def get_side_effect(url, *args, **kwargs):
+            if "logo" in url:
+                return mock_logo_response
+            return mock_api_response
+
+        mock_get.side_effect = get_side_effect
 
         out = StringIO()
         call_command("fetch_gsoc_orgs", "--years", "2024", stdout=out)
