@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}
+    Bitcoin Cash Bidding System - OWASP BLT
+{% endblock title %}
+
+{% block description %}
+    Revolutionary Bitcoin Cash bidding system for open source GitHub issues. Place bids, fund projects, and get paid in BCH.
+{% endblock description %}
+
+{% block keywords %}
+    bitcoin cash, BCH, bidding, github issues, open source, bounties, cryptocurrency, blockchain
+{% endblock keywords %}
+
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    
+    <div class="min-h-screen bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Hero Section -->
+            <div class="bg-gradient-to-r from-[#e74c3c] to-red-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-4xl font-bold mb-4 flex items-center gap-3">
+                            <i class="fas fa-coins text-yellow-300"></i>
+                            Bitcoin Cash Bidding System
+                        </h1>
+                        <p class="text-xl mb-4 opacity-90">
+                            The world's first decentralized bidding system for GitHub issues using Bitcoin Cash
+                        </p>
+                        <div class="flex flex-wrap gap-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Secure Escrow</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-globe"></i>
+                                <span>Decentralized</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bolt"></i>
+                                <span>Fast Payments</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden lg:block">
+                        <div class="text-6xl opacity-20">
+                            <i class="fab fa-bitcoin"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Total Bids</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ stats.total_bids }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-gavel text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Active Bids</p>
+                            <p class="text-2xl font-bold text-green-600">{{ stats.active_bids }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Funded</p>
+                            <p class="text-2xl font-bold text-[#e74c3c]">{{ stats.funded_bids }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-coins text-[#e74c3c] text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Total BCH</p>
+                            <p class="text-2xl font-bold text-orange-600">{{ stats.total_bch_in_bids|floatformat:4 }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fab fa-bitcoin text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Bidding Form -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-lg p-8">
+                        <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                            <i class="fas fa-plus-circle text-[#e74c3c]"></i>
+                            Place a Bid
+                        </h2>
+                        
+                        <!-- How it Works Section -->
+                        <div class="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                            <h3 class="text-lg font-semibold mb-3 text-blue-900 flex items-center gap-2">
+                                <i class="fas fa-lightbulb text-blue-600"></i>
+                                How It Works
+                            </h3>
+                            <div class="space-y-3 text-sm text-blue-800">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                                    <p><strong>Place Your Bid:</strong> Enter GitHub issue URL and your BCH bid amount</p>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                                    <p><strong>Get Dynamic Image:</strong> Embed our dynamic badge in the GitHub issue</p>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                                    <p><strong>Repo Owner Funds:</strong> Repository owner sends BCH to escrow address</p>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">4</div>
+                                    <p><strong>Submit PR:</strong> Complete the work and submit a pull request</p>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">5</div>
+                                    <p><strong>Get Paid:</strong> Upon approval, BCH is released to your address</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="post" class="space-y-6">
+                            {% csrf_token %}
+                            
+                            <!-- GitHub Username -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fab fa-github text-gray-600 mr-2"></i>
+                                    GitHub Username
+                                </label>
+                                <input 
+                                    type="text" 
+                                    name="github_username" 
+                                    placeholder="your-github-username"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                    required
+                                    {% if request.user.is_authenticated %}
+                                        value="{{ request.user.username }}"
+                                    {% endif %}
+                                >
+                                <p class="mt-1 text-sm text-gray-500">Your GitHub username for bid identification</p>
+                            </div>
+
+                            <!-- GitHub Issue URL -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-link text-gray-600 mr-2"></i>
+                                    GitHub Issue URL
+                                </label>
+                                <input 
+                                    type="url" 
+                                    name="issue_url" 
+                                    placeholder="https://github.com/owner/repo/issues/123"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                    required
+                                    id="issue-url-input"
+                                >
+                                <p class="mt-1 text-sm text-gray-500">Full URL to the GitHub issue you want to bid on</p>
+                            </div>
+
+                            <!-- Bid Amount -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fab fa-bitcoin text-orange-500 mr-2"></i>
+                                    Bid Amount (BCH)
+                                </label>
+                                <div class="relative">
+                                    <input 
+                                        type="number" 
+                                        name="amount_bch" 
+                                        step="0.00000001" 
+                                        min="0.00000001"
+                                        placeholder="0.01"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                        required
+                                    >
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-gray-500">
+                                        BCH
+                                    </div>
+                                </div>
+                                <!-- Quick Amount Buttons -->
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <button type="button" onclick="setBidAmount(0.01)" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors">0.01</button>
+                                    <button type="button" onclick="setBidAmount(0.05)" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors">0.05</button>
+                                    <button type="button" onclick="setBidAmount(0.1)" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors">0.1</button>
+                                    <button type="button" onclick="setBidAmount(0.5)" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors">0.5</button>
+                                    <button type="button" onclick="setBidAmount(1.0)" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors">1.0</button>
+                                </div>
+                            </div>
+
+                            <!-- BCH Address -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-wallet text-green-600 mr-2"></i>
+                                    Your BCH Address (Optional)
+                                </label>
+                                <input 
+                                    type="text" 
+                                    name="bch_address" 
+                                    placeholder="bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                >
+                                <p class="mt-1 text-sm text-gray-500">BCH address to receive payment (can be added later)</p>
+                            </div>
+
+                            <!-- Current Bid Display -->
+                            <div id="current-bid-display" class="hidden p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <h4 class="font-semibold text-yellow-800 mb-2">Current Highest Bid for this Issue:</h4>
+                                <div id="current-bid-info" class="text-yellow-700"></div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button 
+                                type="submit" 
+                                class="w-full bg-gradient-to-r from-[#e74c3c] to-red-600 text-white font-bold py-4 px-6 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                            >
+                                <i class="fas fa-rocket mr-2"></i>
+                                Place Bid
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Recent Bids Sidebar -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-list text-[#e74c3c]"></i>
+                            Recent Bids
+                        </h3>
+                        
+                        {% if bids %}
+                            <div class="space-y-4 max-h-96 overflow-y-auto">
+                                {% for bid in bids %}
+                                    <div class="p-4 border border-gray-200 rounded-lg hover:border-[#e74c3c] transition-colors">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="font-bold text-[#e74c3c] text-lg">{{ bid.amount_bch }} BCH</span>
+                                            <span class="px-2 py-1 text-xs rounded-full 
+                                                {% if bid.status == 'Open' %}bg-green-100 text-green-800
+                                                {% elif bid.status == 'Funded' %}bg-blue-100 text-blue-800
+                                                {% elif bid.status == 'Completed' %}bg-purple-100 text-purple-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ bid.status }}
+                                            </span>
+                                        </div>
+                                        <div class="text-sm text-gray-600 mb-2">
+                                            <a href="{{ bid.issue_url }}" target="_blank" class="hover:text-[#e74c3c] truncate block">
+                                                {{ bid.issue_url|truncatechars:40 }}
+                                            </a>
+                                        </div>
+                                        <div class="flex items-center justify-between text-xs text-gray-500">
+                                            <span>by {{ bid.github_username|default:"Anonymous" }}</span>
+                                            <span>{{ bid.created|timesince }} ago</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-inbox text-4xl mb-4"></i>
+                                <p>No bids yet. Be the first!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- How to Integrate -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-code text-[#e74c3c]"></i>
+                            GitHub Integration
+                        </h3>
+                        <div class="space-y-3 text-sm">
+                            <p class="text-gray-600">After placing a bid, copy and paste this markdown into your GitHub issue:</p>
+                            <div class="bg-gray-100 p-3 rounded-lg font-mono text-xs">
+                                ![Bid Status](https://blt.owasp.org/bid/image/TOKEN.png)
+                            </div>
+                            <p class="text-gray-500">The image will update dynamically as new bids are placed!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setBidAmount(amount) {
+            document.querySelector('input[name="amount_bch"]').value = amount;
+        }
+
+        // Check current bid when issue URL is entered
+        document.getElementById('issue-url-input').addEventListener('blur', function() {
+            const issueUrl = this.value.trim();
+            if (issueUrl && issueUrl.includes('github.com') && issueUrl.includes('/issues/')) {
+                fetch('/api/bid/check-current/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({issue_url: issueUrl})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.current_bid && parseFloat(data.current_bid) > 0) {
+                        document.getElementById('current-bid-display').classList.remove('hidden');
+                        document.getElementById('current-bid-info').innerHTML = `
+                            <strong>${data.current_bid} BCH</strong> by ${data.bidder || 'Anonymous'} 
+                            <span class="text-sm">(${data.status})</span>
+                        `;
+                    } else {
+                        document.getElementById('current-bid-display').classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking current bid:', error);
+                });
+            }
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+{% endblock content %}
