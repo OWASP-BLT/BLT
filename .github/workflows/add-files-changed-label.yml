@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   add_files_changed_label:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Add Files Changed Label
@@ -23,17 +24,8 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
-          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          BASE_REPO: ${{ github.repository }}
         run: |
           echo "Starting Files Changed Label workflow for PR #$PR_NUMBER in $REPO_OWNER/$REPO_NAME"
-          
-          # Check if PR is from a fork (external repository)
-          if [[ "$PR_HEAD_REPO" != "$BASE_REPO" ]]; then
-            echo "This PR is from an external repository: $PR_HEAD_REPO"
-            echo "Skipping label operations for external repository PR to avoid permission issues."
-            exit 0
-          fi
           
           # Get the number of files changed in the PR
           echo "Fetching files changed information..."
