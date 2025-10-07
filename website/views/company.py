@@ -758,7 +758,7 @@ class AddDomainView(View):
         if domain_data["name"].lower().replace("www.", "") == normalized_domain:
             domain_data["name"] = normalized_domain
         else:
-            domain_data["name"] = domain_data["name"].lower()
+            domain_data["name"] = domain_data["name"].strip()
 
         managers_list = request.POST.getlist("user")
         organization_obj = Organization.objects.get(id=id)

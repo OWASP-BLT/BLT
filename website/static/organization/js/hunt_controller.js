@@ -448,7 +448,9 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
     document.getElementById('prize_description').value = description;
     document.getElementById('every_valid_submissions').checked = validSubmissions ? true : false;
     document.getElementById('add_prize_button').innerText = 'Update Prize';
-    document.getElementById('add_prize_button').setAttribute('onclick', `updatePrize(${prizeId}, ${organizationId})`);
+    const addPrizeButton = document.getElementById('add_prize_button');
+    addPrizeButton.onclick = null; // Clear any previous handler
+    addPrizeButton.onclick = function() { updatePrize(prizeId, organizationId); };
     document.getElementById('cryptocurrencyDiv').style.display = "none";
 }
 
@@ -504,10 +506,14 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
         every_valid_submissions.checked = false;
         prize_description.value = "";
         
+        // Restore number_of_winning_projects input visibility and enabled state
+        number_of_winning_projects.disabled = false;
+        number_of_winning_projects.style.display = "";
+        
         // Reset the "Add Prize" button
         const addPrizeButton = document.getElementById('add_prize_button');
         addPrizeButton.innerText = 'Add Prize';
-        addPrizeButton.setAttribute('onclick', 'add_prize()');
+        addPrizeButton.onclick = add_prize;
         addPrizeButton.disabled = false;
         
         // Show success message

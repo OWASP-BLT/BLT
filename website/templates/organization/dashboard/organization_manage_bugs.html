@@ -76,7 +76,7 @@
                                             {% if issue.status == 'open' %}
                                                 <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Open</span>
                                             {% else %}
-                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">Closed</span>
+                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">{{ issue.get_status_display }}</span>
                                             {% endif %}
                                         </td>
                                         <td class="px-6 py-4 text-right">
