@@ -1,0 +1,15 @@
+name = "bug-reporter-api"
+compatibility_date = "2023-09-01"
+pages_build_output_dir = "dist"
+
+[env.production]
+name = "bug-reporter-api"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bug-reporter-db"
+database_id = "660bca36-d3c5-4e1b-a495-c81cd8dc749f"
+
+[vars]
+JWT_SECRET = "Blehbleh"
+ADMIN_EMAIL = "admin@example.com"
