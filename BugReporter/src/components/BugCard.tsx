@@ -76,12 +76,12 @@ export default function BugCard({ bug, onUpdate, canEdit }: BugCardProps) {
   return (
     <>
       <div 
-        className="card p-6 cursor-pointer hover:shadow-lg hover:border-primary-200 transition-all duration-200 transform hover:-translate-y-1"
+        className="card p-4 sm:p-6 cursor-pointer hover:shadow-lg hover:border-primary-200 transition-all duration-200 transform hover:-translate-y-1"
         onClick={handleCardClick}
       >
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3 sm:mb-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <h3 className="text-lg font-semibold text-gray-900 hover:text-primary-600 transition-colors">{bug.title}</h3>
               <span className={clsx('px-2 py-1 rounded-full text-xs font-medium border', getSeverityColor(bug.severity))}>
                 {bug.severity}
@@ -93,10 +93,10 @@ export default function BugCard({ bug, onUpdate, canEdit }: BugCardProps) {
             </div>
           
             {bug.description && (
-              <p className="text-gray-600 mb-3">{bug.description}</p>
+              <p className="text-gray-600 mb-2 sm:mb-3">{bug.description}</p>
             )}
 
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
               <div className="flex items-center space-x-1">
                 <User className="w-4 h-4" />
                 <span>{bug.reporter_name || bug.reporter_email}</span>
@@ -119,7 +119,7 @@ export default function BugCard({ bug, onUpdate, canEdit }: BugCardProps) {
           </div>
 
           {canEdit && (
-            <div className="flex items-center space-x-2">
+            <div className="flex sm:flex-none sm:justify-end gap-2">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -164,13 +164,13 @@ export default function BugCard({ bug, onUpdate, canEdit }: BugCardProps) {
 
         {/* Status Update */}
         {isEditing && canEdit && (
-          <div className="border-t border-gray-200 pt-4 mt-4">
-            <div className="flex items-center space-x-3">
+          <div className="border-t border-gray-200 pt-3 sm:pt-4 mt-3 sm:mt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <label className="text-sm font-medium text-gray-700">Status:</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as Bug['status'])}
-                className="input-field w-auto"
+                className="input-field w-full sm:w-auto"
                 disabled={loading}
               >
                 <option value="open">Open</option>

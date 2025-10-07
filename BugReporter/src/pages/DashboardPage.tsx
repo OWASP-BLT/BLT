@@ -131,6 +131,33 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Quick Actions */}
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+            <div className="text-lg mb-2">📊</div>
+            <div className="text-sm font-medium text-gray-900">Generate Report</div>
+            <div className="text-xs text-gray-500">Export bug statistics</div>
+          </button>
+          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+            <div className="text-lg mb-2">👤</div>
+            <div className="text-sm font-medium text-gray-900">Manage Users</div>
+            <div className="text-xs text-gray-500">Add or remove users</div>
+          </button>
+          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+            <div className="text-lg mb-2">⚙️</div>
+            <div className="text-sm font-medium text-gray-900">System Settings</div>
+            <div className="text-xs text-gray-500">Configure platform</div>
+          </button>
+          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+            <div className="text-lg mb-2">🔍</div>
+            <div className="text-sm font-medium text-gray-900">Run Scan</div>
+            <div className="text-xs text-gray-500">Start security scan</div>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

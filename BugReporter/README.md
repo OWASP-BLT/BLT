@@ -1,4 +1,4 @@
-# Bug Reporter (BLT)
+#  Bug Reporter (BLT)
 
 A professional bug tracking application built with React, TypeScript, Cloudflare Workers, and D1.
 
@@ -56,7 +56,6 @@ npm run dev
 
 ## 🔑 Authentication
 - Login and registration use JWT.
-- For development only, tokens are stored in `localStorage` for simplicity. See Security Hardening for production guidance.
 
 ## 🗂️ Project Structure
 
@@ -99,11 +98,3 @@ npm run deploy
 ```bash
 npm run worker:deploy
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request

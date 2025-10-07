@@ -92,14 +92,14 @@ export default function BugsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Bugs</h1>
           <p className="text-gray-600 mt-1">Report and track bugs across your projects</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="btn-primary flex items-center space-x-2"
+          className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Report Bug</span>
@@ -115,7 +115,8 @@ export default function BugsPage() {
         />
       )}
 
-      <SearchAndFilter
+      <div className="card p-4 sm:p-5">
+        <SearchAndFilter
         searchPlaceholder="Search bugs by title, description, reporter, or project..."
         onSearchChange={handleSearchChange}
         onFilterChange={handleFilterChange}
@@ -125,7 +126,8 @@ export default function BugsPage() {
           status: searchParams.status || '',
           severity: searchParams.severity || ''
         }}
-      />
+        />
+      </div>
 
       <div className="space-y-4">
         {bugs.length === 0 ? (

@@ -8,6 +8,7 @@ import ProjectsPage from './pages/ProjectsPage';
 import RepositoriesPage from './pages/RepositoriesPage';
 import UserManagementPage from './pages/UserManagementPage';
 import LoadingSpinner from './components/LoadingSpinner';
+import HomePage from './pages/HomePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -31,7 +32,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user || user.role !== 'admin') {
-    return <Navigate to="/bugs" replace />;
+    return <Navigate to="/app/bugs" replace />;
   }
 
   return <>{children}</>;
@@ -46,19 +47,20 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/" element={<HomePage />} />
       <Route 
         path="/login" 
-        element={user ? <Navigate to="/bugs" replace /> : <LoginPage />} 
+        element={user ? <Navigate to="/app/bugs" replace /> : <LoginPage />} 
       />
       <Route
-        path="/"
+        path="/app"
         element={
           <ProtectedRoute>
             <Layout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/bugs" replace />} />
+        <Route index element={<Navigate to="/app/bugs" replace />} />
         <Route path="bugs" element={<BugsPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="repositories" element={<RepositoriesPage />} />
@@ -71,7 +73,7 @@ function AppRoutes() {
           } 
         />
       </Route>
-      <Route path="*" element={<Navigate to="/bugs" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

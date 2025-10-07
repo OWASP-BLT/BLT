@@ -88,14 +88,14 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
           <p className="text-gray-600 mt-1">Manage your security testing projects</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="btn-primary flex items-center space-x-2"
+          className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Create Project</span>
@@ -119,7 +119,8 @@ export default function ProjectsPage() {
         />
       )}
 
-      <SearchAndFilter
+      <div className="card p-4 sm:p-5">
+        <SearchAndFilter
         searchPlaceholder="Search projects by name, description, or creator..."
         onSearchChange={handleSearchChange}
         onFilterChange={handleFilterChange}
@@ -128,10 +129,11 @@ export default function ProjectsPage() {
         initialFilters={{
           status: searchParams.status || ''
         }}
-      />
+        />
+      </div>
 
       {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {projects.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />

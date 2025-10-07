@@ -88,7 +88,7 @@ export default function UserManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Manage users and their permissions</p>
@@ -96,26 +96,77 @@ export default function UserManagementPage() {
       </div>
 
       <div className="card overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">All Users</h3>
         </div>
-        <div className="overflow-x-auto">
+        {/* Mobile List */}
+        <div className="block md:hidden p-4 space-y-3">
+          {users.map((user) => (
+            <div key={user.id} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                {user.avatar_url ? (
+                  <img className="h-10 w-10 rounded-full" src={user.avatar_url} alt="" />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-primary-600" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{user.name}</div>
+                  <div className="text-xs text-gray-500 truncate">{user.email}</div>
+                </div>
+                <span className={`ml-auto px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
+                  {user.role}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                <div className="flex items-center">
+                  <Bug className="w-3.5 h-3.5 mr-1" />
+                  {(user as any).bugs_reported || 0} bugs
+                </div>
+                <div className="flex items-center">
+                  <Calendar className="w-3.5 h-3.5 mr-1" />
+                  {new Date(user.created_at).toLocaleDateString()}
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button 
+                  onClick={() => handleEditUser(user.id)}
+                  disabled={actionLoading === user.id}
+                  className="btn-secondary text-xs"
+                >
+                  Edit
+                </button>
+                <button 
+                  onClick={() => handleDeleteUser(user.id)}
+                  disabled={actionLoading === user.id}
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Bugs Reported
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Joined
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -123,7 +174,7 @@ export default function UserManagementPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         {user.avatar_url ? (
@@ -140,25 +191,25 @@ export default function UserManagementPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
                       {user.role}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
                       <Bug className="w-4 h-4 mr-1" />
                       {(user as any).bugs_reported || 0}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar className="w-4 h-4 mr-1" />
                       {new Date(user.created_at).toLocaleDateString()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex flex-wrap gap-2">
                       <button 
                         onClick={() => handleEditUser(user.id)}
                         disabled={actionLoading === user.id}
@@ -186,15 +237,9 @@ export default function UserManagementPage() {
 
       {/* Edit Role Modal */}
       {editingUser && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-user-title"
-          onKeyDown={(e) => e.key === 'Escape' && setEditingUser(null)}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 id="edit-user-title" className="text-lg font-semibold text-gray-900 mb-4">Edit User</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit User</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
@@ -220,17 +265,11 @@ export default function UserManagementPage() {
 
       {/* Delete Confirmation */}
       {deleteTarget && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-user-title"
-          onKeyDown={(e) => e.key === 'Escape' && setDeleteTarget(null)}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="flex items-center space-x-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
-              <h3 id="delete-user-title" className="text-lg font-semibold text-gray-900">Delete User</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Delete User</h3>
             </div>
             <p className="text-gray-600 mb-6">Are you sure you want to delete {deleteTarget.name}? This action cannot be undone.</p>
             <div className="flex justify-end space-x-3">

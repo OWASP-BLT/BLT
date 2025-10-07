@@ -11,8 +11,7 @@
     "lint": "eslint --ext .ts,.tsx src --max-warnings=0",
     "lint:fix": "eslint --ext .ts,.tsx src --fix",
     "worker:dev": "wrangler dev worker/index.ts",
-    "worker:deploy": "wrangler deploy worker/index.ts",
-    "db:migrate": "wrangler d1 execute bug-reporter-db --local --file=./worker/schema.sql"
+    "worker:deploy": "wrangler deploy worker/index.ts"
   },
   "dependencies": {
     "clsx": "^2.0.0",

@@ -9,13 +9,13 @@ interface SidebarProps {
 }
 
 const navigation = [
-  { name: 'Bugs', href: '/bugs', icon: Bug },
-  { name: 'Projects', href: '/projects', icon: FolderOpen },
-  { name: 'Repositories', href: '/repositories', icon: GitBranch },
+  { name: 'Bugs', href: '/app/bugs', icon: Bug },
+  { name: 'Projects', href: '/app/projects', icon: FolderOpen },
+  { name: 'Repositories', href: '/app/repositories', icon: GitBranch },
 ];
 
 const adminNavigation = [
-  { name: 'User Management', href: '/users', icon: Users },
+  { name: 'User Management', href: '/app/users', icon: Users },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {

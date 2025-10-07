@@ -16,7 +16,7 @@ export default function Layout() {
           onClose={() => setSidebarOpen(false)}
         />
         
-        <main className="flex-1 p-6 lg:ml-64">
+        <main className="flex-1 p-4 sm:p-6 lg:ml-64">
           <Outlet />
         </main>
       </div>

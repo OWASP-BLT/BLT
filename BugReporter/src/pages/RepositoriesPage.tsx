@@ -39,7 +39,6 @@ export default function RepositoriesPage() {
 
   const handleRepositoryDeleted = (repositoryId: number) => {
     setRepositories(prev => prev.filter(r => r.id !== repositoryId));
-    setSelectedRepoId(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -61,14 +60,14 @@ export default function RepositoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Repositories</h1>
           <p className="text-gray-600 mt-1">Monitor and scan your code repositories</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="btn-primary flex items-center space-x-2"
+          className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add Repository</span>
@@ -95,10 +94,10 @@ export default function RepositoriesPage() {
 
       <div className="space-y-4">
         {repositories.map((repo) => (
-          <div key={repo.id} className="card p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
+          <div key={repo.id} className="card p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <h3 className="text-lg font-semibold text-gray-900">{repo.name}</h3>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(repo.status)}`}>
                     {repo.status}
@@ -113,12 +112,12 @@ export default function RepositoriesPage() {
                   href={repo.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 text-sm mb-3 inline-flex items-center space-x-1"
+                  className="break-all text-blue-600 hover:text-blue-700 text-sm mb-3 inline-flex items-center space-x-1"
                 >
                   <span>{repo.url}</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
-                <div className="flex items-center space-x-6 text-sm text-gray-500">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
                   <div className="flex items-center space-x-1">
                     <Calendar className="w-4 h-4" />
                     <span>Last scan: {repo.last_scan ? new Date(repo.last_scan).toLocaleDateString() : 'Never'}</span>
@@ -132,8 +131,8 @@ export default function RepositoriesPage() {
                   )}
                 </div>
               </div>
-              <div className="flex space-x-2">
-                <button className="btn-secondary text-sm" onClick={() => setSelectedRepoId(repo.id)}>View Details</button>
+              <div className="flex sm:flex-none sm:justify-end gap-2">
+                <button className="btn-secondary text-sm w-full sm:w-auto" onClick={() => setSelectedRepoId(repo.id)}>View Details</button>
               </div>
             </div>
           </div>

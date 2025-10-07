@@ -5,6 +5,5 @@ INSERT OR IGNORE INTO bugs (id, title, description, severity, status, reporter_i
 (3, 'UI Button Alignment Issue', 'Submit button is misaligned on mobile devices', 'low', 'resolved', 1, 2, 3, '1. Open app on mobile\n2. Navigate to form\n3. Observe button position', 'Button should be centered', 'Button appears off-center', '2024-09-27 14:20:00');
 
 -- Add a regular user for testing
--- password: user123
 INSERT OR IGNORE INTO users (id, email, name, password_hash, role, created_at) VALUES 
-(2, 'user@example.com', 'Test User', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'user', '2024-09-28 10:00:00');
+(2, 'user@example.com', 'Test User', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'user', '2024-09-28 10:00:00');

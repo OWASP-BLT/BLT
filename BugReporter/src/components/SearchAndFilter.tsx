@@ -1,6 +1,5 @@
+import { useState, useRef } from 'react';
 import { Search, Filter, X } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-
 
 interface FilterOption {
   label: string;
@@ -33,17 +32,8 @@ export default function SearchAndFilter({
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
 
-  const debounceRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        window.clearTimeout(debounceRef.current);
-      }
-    };
-  }, []);
-  
   // debounce search to avoid frequent reloads/requests
+  const debounceRef = useRef<number | null>(null);
   const handleSearchChange = (value: string) => {
     setSearch(value);
     if (debounceRef.current) {
@@ -90,10 +80,10 @@ export default function SearchAndFilter({
       </div>
 
       {/* Filter Toggle and Clear */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
+          className="flex items-center justify-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
         >
           <Filter className="w-4 h-4" />
           <span>Filters</span>
@@ -107,7 +97,7 @@ export default function SearchAndFilter({
         {activeFilterCount > 0 && (
           <button
             onClick={clearAllFilters}
-            className="flex items-center space-x-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
+            className="flex items-center justify-center space-x-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
           >
             <X className="w-4 h-4" />
             <span>Clear all</span>
@@ -117,7 +107,7 @@ export default function SearchAndFilter({
 
       {/* Filter Options */}
       {showFilters && Object.keys(filters).length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-4 bg-gray-50 rounded-lg">
           {Object.entries(filters).map(([key, filter]) => (
             <div key={key}>
               <label className="block text-sm font-medium text-gray-700 mb-2">

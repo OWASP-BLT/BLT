@@ -10,11 +10,10 @@ type Bindings = {
 };
 
 type Variables = {
-  jwtPayload: {
+  user: {
     id: number;
     email: string;
     role: string;
-    exp?: number;
   };
 };
 
@@ -111,12 +110,9 @@ app.post('/api/auth/login', async (c) => {
       }
     });
   } catch (error) {
-      console.error('Login error:', error);
-      if (error instanceof HTTPException) {
-        throw error;
-      }
-      throw new HTTPException(500, { message: 'Login failed' });
-    }
+    console.error('Login error:', error);
+    throw new HTTPException(500, { message: 'Login failed' });
+  }
 });
 
 app.post('/api/auth/register', async (c) => {
@@ -625,16 +621,11 @@ app.delete('/api/protected/projects/:id', async (c) => {
 // Delete repository endpoint
 app.delete('/api/protected/repositories/:id', async (c) => {
   try {
- 
-    const payload = c.get('jwtPayload');
     const repoId = c.req.param('id');
     
     const repository = await c.env.DB.prepare('SELECT * FROM repositories WHERE id = ?').bind(repoId).first();
     if (!repository) {
       throw new HTTPException(404, { message: 'Repository not found' });
-    }
-    if (payload.role !== 'admin') {
-      throw new HTTPException(403, { message: 'Not authorized to delete this repository' });
     }
     
     await c.env.DB.prepare('DELETE FROM repositories WHERE id = ?').bind(repoId).run();
