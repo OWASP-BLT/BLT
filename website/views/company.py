@@ -482,7 +482,7 @@ class OrganizationDashboardAnalyticsView(View):
             "security_incidents_summary": self.get_security_incidents_summary(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
-        return render(request, "organization/organization_analytics.html", context=context)
+        return render(request, "organization/dashboard/organization_analytics.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):
@@ -517,7 +517,7 @@ class OrganizationDashboardIntegrations(View):
             "organization_obj": organization_obj,
             "slack_integration": slack_integration,
         }
-        return render(request, "organization/organization_integrations.html", context=context)
+        return render(request, "organization/dashboard/organization_integrations.html", context=context)
 
 
 class OrganizationDashboardTeamOverviewView(View):
@@ -598,7 +598,7 @@ class OrganizationDashboardTeamOverviewView(View):
             "current_direction": sort_direction,
         }
 
-        return render(request, "organization/organization_team_overview.html", context=context)
+        return render(request, "organization/dashboard/organization_team_overview.html", context=context)
 
 
 class OrganizationDashboardManageBugsView(View):
@@ -630,7 +630,7 @@ class OrganizationDashboardManageBugsView(View):
             "organization_obj": organization_obj,
             "issues": issues,
         }
-        return render(request, "organization/organization_manage_bugs.html", context=context)
+        return render(request, "organization/dashboard/organization_manage_bugs.html", context=context)
 
 
 class OrganizationDashboardManageDomainsView(View):
@@ -681,7 +681,7 @@ class OrganizationDashboardManageDomainsView(View):
             .count(),
         }
 
-        return render(request, "organization/organization_manage_domains.html", context)
+        return render(request, "organization/dashboard/organization_manage_domains.html", context)
 
 
 class AddDomainView(View):
@@ -716,9 +716,9 @@ class AddDomainView(View):
         }
 
         if domain:
-            return render(request, "organization/edit_domain.html", context=context)
+            return render(request, "organization/dashboard/edit_domain.html", context=context)
         else:
-            return render(request, "organization/add_domain.html", context=context)
+            return render(request, "organization/dashboard/add_domain.html", context=context)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -731,24 +731,34 @@ class AddDomainView(View):
             "facebook": request.POST.get("facebook_url", None),
         }
 
-        if domain_data["url"]:
-            parsed_url = urlparse(domain_data["url"])
-            if parsed_url.hostname is None:
-                messages.error(request, "Invalid domain url")
-                return redirect("add_domain", id=id)
-            domain_data["url"] = parsed_url.netloc
-
-        if domain_data["name"] is None:
+        # Validate required fields first
+        if not domain_data["name"]:
             messages.error(request, "Enter domain name")
             return redirect("add_domain", id=id)
 
-        if domain_data["url"] is None:
+        if not domain_data["url"]:
             messages.error(request, "Enter domain url")
             return redirect("add_domain", id=id)
 
-        domain = (parsed_url.hostname).replace("www.", "")
+        # Parse and validate URL
+        try:
+            parsed_url = urlparse(domain_data["url"])
+            if not parsed_url.hostname:
+                messages.error(request, "Invalid domain url")
+                return redirect("add_domain", id=id)
+            domain_data["url"] = parsed_url.netloc
+        except Exception:
+            messages.error(request, "Invalid domain url format")
+            return redirect("add_domain", id=id)
 
-        domain_data["name"] = domain_data["name"].lower()
+        # Extract domain hostname and normalize to lowercase for consistency
+        normalized_domain = parsed_url.hostname.replace("www.", "").lower()
+        # Ensure the domain name is consistent with the URL processing
+        # If user didn't provide a custom name, use the normalized domain
+        if domain_data["name"].lower().replace("www.", "") == normalized_domain:
+            domain_data["name"] = normalized_domain
+        else:
+            domain_data["name"] = domain_data["name"].strip()
 
         managers_list = request.POST.getlist("user")
         organization_obj = Organization.objects.get(id=id)
@@ -773,22 +783,6 @@ class AddDomainView(View):
         except ValueError:
             messages.error(request, "URL validation error.")
             return redirect("add_domain", id=id)
-
-        # validate domain email
-        user_email_domain = request.user.email.split("@")[-1]
-
-        if not domain.endswith(f".{user_email_domain}") and domain != user_email_domain:
-            messages.error(request, "Your email does not match domain email. Action Denied!")
-            return redirect("add_domain", id=id)
-
-        for domain_manager_email in managers_list:
-            manager_email_domain = domain_manager_email.split("@")[-1]
-            if not domain.endswith(f".{manager_email_domain}") and domain != manager_email_domain:
-                messages.error(
-                    request,
-                    f"Manager: {domain_manager_email} does not match domain email.",
-                )
-                return redirect("add_domain", id=id)
 
         if request.FILES.get("logo"):
             domain_logo = request.FILES.get("logo")
@@ -816,7 +810,7 @@ class AddDomainView(View):
         if domain_data["twitter"]:
             if "twitter.com" not in domain_data["twitter"] and "x.com" not in domain_data["twitter"]:
                 messages.error(request, "Twitter url should contain twitter.com or x.com")
-            return redirect("add_domain", id=id)
+                return redirect("add_domain", id=id)
         if domain_data["github"] and "github.com" not in domain_data["github"]:
             messages.error(request, "Github url should contain github.com")
             return redirect("add_domain", id=id)
@@ -858,7 +852,8 @@ class AddDomainView(View):
             return redirect("edit_domain", id=id, domain_id=domain_id)
 
         parsed_url = urlparse(domain_data["url"])
-        domain_name = (parsed_url.hostname).replace("www.", "")
+        # Normalize domain name to lowercase for consistent validation
+        domain_name = (parsed_url.hostname).replace("www.", "").lower()
 
         domain_data["name"] = domain_data["name"].lower()
 
@@ -888,22 +883,6 @@ class AddDomainView(View):
         except ValueError:
             messages.error(request, "URL validation error.")
             return redirect("edit_domain", id=id, domain_id=domain_id)
-
-        # validate domain email
-        user_email_domain = request.user.email.split("@")[-1]
-
-        if not domain_name.endswith(f".{user_email_domain}") and domain_name != user_email_domain:
-            messages.error(request, "Your email does not match domain email. Action Denied!")
-            return redirect("edit_domain", id=id, domain_id=domain_id)
-
-        for domain_manager_email in managers_list:
-            manager_email_domain = domain_manager_email.split("@")[-1]
-            if not domain_name.endswith(f".{manager_email_domain}") and domain_name != manager_email_domain:
-                messages.error(
-                    request,
-                    f"Manager: {domain_manager_email} does not match domain email.",
-                )
-                return redirect("edit_domain", id=id, domain_id=domain_id)
 
         if request.FILES.get("logo"):
             domain_logo = request.FILES.get("logo")
@@ -978,7 +957,7 @@ class AddSlackIntegrationView(View):
             hours = range(24)
             return render(
                 request,
-                "organization/add_slack_integration.html",
+                "organization/dashboard/add_slack_integration.html",
                 context={
                     "organization": id,
                     "slack_integration": slack_integration,
@@ -1308,7 +1287,7 @@ class DomainView(View):
             "ongoing_bughunts": ongoing_bughunts,
         }
 
-        return render(request, "organization/view_domain.html", context)
+        return render(request, "organization/dashboard/view_domain.html", context)
 
 
 class OrganizationDashboardManageRolesView(View):
@@ -1374,7 +1353,7 @@ class OrganizationDashboardManageRolesView(View):
             "organization_users": organization_users_list,
         }
 
-        return render(request, "organization/organization_manage_roles.html", context)
+        return render(request, "organization/dashboard/organization_manage_roles.html", context)
 
     def post(self, request, id, *args, **kwargs):
         domain = Domain.objects.filter(
@@ -1395,18 +1374,7 @@ class OrganizationDashboardManageRolesView(View):
         domain_managers = User.objects.filter(username__in=managers_list, is_active=True)
 
         for manager in domain_managers:
-            user_email_domain = manager.email.split("@")[-1]
-            organization_url = domain.organization.url
-            parsed_url = urlparse(organization_url).netloc
-            organization_domain = parsed_url.replace("www.", "")
-            if user_email_domain == organization_domain:
-                domain.managers.add(manager.id)
-            else:
-                messages.error(
-                    request,
-                    f"Manager: {domain_manager_email} does not match domain email.",
-                )
-                return redirect("organization_manage_roles", id)
+            domain.managers.add(manager.id)
 
         messages.success(request, "successfully added the managers")
         return redirect("organization_manage_roles", id)
@@ -1617,14 +1585,16 @@ class AddHuntView(View):
             messages.error(request, "Domain Does not exists")
             return redirect("add_bughunt", id)
 
+        # Expect dates in MM/DD/YYYY format from the form
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
 
         try:
+            # Parse MM/DD/YYYY format and convert to database format
             start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
         except ValueError:
-            messages.error(request, "Invalid Date Format")
+            messages.error(request, "Please enter dates in MM/DD/YYYY format (e.g., 12/25/2024)")
             return redirect("add_bughunt", id)
 
         # apply validation for date not valid
@@ -1716,19 +1686,25 @@ class OrganizationDashboardManageBughuntView(View):
             messages.error(request, "Organization does not exist")
             return redirect("home")
 
-        query = Hunt.objects.values(
-            "id",
-            "name",
-            "prize",
-            "is_published",
-            "result_published",
-            "starts_on__day",
-            "starts_on__month",
-            "starts_on__year",
-            "end_on__day",
-            "end_on__month",
-            "end_on__year",
-        ).filter(domain__organization__id=id)
+        query = (
+            Hunt.objects.values(
+                "id",
+                "name",
+                "prize",
+                "is_published",
+                "result_published",
+                "starts_on__day",
+                "starts_on__month",
+                "starts_on__year",
+                "end_on__day",
+                "end_on__month",
+                "end_on__year",
+                "url",
+                "logo",
+            )
+            .annotate(total_prize=Sum("huntprize__value"))
+            .filter(domain__organization__id=id)
+        )
         filtered_bughunts = {
             "all": query,
             "ongoing": query.filter(result_published=False, is_published=True),
