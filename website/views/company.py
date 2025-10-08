@@ -751,9 +751,14 @@ class AddDomainView(View):
             messages.error(request, "Invalid domain url format")
             return redirect("add_domain", id=id)
 
-        # Extract domain hostname and normalize to lowercase
-        domain = parsed_url.hostname.replace("www.", "").lower()
-        domain_data["name"] = domain_data["name"].lower()
+        # Extract domain hostname and normalize to lowercase for consistency
+        normalized_domain = parsed_url.hostname.replace("www.", "").lower()
+        # Ensure the domain name is consistent with the URL processing
+        # If user didn't provide a custom name, use the normalized domain
+        if domain_data["name"].lower().replace("www.", "") == normalized_domain:
+            domain_data["name"] = normalized_domain
+        else:
+            domain_data["name"] = domain_data["name"].strip()
 
         managers_list = request.POST.getlist("user")
         organization_obj = Organization.objects.get(id=id)
@@ -1580,14 +1585,16 @@ class AddHuntView(View):
             messages.error(request, "Domain Does not exists")
             return redirect("add_bughunt", id)
 
+        # Expect dates in MM/DD/YYYY format from the form
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
 
         try:
+            # Parse MM/DD/YYYY format and convert to database format
             start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
         except ValueError:
-            messages.error(request, "Invalid Date Format")
+            messages.error(request, "Please enter dates in MM/DD/YYYY format (e.g., 12/25/2024)")
             return redirect("add_bughunt", id)
 
         # apply validation for date not valid
@@ -1679,19 +1686,25 @@ class OrganizationDashboardManageBughuntView(View):
             messages.error(request, "Organization does not exist")
             return redirect("home")
 
-        query = Hunt.objects.values(
-            "id",
-            "name",
-            "prize",
-            "is_published",
-            "result_published",
-            "starts_on__day",
-            "starts_on__month",
-            "starts_on__year",
-            "end_on__day",
-            "end_on__month",
-            "end_on__year",
-        ).filter(domain__organization__id=id)
+        query = (
+            Hunt.objects.values(
+                "id",
+                "name",
+                "prize",
+                "is_published",
+                "result_published",
+                "starts_on__day",
+                "starts_on__month",
+                "starts_on__year",
+                "end_on__day",
+                "end_on__month",
+                "end_on__year",
+                "url",
+                "logo",
+            )
+            .annotate(total_prize=Sum("huntprize__value"))
+            .filter(domain__organization__id=id)
+        )
         filtered_bughunts = {
             "all": query,
             "ongoing": query.filter(result_published=False, is_published=True),
