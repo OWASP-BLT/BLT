@@ -87,6 +87,7 @@ from website.utils import (
 from .constants import GSOC25_PROJECTS
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     context = {}
@@ -121,21 +122,21 @@ def like_issue(request, issue_pk):
             },
         )
 
-        send_mail(
-            "Your issue got an upvote!!",
+        send_mail(            "Your issue got an upvote!!",
             msg_plain,
             settings.EMAIL_TO_STRING,
             [liked_user.email],
             html_message=msg_html,
         )
 
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
+    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()    
     context["object"] = issue
     context["likes"] = total_votes
     context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
     return HttpResponse("Success")
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
     context = {}
@@ -149,7 +150,7 @@ def dislike_issue(request, issue_pk):
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)
-    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()    
     context["object"] = issue
     context["dislikes"] = total_votes
     context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
@@ -1837,6 +1838,7 @@ def comment_on_content(request, content_pk):
     return render(request, "comments2.html", context)
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def unsave_issue(request, issue_pk):
     issue_pk = int(issue_pk)
@@ -1846,6 +1848,7 @@ def unsave_issue(request, issue_pk):
     return HttpResponse("OK")
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
     issue_pk = int(issue_pk)
@@ -1912,6 +1915,7 @@ def IssueEdit(request):
         return HttpResponse("POST ONLY")
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
     context = {}
