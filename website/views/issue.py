@@ -130,10 +130,6 @@ def like_issue(request, issue_pk):
             html_message=msg_html,
         )
 
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    context["object"] = issue
-    context["likes"] = total_votes
-    context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
     return HttpResponse("Success")
 
 
@@ -151,10 +147,6 @@ def dislike_issue(request, issue_pk):
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)
-    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    context["object"] = issue
-    context["dislikes"] = total_votes
-    context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
     return HttpResponse("Success")
 
 
@@ -1842,29 +1834,35 @@ def comment_on_content(request, content_pk):
 @require_POST
 @login_required(login_url="/accounts/login")
 def unsave_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-    userprof.issue_saved.remove(issue)
-    return HttpResponse("OK")
+    try:
+        issue_pk = int(issue_pk)
+        issue = Issue.objects.get(pk=issue_pk)
+        userprof = UserProfile.objects.get(user=request.user)
+        userprof.issue_saved.remove(issue)
+        return HttpResponse("OK")
+    except Exception as e:
+        return HttpResponse("ERROR")
 
 
 @require_POST
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
+    try:
+        issue_pk = int(issue_pk)
+        issue = Issue.objects.get(pk=issue_pk)
+        userprof = UserProfile.objects.get(user=request.user)
 
-    already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
+        already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
 
-    if already_saved:
-        userprof.issue_saved.remove(issue)
-        return HttpResponse("REMOVED")
+        if already_saved:
+            userprof.issue_saved.remove(issue)
+            return HttpResponse("REMOVED")
 
-    else:
-        userprof.issue_saved.add(issue)
-        return HttpResponse("OK")
+        else:
+            userprof.issue_saved.add(issue)
+            return HttpResponse("OK")
+    except Exception as e:
+        return HttpResponse("ERROR")
 
 
 @receiver(user_logged_in)
@@ -1919,21 +1917,24 @@ def IssueEdit(request):
 @require_POST
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_flaged=issue):
-        userprof.issue_flaged.remove(issue)
-    else:
-        userprof.issue_flaged.add(issue)
-        issue_pk = issue.pk
+    try:
+        context = {}
+        issue_pk = int(issue_pk)
+        issue = Issue.objects.get(pk=issue_pk)
+        userprof = UserProfile.objects.get(user=request.user)
+        if userprof in UserProfile.objects.filter(issue_flaged=issue):
+            userprof.issue_flaged.remove(issue)
+        else:
+            userprof.issue_flaged.add(issue)
+            issue_pk = issue.pk
 
-    userprof.save()
-    total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
-    context["object"] = issue
-    context["flags"] = total_flag_votes
-    return render(request, "includes/_flags.html", context)
+        userprof.save()
+        total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
+        context["object"] = issue
+        context["flags"] = total_flag_votes
+        return render(request, "includes/_flags.html", context)
+    except Exception as e:
+        return HttpResponse("Error processing flag", status=400)
 
 
 def select_bid(request):
