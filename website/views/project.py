@@ -1887,7 +1887,7 @@ class RepoBadgeView(APIView):
             repo.repo_visit_count = F("repo_visit_count") + 1
             repo.save()
 
-        # Get unique visits, grouped by date (last 7 days)
+        # Get unique visits, grouped by date (last 30 days)
         thirty_days_ago = today - timedelta(days=30)
         visit_counts = (
             IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
@@ -1951,14 +1951,17 @@ class RepoBadgeView(APIView):
             for i, count in enumerate(counts):
                 x1 = margin + (i * bar_spacing)
                 x2 = x1 + bar_width
-                if count > 0:  # Only draw visible bars for days with visits
+                if count > 0:
                     bar_height = (count / max_count) * chart_height
                     y1 = height - margin - bar_height
                     y2 = height - margin
-                    # Draw solid rectangle (much faster than gradient)
                     draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
-                # Note: For zero days, we draw nothing (empty space)
-
+                else:
+                    # Draw a faint line or a short, very light bar for 0 days
+                    faint_color = "#fcbab3"  # light red or gray, or use text_color
+                    y1 = y2 = height - margin - 2  # minimal height
+                    draw.rectangle([(x1, y1), (x2, y2+1)], fill=faint_color)
+                
         # Draw total views text
         try:
             font = ImageFont.truetype("DejaVuSans.ttf", 28)  # Slightly smaller
