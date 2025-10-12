@@ -122,14 +122,15 @@ def like_issue(request, issue_pk):
             },
         )
 
-        send_mail(            "Your issue got an upvote!!",
+        send_mail(
+            "Your issue got an upvote!!",
             msg_plain,
             settings.EMAIL_TO_STRING,
             [liked_user.email],
             html_message=msg_html,
         )
 
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()    
+    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context["object"] = issue
     context["likes"] = total_votes
     context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
@@ -150,7 +151,7 @@ def dislike_issue(request, issue_pk):
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)
-    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()    
+    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
     context["object"] = issue
     context["dislikes"] = total_votes
     context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
