@@ -165,9 +165,9 @@ class ProjectBadgeView(APIView):
             project.save()
 
         # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        thirty_days_ago = today - timedelta(days=30)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
             .annotate(visit_count=Count("address"))
@@ -178,8 +178,17 @@ class ProjectBadgeView(APIView):
         project.refresh_from_db()
 
         # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
+        all_dates = []
+        all_counts = []
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+
+        for i in range(30):
+            check_date = today - timedelta(days=29-i) #for last 30 days in order
+            all_dates.append(check_date)
+            all_counts.append(visit_dict.get(check_date, 0)) #default=0 for no visits
+        
+        dates = all_dates
+        counts = all_counts
         total_views = project.project_visit_count
 
         # Create a new image with a white background
@@ -1879,9 +1888,9 @@ class RepoBadgeView(APIView):
             repo.save()
 
         # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        thirty_days_ago = today - timedelta(days=30)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
             .annotate(visit_count=Count("address"))
@@ -1892,8 +1901,17 @@ class RepoBadgeView(APIView):
         repo.refresh_from_db()
 
         # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
+        all_dates = []
+        all_counts = []
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+
+        for i in range(30):
+            check_date = today - timedelta(days=29-i) #for last 30 days in order
+            all_dates.append(check_date)
+            all_counts.append(visit_dict.get(check_date, 0)) #default=0 for no visits
+        
+        dates = all_dates
+        counts = all_counts
         total_views = repo.repo_visit_count
 
         # Create a new image with a white background
@@ -1909,42 +1927,51 @@ class RepoBadgeView(APIView):
 
         # Calculate chart dimensions
         margin = 40
+        text_height = 50  #reserve space for title
         chart_width = width - 2 * margin
-        chart_height = height - 2 * margin
+        chart_height = height - 2 * margin - text_height
+
+        #calculating the max xount and bar width for 30 bars
+        if counts and max(counts) > 0:
+            max_count = max(counts)
+        else:
+            max_count = 1
+        
+        # Fixed width for exactly 30 bars with proper spacing
+        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
+        bar_spacing = chart_width / 30  # Even spacing for 30 positions
 
         # Draw grid lines
         for i in range(5):
-            y = margin + (chart_height * i) // 4
+            y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars
+        # Draw bars (with zero-day case handled)
         if dates and counts:
-            max_count = max(counts)
-            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
             for i, count in enumerate(counts):
-                bar_height = (count / max_count) * chart_height
-                x1 = margin + (i * 2 * bar_width)
-                y1 = height - margin - bar_height
+                x1 = margin + (i * bar_spacing)
                 x2 = x1 + bar_width
-                y2 = height - margin
-
-                # Draw bar with a slight gradient effect
-                for h in range(int(y1), int(y2)):
-                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
-                    r, g, b = 224, 93, 68  # RGB values for #e05d44
-                    current_color = f"#{r:02x}{g:02x}{b:02x}"
-                    draw.line([(x1, h), (x2, h)], fill=current_color)
+                if count > 0:  # Only draw visible bars for days with visits
+                    bar_height = (count / max_count) * chart_height
+                    y1 = height - margin - bar_height
+                    y2 = height - margin
+                    # Draw solid rectangle (much faster than gradient)
+                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+                # Note: For zero days, we draw nothing (empty space)
 
         # Draw total views text
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+            font = ImageFont.truetype("DejaVuSans.ttf", 28)  # Slightly smaller
         except OSError:
             font = ImageFont.load_default()
 
         text = f"Total Views: {total_views}"
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+        text_x = (width - text_width) // 2
+        text_y = 15  # Fixed position at top
+
+        draw.text((text_x, text_y), text, font=font, fill=bar_color) #avoiding overlaping 
 
         # Save the image to a buffer
         buffer = BytesIO()
