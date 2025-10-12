@@ -134,7 +134,7 @@ class ApiService {
   }
 
   async updateBug(id: number, updates: Partial<Bug>): Promise<{ bug: Bug }> {
-    return this.request<{ bug: Bug }>(`/protected/bugs/${id}`, {
+    return this.request<{ bug: Bug }>(`/api/protected/bugs/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
@@ -153,7 +153,7 @@ class ApiService {
   }
 
   async getProject(id: number): Promise<{ project: Project }> {
-    return this.request<{ project: Project }>(`/protected/projects/${id}`);
+    return this.request<{ project: Project }>(`/api/protected/projects/${id}`);
   }
 
   async createProject(projectData: Partial<Project>): Promise<{ project: Project }> {
@@ -164,13 +164,13 @@ class ApiService {
   }
 
   async deleteProject(id: number): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(`/protected/projects/${id}`, {
+    return this.request<{ success: boolean }>(`/api/protected/projects/${id}`, {
       method: 'DELETE',
     });
   }
 
   async findOrCreateProject(name: string): Promise<{ project: Project }> {
-    return this.request<{ project: Project }>(`/protected/projects/find-or-create`, {
+    return this.request<{ project: Project }>(`/api/protected/projects/find-or-create`, {
       method: 'POST',
       body: JSON.stringify({ name }),
     });
@@ -191,7 +191,7 @@ class ApiService {
   }
 
   async getRepository(id: number): Promise<{ repository: Repository }> {
-    return this.request<{ repository: Repository }>(`/protected/repositories/${id}`);
+    return this.request<{ repository: Repository }>(`/api/protected/repositories/${id}`);
   }
 
   async createRepository(repoData: Partial<Repository>): Promise<{ repository: Repository }> {
@@ -202,13 +202,13 @@ class ApiService {
   }
 
   async deleteRepository(id: number): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(`/protected/repositories/${id}`, {
+    return this.request<{ success: boolean }>(`/api/protected/repositories/${id}`, {
       method: 'DELETE',
     });
   }
 
   async findOrCreateRepository(name: string, project_id: number): Promise<{ repository: Repository }> {
-    return this.request<{ repository: Repository }>(`/protected/repositories/find-or-create`, {
+    return this.request<{ repository: Repository }>(`/api/protected/repositories/find-or-create`, {
       method: 'POST',
       body: JSON.stringify({ name, project_id }),
     });
@@ -241,7 +241,7 @@ class ApiService {
   }
 
   async deleteUser(id: number): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(`/protected/admin/users/${id}`, {
+    return this.request<{ success: boolean }>(`/api/protected/admin/users/${id}`, {
       method: 'DELETE',
     });
   }

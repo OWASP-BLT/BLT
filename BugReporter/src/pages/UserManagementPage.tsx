@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Users, Calendar, Bug, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
@@ -13,11 +13,7 @@ export default function UserManagementPage() {
   const [editRole, setEditRole] = useState<'admin' | 'user'>('user');
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       const response = await apiService.getUsers();
       setUsers(response.users);
@@ -26,7 +22,11 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   const handleEditUser = (userId: number) => {
     const user = users.find(u => u.id === userId);
@@ -105,7 +105,7 @@ export default function UserManagementPage() {
             <div key={user.id} className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-center gap-3">
                 {user.avatar_url ? (
-                  <img className="h-10 w-10 rounded-full" src={user.avatar_url} alt="" />
+                  <img className="h-10 w-10 rounded-full" src={user.avatar_url} alt={`${user.name} avatar`} />
                 ) : (
                   <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
                     <Users className="h-5 w-5 text-primary-600" />
@@ -178,7 +178,7 @@ export default function UserManagementPage() {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         {user.avatar_url ? (
-                          <img className="h-10 w-10 rounded-full" src={user.avatar_url} alt="" />
+                          <img className="h-10 w-10 rounded-full" src={user.avatar_url} alt={`${user.name} avatar`} />
                         ) : (
                           <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
                             <Users className="h-5 w-5 text-primary-600" />

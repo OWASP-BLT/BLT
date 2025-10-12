@@ -62,11 +62,7 @@ async function hashPassword(password: string): Promise<string> {
 
 // Helper function to verify passwords
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  if (hash === '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' && password === 'admin123') {
-    return true;
-  }
-  
-  // For new users, use SHA-256
+  // Use SHA-256 for password verification
   const hashedPassword = await hashPassword(password);
   return hashedPassword === hash;
 }

@@ -1,6 +1,6 @@
 name = "bug-reporter-api"
 main = "worker/index.ts"
-compatibility_date = "2023-09-01"
+compatibility_date = "2025-10-07"
 
 [[d1_databases]]
 binding = "DB"
@@ -8,5 +8,6 @@ database_name = "bug-reporter-db"
 database_id = "660bca36-d3c5-4e1b-a495-c81cd8dc749f"
 
 [vars]
-JWT_SECRET = "Blehbleh"
+# JWT_SECRET should be set as a Cloudflare secret using: wrangler secret put JWT_SECRET
+# Generate a secure secret with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ADMIN_EMAIL = "admin@example.com"

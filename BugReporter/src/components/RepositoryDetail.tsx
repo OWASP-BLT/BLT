@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, GitBranch, ExternalLink, AlertTriangle, Trash2, User } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
@@ -19,11 +19,7 @@ export default function RepositoryDetail({ repositoryId, onClose, onDelete }: Re
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => {
-    loadRepository();
-  }, [repositoryId]);
-
-  const loadRepository = async () => {
+  const loadRepository = useCallback(async () => {
     try {
       const response = await apiService.getRepository(repositoryId);
       setRepository(response.repository);
@@ -33,7 +29,11 @@ export default function RepositoryDetail({ repositoryId, onClose, onDelete }: Re
     } finally {
       setLoading(false);
     }
-  };
+  }, [repositoryId, showError, onClose]);
+
+  useEffect(() => {
+    loadRepository();
+  }, [loadRepository]);
 
   const handleDelete = async () => {
     if (!repository) return;

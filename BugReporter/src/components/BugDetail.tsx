@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, User, AlertTriangle, CheckCircle, Clock, XCircle, Edit, ExternalLink, Tag, GitBranch } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
@@ -19,11 +19,7 @@ export default function BugDetail({ bugId, onClose, canEdit }: BugDetailProps) {
   const [status, setStatus] = useState<Bug['status']>('open');
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    loadBug();
-  }, [bugId]);
-
-  const loadBug = async () => {
+  const loadBug = useCallback(async () => {
     try {
       const response = await apiService.getBug(bugId);
       setBug(response.bug);
@@ -34,7 +30,11 @@ export default function BugDetail({ bugId, onClose, canEdit }: BugDetailProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bugId, showError, onClose]);
+
+  useEffect(() => {
+    loadBug();
+  }, [loadBug]);
 
   const handleStatusUpdate = async () => {
     if (!bug || status === bug.status) return;

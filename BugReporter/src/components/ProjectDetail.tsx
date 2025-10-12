@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, User, Tag, Bug, Trash2, AlertTriangle } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
@@ -19,11 +19,7 @@ export default function ProjectDetail({ projectId, onClose, onDelete }: ProjectD
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => {
-    loadProject();
-  }, [projectId]);
-
-  const loadProject = async () => {
+  const loadProject = useCallback(async () => {
     try {
       const response = await apiService.getProject(projectId);
       setProject(response.project);
@@ -33,7 +29,11 @@ export default function ProjectDetail({ projectId, onClose, onDelete }: ProjectD
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, showError, onClose]);
+
+  useEffect(() => {
+    loadProject();
+  }, [loadProject]);
 
   const handleDelete = async () => {
     if (!project) return;

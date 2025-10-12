@@ -1,0 +1,25 @@
+echo "🔐 BugReporter Security Setup"
+echo "=============================="
+echo ""
+
+# Generate a secure JWT secret
+echo "Generating secure JWT secret..."
+JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+
+echo "Generated JWT secret: $JWT_SECRET"
+echo ""
+echo "To set this as a Cloudflare secret, run:"
+echo "wrangler secret put JWT_SECRET"
+echo "Then paste the generated secret when prompted."
+echo ""
+echo "⚠️  IMPORTANT SECURITY NOTES:"
+echo "1. Never commit secrets to version control"
+echo "2. Use different secrets for different environments"
+echo "3. Rotate secrets regularly"
+echo "4. Store secrets in Cloudflare's secret manager"
+echo ""
+echo "To create an initial admin user:"
+echo "1. Register a new user with the admin email configured in wrangler-worker.toml"
+echo "2. Or use the admin management interface to promote a user to admin role"
+echo ""
+echo "Setup complete! 🎉"
