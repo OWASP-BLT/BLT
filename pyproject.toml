@@ -21,7 +21,7 @@ user-agents = "^2.2.0"
 whitenoise = "^6.9.0"
 
 pylibmc = "^1.6.1"
-psycopg2-binary = "^2.9.10"
+psycopg2-binary = "^2.9.11"
 protobuf = "^4.25.3"
 django-storages = { extras = ["google"], version = "^1.14.6" }
 django-timedeltafield = "^0.7.10"
