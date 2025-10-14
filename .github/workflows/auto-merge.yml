@@ -5,32 +5,80 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   pull_request_review:
     types: [submitted]
+  workflow_run:
+    workflows: ["Approve dependabot"]
+    types:
+      - completed
 
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
+    if: |
+      github.actor == 'dependabot[bot]' ||
+      github.actor == 'dependabot-preview[bot]' ||
+      github.actor == 'dependabot' ||
+      github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: write
       pull-requests: write
     steps:
+      - name: Get PR number
+        id: get_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # Get PR number from workflow_run event
+            pr_number=$(gh api /repos/${{ github.repository }}/pulls --jq '.[] | select(.head.sha=="${{ github.event.workflow_run.head_sha }}") | .number' | head -n 1)
+          else
+            # Get PR number from pull_request event
+            pr_number="${{ github.event.pull_request.number }}"
+          fi
+          echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+          echo "Found PR number: $pr_number"
+
       - name: Wait for approval and enable auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pr_number="${{ github.event.pull_request.number }}"
-          
-          # Check if PR is already approved
-          reviews=$(gh pr view $pr_number --json reviews --jq '.reviews[] | select(.state=="APPROVED") | .state' | wc -l)
-          
-          if [ "$reviews" -gt 0 ]; then
-            echo "PR #$pr_number is approved, enabling auto-merge"
-            
-            # Enable auto-merge with squash strategy
-            gh pr merge $pr_number --auto --squash --delete-branch
-            
-            echo "Auto-merge enabled for dependabot PR #$pr_number"
-          else
-            echo "PR #$pr_number is not yet approved, skipping auto-merge"
+          pr_number="${{ steps.get_pr.outputs.pr_number }}"
+
+          if [ -z "$pr_number" ]; then
+            echo "No PR number found, exiting"
+            exit 0
           fi
 
+          # Wait a bit for approvals to be recorded
+          echo "Waiting 5 seconds for approvals to be recorded..."
+          sleep 5
+
+          # Check if PR is already approved with retry logic
+          max_attempts=3
+          attempt=0
+          reviews=0
+
+          while [ $attempt -lt $max_attempts ]; do
+            reviews=$(gh pr view $pr_number --json reviews --jq '.reviews[] | select(.state=="APPROVED") | .state' | wc -l)
+
+            if [ "$reviews" -gt 0 ]; then
+              echo "PR #$pr_number has $reviews approval(s)"
+              break
+            fi
+
+            attempt=$((attempt + 1))
+            if [ $attempt -lt $max_attempts ]; then
+              echo "No approvals found yet, waiting 10 seconds... (attempt $attempt/$max_attempts)"
+              sleep 10
+            fi
+          done
+
+          if [ "$reviews" -gt 0 ]; then
+            echo "PR #$pr_number is approved, enabling auto-merge"
+
+            # Enable auto-merge with squash strategy
+            gh pr merge $pr_number --auto --squash --delete-branch
+
+            echo "Auto-merge enabled for dependabot PR #$pr_number"
+          else
+            echo "PR #$pr_number is not yet approved after $max_attempts attempts, skipping auto-merge"
+          fi
