@@ -1843,6 +1843,9 @@ class RepoDetailView(DetailView):
 
 
 class RepoBadgeView(APIView):
+    """
+    Generates a 30-day unique visits badge PNG for a Repo, with zero-days shown as faint bars.
+    """
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -1893,7 +1896,7 @@ class RepoBadgeView(APIView):
             IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address"))
+            .annotate(visit_count=Count("address", distinct=True))
             .order_by("date")
         )
 
@@ -1931,7 +1934,7 @@ class RepoBadgeView(APIView):
         chart_width = width - 2 * margin
         chart_height = height - 2 * margin - text_height
 
-        #calculating the max xount and bar width for 30 bars
+        #calculating the max count and bar width for 30 bars
         if counts and max(counts) > 0:
             max_count = max(counts)
         else:
@@ -1958,7 +1961,7 @@ class RepoBadgeView(APIView):
                     draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
                 else:
                     # Draw a faint line or a short, very light bar for 0 days
-                    faint_color = "#fcbab3"  # light red or gray, or use text_color
+                    faint_color = "#fcbab3"  #faint color used to show 0 days
                     y1 = y2 = height - margin - 2  # minimal height
                     draw.rectangle([(x1, y1), (x2, y2+1)], fill=faint_color)
                 
