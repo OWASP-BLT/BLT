@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
@@ -32,6 +32,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Organization,
+    OrganizationAdmin,
     SlackIntegration,
     UserProfile,
     Winner,
@@ -656,7 +657,7 @@ class OrganizationDashboardManageDomainsView(View):
 
         # Get all domains for this organization
         domains = domains_query.values(
-            "id", "name", "url", "logo", "has_security_txt", "security_txt_checked_at"
+            "id", "name", "url", "logo", "is_active", "has_security_txt", "security_txt_checked_at"
         ).order_by("name")
 
         # If user has access to organizations
@@ -1293,91 +1294,277 @@ class DomainView(View):
 class OrganizationDashboardManageRolesView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        # For authenticated users, show organizations they have access to
-        if request.user.is_authenticated:
-            organizations = (
-                Organization.objects.values("name", "id")
-                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-                .distinct()
-            )
-        else:
-            # For unauthenticated users, don't show organization list
-            organizations = []
-
         # Get the organization object
         organization_obj = Organization.objects.filter(id=id).first()
         if not organization_obj:
             messages.error(request, "Organization does not exist")
             return redirect("home")
 
-        # Get organization domain and users only if authenticated
-        if request.user.is_authenticated:
-            organization_url = organization_obj.url
-            parsed_url = urlparse(organization_url).netloc
-            organization_domain = parsed_url.replace("www.", "")
-            organization_users = User.objects.filter(email__endswith=f"@{organization_domain}").values(
-                "id", "username", "email"
+        # Check if user is admin or manager of this organization
+        is_org_admin = organization_obj.admin == request.user
+        is_org_manager = organization_obj.managers.filter(id=request.user.id).exists()
+
+        if not (is_org_admin or is_org_manager):
+            messages.error(request, "You don't have permission to manage roles for this organization")
+            return redirect("organization_dashboard_overview", id=id)
+
+        # Get user's own role to determine permissions
+        try:
+            current_user_role = OrganizationAdmin.objects.get(
+                user=request.user, organization=organization_obj, is_active=True
             )
-            organization_users_list = list(organization_users)
+            user_role_level = current_user_role.role  # 0=Admin, 1=Moderator
+        except OrganizationAdmin.DoesNotExist:
+            # Organization owner has full access
+            if is_org_admin:
+                user_role_level = 0
+            else:
+                messages.error(request, "You don't have an active role in this organization")
+                return redirect("organization_dashboard_overview", id=id)
 
-            domains = Domain.objects.filter(
-                Q(organization__id=id)
-                & (Q(organization__managers__in=[request.user]) | Q(organization__admin=request.user))
-                | Q(managers=request.user)
-            ).distinct()
+        # Only admins (role=0) or org owner can manage roles
+        if user_role_level != 0 and not is_org_admin:
+            messages.error(request, "Only administrators can manage roles")
+            return redirect("organization_dashboard_overview", id=id)
 
-            domains_data = []
-            for domain in domains:
-                _id = domain.id
-                name = domain.name
-                organization_admin = domain.organization.admin
-                managers = list(domain.managers.values("id", "username", "userprofile__user_avatar"))
-                domains_data.append(
-                    {
-                        "id": _id,
-                        "name": name,
-                        "managers": managers,
-                        "organization_admin": organization_admin,
-                    }
+        # Get all active roles in the organization
+        org_roles = (
+            OrganizationAdmin.objects.filter(organization=organization_obj, is_active=True)
+            .select_related("user", "user__userprofile", "domain")
+            .order_by("role", "created")
+        )
+
+        # Get organization domains for assignment
+        domains = Domain.objects.filter(organization=organization_obj).order_by("name")
+
+        # Get users from organization email domain for quick add
+        organization_url = organization_obj.url
+        # Handle both with and without scheme
+        if "://" not in organization_url:
+            organization_url = f"https://{organization_url}"
+        parsed_url = urlparse(organization_url)
+        organization_domain = parsed_url.netloc.replace("www.", "").strip()
+
+        # Try to get users matching organization email domain
+        if organization_domain:
+            available_users = (
+                User.objects.filter(email__endswith=f"@{organization_domain}", is_active=True)
+                .exclude(id__in=org_roles.values_list("user_id", flat=True))
+                .values("id", "username", "email", "first_name", "last_name")[:100]
+            )
+
+            # If no users found with matching email domain, show all active users
+            if not available_users.exists():
+                available_users = (
+                    User.objects.filter(is_active=True)
+                    .exclude(id__in=org_roles.values_list("user_id", flat=True))
+                    .values("id", "username", "email", "first_name", "last_name")[:100]
                 )
         else:
-            # For unauthenticated users, show empty lists
-            organization_users_list = []
-            domains_data = []
+            # If no valid domain, show all active users
+            available_users = (
+                User.objects.filter(is_active=True)
+                .exclude(id__in=org_roles.values_list("user_id", flat=True))
+                .values("id", "username", "email", "first_name", "last_name")[:100]
+            )
+
+        # Format roles data for template
+        roles_data = []
+        admin_count = 0
+        moderator_count = 0
+
+        for org_role in org_roles:
+            role_info = {
+                "id": org_role.id,
+                "user": org_role.user,
+                "user_id": org_role.user.id if org_role.user else None,
+                "username": org_role.user.username if org_role.user else "Unknown",
+                "email": org_role.user.email if org_role.user else "",
+                "avatar": org_role.user.userprofile.user_avatar
+                if org_role.user and hasattr(org_role.user, "userprofile")
+                else None,
+                "role": org_role.role,
+                "role_display": "Administrator" if org_role.role == 0 else "Moderator",
+                "domain": org_role.domain,
+                "domain_name": org_role.domain.name if org_role.domain else None,
+                "created": org_role.created,
+                "is_active": org_role.is_active,
+                "is_owner": organization_obj.admin == org_role.user,
+            }
+            roles_data.append(role_info)
+
+            if org_role.role == 0:
+                admin_count += 1
+            else:
+                moderator_count += 1
 
         context = {
             "organization": id,
             "organization_obj": organization_obj,
-            "organizations": list(organizations),
-            "domains": domains_data,
-            "organization_users": organization_users_list,
+            "roles": roles_data,
+            "domains": list(domains.values("id", "name")),
+            "available_users": list(available_users),
+            "is_org_admin": is_org_admin,
+            "user_role_level": user_role_level,
+            "admin_count": admin_count,
+            "moderator_count": moderator_count,
+            "role_choices": [{"value": 0, "label": "Administrator"}, {"value": 1, "label": "Moderator"}],
         }
 
         return render(request, "organization/dashboard/organization_manage_roles.html", context)
 
     def post(self, request, id, *args, **kwargs):
-        domain = Domain.objects.filter(
-            Q(organization__id=id)
-            & Q(id=request.POST.get("domain_id"))
-            & (Q(organization__admin=request.user) | Q(managers__in=[request.user]))
-        ).first()
+        # Get the organization
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
 
-        if domain is None:
-            messages.error("you are not manager of this domain.")
-            return redirect("organization_manage_roles", id)
+        # Check permissions
+        is_org_admin = organization_obj.admin == request.user
+        try:
+            current_user_role = OrganizationAdmin.objects.get(
+                user=request.user, organization=organization_obj, is_active=True
+            )
+            user_role_level = current_user_role.role
+        except OrganizationAdmin.DoesNotExist:
+            if not is_org_admin:
+                messages.error(request, "You don't have permission to manage roles")
+                return redirect("organization_manage_roles", id=id)
+            user_role_level = 0
 
-        if not request.POST.getlist("user[]"):
-            messages.error(request, "No user selected.")
-            return redirect("organization_manage_roles", id)
+        # Only admins can manage roles
+        if user_role_level != 0 and not is_org_admin:
+            messages.error(request, "Only administrators can manage roles")
+            return redirect("organization_manage_roles", id=id)
 
-        managers_list = request.POST.getlist("user[]")
-        domain_managers = User.objects.filter(username__in=managers_list, is_active=True)
+        action = request.POST.get("action")
 
-        for manager in domain_managers:
-            domain.managers.add(manager.id)
+        if action == "add_role":
+            user_id = request.POST.get("user_id")
+            email = request.POST.get("email")
+            role = request.POST.get("role", 1)  # Default to Moderator
+            domain_id = request.POST.get("domain_id")
 
-        messages.success(request, "successfully added the managers")
-        return redirect("organization_manage_roles", id)
+            try:
+                # Find user by ID or email
+                if user_id:
+                    user = User.objects.get(id=user_id, is_active=True)
+                elif email:
+                    user = User.objects.get(email=email, is_active=True)
+                else:
+                    messages.error(request, "Please provide a user ID or email")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Check if user already has an active role
+                existing_role = OrganizationAdmin.objects.filter(
+                    user=user, organization=organization_obj, is_active=True
+                ).first()
+
+                if existing_role:
+                    messages.error(request, f"{user.username} already has an active role in this organization")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Check if user is trying to assign themselves
+                if user == request.user:
+                    messages.error(request, "You cannot modify your own role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Get domain if specified
+                domain = None
+                if domain_id:
+                    domain = Domain.objects.filter(id=domain_id, organization=organization_obj).first()
+
+                # Create the role
+                OrganizationAdmin.objects.create(
+                    user=user, organization=organization_obj, domain=domain, role=int(role), is_active=True
+                )
+
+                role_name = "Administrator" if int(role) == 0 else "Moderator"
+                messages.success(request, f"Successfully assigned {role_name} role to {user.username}")
+
+            except User.DoesNotExist:
+                messages.error(request, "User not found or inactive")
+            except (ValidationError, IntegrityError) as e:
+                logger.exception(f"Error adding role: {e!s}")
+                messages.error(request, "An error occurred while adding the role. Please try again.")
+
+        elif action == "update_role":
+            role_id = request.POST.get("role_id")
+            new_role = request.POST.get("role")
+            domain_id = request.POST.get("domain_id")
+
+            try:
+                org_role = OrganizationAdmin.objects.get(id=role_id, organization=organization_obj, is_active=True)
+
+                # Prevent modifying own role
+                if org_role.user == request.user:
+                    messages.error(request, "You cannot modify your own role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Prevent modifying organization owner's role
+                if org_role.user == organization_obj.admin:
+                    messages.error(request, "Cannot modify the organization owner's role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Update role
+                if new_role is not None:
+                    org_role.role = int(new_role)
+
+                # Update domain assignment
+                if domain_id:
+                    domain = Domain.objects.filter(id=domain_id, organization=organization_obj).first()
+                    org_role.domain = domain
+                elif domain_id == "":
+                    org_role.domain = None
+
+                org_role.save()
+                messages.success(request, f"Successfully updated role for {org_role.user.username}")
+
+            except OrganizationAdmin.DoesNotExist:
+                messages.error(request, "Role not found")
+            except ValueError as e:
+                logger.error(f"Invalid value provided when updating role: {str(e)}")
+                messages.error(request, str(e))
+            except ValidationError as e:
+                logger.error(f"Validation error when updating role: {str(e)}")
+                messages.error(request, str(e))
+            except IntegrityError as e:
+                logger.error(f"Database integrity error when updating role: {str(e)}")
+                messages.error(request, "Database integrity error: Unable to update role due to conflicting data")
+            except Exception as e:
+                logger.exception("Error updating role")
+                messages.error(request, "An error occurred while updating the role. " + str(e))
+
+        elif action == "remove_role":
+            role_id = request.POST.get("role_id")
+
+            try:
+                org_role = OrganizationAdmin.objects.get(id=role_id, organization=organization_obj)
+
+                # Prevent removing own role
+                if org_role.user == request.user:
+                    messages.error(request, "You cannot remove your own role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Prevent removing organization owner's role
+                if org_role.user == organization_obj.admin:
+                    messages.error(request, "Cannot remove the organization owner's role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Deactivate the role instead of deleting
+                org_role.is_active = False
+                org_role.save()
+
+                messages.success(request, f"Successfully removed role from {org_role.user.username}")
+
+            except OrganizationAdmin.DoesNotExist:
+                messages.error(request, "Role not found")
+            except (ValidationError, ValueError) as e:
+                logger.exception(f"Error removing role: {e!s}")
+                messages.error(request, "An error occurred while removing the role. Please try again.")
+
+        return redirect("organization_manage_roles", id=id)
 
 
 class ShowBughuntView(View):
