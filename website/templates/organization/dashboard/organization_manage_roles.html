@@ -345,11 +345,28 @@
             
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             
-            form.innerHTML = `
-                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
-                <input type="hidden" name="action" value="remove_role">
-                <input type="hidden" name="role_id" value="${roleId}">
-            `;
+            // Create CSRF token input
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            
+            // Create action input
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'remove_role';
+            
+            // Create role_id input
+            const roleIdInput = document.createElement('input');
+            roleIdInput.type = 'hidden';
+            roleIdInput.name = 'role_id';
+            roleIdInput.value = roleId;
+            
+            // Append inputs to form
+            form.appendChild(csrfInput);
+            form.appendChild(actionInput);
+            form.appendChild(roleIdInput);
             
             document.body.appendChild(form);
             form.submit();

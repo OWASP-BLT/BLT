@@ -171,11 +171,28 @@
                 const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
                 const csrfToken = csrfElement ? csrfElement.value : '{{ csrf_token }}';
                 
-                form.innerHTML = `
-                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
-                    <input type="hidden" name="_method" value="delete">
-                    <input type="hidden" name="domain_id" value="${domainId}">
-                `;
+                // Create CSRF token input
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                
+                // Create method input
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'delete';
+                
+                // Create domain_id input
+                const domainIdInput = document.createElement('input');
+                domainIdInput.type = 'hidden';
+                domainIdInput.name = 'domain_id';
+                domainIdInput.value = domainId;
+                
+                // Append inputs to form
+                form.appendChild(csrfInput);
+                form.appendChild(methodInput);
+                form.appendChild(domainIdInput);
                 
                 document.body.appendChild(form);
                 form.submit();
