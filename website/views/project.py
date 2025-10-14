@@ -1908,7 +1908,7 @@ class RepoBadgeView(APIView):
         # Refresh repo to get the latest visit count
         repo.refresh_from_db()
 
-        # Extract dates and counts
+        # Extract dates and counts for chart, including zero-visit days
         all_dates = []
         all_counts = []
         visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
