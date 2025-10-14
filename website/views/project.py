@@ -123,6 +123,7 @@ class ProjectBadgeView(APIView):
     """
     Generates a 30-day unique visits badge PNG for a Project, with zero-days shown as faint bars.
     """
+
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -184,10 +185,10 @@ class ProjectBadgeView(APIView):
         all_counts = []
         visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
         for i in range(30):
-            check_date = today - timedelta(days=29-i) # for last 30 days in order
+            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
             all_dates.append(check_date)
-            all_counts.append(visit_dict.get(check_date, 0)) # default=0 for no visits
-        
+            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
+
         dates = all_dates
         counts = all_counts
         total_views = project.project_visit_count
@@ -200,7 +201,6 @@ class ProjectBadgeView(APIView):
 
         # Define colors for bars, grid, and text
         bar_color = "#e05d44"
-        text_color = "#333333"  # Retained per your instruction
         grid_color = "#eeeeee"
 
         # Calculate chart dimensions and reserve space for the title
@@ -214,7 +214,7 @@ class ProjectBadgeView(APIView):
             max_count = max(counts)
         else:
             max_count = 1
-        
+
         # Fixed width for exactly 30 bars, plus extra margins
         bar_width = chart_width / 32  # 30 bars + 2 extra for margins
         bar_spacing = chart_width / 30  # Even spacing for 30 positions
@@ -238,8 +238,8 @@ class ProjectBadgeView(APIView):
                     # Draw a faint line or a short, very light bar for 0 days
                     faint_color = "#fcbab3"  # slightly lighter bar color for zero days
                     y1 = y2 = height - margin - 2  # minimal height
-                    draw.rectangle([(x1, y1), (x2, y2+1)], fill=faint_color)
-                
+                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
+
         # Draw total views text centered at the top, uses bar_color
         try:
             font = ImageFont.truetype("DejaVuSans.ttf", 28)
@@ -1851,6 +1851,7 @@ class RepoBadgeView(APIView):
     """
     Generates a 30-day unique visits badge PNG for a Repo, with zero-days shown as faint bars.
     """
+
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -1914,10 +1915,10 @@ class RepoBadgeView(APIView):
         visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
 
         for i in range(30):
-            check_date = today - timedelta(days=29-i) #for last 30 days in order
+            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
             all_dates.append(check_date)
-            all_counts.append(visit_dict.get(check_date, 0)) #default=0 for no visits
-        
+            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
+
         dates = all_dates
         counts = all_counts
         total_views = repo.repo_visit_count
@@ -1930,21 +1931,20 @@ class RepoBadgeView(APIView):
 
         # Define colors
         bar_color = "#e05d44"
-        text_color = "#333333"
         grid_color = "#eeeeee"
 
         # Calculate chart dimensions
         margin = 40
-        text_height = 50  #reserve space for title
+        text_height = 50  # reserve space for title
         chart_width = width - 2 * margin
         chart_height = height - 2 * margin - text_height
 
-        #calculating the max count and bar width for 30 bars
+        # calculating the max count and bar width for 30 bars
         if counts and max(counts) > 0:
             max_count = max(counts)
         else:
             max_count = 1
-        
+
         # Fixed width for exactly 30 bars with proper spacing
         bar_width = chart_width / 32  # 30 bars + 2 extra for margins
         bar_spacing = chart_width / 30  # Even spacing for 30 positions
@@ -1966,10 +1966,10 @@ class RepoBadgeView(APIView):
                     draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
                 else:
                     # Draw a faint line or a short, very light bar for 0 days
-                    faint_color = "#fcbab3"  #faint color used to show 0 days
+                    faint_color = "#fcbab3"  # faint color used to show 0 days
                     y1 = y2 = height - margin - 2  # minimal height
-                    draw.rectangle([(x1, y1), (x2, y2+1)], fill=faint_color)
-                
+                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
+
         # Draw total views text
         try:
             font = ImageFont.truetype("DejaVuSans.ttf", 28)  # Slightly smaller
@@ -1982,7 +1982,7 @@ class RepoBadgeView(APIView):
         text_x = (width - text_width) // 2
         text_y = 15  # Fixed position at top
 
-        draw.text((text_x, text_y), text, font=font, fill=bar_color) #avoiding overlaping 
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)  # avoiding overlaping
 
         # Save the image to a buffer
         buffer = BytesIO()
