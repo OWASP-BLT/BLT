@@ -46,80 +46,73 @@
                     <div class="px-6 py-4 border-b border-gray-200">
                         <h2 class="text-lg font-semibold text-gray-900">All Domains</h2>
                     </div>
-                    <div class="divide-y divide-gray-200" id="domainsList">
-                        {% for domain in domains %}
-                            <div class="domain-item p-6 hover:bg-gray-50 transition-all duration-200"
-                                 data-name="{{ domain.name|lower }}"
-                                 data-url="{{ domain.url|lower }}">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-4 truncate">
-                                        <div class="flex-shrink-0">
-                                            <div class="w-12 h-12 select-none rounded-lg bg-gradient-to-br from-[#e74c3c] to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                                                {% if domain.logo %}
-                                                    <img class="w-full h-full rounded-lg object-cover"
-                                                         src="{{ MEDIA_URL }}{{ domain.logo }}"
-                                                         alt="{{ domain.name }} Logo"
-                                                         height="48"
-                                                         width="48"
-                                                         loading="lazy"
-                                                         decoding="async">
-                                                {% else %}
-                                                    {{ domain.name|first|upper }}
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <h3 class="text-lg font-semibold text-gray-900">{{ domain.name|capfirst }}</h3>
-                                            {% if domain.url %}
-                                                <a href="{% if domain.url|slice:':4' == 'http' %}{{ domain.url }}{% else %}https://{{ domain.url }}{% endif %}"
-                                                   target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   class="text-sm text-[#e74c3c] hover:text-red-800 hover:underline flex items-center gap-1">
-                                                    {{ domain.url|default_if_none:"" }}
-                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
-                                                        </path>
-                                                    </svg>
-                                                </a>
-                                            {% else %}
-                                                <span class="text-sm text-gray-400">No URL provided</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center space-x-2 select-none">
-                                        <a href="{% url 'view_domain' domain.id %}"
-                                           class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all"
-                                           title="View Domain">
-                                            <svg class="w-4 h-4 mr-1.5"
-                                                 fill="none"
-                                                 stroke="currentColor"
-                                                 viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                                                </path>
-                                            </svg>
-                                            View
-                                        </a>
-                                        <a href="{% url 'edit_domain' organization domain.id %}"
-                                           class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all"
-                                           title="Edit Domain">
-                                            <svg class="w-4 h-4 mr-1.5"
-                                                 fill="none"
-                                                 stroke="currentColor"
-                                                 viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-                                                </path>
-                                            </svg>
-                                            Edit
-                                        </a>
-                                        <form action="{% url 'add_domain' organization %}"
-                                              method="post"
-                                              class="inline delete-form">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="_method" value="delete">
-                                            <input type="hidden" name="domain_id" value="{{ domain.id }}">
-                                            <button type="submit"
-                                                    class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Domain</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">URL</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                                <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for domain in domains %}
+                                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ domain.name }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {% if domain.url %}
+                                            <a href="{% if domain.url|slice:':4' == 'http' %}{{ domain.url }}{% else %}https://{{ domain.url }}{% endif %}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="text-sm text-[#e74c3c] hover:text-red-800 hover:underline inline-flex items-center gap-1">
+                                                {{ domain.url|truncatechars:30 }}
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                                    </path>
+                                                </svg>
+                                            </a>
+                                        {% else %}
+                                            <div class="text-sm text-gray-400">No URL</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {% if domain.is_active %}
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Active</span>
+                                        {% else %}
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex items-center justify-end space-x-2">
+                                            <a href="{% url 'view_domain' domain.id %}"
+                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
+                                               title="View Domain">
+                                                <svg class="w-4 h-4 mr-1.5"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                    </path>
+                                                </svg>
+                                                View
+                                            </a>
+                                            <a href="{% url 'edit_domain' organization domain.id %}"
+                                               class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all font-medium text-sm"
+                                               title="Edit Domain">
+                                                <svg class="w-4 h-4 mr-1.5"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                    </path>
+                                                </svg>
+                                                Edit
+                                            </a>
+                                            <button onclick="confirmDelete('{{ domain.id }}', '{{ domain.name }}')"
+                                                    class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all font-medium text-sm"
                                                     title="Delete Domain">
                                                 <svg class="w-4 h-4 mr-1.5"
                                                      fill="none"
@@ -130,12 +123,12 @@
                                                 </svg>
                                                 Delete
                                             </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             {% else %}
                 <!-- Empty State -->
@@ -167,43 +160,25 @@
             {% endif %}
         </div>
     </div>
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay"
-         class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50">
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
-                <svg class="animate-spin h-5 w-5 text-[#e74c3c]"
-                     fill="none"
-                     viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                    </path>
-                </svg>
-                <span class="text-gray-700">Loading...</span>
-            </div>
-        </div>
-    </div>
     <script>
         // Delete confirmation handling
-        document.addEventListener('DOMContentLoaded', function() {
-            const deleteForms = document.querySelectorAll('.delete-form');
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            
-            deleteForms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const domainName = this.closest('.domain-item').querySelector('h3').textContent.trim();
-                    
-                    if (confirm(`Are you sure you want to delete ${domainName}? This action cannot be undone.`)) {
-                        if (loadingOverlay) {
-                            loadingOverlay.classList.remove('hidden');
-                        }
-                        this.submit();
-                    }
-                });
-            });
-            
-        });
+        function confirmDelete(domainId, domainName) {
+            if (confirm(`Are you sure you want to delete ${domainName}? This action cannot be undone.`)) {
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.action = '{% url "add_domain" organization %}';
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value || '{{ csrf_token }}';
+                
+                form.innerHTML = `
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <input type="hidden" name="_method" value="delete">
+                    <input type="hidden" name="domain_id" value="${domainId}">
+                `;
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
     </script>
 {% endblock body %}
