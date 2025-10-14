@@ -1,5 +1,10 @@
 name: auto-merge
 
+# This workflow automatically merges dependabot PRs that have been auto-approved
+# It triggers in three scenarios:
+# 1. When a PR is opened/updated (pull_request_target)
+# 2. When a PR review is submitted (pull_request_review)
+# 3. After the "Approve dependabot" workflow completes (workflow_run)
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -13,6 +18,9 @@ on:
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
+    # Run if:
+    # - The actor is dependabot (for pull_request_target and pull_request_review events)
+    # - The workflow_run was successful (for workflow_run event)
     if: |
       github.actor == 'dependabot[bot]' ||
       github.actor == 'dependabot-preview[bot]' ||
