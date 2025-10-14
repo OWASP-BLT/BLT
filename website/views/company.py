@@ -1339,8 +1339,11 @@ class OrganizationDashboardManageRolesView(View):
 
         # Get users from organization email domain for quick add
         organization_url = organization_obj.url
-        parsed_url = urlparse(organization_url).netloc
-        organization_domain = parsed_url.replace("www.", "").strip()
+        # Handle both with and without scheme
+        if "://" not in organization_url:
+            organization_url = f"https://{organization_url}"
+        parsed_url = urlparse(organization_url)
+        organization_domain = parsed_url.netloc.replace("www.", "").strip()
 
         # Try to get users matching organization email domain
         if organization_domain:

@@ -111,7 +111,7 @@
                                                 </svg>
                                                 Edit
                                             </a>
-                                            <button onclick="confirmDelete('{{ domain.id }}', '{{ domain.name }}')"
+                                            <button onclick="confirmDelete('{{ domain.id }}', '{{ domain.name|escapejs }}')"
                                                     class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all font-medium text-sm"
                                                     title="Delete Domain">
                                                 <svg class="w-4 h-4 mr-1.5"
@@ -168,7 +168,8 @@
                 form.method = 'post';
                 form.action = '{% url "add_domain" organization %}';
                 
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value || '{{ csrf_token }}';
+                const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
+                const csrfToken = csrfElement ? csrfElement.value : '{{ csrf_token }}';
                 
                 form.innerHTML = `
                     <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
