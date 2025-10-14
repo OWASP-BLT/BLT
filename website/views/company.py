@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
@@ -657,7 +657,7 @@ class OrganizationDashboardManageDomainsView(View):
 
         # Get all domains for this organization
         domains = domains_query.values(
-            "id", "name", "url", "logo", "has_security_txt", "security_txt_checked_at"
+            "id", "name", "url", "logo", "is_active", "has_security_txt", "security_txt_checked_at"
         ).order_by("name")
 
         # If user has access to organizations
@@ -1485,8 +1485,8 @@ class OrganizationDashboardManageRolesView(View):
 
             except User.DoesNotExist:
                 messages.error(request, "User not found or inactive")
-            except Exception as e:
-                logger.error(f"Error adding role: {str(e)}")
+            except (ValidationError, IntegrityError) as e:
+                logger.exception(f"Error adding role: {e!s}")
                 messages.error(request, "An error occurred while adding the role. Please try again.")
 
         elif action == "update_role":
@@ -1523,9 +1523,18 @@ class OrganizationDashboardManageRolesView(View):
 
             except OrganizationAdmin.DoesNotExist:
                 messages.error(request, "Role not found")
+            except ValueError as e:
+                logger.error(f"Invalid value provided when updating role: {str(e)}")
+                messages.error(request, str(e))
+            except ValidationError as e:
+                logger.error(f"Validation error when updating role: {str(e)}")
+                messages.error(request, str(e))
+            except IntegrityError as e:
+                logger.error(f"Database integrity error when updating role: {str(e)}")
+                messages.error(request, "Database integrity error: Unable to update role due to conflicting data")
             except Exception as e:
-                logger.error(f"Error updating role: {str(e)}")
-                messages.error(request, "An error occurred while updating the role. Please try again.")
+                logger.exception("Error updating role")
+                messages.error(request, "An error occurred while updating the role. " + str(e))
 
         elif action == "remove_role":
             role_id = request.POST.get("role_id")
@@ -1551,8 +1560,8 @@ class OrganizationDashboardManageRolesView(View):
 
             except OrganizationAdmin.DoesNotExist:
                 messages.error(request, "Role not found")
-            except Exception as e:
-                logger.error(f"Error removing role: {str(e)}")
+            except (ValidationError, ValueError) as e:
+                logger.exception(f"Error removing role: {e!s}")
                 messages.error(request, "An error occurred while removing the role. Please try again.")
 
         return redirect("organization_manage_roles", id=id)
