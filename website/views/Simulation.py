@@ -51,10 +51,16 @@ def lab_detail(request, lab_id):
     """Display detailed view of a specific lab with its tasks"""
     lab = get_object_or_404(Labs, id=lab_id, is_active=True)
     tasks = Tasks.objects.filter(lab=lab, is_active=True).order_by("order")
+    completed_task_ids = set(
+        UserTaskProgress.objects.filter(user=request.user, task__in=tasks, completed=True).values_list(
+            "task_id", flat=True
+        )
+    )
 
     context = {
         "lab": lab,
         "tasks": tasks,
+        "completed_task_ids": completed_task_ids,
     }
     return render(request, "lab_detail.html", context)
 
