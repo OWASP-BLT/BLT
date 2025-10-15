@@ -9,22 +9,26 @@ jobs:
     # Only run if PR was merged (not just closed)
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+      contents: read
     
     steps:
       - name: Extract linked issues from PR
         id: extract_issues
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           pr_number="${{ github.event.pull_request.number }}"
-          pr_body="${{ github.event.pull_request.body }}"
           
           echo "PR #$pr_number was merged"
-          echo "PR Body: $pr_body"
+          echo "PR Body: $PR_BODY"
           
           # Extract issue numbers from PR body
           # Looks for patterns like "Fixes #123", "Closes #456", "Resolves #789"
-          issue_numbers=$(echo "$pr_body" | grep -oiE "(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+" | grep -oE "#[0-9]+" | sed 's/#//' || echo "")
+          issue_numbers=$(echo "$PR_BODY" | grep -oiE "(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+" | grep -oE "#[0-9]+" | sed 's/#//' || echo "")
           
           if [ -z "$issue_numbers" ]; then
             echo "No linked issues found in PR body"
@@ -65,13 +69,15 @@ jobs:
               echo "Sending bounty payout request to BLT API..."
               
               # Call the BLT bounty payout API
-              # Note: Replace with actual BLT production URL
+              # BLT_API_URL can be set in repository secrets/variables for testing
+              # Defaults to production if not set
               # Add BLT_API_TOKEN to repository secrets for authentication
+              api_url="${{ secrets.BLT_API_URL || 'https://blt.owasp.org' }}"
               response=$(curl -X POST \
                 -H "Content-Type: application/json" \
                 -H "X-BLT-API-TOKEN: ${{ secrets.BLT_API_TOKEN }}" \
                 -d "{\"issue_url\": \"$issue_url\", \"pr_url\": \"$pr_url\"}" \
-                https://blt.owasp.org/api/bounty_payout/ \
+                "${api_url}/api/bounty_payout/" \
                 -w "\n%{http_code}" -s)
               
               http_code=$(echo "$response" | tail -n 1)

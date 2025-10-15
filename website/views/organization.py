@@ -3763,7 +3763,7 @@ def process_bounty_payout(request):
         expected_token = getattr(settings, "BLT_API_TOKEN", None)
         
         if expected_token and api_token != expected_token:
-            logger.warning(f"Invalid API token provided for bounty payout")
+            logger.warning("Invalid API token provided for bounty payout")
             return JsonResponse(
                 {"success": False, "error": "Invalid API token"},
                 status=401
@@ -3912,7 +3912,7 @@ def process_bounty_payout(request):
         except GitHubIssue.DoesNotExist:
             pass  # Issue doesn't exist yet, proceed with payment
         
-        github_issue, created = GitHubIssue.objects.update_or_create(
+        github_issue, _created = GitHubIssue.objects.update_or_create(
             issue_id=issue_data["id"],
             repo=repo,
             defaults={
@@ -3946,8 +3946,8 @@ def process_bounty_payout(request):
         })
         
     except Exception as e:
-        logger.error(f"Error processing bounty payout: {str(e)}")
+        logger.exception("Error processing bounty payout")
         return JsonResponse(
-            {"success": False, "error": str(e)},
+            {"success": False, "error": "Internal server error"},
             status=500
         )
