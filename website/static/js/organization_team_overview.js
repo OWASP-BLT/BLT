@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentTab = null;
     let taskSearchTimeout = null;
+    let requestIdCounter = 0;
+    let currentRequestId = 0;
 
     function updateTable(data) {
         console.log('Updating table with data:', data);
@@ -132,11 +134,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function fetchFilteredData(filterType, filterValue) {
+        // Increment and store request ID to prevent race conditions
+        requestIdCounter++;
+        const thisRequestId = requestIdCounter;
+        currentRequestId = thisRequestId;
+        
         const url = new URL(window.location.href);
         url.searchParams.set('filter_type', filterType);
         url.searchParams.set('filter_value', filterValue);
 
-        console.log('Fetching data:', { filterType, filterValue, url: url.toString() });
+        console.log('Fetching data:', { requestId: thisRequestId, filterType, filterValue, url: url.toString() });
         
         // Show loading indicator
         tableBody.innerHTML = `
@@ -156,6 +163,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(response => {
+            // Guard against stale responses
+            if (thisRequestId !== currentRequestId) {
+                console.log(`Discarding stale response (request ${thisRequestId}, current ${currentRequestId})`);
+                return null;
+            }
+            
             console.log('Response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -163,6 +176,17 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
+            // Guard against stale responses
+            if (thisRequestId !== currentRequestId) {
+                console.log(`Discarding stale data (request ${thisRequestId}, current ${currentRequestId})`);
+                return;
+            }
+            
+            // Handle null response from discarded request
+            if (data === null) {
+                return;
+            }
+            
             console.log('Received data:', data);
             if (data && data.data !== undefined) {
                 updateTable(data.data);
@@ -172,6 +196,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
+            // Guard against stale error handlers
+            if (thisRequestId !== currentRequestId) {
+                console.log(`Discarding stale error (request ${thisRequestId}, current ${currentRequestId})`);
+                return;
+            }
+            
             console.error('Error fetching data:', error);
             tableBody.innerHTML = `
                 <tr>
