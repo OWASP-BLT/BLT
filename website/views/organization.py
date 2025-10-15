@@ -10,6 +10,7 @@ from decimal import Decimal
 from urllib.parse import urlparse
 
 import requests
+from allauth.socialaccount.models import SocialAccount
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
@@ -40,7 +41,6 @@ from django.views.generic import DetailView, FormView, ListView, TemplateView, V
 from django.views.generic.edit import CreateView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from allauth.socialaccount.models import SocialAccount
 
 from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
 from website.models import (
