@@ -14,6 +14,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
+    AibotComment,
     BannedApp,
     Bid,
     Blocked,
@@ -29,6 +30,8 @@ from website.models import (
     ForumComment,
     ForumPost,
     ForumVote,
+    GithubAppInstallation,
+    GithubAppRepo,
     GitHubIssue,
     GitHubReview,
     Hunt,
@@ -849,6 +852,9 @@ admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(JoinRequest, JoinRequestAdmin)
 admin.site.register(Notification)
+admin.site.register(GithubAppInstallation)
+admin.site.register(GithubAppRepo)
+admin.site.register(AibotComment)
 
 
 @admin.register(BannedApp)
