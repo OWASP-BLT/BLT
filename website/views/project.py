@@ -142,7 +142,7 @@ class ProjectBadgeView(APIView):
         return remote_addr
 
     def get(self, request, slug):
-        # Get the project or return 404 (original case-sensitive lookup)
+        # Get the project or return 404
         project = get_object_or_404(Project, slug=slug)
 
         # Get today's date
@@ -168,7 +168,7 @@ class ProjectBadgeView(APIView):
             project.save()
 
         # Get unique visits, grouped by date (last 30 days)
-        thirty_days_ago = today - timedelta(days=30)
+        thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
             IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
@@ -254,7 +254,7 @@ class ProjectBadgeView(APIView):
 
         # Save the image to a buffer
         buffer = BytesIO()
-        img.save(buffer, format="PNG", quality=95)
+        img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
 
         # Return the image with appropriate headers (no caching)
@@ -1897,7 +1897,7 @@ class RepoBadgeView(APIView):
             repo.save()
 
         # Get unique visits, grouped by date (last 30 days)
-        thirty_days_ago = today - timedelta(days=30)
+        thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
             IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
@@ -1982,11 +1982,11 @@ class RepoBadgeView(APIView):
         text_x = (width - text_width) // 2
         text_y = 15  # Fixed position at top
 
-        draw.text((text_x, text_y), text, font=font, fill=bar_color)  # avoiding overlaping
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)  # avoiding overlapping
 
         # Save the image to a buffer
         buffer = BytesIO()
-        img.save(buffer, format="PNG", quality=95)
+        img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
 
         # Return the image with appropriate headers
