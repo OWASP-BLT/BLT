@@ -2,83 +2,141 @@
 {% load static %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
-        <div class="relative py-3 sm:max-w-xl sm:mx-auto">
-            <div class="relative px-4 py-10 bg-white mx-8 md:mx-0 shadow rounded-3xl sm:p-10">
-                <div class="max-w-md mx-auto">
-                    <div class="flex items-center space-x-5">
-                        <div class="block pl-2 font-semibold text-xl text-gray-700">
-                            <h2 class="leading-relaxed">Reminder Settings</h2>
-                        </div>
+    <div class="min-h-screen bg-gray-50 py-8">
+        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="mb-8 text-center sm:text-left">
+                <h1 class="text-2xl font-bold text-gray-800">Reminder Settings</h1>
+                <div class="h-1 w-20 bg-[#e74c3c] mt-2 mb-3"></div>
+                <p class="mt-2 text-gray-600">Customize when and how you receive your daily reminders</p>
+            </div>
+            <!-- Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <!-- Messages -->
+                {% if messages %}
+                    <div class="px-6 pt-6">
+                        {% for message in messages %}
+                            <div class="p-4 mb-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %} flex items-center"
+                                 role="alert">
+                                <span class="mr-2">
+                                    {% if message.tags == 'success' %}
+                                        <svg class="w-5 h-5 text-green-500"
+                                             fill="currentColor"
+                                             viewBox="0 0 20 20"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd">
+                                            </path>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="w-5 h-5 text-red-500"
+                                             fill="currentColor"
+                                             viewBox="0 0 20 20"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                                            </path>
+                                        </svg>
+                                    {% endif %}
+                                </span>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
                     </div>
-                    <div class="divide-y divide-gray-200">
-                        <div class="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
-                            {% if messages %}
-                                {% for message in messages %}
-                                    <div class="p-4 mb-4 text-sm rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}"
-                                         role="alert">{{ message }}</div>
-                                {% endfor %}
-                            {% endif %}
-                            <form method="post" class="space-y-6">
-                                {% csrf_token %}
+                {% endif %}
+                <!-- Form -->
+                <div class="p-4">
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        <!-- Reminder Status -->
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex items-center">
+                                <span class="mr-3 text-[#e74c3c]">
+                                    <svg class="w-6 h-6"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20"
+                                         xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd">
+                                        </path>
+                                    </svg>
+                                </span>
                                 <div>
-                                    <label for="{{ form.reminder_time.id_for_label }}"
-                                           class="block text-sm font-medium text-gray-700">Reminder Time</label>
-                                    <div class="mt-1">
-                                        {{ form.reminder_time }}
-                                        {% if form.reminder_time.errors %}
-                                            <p class="mt-2 text-sm text-red-600">{{ form.reminder_time.errors.0 }}</p>
-                                        {% endif %}
-                                        <p class="mt-2 text-sm text-gray-500">{{ form.reminder_time.help_text }}</p>
+                                    <h3 class="font-medium text-gray-800">Daily Reminders</h3>
+                                    <p class="text-sm text-gray-500">Receive a notification every day</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                {{ form.is_active }}
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none  rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#e74c3c]">
+                                </div>
+                            </label>
+                        </div>
+                        <div class="flex flex-col gap-6">
+                            <!-- Reminder Time -->
+                            <div class="space-y-2">
+                                <label for="{{ form.reminder_time.id_for_label }}"
+                                       class="block text-sm font-medium text-gray-700">
+                                    What time would you like to be reminded?
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 z-20">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             width="20"
+                                             height="20"
+                                             viewBox="0 0 20 20"
+                                             fill="currentColor"
+                                             class="w-5 h-5">
+                                            <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+                                            <path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M10 5v5L13 12" />
+                                        </svg>
                                     </div>
+                                    <div class="time-input-wrapper w-full">{{ form.reminder_time }}</div>
                                 </div>
-                                <div>
-                                    <label for="{{ form.timezone.id_for_label }}"
-                                           class="block text-sm font-medium text-gray-700">Timezone</label>
-                                    <div class="mt-1">
-                                        {{ form.timezone }}
-                                        {% if form.timezone.errors %}<p class="mt-2 text-sm text-red-600">{{ form.timezone.errors.0 }}</p>{% endif %}
-                                        <p class="mt-2 text-sm text-gray-500">{{ form.timezone.help_text }}</p>
+                                {% if form.reminder_time.errors %}
+                                    <p class="mt-1 text-sm text-[#e74c3c]">{{ form.reminder_time.errors.0 }}</p>
+                                {% endif %}
+                                {% if form.reminder_time.help_text %}
+                                    <p class="mt-1 text-xs text-gray-500">{{ form.reminder_time.help_text }}</p>
+                                {% endif %}
+                            </div>
+                            <!-- Timezone -->
+                            <div class="space-y-2">
+                                <label for="{{ form.timezone.id_for_label }}"
+                                       class="block text-sm font-medium text-gray-700">Your timezone</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 z-20">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             width="20"
+                                             height="20"
+                                             viewBox="0 0 20 20"
+                                             fill="currentColor"
+                                             class="w-5 h-5">
+                                            <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+                                            <path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M10 5v5L13 12" />
+                                        </svg>
                                     </div>
+                                    <div class="timezone-select-wrapper w-full">{{ form.timezone }}</div>
                                 </div>
-                                <div class="flex items-center">
-                                    {{ form.is_active }}
-                                    <label for="{{ form.is_active.id_for_label }}"
-                                           class="ml-2 block text-sm text-gray-900">Enable Daily Reminders</label>
-                                </div>
-                                <div class="pt-4">
-                                    <button type="submit"
-                                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                        Save Settings
-                                    </button>
-                                </div>
-                            </form>
-                            <div class="mt-4">
-                                <form method="post" action="{% url 'send_test_reminder' %}">
-                                    {% csrf_token %}
-                                    <button type="submit"
-                                            class="w-full flex justify-center py-2 px-4 border border-[#e74c3c] rounded-md shadow-sm text-sm font-medium text-[#e74c3c] bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                        Send Test Reminder
-                                    </button>
-                                </form>
+                                {% if form.timezone.errors %}<p class="mt-1 text-sm text-[#e74c3c]">{{ form.timezone.errors.0 }}</p>{% endif %}
+                                {% if form.timezone.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.timezone.help_text }}</p>{% endif %}
                             </div>
                         </div>
-                    </div>
+                        <!-- Submit Button -->
+                        <div class="pt-6">
+                            <button type="submit"
+                                    class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none transition-colors duration-200">
+                                <svg class="w-5 h-5 mr-2"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                Save Settings
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if browser supports time input
-    const timeInput = document.querySelector('input[type="time"]');
-    if (timeInput && !timeInput.value) {
-        // Set default time to current time if no value is set
-        const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        timeInput.value = `${hours}:${minutes}`;
-    }
-});
-    </script>
+    <script src="{% static 'js/reminder_settings.js' %}"></script>
 {% endblock %}
