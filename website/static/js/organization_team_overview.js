@@ -74,32 +74,47 @@ document.addEventListener('DOMContentLoaded', function() {
             const nextPlan = report.next_plan || '';
             const blockers = report.blockers || '';
             
+            // Helper to escape HTML
+            const escapeHtml = (text) => {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+            
+            const escapedUsername     = escapeHtml(report.username);
+            const escapedDate         = escapeHtml(report.date);
+            const escapedAvatarUrl    = escapeHtml(avatarUrl);
+            const escapedPreviousWork = escapeHtml(previousWork);
+            const escapedNextPlan     = escapeHtml(nextPlan);
+            const escapedBlockers     = escapeHtml(blockers);
+            const escapedMood         = escapeHtml(report.current_mood || '😊');
+            
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
-                        <img src="${avatarUrl}" alt="${report.username}" class="w-8 h-8 rounded-full mr-3 object-cover">
-                        <span class="text-sm font-medium text-gray-900">${report.username}</span>
+                        <img src="${escapedAvatarUrl}" alt="${escapedUsername}" class="w-8 h-8 rounded-full mr-3 object-cover">
+                        <span class="text-sm font-medium text-gray-900">${escapedUsername}</span>
                     </div>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="text-sm text-gray-600">${report.date}</div>
+                    <div class="text-sm text-gray-600">${escapedDate}</div>
                 </td>
                 <td class="px-6 py-4 expandable-content max-w-xs">
                     <div class="text-sm text-gray-600">
-                        <span class="short-text">${previousWork.slice(0, 50)}${previousWork.length > 50 ? '...' : ''}</span>
-                        <span class="full-text hidden">${previousWork}</span>
+                        <span class="short-text">${escapedPreviousWork.slice(0, 50)}${previousWork.length > 50 ? '...' : ''}</span>
+                        <span class="full-text hidden">${escapedPreviousWork}</span>
                     </div>
                 </td>
                 <td class="px-6 py-4 expandable-content max-w-xs">
                     <div class="text-sm text-gray-600">
-                        <span class="short-text">${nextPlan.slice(0, 50)}${nextPlan.length > 50 ? '...' : ''}</span>
-                        <span class="full-text hidden">${nextPlan}</span>
+                        <span class="short-text">${escapedNextPlan.slice(0, 50)}${nextPlan.length > 50 ? '...' : ''}</span>
+                        <span class="full-text hidden">${escapedNextPlan}</span>
                     </div>
                 </td>
                 <td class="px-6 py-4 expandable-content max-w-xs">
                     <div class="text-sm text-gray-600">
-                        <span class="short-text">${blockers.slice(0, 50)}${blockers.length > 50 ? '...' : ''}</span>
-                        <span class="full-text hidden">${blockers}</span>
+                        <span class="short-text">${escapedBlockers.slice(0, 50)}${blockers.length > 50 ? '...' : ''}</span>
+                        <span class="full-text hidden">${escapedBlockers}</span>
                     </div>
                 </td>
                 <td class="px-6 py-4">
@@ -108,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </span>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="text-xl">${report.current_mood || '😊'}</div>
+                    <div class="text-xl">${escapedMood}</div>
                 </td>
             `;
             tableBody.appendChild(row);
