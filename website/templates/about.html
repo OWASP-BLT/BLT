@@ -22,150 +22,309 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <!-- Main Content Container -->
-    <div class="flex-1 p-4 md:p-8">
-        <div class="container mx-auto">
+    <div class="flex-1 py-4 md:p-8 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div class="container mx-auto max-w-[90%]">
             <!-- Hero Section -->
-            <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
-                <h1 class="text-4xl font-bold mb-4">{% trans "About" %} {% env 'PROJECT_NAME' %}</h1>
-                <div class="text-xl text-gray-700 leading-relaxed">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 md:p-8 p-2 mb-10 transform transition-all hover:shadow-md">
+                <div class="flex items-center mb-6">
+                    <div class="w-2 h-16 bg-[#e74c3c] rounded-full mr-4"></div>
+                    <h1 class="text-4xl font-bold text-gray-800">{% trans "About" %} {% env 'PROJECT_NAME' %}</h1>
+                </div>
+                <div class="text-lg text-gray-700 leading-relaxed border-l-4 border-[#e74c3c]/20 pl-6 py-2">
                     {% env 'PROJECT_NAME' %} {% trans "is a 100% free to use, open-source, non-commercial and non-profit initiative dedicated to improving software security through community-driven bug reporting. Every reward goes directly to the security researchers(bug hunters) who find and report vulnerabilities." %}
                 </div>
             </div>
             <!-- Mission & Vision -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="bg-white rounded-lg shadow-lg p-8">
-                    <h2 class="text-2xl font-bold mb-4">{% trans "Our Mission" %}</h2>
-                    <p class="text-gray-700 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 md:p-8 p-2 transform transition-all hover:shadow-md hover:-translate-y-1">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-[#e74c3c] flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-bullseye fa-lg"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold ml-4 text-gray-800">{% trans "Our Mission" %}</h2>
+                    </div>
+                    <p class="text-gray-700 mb-4 leading-relaxed pl-4 border-l-2 border-[#e74c3c]/20">
                         {% trans "To create a secure digital environment where users can access online services seamlessly and safely. From e-commerce to streaming services, we believe every online interaction should be bug-free and secure." %}
                     </p>
                 </div>
-                <div class="bg-white rounded-lg shadow-lg p-8">
-                    <h2 class="text-2xl font-bold mb-4">{% trans "What We Do" %}</h2>
-                    <p class="text-gray-700">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 md:p-8 p-2 transform transition-all hover:shadow-md hover:-translate-y-1">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-[#e74c3c] flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-cogs fa-lg"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold ml-4 text-gray-800">{% trans "What We Do" %}</h2>
+                    </div>
+                    <p class="text-gray-700 leading-relaxed pl-4 border-l-2 border-[#e74c3c]/20">
                         {% trans "BLT provides a comprehensive platform for identifying and reporting software and hardware vulnerabilities that affect user experience, system security, and overall reliability." %}
                     </p>
                 </div>
             </div>
             <!-- Benefits Section -->
-            <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
-                <h2 class="text-3xl font-bold mb-6">{% trans "What's in it for you?" %}</h2>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 md:p-8 p-2 mb-10 hover:shadow-md transition-all">
+                <div class="flex items-center mb-8">
+                    <div class="w-2 h-16 bg-[#e74c3c] rounded-full mr-4"></div>
+                    <h2 class="text-3xl font-bold text-gray-800">{% trans "What's in it for you?" %}</h2>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="p-6 bg-gray-50 rounded-lg">
-                        <h3 class="text-xl font-semibold mb-3">{% trans "Points" %}</h3>
+                    <div class="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                        <div class="w-16 h-16 rounded-full bg-[#e74c3c]/10 flex items-center justify-center mb-4">
+                            <i class="fas fa-award text-[#e74c3c] text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-800">{% trans "Points" %}</h3>
                         <p class="text-gray-700">{% trans "Earn points for every verified bug report" %}</p>
                     </div>
-                    <div class="p-6 bg-gray-50 rounded-lg">
-                        <h3 class="text-xl font-semibold mb-3">{% trans "Bug Bounty Rewards" %}</h3>
+                    <div class="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                        <div class="w-16 h-16 rounded-full bg-[#e74c3c]/10 flex items-center justify-center mb-4">
+                            <i class="fas fa-money-bill-wave text-[#e74c3c] text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-800">{% trans "Bug Bounty Rewards" %}</h3>
                         <p class="text-gray-700">{% trans "Money if you join a BLT Sponsored Bug Bounty" %}</p>
                     </div>
-                    <div class="p-6 bg-gray-50 rounded-lg">
-                        <h3 class="text-xl font-semibold mb-3">{% trans "Jackpot" %}</h3>
+                    <div class="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                        <div class="w-16 h-16 rounded-full bg-[#e74c3c]/10 flex items-center justify-center mb-4">
+                            <i class="fas fa-trophy text-[#e74c3c] text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-800">{% trans "Jackpot" %}</h3>
                         <p class="text-gray-700">{% trans "Jackpot money listed on the Leaderboard" %}</p>
                     </div>
-                    <div class="p-6 bg-gray-50 rounded-lg">
-                        <h3 class="text-xl font-semibold mb-3">{% trans "Tips" %}</h3>
+                    <div class="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                        <div class="w-16 h-16 rounded-full bg-[#e74c3c]/10 flex items-center justify-center mb-4">
+                            <i class="fas fa-hand-holding-usd text-[#e74c3c] text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-800">{% trans "Tips" %}</h3>
                         <p class="text-gray-700">{% trans "Money if someone tips you for finding a bug" %}</p>
                     </div>
                 </div>
             </div>
             <!-- How it Works -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="bg-white rounded-lg shadow-lg p-8">
-                    <h2 class="text-2xl font-bold mb-6">{% trans "For Security Researchers (Testers)" %}</h2>
-                    <ol class="list-decimal list-inside space-y-4 text-gray-700">
-                        <li>{% trans "Create a User Account to log into BLT" %}</li>
-                        <li>{% trans "Describe the software or hardware bug you found" %}</li>
-                        <li>{% trans "Attach a screenshot of the bug" %}</li>
-                        <li>{% trans "Submit the information" %}</li>
-                        <li>{% trans "Win money through sponsored Bug Bounties, tips or the Jackpot" %}</li>
-                        <li>
-                            {% trans "We may also have 'heists' where each bug is worth a specific amount based on what the Organization sets." %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 md:p-8 p-2 transform transition-all hover:shadow-md">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-[#e74c3c] flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-user-shield fa-lg"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold ml-4 text-gray-800">{% trans "For Security Researchers (Testers)" %}</h2>
+                    </div>
+                    <ol class="space-y-4 text-gray-700 pl-4">
+                        <li class="flex items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#e74c3c] text-white text-sm mr-3 mt-0.5 flex-shrink-0 shadow-sm">1</span>
+                            <span class="py-1">{% trans "Create a User Account to log into BLT" %}</span>
+                        </li>
+                        <li class="flex items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#e74c3c] text-white text-sm mr-3 mt-0.5 flex-shrink-0 shadow-sm">2</span>
+                            <span class="py-1">{% trans "Describe the software or hardware bug you found" %}</span>
+                        </li>
+                        <li class="flex items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#e74c3c] text-white text-sm mr-3 mt-0.5 flex-shrink-0 shadow-sm">3</span>
+                            <span class="py-1">{% trans "Attach a screenshot of the bug" %}</span>
+                        </li>
+                        <li class="flex items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#e74c3c] text-white text-sm mr-3 mt-0.5 flex-shrink-0 shadow-sm">4</span>
+                            <span class="py-1">{% trans "Submit the information" %}</span>
+                        </li>
+                        <li class="flex items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#e74c3c] text-white text-sm mr-3 mt-0.5 flex-shrink-0 shadow-sm">5</span>
+                            <span class="py-1">{% trans "Win money through sponsored Bug Bounties, tips or the Jackpot" %}</span>
+                        </li>
+                        <li class="flex items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#e74c3c] text-white text-sm mr-3 mt-0.5 flex-shrink-0 shadow-sm">6</span>
+                            <span class="py-1">{% trans "We may also have 'heists' where each bug is worth a specific amount based on what the Organization sets." %}</span>
                         </li>
                     </ol>
                 </div>
-                <div class="bg-white rounded-lg shadow-lg p-8">
-                    <h2 class="text-2xl font-bold mb-6">{% trans "For Organizations" %}</h2>
-                    <div class="text-gray-700 space-y-4">
-                        <p>{% trans "We want everyone to love your website." %}</p>
-                        <p>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 md:p-8 p-2 transform transition-all hover:shadow-md">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-[#e74c3c] flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-building fa-lg"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold ml-4 text-gray-800">{% trans "For Organizations" %}</h2>
+                    </div>
+                    <div class="text-gray-700 space-y-4 p-6 bg-gradient-to-r from-[#e74c3c]/5 to-[#e74c3c]/10 rounded-xl border border-[#e74c3c]/20">
+                        <p class="font-medium text-xl">{% trans "We want everyone to love your website." %}</p>
+                        <p class="leading-relaxed">
                             {% trans "You want to keep your customers happy by giving them a consistent bug-free user experience. BLT offers monthly Bug Bounties through 4 different subscription plans to help you achieve this." %}
                         </p>
+                        <div class="pt-4">
+                            <a href="/"
+                               class="inline-block px-4 py-2 bg-[#e74c3c] hover:text-white text-white rounded-lg shadow-md hover:bg-[#e74c3c]/90 transition-colors cursor-pointer">
+                                {% trans "Learn More" %}
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <!-- Features Section -->
-            <div class="bg-white rounded-lg shadow-lg p-8">
-                <h2 class="text-3xl font-bold mb-8">{% trans "Features of BLT" %}</h2>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 md:p-8 p-2 hover:shadow-md transition-all">
+                <div class="flex items-center mb-8">
+                    <div class="w-2 h-16 bg-[#e74c3c] rounded-full mr-4"></div>
+                    <h2 class="text-3xl font-bold text-gray-800">{% trans "Features of BLT" %}</h2>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Bug Reporting System -->
-                    <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Bug Reporting" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Users can report software or hardware bugs found on any website:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
-                                <li>{% trans "Simple bug submission process" %}</li>
-                                <li>{% trans "Screenshot attachment capability" %}</li>
-                                <li>{% trans "Detailed bug description support" %}</li>
+                    <div class="space-y-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#e74c3c] to-[#e74c3c]/80 text-white p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                                    <i class="fas fa-bug fa-lg"></i>
+                                </div>
+                                <h3 class="text-2xl font-semibold ml-4">{% trans "Bug Reporting" %}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <p class="text-gray-700 font-medium">{% trans "Users can report software or hardware bugs found on any website:" %}</p>
+                            <ul class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Simple bug submission process" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Screenshot attachment capability" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Detailed bug description support" %}</span>
+                                </li>
                             </ul>
                         </div>
                     </div>
                     <!-- Verification Process -->
-                    <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Verification Process" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Bugs are verified through a community-driven process:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
-                                <li>{% trans "Community verification of reported issues" %}</li>
-                                <li>{% trans "Company confirmation of bug validity" %}</li>
+                    <div class="space-y-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#e74c3c] to-[#e74c3c]/80 text-white p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                                    <i class="fas fa-check-circle fa-lg"></i>
+                                </div>
+                                <h3 class="text-2xl font-semibold ml-4">{% trans "Verification Process" %}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <p class="text-gray-700 font-medium">{% trans "Bugs are verified through a community-driven process:" %}</p>
+                            <ul class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Community verification of reported issues" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Company confirmation of bug validity" %}</span>
+                                </li>
                             </ul>
                         </div>
                     </div>
                     <!-- Rewards System -->
-                    <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Rewards System" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Users earn rewards for reporting bugs:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
-                                <li>{% trans "Points for verified bug reports" %}</li>
-                                <li>{% trans "Bug bounty rewards from sponsored hunts" %}</li>
-                                <li>{% trans "Tips from appreciative users" %}</li>
-                                <li>{% trans "Jackpot opportunities" %}</li>
+                    <div class="space-y-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#e74c3c] to-[#e74c3c]/80 text-white p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                                    <i class="fas fa-gift fa-lg"></i>
+                                </div>
+                                <h3 class="text-2xl font-semibold ml-4">{% trans "Rewards System" %}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <p class="text-gray-700 font-medium">{% trans "Users earn rewards for reporting bugs:" %}</p>
+                            <ul class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Points for verified bug reports" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Bug bounty rewards from sponsored hunts" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Tips from appreciative users" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Jackpot opportunities" %}</span>
+                                </li>
                             </ul>
                         </div>
                     </div>
                     <!-- User Profiles -->
-                    <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "User Profiles" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Manage bug reporting activities and personal information:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
-                                <li>{% trans "Track your reported bugs" %}</li>
-                                <li>{% trans "Manage personal information" %}</li>
-                                <li>{% trans "View earned rewards" %}</li>
+                    <div class="space-y-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#e74c3c] to-[#e74c3c]/80 text-white p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                                    <i class="fas fa-user-circle fa-lg"></i>
+                                </div>
+                                <h3 class="text-2xl font-semibold ml-4">{% trans "User Profiles" %}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <p class="text-gray-700 font-medium">{% trans "Manage bug reporting activities and personal information:" %}</p>
+                            <ul class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Track your reported bugs" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Manage personal information" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "View earned rewards" %}</span>
+                                </li>
                             </ul>
                         </div>
                     </div>
                     <!-- Community Engagement -->
-                    <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Community Engagement" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Collaboration and knowledge sharing features:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
-                                <li>{% trans "Community-driven bug verification" %}</li>
-                                <li>{% trans "Knowledge sharing opportunities" %}</li>
-                                <li>{% trans "Collaborative environment" %}</li>
+                    <div class="space-y-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#e74c3c] to-[#e74c3c]/80 text-white p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                                    <i class="fas fa-users fa-lg"></i>
+                                </div>
+                                <h3 class="text-2xl font-semibold ml-4">{% trans "Community Engagement" %}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <p class="text-gray-700 font-medium">{% trans "Collaboration and knowledge sharing features:" %}</p>
+                            <ul class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Community-driven bug verification" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Knowledge sharing opportunities" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Collaborative environment" %}</span>
+                                </li>
                             </ul>
                         </div>
                     </div>
                     <!-- Leaderboard -->
-                    <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Leaderboard" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Ranks users based on their contributions:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
-                                <li>{% trans "Track top contributors" %}</li>
-                                <li>{% trans "View point rankings" %}</li>
-                                <li>{% trans "Jackpot eligibility tracking" %}</li>
+                    <div class="space-y-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#e74c3c] to-[#e74c3c]/80 text-white p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                                    <i class="fas fa-chart-bar fa-lg"></i>
+                                </div>
+                                <h3 class="text-2xl font-semibold ml-4">{% trans "Leaderboard" %}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <p class="text-gray-700 font-medium">{% trans "Ranks users based on their contributions:" %}</p>
+                            <ul class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Track top contributors" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "View point rankings" %}</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="text-[#e74c3c] mr-2">•</span>
+                                    <span>{% trans "Jackpot eligibility tracking" %}</span>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -173,15 +332,16 @@
             </div>
         </div>
     </div>
+    <!-- Floating Edit Links with improved styling -->
     {% block edit_link %}
-        <div class="fixed bottom-4 right-4 space-x-2">
+        <div class="fixed bottom-4 left-4 space-x-3">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/about.html"
-               class="inline-flex items-center justify-center w-10 h-10 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors">
-                <i class="fab fa-github text-white"></i>
+               class="inline-flex items-center justify-center w-12 h-12 bg-gray-800 hover:bg-gray-700 rounded-full text-white shadow-lg transition-all hover:-translate-y-1">
+                <i class="fab fa-github fa-lg"></i>
             </a>
             <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=487%3A2791&t=OZnfXHD7sfzkaLm1-1"
-               class="inline-flex items-center justify-center w-10 h-10 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors">
-                <i class="fab fa-figma text-white"></i>
+               class="inline-flex items-center justify-center w-12 h-12 bg-[#e74c3c] hover:bg-[#e74c3c]/90 rounded-full text-white shadow-lg transition-all hover:-translate-y-1">
+                <i class="fab fa-figma fa-lg"></i>
             </a>
         </div>
     {% endblock edit_link %}
