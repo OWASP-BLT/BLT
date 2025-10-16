@@ -42,22 +42,14 @@ jobs:
         with:
           python-version: 3.11.2
 
-      - name: Get Poetry cache directory
-        id: poetry-cache
-        run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
-      
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-            .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
-            ${{ runner.os }}-poetry-
+          enable-cache: true
 
+      - name: Synchronize dependencies
+        run: uv sync
+      
       - name: Print memory usage
         run: free -h
 
@@ -76,10 +68,9 @@ jobs:
         with:
           python-version: 3.11.2
       - name: Run pre-commit
-        uses: pre-commit/action@v3.0.1
+        run: uv run pre-commit run --all-files
       - name: Print memory usage
         run: free -h
-
 
   test:
     name: Run Tests
@@ -99,12 +90,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
-      - run: pip install poetry
-      - run: poetry lock
-      - run: poetry install --with dev
-      - run: poetry run python manage.py collectstatic --noinput
+      - run: uv run python manage.py collectstatic --noinput
       - name: Run tests
-        run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+        run: uv run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
 
   docker-test:
     runs-on: ubuntu-latest
@@ -121,16 +109,15 @@ jobs:
           docker-compose --version
 
       - name: Build Docker image
-        run: |
-          docker build -t my-app .
+        run: docker build -t my-app .
 
       - name: Run Docker container
-        run: |
-          docker run -d --name my-container my-app
+        run: docker run -d --name my-container my-app
 
-      - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock
-      - run: docker exec my-container poetry install --without dev --no-interaction
+      - name: Install uv and sync dependencies inside container
+        run: |
+          docker exec my-container bash -c "curl -sSL https://install.astral.sh/uv | bash"
+          docker exec my-container bash -c "uv venv && uv sync"
 
       - name: Clean up
         run: |
