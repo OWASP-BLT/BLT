@@ -69,10 +69,20 @@ jobs:
               echo "Sending bounty payout request to BLT API..."
               
               # Call the BLT bounty payout API
-              # BLT_API_URL can be set in repository secrets/variables for testing
-              # Defaults to production if not set
+              # BLT_API_URL must be set in repository secrets/variables
+              # This prevents accidental production calls during testing
               # Add BLT_API_TOKEN to repository secrets for authentication
-              api_url="${{ secrets.BLT_API_URL || 'https://blt.owasp.org' }}"
+              if [ -z "${{ secrets.BLT_API_URL }}" ]; then
+                echo "❌ BLT_API_URL is not set. Refusing to call production API by default."
+                echo "Please set BLT_API_URL in repository secrets/variables."
+                echo "For production: https://blt.owasp.org"
+                echo "For testing: your test instance URL"
+                exit 1
+              fi
+              api_url="${{ secrets.BLT_API_URL }}"
+              
+              echo "Using API URL: $api_url"
+              
               response=$(curl -X POST \
                 -H "Content-Type: application/json" \
                 -H "X-BLT-API-TOKEN: ${{ secrets.BLT_API_TOKEN }}" \

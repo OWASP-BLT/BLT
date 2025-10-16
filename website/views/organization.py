@@ -3,7 +3,6 @@ import json
 import logging
 import re
 import time
-import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -3825,18 +3824,29 @@ def process_bounty_payout(request):
         
         issue_data = response.json()
         
+        # Check if issue is closed (don't pay for open issues)
+        if issue_data.get("state") != "closed":
+            return JsonResponse(
+                {"success": False, "error": "Issue must be closed before bounty payout"},
+                status=400
+            )
+        
         # Check if issue has dollar tag (bounty)
         has_bounty = False
         bounty_amount = 0
+        # Use regex to extract bounty amount from labels like "$50 – medium" or "$1,000 reward"
+        amount_pattern = re.compile(r"^\$?\s*(\d+(?:,\d{3})*)")
         for label in issue_data.get("labels", []):
             label_name = label.get("name", "")
-            if label_name.startswith("$"):
+            match = amount_pattern.match(label_name)
+            if match:
                 has_bounty = True
-                # Extract amount from label (e.g., "$5" -> 5)
+                # Extract amount and remove commas (e.g., "1,000" -> 1000)
+                amount_str = match.group(1).replace(",", "")
                 try:
-                    bounty_amount = int(label_name.replace("$", "").strip())
+                    bounty_amount = int(amount_str)
                 except ValueError:
-                    bounty_amount = 5  # Default to $5
+                    bounty_amount = 5  # Fallback to $5
                 break
         
         if not has_bounty:
@@ -3975,17 +3985,23 @@ def process_bounty_payout(request):
             tiers = sponsors_listing.get("tiers", {}).get("nodes", [])
             target_amount_cents = bounty_amount * 100
             
-            # Find exact match or closest tier
+            # Find exact match or next tier up (never downgrade)
             matching_tier = None
             for tier in tiers:
                 if tier.get("monthlyPriceInCents") == target_amount_cents:
                     matching_tier = tier
                     break
             
-            # If no exact match, find closest tier
+            # If no exact match, find next tier up (never pay less than bounty)
             if not matching_tier and tiers:
-                matching_tier = min(tiers, key=lambda t: abs(t.get("monthlyPriceInCents", 0) - target_amount_cents))
-                logger.warning(f"No exact tier match for ${bounty_amount}, using closest: ${matching_tier.get('monthlyPriceInCents', 0) / 100}")
+                # Sort tiers by price ascending
+                sorted_tiers = sorted(tiers, key=lambda t: t.get("monthlyPriceInCents", 0))
+                # Find first tier >= target amount
+                for tier in sorted_tiers:
+                    if tier.get("monthlyPriceInCents", 0) >= target_amount_cents:
+                        matching_tier = tier
+                        logger.warning(f"No exact tier match for ${bounty_amount}, using next tier up: ${tier.get('monthlyPriceInCents', 0) / 100}")
+                        break
             
             if not matching_tier:
                 return JsonResponse({
@@ -4065,6 +4081,75 @@ def process_bounty_payout(request):
                 }, status=400)
             
             logger.info(f"Successfully created GitHub Sponsors payment: {sponsorship_id}")
+            
+            # IMMEDIATELY cancel the sponsorship to prevent recurring charges
+            # This creates a one-time payment effect
+            cancel_mutation = """
+            mutation($sponsorshipId: ID!) {
+              cancelSponsorship(input: {
+                sponsorshipId: $sponsorshipId
+              }) {
+                sponsorsTier {
+                  monthlyPriceInCents
+                  name
+                }
+              }
+            }
+            """
+            
+            cancel_variables = {
+                "sponsorshipId": sponsorship_id,
+            }
+            
+            # Attempt to cancel with retries
+            cancel_success = False
+            max_retries = 3
+            
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Attempting to cancel sponsorship {sponsorship_id} (attempt {attempt + 1}/{max_retries})")
+                    
+                    cancel_response = requests.post(
+                        graphql_url,
+                        json={"query": cancel_mutation, "variables": cancel_variables},
+                        headers=graphql_headers,
+                        timeout=30
+                    )
+                    
+                    if cancel_response.status_code == 200:
+                        cancel_data = cancel_response.json()
+                        
+                        if "errors" not in cancel_data:
+                            logger.info(f"Successfully cancelled sponsorship {sponsorship_id}")
+                            cancel_success = True
+                            break
+                        else:
+                            logger.error(f"GraphQL errors cancelling sponsorship: {cancel_data['errors']}")
+                    else:
+                        logger.error(f"Cancel API returned status {cancel_response.status_code}: {cancel_response.text}")
+                    
+                    # Wait before retry (exponential backoff)
+                    if attempt < max_retries - 1:
+                        time.sleep(2 ** attempt)
+                        
+                except requests.exceptions.RequestException as cancel_error:
+                    logger.error(f"Network error cancelling sponsorship (attempt {attempt + 1}): {cancel_error}")
+                    if attempt < max_retries - 1:
+                        time.sleep(2 ** attempt)
+            
+            # CRITICAL: If cancellation failed, log and alert
+            if not cancel_success:
+                logger.critical(
+                    f"CRITICAL: Failed to cancel sponsorship {sponsorship_id} after {max_retries} attempts. "
+                    f"Recurring charges will continue! Issue: #{issue_number}, User: {assignee_username}, Amount: ${bounty_amount}"
+                )
+                # Return error to prevent marking as paid
+                return JsonResponse({
+                    "success": False,
+                    "error": "Payment was created but cancellation failed. Please manually cancel the sponsorship to prevent recurring charges.",
+                    "sponsorship_id": sponsorship_id,
+                    "action_required": "Manual cancellation needed"
+                }, status=500)
             
         except requests.exceptions.RequestException as e:
             logger.exception(f"Network error calling GitHub Sponsors API: {e}")
