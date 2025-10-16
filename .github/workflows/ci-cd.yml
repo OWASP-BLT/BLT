@@ -1,5 +1,4 @@
 name: CI/CD Optimized
-
 on:
   #merge_group:
   pull_request:
@@ -9,26 +8,23 @@ on:
     workflows: ["Pre-commit fix"]
     types:
       - completed
-
 env:
   FORCE_COLOR: 1
-  POETRY_CACHE_DIR: ~/.cache/pypoetry
-
+  UV_CACHE_DIR: ~/.cache/uv
 concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-
 jobs:
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
-    permissions: 
-      contents: read  # Minimal permission for checking out code
+    permissions:
+      contents: read # Minimal permission for checking out code
     outputs:
-      python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
+      uv-cache-dir: ${{ steps.uv-cache.outputs.dir }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Cache pre-commit hooks
         uses: actions/cache@v4
         with:
@@ -46,10 +42,23 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Synchronize dependencies
-        run: uv sync
-      
+      - name: Get uv cache directory
+        id: uv-cache
+        run: echo "UV_CACHE_DIR=${{ env.UV_CACHE_DIR }}" >> $GITHUB_ENV
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}-
+            ${{ runner.os }}-uv-
+
       - name: Print memory usage
         run: free -h
 
@@ -57,18 +66,21 @@ jobs:
     name: Run pre-commit
     needs: setup
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       issues: write
       pull-requests: write
       contents: write
       actions: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+
       - name: Run pre-commit
-        run: uv run pre-commit run --all-files
+        uses: pre-commit/action@v3.0.1
+
       - name: Print memory usage
         run: free -h
 
@@ -83,14 +95,28 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
-      - run: uv run python manage.py collectstatic --noinput
+
+      - name: Synchronize dependencies
+        run: uv sync --dev
+
+      - name: Collect static files
+        run: uv run python manage.py collectstatic --noinput
+
       - name: Run tests
         run: uv run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
 
@@ -109,15 +135,18 @@ jobs:
           docker-compose --version
 
       - name: Build Docker image
-        run: docker build -t my-app .
+        run: |
+          docker build -t my-app .
 
       - name: Run Docker container
-        run: docker run -d --name my-container my-app
-
-      - name: Install uv and sync dependencies inside container
         run: |
-          docker exec my-container bash -c "curl -sSL https://install.astral.sh/uv | bash"
-          docker exec my-container bash -c "uv venv && uv sync"
+          docker run -d --name my-container my-app
+
+      - name: Install uv in container
+        run: docker exec my-container pip install uv
+
+      - name: Synchronize dependencies in container
+        run: docker exec my-container uv sync --no-dev
 
       - name: Clean up
         run: |
