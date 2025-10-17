@@ -11,15 +11,17 @@ on:
 env:
   FORCE_COLOR: 1
   UV_CACHE_DIR: ~/.cache/uv
+
 concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
 jobs:
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Minimal permission for checking out code
+      contents: read
     outputs:
       uv-cache-dir: ${{ steps.uv-cache.outputs.dir }}
     steps:
@@ -46,7 +48,7 @@ jobs:
 
       - name: Get uv cache directory
         id: uv-cache
-        run: echo "UV_CACHE_DIR=${{ env.UV_CACHE_DIR }}" >> $GITHUB_ENV
+        run: echo "dir=${{ env.UV_CACHE_DIR }}" >> $GITHUB_OUTPUT
 
       - name: Cache uv dependencies
         uses: actions/cache@v4
@@ -100,18 +102,18 @@ jobs:
         with:
           python-version: 3.11.2
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
-
-      - name: Synchronize dependencies
+      - name: Install dependencies
         run: uv sync --dev
 
       - name: Collect static files
@@ -129,7 +131,6 @@ jobs:
       - name: Set up Docker
         run: |
           docker --version
-          # Install docker-compose
           curl -sSL https://github.com/docker/compose/releases/download/v2.17.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
           chmod +x /usr/local/bin/docker-compose
           docker-compose --version
@@ -145,7 +146,7 @@ jobs:
       - name: Install uv in container
         run: docker exec my-container pip install uv
 
-      - name: Synchronize dependencies in container
+      - name: Install dependencies in container
         run: docker exec my-container uv sync --no-dev
 
       - name: Clean up
