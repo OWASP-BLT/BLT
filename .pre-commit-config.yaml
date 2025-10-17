@@ -39,7 +39,6 @@ repos:
     rev: 0.5.4
     hooks:
       - id: uv-lock
-      - id: uv-export
         args:
           - --frozen
           - --no-hashes

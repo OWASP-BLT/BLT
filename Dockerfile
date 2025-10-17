@@ -36,6 +36,7 @@ COPY pyproject.toml ./
 
 # Install all dependencies from pyproject.toml (main + dev groups)
 RUN uv pip install --system --no-cache --group dev .
+RUN uv sync --compile-bytecode
 
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation
@@ -44,9 +45,6 @@ RUN pip install opentelemetry-api opentelemetry-instrumentation
 FROM python:3.11.2-slim
 ENV PYTHONUNBUFFERED 1
 WORKDIR /blt
-
-# Place executables in the environment at the front of the path
-ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy only necessary files from builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
