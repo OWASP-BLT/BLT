@@ -146,9 +146,6 @@ jobs:
         run: |
           docker run -d --name my-container my-app
 
-      - name: Install uv in container
-        run: docker exec my-container pip install uv
-
       - name: Install dependencies in container
         run: docker exec my-container uv sync --no-dev
 
