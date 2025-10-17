@@ -36,9 +36,10 @@ repos:
 
   # uv integration hooks
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.5.4
+    rev: 0.9.3
     hooks:
       - id: uv-lock
+      - id: uv-export
         args:
           - --frozen
           - --no-hashes

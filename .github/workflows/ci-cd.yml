@@ -61,6 +61,9 @@ jobs:
             ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}-
             ${{ runner.os }}-uv-
 
+      - name: Install dependencies
+        run: uv sync --dev
+
       - name: Print memory usage
         run: free -h
 
