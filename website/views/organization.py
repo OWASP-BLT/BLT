@@ -35,6 +35,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.timezone import now
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
@@ -501,7 +502,7 @@ class Listbounties(TemplateView):
         try:
             github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.exception("Error fetching GitHub issues")
             github_issues = []
 
         context = {
@@ -563,7 +564,7 @@ class Listbounties(TemplateView):
             return formatted_issues
 
         except requests.RequestException as e:
-            logger.error(f"GitHub API request failed: {str(e)}")
+            logger.exception("GitHub API request failed")
             return []
 
 
@@ -576,7 +577,7 @@ def load_more_issues(request):
         issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
         return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
     except Exception as e:
-        logger.error(f"Error loading more issues: {str(e)}")
+        logger.exception("Error loading more issues")
         return JsonResponse({"success": False, "error": "An unexpected error occurred."})
 
 
@@ -771,7 +772,7 @@ class DomainDetailView(ListView):
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error parsing domain slug '{slug}': {str(e)}")
+            logger.exception(f"Error parsing domain slug '{slug}'")
             raise Http404("Invalid domain format")
 
     def get_queryset(self):
@@ -898,7 +899,7 @@ class DomainDetailView(ListView):
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error in DomainDetailView: {str(e)}")
+            logger.exception("Error in DomainDetailView")
             raise Http404("Domain not found")
 
 
@@ -988,7 +989,7 @@ class InboundParseWebhookView(View):
                     profile.save()
 
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
-                logger.error(f"Error processing SendGrid webhook event: {str(e)}")
+                logger.exception("Error processing SendGrid webhook event")
 
         return JsonResponse({"detail": "Inbound Sendgrid Webhook received"})
 
@@ -1443,7 +1444,7 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
         return redirect("/")
 
     except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist) as e:
-        logger.error(f"Error in organization_dashboard_domain_detail: {str(e)}")
+        logger.exception("Error in organization_dashboard_domain_detail")
         return redirect("/")
 
 
@@ -1539,7 +1540,7 @@ def add_or_update_organization(request):
             return HttpResponse("Organization updated successfully")
 
         except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            logger.error(f"Error updating organization: {str(e)}")
+            logger.exception("Error updating organization")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
                 "doesn't exist or there was a key error. Please try again later."
@@ -1577,7 +1578,7 @@ def add_role(request):
                 return HttpResponse("Role added successfully")
 
         except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            logger.error(f"Error adding role: {str(e)}")
+            logger.exception("Error adding role")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
                 "doesn't exist or there was a key error. Please try again later."
@@ -2708,7 +2709,7 @@ class BountyPayoutsView(ListView):
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
                 return [], 0
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.exception("Error fetching GitHub issues")
             return [], 0
 
     def post(self, request, *args, **kwargs):
@@ -2850,9 +2851,9 @@ class BountyPayoutsView(ListView):
                                         )
                                 except Exception as e:
                                     error_msg = "Error fetching GitHub user data"
-                                    logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
+                                    logger.exception(f"{error_msg} for {assignee_username}")
                         except Exception as e:
-                            logger.error(f"Error creating contributor for assignee {assignee_username}: {str(e)}")
+                            logger.exception(f"Error creating contributor for assignee {assignee_username}")
                             assignee_contributor = None
 
                     # Try to find a matching user profile for the GitHub username
@@ -3365,7 +3366,7 @@ class BountyPayoutsView(ListView):
                                 },
                             )
                         except Exception as e:
-                            logger.error(f"Error creating repository for {pr_repo_url}: {str(e)}")
+                            logger.exception(f"Error creating repository for {pr_repo_url}")
                             continue
 
                         # Check if we already have this PR in our database
@@ -3395,7 +3396,7 @@ class BountyPayoutsView(ListView):
                                         f"Updated PR #{pr_number} state to {pr_data['state']}, merged: {existing_pr.is_merged}"
                                     )
                             except Exception as e:
-                                logger.error(f"Error updating PR state for {pr_url}: {str(e)}")
+                                logger.exception(f"Error updating PR state for {pr_url}")
 
                             logger.info(f"Linked existing PR #{pr_number} to issue #{issue_number}")
                         else:
@@ -3444,7 +3445,7 @@ class BountyPayoutsView(ListView):
                                                 name=github_username, defaults={"name": github_username}
                                             )
                                         except Exception as e:
-                                            logger.error(f"Error creating contributor for {github_username}: {str(e)}")
+                                            logger.exception(f"Error creating contributor for {github_username}")
                                             contributor = None
 
                                 # Check if PR is merged
@@ -3475,18 +3476,18 @@ class BountyPayoutsView(ListView):
                                     issue.linked_pull_requests.add(new_pr)
                                     logger.info(f"Created and linked new PR #{pr_number} to issue #{issue_number}")
                                 except Exception as e:
-                                    logger.error(f"Error saving PR {pr_url}: {str(e)}")
+                                    logger.exception(f"Error saving PR {pr_url}")
                                     continue
 
                             except requests.exceptions.RequestException as e:
-                                logger.error(f"Error fetching PR details for {pr_url}: {str(e)}")
+                                logger.exception(f"Error fetching PR details for {pr_url}")
                                 continue
 
             # As a fallback, also check for PRs that mention this issue in their body with closing keywords
             self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching timeline for issue #{issue_number}: {str(e)}")
+            logger.exception(f"Error fetching timeline for issue #{issue_number}")
             # Fall back to regex-based search for PRs mentioning this issue
             self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
@@ -3523,7 +3524,7 @@ class BountyPayoutsView(ListView):
                     logger.info(f"Linked PR #{pr.issue_id} to issue #{issue_number} via mention in PR body")
 
         except Exception as e:
-            logger.error(f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
+            logger.exception(f"Error finding PRs mentioning issue #{issue_number}")
 
     def extract_payment_info_from_comments(self, issue, owner, repo_name, issue_number):
         """
@@ -3741,11 +3742,12 @@ class BountyPayoutsView(ListView):
             return False
 
         except Exception as e:
-            logger.error(f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
+            logger.exception(f"Error extracting payment info from comments for issue #{issue_number}")
             return False
 
 
 @require_POST
+@csrf_exempt
 def process_bounty_payout(request):
     """
     API endpoint to process bounty payouts for merged PRs with attached issues.
@@ -3830,11 +3832,40 @@ def process_bounty_payout(request):
                 {"success": False, "error": "Issue must be closed before bounty payout"},
                 status=400
             )
+
+        # Verify PR is merged if pr_url is provided
+        if pr_url:
+            # Extract PR details from URL
+            # URL format: https://github.com/owner/repo/pull/number
+            pr_parts = pr_url.rstrip("/").split("/")
+            if len(pr_parts) >= 7 and pr_parts[5] == "pull":
+                pr_owner = pr_parts[3]
+                pr_repo_name = pr_parts[4]
+                pr_number = pr_parts[6]
+
+                if pr_number.isdigit():
+                    # Fetch PR from GitHub API
+                    pr_api_url = f"https://api.github.com/repos/{pr_owner}/{pr_repo_name}/pulls/{pr_number}"
+                    pr_response = requests.get(pr_api_url, headers=headers, timeout=10)
+
+                    if pr_response.status_code == 200:
+                        pr_data = pr_response.json()
+                        if not pr_data.get("merged"):
+                            return JsonResponse(
+                                {"success": False, "error": "PR must be merged before bounty payout"},
+                                status=400
+                            )
+                    else:
+                        logger.warning(f"Failed to fetch PR data: {pr_response.status_code}")
+                else:
+                    logger.warning("Invalid PR number format")
+            else:
+                logger.warning("Invalid PR URL format")
         
         # Check if issue has dollar tag (bounty)
         has_bounty = False
         bounty_amount = 0
-        # Use regex to extract bounty amount from labels like "$50 – medium" or "$1,000 reward"
+        # Use regex to extract bounty amount from labels like "$50 - medium" or "$1,000 reward"
         amount_pattern = re.compile(r"^\$?\s*(\d+(?:,\d{3})*)")
         for label in issue_data.get("labels", []):
             label_name = label.get("name", "")
