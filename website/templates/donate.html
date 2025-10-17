@@ -2,46 +2,102 @@
 {% load custom_tags %}
 {% load i18n %}
 {% load static %}
-{% block title %}Donation Options{% endblock %}
-{% block description %}
-    Support the ongoing development of the OWASP Bug Logging Tool by choosing a sponsorship plan. Help us grow and improve with your contribution.
+{% block title %}
+    {% trans "Donation Options" %}
 {% endblock %}
-{% block keywords %}donation, OWASP, sponsorship, Bug Logging Tool, support, development{% endblock %}
-{% block og_title %}Support OWASP with a Donation{% endblock %}
+{% block description %}
+    {% trans "Support the ongoing development of the OWASP Bug Logging Tool by choosing a sponsorship plan. Help us grow and improve with your contribution." %}
+{% endblock %}
+{% block keywords %}
+    {% trans "donation, OWASP, sponsorship, Bug Logging Tool, support, development" %}
+{% endblock %}
+{% block og_title %}
+    {% trans "Support OWASP with a Donation" %}
+{% endblock %}
 {% block og_description %}
-    Choose a sponsorship plan and support the OWASP Bug Logging Tool's development. Your contribution helps improve the tool.
+    {% trans "Choose a sponsorship plan and support the OWASP Bug Logging Tool's development. Your contribution helps improve." %}
 {% endblock %}
 {% block content %}
-    <!-- Support OWASP Development Section -->
     {% include "includes/sidenav.html" %}
-    <div class="flex justify-center items-centre">
-        <div class="bg-white shadow-lg rounded-lg pt-10 mt-20 lg:w-1/2 md:w-3/4 max-md:w-full">
-            <h2 class="text-4xl font-semibold text-center text-gray-800 mb-6">Support OWASP with a Donation</h2>
-            <p class="text-lg text-center mb-6 text-gray-600">
-                Contribute directly to the ongoing development of the OWASP Bug Logging Tool (BLT). Choose a sponsorship plan and help us continue to grow and improve.
-            </p>
-            <div class="grid grid-cols-1 gap-6">
-                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
-                   class="text-white p-6 rounded-lg text-center hover:bg-gray-200 transition-colors">
-                    <p class="text-xl font-bold">{% trans "Flea Plan" %}</p>
-                    <p class="text-2xl">$25.00 / {% trans "Month" %}</p>
-                </a>
-                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
-                   class="text-white p-6 rounded-lg text-center hover:bg-gray-200 transition-colors">
-                    <p class="text-xl font-bold">{% trans "Ant Plan" %}</p>
-                    <p class="text-2xl">$50.00 / {% trans "Month" %}</p>
-                </a>
-                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
-                   class="text-white p-6 rounded-lg text-center hover:bg-gray-200 transition-colors">
-                    <p class="text-xl font-bold">{% trans "Wasp Plan" %}</p>
-                    <p class="text-2xl">$100.00 / {% trans "Month" %}</p>
-                </a>
-                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
-                   class="text-white p-6 rounded-lg text-center hover:bg-gray-200 transition-colors">
-                    <p class="text-xl font-bold">{% trans "Scorpion Plan" %}</p>
-                    <p class="text-2xl">$500.00 / {% trans "Month" %}</p>
-                </a>
-            </div>
+    <div class="container mx-auto w-[85%] py-12">
+        <div class="space-y-8 text-gray-700">
+            <header>
+                <h1 class="text-4xl font-bold text-[#e74c3c] mb-6">{% trans "Support OWASP with a Donation" %}</h1>
+                <div class="h-1 w-24 bg-[#e74c3c] rounded mb-8"></div>
+            </header>
+            <section class="space-y-4">
+                <p class="text-lg">
+                    {% trans "Contribute directly to the ongoing development of the OWASP Bug Logging Tool (BLT). Choose a sponsorship plan and help us continue to grow and improve." %}
+                </p>
+                <p class="text-lg font-medium">{% trans "Your support makes a difference." %}</p>
+            </section>
+            <section class="mt-10">
+                <h2 class="text-3xl font-bold text-[#e74c3c] mb-6">{% trans "Sponsorship Plans" %}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-sm transition-shadow duration-300 border-l-4 border-[#e74c3c]">
+                        <h3 class="text-xl font-bold mb-4 text-[#e74c3c]">{% trans "Flea Plan" %}</h3>
+                        <p class="text-3xl font-bold mb-2">
+                            {% trans "$25.00" %} <span class="text-lg font-normal">/ {% trans "Month" %}</span>
+                        </p>
+                        <p class="text-gray-600 mb-6">{% trans "Perfect for individuals who want to support our mission." %}</p>
+                        <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool&plan=flea#sponsor"
+                           class="inline-block hover:text-white px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            {% trans "Support Now" %}
+                        </a>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-sm transition-shadow duration-300 border-l-4 border-[#e74c3c]">
+                        <h3 class="text-xl font-bold mb-4 text-[#e74c3c]">{% trans "Ant Plan" %}</h3>
+                        <p class="text-3xl font-bold mb-2">
+                            {% trans "$50.00" %} <span class="text-lg font-normal">/ {% trans "Month" %}</span>
+                        </p>
+                        <p class="text-gray-600 mb-6">{% trans "Great for small teams and growing organizations." %}</p>
+                        <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool&plan=ant#sponsor"
+                           class="inline-block hover:text-white px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            {% trans "Support Now" %}
+                        </a>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-sm transition-shadow duration-300 border-l-4 border-[#e74c3c]">
+                        <h3 class="text-xl font-bold mb-4 text-[#e74c3c]">{% trans "Wasp Plan" %}</h3>
+                        <p class="text-3xl font-bold mb-2">
+                            {% trans "$100.00" %} <span class="text-lg font-normal">/ {% trans "Month" %}</span>
+                        </p>
+                        <p class="text-gray-600 mb-6">{% trans "Ideal for established organizations and companies." %}</p>
+                        <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool&plan=wasp#sponsor"
+                           class="inline-block hover:text-white px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            {% trans "Support Now" %}
+                        </a>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-sm transition-shadow duration-300 border-l-4 border-[#e74c3c]">
+                        <h3 class="text-xl font-bold mb-4 text-[#e74c3c]">{% trans "Scorpion Plan" %}</h3>
+                        <p class="text-3xl font-bold mb-2">
+                            {% trans "$500.00" %} <span class="text-lg font-normal">/ {% trans "Month" %}</span>
+                        </p>
+                        <p class="text-gray-600 mb-6">{% trans "For major supporters and enterprise organizations." %}</p>
+                        <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool&plan=scorpion#sponsor"
+                           class="inline-block hover:text-white px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            {% trans "Support Now" %}
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <section class="mt-10 p-6 bg-gray-50 rounded-lg shadow-sm">
+                <h2 class="text-2xl font-bold text-[#e74c3c] mb-4">{% trans "Why Support Us?" %}</h2>
+                <ul class="list-disc pl-6 space-y-3">
+                    <li class="text-base">{% trans "Help maintain and improve the OWASP Bug Logging Tool" %}</li>
+                    <li class="text-base">{% trans "Support open source security initiatives" %}</li>
+                    <li class="text-base">{% trans "Enable new feature development and community growth" %}</li>
+                    <li class="text-base">{% trans "Contribute to better security practices across the web" %}</li>
+                </ul>
+            </section>
         </div>
     </div>
+    {% block edit_link %}
+        <div class="fixed bottom-6 left-6">
+            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/donate.html"
+               aria-label="Edit this page on GitHub"
+               class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-200">
+                <i class="fab fa-github text-xl text-[#e74c3c]"></i>
+            </a>
+        </div>
+    {% endblock edit_link %}
 {% endblock content %}

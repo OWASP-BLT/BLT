@@ -16,401 +16,311 @@
     Get a detailed view of your team members and their daily progress. Easily manage roles, statuses, and daily status reports to maintain efficient operations and improve team performance.
 {% endblock og_description %}
 {% block body %}
-    <div class="fixed bottom-2.5 right-3.75">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html">
-            <i class="fab fa-github"></i>
+    {% comment %} <div class="fixed bottom-6 right-6 z-50 flex gap-3">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html" class="bg-gray-800 hover:bg-gray-900 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
+            <i class="fab fa-github text-xl"></i>
         </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma"></i>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1" class="bg-[#e74c3c] hover:bg-[#c0392b] text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
+            <i class="fab fa-figma text-xl"></i>
         </a>
-    </div>
-    <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
-        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Team Members</p>
-            <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <a href="/teams/overview"
-                   class="flex items-center justify-center md:justify-center px-16 py-7 bg-red-600 rounded-xl hover:bg-red-600 transition-all">
-                    <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
-                </a>
+    </div> {% endcomment %}
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <!-- Header Section -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Team Overview</h1>
+                        <p class="mt-1 text-sm text-gray-500">Manage your organization's team members and their status reports</p>
+                    </div>
+                    <a href="/teams/overview"
+                       class="inline-flex items-center px-4 py-2.5 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 select-none">
+                        <svg class="w-5 h-5 mr-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add Member
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="w-[96%] overflow-y-scroll flow-root my-10">
-            <div class="relative overflow-x-auto shadow-md sm:rounded-lg h-full bg-white">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <caption class="p-5 text-xl font-semibold text-left text-gray-900 bg-white">
-                        <div class="flex w-full justify-between">
-                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Members</h2>
-                        </div>
-                    </caption>
-                    <thead class="text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Member</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Email</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Role</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">Status</th>
-                            <th scope="col" class="px-6 py-3 text-[1rem]">
-                                <span class="sr-only">View</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if team_members %}
-                            {% for member in team_members %}
-                                <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
-                                    <th scope="row"
-                                        class="px-6 py-4 text-gray-900 whitespace-nowrap text-lg flex items-center">
-                                        {% if member.user_avatar %}
-                                            <img src="{{ member.user_avatar.url }}"
-                                                 alt="User Avatar"
-                                                 class="rounded-full mr-3"
-                                                 width="40"
-                                                 height="40">
-                                        {% else %}
-                                            <img src="{% static 'images/dummy-user.png' %}"
-                                                 alt="Default Avatar"
-                                                 class="rounded-full mr-3"
-                                                 width="40"
-                                                 height="40">
-                                        {% endif %}
-                                        {{ member.user.username }}
-                                    </th>
-                                    <td class="px-6 py-4">{{ member.user.email }}</td>
-                                    <td class="px-6 py-4">{{ member.role }}</td>
-                                    <td class="px-6 py-4">
-                                        {% if member.user.is_active %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                                        {% else %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <a href="/profile/{{ member.user.username }}"
-                                           class="md:justify-center px-5 py-3 bg-red-600 rounded-xl hover:bg-purple-600 transition-all text-white">
-                                            View
-                                        </a>
+        <!-- Main Content -->
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
+            <!-- Team Members Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-gray-900">Organization Members</h2>
+                        <span class="px-3 py-1 bg-[#e74c3c]/10 text-[#e74c3c] rounded-full text-sm font-semibold">
+                            {{ team_members|length }} member{{ team_members|length|pluralize }}
+                        </span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Member</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Email</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Role</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                                <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            {% if team_members %}
+                                {% for member in team_members %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                {% if member.user_avatar %}
+                                                    <img src="{{ member.user_avatar.url }}"
+                                                         alt="{{ member.user.username }}"
+                                                         width="40"
+                                                         height="40"
+                                                         class="w-10 h-10 rounded-full mr-3 border-2 border-[#e74c3c]/20 object-cover">
+                                                {% else %}
+                                                    <img src="{% static 'images/dummy-user.png' %}"
+                                                         alt="{{ member.user.username }}"
+                                                         width="40"
+                                                         height="40"
+                                                         class="w-10 h-10 rounded-full mr-3 border-2 border-gray-200 object-cover">
+                                                {% endif %}
+                                                <span class="text-sm font-semibold text-gray-900">{{ member.user.username }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">{{ member.user.email }}</td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#e74c3c]/10 text-[#e74c3c]">
+                                                <i class="fas fa-shield-alt mr-1"></i>
+                                                {{ member.role }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {% if member.user.is_active %}
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Active
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                                                    <i class="fas fa-times-circle mr-1"></i>
+                                                    Inactive
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <a href="/profile/{{ member.user.username }}"
+                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
+                                               title="View Profile">
+                                                <svg class="w-4 h-4 mr-1.5"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                    </path>
+                                                </svg>
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                                <i class="fas fa-users text-gray-400 text-2xl"></i>
+                                            </div>
+                                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No Members Found</h3>
+                                            <p class="text-gray-500 mb-4">Start building your team by adding members</p>
+                                            <a href="/teams/overview"
+                                               class="inline-flex items-center gap-2 px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white font-medium rounded-lg transition-all duration-200">
+                                                <i class="fas fa-plus"></i>
+                                                Add First Member
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr class="bg-white border-b">
-                                <th scope="row"
-                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">No Members Found</th>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Daily Status Reports Section -->
+            {% comment %}
+            DEBUG: Team Members: {{ team_members|length }}
+            DEBUG: Daily Reports: {{ daily_status_reports|length }}
+            {% endcomment %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Daily Status Reports</h2>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Showing {{ daily_status_reports|length }} report{{ daily_status_reports|length|pluralize }} from {{ team_members|length }} member{{ team_members|length|pluralize }}
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 text-gray-700 transition-all duration-200 hover:border-[#e74c3c]/30"
+                                data-tab="user">
+                            <i class="fas fa-user mr-2"></i>By User
+                        </button>
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 text-gray-700 transition-all duration-200 hover:border-[#e74c3c]/30"
+                                data-tab="date">
+                            <i class="fas fa-calendar mr-2"></i>By Date
+                        </button>
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 text-gray-700 transition-all duration-200 hover:border-[#e74c3c]/30"
+                                data-tab="goal">
+                            <i class="fas fa-bullseye mr-2"></i>By Goal
+                        </button>
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 text-gray-700 transition-all duration-200 hover:border-[#e74c3c]/30"
+                                data-tab="task">
+                            <i class="fas fa-search mr-2"></i>By Task
+                        </button>
+                    </div>
+                </div>
+                <!-- Filter Panels -->
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <div id="user-panel" class="filter-panel hidden">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-user-circle text-[#e74c3c] mr-2"></i>Select Team Member
+                        </label>
+                        <select id="user-filter"
+                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                            <option value="">All Members</option>
+                            {% for member in team_members %}<option value="{{ member.user.id }}">{{ member.user.username }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div id="date-panel" class="filter-panel hidden">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>Select Date
+                        </label>
+                        <input type="date"
+                               id="date-filter"
+                               class="w-full md:w-96 px-4 py-2.5 border border-gray-300 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                    </div>
+                    <div id="goal-panel" class="filter-panel hidden">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-flag-checkered text-[#e74c3c] mr-2"></i>Goal Status
+                        </label>
+                        <select id="goal-filter"
+                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                            <option value="">All Goals</option>
+                            <option value="true">✅ Accomplished</option>
+                            <option value="false">❌ Not Accomplished</option>
+                        </select>
+                    </div>
+                    <div id="task-panel" class="filter-panel hidden">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-search text-[#e74c3c] mr-2"></i>Search Tasks
+                        </label>
+                        <input type="text"
+                               id="task-filter"
+                               placeholder="Type to search in previous work..."
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                    </div>
+                </div>
+                <!-- Reports Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">User</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Previous Work</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Next Plan</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Blockers</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Goal</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Mood</th>
                             </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
-        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Daily Status Reports</p>
-        </div>
-        <div class="mb-3">
-            <div class="border-b border-gray-200">
-                <nav class="flex -mb-px" aria-label="Tabs">
-                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 whitespace-nowrap"
-                            data-tab="user">By User</button>
-                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 whitespace-nowrap"
-                            data-tab="date">By Date</button>
-                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 whitespace-nowrap"
-                            data-tab="goal">By Goal</button>
-                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 whitespace-nowrap"
-                            data-tab="task">By Task</button>
-                </nav>
-            </div>
-            <div class="mt-4 text-center">
-                <div id="user-panel" class="filter-panel hidden">
-                    <select id="user-filter"
-                            class="rounded-md border-gray-300 bg-red-500 p-4 text-white shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                        <option value="">Select User</option>
-                        {% for member in team_members %}<option value="{{ member.user.id }}">{{ member.user.username }}</option>{% endfor %}
-                    </select>
-                </div>
-                <div id="date-panel" class="filter-panel hidden">
-                    <input type="date"
-                           id="date-filter"
-                           class="rounded-md p-4 bg-red-500 text-white border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                </div>
-                <div id="goal-panel" class="filter-panel hidden">
-                    <select id="goal-filter"
-                            class="rounded-md p-4 border-gray-300 bg-red-500 text-white shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                        <option value="">Select Status</option>
-                        <option value="true">Accomplished</option>
-                        <option value="false">Not Accomplished</option>
-                    </select>
-                </div>
-                <div id="task-panel" class="filter-panel hidden">
-                    <input type="text"
-                           id="task-filter"
-                           placeholder="Search in previous work..."
-                           class="rounded-md p-4 border-gray-300 bg-red-500 text-white shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full">
-                </div>
-            </div>
-        </div>
-        <div class="w-[96%] h-[70vh] overflow-y-scroll flow-root my-5">
-            <div class="relative overflow-x-auto shadow-md sm:rounded-lg h-full bg-white">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <caption class="p-5 text-xl font-semibold text-left text-gray-900 bg-white">
-                        <div class="flex w-full justify-between">
-                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Reports</h2>
-                        </div>
-                    </caption>
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                User
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Previous Work
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Next Plan
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Blockers
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Goal Accomplished
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Mood
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="statusTableBody">
-                        {% if daily_status_reports %}
-                            {% for report in daily_status_reports %}
-                                <tr class="bg-white border-b hover:bg-gray-50 transition-colors cursor-pointer"
-                                    onclick="toggleRow(this)">
-                                    <th scope="row"
-                                        class="px-6 py-4 text-gray-900 whitespace-nowrap text-lg flex items-center">
-                                        {% if report.user.userprofile.user_avatar %}
-                                            <img src="{{ report.user.userprofile.user_avatar.url }}"
-                                                 alt="User Avatar"
-                                                 class="rounded-full mr-3"
-                                                 width="40"
-                                                 height="40">
-                                        {% else %}
-                                            <img src="{% static 'images/dummy-user.png' %}"
-                                                 alt="Default Avatar"
-                                                 class="rounded-full mr-3"
-                                                 width="40"
-                                                 height="40">
-                                        {% endif %}
-                                        {{ report.user.username }}
-                                    </th>
-                                    <td class="px-6 py-4">{{ report.date|date:"F j, Y" }}</td>
-                                    <td class="px-6 py-4 expandable-content">
-                                        <span class="short-text">{{ report.previous_work|slice:":25" }}...</span>
-                                        <span class="full-text hidden">{{ report.previous_work }}</span>
+                        </thead>
+                        <tbody id="statusTableBody"
+                               class="divide-y divide-gray-200 bg-white"
+                               data-initial-count="{{ daily_status_reports|length }}">
+                            {% if daily_status_reports %}
+                                {% for report in daily_status_reports %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                                        onclick="toggleRow(this)">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                {% with user_profile=report.user.userprofile %}
+                                                    {% if user_profile.user_avatar %}
+                                                        <img src="{{ user_profile.user_avatar.url }}"
+                                                             alt="{{ report.user.username }}"
+                                                             width="32"
+                                                             height="32"
+                                                             class="w-8 h-8 rounded-full mr-3 object-cover">
+                                                    {% else %}
+                                                        <img src="{% static 'images/dummy-user.png' %}"
+                                                             alt="{{ report.user.username }}"
+                                                             width="32"
+                                                             height="32"
+                                                             class="w-8 h-8 rounded-full mr-3 object-cover">
+                                                    {% endif %}
+                                                {% endwith %}
+                                                <span class="text-sm font-medium text-gray-900">{{ report.user.username }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-600">{{ report.date|date:"M j, Y" }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 expandable-content max-w-xs">
+                                            <div class="text-sm text-gray-600">
+                                                <span class="short-text">{{ report.previous_work|slice:":50" }}...</span>
+                                                <span class="full-text hidden">{{ report.previous_work }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 expandable-content max-w-xs">
+                                            <div class="text-sm text-gray-600">
+                                                <span class="short-text">{{ report.next_plan|slice:":50" }}...</span>
+                                                <span class="full-text hidden">{{ report.next_plan }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 expandable-content max-w-xs">
+                                            <div class="text-sm text-gray-600">
+                                                <span class="short-text">{{ report.blockers|slice:":50" }}...</span>
+                                                <span class="full-text hidden">{{ report.blockers }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {% if report.goal_accomplished %}
+                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Yes</span>
+                                            {% else %}
+                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">No</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-xl">{{ report.current_mood }}</div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                                <svg class="w-8 h-8 text-gray-400"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-sm font-medium text-gray-900 mb-1">No Reports Found</h3>
+                                            <p class="text-sm text-gray-500">Daily status reports will appear here when submitted</p>
+                                        </div>
                                     </td>
-                                    <td class="px-6 py-4 expandable-content">
-                                        <span class="short-text">{{ report.next_plan|slice:":25" }}...</span>
-                                        <span class="full-text hidden">{{ report.next_plan }}</span>
-                                    </td>
-                                    <td class="px-6 py-4 expandable-content">
-                                        <span class="short-text">{{ report.blockers|slice:":25" }}...</span>
-                                        <span class="full-text hidden">{{ report.blockers }}</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        {% if report.goal_accomplished %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Yes</span>
-                                        {% else %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">No</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-6 py-4">{{ report.current_mood }}</td>
                                 </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr class="bg-white border-b">
-                                <th scope="row"
-                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">No Reports Found</th>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-    <script>
-        function toggleRow(row) {
-            const expandableContents = row.getElementsByClassName('expandable-content');
-            for (let content of expandableContents) {
-                const shortText = content.querySelector('.short-text');
-                const fullText = content.querySelector('.full-text');
-                
-                if (shortText.classList.contains('hidden')) {
-                    shortText.classList.remove('hidden');
-                    fullText.classList.add('hidden');
-                } else {
-                    shortText.classList.add('hidden');
-                    fullText.classList.remove('hidden');
-                }
-            }
-        }
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const tableBody = document.getElementById('statusTableBody');
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const filterPanels = document.querySelectorAll('.filter-panel');
-            let currentTab = null;
-            let taskSearchTimeout = null;
-
-            function updateTable(data) {
-                tableBody.innerHTML = '';
-                data.forEach(report => {
-                    const row = document.createElement('tr');
-                    row.className = 'bg-white border-b hover:bg-gray-50 transition-colors cursor-pointer';
-                    row.onclick = () => toggleRow(row);
-                    
-                    row.innerHTML = `
-                        <th scope="row" class="px-6 py-4 text-gray-900 whitespace-nowrap text-lg flex items-center">
-                            <img src="${report.avatar_url || '/static/images/dummy-user.png'}" alt="User Avatar" class="w-10 h-10 rounded-full mr-3">
-                            ${report.username}
-                        </th>
-                        <td class="px-6 py-4">${report.date}</td>
-                        <td class="px-6 py-4 expandable-content">
-                            <span class="short-text">${report.previous_work.slice(0, 25)}...</span>
-                            <span class="full-text hidden">${report.previous_work}</span>
-                        </td>
-                        <td class="px-6 py-4 expandable-content">
-                            <span class="short-text">${report.next_plan.slice(0, 25)}...</span>
-                            <span class="full-text hidden">${report.next_plan}</span>
-                        </td>
-                        <td class="px-6 py-4 expandable-content">
-                            <span class="short-text">${report.blockers.slice(0, 25)}...</span>
-                            <span class="full-text hidden">${report.blockers}</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${report.goal_accomplished ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                ${report.goal_accomplished ? 'Yes' : 'No'}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">${report.current_mood}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            }
-
-            function fetchFilteredData(filterType, filterValue) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('filter_type', filterType);
-                url.searchParams.set('filter_value', filterValue);
-
-                fetch(url, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    updateTable(data.data);
-                    if (data.data.length === 0) {
-                        tableBody.innerHTML = `
-                            <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                                    No reports found for the selected filter.
-                                </td>
-                            </tr>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    tableBody.innerHTML = `
-                            <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-red-500">
-                                    Error fetching data. Please try again.
-                                </td>
-                            </tr>
-                        `;
-                });
-            }
-
-            function switchTab(tabName) {
-                tabButtons.forEach(button => {
-                    if (button.dataset.tab === tabName) {
-                        button.classList.add('border-indigo-500', 'text-indigo-600');
-                        button.classList.remove('border-transparent', 'text-gray-500');
-                    } else {
-                        button.classList.remove('border-indigo-500', 'text-indigo-600');
-                        button.classList.add('border-transparent', 'text-gray-500');
-                    }
-                });
-
-                filterPanels.forEach(panel => {
-                    panel.classList.add('hidden');
-                });
-                document.getElementById(`${tabName}-panel`).classList.remove('hidden');
-                
-                if (currentTab !== tabName) {
-                    document.getElementById('user-filter').value = '';
-                    document.getElementById('date-filter').value = '';
-                    document.getElementById('goal-filter').value = '';
-                    document.getElementById('task-filter').value = '';
-                    fetchFilteredData('none', '');
-                }
-                
-                currentTab = tabName;
-            }
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    switchTab(button.dataset.tab);
-                });
-            });
-
-            document.getElementById('user-filter').addEventListener('change', function() {
-                if (this.value) {
-                    fetchFilteredData('user', this.value);
-                } else {
-                    fetchFilteredData('none', '');
-                }
-            });
-
-            document.getElementById('date-filter').addEventListener('change', function() {
-                if (this.value) {
-                    fetchFilteredData('date', this.value);
-                } else {
-                    fetchFilteredData('none', '');
-                }
-            });
-
-            document.getElementById('goal-filter').addEventListener('change', function() {
-                if (this.value) {
-                    fetchFilteredData('goal', this.value);
-                } else {
-                    fetchFilteredData('none', '');
-                }
-            });
-
-            document.getElementById('task-filter').addEventListener('input', function() {
-                clearTimeout(taskSearchTimeout);
-                const searchValue = this.value.trim();
-                
-                taskSearchTimeout = setTimeout(() => {
-                    if (searchValue) {
-                        fetchFilteredData('task', searchValue);
-                    } else {
-                        fetchFilteredData('none', '');
-                    }
-                }, 300);
-            });
-
-            switchTab('user');
-        });
-    </script>
+    <script src="{% static 'js/organization_team_overview.js' %}"></script>
 {% endblock body %}
