@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Tag Management Dashboard{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    {% include "includes/sidenav.html" %}
+    
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Tag Management Dashboard</h1>
+                    <p class="text-gray-600">Manage and organize tags across the platform</p>
+                </div>
+                <div class="flex gap-3 mt-4 sm:mt-0">
+                    <a href="{% url 'tag_analytics' %}" 
+                       class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="fas fa-chart-bar mr-2"></i>Analytics
+                    </a>
+                    <a href="{% url 'admin:website_tag_add' %}" 
+                       class="bg-[#e74c3c] text-white px-4 py-2 rounded-lg hover:bg-[#c0392b] transition-colors flex items-center">
+                        <i class="fas fa-plus mr-2"></i>Add Tag
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                            <i class="fas fa-tags text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Tags</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ total_tags }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                            <i class="fas fa-check-circle text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Active Tags</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ active_tags }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                            <i class="fas fa-pause-circle text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Inactive Tags</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ inactive_tags }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Actions -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <form method="GET" class="space-y-4 sm:space-y-0 sm:flex sm:items-end sm:gap-4">
+                <!-- Search -->
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search Tags</label>
+                    <input type="text" 
+                           id="search" 
+                           name="search" 
+                           value="{{ search_query }}"
+                           placeholder="Search by name or description..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                </div>
+                
+                <!-- Category Filter -->
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select id="category" name="category" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        <option value="">All Categories</option>
+                        {% for value, label in category_choices %}
+                            <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Status Filter -->
+                <div>
+                    <label for="is_active" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="is_active" name="is_active" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        <option value="">All Status</option>
+                        <option value="true" {% if selected_is_active == 'true' %}selected{% endif %}>Active</option>
+                        <option value="false" {% if selected_is_active == 'false' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+                
+                <!-- Order By -->
+                <div>
+                    <label for="order_by" class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                    <select id="order_by" name="order_by" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        <option value="name" {% if order_by == 'name' %}selected{% endif %}>Name (A-Z)</option>
+                        <option value="-name" {% if order_by == '-name' %}selected{% endif %}>Name (Z-A)</option>
+                        <option value="category" {% if order_by == 'category' %}selected{% endif %}>Category</option>
+                        <option value="-total_usage" {% if order_by == '-total_usage' %}selected{% endif %}>Most Used</option>
+                        <option value="total_usage" {% if order_by == 'total_usage' %}selected{% endif %}>Least Used</option>
+                        <option value="-created" {% if order_by == '-created' %}selected{% endif %}>Newest</option>
+                        <option value="created" {% if order_by == 'created' %}selected{% endif %}>Oldest</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
+                    Filter
+                </button>
+            </form>
+        </div>
+
+        <!-- Tags Table -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <form method="POST" action="{% url 'bulk_tag_actions' %}" id="bulk-form">
+                {% csrf_token %}
+                
+                <!-- Bulk Actions -->
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <input type="checkbox" id="select-all" class="h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded">
+                            <label for="select-all" class="text-sm font-medium text-gray-700">Select All</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <select name="action" class="px-3 py-2 border border-gray-300 rounded-md text-sm">
+                                <option value="">Choose Action</option>
+                                <option value="activate">Activate</option>
+                                <option value="deactivate">Deactivate</option>
+                                <option value="delete">Delete</option>
+                            </select>
+                            <button type="submit" class="bg-[#e74c3c] text-white px-4 py-2 rounded-md hover:bg-[#c0392b] transition-colors text-sm">
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Header -->
+                <div class="px-6 py-3 border-b border-gray-200 bg-gray-50">
+                    <div class="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <div class="col-span-1"></div>
+                        <div class="col-span-3">Tag</div>
+                        <div class="col-span-2">Category</div>
+                        <div class="col-span-1">Color</div>
+                        <div class="col-span-2">Usage</div>
+                        <div class="col-span-1">Status</div>
+                        <div class="col-span-2">Actions</div>
+                    </div>
+                </div>
+
+                <!-- Table Body -->
+                <div class="divide-y divide-gray-200">
+                    {% for tag in tags %}
+                        <div class="px-6 py-4 hover:bg-gray-50">
+                            <div class="grid grid-cols-12 gap-4 items-center">
+                                <!-- Checkbox -->
+                                <div class="col-span-1">
+                                    <input type="checkbox" name="tag_ids" value="{{ tag.id }}" class="tag-checkbox h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded">
+                                </div>
+                                
+                                <!-- Tag Info -->
+                                <div class="col-span-3">
+                                    <div class="flex items-center">
+                                        {% if tag.icon %}
+                                            <i class="{{ tag.icon }} mr-2 text-gray-600"></i>
+                                        {% endif %}
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ tag.name }}</div>
+                                            {% if tag.description %}
+                                                <div class="text-sm text-gray-500 truncate">{{ tag.description|truncatechars:50 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Category -->
+                                <div class="col-span-2">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        {{ tag.get_category_display }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Color -->
+                                <div class="col-span-1">
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 rounded border border-gray-300 mr-2" style="background-color: {{ tag.color }};"></div>
+                                        <span class="text-xs text-gray-500">{{ tag.get_color_display }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Usage Count -->
+                                <div class="col-span-2">
+                                    <div class="text-sm font-medium text-gray-900">{{ tag.usage_count }}</div>
+                                    <div class="text-xs text-gray-500">total uses</div>
+                                </div>
+                                
+                                <!-- Status -->
+                                <div class="col-span-1">
+                                    {% if tag.is_active %}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            Active
+                                        </span>
+                                    {% else %}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                            Inactive
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="col-span-2">
+                                    <div class="flex items-center space-x-2">
+                                        <a href="{% url 'admin:website_tag_change' tag.id %}" 
+                                           class="text-indigo-600 hover:text-indigo-900 text-sm">Edit</a>
+                                        <span class="text-gray-300">|</span>
+                                        <a href="{% url 'admin:website_tag_delete' tag.id %}" 
+                                           class="text-red-600 hover:text-red-900 text-sm">Delete</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="px-6 py-12 text-center">
+                            <div class="text-gray-500">
+                                <i class="fas fa-tags text-4xl mb-4"></i>
+                                <p class="text-lg font-medium">No tags found</p>
+                                <p class="text-sm">Try adjusting your filters or create a new tag.</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </form>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="mt-6 flex justify-center">
+                <nav class="flex items-center space-x-2">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}{% if request.GET.order_by %}&order_by={{ request.GET.order_by }}{% endif %}" 
+                           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            Previous
+                        </a>
+                    {% endif %}
+                    
+                    <span class="px-3 py-2 text-sm font-medium text-gray-700">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}{% if request.GET.order_by %}&order_by={{ request.GET.order_by }}{% endif %}" 
+                           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            Next
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all functionality
+    const selectAll = document.getElementById('select-all');
+    const tagCheckboxes = document.querySelectorAll('.tag-checkbox');
+    
+    selectAll.addEventListener('change', function() {
+        tagCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+    });
+    
+    // Update select all when individual checkboxes change
+    tagCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = Array.from(tagCheckboxes).every(cb => cb.checked);
+            const noneChecked = Array.from(tagCheckboxes).every(cb => !cb.checked);
+            
+            selectAll.checked = allChecked;
+            selectAll.indeterminate = !allChecked && !noneChecked;
+        });
+    });
+    
+    // Bulk form validation
+    document.getElementById('bulk-form').addEventListener('submit', function(e) {
+        const selectedTags = document.querySelectorAll('.tag-checkbox:checked');
+        const action = document.querySelector('select[name="action"]').value;
+        
+        if (selectedTags.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one tag.');
+            return;
+        }
+        
+        if (!action) {
+            e.preventDefault();
+            alert('Please select an action.');
+            return;
+        }
+        
+        if (action === 'delete' && !confirm('Are you sure you want to delete the selected tags? This action cannot be undone.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -92,6 +92,22 @@
                 <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.get_label_display }}</span>
             </div>
         </div>
+        <!-- Tags -->
+        {% if object.tags.all %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-start">
+                    <span class="text-gray-700 font-medium">Tags</span>
+                    <div class="flex flex-wrap gap-2">
+                        {% for tag in object.tags.all %}
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm"
+                                  style="background-color: {{ tag.color }};">
+                                {% if tag.icon %}<i class="{{ tag.icon }} mr-1"></i>{% endif %}{{ tag.name }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <!-- CVE Score -->
         {% if object.cve_score %}
             <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
