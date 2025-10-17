@@ -1,6 +1,5 @@
 # Stage 1: Build stage
 FROM python:3.11.2 AS builder
-
 ENV PYTHONUNBUFFERED 1
 WORKDIR /blt
 
@@ -29,24 +28,25 @@ RUN curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-ke
 
 RUN ln -s /usr/bin/google-chrome-stable /usr/local/bin/google-chrome
 
-# Install Poetry and dependencies
-RUN pip install poetry
-RUN poetry config virtualenvs.create false
-COPY pyproject.toml poetry.lock* ./
-# Clean any existing httpx installation and update pip
-RUN pip uninstall -y httpx || true
-RUN pip install --upgrade pip
-# Install dependencies with Poetry
-RUN poetry install --no-root --no-interaction
+# Install UV
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copy dependency file
+COPY pyproject.toml ./
+
+# Install all dependencies from pyproject.toml (main + dev groups)
+RUN uv pip install --system --no-cache --group dev .
 
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation
 
 # Stage 2: Runtime stage
 FROM python:3.11.2-slim
-
 ENV PYTHONUNBUFFERED 1
 WORKDIR /blt
+
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy only necessary files from builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
@@ -63,9 +63,11 @@ COPY . /blt
 
 # Convert line endings and set permissions
 RUN dos2unix Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
+
 # Check if .env exists and run dos2unix on it, otherwise skip
 RUN if [ -f /blt/.env ]; then dos2unix /blt/.env; fi
+
 RUN chmod +x /blt/entrypoint.sh
 
 ENTRYPOINT ["/blt/entrypoint.sh"]
-CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
