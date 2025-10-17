@@ -39,6 +39,7 @@ from website.models import (
     Contributor,
     Domain,
     GitHubIssue,
+    GitHubReview,
     Hunt,
     InviteFriend,
     Issue,
@@ -478,13 +479,13 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Reviewed PR Leaderboard
+        # Reviewed PR Leaderboard - fixed to properly count reviews per reviewer
         reviewed_pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request")
+            GitHubReview.objects.filter(pull_request__type="pull_request")
             .values(
-                "reviews__reviewer__user__username",
-                "reviews__reviewer__user__email",
-                "user_profile__github_url",
+                "reviewer__user__username",
+                "reviewer__user__email",
+                "reviewer__github_url",
             )
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
