@@ -17,7 +17,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import mail_admins, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
@@ -3752,11 +3752,11 @@ def process_bounty_payout(request):
     """
     API endpoint to process bounty payouts for merged PRs with attached issues.
     Called by GitHub Action when a PR is merged.
-    
+
     Expected POST data:
     - issue_url: URL of the GitHub issue with bounty
     - pr_url: URL of the merged PR (optional, for logging)
-    
+
     Expected Headers:
     - X-BLT-API-TOKEN: API token for authentication (optional but recommended)
     """
@@ -3764,74 +3764,65 @@ def process_bounty_payout(request):
         # Optional: Validate API token if provided
         api_token = request.headers.get("X-BLT-API-TOKEN")
         expected_token = getattr(settings, "BLT_API_TOKEN", None)
-        
+
         if expected_token and api_token != expected_token:
             logger.warning("Invalid API token provided for bounty payout")
-            return JsonResponse(
-                {"success": False, "error": "Invalid API token"},
-                status=401
-            )
-        
+            return JsonResponse({"success": False, "error": "Invalid API token"}, status=401)
+
         # Parse request data
         data = json.loads(request.body) if request.body else {}
         issue_url = data.get("issue_url")
         pr_url = data.get("pr_url", "")
-        
+
         if not issue_url:
-            return JsonResponse(
-                {"success": False, "error": "issue_url is required"},
-                status=400
-            )
-        
+            return JsonResponse({"success": False, "error": "issue_url is required"}, status=400)
+
         logger.info(f"Processing bounty payout for issue: {issue_url}, PR: {pr_url}")
-        
+
         # Extract issue details from URL
         # URL format: https://github.com/owner/repo/issues/number
         parts = issue_url.rstrip("/").split("/")
         if len(parts) < 7 or parts[5] != "issues":
-            return JsonResponse(
-                {"success": False, "error": "Invalid issue URL format"},
-                status=400
-            )
-        
+            return JsonResponse({"success": False, "error": "Invalid issue URL format"}, status=400)
+
         owner = parts[3]
         repo_name = parts[4]
         issue_number = parts[6]
-        
+
         # Validate URL components
-        if not re.match(r'^[\w-]+$', owner) or not re.match(r'^[\w-]+$', repo_name):
-            return JsonResponse(
-                {"success": False, "error": "Invalid repository owner or name"},
-                status=400
-            )
+        if not re.match(r"^[\w-]+$", owner) or not re.match(r"^[\w-]+$", repo_name):
+            return JsonResponse({"success": False, "error": "Invalid repository owner or name"}, status=400)
         if not issue_number.isdigit():
-            return JsonResponse(
-                {"success": False, "error": "Invalid issue number"},
-                status=400
-            )
-        
+            return JsonResponse({"success": False, "error": "Invalid issue number"}, status=400)
+
         # Fetch issue from GitHub API
         headers = {}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
-        
+
         api_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}"
         response = requests.get(api_url, headers=headers, timeout=10)
-        
+
         if response.status_code != 200:
+            if response.status_code == 404:
+                error_msg = "GitHub issue not found. Please verify the issue URL."
+            elif response.status_code in (401, 403):
+                error_msg = "GitHub API authentication failed. Please contact support."
+            elif response.status_code == 429:
+                error_msg = "GitHub API rate limit exceeded. Please try again later."
+            else:
+                error_msg = f"Failed to fetch issue from GitHub API (HTTP {response.status_code}). Please verify the issue URL and try again."
+
             return JsonResponse(
-                {"success": False, "error": f"Failed to fetch issue from GitHub API (HTTP {response.status_code}). Please verify the issue URL and try again."},
+                {"success": False, "error": error_msg},
                 status=400
             )
-        
+
         issue_data = response.json()
-        
+
         # Check if issue is closed (don't pay for open issues)
         if issue_data.get("state") != "closed":
-            return JsonResponse(
-                {"success": False, "error": "Issue must be closed before bounty payout"},
-                status=400
-            )
+            return JsonResponse({"success": False, "error": "Issue must be closed before bounty payout"}, status=400)
 
         # Verify PR is merged if pr_url is provided
         if pr_url:
@@ -3852,8 +3843,7 @@ def process_bounty_payout(request):
                         pr_data = pr_response.json()
                         if not pr_data.get("merged"):
                             return JsonResponse(
-                                {"success": False, "error": "PR must be merged before bounty payout"},
-                                status=400
+                                {"success": False, "error": "PR must be merged before bounty payout"}, status=400
                             )
                     else:
                         logger.warning(f"Failed to fetch PR data: {pr_response.status_code}")
@@ -3861,7 +3851,7 @@ def process_bounty_payout(request):
                     logger.warning("Invalid PR number format")
             else:
                 logger.warning("Invalid PR URL format")
-        
+
         # Check if issue has dollar tag (bounty)
         has_bounty = False
         bounty_amount = 0
@@ -3879,51 +3869,45 @@ def process_bounty_payout(request):
                 except ValueError:
                     bounty_amount = 5  # Fallback to $5
                 break
-        
+
         if not has_bounty:
-            return JsonResponse(
-                {"success": False, "error": "Issue does not have a bounty label"},
-                status=400
-            )
-        
+            return JsonResponse({"success": False, "error": "Issue does not have a bounty label"}, status=400)
+
         # Get assignee username (the person who will receive payment)
         assignee_username = None
         if issue_data.get("assignee"):
             assignee_username = issue_data["assignee"]["login"]
         elif issue_data.get("assignees") and len(issue_data["assignees"]) > 0:
             assignee_username = issue_data["assignees"][0]["login"]
-        
+
         if not assignee_username:
-            return JsonResponse(
-                {"success": False, "error": "Issue has no assignee to pay"},
-                status=400
-            )
-        
+            return JsonResponse({"success": False, "error": "Issue has no assignee to pay"}, status=400)
+
         logger.info(f"Processing payment for assignee: {assignee_username}")
-        
+
         # Find user profile by GitHub username
         try:
-            social_account = SocialAccount.objects.get(
-                provider="github",
-                extra_data__login=assignee_username
-            )
+            social_account = SocialAccount.objects.get(provider="github", extra_data__login=assignee_username)
             user_profile = social_account.user.userprofile
         except SocialAccount.DoesNotExist:
             return JsonResponse(
                 {"success": False, "error": f"User with GitHub username {assignee_username} not found in BLT"},
-                status=404
+                status=404,
             )
-        
+
         # Check preferred payment method
         payment_method = user_profile.preferred_payment_method or "sponsors"
-        
+
         # For this task, only handle GitHub Sponsors
         if payment_method != "sponsors":
             return JsonResponse(
-                {"success": False, "error": f"User prefers {payment_method} payment method, but only sponsors is supported in this implementation"},
-                status=400
+                {
+                    "success": False,
+                    "error": f"User prefers {payment_method} payment method, but only sponsors is supported in this implementation",
+                },
+                status=400,
             )
-        
+
         # Check for duplicate payment BEFORE processing to prevent double charges
         repo_url = f"https://github.com/{owner}/{repo_name}"
         repo, _ = Repo.objects.get_or_create(
@@ -3933,32 +3917,39 @@ def process_bounty_payout(request):
                 "slug": f"{owner}-{repo_name}",
             },
         )
-        
+
         try:
             existing_issue = GitHubIssue.objects.get(issue_id=issue_data["id"], repo=repo)
             if existing_issue.sponsors_tx_id or existing_issue.bch_tx_id:
                 logger.warning(f"Bounty already paid for issue #{issue_number}")
-                return JsonResponse({
-                    "success": False,
-                    "error": "Bounty already paid for this issue",
-                    "paid_at": existing_issue.p2p_payment_created_at.isoformat() if existing_issue.p2p_payment_created_at else None
-                }, status=400)
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Bounty already paid for this issue",
+                        "paid_at": existing_issue.p2p_payment_created_at.isoformat()
+                        if existing_issue.p2p_payment_created_at
+                        else None,
+                    },
+                    status=400,
+                )
         except GitHubIssue.DoesNotExist:
             pass  # Issue doesn't exist yet, proceed with payment
-        
+
         # Process GitHub Sponsors payment
         # Get sponsor username from settings (defaults to DonnieBLT as per issue requirements)
         sponsor_username = getattr(settings, "GITHUB_SPONSOR_USERNAME", "DonnieBLT")
-        
-        logger.info(f"Creating GitHub Sponsors payment: {sponsor_username} -> {assignee_username}, Amount: ${bounty_amount}")
-        
+
+        logger.info(
+            f"Creating GitHub Sponsors payment: {sponsor_username} -> {assignee_username}, Amount: ${bounty_amount}"
+        )
+
         # Call GitHub Sponsors GraphQL API
         graphql_url = "https://api.github.com/graphql"
         graphql_headers = {
             "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
             "Content-Type": "application/json",
         }
-        
+
         # Step 1: Get user's sponsorable ID and available tiers
         query_user = """
         query($login: String!) {
@@ -3977,52 +3968,50 @@ def process_bounty_payout(request):
           }
         }
         """
-        
+
         try:
             user_response = requests.post(
                 graphql_url,
                 json={"query": query_user, "variables": {"login": assignee_username}},
                 headers=graphql_headers,
-                timeout=10
+                timeout=10,
             )
-            
+
             if user_response.status_code != 200:
                 logger.error(f"Failed to fetch user info: {user_response.status_code}")
-                return JsonResponse({
-                    "success": False,
-                    "error": "Failed to fetch recipient information from GitHub"
-                }, status=400)
-            
+                return JsonResponse(
+                    {"success": False, "error": "Failed to fetch recipient information from GitHub"}, status=400
+                )
+
             user_data = user_response.json()
-            
+
             if "errors" in user_data:
                 logger.error(f"GraphQL errors: {user_data['errors']}")
-                return JsonResponse({
-                    "success": False,
-                    "error": "User not found or does not have GitHub Sponsors enabled"
-                }, status=400)
-            
+                return JsonResponse(
+                    {"success": False, "error": "User not found or does not have GitHub Sponsors enabled"}, status=400
+                )
+
             user_info = user_data.get("data", {}).get("user", {})
             sponsorable_id = user_info.get("id")
             sponsors_listing = user_info.get("sponsorsListing")
-            
+
             if not sponsorable_id or not sponsors_listing:
-                return JsonResponse({
-                    "success": False,
-                    "error": f"User {assignee_username} does not have GitHub Sponsors enabled"
-                }, status=400)
-            
+                return JsonResponse(
+                    {"success": False, "error": f"User {assignee_username} does not have GitHub Sponsors enabled"},
+                    status=400,
+                )
+
             # Step 2: Find matching tier or use closest one
             tiers = sponsors_listing.get("tiers", {}).get("nodes", [])
             target_amount_cents = bounty_amount * 100
-            
+
             # Find exact match or next tier up (never downgrade)
             matching_tier = None
             for tier in tiers:
                 if tier.get("monthlyPriceInCents") == target_amount_cents:
                     matching_tier = tier
                     break
-            
+
             # If no exact match, find next tier up (never pay less than bounty)
             if not matching_tier and tiers:
                 # Sort tiers by price ascending
@@ -4031,24 +4020,28 @@ def process_bounty_payout(request):
                 for tier in sorted_tiers:
                     if tier.get("monthlyPriceInCents", 0) >= target_amount_cents:
                         matching_tier = tier
-                        logger.warning(f"No exact tier match for ${bounty_amount}, using next tier up: ${tier.get('monthlyPriceInCents', 0) / 100}")
+                        logger.warning(
+                            f"No exact tier match for ${bounty_amount}, using next tier up: ${tier.get('monthlyPriceInCents', 0) / 100}"
+                        )
                         break
-            
+
             if not matching_tier:
-                return JsonResponse({
-                    "success": False,
-                    "error": f"No sponsorship tiers available for {assignee_username}. They need to set up sponsor tiers first."
-                }, status=400)
-            
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"No sponsorship tiers available for {assignee_username}. They need to set up sponsor tiers first.",
+                    },
+                    status=400,
+                )
+
             tier_id = matching_tier.get("id")
-            
+
         except requests.exceptions.RequestException as e:
             logger.exception(f"Network error fetching user info: {e}")
-            return JsonResponse({
-                "success": False,
-                "error": "Network error while fetching recipient information"
-            }, status=500)
-        
+            return JsonResponse(
+                {"success": False, "error": "Network error while fetching recipient information"}, status=500
+            )
+
         # Step 3: Create sponsorship
         graphql_mutation = """
         mutation($sponsorableId: ID!, $tierId: ID!) {
@@ -4068,51 +4061,58 @@ def process_bounty_payout(request):
           }
         }
         """
-        
+
         graphql_variables = {
             "sponsorableId": sponsorable_id,
             "tierId": tier_id,
         }
-        
+
         try:
             graphql_response = requests.post(
                 graphql_url,
                 json={"query": graphql_mutation, "variables": graphql_variables},
                 headers=graphql_headers,
-                timeout=30
+                timeout=30,
             )
-            
+
             if graphql_response.status_code != 200:
-                logger.error(f"GitHub Sponsors API returned status {graphql_response.status_code}: {graphql_response.text}")
-                return JsonResponse({
-                    "success": False,
-                    "error": f"Failed to process GitHub Sponsors payment (HTTP {graphql_response.status_code}). The user may not have GitHub Sponsors enabled."
-                }, status=400)
-            
+                logger.error(
+                    f"GitHub Sponsors API returned status {graphql_response.status_code}: {graphql_response.text}"
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"Failed to process GitHub Sponsors payment (HTTP {graphql_response.status_code}). The user may not have GitHub Sponsors enabled.",
+                    },
+                    status=400,
+                )
+
             graphql_data = graphql_response.json()
-            
+
             # Check for GraphQL errors
             if "errors" in graphql_data:
                 error_messages = [err.get("message", "Unknown error") for err in graphql_data["errors"]]
                 logger.error(f"GitHub Sponsors GraphQL errors: {error_messages}")
-                return JsonResponse({
-                    "success": False,
-                    "error": f"GitHub Sponsors API error: {'; '.join(error_messages)}"
-                }, status=400)
-            
+                return JsonResponse(
+                    {"success": False, "error": f"GitHub Sponsors API error: {'; '.join(error_messages)}"}, status=400
+                )
+
             # Extract sponsorship ID from response
             sponsorship_data = graphql_data.get("data", {}).get("createSponsorship", {}).get("sponsorship", {})
             sponsorship_id = sponsorship_data.get("id")
-            
+
             if not sponsorship_id:
                 logger.error(f"No sponsorship ID in response: {graphql_data}")
-                return JsonResponse({
-                    "success": False,
-                    "error": "Failed to create sponsorship. Please ensure the recipient has GitHub Sponsors enabled."
-                }, status=400)
-            
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Failed to create sponsorship. Please ensure the recipient has GitHub Sponsors enabled.",
+                    },
+                    status=400,
+                )
+
             logger.info(f"Successfully created GitHub Sponsors payment: {sponsorship_id}")
-            
+
             # IMMEDIATELY cancel the sponsorship to prevent recurring charges
             # This creates a one-time payment effect
             cancel_mutation = """
@@ -4127,29 +4127,31 @@ def process_bounty_payout(request):
               }
             }
             """
-            
+
             cancel_variables = {
                 "sponsorshipId": sponsorship_id,
             }
-            
+
             # Attempt to cancel with retries
             cancel_success = False
             max_retries = 3
-            
+
             for attempt in range(max_retries):
                 try:
-                    logger.info(f"Attempting to cancel sponsorship {sponsorship_id} (attempt {attempt + 1}/{max_retries})")
-                    
+                    logger.info(
+                        f"Attempting to cancel sponsorship {sponsorship_id} (attempt {attempt + 1}/{max_retries})"
+                    )
+
                     cancel_response = requests.post(
                         graphql_url,
                         json={"query": cancel_mutation, "variables": cancel_variables},
                         headers=graphql_headers,
-                        timeout=30
+                        timeout=30,
                     )
-                    
+
                     if cancel_response.status_code == 200:
                         cancel_data = cancel_response.json()
-                        
+
                         if "errors" not in cancel_data:
                             logger.info(f"Successfully cancelled sponsorship {sponsorship_id}")
                             cancel_success = True
@@ -4157,38 +4159,67 @@ def process_bounty_payout(request):
                         else:
                             logger.error(f"GraphQL errors cancelling sponsorship: {cancel_data['errors']}")
                     else:
-                        logger.error(f"Cancel API returned status {cancel_response.status_code}: {cancel_response.text}")
-                    
+                        logger.error(
+                            f"Cancel API returned status {cancel_response.status_code}: {cancel_response.text}"
+                        )
+
                     # Wait before retry (exponential backoff)
                     if attempt < max_retries - 1:
-                        time.sleep(2 ** attempt)
-                        
+                        time.sleep(2**attempt)
+
                 except requests.exceptions.RequestException as cancel_error:
-                    logger.error(f"Network error cancelling sponsorship (attempt {attempt + 1}): {cancel_error}")
+                    logger.exception(f"Network error cancelling sponsorship (attempt {attempt + 1})")
                     if attempt < max_retries - 1:
-                        time.sleep(2 ** attempt)
-            
+                        time.sleep(2**attempt)
+
             # CRITICAL: If cancellation failed, log and alert
             if not cancel_success:
-                logger.critical(
+                error_message = (
                     f"CRITICAL: Failed to cancel sponsorship {sponsorship_id} after {max_retries} attempts. "
                     f"Recurring charges will continue! Issue: #{issue_number}, User: {assignee_username}, Amount: ${bounty_amount}"
                 )
+                logger.critical(error_message)
+
+                # Send automated alert to admins
+                mail_admins(
+                    subject="CRITICAL: GitHub Sponsors Cancellation Failed",
+                    message=f"""
+Failed to cancel GitHub Sponsors subscription after {max_retries} attempts.
+
+Details:
+- Sponsorship ID: {sponsorship_id}
+- Issue: #{issue_number}
+- User: {assignee_username}
+- Amount: ${bounty_amount}
+- Repository: {owner}/{repo_name}
+
+IMMEDIATE ACTION REQUIRED: Manually cancel this sponsorship at:
+https://github.com/sponsors/{assignee_username}
+
+This will prevent recurring monthly charges!
+
+Note: Consider adding database fields to GitHubIssue model for tracking failed cancellations.
+                    """,
+                )
+
                 # Return error to prevent marking as paid
-                return JsonResponse({
-                    "success": False,
-                    "error": "Payment was created but cancellation failed. Please manually cancel the sponsorship to prevent recurring charges.",
-                    "sponsorship_id": sponsorship_id,
-                    "action_required": "Manual cancellation needed"
-                }, status=500)
-            
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Payment was created but cancellation failed. Please manually cancel the sponsorship to prevent recurring charges.",
+                        "sponsorship_id": sponsorship_id,
+                        "action_required": "Manual cancellation needed",
+                    },
+                    status=500,
+                )
+
         except requests.exceptions.RequestException as e:
-            logger.exception(f"Network error calling GitHub Sponsors API: {e}")
-            return JsonResponse({
-                "success": False,
-                "error": "Network error while processing payment. Please try again later."
-            }, status=500)
-        
+            logger.exception("Network error calling GitHub Sponsors API")
+            return JsonResponse(
+                {"success": False, "error": "Network error while processing payment. Please try again later."},
+                status=500,
+            )
+
         # Create/update the GitHubIssue record with actual transaction ID
         # Note: repo was already created earlier during duplicate check
         github_issue, _created = GitHubIssue.objects.update_or_create(
@@ -4205,28 +4236,35 @@ def process_bounty_payout(request):
                 "updated_at": parse_datetime(issue_data["updated_at"]),
                 "closed_at": parse_datetime(issue_data["closed_at"]) if issue_data.get("closed_at") else None,
                 "user_profile": user_profile,
-            }
+            },
         )
-        
+
         # Mark as paid with actual GitHub Sponsors transaction ID
         github_issue.sponsors_tx_id = sponsorship_id
         github_issue.p2p_payment_created_at = timezone.now()
         github_issue.save()
-        
-        logger.info(f"Successfully processed bounty payout for issue #{issue_number} with sponsorship ID: {sponsorship_id}")
-        
-        return JsonResponse({
-            "success": True,
-            "message": f"Bounty payout completed for {assignee_username}",
-            "amount": bounty_amount,
-            "payment_method": "sponsors",
-            "transaction_id": sponsorship_id,
-            "issue_number": issue_number,
-        })
-        
+
+        logger.info(
+            f"Successfully processed bounty payout for issue #{issue_number} with sponsorship ID: {sponsorship_id}"
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Bounty payout completed for {assignee_username}",
+                "amount": bounty_amount,
+                "payment_method": "sponsors",
+                "transaction_id": sponsorship_id,
+                "issue_number": issue_number,
+            }
+        )
+
     except Exception:
         logger.exception("Error processing bounty payout")
         return JsonResponse(
-            {"success": False, "error": "Failed to process bounty payout. Please contact support if the issue persists."},
-            status=500
+            {
+                "success": False,
+                "error": "Failed to process bounty payout. Please contact support if the issue persists.",
+            },
+            status=500,
         )
