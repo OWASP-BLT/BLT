@@ -69,13 +69,14 @@ def validate_file_type(request, file_field_name, allowed_extensions, allowed_mim
 
 
 def get_client_ip(request):
-    """Extract the client's IP address from the request."""
+    """Extract the client's IP address from the request, checking X-Forwarded-For, X-Real-IP, and REMOTE_ADDR."""
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
     if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
+        return x_forwarded_for.split(",")[0].strip()
+    x_real_ip = request.META.get("HTTP_X_REAL_IP")
+    if x_real_ip:
+        return x_real_ip.strip()
+    return request.META.get("REMOTE_ADDR")
 
 
 def get_email_from_domain(domain_name):
