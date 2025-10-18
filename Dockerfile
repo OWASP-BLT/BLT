@@ -41,12 +41,14 @@ RUN apt-get update && apt-get install -y \
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project
+    uv sync --frozen --no-install-project && \
+    rm -rf /blt/.venv
 
 # Add the project source code and install it
-ADD . /blt
+COPY . /blt
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen
+    uv sync --frozen && \
+    rm -rf /blt/.venv
 
 # Copy Chrome from builder stage
 COPY --from=builder /opt/google/chrome /opt/google/chrome
