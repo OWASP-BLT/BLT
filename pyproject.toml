@@ -84,6 +84,8 @@ dev = [
     "django-debug-toolbar<5.0.0,>=4.4.6",
     "django-livereload-server<1.0.0,>=0.5.1",
     "watchfiles<2.0.0,>=1.0.4",
+    "opentelemetry-api",
+    "opentelemetry-instrumentation",
 ]
 
 [build-system]
