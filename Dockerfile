@@ -28,8 +28,7 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONDONTWRITEBYTECODE=1
 
 # Install runtime system dependencies
 RUN apt-get update && apt-get install -y \

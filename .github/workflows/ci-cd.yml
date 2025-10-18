@@ -50,17 +50,6 @@ jobs:
         id: uv-cache
         run: echo "dir=${{ env.UV_CACHE_DIR }}" >> $GITHUB_OUTPUT
 
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/uv
-            .venv
-          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}-
-            ${{ runner.os }}-uv-
-
       - name: Install dependencies
         run: uv sync --dev
 
@@ -78,6 +67,9 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
 
       - uses: actions/setup-python@v5
         with:
