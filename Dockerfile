@@ -7,10 +7,11 @@ WORKDIR /blt
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl ca-certificates gnupg && \
-    curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get -yqq update && \
-    apt-get -yqq install google-chrome-stable && \
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
+    chmod 644 /usr/share/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*
 
 # Stage 2: Runtime stage
@@ -24,11 +25,11 @@ WORKDIR /blt
 
 # Environment variables
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-ENV UV_COMPILE_BYTECODE=1
-ENV UV_LINK_MODE=copy
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PATH="/opt/venv/bin:$PATH" \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 # Install runtime system dependencies
 RUN apt-get update && apt-get install -y \
