@@ -1,18 +1,16 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: v4.5.0
     hooks:
       - id: check-ast
       - id: check-builtin-literals
       - id: check-yaml
+      - id: fix-encoding-pragma
+        args:
+          - --remove
       - id: mixed-line-ending
         args:
           - --fix=lf
-
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.0
-    hooks:
-    -   id: pyupgrade
 
   - repo: https://github.com/pycqa/isort
     rev: 7.0.0
