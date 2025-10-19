@@ -3997,35 +3997,22 @@ def process_bounty_payout(request):
                     status=400,
                 )
 
-            # Step 2: Find matching tier or use closest one
+            # Step 2: Find exact matching tier only (no rounding up)
             tiers = sponsors_listing.get("tiers", {}).get("nodes", [])
             target_amount_cents = bounty_amount * 100
 
-            # Find exact match or next tier up (never downgrade)
+            # Find exact match only
             matching_tier = None
             for tier in tiers:
                 if tier.get("monthlyPriceInCents") == target_amount_cents:
                     matching_tier = tier
                     break
 
-            # If no exact match, find next tier up (never pay less than bounty)
-            if not matching_tier and tiers:
-                # Sort tiers by price ascending
-                sorted_tiers = sorted(tiers, key=lambda t: t.get("monthlyPriceInCents", 0))
-                # Find first tier >= target amount
-                for tier in sorted_tiers:
-                    if tier.get("monthlyPriceInCents", 0) >= target_amount_cents:
-                        matching_tier = tier
-                        logger.warning(
-                            f"No exact tier match for ${bounty_amount}, using next tier up: ${tier.get('monthlyPriceInCents', 0) / 100}"
-                        )
-                        break
-
             if not matching_tier:
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": f"No sponsorship tiers available for {assignee_username}. They need to set up sponsor tiers first.",
+                        "error": f"No exact sponsorship tier found for ${bounty_amount}. User {assignee_username} needs to create a tier matching this exact amount.",
                     },
                     status=400,
                 )
