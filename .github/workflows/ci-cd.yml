@@ -104,7 +104,12 @@ jobs:
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
+        # Note: Selenium tests are tagged with @tag('serial') to avoid SQLite concurrency issues
+        # The test database uses file-based SQLite to prevent "cannot open savepoint" errors
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+      - name: Cleanup test database
+        if: always()
+        run: rm -f test_db.sqlite3
 
   docker-test:
     runs-on: ubuntu-latest

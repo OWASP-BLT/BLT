@@ -330,17 +330,34 @@ else:
     # But make sure we keep the EMAIL_BACKEND setting from above
     pass
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+# Database configuration
+# Use file-based SQLite for testing to avoid transaction/savepoint issues
+if TESTING:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "test_db.sqlite3"),
+            "OPTIONS": {
+                "timeout": 30,  # Increase timeout for concurrent access
+            },
+            "TEST": {
+                "NAME": os.path.join(BASE_DIR, "test_db.sqlite3"),
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        }
+    }
 
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
+    if not TESTING:
+        DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
