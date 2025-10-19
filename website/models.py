@@ -1705,6 +1705,10 @@ class GitHubIssue(models.Model):
         related_name="github_issue_p2p_payments",
     )
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
+    # Sponsors cancellation tracking (observability for immediate-cancel flow)
+    sponsors_cancellation_failed = models.BooleanField(default=False)
+    sponsors_cancellation_attempts = models.IntegerField(default=0)
+    sponsors_cancellation_last_attempt = models.DateTimeField(null=True, blank=True)
     # Related pull requests
     linked_pull_requests = models.ManyToManyField(
         "self",

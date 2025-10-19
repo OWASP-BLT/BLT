@@ -2849,10 +2849,9 @@ class BountyPayoutsView(ListView):
                                         logger.warning(
                                             f"GitHub API returned {response.status_code} for user {assignee_username}"
                                         )
-                                except Exception as e:
-                                    error_msg = "Error fetching GitHub user data"
-                                    logger.exception(f"{error_msg} for {assignee_username}")
-                        except Exception as e:
+                                except Exception:
+                                    logger.exception(f"Error fetching GitHub user data for {assignee_username}")
+                        except Exception:
                             logger.exception(f"Error creating contributor for assignee {assignee_username}")
                             assignee_contributor = None
 
@@ -2974,9 +2973,9 @@ class BountyPayoutsView(ListView):
 
                 msg = f"Successfully added {count} new closed issues with bounty."
                 messages.success(request, msg)
-            except Exception as e:
-                error_message = "Error fetching issues from GitHub"
-                messages.error(request, f"{error_message}: {str(e)}")
+            except Exception:
+                logger.exception("Error fetching issues from GitHub in refresh_issues action")
+                messages.error(request, "Error fetching issues from GitHub. Please try again later.")
 
         elif action == "pay_bounty":
             # Record bounty payment (superusers only)
@@ -3045,9 +3044,9 @@ class BountyPayoutsView(ListView):
                             )
                     except GitHubIssue.DoesNotExist:
                         messages.error(request, "Issue not found")
-                    except Exception as e:
-                        error_message = "Error recording payment"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                    except Exception:
+                        logger.exception("Error recording payment in pay_bounty action")
+                        messages.error(request, "Error recording payment. Please try again later.")
 
         elif action == "delete_issue":
             # Delete an issue (superusers only)
@@ -3068,9 +3067,9 @@ class BountyPayoutsView(ListView):
                         messages.success(request, f"Successfully deleted issue: {issue_title}")
                     except GitHubIssue.DoesNotExist:
                         messages.error(request, "Issue not found")
-                    except Exception as e:
-                        error_message = "Error deleting issue"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                    except Exception:
+                        logger.exception("Error deleting issue in delete_issue action")
+                        messages.error(request, "Error deleting issue. Please try again later.")
 
         elif action == "refresh_assignee":
             # Refresh assignee for an issue (staff only)
@@ -3276,9 +3275,9 @@ class BountyPayoutsView(ListView):
 
                     except GitHubIssue.DoesNotExist:
                         messages.error(request, "Issue not found")
-                    except Exception as e:
-                        error_message = "Error refreshing linked pull requests"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                    except Exception:
+                        logger.exception("Error refreshing linked pull requests in refresh_pull_requests action")
+                        messages.error(request, "Error refreshing linked pull requests. Please try again later.")
 
         return redirect("bounty_payouts")
 
@@ -3813,10 +3812,7 @@ def process_bounty_payout(request):
             else:
                 error_msg = f"Failed to fetch issue from GitHub API (HTTP {response.status_code}). Please verify the issue URL and try again."
 
-            return JsonResponse(
-                {"success": False, "error": error_msg},
-                status=400
-            )
+            return JsonResponse({"success": False, "error": error_msg}, status=400)
 
         issue_data = response.json()
 
@@ -4168,7 +4164,7 @@ def process_bounty_payout(request):
                         time.sleep(2**attempt)
 
                 except requests.exceptions.RequestException as cancel_error:
-                    logger.exception(f"Network error cancelling sponsorship (attempt {attempt + 1})")
+                    logger.exception("Network error cancelling sponsorship")
                     if attempt < max_retries - 1:
                         time.sleep(2**attempt)
 
@@ -4201,6 +4197,36 @@ This will prevent recurring monthly charges!
 Note: Consider adding database fields to GitHubIssue model for tracking failed cancellations.
                     """,
                 )
+
+                # Update DB flags to indicate failure for observability
+                try:
+                    from django.utils import timezone
+
+                    repo_url = f"https://github.com/{owner}/{repo_name}"
+                    repo, _ = Repo.objects.get_or_create(
+                        repo_url=repo_url,
+                        defaults={
+                            "name": repo_name,
+                            "slug": f"{owner}-{repo_name}",
+                        },
+                    )
+                    gh_issue, _ = GitHubIssue.objects.get_or_create(
+                        issue_id=issue_data["id"],
+                        repo=repo,
+                        defaults={
+                            "url": issue_url,
+                            "title": issue_data["title"],
+                            "state": issue_data["state"],
+                            "created_at": parse_datetime(issue_data["created_at"]),
+                            "updated_at": parse_datetime(issue_data["updated_at"]),
+                        },
+                    )
+                    gh_issue.sponsors_cancellation_failed = True
+                    gh_issue.sponsors_cancellation_attempts = max_retries
+                    gh_issue.sponsors_cancellation_last_attempt = timezone.now()
+                    gh_issue.save()
+                except Exception:
+                    logger.exception("Failed to update GitHubIssue with cancellation failure flags")
 
                 # Return error to prevent marking as paid
                 return JsonResponse(
@@ -4242,6 +4268,10 @@ Note: Consider adding database fields to GitHubIssue model for tracking failed c
         # Mark as paid with actual GitHub Sponsors transaction ID
         github_issue.sponsors_tx_id = sponsorship_id
         github_issue.p2p_payment_created_at = timezone.now()
+        # Clear failure flags if any from prior attempts
+        github_issue.sponsors_cancellation_failed = False
+        github_issue.sponsors_cancellation_attempts = 0
+        github_issue.sponsors_cancellation_last_attempt = None
         github_issue.save()
 
         logger.info(
