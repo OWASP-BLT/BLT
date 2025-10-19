@@ -3794,6 +3794,17 @@ def process_bounty_payout(request):
         if not issue_number.isdigit():
             return JsonResponse({"success": False, "error": "Invalid issue number"}, status=400)
 
+        # SECURITY: Ensure the target repo is authorized for bounty payouts
+        # Prevents attackers from creating fake issues in their own repos to drain budget
+        allowed_repos = getattr(settings, "BLT_ALLOWED_BOUNTY_REPOS", {"OWASP-BLT/BLT"})
+        repo_key = f"{owner}/{repo_name}"
+        if repo_key not in allowed_repos:
+            logger.warning(f"Attempted bounty payout for unauthorized repository: {repo_key}")
+            return JsonResponse(
+                {"success": False, "error": "Repository is not eligible for automated bounty payouts"},
+                status=403,
+            )
+
         # Fetch issue from GitHub API
         headers = {}
         if settings.GITHUB_TOKEN:
