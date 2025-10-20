@@ -101,7 +101,7 @@ If you encounter conflicts, it might be set to another port (e.g., 5433 in some 
   docker-compose up
   ```
 
-   **Note:** If you encounter `ModuleNotFoundError: No module named 'django'` at runtime, see the **Troubleshooting** section below. Verify the Dockerfile has the correct `.venv/bin` in PATH, ensure `.dockerignore` excludes `.venv`, and rebuild with `docker-compose build --no-cache`.
+   **Note:** If you encounter `ModuleNotFoundError: No module named 'django'` at runtime, see the **Troubleshooting** section below. Verify the Dockerfile has the correct `.venv/bin` in PATH, ensure `.venv` is listed in `.dockerignore`, and rebuild with `docker-compose build --no-cache`.
 
 - #### Access the application
 
