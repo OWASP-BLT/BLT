@@ -16,7 +16,8 @@
         <div class="w-64 bg-white rounded-lg shadow-sm p-6 mr-8 h-fit">
             <h2 class="text-xl font-semibold mb-4 text-[#e74c3c]">Categories</h2>
             <ul class="space-y-2">
-                <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-50 {% if not selected_category %}bg-[#e74c3c] text-white{% endif %}"
+                <li class="sidebar-category-item flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-50 {% if not selected_category %}bg-[#e74c3c] text-white{% endif %}"
+                    data-category-id=""
                     onclick="filterByCategory('')">
                     <span>All Categories</span>
                     <span class="px-3 py-1 rounded-full text-sm font-medium {% if not selected_category %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
@@ -24,7 +25,8 @@
                     </span>
                 </li>
                 {% for category in categories %}
-                    <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-50 {% if selected_category == category.id %}bg-[#e74c3c] text-white{% endif %}"
+                    <li class="sidebar-category-item flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-50 {% if selected_category == category.id %}bg-[#e74c3c] text-white{% endif %}"
+                        data-category-id="{{ category.id }}"
                         onclick="filterByCategory('{{ category.id }}')">
                         <span>{{ category.name }}</span>
                         <span class="px-3 py-1 rounded-full text-sm font-medium {% if selected_category == category.id %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
@@ -356,15 +358,6 @@
         .catch(error => console.error('Error:', error));
     }
 
-    function filterByCategory(categoryId) {
-        const url = new URL(window.location.href);
-        if (categoryId) {
-            url.searchParams.set('category', categoryId);
-        } else {
-            url.searchParams.delete('category');
-        }
-        window.location.href = url.toString();
-    }
 
     // Initialize voting when the page loads
     document.addEventListener('DOMContentLoaded', initializeVoting);
@@ -377,4 +370,5 @@
         }
     }
     </script>
+    <script src="{% static 'js/forum.js' %}"></script>
 {% endblock content %}

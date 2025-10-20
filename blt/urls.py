@@ -116,6 +116,7 @@ from website.views.core import (
     view_pr_analysis,
     vote_forum_post,
     website_stats,
+    forum_filter,
 )
 from website.views.daily_reminders import reminder_settings, send_test_reminder
 from website.views.education import (
@@ -936,6 +937,7 @@ urlpatterns = [
     path("weekly-report/", weekly_report, name="weekly_report"),
     path("forum/add/", add_forum_post, name="add_forum_post"),
     path("forum/", view_forum, name="view_forum"),
+    path("forum/filter/", forum_filter, name="forum_filter"),
     path("forum/vote/", vote_forum_post, name="vote_forum_post"),
     path("forum/set-vote-status/", set_vote_status, name="set_vote_status"),
     path("forum/comment/", add_forum_comment, name="add_forum_comment"),

@@ -20,6 +20,8 @@ from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from bs4 import BeautifulSoup
+from django.views.decorators.http import require_GET
+from django.core.paginator import Paginator
 from dj_rest_auth.registration.views import SocialAccountDisconnectView as BaseSocialAccountDisconnectView
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
@@ -40,7 +42,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -912,6 +913,44 @@ def view_forum(request):
         request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
     )
 
+
+def forum_filter(request):
+    """Handle AJAX requests for forum filtering"""
+    category_id = request.GET.get("category")
+    page = request.GET.get("page", 1)
+
+    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+
+    if category_id:
+        posts = posts.filter(category_id=category_id)
+        paginator = Paginator(posts, 20)  # 20 posts per page
+        posts = paginator.get_page(page)
+
+    posts_data = []
+    for post in posts:
+        posts_data.append(
+            {
+                "id": post.id,
+                "title": post.title,
+                "description": post.description or "",
+                "user": str(post.user) if post.user else "Anonymous",
+                "created": post.created.isoformat(),
+                "status": post.status,
+                "status_display": post.get_status_display(),
+                "category": post.category.name if post.category else None,
+                "up_votes": post.up_votes or 0,
+                "down_votes": post.down_votes or 0,
+                "comments_count": post.comments.count(),
+                "is_pinned": post.is_pinned,
+            }
+        )
+
+    return JsonResponse({
+        "posts": posts_data,
+        "page": posts.number,
+        "total_pages": paginator.num_pages,
+        "total_count": paginator.count
+    })
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
