@@ -20,8 +20,6 @@ from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from bs4 import BeautifulSoup
-from django.views.decorators.http import require_GET
-from django.core.paginator import Paginator
 from dj_rest_auth.registration.views import SocialAccountDisconnectView as BaseSocialAccountDisconnectView
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
@@ -33,6 +31,7 @@ from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.paginator import Paginator
 from django.db import connection, models
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
@@ -42,6 +41,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -914,20 +914,22 @@ def view_forum(request):
     )
 
 
+@require_GET
 def forum_filter(request):
     """Handle AJAX requests for forum filtering"""
     category_id = request.GET.get("category")
     page = request.GET.get("page", 1)
 
-    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
-
+    # UseD annotate to avoid N+1 on comments counts
+    qs = ForumPost.objects.select_related("user", "category").annotate(comments_count=Count("comments")).all()
     if category_id:
-        posts = posts.filter(category_id=category_id)
-        paginator = Paginator(posts, 20)  # 20 posts per page
-        posts = paginator.get_page(page)
+        qs = qs.filter(category_id=category_id)
+
+    paginator = Paginator(qs, 20)  # 20 posts per page
+    page_obj = paginator.get_page(page)
 
     posts_data = []
-    for post in posts:
+    for post in page_obj.object_list:
         posts_data.append(
             {
                 "id": post.id,
@@ -940,17 +942,20 @@ def forum_filter(request):
                 "category": post.category.name if post.category else None,
                 "up_votes": post.up_votes or 0,
                 "down_votes": post.down_votes or 0,
-                "comments_count": post.comments.count(),
+                "comments_count": getattr(post, "comments_count", 0),
                 "is_pinned": post.is_pinned,
             }
         )
 
-    return JsonResponse({
-        "posts": posts_data,
-        "page": posts.number,
-        "total_pages": paginator.num_pages,
-        "total_count": paginator.count
-    })
+    return JsonResponse(
+        {
+            "posts": posts_data,
+            "page": page_obj.number,
+            "total_pages": paginator.num_pages,
+            "total_count": paginator.count,
+        }
+    )
+
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter

@@ -96,6 +96,7 @@ from website.views.core import (
     facebook_callback,
     features_view,
     find_key,
+    forum_filter,
     github_callback,
     google_callback,
     home,
@@ -116,7 +117,6 @@ from website.views.core import (
     view_pr_analysis,
     vote_forum_post,
     website_stats,
-    forum_filter,
 )
 from website.views.daily_reminders import reminder_settings, send_test_reminder
 from website.views.education import (
