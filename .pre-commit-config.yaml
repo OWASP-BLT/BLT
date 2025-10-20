@@ -34,19 +34,6 @@ repos:
           - --reformat
           - --lint
 
-  # uv integration hooks
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.3
-    hooks:
-      - id: uv-lock
-      - id: uv-export
-        args:
-          - --frozen
-          - --no-hashes
-          - --no-emit-project
-          - --all-groups
-          - --output-file=requirements-dev.txt
-
   - repo: local
     hooks:
       - id: check-style-tags
