@@ -101,6 +101,8 @@ If you encounter conflicts, it might be set to another port (e.g., 5433 in some 
   docker-compose up
   ```
 
+   **Note:** If you encounter `ModuleNotFoundError: No module named 'django'` at runtime, see the **Troubleshooting** section below. Verify the Dockerfile has the correct `.venv/bin` in PATH, ensure `.dockerignore` excludes `.venv`, and rebuild with `docker-compose build --no-cache`.
+
 - #### Access the application
 
 - Open your browser and navigate to:
@@ -231,13 +233,15 @@ If you run into issues during the setup, here are some common solutions:
 
 ### 1. UV Virtual Environment Issues
 
-The error message you're encountering suggests that the resolver is unable to find installation candidates with your current constraints.
-Below are the temporary solutions.
+The error message you're encountering suggests that the resolver is unable to find installation candidates with your current constraints. Additionally, if you've recently run Docker builds, your local `.venv` may have been corrupted or owned by root (due to Docker layer caching before `.venv` was added to `.dockerignore`).
+Below are solutions.
 
-If UV reports "linked to a non-existent interpreter" or permission denied errors:
+**If UV reports "linked to a non-existent interpreter" or permission denied errors:**
 
-1. Delete the local .venv: `rm -rf .venv`
-2. Recreate it: `uv sync`
+1. **Quick fix (recommended):** Fix ownership with `sudo chown -R $USER:$USER .venv`, then retry.
+2. **Full reset:** Delete and recreate: `rm -rf .venv && uv sync`
+
+**To prevent recurrence:** Ensure your `.dockerignore` includes `.venv` to prevent Docker from caching the directory across builds.
 
 ### 2. Cannot install nltk, distlib, certifi
 
