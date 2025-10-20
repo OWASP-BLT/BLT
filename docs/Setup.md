@@ -114,16 +114,16 @@ http://localhost:8000/
  cd BLT
 
  # Create tables in the database
- python manage.py migrate
+ uv run python manage.py migrate
 
  # Create a super user
- python manage.py createsuperuser
+ uv run python manage.py createsuperuser
 
  # Collect static files
- python manage.py collectstatic
+ uv run python manage.py collectstatic
 
  # Run the server
- python manage.py runserver
+ uv run python manage.py runserver
 ```
 
 #### Ready to go
@@ -150,7 +150,7 @@ pyenv install 3.11.2
 
 Note: Project root folder already contains `.python-version`, so pyenv can recognize the local version to use for the current project.
 
-#### Setup virtual environment using poetry
+#### Setup virtual environment using uv
 
 Ensure that `python -V` returns the correct python version for the project
 
@@ -164,30 +164,27 @@ brew install postgresql
 sudo apt-get install postgresql
 
 # --- Setup Virtual Environment ---
-# Install Poetry
-pip install poetry
+# Install uv (https://docs.astral.sh/uv/)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Activate virtual environment
-poetry shell
-
-# Install required dependencies
-poetry install
+# Install dependencies and create virtualenv from pyproject
+uv sync
 
 # --- Project setup ---
 # Create tables in the database
-python manage.py migrate
+uv run python manage.py migrate
 
 # Load initial data
-python3 manage.py loaddata website/fixtures/initial_data.json
+uv run python manage.py loaddata website/fixtures/initial_data.json
 
 # Create a super user
-python manage.py createsuperuser
+uv run python manage.py createsuperuser
 
 # Collect static files
-python manage.py collectstatic
+uv run python manage.py collectstatic
 
 # Run the server
-python manage.py runserver
+uv run python manage.py runserver
 ```
 
 #### Ready to go now
@@ -203,13 +200,13 @@ Add a Domain `http://127.0.0.1:8000/admin/website/domain/` with the name 'owasp.
 If you run into issues during the setup, here are some common solutions:
 
 ### 1.Cannot install nltk, distlib, certifi 
-The error message you're encountering suggests that the package manager (likely poetry) is unable to find installation candidates.
+The error message you're encountering suggests that the resolver is unable to find installation candidates with your current constraints.
 Below are the temporary solutions.
 
 ```sh
-poetry cache clear --all pypi
+uv cache prune
 
-#For Docker method only
+# For Docker method only
 docker-compose build --no-cache 
 ```
 Feel free to contribute by solving this [issue](https://github.com/OWASP-BLT/BLT/issues/2659).
