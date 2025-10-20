@@ -6,7 +6,7 @@
 
 Before proceeding with any setup, you need to configure environment variables.
 
-### 1.Adding environment variables to .env:
+### 1.Adding environment variables to .env
 
 - We provide a .env.example file that demonstrates how the environment is set up.
 
@@ -21,7 +21,7 @@ cp .env.example .env
 
 ## Step 2: Choose your setup method (Docker recommended)
 
-#### Prerequisites for Docker method
+### Prerequisites for Docker method
 
 Ensure the following are installed on your system before proceeding:
 
@@ -38,9 +38,11 @@ Before building the Docker images, ensure all files, especially scripts like `en
 1. If you're working on a Windows machine or collaborating across different operating systems, ensure consistent line endings:
 
    - Set `core.autocrlf=input` in Git configurations to enforce LF-style line endings in the repository while preserving your local OS line endings.
+
      ```bash
      git config --global core.autocrlf input
      ```
+
    - Alternatively, in VS Code, you can manually change the line endings:
      - Open the file in the editor.
      - Look for the line ending type displayed in the bottom-right corner of the VS Code window (e.g., CRLF or LF).
@@ -50,13 +52,16 @@ Before building the Docker images, ensure all files, especially scripts like `en
    For **local development**, make these adjustments in `/blt/settings.py` to enable access over **HTTP**:
 
    - Set:
+
      ```python
      SECURE_SSL_REDIRECT = False
      SECURE_PROXY_SSL_HEADER = None
      ```
 
 3. To convert to LF (if needed):
+
    - Using `dos2unix`:
+
      ```bash
      dos2unix entrypoint.sh
      ```
@@ -84,20 +89,26 @@ If you encounter conflicts, it might be set to another port (e.g., 5433 in some 
 
   ```
 
-- #### Build the Docker images:
+- ### Build the Docker images
+
   ```bash
   docker-compose build
   ```
-- #### Start the containers:
+
+- #### Start the containers
+
   ```bash
   docker-compose up
   ```
-- #### Access the application:
+
+- #### Access the application
 
 - Open your browser and navigate to:
-  http://localhost:8000/
-- #### Prevent Automatic Redirects to HTTPS:
-- Use Incognito Mode (Private Browsing): Open the browser in incognito mode and access the application using http://localhost:8000.
+  `http://localhost:8000/`
+
+- #### Prevent Automatic Redirects to HTTPS
+
+- Use Incognito Mode (Private Browsing): Open the browser in incognito mode and access the application using `http://localhost:8000`
 - Ensure you're explicitly using http:// instead of https:// in the URL.
 
 ### Notes
@@ -109,7 +120,7 @@ If you encounter conflicts, it might be set to another port (e.g., 5433 in some 
 
 - If container fails execute ./entrypoint.sh due to permission error, use `chmod +x ./entrypoint.sh`
 - If you encounter ./entrypoint.sh was not found, then make sure you are using `LF` line ending in place of `CRLF`
-- If you encounter ERR_SSL_PROTOCOL_ERROR when you try to access the server on http://localhost:8000, make sure the Browser doesn't automatically redirect to https://localhost:8000. If it keeps doing this behaviour, then you can set `SECURE_SSL_REDIRECT` to `False` locally only(search for it /blt/settings.py), stop the container and start it again.
+- If you encounter ERR_SSL_PROTOCOL_ERROR when you try to access the server on `http://localhost:8000`, make sure the Browser doesn't automatically redirect to `https://localhost:8000`. If it keeps doing this behaviour, then you can set `SECURE_SSL_REDIRECT` to `False` locally only(search for it /blt/settings.py), stop the container and start it again.
 - If you encounter the same error indicating SSL_REDIRECT in the logs while building the container, set `SECURE_SSL_REDIRECT` to `False`
 
 ### Option 2.Setting up development server using vagrant
