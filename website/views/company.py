@@ -34,7 +34,6 @@ from website.models import (
     Organization,
     OrganizationAdmin,
     SlackIntegration,
-    UserProfile,
     Winner,
 )
 from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
@@ -524,9 +523,6 @@ class OrganizationDashboardIntegrations(View):
 class OrganizationDashboardTeamOverviewView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        sort_field = request.GET.get("sort", "date")
-        sort_direction = request.GET.get("direction", "desc")
-
         # For authenticated users, show organizations they have access to
         if request.user.is_authenticated:
             organizations = (
@@ -540,54 +536,119 @@ class OrganizationDashboardTeamOverviewView(View):
 
         organization_obj = Organization.objects.filter(id=id).first()
 
-        team_members = UserProfile.objects.filter(team=organization_obj)
-        team_member_users = [member.user for member in team_members]
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
 
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            filter_type = request.GET.get("filter_type")
-            filter_value = request.GET.get("filter_value")
+        # Get team members from organization's admin and managers
+        team_member_users = []
+        if organization_obj.admin:
+            team_member_users.append(organization_obj.admin)
 
-            reports = DailyStatusReport.objects.filter(user__in=team_member_users)
+        # Add all managers
+        managers = organization_obj.managers.all()
+        team_member_users.extend(managers)
 
-            if filter_type == "user":
-                reports = reports.filter(user_id=filter_value)
-            elif filter_type == "date":
-                reports = reports.filter(date=filter_value)
-            elif filter_type == "goal":
-                reports = reports.filter(goal_accomplished=filter_value == "true")
-            elif filter_type == "task":
-                reports = reports.filter(previous_work__icontains=filter_value)
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_team_members = []
+        for user in team_member_users:
+            if user.id not in seen:
+                seen.add(user.id)
+                unique_team_members.append(user)
 
-            data = []
-            for report in reports:
-                data.append(
+        team_member_users = unique_team_members
+
+        # Get UserProfile objects for template rendering
+        team_members = []
+        for user in team_member_users:
+            try:
+                profile = user.userprofile
+                # Create a wrapper object with expected attributes
+                member_data = type(
+                    "obj",
+                    (object,),
                     {
-                        "username": report.user.username,
-                        "avatar_url": (
-                            report.user.userprofile.user_avatar.url if report.user.userprofile.user_avatar else None
-                        ),
-                        "date": report.date.strftime("%B %d, %Y"),
-                        "previous_work": report.previous_work,
-                        "next_plan": report.next_plan,
-                        "blockers": report.blockers,
-                        "goal_accomplished": report.goal_accomplished,
-                        "current_mood": report.current_mood,
-                    }
+                        "user": user,
+                        "user_avatar": profile.user_avatar if hasattr(profile, "user_avatar") else None,
+                        "role": "Admin" if user == organization_obj.admin else "Manager",
+                    },
+                )()
+                team_members.append(member_data)
+            except Exception:
+                # If userprofile doesn't exist, create basic member data
+                member_data = type(
+                    "obj",
+                    (object,),
+                    {
+                        "user": user,
+                        "user_avatar": None,
+                        "role": "Admin" if user == organization_obj.admin else "Manager",
+                    },
+                )()
+                team_members.append(member_data)
+
+        # Handle AJAX requests for filtered status reports
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            try:
+                filter_type = request.GET.get("filter_type")
+                filter_value = request.GET.get("filter_value")
+
+                logger.info(
+                    f"AJAX request for team overview: filter_type={filter_type}, filter_value={filter_value}, team_size={len(team_member_users)}"
                 )
-            return JsonResponse({"data": data})
 
-        daily_status_reports = DailyStatusReport.objects.filter(user__in=team_member_users)
+                reports = DailyStatusReport.objects.filter(user__in=team_member_users).order_by("-date")
 
-        sort_prefix = "-" if sort_direction == "desc" else ""
-        sort_mapping = {
-            "date": "date",
-            "username": "user__username",
-            "mood": "current_mood",
-            "goal": "goal_accomplished",
-        }
+                logger.info(f"Total reports before filter: {reports.count()}")
 
-        if sort_field in sort_mapping:
-            daily_status_reports = daily_status_reports.order_by(f"{sort_prefix}{sort_mapping[sort_field]}")
+                if filter_type == "user" and filter_value:
+                    reports = reports.filter(user_id=filter_value)
+                elif filter_type == "date" and filter_value:
+                    reports = reports.filter(date=filter_value)
+                elif filter_type == "goal" and filter_value:
+                    reports = reports.filter(goal_accomplished=filter_value == "true")
+                elif filter_type == "task" and filter_value:
+                    reports = reports.filter(previous_work__icontains=filter_value)
+
+                logger.info(f"Reports after filter: {reports.count()}")
+
+                data = []
+                for report in reports:
+                    try:
+                        avatar_url = (
+                            report.user.userprofile.user_avatar.url if report.user.userprofile.user_avatar else None
+                        )
+                    except Exception as e:
+                        logger.warning(f"Error getting avatar for user {report.user.username}: {e}")
+                        avatar_url = None
+
+                    data.append(
+                        {
+                            "username": report.user.username,
+                            "avatar_url": avatar_url,
+                            "date": report.date.strftime("%B %d, %Y"),
+                            "previous_work": report.previous_work,
+                            "next_plan": report.next_plan,
+                            "blockers": report.blockers,
+                            "goal_accomplished": report.goal_accomplished,
+                            "current_mood": report.current_mood,
+                        }
+                    )
+
+                logger.info(f"Returning {len(data)} reports")
+                return JsonResponse({"data": data})
+
+            except Exception as e:
+                logger.error(f"Error in team overview AJAX: {e}", exc_info=True)
+                return JsonResponse({"error": "An error occurred while fetching reports", "data": []}, status=500)
+
+        # Get daily status reports ordered by date (most recent first)
+        daily_status_reports = DailyStatusReport.objects.filter(user__in=team_member_users).order_by("-date")
+
+        logger.info(
+            f"Team overview page load: org_id={id}, members={len(team_members)}, reports={daily_status_reports.count()}"
+        )
 
         context = {
             "organization": id,
@@ -595,8 +656,6 @@ class OrganizationDashboardTeamOverviewView(View):
             "organization_obj": organization_obj,
             "team_members": team_members,
             "daily_status_reports": daily_status_reports,
-            "current_sort": sort_field,
-            "current_direction": sort_direction,
         }
 
         return render(request, "organization/dashboard/organization_team_overview.html", context=context)
