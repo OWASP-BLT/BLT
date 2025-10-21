@@ -486,8 +486,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Reviewed PR Leaderboard - Fixed query to properly count reviews
         reviewed_pr_leaderboard = (
-            GitHubReview.objects
-            .filter(reviewer__user__isnull=False)
+            GitHubReview.objects.filter(reviewer__user__isnull=False)
             .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
