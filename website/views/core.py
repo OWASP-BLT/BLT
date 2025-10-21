@@ -920,10 +920,17 @@ def forum_filter(request):
     category_id = request.GET.get("category")
     page = request.GET.get("page", 1)
 
-    # UseD annotate to avoid N+1 on comments counts
-    qs = ForumPost.objects.select_related("user", "category").annotate(comments_count=Count("comments")).all()
+    # Use annotate to avoid N+1 on comment counts and order deterministically for pagination
+    qs = (
+        ForumPost.objects.select_related("user", "category")
+        .annotate(comments_count=Count("comments"))
+        .order_by("-is_pinned", "-created", "-id")
+    )
     if category_id:
-        qs = qs.filter(category_id=category_id)
+        try:
+            qs = qs.filter(category_id=int(category_id))
+        except (TypeError, ValueError):
+            return JsonResponse({"error": "Invalid category"}, status=400)
 
     paginator = Paginator(qs, 20)  # 20 posts per page
     page_obj = paginator.get_page(page)
