@@ -25,11 +25,11 @@
     </div>
     <div class="flex flex-col md:gap-10 px-4  gap-2 md:px-0">
         <div class="flex justify-center gap-6 flex-wrap">
-            <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Points Leaderboard</div>
+            <div class=" flex-1  border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">Points Leaderboard</div>
                 <div class=" list-group w-full p-4">
                     {% if not leaderboard %}
-                        <p class="text-red-500 text-center font-medium">No data for this month!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No data for this month!</p>
                     {% else %}
                         <div class="flex flex-col gap-2">
                             {% for leader in leaderboard %}
@@ -73,8 +73,10 @@
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class=" text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Pull Request Leaderboard</div>
+            <div class=" flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class=" text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">
+                    Pull Request Leaderboard
+                </div>
                 <div class=" list-group w-full p-4">
                     {% if pr_leaderboard %}
                         <div class="flex flex-col gap-2">
@@ -108,40 +110,46 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No pull request data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No pull request data available!</p>
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Code Review Leaderboard</div>
+            <div class=" flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">Code Review Leaderboard</div>
                 <div class="list-group p-4">
                     {% if code_review_leaderboard %}
                         <div class="flex flex-col gap-2">
                             {% for leader in code_review_leaderboard %}
                                 <div class="flex justify-between items-center">
                                     <div class="flex  gap-2 items-center truncate">
-                                        {% if leader.reviews__reviewer__user__username %}
-                                            <img src="https://github.com/{{ leader.reviews__reviewer__user__username }}.png"
+                                        {% if leader.reviewer__user__username %}
+                                            <img src="https://github.com/{{ leader.reviewer__user__username }}.png"
                                                  class=" size-11 select-none border border-gray-200 rounded-full"
-                                                 alt="{{ leader.reviews__reviewer__user__username }}"
+                                                 alt="{{ leader.reviewer__user__username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
-                                            <img src="{% gravatar_url leader.reviews__reviewer__user__email 50 %}"
+                                            <img src="{% gravatar_url leader.reviewer__user__email 50 %}"
                                                  class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
-                                        <a href="{% url 'profile' slug=leader.reviews__reviewer__user__username %}"
-                                           class="text-lg transition-all duration-200">
-                                            {{ leader.reviews__reviewer__user__username }}
-                                        </a>
-                                        <a href="https://github.com/{{ leader.reviews__reviewer__user__username }}"
-                                           target="_blank"
-                                           class="ml-2">
-                                            <i class="fab fa-github text-xl"></i>
-                                        </a>
+                                        {% if leader.reviewer__user__username %}
+                                            <a href="{% url 'profile' slug=leader.reviewer__user__username %}"
+                                               class="text-lg transition-all duration-200">
+                                                {{ leader.reviewer__user__username }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-lg text-gray-500">Unknown User</span>
+                                        {% endif %}
+                                        {% if leader.reviewer__user__username %}
+                                            <a href="https://github.com/{{ leader.reviewer__user__username }}"
+                                               target="_blank"
+                                               class="ml-2">
+                                                <i class="fab fa-github text-xl"></i>
+                                            </a>
+                                        {% endif %}
                                     </div>
                                     <span class="pull-right badge bg-gray-100 flex-shrink-0 rounded-md py-1 px-2 select-none">Reviews: {{ leader.total_reviews }}</span>
                                 </div>
@@ -149,14 +157,14 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No code review data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No code review data available!</p>
                     {% endif %}
                 </div>
             </div>
         </div>
         <div class="flex justify-center gap-6 flex-wrap">
-            <div class="flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Top Visitors</div>
+            <div class="flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">Top Visitors</div>
                 <div class="list-group w-full p-4">
                     {% if top_visitors %}
                         <div class="flex flex-col gap-2">
@@ -188,24 +196,24 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No visitor data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No visitor data available!</p>
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Issue Bounties</div>
+            <div class=" flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">Issue Bounties</div>
                 <div class=" list-group w-full p-4">
                     {% if not issue_bounties %}
-                        <p class="text-red-500 text-center font-medium">No issue bounties data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No issue bounties data available!</p>
                     {% else %}
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Bug Bounties</div>
+            <div class=" flex-1  border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">Bug Bounties</div>
                 <div class=" list-group w-full p-4">
                     {% if not bug_bounties %}
-                        <p class="text-red-500 text-center font-medium">No bug bounties data available!</p>
+                        <p class="text-[#e74c3c] text-center font-medium">No bug bounties data available!</p>
                     {% else %}
                     {% endif %}
                 </div>
