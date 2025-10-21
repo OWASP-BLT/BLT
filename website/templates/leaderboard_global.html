@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load string_filters %}
 {% block title %}
     Global Leaderboard
 {% endblock title %}
@@ -122,8 +123,8 @@
                             {% for leader in code_review_leaderboard %}
                                 <div class="flex justify-between items-center">
                                     <div class="flex  gap-2 items-center truncate">
-                                        {% if leader.reviewer__github_url %}
-                                            <img src="https://github.com/{{ leader.reviewer__github_url|split:'/'|last }}.png"
+                                        {% if leader.github_username %}
+                                            <img src="https://github.com/{{ leader.github_username }}.png"
                                                  class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="{{ leader.reviewer__user__username }}"
                                                  width="50px"

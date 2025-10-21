@@ -477,11 +477,18 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
+        # Extract GitHub username from URL for avatar
+        for leader in pr_leaderboard:
+            if leader.get("user_profile__github_url"):
+                github_username = leader["user_profile__github_url"].rstrip("/").split("/")[-1]
+                leader["github_username"] = github_username
         context["pr_leaderboard"] = pr_leaderboard
 
         # Reviewed PR Leaderboard - Fixed query to properly count reviews
         reviewed_pr_leaderboard = (
-            GitHubReview.objects.values(
+            GitHubReview.objects
+            .filter(reviewer__user__isnull=False)
+            .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
                 "reviewer__github_url",
@@ -489,6 +496,12 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
         )
+        # Extract GitHub username from URL for avatar
+        for leader in reviewed_pr_leaderboard:
+            if leader.get("reviewer__github_url"):
+                # Extract username from https://github.com/username format
+                github_username = leader["reviewer__github_url"].rstrip("/").split("/")[-1]
+                leader["github_username"] = github_username
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         # Top visitors leaderboard
