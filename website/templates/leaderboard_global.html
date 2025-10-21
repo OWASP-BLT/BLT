@@ -122,14 +122,20 @@
                             {% for leader in code_review_leaderboard %}
                                 <div class="flex justify-between items-center">
                                     <div class="flex  gap-2 items-center truncate">
-                                        {% if leader.reviewer__user__username %}
-                                            <img src="https://github.com/{{ leader.reviewer__user__username }}.png"
+                                        {% if leader.reviewer__github_url %}
+                                            <img src="https://github.com/{{ leader.reviewer__github_url|split:'/'|last }}.png"
                                                  class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="{{ leader.reviewer__user__username }}"
                                                  width="50px"
                                                  height="50px">
-                                        {% else %}
+                                        {% elif leader.reviewer__user__email %}
                                             <img src="{% gravatar_url leader.reviewer__user__email 50 %}"
+                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 alt="username"
+                                                 width="50px"
+                                                 height="50px">
+                                        {% else %}
+                                            <img src="{% gravatar_url 'default@example.com' 50 %}"
                                                  class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
@@ -140,15 +146,13 @@
                                                class="text-lg transition-all duration-200">
                                                 {{ leader.reviewer__user__username }}
                                             </a>
+                                            {% if leader.reviewer__github_url %}
+                                                <a href="{{ leader.reviewer__github_url }}" target="_blank" class="ml-2">
+                                                    <i class="fab fa-github text-xl"></i>
+                                                </a>
+                                            {% endif %}
                                         {% else %}
                                             <span class="text-lg text-gray-500">Unknown User</span>
-                                        {% endif %}
-                                        {% if leader.reviewer__user__username %}
-                                            <a href="https://github.com/{{ leader.reviewer__user__username }}"
-                                               target="_blank"
-                                               class="ml-2">
-                                                <i class="fab fa-github text-xl"></i>
-                                            </a>
                                         {% endif %}
                                     </div>
                                     <span class="pull-right badge bg-gray-100 flex-shrink-0 rounded-md py-1 px-2 select-none">Reviews: {{ leader.total_reviews }}</span>

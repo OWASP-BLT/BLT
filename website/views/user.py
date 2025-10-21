@@ -483,7 +483,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         reviewed_pr_leaderboard = (
             GitHubReview.objects.values(
                 "reviewer__user__username",
-                "reviewer__user__email", 
+                "reviewer__user__email",
                 "reviewer__github_url",
             )
             .annotate(total_reviews=Count("id"))
