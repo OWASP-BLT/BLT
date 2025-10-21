@@ -88,3 +88,4 @@ class ForumViewsTests(TestCase):
         url = reverse("forum_filter")
         resp = self.client.post(url, {})
         self.assertEqual(resp.status_code, 405)
+        
