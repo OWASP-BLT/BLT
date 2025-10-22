@@ -109,10 +109,11 @@ def get_page_views(url_path, days=30):
 
     # Query the IP table for views of this page
     daily_views = (
-        queryset.values("created__date")
-        .annotate(total_views=models.Sum("count"))
-        .order_by("created__date")
-    )
+    queryset
+    .values("created__date")
+    .annotate(total_views=models.Sum("count"))
+    .order_by("created__date")
+)
 
     # Create a dictionary with dates as keys and view counts as values
     view_counts_dict = {}
