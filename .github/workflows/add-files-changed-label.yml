@@ -84,7 +84,13 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/labels")
           
-          ALL_REPO_LABELS=$(echo "$ALL_LABELS_RESPONSE" | jq -r '.[].name')
+          # Check if the response is an array before parsing
+          if echo "$ALL_LABELS_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            ALL_REPO_LABELS=$(echo "$ALL_LABELS_RESPONSE" | jq -r '.[].name')
+          else
+            echo "Error: Failed to fetch repository labels. Response: $ALL_LABELS_RESPONSE"
+            exit 1
+          fi
           
           # Create the label if it doesn't exist
           if ! echo "$ALL_REPO_LABELS" | grep -q "$LABEL"; then
@@ -118,7 +124,13 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels")
           
-          EXISTING_LABELS=$(echo "$PR_LABELS_RESPONSE" | jq -r '.[].name')
+          # Check if the response is an array before parsing
+          if echo "$PR_LABELS_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            EXISTING_LABELS=$(echo "$PR_LABELS_RESPONSE" | jq -r '.[].name')
+          else
+            echo "Error: Failed to fetch PR labels. Response: $PR_LABELS_RESPONSE"
+            exit 1
+          fi
           
           # Remove any existing files-changed labels
           echo "Checking for existing 'files-changed' labels to remove..."
