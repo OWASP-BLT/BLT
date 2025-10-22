@@ -1,7 +1,7 @@
 {% load custom_tags %}
 {% get_current_template as current_template %}
 {% get_current_url_path as current_url_path %}
-{% get_page_views current_url_path 30 as page_views %}
+{% get_page_views None 30 as page_views %}
 {% get_page_votes current_template as upvotes %}
 {% get_page_votes current_template "downvote" as downvotes %}
 <div id="pageStatsContainer"
