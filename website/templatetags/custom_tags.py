@@ -107,7 +107,6 @@ def get_page_views(url_path, days=30):
     if url_path:
         queryset = queryset.filter(path__icontains=url_path)
 
-
     # Query the IP table for views of this page
     daily_views = (
         queryset.values("created__date")
