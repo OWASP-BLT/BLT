@@ -115,7 +115,7 @@ def get_page_views(url_path, days=30):
 
     # First, initialize the dictionary with zeros for all dates in the range
     for i in range(days):
-        current_date = (start_day + timedelta(days=i))
+        current_date = start_day + timedelta(days=i)
         formatted_date = current_date.strftime("%Y-%m-%d")
         view_counts_dict[formatted_date] = 0
 
