@@ -1,18 +1,26 @@
+export type Role = 'user' | 'admin';
+export type BugSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type BugStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+export type ProjectStatus = 'active' | 'inactive' | 'archived';
+export type RepositoryStatus = 'active' | 'scanning' | 'completed';
+export type ISODateString = string;
+
 export interface User {
   id: number;
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: Role;
   avatar_url?: string;
-  created_at: string;
+  created_at: ISODateString;
+  bugs_reported?: number;
 }
 
 export interface Bug {
   id: number;
   title: string;
   description?: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  severity: BugSeverity;
+  status: BugStatus;
   reporter_id: number;
   reporter_name?: string;
   reporter_email?: string;
@@ -25,20 +33,20 @@ export interface Bug {
   steps_to_reproduce?: string;
   expected_behavior?: string;
   actual_behavior?: string;
-  created_at: string;
-  updated_at: string;
+  created_at: ISODateString;
+  updated_at: ISODateString;
 }
 
 export interface Project {
   id: number;
   name: string;
   description?: string;
-  status: 'active' | 'inactive' | 'archived';
+  status: ProjectStatus;
   created_by: number;
   created_by_name?: string;
   bugs_count?: number;
-  created_at: string;
-  updated_at: string;
+  created_at: ISODateString;
+  updated_at: ISODateString;
 }
 
 export interface Repository {
@@ -48,11 +56,11 @@ export interface Repository {
   language?: string;
   project_id: number;
   project_name?: string;
-  status: 'active' | 'scanning' | 'completed';
+  status: RepositoryStatus;
   last_scan?: string;
   vulnerabilities_count: number;
-  created_at: string;
-  updated_at: string;
+  created_at: ISODateString;
+  updated_at: ISODateString;
 }
 
 export interface AuthResponse {

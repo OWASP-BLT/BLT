@@ -21,6 +21,8 @@ build/
 # Wrangler
 .wrangler/
 worker/.wrangler/
+wrangler.toml
+wrangler-worker.toml
 
 # Environment variables
 .env

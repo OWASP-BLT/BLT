@@ -147,7 +147,7 @@ export default function ProjectDetail({ projectId, onClose, onDelete }: ProjectD
         </div>
 
         {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-60 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
               <div className="flex items-center space-x-3 mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-600" />

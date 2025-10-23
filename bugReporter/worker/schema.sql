@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS bug_comments (
 -- Note: Default admin user should be created via environment variables or setup script
 -- This prevents hardcoded credentials in the schema file
 
--- Insert sample projects
+-- Insert sample projects (after admin user exists)
 INSERT OR IGNORE INTO projects (name, description, created_by) 
 VALUES 
   ('OWASP BLT Core', 'Main bug tracking platform for OWASP BLT', 1),
@@ -86,6 +86,10 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_bugs_status ON bugs(status);
 CREATE INDEX IF NOT EXISTS idx_bugs_severity ON bugs(severity);
 CREATE INDEX IF NOT EXISTS idx_bugs_created_at ON bugs(created_at);
+-- Composite/covering indexes for common filters
+CREATE INDEX IF NOT EXISTS idx_bugs_project_status_created ON bugs(project_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bugs_severity_created ON bugs(severity, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_repositories_project_status ON repositories(project_id, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bugs_reporter_id ON bugs(reporter_id);
 CREATE INDEX IF NOT EXISTS idx_bugs_assignee_id ON bugs(assignee_id);
 CREATE INDEX IF NOT EXISTS idx_bugs_project_id ON bugs(project_id);

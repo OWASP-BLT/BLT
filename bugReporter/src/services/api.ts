@@ -10,7 +10,7 @@ class ApiService {
     this.token = localStorage.getItem('auth_token');
   }
 
-  private async handleUnauthorized(): Promise<void> {
+  private handleUnauthorized(): never {
     this.logout();
     window.location.href = '/login';
     throw new Error('Session expired. Please login again.');
@@ -36,7 +36,7 @@ class ApiService {
       if (!response.ok) {
         // If token is invalid, clear it and redirect to login
         if (response.status === 401) {
-          return this.handleUnauthorized();
+          this.handleUnauthorized();
         }
 
         const error = await response.json().catch(() => ({ message: 'Request failed' }));
@@ -69,9 +69,9 @@ class ApiService {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        return this.handleUnauthorized();
-      }
+        if (response.status === 401) {
+          this.handleUnauthorized();
+        }
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));
       throw new Error(error.message || 'Upload failed');
     }

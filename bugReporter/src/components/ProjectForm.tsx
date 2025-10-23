@@ -89,13 +89,14 @@ export default function ProjectForm({ onSubmit, onCancel }: ProjectFormProps) {
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
             <button
               type="submit"
               disabled={loading}

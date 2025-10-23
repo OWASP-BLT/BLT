@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 
 interface FilterOption {
@@ -67,7 +67,7 @@ export default function SearchAndFilter({
   // Update filters when props change to prevent stale references
   useEffect(() => {
     setActiveFilters(initialFilters);
-  }, [initialFilters]);
+  }, [JSON.stringify(initialFilters)]);
 
   const clearAllFilters = () => {
     setSearch('');
@@ -81,14 +81,13 @@ export default function SearchAndFilter({
   return (
     <div className="space-y-4">
       {/* Search Bar */}
-      <div className="relative" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); } }}>
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         <input
           type="text"
           placeholder={searchPlaceholder}
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); } }}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
       </div>

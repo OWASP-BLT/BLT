@@ -1,4 +1,10 @@
+-- Add admin user for testing (using PBKDF2 hash for password: admin123)
+-- Note: This is a placeholder hash - replace with actual PBKDF2 hash in production
+INSERT OR IGNORE INTO users (id, email, name, password_hash, role, created_at) VALUES 
+(1, 'admin@example.com', 'Admin User', 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', 'admin', '2024-09-28 09:00:00');
+
 -- Add a regular user for testing (using PBKDF2 hash for password: user123)
+-- Note: This is a placeholder hash - replace with actual PBKDF2 hash in production
 INSERT OR IGNORE INTO users (id, email, name, password_hash, role, created_at) VALUES 
 (2, 'user@example.com', 'Test User', 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', 'user', '2024-09-28 10:00:00');
 

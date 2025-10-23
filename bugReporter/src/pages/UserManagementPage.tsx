@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Users, Calendar, Bug, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { apiService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import type { User } from '../types';
 
 export default function UserManagementPage() {
   const { success, error: showError } = useNotification();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editRole, setEditRole] = useState<'admin' | 'user'>('user');
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+
+  const isLastAdmin = (targetId?: number) =>
+    users.filter(u => u.role === 'admin' && u.id !== targetId).length === 0;
 
   useEffect(() => {
     loadUsers();
@@ -31,12 +36,20 @@ export default function UserManagementPage() {
   const handleEditUser = (userId: number) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
+    if (currentUser?.id === user.id && isLastAdmin(user.id)) {
+      showError('Operation not allowed', 'You are the last admin and cannot change your role.');
+      return;
+    }
     setEditingUser(user);
     setEditRole(user.role as 'admin' | 'user');
   };
 
   const submitEditUser = async () => {
     if (!editingUser) return;
+    if (currentUser?.id === editingUser.id && editRole !== editingUser.role && isLastAdmin(editingUser.id)) {
+      showError('Operation not allowed', 'You are the last admin and cannot change your role.');
+      return;
+    }
     setActionLoading(editingUser.id);
     try {
       const { user } = await apiService.updateUser(editingUser.id, { role: editRole } as Partial<User>);
@@ -52,6 +65,15 @@ export default function UserManagementPage() {
 
   const handleDeleteUser = (userId: number) => {
     const user = users.find(u => u.id === userId) || null;
+    if (!user) return;
+    if (currentUser?.id === user.id) {
+      showError('Operation not allowed', 'You cannot delete your own account.');
+      return;
+    }
+    if (user.role === 'admin' && isLastAdmin(user.id)) {
+      showError('Operation not allowed', 'Cannot delete the last remaining admin.');
+      return;
+    }
     setDeleteTarget(user);
   };
 
@@ -132,14 +154,14 @@ export default function UserManagementPage() {
               <div className="mt-3 flex gap-2">
                 <button 
                   onClick={() => handleEditUser(user.id)}
-                  disabled={actionLoading === user.id}
+                  disabled={actionLoading === user.id || (user.role === 'admin' && isLastAdmin(user.id)) || currentUser?.id === user.id}
                   className="btn-secondary text-xs"
                 >
                   Edit
                 </button>
                 <button 
                   onClick={() => handleDeleteUser(user.id)}
-                  disabled={actionLoading === user.id}
+                  disabled={actionLoading === user.id || (user.role === 'admin' && isLastAdmin(user.id)) || currentUser?.id === user.id}
                   className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Delete
@@ -212,7 +234,7 @@ export default function UserManagementPage() {
                     <div className="flex flex-wrap gap-2">
                       <button 
                         onClick={() => handleEditUser(user.id)}
-                        disabled={actionLoading === user.id}
+                        disabled={actionLoading === user.id || (user.role === 'admin' && isLastAdmin(user.id)) || currentUser?.id === user.id}
                         className="text-blue-600 hover:text-blue-700 disabled:opacity-50 flex items-center space-x-1 transition-colors"
                       >
                         <Edit className="w-3 h-3" />
@@ -220,7 +242,7 @@ export default function UserManagementPage() {
                       </button>
                       <button 
                         onClick={() => handleDeleteUser(user.id)}
-                        disabled={actionLoading === user.id}
+                        disabled={actionLoading === user.id || (user.role === 'admin' && isLastAdmin(user.id)) || currentUser?.id === user.id}
                         className="text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center space-x-1 transition-colors"
                       >
                         <Trash2 className="w-3 h-3" />

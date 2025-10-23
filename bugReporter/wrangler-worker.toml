@@ -5,7 +5,7 @@ compatibility_date = "2023-09-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "bug-reporter-db"
-database_id = "660bca36-d3c5-4e1b-a495-c81cd8dc749f"
+database_id = "your-d1-database-id-here"
 
 # R2 bucket for file uploads
 [[r2_buckets]]
@@ -20,5 +20,6 @@ bucket_name = "bug-reporter-uploads"
 
 [vars]
 # These will be overridden by secrets in production
+JWT_SECRET = "dev-only-secret-replace-in-production"
 ADMIN_EMAIL = "admin@example.com"
 CORS_ORIGINS = "http://localhost:5173"

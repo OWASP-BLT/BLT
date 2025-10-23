@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, FolderOpen, GitBranch, Bug, AlertTriangle } from 'lucide-react';
 import { apiService } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 import type { DashboardStats } from '../types';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadStats();
@@ -136,25 +138,37 @@ export default function DashboardPage() {
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+          <button 
+            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+            onClick={() => navigate('/app/bugs')}
+          >
             <div className="text-lg mb-2">📊</div>
-            <div className="text-sm font-medium text-gray-900">Generate Report</div>
-            <div className="text-xs text-gray-500">Export bug statistics</div>
+            <div className="text-sm font-medium text-gray-900">View Bugs</div>
+            <div className="text-xs text-gray-500">Browse all reported bugs</div>
           </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+          <button 
+            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+            onClick={() => navigate('/app/users')}
+          >
             <div className="text-lg mb-2">👤</div>
             <div className="text-sm font-medium text-gray-900">Manage Users</div>
             <div className="text-xs text-gray-500">Add or remove users</div>
           </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+          <button 
+            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+            onClick={() => navigate('/app/projects')}
+          >
             <div className="text-lg mb-2">⚙️</div>
-            <div className="text-sm font-medium text-gray-900">System Settings</div>
-            <div className="text-xs text-gray-500">Configure platform</div>
+            <div className="text-sm font-medium text-gray-900">Manage Projects</div>
+            <div className="text-xs text-gray-500">Configure projects</div>
           </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+          <button 
+            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+            onClick={() => navigate('/app/repositories')}
+          >
             <div className="text-lg mb-2">🔍</div>
-            <div className="text-sm font-medium text-gray-900">Run Scan</div>
-            <div className="text-xs text-gray-500">Start security scan</div>
+            <div className="text-sm font-medium text-gray-900">Manage Repositories</div>
+            <div className="text-xs text-gray-500">Configure repositories</div>
           </button>
         </div>
       </div>

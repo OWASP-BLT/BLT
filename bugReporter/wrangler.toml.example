@@ -20,9 +20,11 @@ bucket_name = "bug-reporter-uploads"
 # wrangler secret put JWT_SECRET
 # wrangler secret put ADMIN_EMAIL
 # wrangler secret put CORS_ORIGINS
+# wrangler secret put R2_PUBLIC_BASE_URL
 
 [vars]
 # These will be overridden by secrets in production
 JWT_SECRET = "your-jwt-secret-here"
 ADMIN_EMAIL = "admin@example.com"
 CORS_ORIGINS = "http://localhost:5173"
+R2_PUBLIC_BASE_URL = "https://pub-your-account-id.r2.dev/bug-reporter-uploads"

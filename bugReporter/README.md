@@ -10,7 +10,7 @@ A professional bug tracking application built with React, TypeScript, Cloudflare
 - **User Management**: Admin can update roles and delete users
 - **File Uploads**: Screenshot and attachment support via Cloudflare R2
 - **Responsive UI**: Clean, modern interface with accessibility considerations
-- **Security**: bcrypt password hashing, security headers, CORS protection
+- **Security**: PBKDF2 password hashing, security headers, CORS protection
 
 ## 🚀 Quick Start (Local Dev)
 
@@ -88,7 +88,7 @@ npm run dev
 
 ## 🗂️ Project Structure
 
-```
+```text
 BugReporter/
 ├── src/                    # React frontend
 │   ├── components/         # Reusable UI components

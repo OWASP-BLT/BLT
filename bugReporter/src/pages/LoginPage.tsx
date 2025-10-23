@@ -27,7 +27,7 @@ export default function LoginPage() {
         await register(formData.email, formData.name, formData.password);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authentication failed');
+      setError('Authentication failed. Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
@@ -167,11 +167,13 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500">
-            Demo credentials: Use ADMIN_EMAIL and ADMIN_PASSWORD environment variables
-          </p>
-        </div>
+        {import.meta.env.DEV && (
+          <div className="mt-8 text-center">
+            <p className="text-xs text-gray-500">
+              Demo credentials: Use ADMIN_EMAIL and ADMIN_PASSWORD environment variables
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

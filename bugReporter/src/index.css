@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,6 +5,7 @@
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -69,7 +69,8 @@
 
   tbody tr:hover {
     background-color: #f9fafb;
-    transform: scale(1.005);
+    /* Consider subtle shadow or left border instead of scale */
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
   }
 
   /* Pulse animation for loading states */
@@ -110,26 +111,11 @@
     overflow: hidden;
   }
 
-  /* Notification animations */
-  .notification-enter {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-
-  .notification-enter-active {
-    opacity: 1;
-    transform: translateX(0);
-    transition: all 0.3s ease-out;
-  }
-
-  .notification-exit {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .notification-exit-active {
-    opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.3s ease-in;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -54,7 +54,7 @@ export default function HomePage() {
                 <a
                   href="https://github.com/OWASP-BLT/BLT"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center btn-secondary"
                 >
                   <Github className="w-4 h-4 mr-2" />

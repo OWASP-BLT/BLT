@@ -111,7 +111,7 @@ export default function ProjectsPage() {
       )}
 
       {/* Project Detail Modal */}
-      {selectedProjectId && (
+      {selectedProjectId !== null && (
         <ProjectDetail
           projectId={selectedProjectId}
           onClose={() => setSelectedProjectId(null)}

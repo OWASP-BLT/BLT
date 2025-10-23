@@ -11,12 +11,15 @@ type Bindings = {
   CORS_ORIGINS: string;
 };
 
+type JwtPayload = {
+  id: number;
+  email: string;
+  role: 'user' | 'admin';
+  exp?: number;
+};
+
 type Variables = {
-  user: {
-    id: number;
-    email: string;
-    role: string;
-  };
+  jwtPayload: JwtPayload;
 };
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -28,7 +31,7 @@ app.use('*', async (c, next) => {
   c.header('X-Frame-Options', 'DENY');
   c.header('X-XSS-Protection', '1; mode=block');
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;");
+  c.header('Content-Security-Policy', "default-src 'none'; connect-src 'self'; img-src https: data:; frame-ancestors 'none'; base-uri 'none';");
 });
 
 // CORS middleware with environment-based origins
@@ -39,10 +42,12 @@ app.use('*', cors({
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  exposeHeaders: ['X-Total-Count', 'Link'],
 }));
 
 // Auth middleware with better error handling
-const authMiddleware = async (c: any, next: any) => {
+const authMiddleware: Parameters<typeof app.use>[1] = async (c, next) => {
   try {
     const authHeader = c.req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -101,6 +106,14 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 // Helper function to verify passwords with backward compatibility
+// Timing-safe comparison to prevent timing attacks
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
   // Note: Legacy admin password check removed for security
   
@@ -136,21 +149,15 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
       );
       
       const derivedHash = new Uint8Array(derivedBits);
-      return storedHash.every((byte, index) => byte === derivedHash[index]);
+      return timingSafeEqual(storedHash, derivedHash);
     } catch (error) {
       console.error('PBKDF2 verification error:', error);
       return false;
     }
   }
   
-  // Legacy SHA-256 fallback for old passwords
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const shaHash = await crypto.subtle.digest('SHA-256', data);
-  const shaHashString = Array.from(new Uint8Array(shaHash))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-  return shaHashString === hash;
+  // No legacy fallback: reject non-PBKDF2 hashes (migrate old accounts to PBKDF2)
+  return false;
 }
 
 // Auth routes
@@ -211,7 +218,10 @@ app.post('/api/auth/register', async (c) => {
     }
 
     const hashedPassword = await hashPassword(password);
-    const role = email === c.env.ADMIN_EMAIL ? 'admin' : 'user';
+    const role =
+      email.trim().toLowerCase() === (c.env.ADMIN_EMAIL || '').trim().toLowerCase()
+        ? 'admin'
+        : 'user';
 
     const result = await c.env.DB.prepare(
       'INSERT INTO users (email, name, password_hash, role) VALUES (?, ?, ?, ?) RETURNING *'
@@ -280,9 +290,11 @@ app.post('/api/protected/uploads', async (c) => {
         contentType: file.type,
       },
     });
-    
-    // Return public URL
-    const publicUrl = `https://pub-${c.env.UPLOADS.bucket_name}.r2.dev/${filename}`;
+
+    // Return public URL (configure e.g. R2_PUBLIC_BASE_URL = https://pub-<ACCOUNT_ID>.r2.dev/<BUCKET_NAME>)
+    const base = c.env.R2_PUBLIC_BASE_URL;
+    if (!base) throw new HTTPException(500, { message: 'R2 public base URL not configured' });
+    const publicUrl = `${base.replace(/\/$/, '')}/${filename}`;
     
     return c.json({ url: publicUrl });
   } catch (error) {
@@ -704,8 +716,8 @@ app.get('/api/protected/admin/users', async (c) => {
 app.get('/api/protected/admin/stats', async (c) => {
   const [totalBugs, criticalBugs, resolvedBugs, totalUsers, totalProjects, totalRepositories] = await Promise.all([
     c.env.DB.prepare('SELECT COUNT(*) as count FROM bugs').first(),
-    c.env.DB.prepare('SELECT COUNT(*) as count FROM bugs WHERE severity = "critical"').first(),
-    c.env.DB.prepare('SELECT COUNT(*) as count FROM bugs WHERE status = "resolved"').first(),
+    c.env.DB.prepare("SELECT COUNT(*) as count FROM bugs WHERE severity = 'critical'").first(),
+    c.env.DB.prepare("SELECT COUNT(*) as count FROM bugs WHERE status = 'resolved'").first(),
     c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first(),
     c.env.DB.prepare('SELECT COUNT(*) as count FROM projects').first(),
     c.env.DB.prepare('SELECT COUNT(*) as count FROM repositories').first(),
