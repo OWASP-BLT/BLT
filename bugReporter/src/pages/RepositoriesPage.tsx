@@ -1,0 +1,207 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Plus, ExternalLink, Calendar, AlertTriangle } from 'lucide-react';
+import { apiService } from '../services/api';
+import type { Repository, Project } from '../types';
+import RepositoryForm from '../components/RepositoryForm';
+import RepositoryDetail from '../components/RepositoryDetail';
+import SearchAndFilter from '../components/SearchAndFilter';
+
+export default function RepositoriesPage() {
+  const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedRepoId, setSelectedRepoId] = useState<number | null>(null);
+  const [searchParams, setSearchParams] = useState<{
+    search?: string;
+    status?: string;
+    project?: string;
+    language?: string;
+  }>({});
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [reposResponse, projectsResponse] = await Promise.all([
+        apiService.getRepositories(searchParams),
+        apiService.getProjects(),
+      ]);
+      setRepositories(reposResponse.repositories);
+      setProjects(projectsResponse.projects);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      alert('Failed to load repositories. Please refresh the page.');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleRepositoryCreated = (newRepository: Repository) => {
+    setRepositories(prev => [newRepository, ...prev]);
+    setShowForm(false);
+  };
+
+  const handleRepositoryDeleted = (repositoryId: number) => {
+    setRepositories(prev => prev.filter(r => r.id !== repositoryId));
+  };
+
+  const handleSearchChange = (search: string) => {
+    setSearchParams(prev => ({ ...prev, search: search || undefined }));
+  };
+
+  const handleFilterChange = (filters: Record<string, string>) => {
+    setSearchParams(prev => ({ ...prev, ...filters }));
+  };
+
+  const filterOptions = {
+    status: {
+      label: 'Status',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Scanning', value: 'scanning' },
+        { label: 'Completed', value: 'completed' }
+      ]
+    },
+    project: {
+      label: 'Project',
+      options: projects.map(project => ({
+        label: project.name,
+        value: project.name
+      }))
+    },
+    language: {
+      label: 'Language',
+      options: [
+        { label: 'JavaScript', value: 'JavaScript' },
+        { label: 'TypeScript', value: 'TypeScript' },
+        { label: 'Python', value: 'Python' },
+        { label: 'Java', value: 'Java' },
+        { label: 'C++', value: 'C++' },
+        { label: 'Go', value: 'Go' },
+        { label: 'Rust', value: 'Rust' },
+        { label: 'PHP', value: 'PHP' },
+        { label: 'Ruby', value: 'Ruby' },
+        { label: 'C#', value: 'C#' }
+      ]
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'scanning': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Repositories</h1>
+          <p className="text-gray-600 mt-1">Monitor and scan your code repositories</p>
+        </div>
+        <button
+          onClick={() => setShowForm(true)}
+          className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Repository</span>
+        </button>
+      </div>
+
+      {/* Repository Form Modal */}
+      {showForm && (
+        <RepositoryForm
+          projects={projects}
+          onSubmit={handleRepositoryCreated}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {/* Repository Detail Modal */}
+      {selectedRepoId && (
+        <RepositoryDetail
+          repositoryId={selectedRepoId}
+          onClose={() => setSelectedRepoId(null)}
+          onDelete={handleRepositoryDeleted}
+        />
+      )}
+
+      <div className="card p-4 sm:p-5">
+        <SearchAndFilter
+          searchPlaceholder="Search repositories by name, URL, or project..."
+          onSearchChange={handleSearchChange}
+          onFilterChange={handleFilterChange}
+          filters={filterOptions}
+          initialSearch={searchParams.search}
+          initialFilters={{
+            status: searchParams.status || '',
+            project: searchParams.project || '',
+            language: searchParams.language || ''
+          }}
+        />
+      </div>
+
+      <div className="space-y-4">
+        {repositories.map((repo) => (
+          <div key={repo.id} className="card p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">{repo.name}</h3>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(repo.status)}`}>
+                    {repo.status}
+                  </span>
+                  {repo.language && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                      {repo.language}
+                    </span>
+                  )}
+                </div>
+                <a 
+                  href={repo.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="break-all text-blue-600 hover:text-blue-700 text-sm mb-3 inline-flex items-center space-x-1"
+                >
+                  <span>{repo.url}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>Last scan: {repo.last_scan ? new Date(repo.last_scan).toLocaleDateString() : 'Never'}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>{repo.vulnerabilities_count} vulnerabilities</span>
+                  </div>
+                  {repo.project_name && (
+                    <span className="text-blue-600">{repo.project_name}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex sm:flex-none sm:justify-end gap-2">
+                <button className="btn-secondary text-sm w-full sm:w-auto" onClick={() => setSelectedRepoId(repo.id)}>View Details</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
