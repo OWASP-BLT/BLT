@@ -12,7 +12,7 @@ A professional bug tracking application built with React, TypeScript, Cloudflare
 - **Responsive UI**: Clean, modern interface with accessibility considerations
 - **Security**: PBKDF2 password hashing, security headers, CORS protection
 
-## 🚀 Quick Start (Local Dev)
+## Quick Start (Local Dev)
 
 ### Prerequisites
 - Node.js 18+
@@ -81,12 +81,12 @@ npm run dev
 - Frontend: `http://localhost:5173`
 - API: `http://localhost:8787`
 
-## 🔑 Authentication
+## Authentication
 - Default admin: Use `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables
 - Login and registration use JWT with PBKDF2 password hashing
 - Role-based access control (admin/user)
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```text
 BugReporter/
@@ -144,7 +144,7 @@ npm run worker:deploy
 npm run deploy
 ```
 
-## 🔒 Security Features
+## Security Features
 
 - **Password Security**: PBKDF2 hashing with 100,000 iterations and random salt
 - **JWT Authentication**: Secure token-based auth
@@ -153,7 +153,7 @@ npm run deploy
 - **File Upload Security**: Type and size validation
 - **Input Validation**: Server-side validation for all endpoints
 
-## 📁 File Uploads
+## File Uploads
 
 File uploads are stored in Cloudflare R2 with:
 - Image type validation (JPEG, PNG, GIF, WebP)
