@@ -89,8 +89,8 @@ http://localhost:8000/
 - Ensure all required configurations in .env are correct for seamless setup.
 
 ### Error Edge Cases
-- If container fails execute ./entrypoint.sh due to permission error, use `chmod +x scripts/entrypoint.sh`
-- If you encounter ./entrypoint.sh was not found, then make sure you are using `LF` line ending in place of `CRLF`
+- If container fails to execute ./scripts/entrypoint.sh due to permission error, use `chmod +x scripts/entrypoint.sh`
+- If you encounter ./scripts/entrypoint.sh was not found, then make sure you are using `LF` line ending in place of `CRLF`
 - If you encounter ERR_SSL_PROTOCOL_ERROR when you try to access the server on http://localhost:8000, make sure the Browser doesn't automatically redirect to https://localhost:8000. If it keeps doing this behaviour, then you can set `SECURE_SSL_REDIRECT` to `False` locally only(search for it  /blt/settings.py), stop the container and start it again.
 - If you encounter the same error indicating SSL_REDIRECT in the logs while building the container, set `SECURE_SSL_REDIRECT` to `False`
 
