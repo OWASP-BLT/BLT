@@ -331,7 +331,6 @@ class Command(BaseCommand):
             },
         ]
 
-        # Create tasks and their content
         for task_data in tasks_data:
             task, created = Tasks.objects.update_or_create(
                 lab=sql_lab,

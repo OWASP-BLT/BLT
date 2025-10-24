@@ -131,6 +131,10 @@ def distribute_bacon(request, contribution_id):
 
 
 class ProjectBadgeView(APIView):
+    """
+    Generates a 30-day unique visits badge PNG for a Project, with zero-days shown as faint bars.
+    """
+
     def get_client_ip(self, request):
         return get_client_ip(request)
 
@@ -147,7 +151,6 @@ class ProjectBadgeView(APIView):
 
         # Check if we have a record for today
         visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).first()
-
         if visited_data:
             # If we have a record for today, only update project visit count if needed
             if visited_data.count == 1:
@@ -161,22 +164,30 @@ class ProjectBadgeView(APIView):
             project.project_visit_count = F("project_visit_count") + 1
             project.save()
 
-        # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        # Get unique visits, grouped by date (last 30 days)
+        thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address"))
+            .annotate(visit_count=Count("address", distinct=True))  # Count only unique IPs
             .order_by("date")
         )
 
         # Refresh project to get the latest visit count
         project.refresh_from_db()
 
-        # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
+        # Extract dates and counts for chart, including zero-visit days
+        all_dates = []
+        all_counts = []
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+        for i in range(30):
+            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
+            all_dates.append(check_date)
+            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
+
+        dates = all_dates
+        counts = all_counts
         total_views = project.project_visit_count
 
         # Create a new image with a white background
@@ -185,66 +196,69 @@ class ProjectBadgeView(APIView):
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
 
-        # Define colors
+        # Define colors for bars, grid, and text
         bar_color = "#e05d44"
-        text_color = "#333333"
         grid_color = "#eeeeee"
 
-        # Calculate chart dimensions
+        # Calculate chart dimensions and reserve space for the title
         margin = 40
+        text_height = 50  # reserve space for title at top
         chart_width = width - 2 * margin
-        chart_height = height - 2 * margin
+        chart_height = height - 2 * margin - text_height
 
-        if counts:
+        # Calculate max count and bar width for 30 bars
+        if counts and max(counts) > 0:
             max_count = max(counts)
-            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
         else:
             max_count = 1
-            bar_width = chart_width / 14  # Default for empty data
 
-        # Draw grid lines
+        # Fixed width for exactly 30 bars, plus extra margins
+        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
+        bar_spacing = chart_width / 30  # Even spacing for 30 positions
+
+        # Draw grid lines, offset for reserved space at top
         for i in range(5):
-            y = margin + (chart_height * i) // 4
+            y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars
+        # Draw bars with proportional heights; faint for zero days
         if dates and counts:
             for i, count in enumerate(counts):
-                bar_height = (count / max_count) * chart_height
-                x1 = margin + (i * 2 * bar_width)
-                y1 = height - margin - bar_height
+                x1 = margin + (i * bar_spacing)
                 x2 = x1 + bar_width
-                y2 = height - margin
+                if count > 0:
+                    bar_height = (count / max_count) * chart_height
+                    y1 = height - margin - bar_height
+                    y2 = height - margin
+                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+                else:
+                    # Draw a faint line or a short, very light bar for 0 days
+                    faint_color = "#fcbab3"  # slightly lighter bar color for zero days
+                    y1 = y2 = height - margin - 2  # minimal height
+                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
 
-                # Draw bar with a slight gradient effect
-                for h in range(int(y1), int(y2)):
-                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
-                    r, g, b = 224, 93, 68  # RGB values for #e05d44
-                    current_color = f"#{r:02x}{g:02x}{b:02x}"
-                    draw.line([(x1, h), (x2, h)], fill=current_color)
-
-        # Draw total views text
+        # Draw total views text centered at the top, uses bar_color
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+            font = ImageFont.truetype("DejaVuSans.ttf", 28)
         except OSError:
             font = ImageFont.load_default()
-
         text = f"Total Views: {total_views}"
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+        text_x = (width - text_width) // 2
+        text_y = 15  # Fixed position at top
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)
 
         # Save the image to a buffer
         buffer = BytesIO()
-        img.save(buffer, format="PNG", quality=95)
+        img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
 
-        # Return the image with appropriate headers
+        # Return the image with appropriate headers (no caching)
         response = HttpResponse(buffer, content_type="image/png")
         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response["Pragma"] = "no-cache"
         response["Expires"] = "0"
-
         return response
 
 
@@ -1955,6 +1969,10 @@ class RepoDetailView(DetailView):
 
 
 class RepoBadgeView(APIView):
+    """
+    Generates a 30-day unique visits badge PNG for a Repo, with zero-days shown as faint bars.
+    """
+
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -1999,22 +2017,31 @@ class RepoBadgeView(APIView):
             repo.repo_visit_count = F("repo_visit_count") + 1
             repo.save()
 
-        # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        # Get unique visits, grouped by date (last 30 days)
+        thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address"))
+            .annotate(visit_count=Count("address", distinct=True))
             .order_by("date")
         )
 
         # Refresh repo to get the latest visit count
         repo.refresh_from_db()
 
-        # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
+        # Extract dates and counts for chart, including zero-visit days
+        all_dates = []
+        all_counts = []
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+
+        for i in range(30):
+            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
+            all_dates.append(check_date)
+            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
+
+        dates = all_dates
+        counts = all_counts
         total_views = repo.repo_visit_count
 
         # Create a new image with a white background
@@ -2025,51 +2052,62 @@ class RepoBadgeView(APIView):
 
         # Define colors
         bar_color = "#e05d44"
-        text_color = "#333333"
         grid_color = "#eeeeee"
 
         # Calculate chart dimensions
         margin = 40
+        text_height = 50  # reserve space for title
         chart_width = width - 2 * margin
-        chart_height = height - 2 * margin
+        chart_height = height - 2 * margin - text_height
+
+        # calculating the max count and bar width for 30 bars
+        if counts and max(counts) > 0:
+            max_count = max(counts)
+        else:
+            max_count = 1
+
+        # Fixed width for exactly 30 bars with proper spacing
+        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
+        bar_spacing = chart_width / 30  # Even spacing for 30 positions
 
         # Draw grid lines
         for i in range(5):
-            y = margin + (chart_height * i) // 4
+            y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars
+        # Draw bars (with zero-day case handled)
         if dates and counts:
-            max_count = max(counts)
-            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
             for i, count in enumerate(counts):
-                bar_height = (count / max_count) * chart_height
-                x1 = margin + (i * 2 * bar_width)
-                y1 = height - margin - bar_height
+                x1 = margin + (i * bar_spacing)
                 x2 = x1 + bar_width
-                y2 = height - margin
-
-                # Draw bar with a slight gradient effect
-                for h in range(int(y1), int(y2)):
-                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
-                    r, g, b = 224, 93, 68  # RGB values for #e05d44
-                    current_color = f"#{r:02x}{g:02x}{b:02x}"
-                    draw.line([(x1, h), (x2, h)], fill=current_color)
+                if count > 0:
+                    bar_height = (count / max_count) * chart_height
+                    y1 = height - margin - bar_height
+                    y2 = height - margin
+                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+                else:
+                    # Draw a faint line or a short, very light bar for 0 days
+                    faint_color = "#fcbab3"  # faint color used to show 0 days
+                    y1 = y2 = height - margin - 2  # minimal height
+                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
 
         # Draw total views text
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+            font = ImageFont.truetype("DejaVuSans.ttf", 28)  # Slightly smaller
         except OSError:
             font = ImageFont.load_default()
 
         text = f"Total Views: {total_views}"
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+        text_x = (width - text_width) // 2
+        text_y = 15  # Fixed position at top
+
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)  # avoiding overlapping
 
         # Save the image to a buffer
         buffer = BytesIO()
-        img.save(buffer, format="PNG", quality=95)
+        img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
 
         # Return the image with appropriate headers

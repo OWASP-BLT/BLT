@@ -1067,6 +1067,11 @@
         const unreadCount = document.getElementById("unreadCount");
         const notificationList = document.getElementById("notificationList");
 
+        // Early exit if notification elements don't exist (unauthenticated users)
+        if (!notificationButton || !notificationDropdown || !unreadCount || !notificationList) {
+            return;
+        }
+
         async function fetchNotifications() {
             try {
                 const response = await fetch("{% url 'fetch_notifications' %}", {
