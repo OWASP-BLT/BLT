@@ -433,22 +433,6 @@ class OrganizationDashboardAnalyticsView(View):
             "this_week_issue_count": this_week_issue_count,
         }
 
-    def get_spent_on_bugtypes(self, organization):
-        spent_on_bugtypes = (
-            Issue.objects.values("label").filter(domain__organization__id=organization).annotate(spent=Sum("rewarded"))
-        )
-        labels = list(self.labels.values())
-        data = [0 for label in labels]  # make all labels spent 0 / init with 0
-
-        for bugtype in spent_on_bugtypes:
-            data[bugtype["label"]] = bugtype["spent"]
-
-        return {
-            "labels": json.dumps(labels),
-            "data": json.dumps(data),
-            "zipped_data": zip(labels, data),
-        }
-
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # For authenticated users, show all organizations they have access to
@@ -478,7 +462,6 @@ class OrganizationDashboardAnalyticsView(View):
             "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(id),
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
-            "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
             "security_incidents_summary": self.get_security_incidents_summary(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
