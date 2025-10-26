@@ -142,14 +142,18 @@ class Command(BaseCommand):
             # Handle Contact Links
             self.assign_contacts(org, data.get("contact_links", []))
 
-            # Add a field to track participation years if it doesn't exist
-            if not hasattr(org, "gsoc_years") or not org.gsoc_years:
-                org.gsoc_years = []
-
-            # Add this year to the organization's participation history if not already there
-            if year not in org.gsoc_years:
-                org.gsoc_years.append(year)
-                org.gsoc_years.sort(reverse=True)  # Most recent years first
+            # Update participation years (stored as comma-separated string)
+            if org.gsoc_years:
+                # Parse existing years
+                existing_years = [int(y.strip()) for y in org.gsoc_years.split(",") if y.strip()]
+                # Add this year if not already present
+                if year not in existing_years:
+                    existing_years.append(year)
+                    existing_years.sort(reverse=True)  # Most recent years first
+                    org.gsoc_years = ",".join(map(str, existing_years))
+            else:
+                # First year participation
+                org.gsoc_years = str(year)
 
             org.save()
             status = "Added" if created else "Updated"
