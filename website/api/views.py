@@ -28,6 +28,7 @@ from website.models import (
     ActivityLog,
     Contributor,
     Domain,
+    GitHubComment,
     Hunt,
     HuntPrize,
     InviteFriend,
@@ -440,6 +441,25 @@ class LeaderboardApiViewSet(APIView):
 
         return paginator.get_paginated_response(page)
 
+    def github_comment_leaderboard(self, request, *args, **kwargs):
+        """API endpoint for GitHub comment leaderboard."""
+        paginator = PageNumberPagination()
+
+        # Get comment counts per user
+        github_comment_leaderboard = (
+            GitHubComment.objects.values(
+                "user_profile__user__id",
+                "user_profile__user__username",
+                "user_profile__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_comments=Count("id"))
+            .order_by("-total_comments")
+        )
+
+        page = paginator.paginate_queryset(github_comment_leaderboard, request)
+        return paginator.get_paginated_response(page)
+
     def get(self, request, format=None, *args, **kwargs):
         filter = request.query_params.get("filter")
         group_by_month = request.query_params.get("group_by_month")
@@ -452,6 +472,8 @@ class LeaderboardApiViewSet(APIView):
             return self.group_by_month(request, *args, **kwargs)
         elif leaderboard_type == "organizations":
             return self.organization_leaderboard(request, *args, **kwargs)
+        elif leaderboard_type == "github_comments":
+            return self.github_comment_leaderboard(request, *args, **kwargs)
         else:
             return self.global_leaderboard(request, *args, **kwargs)
 
