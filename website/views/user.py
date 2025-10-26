@@ -517,8 +517,8 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 type="pull_request",
                 is_merged=True,
                 repo__isnull=False,  # Only include PRs from tracked repositories
+                user_profile__isnull=False,  # Only include PRs with user profiles
             )
-            .exclude(user_profile__isnull=True)  # Exclude PRs without user profiles
             .select_related("user_profile__user", "repo")  # Optimize database queries
             .values(
                 "user_profile__user__username",
@@ -537,7 +537,10 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Code Review Leaderboard - Fixed query to properly count reviews
         code_review_leaderboard = (
-            GitHubReview.objects.filter(reviewer__user__isnull=False)
+            GitHubReview.objects.filter(
+                reviewer__user__isnull=False,
+                pull_request__repo__isnull=False,  # Only include reviews from tracked repositories
+            )
             .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
