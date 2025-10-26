@@ -43,6 +43,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import ListView, TemplateView, View
 
+from website.aibot.main import aibot_health_check
 from website.models import (
     IP,
     Activity,
@@ -139,6 +140,7 @@ def status_page(request):
     CHECK_SENDGRID = True
     CHECK_GITHUB = True
     CHECK_OPENAI = True
+    CHECK_AIBOT_ENTRYPOINT = True
     CHECK_MEMORY = True
     CHECK_DATABASE = True
     CHECK_REDIS = True
@@ -165,6 +167,10 @@ def status_page(request):
                 if not CHECK_REDIS
                 else {}
             ),
+            "aibot_entrypoint": {
+                "health": None if not CHECK_AIBOT_ENTRYPOINT else 1,
+                "status": "Not checked",
+            },
             "slack_bot": {},
             "management_commands": [],
             "available_commands": [],
@@ -326,6 +332,19 @@ def status_page(request):
                 except requests.exceptions.RequestException as e:
                     print(f"GitHub API Error: {e}")
                     status_data["github_rate_limit"] = None
+
+        if CHECK_AIBOT_ENTRYPOINT:
+            try:
+                response = aibot_health_check(request)
+                webhook_data = json.loads(response.content)
+                status_data["aibot_entrypoint"] = webhook_data
+            except Exception as e:
+                status_data["aibot_entrypoint"] = {
+                    "health": 2,
+                    "status": "Health check failed",
+                    "error": str(e),
+                    "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                }
 
         # OpenAI API check
         if CHECK_OPENAI:
