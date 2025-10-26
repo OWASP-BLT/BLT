@@ -74,7 +74,11 @@ def extract_github_username(github_url):
     # Strip trailing slashes and whitespace
     github_url = github_url.strip().rstrip("/")
 
-    # Ensure URL contains at least one slash
+    # Validate that this is a GitHub URL
+    if not github_url.startswith(("https://github.com/", "http://github.com/")):
+        return None
+
+    # Ensure URL contains at least one slash after the domain
     if "/" not in github_url:
         return None
 
@@ -83,7 +87,7 @@ def extract_github_username(github_url):
     username = segments[-1] if segments else None
 
     # Return username only if it's non-empty and not just domain parts
-    if username and username not in ["github.com", "www.github.com"]:
+    if username and username not in ["github.com", "www.github.com", ""]:
         return username
 
     return None
@@ -528,7 +532,9 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
-        # Extract GitHub username from URL for avatar
+        # Extract GitHub username from URL for avatar display
+        # Note: Processing in a loop is acceptable here since we're limited to top 10 entries
+        # and URL parsing cannot be done efficiently in the database
         for leader in pr_leaderboard:
             github_username = extract_github_username(leader.get("user_profile__github_url"))
             if github_username:
@@ -546,7 +552,9 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
         )
-        # Extract GitHub username from URL for avatar
+        # Extract GitHub username from URL for avatar display
+        # Note: Processing in a loop is acceptable here since we're limited to top 10 entries
+        # and URL parsing cannot be done efficiently in the database
         for leader in reviewed_pr_leaderboard:
             github_username = extract_github_username(leader.get("reviewer__github_url"))
             if github_username:
