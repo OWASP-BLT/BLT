@@ -84,10 +84,10 @@ Before you start contributing, you'll need to set up your development environmen
 3. Set up the application:
 
    ```bash
-   python manage.py migrate
-   python manage.py createsuperuser
-   python manage.py collectstatic
-   python manage.py runserver
+   uv run python manage.py migrate
+   uv run python manage.py createsuperuser
+   uv run python manage.py collectstatic
+   uv run python manage.py runserver
    ```
 
 4. Access the application at http://localhost:8000
@@ -100,22 +100,22 @@ Before you start contributing, you'll need to set up your development environmen
    pyenv install 3.11.2
    ```
 
-2. Set up Poetry and virtual environment:
+2. Set up uv and virtual environment:
 
    ```bash
-   pip install poetry
-   poetry shell
-   poetry install
+   # Install uv (https://docs.astral.sh/uv/)
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   uv sync
    ```
 
 3. Set up the application:
 
    ```bash
-   python manage.py migrate
-   python3 manage.py loaddata website/fixtures/initial_data.json
-   python manage.py createsuperuser
-   python manage.py collectstatic
-   python manage.py runserver
+   uv run python manage.py migrate
+   uv run python manage.py loaddata website/fixtures/initial_data.json
+   uv run python manage.py createsuperuser
+   uv run python manage.py collectstatic
+   uv run python manage.py runserver
    ```
 
 4. Access the application at http://localhost:8000
@@ -167,18 +167,18 @@ We use several tools to maintain code quality:
 - isort for import sorting
 - ruff for linting
 
-You can run these tools using Poetry:
+You can run these tools using uv:
 
 ```bash
-poetry run black .
-poetry run isort .
-poetry run ruff .
+uv run black .
+uv run isort .
+uv run ruff .
 ```
 
 We also use pre-commit hooks to ensure code quality. Install them with:
 
 ```bash
-poetry run pre-commit install
+uv run pre-commit install
 ```
 
 ## Testing
@@ -186,7 +186,7 @@ poetry run pre-commit install
 When adding new features or fixing bugs, please include appropriate tests. Run the tests with:
 
 ```bash
-python manage.py test
+uv run python manage.py test
 ```
 
 ## Documentation

@@ -3,9 +3,11 @@
 - [Video on How to setup Project BLT](https://www.youtube.com/watch?v=IYBRVRfPCK8)
 
 ## Step 1: Add environment variables
+
 Before proceeding with any setup, you need to configure environment variables.
 
-### 1.Adding environment variables to .env:
+### 1.Adding environment variables to .env
+
 - We provide a .env.example file that demonstrates how the environment is set up.
 
 ```sh
@@ -14,26 +16,33 @@ cd BLT
 
 cp .env.example .env
 ```
+
 - Modify the .env file as per your local setup.
 
 ## Step 2: Choose your setup method (Docker recommended)
-#### Prerequisites for Docker method
+
+### Prerequisites for Docker method
+
 Ensure the following are installed on your system before proceeding:
 
-- Docker  
-- Docker Compose  
-- PostgreSQL client (optional, for manual database interaction)  
+- Docker
+- Docker Compose
+- PostgreSQL client (optional, for manual database interaction)
 
 ---
 
 ### 1. Ensure LF Line Endings
+
 Before building the Docker images, ensure all files, especially scripts like `entrypoint.sh`, `.env`, `docker-compose.yml`, `Dockerfile`, `settings.py` use LF line endings. Using CRLF can cause build failures. To verify and correct line endings:
 
 1. If you're working on a Windows machine or collaborating across different operating systems, ensure consistent line endings:
+
    - Set `core.autocrlf=input` in Git configurations to enforce LF-style line endings in the repository while preserving your local OS line endings.
+
      ```bash
      git config --global core.autocrlf input
      ```
+
    - Alternatively, in VS Code, you can manually change the line endings:
      - Open the file in the editor.
      - Look for the line ending type displayed in the bottom-right corner of the VS Code window (e.g., CRLF or LF).
@@ -41,23 +50,29 @@ Before building the Docker images, ensure all files, especially scripts like `en
 
 2. If the browser **automatically redirects to HTTPS** even in incognito mode, you can try the following:  
    For **local development**, make these adjustments in `/blt/settings.py` to enable access over **HTTP**:
+
    - Set:
+
      ```python
      SECURE_SSL_REDIRECT = False
      SECURE_PROXY_SSL_HEADER = None
      ```
 
-3. To convert to LF (if needed):  
+3. To convert to LF (if needed):
+
    - Using `dos2unix`:
+
      ```bash
      dos2unix entrypoint.sh
      ```
 
-⚠️ **Important:**  
-- If line endings are not set to LF, running `docker-compose build` may fail.  
+⚠️ **Important:**
+
+- If line endings are not set to LF, running `docker-compose build` may fail.
 - Avoid creating a PR to commit these local changes back to the repository.
 
 ### 2. PostgreSQL Setup
+
 The PostgreSQL database listens on a port specified in the .env file.
 Default is 5432 and
 If you encounter conflicts, it might be set to another port (e.g., 5433 in some cases). Adjust the .env file accordingly.
@@ -66,32 +81,48 @@ If you encounter conflicts, it might be set to another port (e.g., 5433 in some 
 
 ## Commands to Set Up the Project
 
-- **Copy and configure the `.env` file:**  
-   ```bash
-   cp .env.example .env
-Update credentials and settings as needed.
+- **Copy and configure the `.env` file:**
 
-- #### Build the Docker images:
+  ```bash
+  cp .env.example .env
+  Update credentials and settings as needed.
+
+  ```
+
+- ### Build the Docker images
+
   ```bash
   docker-compose build
-- #### Start the containers:
+  ```
+
+- #### Start the containers
+
   ```bash
   docker-compose up
-- #### Access the application:
+  ```
+
+   **Note:** If you encounter `ModuleNotFoundError: No module named 'django'` at runtime, see the **Troubleshooting** section below. Verify the Dockerfile has the correct `.venv/bin` in PATH, ensure `.venv` is listed in `.dockerignore`, and rebuild with `docker-compose build --no-cache`.
+
+- #### Access the application
 
 - Open your browser and navigate to:
-http://localhost:8000/
-- #### Prevent Automatic Redirects to HTTPS: 
-- Use Incognito Mode (Private Browsing): Open the browser in incognito mode and access the application using http://localhost:8000.
+  `http://localhost:8000/`
+
+- #### Prevent Automatic Redirects to HTTPS
+
+- Use Incognito Mode (Private Browsing): Open the browser in incognito mode and access the application using `http://localhost:8000`
 - Ensure you're explicitly using http:// instead of https:// in the URL.
+
 ### Notes
+
 - The project listens on port 8000 over the HTTP protocol.
 - Ensure all required configurations in .env are correct for seamless setup.
 
 ### Error Edge Cases
+
 - If container fails execute ./entrypoint.sh due to permission error, use `chmod +x ./entrypoint.sh`
 - If you encounter ./entrypoint.sh was not found, then make sure you are using `LF` line ending in place of `CRLF`
-- If you encounter ERR_SSL_PROTOCOL_ERROR when you try to access the server on http://localhost:8000, make sure the Browser doesn't automatically redirect to https://localhost:8000. If it keeps doing this behaviour, then you can set `SECURE_SSL_REDIRECT` to `False` locally only(search for it  /blt/settings.py), stop the container and start it again.
+- If you encounter ERR_SSL_PROTOCOL_ERROR when you try to access the server on `http://localhost:8000`, make sure the Browser doesn't automatically redirect to `https://localhost:8000`. If it keeps doing this behaviour, then you can set `SECURE_SSL_REDIRECT` to `False` locally only(search for it /blt/settings.py), stop the container and start it again.
 - If you encounter the same error indicating SSL_REDIRECT in the logs while building the container, set `SECURE_SSL_REDIRECT` to `False`
 
 ### Option 2.Setting up development server using vagrant
@@ -114,16 +145,16 @@ http://localhost:8000/
  cd BLT
 
  # Create tables in the database
- python manage.py migrate
+ uv run python manage.py migrate
 
  # Create a super user
- python manage.py createsuperuser
+ uv run python manage.py createsuperuser
 
  # Collect static files
- python manage.py collectstatic
+ uv run python manage.py collectstatic
 
  # Run the server
- python manage.py runserver
+ uv run python manage.py runserver
 ```
 
 #### Ready to go
@@ -150,7 +181,7 @@ pyenv install 3.11.2
 
 Note: Project root folder already contains `.python-version`, so pyenv can recognize the local version to use for the current project.
 
-#### Setup virtual environment using poetry
+#### Setup virtual environment using uv
 
 Ensure that `python -V` returns the correct python version for the project
 
@@ -164,30 +195,27 @@ brew install postgresql
 sudo apt-get install postgresql
 
 # --- Setup Virtual Environment ---
-# Install Poetry
-pip install poetry
+# Install uv (https://docs.astral.sh/uv/)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Activate virtual environment
-poetry shell
-
-# Install required dependencies
-poetry install
+# Install dependencies and create virtualenv from pyproject
+uv sync
 
 # --- Project setup ---
 # Create tables in the database
-python manage.py migrate
+uv run python manage.py migrate
 
 # Load initial data
-python3 manage.py loaddata website/fixtures/initial_data.json
+uv run python manage.py loaddata website/fixtures/initial_data.json
 
 # Create a super user
-python manage.py createsuperuser
+uv run python manage.py createsuperuser
 
 # Collect static files
-python manage.py collectstatic
+uv run python manage.py collectstatic
 
 # Run the server
-python manage.py runserver
+uv run python manage.py runserver
 ```
 
 #### Ready to go now
@@ -200,19 +228,33 @@ Add a Domain `http://127.0.0.1:8000/admin/website/domain/` with the name 'owasp.
 **Note:** In case you encounter an error, run `sudo apt-get install libpq-dev`.
 
 ## Troubleshooting
+
 If you run into issues during the setup, here are some common solutions:
 
-### 1.Cannot install nltk, distlib, certifi 
-The error message you're encountering suggests that the package manager (likely poetry) is unable to find installation candidates.
-Below are the temporary solutions.
+### 1. UV Virtual Environment Issues
+
+The error message you're encountering suggests that the resolver is unable to find installation candidates with your current constraints. Additionally, if you've recently run Docker builds, your local `.venv` may have been corrupted or owned by root (due to Docker layer caching before `.venv` was added to `.dockerignore`).
+Below are solutions.
+
+**If UV reports "linked to a non-existent interpreter" or permission denied errors:**
+
+1. **Quick fix (recommended):** Fix ownership with `sudo chown -R $USER:$USER .venv`, then retry.
+2. **Full reset:** Delete and recreate: `rm -rf .venv && uv sync`
+
+**To prevent recurrence:** Ensure your `.dockerignore` includes `.venv` to prevent Docker from caching the directory across builds.
+
+### 2. Cannot install nltk, distlib, certifi
 
 ```sh
-poetry cache clear --all pypi
+# For local venv or inside Docker container
+uv cache prune
 
-#For Docker method only
-docker-compose build --no-cache 
+# For Docker method only
+docker-compose build --no-cache
 ```
+
 Feel free to contribute by solving this [issue](https://github.com/OWASP-BLT/BLT/issues/2659).
 
 ## Need more help?
+
 If you're still facing issues or need further assistance, feel free to reach out to the community on the [OWASP Slack channel](https://owasp.org/slack/invite).

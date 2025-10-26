@@ -1,5 +1,4 @@
 name: CI/CD Optimized
-
 on:
   #merge_group:
   pull_request:
@@ -9,10 +8,9 @@ on:
     workflows: ["Pre-commit fix"]
     types:
       - completed
-
 env:
   FORCE_COLOR: 1
-  POETRY_CACHE_DIR: ~/.cache/pypoetry
+  UV_CACHE_DIR: ~/.cache/uv
 
 concurrency:
   cancel-in-progress: true
@@ -22,13 +20,13 @@ jobs:
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
-    permissions: 
-      contents: read  # Minimal permission for checking out code
+    permissions:
+      contents: read
     outputs:
-      python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
+      uv-cache-dir: ${{ steps.uv-cache.outputs.dir }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Cache pre-commit hooks
         uses: actions/cache@v4
         with:
@@ -42,21 +40,18 @@ jobs:
         with:
           python-version: 3.11.2
 
-      - name: Get Poetry cache directory
-        id: poetry-cache
-        run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
-      
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-            .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
-            ${{ runner.os }}-poetry-
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Get uv cache directory
+        id: uv-cache
+        run: echo "dir=${{ env.UV_CACHE_DIR }}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: uv sync --dev
 
       - name: Print memory usage
         run: free -h
@@ -65,21 +60,26 @@ jobs:
     name: Run pre-commit
     needs: setup
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       issues: write
       pull-requests: write
       contents: write
       actions: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
+
       - name: Print memory usage
         run: free -h
-
 
   test:
     name: Run Tests
@@ -92,19 +92,30 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
-      - run: pip install poetry
-      - run: poetry lock
-      - run: poetry install --with dev
-      - run: poetry run python manage.py collectstatic --noinput
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Collect static files
+        run: uv run python manage.py collectstatic --noinput
+
       - name: Run tests
-        run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+        run: uv run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
 
   docker-test:
     runs-on: ubuntu-latest
@@ -115,7 +126,6 @@ jobs:
       - name: Set up Docker
         run: |
           docker --version
-          # Install docker-compose
           curl -sSL https://github.com/docker/compose/releases/download/v2.17.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
           chmod +x /usr/local/bin/docker-compose
           docker-compose --version
@@ -128,9 +138,8 @@ jobs:
         run: |
           docker run -d --name my-container my-app
 
-      - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock
-      - run: docker exec my-container poetry install --without dev --no-interaction
+      - name: Install dependencies in container
+        run: docker exec my-container uv sync --no-dev
 
       - name: Clean up
         run: |
