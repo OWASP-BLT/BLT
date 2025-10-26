@@ -2,7 +2,6 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
-
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -13,6 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
