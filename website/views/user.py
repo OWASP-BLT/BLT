@@ -459,7 +459,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
     def get_context_data(self, *args, **kwargs):
         """
         Assembles template context for the global leaderboard page, adding leaderboards and related data.
-        
+
         The context includes:
         - `user_related_tags`: tags associated with user profiles.
         - `wallet`: the requesting user's Wallet if authenticated.
@@ -467,7 +467,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         - `pr_leaderboard`: top repositories/users by merged pull request count (top 10).
         - `code_review_leaderboard`: top reviewers by review count (top 10).
         - `top_visitors`: user profiles ordered by daily visit count (top 10).
-        
+
         Returns:
             dict: Context mapping names (as listed above) to their querysets or values.
         """
@@ -498,7 +498,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         reviewed_pr_leaderboard = (
             GitHubReview.objects.values(
                 "reviewer__user__username",
-                "reviewer__user__email", 
+                "reviewer__user__email",
                 "reviewer__github_url",
             )
             .annotate(total_reviews=Count("id"))
