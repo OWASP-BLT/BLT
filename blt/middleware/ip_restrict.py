@@ -60,9 +60,12 @@ class IPRestrictMiddleware:
         Retrieve blocked user agents from cache or database.
         """
         blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
-        # Filter out None values
-        blocked_user_agents = [agent for agent in blocked_user_agents if agent is not None]
-        return set(self.get_cached_data("blocked_agents", blocked_user_agents))
+        cached_agents = self.get_cached_data("blocked_agents", blocked_user_agents)
+        # Filter out None values and empty strings after retrieving from cache
+        filtered_agents = [
+            agent for agent in cached_agents if agent is not None and (isinstance(agent, str) and agent.strip() != "")
+        ]
+        return set(filtered_agents)
 
     def ip_in_ips(self, ip, blocked_ips):
         """
@@ -112,16 +115,17 @@ class IPRestrictMiddleware:
                 blocked_entry = Blocked.objects.select_for_update().filter(ip_network=network).first()
             elif user_agent:
                 # Correct lookup: find if any user_agent_string is a substring of the user_agent
+                all_agents = list(Blocked.objects.values_list("user_agent_string", flat=True))
+                matching_agents = [
+                    agent
+                    for agent in all_agents
+                    if agent is not None
+                    and agent.strip() != ""
+                    and user_agent is not None
+                    and agent.lower() in user_agent.lower()
+                ]
                 blocked_entry = (
-                    Blocked.objects.select_for_update()
-                    .filter(
-                        user_agent_string__in=[
-                            agent
-                            for agent in Blocked.objects.values_list("user_agent_string", flat=True)
-                            if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
-                        ]
-                    )
-                    .first()
+                    Blocked.objects.select_for_update().filter(user_agent_string__in=matching_agents).first()
                 )
             else:
                 return  # Nothing to increment
