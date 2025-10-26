@@ -1871,6 +1871,69 @@ class GitHubReview(models.Model):
         return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
 
 
+class GitHubComment(models.Model):
+    """
+    Model to store comments made by users on GitHub issues, PRs, and discussions.
+    """
+
+    COMMENT_TYPE_CHOICES = [
+        ("issue", "Issue Comment"),
+        ("pull_request", "Pull Request Comment"),
+        ("discussion", "Discussion Comment"),
+    ]
+
+    comment_id = models.BigIntegerField(unique=True)
+    github_issue = models.ForeignKey(
+        GitHubIssue,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    user_profile = models.ForeignKey(
+        UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_comments",
+    )
+    contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_comments",
+    )
+    body = models.TextField()
+    comment_type = models.CharField(max_length=50, choices=COMMENT_TYPE_CHOICES, default="issue")
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    url = models.URLField()
+    repo = models.ForeignKey(
+        "Repo",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_comments",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["comment_id"]),
+            models.Index(fields=["user_profile", "-created_at"]),
+            models.Index(fields=["contributor", "-created_at"]),
+        ]
+
+    def __str__(self):
+        username = (
+            self.user_profile.user.username
+            if self.user_profile
+            else (self.contributor.name if self.contributor else "Unknown")
+        )
+        return f"Comment #{self.comment_id} by {username}"
+
+
 class Kudos(models.Model):
     """
     Model to send kudos to team members.
