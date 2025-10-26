@@ -107,8 +107,8 @@ Following the BLT design system:
 
 The template uses:
 - Django template tags for loops and conditionals
-- Gravatar fallback for missing avatars
-- GitHub username for avatar URLs (e.g., `https://github.com/{username}.png`)
+- Gravatar fallback for missing avatars (when user doesn't have GitHub profile linked)
+- GitHub username for avatar URLs when available (e.g., `https://github.com/{username}.png`)
 - Responsive Tailwind classes (`flex`, `flex-col`, `flex-wrap`, `min-w-[300px]`, `max-w-[550px]`)
 
 ## Data Flow

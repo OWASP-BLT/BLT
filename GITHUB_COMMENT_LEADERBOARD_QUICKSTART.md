@@ -92,7 +92,9 @@ To see more users on the leaderboard:
 
 ## Implementation Details
 
-See the full documentation at: `docs/github_comment_leaderboard.md`
+See the full documentation at:
+- Technical documentation: `docs/github_comment_leaderboard.md`
+- UI/UX documentation: `docs/github_comment_leaderboard_ui.md`
 
 ## Testing
 
