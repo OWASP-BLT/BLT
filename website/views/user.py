@@ -58,6 +58,37 @@ from website.models import (
 logger = logging.getLogger(__name__)
 
 
+def extract_github_username(github_url):
+    """
+    Extract GitHub username from a GitHub URL for avatar display.
+
+    Args:
+        github_url (str): GitHub URL like 'https://github.com/username' or 'https://github.com/apps/dependabot'
+
+    Returns:
+        str or None: The username part of the URL, or None if invalid/empty
+    """
+    if not github_url or not isinstance(github_url, str):
+        return None
+
+    # Strip trailing slashes and whitespace
+    github_url = github_url.strip().rstrip("/")
+
+    # Ensure URL contains at least one slash
+    if "/" not in github_url:
+        return None
+
+    # Split on "/" and get the last segment
+    segments = github_url.split("/")
+    username = segments[-1] if segments else None
+
+    # Return username only if it's non-empty and not just domain parts
+    if username and username not in ["github.com", "www.github.com"]:
+        return username
+
+    return None
+
+
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
     referral_token = request.session.get("ref")
@@ -480,9 +511,15 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard
+        # Pull Request Leaderboard - Only show PRs from tracked repositories
         pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            GitHubIssue.objects.filter(
+                type="pull_request",
+                is_merged=True,
+                repo__isnull=False,  # Only include PRs from tracked repositories
+            )
+            .exclude(user_profile__isnull=True)  # Exclude PRs without user profiles
+            .select_related("user_profile__user", "repo")  # Optimize database queries
             .values(
                 "user_profile__user__username",
                 "user_profile__user__email",
@@ -491,11 +528,17 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
+        # Extract GitHub username from URL for avatar
+        for leader in pr_leaderboard:
+            github_username = extract_github_username(leader.get("user_profile__github_url"))
+            if github_username:
+                leader["github_username"] = github_username
         context["pr_leaderboard"] = pr_leaderboard
 
         # Reviewed PR Leaderboard - Fixed query to properly count reviews
         reviewed_pr_leaderboard = (
-            GitHubReview.objects.values(
+            GitHubReview.objects.filter(reviewer__user__isnull=False)
+            .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
                 "reviewer__github_url",
@@ -503,6 +546,11 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
         )
+        # Extract GitHub username from URL for avatar
+        for leader in reviewed_pr_leaderboard:
+            github_username = extract_github_username(leader.get("reviewer__github_url"))
+            if github_username:
+                leader["github_username"] = github_username
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         # Top visitors leaderboard
