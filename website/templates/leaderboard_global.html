@@ -103,13 +103,19 @@
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
-                                        <a href="{% url 'profile' slug=leader.user_profile__user__username %}"
-                                           class="text-lg transition-all duration-200">{{ leader.user_profile__user__username }}</a>
-                                        <a href="{{ leader.user_profile__github_url }}"
-                                           target="_blank"
-                                           class="ml-2">
-                                            <i class="fab fa-github text-xl"></i>
-                                        </a>
+                                        {% if leader.user_profile__user__username %}
+                                            <a href="{% url 'profile' slug=leader.user_profile__user__username %}"
+                                               class="text-lg transition-all duration-200">{{ leader.user_profile__user__username }}</a>
+                                        {% else %}
+                                            <span class="text-lg text-gray-500">Unknown User</span>
+                                        {% endif %}
+                                        {% if leader.user_profile__github_url %}
+                                            <a href="{{ leader.user_profile__github_url }}"
+                                               target="_blank"
+                                               class="ml-2">
+                                                <i class="fab fa-github text-xl"></i>
+                                            </a>
+                                        {% endif %}
                                     </div>
                                     <span class="pull-right badge bg-gray-100 flex-shrink-0 rounded-md py-1 px-2 select-none">{{ leader.total_prs }} PRs</span>
                                 </div>
