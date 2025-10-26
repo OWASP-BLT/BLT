@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from website.models import Labs, TaskContent, Tasks
+from django.core.management.base import CommandError
 
 
 class Command(BaseCommand):
@@ -9,12 +10,9 @@ class Command(BaseCommand):
         try:
             idor_lab = Labs.objects.get(name="Insecure Direct Object Reference (IDOR)")
         except Labs.DoesNotExist:
-            self.stdout.write(
-                self.style.ERROR(
-                    "Insecure Direct Object Reference (IDOR) lab not found. Please run create_initial_labs first."
-                )
+            raise CommandError(
+                "Insecure Direct Object Reference (IDOR) lab not found. Please run create_initial_labs first."
             )
-            return
 
         tasks_data = [
             {
@@ -60,13 +58,13 @@ class Command(BaseCommand):
                     <li><strong>Invoice Download:</strong> <code>/invoice?id=873</code></li>
                     <li><strong>File Access:</strong> <code>/files/report_2023.pdf</code></li>
                 </ul>
-                <p>If changing these identifiers reveals unauthorized information, it’s an IDOR vulnerability.</p>
+                <p>If changing these identifiers reveals unauthorized information, it's an IDOR vulnerability.</p>
 
                 <h3>API-based Example</h3>
                 <pre><code>
                 GET /api/user/45
                 </code></pre>
-                <p>If user A can access user B’s data by changing the ID, the endpoint lacks proper access control.</p>
+                <p>If user A can access user B's data by changing the ID, the endpoint lacks proper access control.</p>
                 """,
                 "mcq_question": "Which of the following URLs likely contains an IDOR vulnerability?",
                 "mcq_options": [
@@ -79,7 +77,7 @@ class Command(BaseCommand):
             },
             {
                 "name": "IDOR Exploit Simulation - Profile Access",
-                "description": "Try to access another user’s profile by modifying the user_id parameter.",
+                "description": "Try to access another user's profile by modifying the user_id parameter.",
                 "task_type": "simulation",
                 "order": 3,
                 "simulation_config": {

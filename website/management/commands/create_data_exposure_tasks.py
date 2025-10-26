@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from website.models import Labs, TaskContent, Tasks
+from django.core.management.base import CommandError
 
 
 class Command(BaseCommand):
@@ -9,12 +10,9 @@ class Command(BaseCommand):
         try:
             sde_lab = Labs.objects.get(name="Sensitive Data Exposure")
         except Labs.DoesNotExist:
-            self.stdout.write(
-                self.style.ERROR(
-                    "Sensitive Data Exposure lab not found. Please run create_initial_labs first."
-                )
+            raise CommandError(
+                "Sensitive Data Exposure lab not found. Please run create_initial_labs first."
             )
-            return
 
         tasks_data = [
             {
@@ -93,7 +91,7 @@ class Command(BaseCommand):
                     "hints": [
                         "Toggle parameters that influence server behavior (e.g., show=error)",
                         "Look for endpoints that print debug info when given unusual input",
-                        "The lab simulates an error page containing a safe example secret for learning"
+                        "The lab simulates an error page containing a safe example secret for learning",
                     ],
                     "difficulty": "beginner",
                 },
@@ -113,7 +111,7 @@ class Command(BaseCommand):
                     "hints": [
                         "Try common backup filenames or paths like /.git/HEAD, /backup/config.bak, /config/.env",
                         "Use GET requests to known file paths that might be accidentally exposed",
-                        "The lab uses safe simulated files and values for demonstration"
+                        "The lab uses safe simulated files and values for demonstration",
                     ],
                     "difficulty": "intermediate",
                 },
@@ -133,7 +131,7 @@ class Command(BaseCommand):
                     "hints": [
                         "Inspect served JavaScript/CSS and HTML for hardcoded keys",
                         "Search for plausible variable names like 'API_KEY', 'TOKEN', or 'SECRET'",
-                        "The lab's static files include safe example keys for learning"
+                        "The lab's static files include safe example keys for learning",
                     ],
                     "difficulty": "beginner",
                 },
@@ -153,7 +151,7 @@ class Command(BaseCommand):
                     "hints": [
                         "Look for admin or export endpoints that might expose user data",
                         "The lab simulates a safe export that demonstrates why storing plaintext is dangerous",
-                        "Check both JSON and CSV endpoints for exported data"
+                        "Check both JSON and CSV endpoints for exported data",
                     ],
                     "difficulty": "intermediate",
                 },
@@ -229,7 +227,7 @@ class Command(BaseCommand):
                     "hints": [
                         "Search common exposed filenames like /.env, config.php, or backup files",
                         "When you find a simulated secret, provide a short remediation plan (rotate, revoke, replace with managed secret)",
-                        "The lab validates remediation text heuristically (contains key phrases)"
+                        "The lab validates remediation text heuristically (contains key phrases)",
                     ],
                     "difficulty": "advanced",
                 },
@@ -279,4 +277,6 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'Updated content for task: "{task.name}"'))
 
         sde_lab.update_total_tasks()
-        self.stdout.write(self.style.SUCCESS(f"Sensitive Data Exposure lab setup complete with {sde_lab.total_tasks} tasks"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Sensitive Data Exposure lab setup complete with {sde_lab.total_tasks} tasks")
+        )
