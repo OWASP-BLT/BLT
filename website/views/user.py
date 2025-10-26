@@ -480,7 +480,13 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Extract GitHub username from URL for avatar
         for leader in pr_leaderboard:
             if leader.get("user_profile__github_url"):
-                github_username = leader["user_profile__github_url"].rstrip("/").split("/")[-1]
+                github_url = leader["user_profile__github_url"].rstrip("/")
+                if "/apps/" in github_url:
+                    # Handle GitHub Apps like https://github.com/apps/dependabot
+                    github_username = github_url.split("/")[-1]
+                else:
+                    # Handle regular users like https://github.com/username
+                    github_username = github_url.split("/")[-1]
                 leader["github_username"] = github_username
         context["pr_leaderboard"] = pr_leaderboard
 
@@ -498,8 +504,13 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Extract GitHub username from URL for avatar
         for leader in reviewed_pr_leaderboard:
             if leader.get("reviewer__github_url"):
-                # Extract username from https://github.com/username format
-                github_username = leader["reviewer__github_url"].rstrip("/").split("/")[-1]
+                github_url = leader["reviewer__github_url"].rstrip("/")
+                if "/apps/" in github_url:
+                    # Handle GitHub Apps like https://github.com/apps/dependabot
+                    github_username = github_url.split("/")[-1]
+                else:
+                    # Handle regular users like https://github.com/username
+                    github_username = github_url.split("/")[-1]
                 leader["github_username"] = github_username
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
