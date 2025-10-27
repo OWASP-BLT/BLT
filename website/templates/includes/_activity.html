@@ -127,6 +127,15 @@
             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#e74c3c] bg-opacity-10 text-[#e74c3c] border border-[#e74c3c] border-opacity-20">
                 {{ activity.get_label_display }}
             </span>
+            <!-- Tags -->
+            {% if activity.tags.all %}
+                {% for tag in activity.tags.all %}
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white shadow-sm"
+                          style="background-color: {{ tag.color }};">
+                        {% if tag.icon %}<i class="{{ tag.icon }} mr-1"></i>{% endif %}{{ tag.name }}
+                    </span>
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
     <!-- Screenshot -->
