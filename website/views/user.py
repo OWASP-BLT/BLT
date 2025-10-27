@@ -261,7 +261,7 @@ I'd be happy to schedule a brief demo or answer any questions about how BLT coul
 Looking forward to helping {org_name} strengthen its security posture with BLT!
 
 Best regards,
-{request.user.get_full_name() or request.user.username}
+{request.user.get_full_name() or request.user.username if request.user.is_authenticated else "BLT Team"}
 
 ---
 Learn more: https://blt.owasp.org
