@@ -241,6 +241,69 @@
                     </div>
                 </div>
             </div>
+            <!-- Contributor Clubs Section -->
+            <div class="flex flex-col items-center lg:items-start bg-gray-100 text-gray-800 px-5 py-2 rounded-lg w-full">
+                <h4 class="text-lg font-semibold uppercase tracking-wide flex gap-3 items-center py-2">
+                    <i class="fa fa-users text-red-500"></i> {% trans "Contributor Clubs" %}
+                </h4>
+                <hr class="border-t-[1px] border-gray-300 opacity-70 w-full mb-3">
+                
+                <!-- Milestone Clubs -->
+                <div class="w-full mb-3">
+                    <div class="text-sm font-medium mb-2 text-gray-600">{% trans "Milestone Clubs" %}</div>
+                    <div class="flex flex-wrap gap-2">
+                        {% if user.userprofile.hundred_club_member %}
+                            <span class="px-3 py-1 bg-red-500 text-white rounded-full text-sm font-bold flex items-center gap-1">
+                                <i class="fas fa-trophy"></i> 100 Club
+                            </span>
+                        {% elif user.userprofile.fifty_club_member %}
+                            <span class="px-3 py-1 bg-red-400 text-white rounded-full text-sm font-bold flex items-center gap-1">
+                                <i class="fas fa-medal"></i> 50 Club
+                            </span>
+                        {% elif user.userprofile.ten_club_member %}
+                            <span class="px-3 py-1 bg-red-300 text-white rounded-full text-sm font-bold flex items-center gap-1">
+                                <i class="fas fa-award"></i> 10 Club
+                            </span>
+                        {% else %}
+                            <span class="px-3 py-1 bg-gray-300 text-gray-600 rounded-full text-sm">
+                                {% trans "No milestone club yet" %}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Activity Clubs -->
+                <div class="w-full">
+                    <div class="text-sm font-medium mb-2 text-gray-600">{% trans "Activity Clubs" %}</div>
+                    <div class="flex flex-wrap gap-2">
+                        {% if user.userprofile.weekly_club_member %}
+                            <span class="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-bold flex items-center gap-1">
+                                <i class="fas fa-fire"></i> Weekly Club
+                            </span>
+                        {% endif %}
+                        {% if user.userprofile.monthly_club_member %}
+                            <span class="px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-bold flex items-center gap-1">
+                                <i class="fas fa-calendar"></i> Monthly Club
+                            </span>
+                        {% endif %}
+                        {% if not user.userprofile.weekly_club_member and not user.userprofile.monthly_club_member %}
+                            <span class="px-3 py-1 bg-gray-300 text-gray-600 rounded-full text-sm">
+                                {% trans "No activity clubs yet" %}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Club Status Summary -->
+                <div class="w-full mt-3 p-2 bg-white rounded border-l-4 border-red-500">
+                    <div class="text-sm font-medium text-gray-700">
+                        {% trans "Total Merged PRs" %}: <span class="font-bold text-red-600">{{ user.userprofile.merged_pr_count }}</span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        {% trans "Keep contributing to unlock more clubs!" %}
+                    </div>
+                </div>
+            </div>
             <div>
                 <h1 class="font-bold text-black/90 mb-3">{% trans "Recent Activity" %}</h1>
                 <div class="top-findings w-full flex flex-col gap-3 items-center justify-center">
