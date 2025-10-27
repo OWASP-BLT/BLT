@@ -192,6 +192,17 @@ from website.views.issue import (
     update_content_comment,
     vote_count,
 )
+from website.views.bidding import (
+    enhanced_bidding_view,
+    dynamic_bid_image,
+    accept_bid,
+    fund_bid,
+    bid_detail,
+    complete_bid,
+    bid_api_status,
+    check_current_bid,
+    github_webhook as bidding_github_webhook,
+)
 from website.views.organization import (
     BountyPayoutsView,
     CreateHunt,
@@ -928,6 +939,15 @@ urlpatterns = [
         name="generate_bid_image",
     ),
     path("bidding/", SaveBiddingData, name="BiddingData"),
+    path("bidding/enhanced/", enhanced_bidding_view, name="enhanced_bidding"),
+    path("bid/<int:bid_id>/", bid_detail, name="bid_detail"),
+    path("bid/<int:bid_id>/accept/", accept_bid, name="accept_bid"),
+    path("bid/<int:bid_id>/fund/", fund_bid, name="fund_bid"),
+    path("bid/<int:bid_id>/complete/", complete_bid, name="complete_bid"),
+    path("bid/image/<str:token>.png", dynamic_bid_image, name="dynamic_bid_image"),
+    path("api/bid/<int:bid_id>/status/", bid_api_status, name="bid_api_status"),
+    path("api/bid/check-current/", check_current_bid, name="check_current_bid"),
+    path("webhooks/github/bidding/", bidding_github_webhook, name="bidding_github_webhook"),
     path("select_bid/", select_bid, name="select_bid"),
     path("get_unique_issues/", get_unique_issues, name="get_unique_issues"),
     path("change_bid_status/", change_bid_status, name="change_bid_status"),
