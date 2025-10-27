@@ -85,7 +85,7 @@
                                id="stake_amount"
                                name="stake_amount"
                                min="1"
-                               max="{{ user_bacon_balance }}"
+                               {% if user_bacon_balance > 0 %}max="{{ user_bacon_balance }}"{% endif %}
                                required
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                                placeholder="50" />
