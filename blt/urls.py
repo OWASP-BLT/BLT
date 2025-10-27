@@ -121,6 +121,7 @@ from website.views.daily_reminders import reminder_settings, send_test_reminder
 from website.views.education import (
     add_lecture,
     add_section,
+    add_video,
     course_content_management,
     create_or_update_course,
     create_standalone_lecture,
@@ -704,6 +705,7 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
+    path("education/add-video/", add_video, name="add_video"),
     path("gsoc/", GsocView.as_view(), name="gsoc"),
     path("gsoc/refresh/", refresh_gsoc_project, name="refresh_gsoc_project"),
     re_path(

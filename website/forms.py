@@ -206,6 +206,19 @@ class GitHubIssueForm(forms.Form):
         return url
 
 
+class VideoSubmissionForm(forms.Form):
+    video_url = forms.URLField(
+        label="Video URL",
+        widget=forms.URLInput(
+            attrs={
+                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                "placeholder": "Enter YouTube or Vimeo video URL",
+            }
+        ),
+        help_text="Enter the full URL to the YouTube or Vimeo video.",
+    )
+
+
 class HackathonForm(forms.ModelForm):
     class Meta:
         model = Hackathon
