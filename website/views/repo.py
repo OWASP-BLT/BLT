@@ -1,6 +1,7 @@
 import os
 import re
 import time
+from urllib.parse import quote_plus
 
 import psutil
 import requests
@@ -454,7 +455,8 @@ def add_repo(request):
 
         # Get issue counts
         def get_issue_count(full_name, query, headers):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = requests.get(search_url, headers=headers)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)

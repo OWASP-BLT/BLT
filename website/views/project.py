@@ -8,7 +8,7 @@ from calendar import monthrange
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 import requests
 import sentry_sdk
@@ -522,7 +522,8 @@ def create_project(request):
                 return response
 
         def get_issue_count(full_name, query):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = api_get(search_url)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
@@ -1355,7 +1356,8 @@ class RepoDetailView(DetailView):
                 return render(request, "includes/_contributor_stats_table.html", context)
 
         def get_issue_count(full_name, query, headers):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = requests.get(search_url, headers=headers)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
