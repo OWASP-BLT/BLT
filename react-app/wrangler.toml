@@ -1,0 +1,10 @@
+name = "blt-react"
+compatibility_date = "2024-10-29"
+pages_build_output_dir = "dist"
+
+[env.production]
+name = "blt-react-production"
+
+[env.production.vars]
+# Production environment variables can be set in Cloudflare dashboard
+# VITE_API_URL will be set during build time
