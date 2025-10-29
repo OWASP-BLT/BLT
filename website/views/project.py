@@ -585,9 +585,9 @@ def create_project(request):
 
                 # Issues count - Fixed
                 full_name = repo_data.get("full_name")
-                open_issues = get_issue_count(full_name, "type:issue+state:open")
-                closed_issues = get_issue_count(full_name, "type:issue+state:closed")
-                open_pull_requests = get_issue_count(full_name, "type:pr+state:open")
+                open_issues = get_issue_count(full_name, "type:issue state:open")
+                closed_issues = get_issue_count(full_name, "type:issue state:closed")
+                open_pull_requests = get_issue_count(full_name, "type:pr state:open")
                 total_issues = open_issues + closed_issues
 
                 # Latest release
@@ -1525,9 +1525,9 @@ class RepoDetailView(DetailView):
                     commit_count = 0
 
                 # Get open issues and PRs
-                open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
-                closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
-                open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+                open_issues = get_issue_count(full_name, "type:issue state:open", headers)
+                closed_issues = get_issue_count(full_name, "type:issue state:closed", headers)
+                open_pull_requests = get_issue_count(full_name, "type:pr state:open", headers)
                 total_issues = open_issues + closed_issues
 
                 if (

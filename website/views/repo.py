@@ -462,9 +462,9 @@ def add_repo(request):
                 return resp.json().get("total_count", 0)
             return 0
 
-        open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
-        closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
-        open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+        open_issues = get_issue_count(full_name, "type:issue state:open", headers)
+        closed_issues = get_issue_count(full_name, "type:issue state:closed", headers)
+        open_pull_requests = get_issue_count(full_name, "type:pr state:open", headers)
         total_issues = open_issues + closed_issues
 
         # Get contributors count and commit count
