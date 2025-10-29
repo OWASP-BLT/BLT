@@ -3,6 +3,7 @@
 @theme {
   /* BLT Colors - Using #e74c3c as primary red */
   --color-primary-red: #e74c3c;
+  --color-primary-red-dark: #c0392b;
   --color-danger: #e74c3c;
   --color-white: #ffffff;
   --color-black: #1c2434;
@@ -31,4 +32,27 @@ body {
 a {
   text-decoration: none;
   color: inherit;
+}
+
+/* Button styles */
+.btn-primary {
+  background-color: var(--color-primary-red);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-red-dark);
+}
+
+/* Input focus styles */
+.input-focus:focus {
+  border-color: var(--color-primary-red);
+  outline: none;
+}
+
+/* Error message styles */
+.error-message {
+  background-color: rgba(231, 76, 60, 0.1);
+  border-color: var(--color-primary-red);
+  color: var(--color-primary-red);
 }

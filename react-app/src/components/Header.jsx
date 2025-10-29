@@ -23,7 +23,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold" style={{ color: '#e74c3c' }}>
+            <span className="text-2xl font-bold text-[#e74c3c]">
               OWASP BLT
             </span>
           </Link>
@@ -47,10 +47,7 @@ const Header = () => {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 rounded-lg transition-colors"
-                  style={{ backgroundColor: '#e74c3c', color: 'white' }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#c0392b'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#e74c3c'}
+                  className="px-4 py-2 rounded-lg btn-primary transition-colors"
                 >
                   Logout
                 </button>
@@ -65,10 +62,7 @@ const Header = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 rounded-lg transition-colors"
-                  style={{ backgroundColor: '#e74c3c', color: 'white' }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#c0392b'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#e74c3c'}
+                  className="px-4 py-2 rounded-lg btn-primary transition-colors"
                 >
                   Sign Up
                 </Link>
@@ -138,8 +132,7 @@ const Header = () => {
                     handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2 rounded-lg"
-                  style={{ backgroundColor: '#e74c3c', color: 'white' }}
+                  className="w-full text-left px-4 py-2 rounded-lg btn-primary"
                 >
                   Logout
                 </button>
@@ -155,8 +148,7 @@ const Header = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="block px-4 py-2 rounded-lg text-center"
-                  style={{ backgroundColor: '#e74c3c', color: 'white' }}
+                  className="block px-4 py-2 rounded-lg btn-primary text-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign Up

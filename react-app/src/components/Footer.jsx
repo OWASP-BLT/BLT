@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About Section */}
           <div>
-            <h3 className="text-xl font-bold mb-4" style={{ color: '#e74c3c' }}>
+            <h3 className="text-xl font-bold mb-4 text-[#e74c3c]">
               OWASP BLT
             </h3>
             <p className="text-bodydark text-sm">

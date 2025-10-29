@@ -56,8 +56,8 @@ const Register = () => {
         </div>
 
         {errors.non_field_errors && (
-          <div className="mb-4 p-3 bg-danger bg-opacity-10 border border-danger rounded-lg" style={{ borderColor: '#e74c3c', backgroundColor: 'rgba(231, 76, 60, 0.1)' }}>
-            <p className="text-sm" style={{ color: '#e74c3c' }}>{getErrorMessage('non_field_errors')}</p>
+          <div className="mb-4 p-3 error-message border rounded-lg">
+            <p className="text-sm">{getErrorMessage('non_field_errors')}</p>
           </div>
         )}
 
@@ -73,14 +73,12 @@ const Register = () => {
               value={formData.username}
               onChange={handleChange}
               required
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-shadow ${
+              className={`w-full px-4 py-2 border rounded-lg input-focus transition-shadow ${
                 errors.username ? 'border-danger' : 'border-stroke'
               }`}
-              onFocus={(e) => e.target.style.borderColor = '#e74c3c'}
-              onBlur={(e) => e.target.style.borderColor = errors.username ? '#e74c3c' : '#E2E8F0'}
             />
             {errors.username && (
-              <p className="mt-1 text-sm" style={{ color: '#e74c3c' }}>{getErrorMessage('username')}</p>
+              <p className="mt-1 text-sm error-message">{getErrorMessage('username')}</p>
             )}
           </div>
 
@@ -95,14 +93,12 @@ const Register = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-shadow ${
+              className={`w-full px-4 py-2 border rounded-lg input-focus transition-shadow ${
                 errors.email ? 'border-danger' : 'border-stroke'
               }`}
-              onFocus={(e) => e.target.style.borderColor = '#e74c3c'}
-              onBlur={(e) => e.target.style.borderColor = errors.email ? '#e74c3c' : '#E2E8F0'}
             />
             {errors.email && (
-              <p className="mt-1 text-sm" style={{ color: '#e74c3c' }}>{getErrorMessage('email')}</p>
+              <p className="mt-1 text-sm error-message">{getErrorMessage('email')}</p>
             )}
           </div>
 
@@ -117,14 +113,12 @@ const Register = () => {
               value={formData.password1}
               onChange={handleChange}
               required
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-shadow ${
+              className={`w-full px-4 py-2 border rounded-lg input-focus transition-shadow ${
                 errors.password1 ? 'border-danger' : 'border-stroke'
               }`}
-              onFocus={(e) => e.target.style.borderColor = '#e74c3c'}
-              onBlur={(e) => e.target.style.borderColor = errors.password1 ? '#e74c3c' : '#E2E8F0'}
             />
             {errors.password1 && (
-              <p className="mt-1 text-sm" style={{ color: '#e74c3c' }}>{getErrorMessage('password1')}</p>
+              <p className="mt-1 text-sm error-message">{getErrorMessage('password1')}</p>
             )}
           </div>
 
@@ -139,24 +133,19 @@ const Register = () => {
               value={formData.password2}
               onChange={handleChange}
               required
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-shadow ${
+              className={`w-full px-4 py-2 border rounded-lg input-focus transition-shadow ${
                 errors.password2 ? 'border-danger' : 'border-stroke'
               }`}
-              onFocus={(e) => e.target.style.borderColor = '#e74c3c'}
-              onBlur={(e) => e.target.style.borderColor = errors.password2 ? '#e74c3c' : '#E2E8F0'}
             />
             {errors.password2 && (
-              <p className="mt-1 text-sm" style={{ color: '#e74c3c' }}>{getErrorMessage('password2')}</p>
+              <p className="mt-1 text-sm error-message">{getErrorMessage('password2')}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-lg text-white font-semibold transition-colors disabled:opacity-50"
-            style={{ backgroundColor: '#e74c3c' }}
-            onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = '#c0392b')}
-            onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = '#e74c3c')}
+            className="w-full py-3 rounded-lg btn-primary font-semibold transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>

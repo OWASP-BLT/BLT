@@ -43,8 +43,8 @@ const Login = () => {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-danger bg-opacity-10 border border-danger rounded-lg" style={{ borderColor: '#e74c3c', backgroundColor: 'rgba(231, 76, 60, 0.1)' }}>
-            <p className="text-sm" style={{ color: '#e74c3c' }}>{error}</p>
+          <div className="mb-4 p-3 error-message border rounded-lg">
+            <p className="text-sm">{error}</p>
           </div>
         )}
 
@@ -60,10 +60,7 @@ const Login = () => {
               value={formData.username}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-stroke rounded-lg focus:outline-none focus:ring-2 transition-shadow"
-              style={{ '--focus-ring-color': '#e74c3c' }}
-              onFocus={(e) => e.target.style.borderColor = '#e74c3c'}
-              onBlur={(e) => e.target.style.borderColor = '#E2E8F0'}
+              className="w-full px-4 py-2 border border-stroke rounded-lg input-focus transition-shadow"
             />
           </div>
 
@@ -78,19 +75,14 @@ const Login = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-stroke rounded-lg focus:outline-none focus:ring-2 transition-shadow"
-              onFocus={(e) => e.target.style.borderColor = '#e74c3c'}
-              onBlur={(e) => e.target.style.borderColor = '#E2E8F0'}
+              className="w-full px-4 py-2 border border-stroke rounded-lg input-focus transition-shadow"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-lg text-white font-semibold transition-colors disabled:opacity-50"
-            style={{ backgroundColor: '#e74c3c' }}
-            onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = '#c0392b')}
-            onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = '#e74c3c')}
+            className="w-full py-3 rounded-lg btn-primary font-semibold transition-colors disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
