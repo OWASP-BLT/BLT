@@ -8,6 +8,28 @@
 
 Everything is on our <a href="https://owaspblt.org">homepage</a>
 
+## 🚀 React Version for Cloudflare
+
+We now have a modern React-based frontend that can be deployed on Cloudflare Pages! 
+
+### Quick Start
+
+```bash
+cd react-app
+npm install
+npm run dev
+```
+
+See the [React App README](react-app/README.md) for full documentation and [Deployment Guide](react-app/DEPLOYMENT.md) for Cloudflare Pages deployment instructions.
+
+### Features
+
+- ⚡ Built with React 19 + Vite
+- 🎨 Styled with Tailwind CSS
+- 🔐 Full authentication support
+- 📱 Responsive design
+- ☁️ Cloudflare Pages ready
+
 ## Star History
 
 <a href="https://star-history.com/#OWASP-BLT/BLT&Date">

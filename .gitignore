@@ -21,3 +21,10 @@ requirements.txt
 .vs
 .qodo
 ssl
+
+# React app
+react-app/node_modules
+react-app/dist
+react-app/.env
+react-app/.env.local
+
