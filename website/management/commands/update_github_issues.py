@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
+from urllib.parse import quote_plus
 
 import requests
 from django.conf import settings
@@ -26,7 +27,9 @@ class Command(LoggedBaseCommand):
             self.stdout.write(f"[{index}/{user_count}] Processing user: {user.github_url}")
 
             github_username = user.github_url.split("/")[-1]
-            api_url = f"https://api.github.com/search/issues?q=author:{github_username}+type:pr&per_page=100&page=1"
+            query = f"author:{github_username} type:pr"
+            encoded_query = quote_plus(query)
+            api_url = f"https://api.github.com/search/issues?q={encoded_query}&per_page=100&page=1"
 
             headers = {"Accept": "application/vnd.github.v3+json", "Authorization": f"token {settings.GITHUB_TOKEN}"}
 
