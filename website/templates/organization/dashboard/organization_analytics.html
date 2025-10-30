@@ -257,371 +257,233 @@
 {% block scripts %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        console.log('Chart.js loaded:', typeof Chart !== 'undefined');
-        
         // Chart.js default configuration
         if (typeof Chart !== 'undefined') {
             Chart.defaults.font.family = "'Inter', 'system-ui', '-apple-system', 'sans-serif'";
             Chart.defaults.color = '#6B7280';
         }
 
-        // Bug Type Pie Chart
-        function initBugTypePie() {
+        // Helper function to parse and validate chart data
+        function parseChartData(labelsRaw, dataRaw, emptyMessage, errorIcon) {
+            if (!labelsRaw || labelsRaw.trim() === '' || labelsRaw === 'null') {
+                labelsRaw = '[]';
+            }
+            if (!dataRaw || dataRaw.trim() === '' || dataRaw === 'null') {
+                dataRaw = '[]';
+            }
+
             try {
-                const ctx = document.getElementById('bugTypePie');
-                if (!ctx) {
-                    console.error('Bug type canvas not found');
-                    return;
-                }
+                const labels = JSON.parse(labelsRaw);
+                const data = JSON.parse(dataRaw);
 
-                let labelsRaw = '{{ bug_report_type_piechart_data.bug_report_type_labels|safe }}';
-                let dataRaw = '{{ bug_report_type_piechart_data.bug_report_type_data|safe }}';
-                
-                // Handle empty or invalid data
-                if (!labelsRaw || labelsRaw.trim() === '' || labelsRaw === 'null') {
-                    labelsRaw = '[]';
-                }
-                if (!dataRaw || dataRaw.trim() === '' || dataRaw === 'null') {
-                    dataRaw = '[]';
-                }
-                
-                console.log('Bug Type Labels Raw:', labelsRaw);
-                console.log('Bug Type Data Raw:', dataRaw);
-
-                let labels, data;
-                try {
-                    labels = JSON.parse(labelsRaw);
-                    data = JSON.parse(dataRaw);
-                } catch (parseError) {
-                    console.error('JSON Parse Error for Bug Type:', parseError);
-                    ctx.parentElement.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="text-center"><i class="fas fa-exclamation-triangle text-gray-300 text-4xl mb-3"></i><p class="text-gray-500 text-sm">Error loading chart data</p></div></div>';
-                    return;
-                }
-
-                console.log('Bug Type Labels:', labels);
-                console.log('Bug Type Data:', data);
-
-                if (!labels || !data || !Array.isArray(labels) || !Array.isArray(data) || labels.length === 0 || data.length === 0) {
-                    ctx.parentElement.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="text-center"><i class="fas fa-chart-pie text-gray-300 text-4xl mb-3"></i><p class="text-gray-500 text-sm">No bug type data available</p></div></div>';
-                    return;
+                if (!Array.isArray(labels) || !Array.isArray(data) || labels.length === 0 || data.length === 0) {
+                    return { success: false, empty: true, message: emptyMessage, icon: errorIcon };
                 }
 
                 if (labels.length !== data.length) {
                     console.warn('Labels and data length mismatch:', labels.length, 'vs', data.length);
                 }
 
-                new Chart(ctx, {
-                    type: 'doughnut',
-      data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-            backgroundColor: [
-                                '#e74c3c',
-                                '#3498db',
-                                '#2ecc71',
-                                '#f39c12',
-                                '#9b59b6',
-                                '#1abc9c',
-                                '#e67e22',
-                                '#95a5a6'
-                            ],
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
-                        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    padding: 15,
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                padding: 12,
-                                cornerRadius: 8,
-                                titleFont: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                bodyFont: {
-                                    size: 13
-                                },
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.parsed || 0;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = ((value / total) * 100).toFixed(1);
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
-                            }
+                return { success: true, labels, data };
+            } catch (error) {
+                console.error('JSON Parse Error:', error);
+                return { success: false, empty: false, message: 'Error loading chart data', icon: 'fas fa-exclamation-triangle' };
+            }
+        }
+
+        // Helper function to show empty/error message
+        function showChartMessage(element, message, icon) {
+            element.innerHTML = `<div class="flex flex-col items-center justify-center h-full"><div class="text-center"><i class="${icon} text-gray-300 text-4xl mb-3"></i><p class="text-gray-500 text-sm">${message}</p></div></div>`;
+        }
+
+        // Shared pie chart configuration
+        const pieChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
                         }
                     }
-                });
-                console.log('Bug Type Chart initialized successfully');
-            } catch (error) {
-                console.error('Error initializing Bug Type Chart:', error);
+                }
             }
+        };
+
+        // Color palettes
+        const pieColors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#95a5a6', '#34495e', '#16a085'];
+
+        // Bug Type Pie Chart
+        function initBugTypePie() {
+            const ctx = document.getElementById('bugTypePie');
+            if (!ctx) return;
+
+            const result = parseChartData(
+                '{{ bug_report_type_piechart_data.bug_report_type_labels|safe }}',
+                '{{ bug_report_type_piechart_data.bug_report_type_data|safe }}',
+                'No bug type data available',
+                'fas fa-chart-pie'
+            );
+
+            if (!result.success) {
+                showChartMessage(ctx.parentElement, result.message, result.icon);
+                return;
+            }
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: result.labels,
+                    datasets: [{
+                        data: result.data,
+                        backgroundColor: pieColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: pieChartOptions
+            });
         }
 
         // Domain Pie Chart
         function initDomainPie() {
-            try {
-                const ctx = document.getElementById('domainPie');
-                if (!ctx) {
-                    console.error('Domain canvas not found');
-                    return;
-                }
+            const ctx = document.getElementById('domainPie');
+            if (!ctx) return;
 
-                let labelsRaw = '{{ reports_on_domain_piechart_data.bug_report_on_domains_labels|safe }}';
-                let dataRaw = '{{ reports_on_domain_piechart_data.bug_report_on_domains_data|safe }}';
-                
-                // Handle empty or invalid data
-                if (!labelsRaw || labelsRaw.trim() === '' || labelsRaw === 'null') {
-                    labelsRaw = '[]';
-                }
-                if (!dataRaw || dataRaw.trim() === '' || dataRaw === 'null') {
-                    dataRaw = '[]';
-                }
-                
-                console.log('Domain Labels Raw:', labelsRaw);
-                console.log('Domain Data Raw:', dataRaw);
+            const result = parseChartData(
+                '{{ reports_on_domain_piechart_data.bug_report_on_domains_labels|safe }}',
+                '{{ reports_on_domain_piechart_data.bug_report_on_domains_data|safe }}',
+                'No domain data available',
+                'fas fa-globe'
+            );
 
-                let labels, data;
-                try {
-                    labels = JSON.parse(labelsRaw);
-                    data = JSON.parse(dataRaw);
-                } catch (parseError) {
-                    console.error('JSON Parse Error for Domain:', parseError);
-                    ctx.parentElement.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="text-center"><i class="fas fa-exclamation-triangle text-gray-300 text-4xl mb-3"></i><p class="text-gray-500 text-sm">Error loading chart data</p></div></div>';
-                    return;
-                }
-
-                console.log('Domain Labels:', labels);
-                console.log('Domain Data:', data);
-
-                if (!labels || !data || !Array.isArray(labels) || !Array.isArray(data) || labels.length === 0 || data.length === 0) {
-                    ctx.parentElement.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="text-center"><i class="fas fa-globe text-gray-300 text-4xl mb-3"></i><p class="text-gray-500 text-sm">No domain data available</p></div></div>';
-                    return;
-                }
-
-                if (labels.length !== data.length) {
-                    console.warn('Labels and data length mismatch:', labels.length, 'vs', data.length);
-                }
-
-                new Chart(ctx, {
-                    type: 'doughnut',
-      data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-            backgroundColor: [
-                                '#e74c3c',
-                                '#3498db',
-                                '#2ecc71',
-                                '#f39c12',
-                                '#9b59b6',
-                                '#1abc9c',
-                                '#e67e22',
-                                '#95a5a6',
-                                '#34495e',
-                                '#16a085'
-                            ],
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
-                        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    padding: 15,
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                padding: 12,
-                                cornerRadius: 8,
-                                titleFont: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                bodyFont: {
-                                    size: 13
-                                },
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.parsed || 0;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = ((value / total) * 100).toFixed(1);
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                console.log('Domain Chart initialized successfully');
-            } catch (error) {
-                console.error('Error initializing Domain Chart:', error);
+            if (!result.success) {
+                showChartMessage(ctx.parentElement, result.message, result.icon);
+                return;
             }
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: result.labels,
+                    datasets: [{
+                        data: result.data,
+                        backgroundColor: pieColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: pieChartOptions
+            });
         }
 
         // Monthly Bar Chart
         function initMonthlyChart() {
-            try {
-                const ctx = document.getElementById('monthlyChart');
-                if (!ctx) {
-                    console.error('Monthly chart canvas not found');
-                    return;
-                }
+            const ctx = document.getElementById('monthlyChart');
+            if (!ctx) return;
 
-                let labelsRaw = '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_labels|safe }}';
-                let dataRaw = '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_data|safe }}';
-                
-                // Handle empty or invalid data
-                if (!labelsRaw || labelsRaw.trim() === '' || labelsRaw === 'null') {
-                    labelsRaw = '[]';
-                }
-                if (!dataRaw || dataRaw.trim() === '' || dataRaw === 'null') {
-                    dataRaw = '[]';
-                }
-                
-                console.log('Monthly Labels Raw:', labelsRaw);
-                console.log('Monthly Data Raw:', dataRaw);
+            const result = parseChartData(
+                '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_labels|safe }}',
+                '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_data|safe }}',
+                'No monthly data available',
+                'fas fa-chart-bar'
+            );
 
-                let labels, data;
-                try {
-                    labels = JSON.parse(labelsRaw);
-                    data = JSON.parse(dataRaw);
-                } catch (parseError) {
-                    console.error('JSON Parse Error for Monthly:', parseError);
-                    ctx.parentElement.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="text-center"><i class="fas fa-exclamation-triangle text-gray-300 text-4xl mb-3"></i><p class="text-gray-500 text-sm">Error loading chart data</p></div></div>';
-                    return;
-                }
+            if (!result.success) {
+                showChartMessage(ctx.parentElement, result.message, result.icon);
+                return;
+            }
 
-                console.log('Monthly Labels:', labels);
-                console.log('Monthly Data:', data);
-
-                if (!labels || !data || !Array.isArray(labels) || !Array.isArray(data) || labels.length === 0 || data.length === 0) {
-                    ctx.parentElement.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="text-center"><i class="fas fa-chart-bar text-gray-300 text-4xl mb-3"></i><p class="text-gray-500 text-sm">No monthly data available</p></div></div>';
-                    return;
-                }
-
-                if (labels.length !== data.length) {
-                    console.warn('Labels and data length mismatch:', labels.length, 'vs', data.length);
-                }
-
-    new Chart(ctx, {
-                    type: 'bar',
-      data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Bug Reports',
-                            data: data,
-                            backgroundColor: '#e74c3c',
-                            borderColor: '#e74c3c',
-            borderWidth: 1,
-                            borderRadius: 8,
-                            borderSkipped: false,
-                        }]
-      },
-      options: {
-        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                padding: 12,
-                                cornerRadius: 8,
-                                titleFont: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                bodyFont: {
-                                    size: 13
-                                },
-                                callbacks: {
-                                    label: function(context) {
-                                        return 'Bugs: ' + context.parsed.y;
-                                    }
-                                }
-                            }
-                        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-                                    stepSize: 1,
-                                    callback: function(value) {
-                                        return Number.isInteger(value) ? value : '';
-                                    }
-                                },
-                                grid: {
-                                    color: '#f3f4f6'
-                                }
-          },
-          x: {
-            grid: {
-                                    display: false
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: result.labels,
+                    datasets: [{
+                        label: 'Bug Reports',
+                        data: result.data,
+                        backgroundColor: '#e74c3c',
+                        borderColor: '#e74c3c',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Bugs: ' + context.parsed.y;
                                 }
                             }
                         }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
+                            },
+                            grid: { color: '#f3f4f6' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
                     }
-                });
-                console.log('Monthly Chart initialized successfully');
-            } catch (error) {
-                console.error('Error initializing Monthly Chart:', error);
-            }
+                }
+            });
         }
 
-        // Initialize all charts when DOM is ready
+        // Initialize all charts
         function initializeAllCharts() {
-            console.log('Initializing all charts...');
-            
-            // Wait a bit to ensure Chart.js is fully loaded
             if (typeof Chart === 'undefined') {
-                console.error('Chart.js not loaded!');
                 setTimeout(initializeAllCharts, 100);
                 return;
             }
-            
+
             try {
                 initBugTypePie();
                 initDomainPie();
                 initMonthlyChart();
-                console.log('All charts initialization attempted');
             } catch (error) {
                 console.error('Error during chart initialization:', error);
             }
         }
 
+        // Start initialization
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
-                console.log('DOM Content Loaded - Waiting for Chart.js');
                 setTimeout(initializeAllCharts, 200);
             });
         } else {
-            console.log('DOM already loaded - Waiting for Chart.js');
             setTimeout(initializeAllCharts, 200);
         }
     </script>
