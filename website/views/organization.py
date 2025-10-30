@@ -2208,9 +2208,7 @@ class OrganizationListView(ListView):
                 path__startswith="/organization/",
                 path__regex=r"^/organization/[^/]+/$",  # Only match exact organization paths
             )
-            .exclude(
-                path="/organizations/"  # Exclude the main organizations list page
-            )
+            .exclude(path="/organizations/")  # Exclude the main organizations list page
             .order_by("-created")
             .values_list("path", flat=True)
             .distinct()[:5]

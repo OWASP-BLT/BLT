@@ -1439,9 +1439,11 @@ class OrganizationDashboardManageRolesView(View):
                 "user_id": org_role.user.id if org_role.user else None,
                 "username": org_role.user.username if org_role.user else "Unknown",
                 "email": org_role.user.email if org_role.user else "",
-                "avatar": org_role.user.userprofile.user_avatar
-                if org_role.user and hasattr(org_role.user, "userprofile")
-                else None,
+                "avatar": (
+                    org_role.user.userprofile.user_avatar
+                    if org_role.user and hasattr(org_role.user, "userprofile")
+                    else None
+                ),
                 "role": org_role.role,
                 "role_display": "Administrator" if org_role.role == 0 else "Moderator",
                 "domain": org_role.domain,

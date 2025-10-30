@@ -1567,13 +1567,15 @@ def get_user_profile(username, workspace_client, user_id):
                         f"*Bio:* {profile.get('bio', 'No bio provided')}"
                     ),
                 },
-                "accessory": {
-                    "type": "image",
-                    "image_url": profile["avatar_url"],
-                    "alt_text": f"GitHub avatar for {username}",
-                }
-                if profile.get("avatar_url")
-                else None,
+                "accessory": (
+                    {
+                        "type": "image",
+                        "image_url": profile["avatar_url"],
+                        "alt_text": f"GitHub avatar for {username}",
+                    }
+                    if profile.get("avatar_url")
+                    else None
+                ),
             },
         ]
 

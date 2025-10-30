@@ -128,9 +128,9 @@ def submit_answer(request, lab_id, task_id):
                 "correct": is_correct,
                 "user_answer": user_answer,
                 "correct_answer": correct_answer,
-                "message": "Correct! Task completed!"
-                if is_correct
-                else f"Incorrect. The correct answer is {correct_answer}.",
+                "message": (
+                    "Correct! Task completed!" if is_correct else f"Incorrect. The correct answer is {correct_answer}."
+                ),
                 "task_completed": user_task_progress.completed,
             }
         )
@@ -167,9 +167,11 @@ def submit_answer(request, lab_id, task_id):
                 "expected_payload": expected_payload if expected_payload else "Not defined",
                 "user_cleaned": user_payload.strip().lower() if expected_payload else "N/A",
                 "expected_cleaned": expected_payload.strip().lower() if expected_payload else "N/A",
-                "message": "Great job! You successfully completed the simulation!"
-                if is_correct
-                else "Try a different approach. Check the hints for guidance.",
+                "message": (
+                    "Great job! You successfully completed the simulation!"
+                    if is_correct
+                    else "Try a different approach. Check the hints for guidance."
+                ),
                 "task_completed": user_task_progress.completed,
             }
         )

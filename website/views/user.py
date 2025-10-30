@@ -61,31 +61,31 @@ logger = logging.getLogger(__name__)
 def extract_github_username(github_url):
     """
     Extract GitHub username from a GitHub URL for avatar display.
-    
+
     Args:
         github_url (str): GitHub URL like 'https://github.com/username' or 'https://github.com/apps/dependabot'
-        
+
     Returns:
         str or None: The username part of the URL, or None if invalid/empty
     """
     if not github_url or not isinstance(github_url, str):
         return None
-    
+
     # Strip trailing slashes and whitespace
     github_url = github_url.strip().rstrip("/")
-    
+
     # Ensure URL contains at least one slash
     if "/" not in github_url:
         return None
-    
+
     # Split on "/" and get the last segment
     segments = github_url.split("/")
     username = segments[-1] if segments else None
-    
+
     # Return username only if it's non-empty and not just domain parts
-    if username and username not in ['github.com', 'www.github.com']:
+    if username and username not in ["github.com", "www.github.com"]:
         return username
-    
+
     return None
 
 
@@ -500,9 +500,9 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Pull Request Leaderboard - Only show PRs from tracked repositories
         pr_leaderboard = (
             GitHubIssue.objects.filter(
-                type="pull_request", 
+                type="pull_request",
                 is_merged=True,
-                repo__isnull=False  # Only include PRs from tracked repositories
+                repo__isnull=False,  # Only include PRs from tracked repositories
             )
             .exclude(user_profile__isnull=True)  # Exclude PRs without user profiles
             .select_related("user_profile__user", "repo")  # Optimize database queries
