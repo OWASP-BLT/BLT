@@ -27,12 +27,13 @@ RUN ARCH=$(dpkg --print-architecture) && \
         curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
         echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
         > /etc/apt/sources.list.d/google-chrome.list && \
-        apt-get update && apt-get install -y google-chrome-stable; \
+        apt-get update && apt-get install -y google-chrome-stable && \
+        ln -sf /usr/bin/google-chrome-stable /usr/local/bin/google-chrome; \
     else \
         echo "Installing Chromium (ARM64 fallback)..." && \
-        apt-get update && apt-get install -y chromium; \
+        apt-get update && apt-get install -y chromium && \
+        ln -sf /usr/bin/chromium /usr/local/bin/google-chrome; \
     fi && \
-    ln -sf $(command -v google-chrome-stable || command -v chromium) /usr/local/bin/google-chrome && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Poetry and dependencies
