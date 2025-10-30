@@ -9,7 +9,7 @@ import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
-from django.core.exceptions import FieldError, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
@@ -207,8 +207,18 @@ class OrganizationDashboardAnalyticsView(View):
         7: "Server Down",
     }
     months_full = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
     ]
 
     def _get_security_issues_queryset(self, organization):
@@ -225,35 +235,33 @@ class OrganizationDashboardAnalyticsView(View):
         severity_distribution = []
         for severity_level in [9, 7, 5, 3, 1]:
             count = security_issues.filter(
-                cve_score__gte=severity_level,
-                cve_score__lt=(severity_level + 2) if severity_level < 9 else 10
+                cve_score__gte=severity_level, cve_score__lt=(severity_level + 2) if severity_level < 9 else 10
             ).count()
             if count > 0 or severity_level == 1:
                 severity_distribution.append({"severity": severity_level, "count": count})
-        
+
         severity_distribution = sorted(severity_distribution, key=lambda x: x["severity"], reverse=True)
 
         # Get recent security incidents (last 30 days)
-        recent_incidents_count = security_issues.filter(
-            created__gte=timezone.now() - timedelta(days=30)
-        ).count()
+        recent_incidents_count = security_issues.filter(created__gte=timezone.now() - timedelta(days=30)).count()
 
         # Calculate average resolution time
-        avg_resolution_time_delta = security_issues.filter(
-            status="resolved",
-            closed_date__isnull=False
-        ).aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
-        
-        avg_resolution_time_formatted = format_timedelta(avg_resolution_time_delta) if avg_resolution_time_delta else None
+        avg_resolution_time_delta = security_issues.filter(status="resolved", closed_date__isnull=False).aggregate(
+            avg_time=Avg(F("closed_date") - F("created"))
+        )["avg_time"]
+
+        avg_resolution_time_formatted = (
+            format_timedelta(avg_resolution_time_delta) if avg_resolution_time_delta else None
+        )
 
         return {
             "total_security_issues": security_issues.count(),
             "recent_incidents": recent_incidents_count,
             "severity_distribution": severity_distribution,
             "avg_resolution_time": avg_resolution_time_formatted,
-            "top_affected_domains": list(security_issues.values("domain__name")
-                .annotate(count=Count("id"))
-                .order_by("-count")[:5]),
+            "top_affected_domains": list(
+                security_issues.values("domain__name").annotate(count=Count("id")).order_by("-count")[:5]
+            ),
         }
 
     def get_threat_intelligence(self, organization):
@@ -270,19 +278,13 @@ class OrganizationDashboardAnalyticsView(View):
             (3.0, 4.9, "Low (3.0-4.9)"),
             (0.1, 2.9, "Very Low (0.1-2.9)"),
         ]
-        
+
         recent_issues = security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
         for min_score, max_score, label in score_ranges:
-            count = recent_issues.filter(
-                cve_score__gte=min_score,
-                cve_score__lte=max_score
-            ).count()
+            count = recent_issues.filter(cve_score__gte=min_score, cve_score__lte=max_score).count()
             if count > 0:
-                attack_vectors.append({
-                    "vulnerability_type": label,
-                    "count": count
-                })
-        
+                attack_vectors.append({"vulnerability_type": label, "count": count})
+
         # Sort by count descending
         attack_vectors.sort(key=lambda x: x["count"], reverse=True)
 
@@ -292,19 +294,19 @@ class OrganizationDashboardAnalyticsView(View):
         if total_issues > 0:
             # Use single queryset with annotations for efficiency
             counts = {
-                'critical': security_issues.filter(cve_score__gte=9.0).count(),
-                'high': security_issues.filter(cve_score__gte=7.0, cve_score__lt=9.0).count(),
-                'medium': security_issues.filter(cve_score__gte=5.0, cve_score__lt=7.0).count(),
-                'low': security_issues.filter(cve_score__gte=3.0, cve_score__lt=5.0).count(),
-                'very_low': security_issues.filter(cve_score__gte=0.1, cve_score__lt=3.0).count(),
+                "critical": security_issues.filter(cve_score__gte=9.0).count(),
+                "high": security_issues.filter(cve_score__gte=7.0, cve_score__lt=9.0).count(),
+                "medium": security_issues.filter(cve_score__gte=5.0, cve_score__lt=7.0).count(),
+                "low": security_issues.filter(cve_score__gte=3.0, cve_score__lt=5.0).count(),
+                "very_low": security_issues.filter(cve_score__gte=0.1, cve_score__lt=3.0).count(),
             }
-            
+
             risk_score = (
-                (counts['critical'] / total_issues * 100) +
-                (counts['high'] / total_issues * 70) +
-                (counts['medium'] / total_issues * 40) +
-                (counts['low'] / total_issues * 20) +
-                (counts['very_low'] / total_issues * 10)
+                (counts["critical"] / total_issues * 100)
+                + (counts["high"] / total_issues * 70)
+                + (counts["medium"] / total_issues * 40)
+                + (counts["low"] / total_issues * 20)
+                + (counts["very_low"] / total_issues * 10)
             )
             risk_score = min(100, int(risk_score))
         else:
@@ -313,10 +315,12 @@ class OrganizationDashboardAnalyticsView(View):
         return {
             "attack_vectors": attack_vectors[:5],  # Top 5
             "risk_score": risk_score,
-            "recent_alerts": list(security_issues.filter(
-                created__gte=timezone.now() - timedelta(days=7),
-                cve_score__gte=7.0,  # Use cve_score for severity (7.0 and above)
-            ).order_by("-created")[:5]),
+            "recent_alerts": list(
+                security_issues.filter(
+                    created__gte=timezone.now() - timedelta(days=7),
+                    cve_score__gte=7.0,  # Use cve_score for severity (7.0 and above)
+                ).order_by("-created")[:5]
+            ),
         }
 
     def get_label_name(self, label_id):
@@ -327,14 +331,14 @@ class OrganizationDashboardAnalyticsView(View):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
         total_domains = Domain.objects.filter(organization__id=organization).count()
-        
+
         # Calculate total money distributed
         # Sum all rewards from issues in the organization's domains
         # This ensures we capture all money distributed, whether through hunts or other means
-        total_money_distributed = Issue.objects.filter(
-            domain__organization__id=organization
-        ).aggregate(total_money=Sum("rewarded"))["total_money"]
-        
+        total_money_distributed = Issue.objects.filter(domain__organization__id=organization).aggregate(
+            total_money=Sum("rewarded")
+        )["total_money"]
+
         # Handle None case - if no rewards exist, default to 0
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
@@ -408,21 +412,17 @@ class OrganizationDashboardAnalyticsView(View):
         """Returns stats comparing past 8-15 days (previous week) to 0-7 days (this week)."""
         current_date = timezone.now().date()
         date_ranges = {
-            'prev': (current_date - timedelta(days=15), current_date - timedelta(days=8)),
-            'this': (current_date - timedelta(days=7), current_date),
+            "prev": (current_date - timedelta(days=15), current_date - timedelta(days=8)),
+            "this": (current_date - timedelta(days=7), current_date),
         }
 
         base_query = Issue.objects.filter(domain__organization__id=organization)
         if is_accepted_bugs:
             base_query = base_query.filter(verified=True)
 
-        prev_week_issue_count = base_query.filter(
-            created__date__range=date_ranges['prev']
-        ).count()
-        
-        this_week_issue_count = base_query.filter(
-            created__date__range=date_ranges['this']
-        ).count()
+        prev_week_issue_count = base_query.filter(created__date__range=date_ranges["prev"]).count()
+
+        this_week_issue_count = base_query.filter(created__date__range=date_ranges["this"]).count()
 
         # Calculate percentage increase
         if prev_week_issue_count == 0:
@@ -439,9 +439,7 @@ class OrganizationDashboardAnalyticsView(View):
     def _get_user_organizations(self, user):
         """Helper to get organizations accessible by user."""
         if user.is_authenticated:
-            return Organization.objects.values("name", "id").filter(
-                Q(managers__in=[user]) | Q(admin=user)
-            ).distinct()
+            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
         return []
 
     @validate_organization_user
