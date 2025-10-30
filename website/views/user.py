@@ -487,6 +487,20 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_global.html"
 
     def get_context_data(self, *args, **kwargs):
+        """
+        Assembles template context for the global leaderboard page, adding leaderboards and related data.
+
+        The context includes:
+        - `user_related_tags`: tags associated with user profiles.
+        - `wallet`: the requesting user's Wallet if authenticated.
+        - `leaderboard`: top users by total score (limited to 10).
+        - `pr_leaderboard`: top repositories/users by merged pull request count (top 10).
+        - `code_review_leaderboard`: top reviewers by review count (top 10).
+        - `top_visitors`: user profiles ordered by daily visit count (top 10).
+
+        Returns:
+            dict: Context mapping names (as listed above) to their querysets or values.
+        """
         context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
 
         user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
