@@ -74,6 +74,9 @@ def extract_github_username(github_url):
     # Strip trailing slashes and whitespace
     github_url = github_url.strip().rstrip("/")
 
+    # Remove query parameters and fragments if present
+    github_url = github_url.split("?")[0].split("#")[0]
+
     # Ensure URL contains at least one slash
     if "/" not in github_url:
         return None
@@ -82,8 +85,8 @@ def extract_github_username(github_url):
     segments = github_url.split("/")
     username = segments[-1] if segments else None
 
-    # Return username only if it's non-empty and not just domain parts
-    if username and username not in ["github.com", "www.github.com"]:
+    # Return username only if it's non-empty and not domain parts or protocol prefixes
+    if username and username not in ["github.com", "www.github.com", "www", "http:", "https:"]:
         return username
 
     return None
