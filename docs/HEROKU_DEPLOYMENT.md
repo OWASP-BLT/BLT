@@ -59,7 +59,12 @@ Set the required environment variables:
 
 ```bash
 # Required: Google Cloud Storage credentials (as JSON string)
-heroku config:set GOOGLE_CREDENTIALS='{"type":"service_account","project_id":"your-project",...}'
+# SECURITY NOTE: Avoid setting sensitive credentials directly in command line
+# Option 1: Use a file to avoid command history exposure
+cat your-credentials.json | heroku config:set GOOGLE_CREDENTIALS="$(cat)"
+
+# Option 2: Set via Heroku dashboard (Settings > Config Vars)
+# This is the most secure method for sensitive credentials
 
 # Optional but recommended
 heroku config:set SECRET_KEY=$(openssl rand -base64 32)
