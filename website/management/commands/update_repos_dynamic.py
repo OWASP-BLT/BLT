@@ -378,9 +378,11 @@ class Command(LoggedBaseCommand):
                         "type": "issue",
                         "created_at": timezone.make_aware(datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
                         "updated_at": timezone.make_aware(datetime.strptime(issue["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                        "closed_at": timezone.make_aware(datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                        if issue.get("closed_at")
-                        else None,
+                        "closed_at": (
+                            timezone.make_aware(datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                            if issue.get("closed_at")
+                            else None
+                        ),
                         "url": issue["html_url"],
                         "has_dollar_tag": True,
                     },
@@ -402,12 +404,16 @@ class Command(LoggedBaseCommand):
                         "type": "pull_request",
                         "created_at": timezone.make_aware(datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
                         "updated_at": timezone.make_aware(datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                        "closed_at": timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                        if pr.get("closed_at")
-                        else None,
-                        "merged_at": timezone.make_aware(datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                        if pr.get("merged_at")
-                        else None,
+                        "closed_at": (
+                            timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                            if pr.get("closed_at")
+                            else None
+                        ),
+                        "merged_at": (
+                            timezone.make_aware(datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                            if pr.get("merged_at")
+                            else None
+                        ),
                         "is_merged": bool(pr.get("merged_at")),
                         "url": pr["html_url"],
                     },

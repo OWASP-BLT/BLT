@@ -110,16 +110,18 @@ class Command(LoggedBaseCommand):
                                 "updated_at": timezone.make_aware(
                                     datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")
                                 ),
-                                "closed_at": timezone.make_aware(
-                                    datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ")
-                                )
-                                if pr.get("closed_at")
-                                else None,
-                                "merged_at": timezone.make_aware(
-                                    datetime.strptime(pr["pull_request"]["merged_at"], "%Y-%m-%dT%H:%M:%SZ")
-                                )
-                                if merged
-                                else None,
+                                "closed_at": (
+                                    timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                                    if pr.get("closed_at")
+                                    else None
+                                ),
+                                "merged_at": (
+                                    timezone.make_aware(
+                                        datetime.strptime(pr["pull_request"]["merged_at"], "%Y-%m-%dT%H:%M:%SZ")
+                                    )
+                                    if merged
+                                    else None
+                                ),
                                 "is_merged": merged,
                                 "url": pr["html_url"],
                                 "user_profile": user,
