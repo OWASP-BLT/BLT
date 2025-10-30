@@ -120,17 +120,10 @@
                 <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 rounded-xl shadow-sm p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">Total Reported This Week</h3>
-                        {% if bug_rate_increase_descrease_weekly.is_increasing %}
-                            <span class="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                                <i class="fas fa-arrow-up mr-1"></i>
-                                {{ bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
-                            </span>
-                        {% else %}
-                            <span class="inline-flex items-center px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
-                                <i class="fas fa-arrow-down mr-1"></i>
-                                {{ bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
-                            </span>
-                        {% endif %}
+                        <span class="inline-flex items-center px-3 py-1 {% if bug_rate_increase_descrease_weekly.is_increasing %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %} rounded-full text-sm font-semibold">
+                            <i class="fas fa-arrow-{% if bug_rate_increase_descrease_weekly.is_increasing %}up{% else %}down{% endif %} mr-1"></i>
+                            {{ bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
+                        </span>
                     </div>
                     <p class="text-4xl font-bold text-blue-900 mb-2">{{ bug_rate_increase_descrease_weekly.this_week_issue_count }}</p>
                     <p class="text-sm text-blue-700/70">
@@ -141,17 +134,10 @@
                 <div class="bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200/50 rounded-xl shadow-sm p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">Accepted Bugs This Week</h3>
-                        {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
-                            <span class="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                                <i class="fas fa-arrow-up mr-1"></i>
-                                {{ accepted_bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
-                            </span>
-                        {% else %}
-                            <span class="inline-flex items-center px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
-                                <i class="fas fa-arrow-down mr-1"></i>
-                                {{ accepted_bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
-                            </span>
-                        {% endif %}
+                        <span class="inline-flex items-center px-3 py-1 {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %} rounded-full text-sm font-semibold">
+                            <i class="fas fa-arrow-{% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}up{% else %}down{% endif %} mr-1"></i>
+                            {{ accepted_bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
+                        </span>
                     </div>
                     <p class="text-4xl font-bold text-green-900 mb-2">{{ accepted_bug_rate_increase_descrease_weekly.this_week_issue_count }}</p>
                     <p class="text-sm text-green-700/70">
@@ -211,7 +197,6 @@
                                     </div>
                                 {% empty %}
                                     <div class="col-span-5 text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
-                                        <i class="fas fa-info-circle text-gray-400 text-lg mb-2"></i>
                                         <p class="text-sm text-gray-500">No severity data available</p>
                                     </div>
                                 {% endfor %}
@@ -239,7 +224,6 @@
                                     </div>
                                 {% empty %}
                                     <div class="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
-                                        <i class="fas fa-globe text-gray-400 text-lg mb-2"></i>
                                         <p class="text-sm text-gray-500">No affected domains</p>
                                     </div>
                                 {% endfor %}
@@ -282,7 +266,6 @@
                                     {% endfor %}
                                 {% else %}
                                     <div class="text-center py-4 bg-white rounded-md border border-gray-200">
-                                        <i class="fas fa-info-circle text-gray-400 text-sm mb-1"></i>
                                         <p class="text-xs text-gray-500">No recent attack vectors</p>
                                     </div>
                                 {% endif %}
@@ -303,7 +286,6 @@
                                     {% endfor %}
                                 {% else %}
                                     <div class="text-center py-4 bg-white rounded-md border border-gray-200">
-                                        <i class="fas fa-info-circle text-gray-400 text-sm mb-1"></i>
                                         <p class="text-xs text-gray-500">No recent alerts</p>
                                     </div>
                                 {% endif %}
@@ -389,7 +371,6 @@
             '#27ae60'  // Dark Green
         ];
 
-
         // Shared pie chart configuration with enhanced design
         const pieChartOptions = {
             responsive: true,
@@ -413,15 +394,8 @@
                     hoverBorderColor: '#ffffff'
                 }
             },
-            onHover: function(event, activeElements, chart) {
-                // Disable all hover visual effects
+            onHover: function(event) {
                 event.native.target.style.cursor = 'default';
-                if (activeElements && activeElements.length > 0) {
-                    // Prevent any hover visual changes
-                    activeElements.forEach(element => {
-                        element.element.options.hoverOffset = 0;
-                    });
-                }
             },
             plugins: {
                 legend: {
@@ -496,75 +470,32 @@
             }
         };
 
-        // Bug Type Pie Chart
-        function initBugTypePie() {
-            const ctx = document.getElementById('bugTypePie');
+        // Generic pie chart initializer
+        function initPieChart(canvasId, labelsRaw, dataRaw, emptyMessage, errorIcon) {
+            const ctx = document.getElementById(canvasId);
             if (!ctx) return;
 
-            const result = parseChartData(
-                '{{ bug_report_type_piechart_data.bug_report_type_labels|safe }}',
-                '{{ bug_report_type_piechart_data.bug_report_type_data|safe }}',
-                'No bug type data available',
-                'fas fa-chart-pie'
-            );
-
+            const result = parseChartData(labelsRaw, dataRaw, emptyMessage, errorIcon);
             if (!result.success) {
                 showChartMessage(ctx.parentElement, result.message, result.icon);
                 return;
             }
 
             const chartColors = pieColors.slice(0, result.labels.length);
-
+            const pieDatasetConfig = {
+                data: result.data,
+                backgroundColor: chartColors,
+                borderColor: '#ffffff',
+                borderWidth: 3,
+                hoverBackgroundColor: chartColors,
+                hoverBorderColor: '#ffffff',
+                hoverBorderWidth: 3
+            };
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: result.labels,
-                    datasets: [{
-                        data: result.data,
-                        backgroundColor: chartColors,
-                        borderColor: '#ffffff',
-                        borderWidth: 3,
-                        hoverBackgroundColor: chartColors,
-                        hoverBorderColor: '#ffffff',
-                        hoverBorderWidth: 3
-                    }]
-                },
-                options: pieChartOptions
-            });
-        }
-
-        // Domain Pie Chart
-        function initDomainPie() {
-            const ctx = document.getElementById('domainPie');
-            if (!ctx) return;
-
-            const result = parseChartData(
-                '{{ reports_on_domain_piechart_data.bug_report_on_domains_labels|safe }}',
-                '{{ reports_on_domain_piechart_data.bug_report_on_domains_data|safe }}',
-                'No domain data available',
-                'fas fa-globe'
-            );
-
-            if (!result.success) {
-                showChartMessage(ctx.parentElement, result.message, result.icon);
-                return;
-            }
-
-            const chartColors = pieColors.slice(0, result.labels.length);
-
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: result.labels,
-                    datasets: [{
-                        data: result.data,
-                        backgroundColor: chartColors,
-                        borderColor: '#ffffff',
-                        borderWidth: 3,
-                        hoverBackgroundColor: chartColors,
-                        hoverBorderColor: '#ffffff',
-                        hoverBorderWidth: 3
-                    }]
+                    datasets: [pieDatasetConfig]
                 },
                 options: pieChartOptions
             });
@@ -613,7 +544,8 @@
                         maxBarThickness: 50,
                         hoverBackgroundColor: gradient,
                         hoverBorderColor: '#e74c3c',
-                        hoverBorderWidth: 2
+                        hoverBorderWidth: 2,
+                        hoverOffset: 0
                     }]
                 },
                 options: {
@@ -634,22 +566,11 @@
                     elements: {
                         bar: {
                             hoverBorderWidth: 2,
-                            hoverBorderColor: '#e74c3c',
-                            hoverBackgroundColor: null
+                            hoverBorderColor: '#e74c3c'
                         }
                     },
-                    onHover: function(event, activeElements, chart) {
-                        // Disable all hover visual effects - keep cursor default
+                    onHover: function(event) {
                         event.native.target.style.cursor = 'default';
-                        // Prevent any size/scale changes on hover
-                        if (activeElements && activeElements.length > 0) {
-                            activeElements.forEach(element => {
-                                // Keep original colors and sizes
-                                if (element.element) {
-                                    element.element.$animations = {};
-                                }
-                            });
-                        }
                     },
                     plugins: {
                         legend: { 
@@ -722,8 +643,14 @@
             }
 
             try {
-                initBugTypePie();
-                initDomainPie();
+                initPieChart('bugTypePie', 
+                    '{{ bug_report_type_piechart_data.bug_report_type_labels|safe }}',
+                    '{{ bug_report_type_piechart_data.bug_report_type_data|safe }}',
+                    'No bug type data available', 'fas fa-chart-pie');
+                initPieChart('domainPie',
+                    '{{ reports_on_domain_piechart_data.bug_report_on_domains_labels|safe }}',
+                    '{{ reports_on_domain_piechart_data.bug_report_on_domains_data|safe }}',
+                    'No domain data available', 'fas fa-globe');
                 initMonthlyChart();
             } catch (error) {
                 console.error('Error during chart initialization:', error);
