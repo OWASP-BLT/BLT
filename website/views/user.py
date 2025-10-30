@@ -420,7 +420,7 @@ class LeaderboardBase:
                 total_score__gt=0,
                 username__isnull=False,
             )
-            .exclude(username='')
+            .exclude(username="")
         )
         if api:
             return data.values("id", "username", "total_score")
