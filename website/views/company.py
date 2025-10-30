@@ -236,9 +236,7 @@ class OrganizationDashboardAnalyticsView(View):
         for severity_level in [9, 7, 5, 3, 1]:
             # For severity level 9, use upper bound of 11 to include CVSS 10 scores
             upper_bound = (severity_level + 2) if severity_level < 9 else 11
-            count = security_issues.filter(
-                cve_score__gte=severity_level, cve_score__lt=upper_bound
-            ).count()
+            count = security_issues.filter(cve_score__gte=severity_level, cve_score__lt=upper_bound).count()
             if count > 0 or severity_level == 1:
                 severity_distribution.append({"severity": severity_level, "count": count})
 
