@@ -72,7 +72,7 @@ def extract_github_username(github_url):
         return None
 
     # Strip trailing slashes and whitespace
-    github_url = github_url.strip().rstrip("/")
+    github_url = github_url.strip().rstrip("/")  # Clean URL format
 
     # Remove query parameters and fragments if present
     github_url = github_url.split("?")[0].split("#")[0]
