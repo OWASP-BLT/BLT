@@ -116,44 +116,44 @@
             <!-- Weekly Trends -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <!-- Total Reported Bugs Trend -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 rounded-xl shadow-sm p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">Total Reported This Week</h3>
-                            {% if bug_rate_increase_descrease_weekly.is_increasing %}
+                        {% if bug_rate_increase_descrease_weekly.is_increasing %}
                             <span class="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
                                 <i class="fas fa-arrow-up mr-1"></i>
-                                {{ bug_rate_increase_descrease_weekly.percent_increase }}%
+                                {{ bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
                             </span>
-                            {% else %}
+                        {% else %}
                             <span class="inline-flex items-center px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
                                 <i class="fas fa-arrow-down mr-1"></i>
-                                {{ bug_rate_increase_descrease_weekly.percent_increase }}%
+                                {{ bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
                             </span>
-                            {% endif %}
+                        {% endif %}
                     </div>
-                    <p class="text-4xl font-bold text-gray-900 mb-2">{{ bug_rate_increase_descrease_weekly.this_week_issue_count }}</p>
-                    <p class="text-sm text-gray-500">
+                    <p class="text-4xl font-bold text-blue-900 mb-2">{{ bug_rate_increase_descrease_weekly.this_week_issue_count }}</p>
+                    <p class="text-sm text-blue-700/70">
                         {% if bug_rate_increase_descrease_weekly.is_increasing %}Increasing{% else %}Decreasing{% endif %} compared to last week
                     </p>
                 </div>
                 <!-- Accepted Bugs Trend -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200/50 rounded-xl shadow-sm p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">Accepted Bugs This Week</h3>
                         {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
                             <span class="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
                                 <i class="fas fa-arrow-up mr-1"></i>
-                                {{ accepted_bug_rate_increase_descrease_weekly.percent_increase }}%
+                                {{ accepted_bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
                             </span>
                         {% else %}
                             <span class="inline-flex items-center px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
                                 <i class="fas fa-arrow-down mr-1"></i>
-                                {{ accepted_bug_rate_increase_descrease_weekly.percent_increase }}%
+                                {{ accepted_bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
                             </span>
                         {% endif %}
                     </div>
-                    <p class="text-4xl font-bold text-gray-900 mb-2">{{ accepted_bug_rate_increase_descrease_weekly.this_week_issue_count }}</p>
-                    <p class="text-sm text-gray-500">
+                    <p class="text-4xl font-bold text-green-900 mb-2">{{ accepted_bug_rate_increase_descrease_weekly.this_week_issue_count }}</p>
+                    <p class="text-sm text-green-700/70">
                         {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}Increasing{% else %}Decreasing{% endif %} compared to last week
                     </p>
                 </div>
@@ -164,34 +164,54 @@
                     <h2 class="text-lg font-semibold text-gray-900">Security Incidents Summary</h2>
                 </div>
                 <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-600 mb-2">Recent Incidents (30 days)</p>
-                            <p class="text-3xl font-bold text-gray-900">{{ security_incidents_summary.recent_incidents }}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200/50 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-medium text-red-700 uppercase tracking-wide">Recent Incidents</p>
+                                <i class="fas fa-exclamation-circle text-red-500 text-sm"></i>
+                            </div>
+                            <p class="text-3xl font-bold text-red-900 mb-1">{{ security_incidents_summary.recent_incidents }}</p>
+                            <p class="text-xs text-red-600/70">Last 30 days</p>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-600 mb-2">Total Security Issues</p>
-                            <p class="text-3xl font-bold text-gray-900">{{ security_incidents_summary.total_security_issues }}</p>
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100/50 border border-gray-200/50 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-medium text-gray-700 uppercase tracking-wide">Total Security Issues</p>
+                                <i class="fas fa-shield-alt text-gray-500 text-sm"></i>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-900 mb-1">{{ security_incidents_summary.total_security_issues }}</p>
+                            <p class="text-xs text-gray-600/70">All time</p>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-600 mb-2">Avg Resolution Time</p>
-                            <p class="text-2xl font-bold text-gray-900">
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-medium text-blue-700 uppercase tracking-wide">Avg Resolution Time</p>
+                                <i class="fas fa-clock text-blue-500 text-sm"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-blue-900 mb-1">
                                 {% if security_incidents_summary.avg_resolution_time %}
-                                    {{ security_incidents_summary.avg_resolution_time|timesince }}
+                                    {{ security_incidents_summary.avg_resolution_time }}
                                 {% else %}
-                                    N/A
+                                    <span class="text-gray-400">N/A</span>
                                 {% endif %}
                             </p>
+                            <p class="text-xs text-blue-600/70">Resolved issues</p>
                         </div>
                     </div>
                     {% if security_incidents_summary.severity_distribution %}
                         <div class="mb-6">
-                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Severity Distribution</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                            <h3 class="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span class="w-1 h-4 bg-[#e74c3c] rounded"></span>
+                                Severity Distribution
+                            </h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                                 {% for severity in security_incidents_summary.severity_distribution %}
-                                    <div class="bg-gray-50 p-3 rounded-lg text-center">
-                                        <p class="text-xs text-gray-600 mb-1">Level {{ severity.severity }}</p>
-                                        <p class="text-2xl font-bold text-gray-900">{{ severity.count }}</p>
+                                    <div class="bg-gradient-to-br {% if severity.severity >= 9 %}from-red-50 to-red-100 border-red-300{% elif severity.severity >= 7 %}from-orange-50 to-orange-100 border-orange-300{% elif severity.severity >= 5 %}from-yellow-50 to-yellow-100 border-yellow-300{% elif severity.severity >= 3 %}from-blue-50 to-blue-100 border-blue-300{% else %}from-green-50 to-green-100 border-green-300{% endif %} border p-4 rounded-lg text-center shadow-sm">
+                                        <p class="text-xs font-semibold {% if severity.severity >= 9 %}text-red-700{% elif severity.severity >= 7 %}text-orange-700{% elif severity.severity >= 5 %}text-yellow-700{% elif severity.severity >= 3 %}text-blue-700{% else %}text-green-700{% endif %} mb-2 uppercase">Level {{ severity.severity }}</p>
+                                        <p class="text-2xl font-bold {% if severity.severity >= 9 %}text-red-900{% elif severity.severity >= 7 %}text-orange-900{% elif severity.severity >= 5 %}text-yellow-900{% elif severity.severity >= 3 %}text-blue-900{% else %}text-green-900{% endif %}">{{ severity.count }}</p>
+                                    </div>
+                                {% empty %}
+                                    <div class="col-span-5 text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
+                                        <i class="fas fa-info-circle text-gray-400 text-lg mb-2"></i>
+                                        <p class="text-sm text-gray-500">No severity data available</p>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -199,14 +219,27 @@
                     {% endif %}
                     {% if security_incidents_summary.top_affected_domains %}
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Top Affected Domains</h3>
-                            <div class="space-y-2">
+                            <h3 class="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span class="w-1 h-4 bg-[#e74c3c] rounded"></span>
+                                Top Affected Domains
+                            </h3>
+                            <div class="space-y-2.5">
                                 {% for domain in security_incidents_summary.top_affected_domains %}
-                                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                        <span class="text-sm font-medium text-gray-900">{{ domain.domain__name }}</span>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 bg-[#e74c3c]/10 text-[#e74c3c] rounded-full text-xs font-semibold">
+                                    <div class="flex items-center justify-between bg-gray-50 hover:bg-gray-100 border border-gray-200 p-3.5 rounded-lg transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-[#e74c3c]/10 rounded-md flex items-center justify-center">
+                                                <i class="fas fa-link text-[#e74c3c] text-xs"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-900">{{ domain.domain__name }}</span>
+                                        </div>
+                                        <span class="inline-flex items-center px-3 py-1 bg-[#e74c3c]/10 text-[#e74c3c] rounded-full text-xs font-semibold">
                                             {{ domain.count }} incident{{ domain.count|pluralize }}
                                         </span>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
+                                        <i class="fas fa-globe text-gray-400 text-lg mb-2"></i>
+                                        <p class="text-sm text-gray-500">No affected domains</p>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -220,33 +253,59 @@
                     <h2 class="text-lg font-semibold text-gray-900">Threat Intelligence</h2>
                 </div>
                 <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-600 mb-2">Security Risk Score</p>
-                            <p class="text-4xl font-bold {% if threat_intelligence.risk_score >= 75 %}text-red-600{% elif threat_intelligence.risk_score >= 50 %}text-yellow-600{% else %}text-green-600{% endif %}">
-                                {{ threat_intelligence.risk_score }}<span class="text-2xl text-gray-400">/100</span>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gradient-to-br {% if threat_intelligence.risk_score >= 75 %}from-red-50 to-red-100 border-red-200{% elif threat_intelligence.risk_score >= 50 %}from-yellow-50 to-yellow-100 border-yellow-200{% else %}from-green-50 to-green-100 border-green-200{% endif %} border p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-xs font-medium {% if threat_intelligence.risk_score >= 75 %}text-red-700{% elif threat_intelligence.risk_score >= 50 %}text-yellow-700{% else %}text-green-700{% endif %} uppercase tracking-wide">Security Risk Score</p>
+                                <i class="fas fa-exclamation-triangle {% if threat_intelligence.risk_score >= 75 %}text-red-500{% elif threat_intelligence.risk_score >= 50 %}text-yellow-500{% else %}text-green-500{% endif %} text-sm"></i>
+                            </div>
+                            <p class="text-4xl font-bold {% if threat_intelligence.risk_score >= 75 %}text-red-900{% elif threat_intelligence.risk_score >= 50 %}text-yellow-900{% else %}text-green-900{% endif %} mb-3">
+                                {{ threat_intelligence.risk_score }}<span class="text-2xl text-gray-500 ml-1">/100</span>
                             </p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-600 mb-3">Top Issue Categories</p>
-                            <div class="space-y-2">
-                                {% for vector in threat_intelligence.attack_vectors|slice:":3" %}
-                                    <div class="flex items-center justify-between text-sm">
-                                        <span class="text-gray-700">{{ vector.vulnerability_type|truncatechars:20 }}</span>
-                                        <span class="font-semibold text-gray-900">{{ vector.count }}</span>
-                                    </div>
-                                {% endfor %}
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="h-2 rounded-full {% if threat_intelligence.risk_score >= 75 %}bg-red-600{% elif threat_intelligence.risk_score >= 50 %}bg-yellow-600{% else %}bg-green-600{% endif %}" style="width: {{ threat_intelligence.risk_score }}%"></div>
                             </div>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-sm text-gray-600 mb-3">Recent Security Alerts</p>
-                            <div class="space-y-2">
-                                {% for alert in threat_intelligence.recent_alerts|slice:":3" %}
-                                    <div class="flex items-start gap-2 text-sm">
-                                        <span class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 {% if alert.cve_score >= 8 %}bg-red-500{% elif alert.cve_score >= 5 %}bg-yellow-500{% else %}bg-orange-500{% endif %}"></span>
-                                        <span class="text-gray-700 line-clamp-2">{{ alert.description }}</span>
+                        <div class="bg-gray-50 border border-gray-200 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-4">
+                                <p class="text-xs font-medium text-gray-700 uppercase tracking-wide">Top Issue Categories</p>
+                                <i class="fas fa-list-ul text-[#e74c3c] text-sm"></i>
+                            </div>
+                            <div class="space-y-2.5">
+                                {% if threat_intelligence.attack_vectors %}
+                                    {% for vector in threat_intelligence.attack_vectors|slice:":3" %}
+                                        <div class="flex items-center justify-between bg-white border border-gray-200 p-2.5 rounded-md hover:border-[#e74c3c]/30 transition-colors">
+                                            <span class="text-sm font-medium text-gray-800">{{ vector.vulnerability_type|truncatechars:20 }}</span>
+                                            <span class="inline-flex items-center justify-center w-7 h-7 bg-[#e74c3c]/10 text-[#e74c3c] rounded-full text-xs font-bold">{{ vector.count }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-4 bg-white rounded-md border border-gray-200">
+                                        <i class="fas fa-info-circle text-gray-400 text-sm mb-1"></i>
+                                        <p class="text-xs text-gray-500">No recent attack vectors</p>
                                     </div>
-                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 border border-gray-200 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-4">
+                                <p class="text-xs font-medium text-gray-700 uppercase tracking-wide">Recent Security Alerts</p>
+                                <i class="fas fa-bell text-[#e74c3c] text-sm"></i>
+                            </div>
+                            <div class="space-y-2.5">
+                                {% if threat_intelligence.recent_alerts %}
+                                    {% for alert in threat_intelligence.recent_alerts|slice:":3" %}
+                                        <div class="flex items-start gap-2.5 bg-white border border-gray-200 p-2.5 rounded-md hover:border-[#e74c3c]/30 transition-colors">
+                                            <span class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 {% if alert.cve_score and alert.cve_score >= 8 %}bg-red-500{% elif alert.cve_score and alert.cve_score >= 5 %}bg-yellow-500{% else %}bg-orange-500{% endif %} shadow-sm"></span>
+                                            <span class="text-sm text-gray-800 line-clamp-2 flex-1">{{ alert.description|truncatechars:55 }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-4 bg-white rounded-md border border-gray-200">
+                                        <i class="fas fa-info-circle text-gray-400 text-sm mb-1"></i>
+                                        <p class="text-xs text-gray-500">No recent alerts</p>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

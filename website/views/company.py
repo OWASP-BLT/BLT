@@ -36,7 +36,7 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
-from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
+from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -228,13 +228,22 @@ class OrganizationDashboardAnalyticsView(View):
             label=4,  # Security label
         )
 
-        # Calculate severity distribution
-        # Note: Check if the severity field exists - currently not defined in the Issue model
-        try:
-            severity_counts = security_issues.values("severity").annotate(count=Count("id"))
-        except FieldError:
-            # Severity field doesn't exist, provide empty list
-            severity_counts = []
+        # Calculate severity distribution based on CVE score ranges
+        # Since severity field doesn't exist, use cve_score ranges
+        severity_distribution = []
+        for severity_level in [9, 7, 5, 3, 1]:
+            count = security_issues.filter(
+                cve_score__gte=severity_level,
+                cve_score__lt=(severity_level + 2) if severity_level < 9 else 10
+            ).count()
+            if count > 0 or severity_level == 1:  # Always show level 1 (lowest) if no others
+                severity_distribution.append({
+                    "severity": severity_level,
+                    "count": count
+                })
+        
+        # Reverse to show highest severity first
+        severity_distribution = sorted(severity_distribution, key=lambda x: x["severity"], reverse=True)
 
         # Get recent security incidents (last 30 days)
         recent_incidents = security_issues.filter(created__gte=timezone.now() - timedelta(days=30))
@@ -242,16 +251,21 @@ class OrganizationDashboardAnalyticsView(View):
         # Calculate average resolution time
         resolved_issues = security_issues.filter(status="resolved")
         resolved_issues = resolved_issues.filter(closed_date__isnull=False)
-        avg_resolution_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+        avg_resolution_time_delta = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+        
+        # Format the timedelta for display
+        avg_resolution_time_formatted = None
+        if avg_resolution_time_delta:
+            avg_resolution_time_formatted = format_timedelta(avg_resolution_time_delta)
 
         return {
             "total_security_issues": security_issues.count(),
             "recent_incidents": recent_incidents.count(),
-            "severity_distribution": list(severity_counts),
-            "avg_resolution_time": avg_resolution_time,
-            "top_affected_domains": security_issues.values("domain__name")
+            "severity_distribution": severity_distribution,
+            "avg_resolution_time": avg_resolution_time_formatted,
+            "top_affected_domains": list(security_issues.values("domain__name")
             .annotate(count=Count("id"))
-            .order_by("-count")[:5],
+            .order_by("-count")[:5]),
         }
 
     def get_threat_intelligence(self, organization):
@@ -261,32 +275,61 @@ class OrganizationDashboardAnalyticsView(View):
             label=4,  # Security label
         )
 
-        # Get trending attack types based on issue labels/tags instead
-        attack_vectors = (
-            security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
-            .values("label")  # Use label instead of vulnerability_type
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5]
-        )
+        # Get trending attack types based on CVE score ranges (since all have label=4, use CVE scores)
+        # Group by CVE score ranges to show vulnerability types
+        attack_vectors = []
+        score_ranges = [
+            (9.0, 10.0, "Critical (9.0-10.0)"),
+            (7.0, 8.9, "High (7.0-8.9)"),
+            (5.0, 6.9, "Medium (5.0-6.9)"),
+            (3.0, 4.9, "Low (3.0-4.9)"),
+            (0.1, 2.9, "Very Low (0.1-2.9)"),
+        ]
+        
+        recent_issues = security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
+        for min_score, max_score, label in score_ranges:
+            count = recent_issues.filter(
+                cve_score__gte=min_score,
+                cve_score__lte=max_score
+            ).count()
+            if count > 0:
+                attack_vectors.append({
+                    "vulnerability_type": label,
+                    "count": count
+                })
+        
+        # Sort by count descending
+        attack_vectors.sort(key=lambda x: x["count"], reverse=True)
 
-        # Calculate risk score (0-100)
+        # Calculate risk score (0-100) based on CVE scores
+        # Weight: Critical (9+) = 100%, High (7-8.9) = 70%, Medium (5-6.9) = 40%, Low (3-4.9) = 20%, Very Low (0-2.9) = 10%
         total_issues = security_issues.count()
-        critical_issues = security_issues.filter(cve_score__gte=8).count()  # Use cve_score instead of severity
-        risk_score = min(100, (critical_issues / total_issues * 100) if total_issues > 0 else 0)
+        if total_issues > 0:
+            critical = security_issues.filter(cve_score__gte=9.0).count()
+            high = security_issues.filter(cve_score__gte=7.0, cve_score__lt=9.0).count()
+            medium = security_issues.filter(cve_score__gte=5.0, cve_score__lt=7.0).count()
+            low = security_issues.filter(cve_score__gte=3.0, cve_score__lt=5.0).count()
+            very_low = security_issues.filter(cve_score__gte=0.1, cve_score__lt=3.0).count()
+            
+            risk_score = (
+                (critical / total_issues * 100) +
+                (high / total_issues * 70) +
+                (medium / total_issues * 40) +
+                (low / total_issues * 20) +
+                (very_low / total_issues * 10)
+            )
+        else:
+            risk_score = 0
+        
+        risk_score = min(100, int(risk_score))
 
         return {
-            "attack_vectors": [
-                {
-                    "vulnerability_type": self.get_label_name(vector["label"]),  # Convert label to readable name
-                    "count": vector["count"],
-                }
-                for vector in attack_vectors
-            ],
-            "risk_score": int(risk_score),
-            "recent_alerts": security_issues.filter(
+            "attack_vectors": attack_vectors[:5],  # Top 5
+            "risk_score": risk_score,
+            "recent_alerts": list(security_issues.filter(
                 created__gte=timezone.now() - timedelta(days=7),
-                cve_score__gte=7,  # Use cve_score for severity
-            ).order_by("-created")[:5],
+                cve_score__gte=7.0,  # Use cve_score for severity (7.0 and above)
+            ).order_by("-created")[:5]),
         }
 
     def get_label_name(self, label_id):
@@ -390,13 +433,15 @@ class OrganizationDashboardAnalyticsView(View):
 
     def bug_rate_increase_descrease_weekly(self, organization, is_accepted_bugs=False):
         # returns stats by comparing the count of past 8-15 days (1 week) activity to this (0 - 7) week.
+        # This week: days 0-7 (inclusive, 8 days total)
+        # Previous week: days 8-15 (inclusive, 8 days total)
 
         current_date = timezone.now().date()
         prev_week_start_date = current_date - timedelta(days=15)
-        prev_week_end_date = current_date - timedelta(days=8)
+        prev_week_end_date = current_date - timedelta(days=8)  # Inclusive
 
-        this_week_start_date = current_date - timedelta(days=7)
-        this_week_end_date = current_date
+        this_week_start_date = current_date - timedelta(days=7)  # Inclusive
+        this_week_end_date = current_date  # Inclusive (today)
 
         if is_accepted_bugs:
             prev_week_issue_count = Issue.objects.filter(
@@ -423,13 +468,25 @@ class OrganizationDashboardAnalyticsView(View):
             ).count()
 
         if prev_week_issue_count == 0:
-            percent_increase = this_week_issue_count * 100
+            # If no bugs in previous week, show appropriate percentage
+            if this_week_issue_count == 0:
+                percent_increase = 0.0
+            else:
+                # New bugs this week when there were none last week
+                percent_increase = 100.0  # 100% increase (or infinite, but we cap at 100 for display)
         else:
             percent_increase = ((this_week_issue_count - prev_week_issue_count) / prev_week_issue_count) * 100
 
+        # Round to 1 decimal place for cleaner display
+        percent_increase = round(percent_increase, 1)
+        
+        # Calculate absolute value for display (always show positive percentage)
+        percent_display = abs(percent_increase)
+        is_increasing = (this_week_issue_count - prev_week_issue_count) >= 0
+
         return {
-            "percent_increase": percent_increase,
-            "is_increasing": (True if (this_week_issue_count - prev_week_issue_count) >= 0 else False),
+            "percent_increase": percent_display,
+            "is_increasing": is_increasing,
             "this_week_issue_count": this_week_issue_count,
         }
 
