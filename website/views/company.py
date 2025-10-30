@@ -340,13 +340,15 @@ class OrganizationDashboardAnalyticsView(View):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
         total_domains = Domain.objects.filter(organization__id=organization).count()
-        # Step 1: Retrieve all hunt IDs associated with the specified organization
-        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list("id", flat=True)
-
-        # Step 2: Sum the rewarded values from issues that have a hunt_id in the hunt_ids list
-        total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(total_money=Sum("rewarded"))[
-            "total_money"
-        ]
+        
+        # Calculate total money distributed
+        # Sum all rewards from issues in the organization's domains
+        # This ensures we capture all money distributed, whether through hunts or other means
+        total_money_distributed = Issue.objects.filter(
+            domain__organization__id=organization
+        ).aggregate(total_money=Sum("rewarded"))["total_money"]
+        
+        # Handle None case - if no rewards exist, default to 0
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         return {

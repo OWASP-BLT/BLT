@@ -1,6 +1,7 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
 {% load static %}
 {% load custom_tags %}
+{% load humanize %}
 {% block title %}
     Organization Analytics | {% env 'PROJECT_NAME' %}
 {% endblock title %}
@@ -77,7 +78,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Money Distributed</p>
-                            <p class="text-3xl font-bold text-gray-900">${{ total_info.total_money_distributed }}</p>
+                            <p class="text-3xl font-bold text-gray-900">${{ total_info.total_money_distributed|intcomma }}</p>
                         </div>
                         <div class="w-12 h-12 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center">
                             <i class="fa-solid fa-dollar-sign text-[#e74c3c] text-xl"></i>
