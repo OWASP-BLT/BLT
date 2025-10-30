@@ -418,11 +418,12 @@ class LeaderboardBase:
             .order_by("-total_score")
             .filter(
                 total_score__gt=0,
+                username__isnull=False,
             )
+            .exclude(username='')
         )
         if api:
             return data.values("id", "username", "total_score")
-
         return data
 
     def current_month_leaderboard(self, api=False):
