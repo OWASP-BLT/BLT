@@ -55,6 +55,7 @@ from website.models import (
     ForumVote,
     Hunt,
     InviteFriend,
+    InviteOrganization,
     Issue,
     ManagementCommandLog,
     Organization,
@@ -1912,11 +1913,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if action.type is int:
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+                                    elif action.type is float:
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif action.type is bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (
@@ -2896,3 +2897,115 @@ class RoadmapView(TemplateView):
 
 class StyleGuideView(TemplateView):
     template_name = "style_guide.html"
+
+
+def invite_organization(request):
+    """
+    View for inviting organizations to join BLT.
+    Generates professional invitation emails with referral tracking.
+    """
+    context = {}
+
+    if request.method == "POST":
+        # Handle form submission
+        email = request.POST.get("email", "").strip()
+        organization_name = request.POST.get("organization_name", "").strip()
+
+        if request.user.is_authenticated and email and organization_name:
+            # Create invite record for logged-in users
+            invite_record = InviteOrganization.objects.create(
+                sender=request.user, email=email, organization_name=organization_name
+            )
+
+            # Generate referral link
+            base_url = request.build_absolute_uri("/organization/")
+            referral_link = f"{base_url}?ref={invite_record.referral_code}"
+            context["referral_link"] = referral_link
+            context["show_points_message"] = True
+        elif email and organization_name:
+            # For non-logged-in users, just show the email template without creating records
+            context["show_login_prompt"] = True
+
+    # Check if user is authenticated for referral tracking (GET request or after POST)
+    if request.user.is_authenticated and "referral_link" not in context:
+        # For GET requests, generate a sample referral link without creating records
+        import uuid
+
+        sample_ref_code = str(uuid.uuid4())
+        base_url = request.build_absolute_uri("/organization/")
+        referral_link = f"{base_url}?ref={sample_ref_code}"
+        context["referral_link"] = referral_link
+        context["show_points_message"] = True
+        context["is_sample_link"] = True  # Flag to indicate this is just for display
+    elif not request.user.is_authenticated:
+        context["show_login_prompt"] = True
+
+    # Add template context variables
+    email = request.POST.get("email", "")
+    organization_name = request.POST.get("organization_name", "")
+
+    if email and organization_name:
+        context["exists"] = True
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Generate email content
+        domain = email.split("@")[-1] if email else ""
+        email_subject = "Invitation to Join BLT (Bug Logging Tool) - Enhanced Security Testing Platform"
+
+        org_name = organization_name if organization_name else "your organization"
+        sender_name = (
+            request.user.get_full_name() or request.user.username if request.user.is_authenticated else "BLT Team"
+        )
+        referral_link = context.get("referral_link", "https://blt.owasp.org/organization/")
+
+        email_body = f"""Dear {org_name} Team,
+
+I hope this message finds you well. I'm reaching out to introduce you to BLT (Bug Logging Tool), a comprehensive security testing platform that could significantly enhance {org_name}'s security posture and bug bounty initiatives.
+
+## What is BLT?
+
+BLT is an open-source bug logging and security testing platform developed by OWASP that enables organizations to:
+
+🔍 **Streamline Security Testing**
+- Centralize bug reporting and vulnerability management
+- Track security issues across multiple domains and applications
+- Integrate with existing development workflows
+
+🏆 **Launch Bug Bounty Programs**
+- Create and manage competitive bug hunting challenges
+- Set custom rewards and recognition systems
+- Access a community of skilled security researchers
+
+📊 **Gain Security Insights**
+- Real-time dashboards and analytics
+- Detailed vulnerability reporting and metrics
+
+## Getting Started:
+
+Use this special referral link to register your organization:
+{referral_link}
+
+Looking forward to helping {org_name} strengthen its security posture with BLT!
+
+Best regards,
+{sender_name}
+
+---
+Learn more: https://blt.owasp.org
+This invitation was sent through BLT's organization invite feature."""
+
+        context.update(
+            {
+                "domain": domain,
+                "email_subject": email_subject,
+                "email_body": email_body,
+            }
+        )
+    else:
+        context["exists"] = False
+
+    # Add user authentication context
+    context["user_logged_in"] = request.user.is_authenticated
+
+    return render(request, "invite.html", context)

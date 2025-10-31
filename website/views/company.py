@@ -29,9 +29,11 @@ from website.models import (
     HuntPrize,
     Integration,
     IntegrationServices,
+    InviteOrganization,
     Issue,
     IssueScreenshot,
     Organization,
+    Points,
     SlackIntegration,
     UserProfile,
     Winner,
@@ -133,6 +135,11 @@ def dashboard_view(request, *args, **kwargs):
 
 class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
+        # Handle referral code parameter
+        ref_code = request.GET.get("ref")
+        if ref_code:
+            request.session["org_ref"] = ref_code
+
         return render(request, "organization/register_organization.html")
 
     def post(self, request, *args, **kwargs):
@@ -185,13 +192,38 @@ class RegisterOrganizationView(View):
                 organization.managers.set(managers)
                 organization.save()
 
+                # Handle referral code and award points
+                ref_code = request.session.get("org_ref")
+                if ref_code:
+                    try:
+                        invite = InviteOrganization.objects.get(referral_code=ref_code, points_awarded=False)
+                        # Award 5 points to the sender
+                        Points.objects.create(
+                            user=invite.sender, score=5, reason=f"Organization invite referral: {organization.name}"
+                        )
+                        # Mark points as awarded and link organization
+                        invite.points_awarded = True
+                        invite.organization = organization
+                        invite.save()
+                        # Clear session
+                        if "org_ref" in request.session:
+                            del request.session["org_ref"]
+                        messages.success(
+                            request,
+                            f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral.",
+                        )
+                    except InviteOrganization.DoesNotExist:
+                        # Invalid or already used referral code
+                        messages.success(request, "Organization registered successfully.")
+                else:
+                    messages.success(request, "Organization registered successfully.")
+
         except ValidationError as e:
             messages.error(request, f"Error saving organization: {e}")
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
 
-        messages.success(request, "organization registered successfully.")
         return redirect("organization_detail", slug=organization.slug)
 
 

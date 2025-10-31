@@ -26,9 +26,16 @@
                 </h1>
                 <div class="flex flex-col gap-3 text-black/65">
                     <div class="flex flex-col items-center justify-center">
-                        <p>
-                            {% trans "Invite an organization to join BLT and earn" %} <span class="font-bold text-[#e74c3c]">{% trans "+5 points" %}</span> {% trans "when they do." %}
-                        </p>
+                        {% if user_logged_in %}
+                            <p>
+                                {% trans "Invite an organization to join BLT and earn" %} <span class="font-bold text-[#e74c3c]">{% trans "+5 points" %}</span> {% trans "when they do." %}
+                            </p>
+                        {% else %}
+                            <p>
+                                {% trans "Invite an organization to join BLT." %} <a href="{% url 'account_login' %}"
+    class="font-bold text-[#e74c3c] hover:underline">{% trans "Login" %}</a> {% trans "to earn +5 points when they register via your referral link." %}
+                            </p>
+                        {% endif %}
                         <p>
                             {% trans "Generate a professional invitation email with detailed information about BLT's benefits for organizations." %}
                         </p>
@@ -61,6 +68,47 @@
             {% endif %}
             {% if exists and email %}
                 <div class="w-full flex flex-col gap-6">
+                    <!-- Referral Link Section -->
+                    {% if referral_link %}
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h3 class="text-lg font-medium text-blue-900 mb-2">Your Referral Link:</h3>
+                            <div class="flex gap-2 items-center">
+                                <input type="text"
+                                       id="referral-link"
+                                       value="{{ referral_link }}"
+                                       readonly
+                                       class="flex-1 px-3 py-2 border border-blue-300 rounded-md bg-white text-sm">
+                                <button onclick="copyToClipboard('referral-link')"
+                                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 text-sm whitespace-nowrap">
+                                    Copy Link
+                                </button>
+                            </div>
+                            <p class="text-blue-700 text-sm mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                {% if is_sample_link %}
+                                    This is a sample referral link. Fill out the form above to generate a real referral link for a specific organization.
+                                {% else %}
+                                    Share this link with the organization. When they register using this link, you'll earn 5 points!
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% else %}
+                        {% if not user_logged_in %}
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <h3 class="text-lg font-medium text-yellow-900 mb-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Want to earn points?
+                                </h3>
+                                <p class="text-yellow-800 text-sm">
+                                    <a href="{% url 'account_login' %}"
+                                       class="font-bold text-[#e74c3c] hover:underline">Login</a> or
+                                    <a href="{% url 'account_signup' %}"
+                                       class="font-bold text-[#e74c3c] hover:underline">sign up</a>
+                                    to get a unique referral link and earn 5 points when the organization registers!
+                                </p>
+                            </div>
+                        {% endif %}
+                    {% endif %}
                     <!-- Email Preview Section -->
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
                         <div class="flex justify-between items-center mb-4">
