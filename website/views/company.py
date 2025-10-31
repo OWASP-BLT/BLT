@@ -466,36 +466,35 @@ class OrganizationDashboardAnalyticsView(View):
 
 
 class OrganizationDashboardIntegrations(View):
+    """View for displaying organization integrations."""
+
+    def _get_slack_integration(self, organization_id):
+        """Helper to fetch Slack integration for an organization."""
+        return SlackIntegration.objects.filter(
+            integration__organization_id=organization_id,
+            integration__service_name=IntegrationServices.SLACK.value,
+        ).select_related("integration").first()
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        # For authenticated users, show organizations they have access to
-        if request.user.is_authenticated:
-            organizations = (
-                Organization.objects.values("name", "id")
-                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-                .distinct()
-            )
-        else:
-            # For unauthenticated users, don't show organization list
-            organizations = []
-
         # Get the organization object
         organization_obj = Organization.objects.filter(id=id).first()
         if not organization_obj:
             messages.error(request, "Organization does not exist")
             return redirect("home")
 
-        # Get slack integration if it exists
-        slack_integration = SlackIntegration.objects.filter(
-            integration__organization_id=id,
-            integration__service_name=IntegrationServices.SLACK.value,
-        ).first()
+        # Get organizations for navigation (if authenticated)
+        organizations = []
+        if request.user.is_authenticated:
+            organizations = Organization.objects.values("name", "id").filter(
+                Q(managers__in=[request.user]) | Q(admin=request.user)
+            ).distinct()
 
         context = {
             "organization": id,
             "organizations": organizations,
             "organization_obj": organization_obj,
-            "slack_integration": slack_integration,
+            "slack_integration": self._get_slack_integration(id),
         }
         return render(request, "organization/dashboard/organization_integrations.html", context=context)
 
@@ -978,35 +977,86 @@ class AddDomainView(View):
 
 
 class AddSlackIntegrationView(View):
+    """View for managing Slack integration configuration."""
+
+    def _get_slack_integration(self, organization_id):
+        """Helper to fetch Slack integration for an organization."""
+        return SlackIntegration.objects.filter(
+            integration__organization_id=organization_id,
+            integration__service_name=IntegrationServices.SLACK.value,
+        ).select_related("integration").first()
+
+    def _get_redirect_uri(self, request):
+        """Helper to construct redirect URI with proper scheme detection."""
+        host = request.get_host()
+        scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
+        
+        # For ngrok or other tunnels, always use https
+        if "ngrok" in host or "localhost.run" in host:
+            scheme = "https"
+        
+        return os.environ.get(
+            "SLACK_OAUTH_REDIRECT_URL",
+            f"{scheme}://{host}/oauth/slack/callback"
+        )
+
+    def _fetch_slack_conversations(self, app, filter_func=None):
+        """Generic method to fetch Slack conversations with pagination."""
+        cursor = None
+        results = []
+        try:
+            while True:
+                response = app.client.conversations_list(cursor=cursor)
+                if response["ok"]:
+                    channels = response["channels"]
+                    if filter_func:
+                        results.extend(filter_func(channel) for channel in channels if filter_func(channel))
+                    else:
+                        results.extend(channel["name"] for channel in channels)
+                cursor = response.get("response_metadata", {}).get("next_cursor")
+                if not cursor:
+                    break
+        except Exception as e:
+            logger.error(f"Error fetching Slack conversations: {e}")
+        return results
+
+    def get_channel_id(self, app, channel_name):
+        """Fetches a Slack channel ID by name."""
+        channel_name = channel_name.strip("#")
+        cursor = None
+        try:
+            while True:
+                response = app.client.conversations_list(cursor=cursor)
+                for channel in response["channels"]:
+                    if channel["name"] == channel_name:
+                        return channel["id"]
+                cursor = response.get("response_metadata", {}).get("next_cursor")
+                if not cursor:
+                    break
+        except Exception as e:
+            logger.error(f"Error fetching channel ID: {e}")
+        return None
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        slack_integration = (
-            SlackIntegration.objects.filter(
-                integration__organization_id=id,
-                integration__service_name=IntegrationServices.SLACK.value,
-            )
-            .select_related("integration")
-            .first()
-        )
+        slack_integration = self._get_slack_integration(id)
 
         if slack_integration:
             try:
-                bot_token = slack_integration.bot_access_token
-                app = App(token=bot_token)
-                channels_list = self.get_channel_names(app)
+                app = App(token=slack_integration.bot_access_token)
+                channels_list = self._fetch_slack_conversations(app)
 
                 if not channels_list:
                     messages.warning(request, "Could not fetch Slack channels. Please verify the bot token and permissions.")
 
-                hours = range(24)
                 return render(
                     request,
                     "organization/dashboard/add_slack_integration.html",
                     context={
                         "organization": id,
                         "slack_integration": slack_integration,
-                        "channels": channels_list if channels_list else [],
-                        "hours": hours,
+                        "channels": channels_list,
+                        "hours": range(24),
                         "welcome_message": slack_integration.welcome_message,
                     },
                 )
@@ -1023,20 +1073,7 @@ class AddSlackIntegrationView(View):
                 return redirect("organization_manage_integrations", id=id)
 
             scopes = "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands"
-            
-            # Get the redirect URI - support ngrok and other proxies
-            host = request.get_host()
-            scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-            
-            # For ngrok or other tunnels, always use https
-            if "ngrok" in host or "localhost.run" in host:
-                scheme = "https"
-            
-            redirect_uri = os.environ.get(
-                "SLACK_OAUTH_REDIRECT_URL",
-                f"{scheme}://{host}/oauth/slack/callback"
-            )
-
+            redirect_uri = self._get_redirect_uri(request)
             state = urlencode({"organization_id": id})
 
             auth_url = (
@@ -1051,55 +1088,32 @@ class AddSlackIntegrationView(View):
             messages.error(request, "Failed to initiate Slack connection. Please try again later.")
             return redirect("organization_manage_integrations", id=id)
 
-    def get_channel_names(self, app):
-        """Fetches channel names from Slack."""
-        cursor = None
-        channels = []
-        try:
-            while True:
-                response = app.client.conversations_list(cursor=cursor)
-                if response["ok"]:
-                    channels.extend(channel["name"] for channel in response["channels"])
-                cursor = response.get("response_metadata", {}).get("next_cursor")
-                if not cursor:
-                    break
-        except Exception as e:
-            logger.error(f"Error fetching channels: {e}")
-        return channels
-
     @validate_organization_user
     def post(self, request, id, *args, **kwargs):
         if request.POST.get("_method") == "delete":
             return self.delete(request, id, *args, **kwargs)
 
-        slack_integration = (
-            SlackIntegration.objects.filter(
-                integration__organization_id=id,
-                integration__service_name=IntegrationServices.SLACK.value,
-            )
-            .select_related("integration")
-            .first()
-        )
+        slack_integration = self._get_slack_integration(id)
 
         if not slack_integration:
             messages.error(request, "Slack integration not found.")
             return redirect("organization_manage_integrations", id=id)
 
         try:
-            # Get form data
+            # Get and validate form data
             target_channel = request.POST.get("target_channel")
             daily_updates_enabled = request.POST.get("daily_sizzle_timelogs_status") == "on"
             daily_update_hour = request.POST.get("daily_sizzle_timelogs_hour")
             welcome_message = request.POST.get("welcome_message", "")
 
-            # Validate daily update settings
+            # Validate and convert hour
             if daily_updates_enabled:
                 if not daily_update_hour:
                     messages.error(request, "Please select an hour for daily updates.")
                     return redirect("add_slack_integration", id=id)
                 try:
                     daily_update_hour = int(daily_update_hour)
-                    if daily_update_hour < 0 or daily_update_hour > 23:
+                    if not 0 <= daily_update_hour <= 23:
                         raise ValueError("Hour must be between 0 and 23")
                 except ValueError:
                     messages.error(request, "Invalid hour selected. Please choose a value between 0 and 23.")
@@ -1107,9 +1121,9 @@ class AddSlackIntegrationView(View):
             else:
                 daily_update_hour = None
 
-            # Update channel settings
-            app = App(token=slack_integration.bot_access_token)
+            # Update channel settings if provided
             if target_channel:
+                app = App(token=slack_integration.bot_access_token)
                 channel_id = self.get_channel_id(app, target_channel)
                 if channel_id:
                     slack_integration.default_channel_id = channel_id
@@ -1117,7 +1131,7 @@ class AddSlackIntegrationView(View):
                 else:
                     messages.warning(request, f"Could not find channel '{target_channel}'. Please verify the channel name.")
 
-            # Update integration settings
+            # Update all settings
             slack_integration.daily_updates = daily_updates_enabled
             slack_integration.daily_update_time = daily_update_hour
             slack_integration.welcome_message = welcome_message
@@ -1131,22 +1145,6 @@ class AddSlackIntegrationView(View):
             return redirect("add_slack_integration", id=id)
 
         return redirect("organization_manage_integrations", id=id)
-
-    def get_channel_id(self, app, channel_name):
-        """Fetches a Slack channel ID by name."""
-        cursor = None
-        try:
-            while True:
-                response = app.client.conversations_list(cursor=cursor)
-                for channel in response["channels"]:
-                    if channel["name"] == channel_name.strip("#"):
-                        return channel["id"]
-                cursor = response.get("response_metadata", {}).get("next_cursor")
-                if not cursor:
-                    break
-        except Exception as e:
-            logger.error(f"Error fetching channel ID: {e}")
-        return None
 
     @validate_organization_user
     def delete(self, request, id, *args, **kwargs):
@@ -1171,9 +1169,25 @@ class AddSlackIntegrationView(View):
 
 
 class SlackCallbackView(View):
+    """Handles OAuth callback from Slack."""
+
+    def _get_redirect_uri(self, request):
+        """Helper to construct redirect URI with proper scheme detection."""
+        host = request.get_host()
+        scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
+        
+        # For ngrok or other tunnels, always use https
+        if "ngrok" in host or "localhost.run" in host:
+            scheme = "https"
+        
+        return os.environ.get(
+            "SLACK_OAUTH_REDIRECT_URL",
+            f"{scheme}://{host}/oauth/slack/callback"
+        )
+
     def get(self, request, *args, **kwargs):
         try:
-            # Extract parameters
+            # Validate required parameters
             code = request.GET.get("code")
             state = request.GET.get("state")
 
@@ -1185,7 +1199,7 @@ class SlackCallbackView(View):
                 logger.error("Missing 'state' parameter in OAuth callback.")
                 return HttpResponseBadRequest("Missing 'state' parameter")
 
-            # Safely parse state
+            # Parse and validate organization ID
             state_data = parse_qs(state)
             organization_id = state_data.get("organization_id", [None])[0]
 
@@ -1193,7 +1207,7 @@ class SlackCallbackView(View):
                 logger.error(f"Invalid organization_id received: {organization_id}")
                 return HttpResponseBadRequest("Invalid organization ID")
 
-            organization_id = int(organization_id)  # Convert to integer after validation
+            organization_id = int(organization_id)
 
             # Exchange code for access token
             token_data = self.exchange_code_for_token(code, request)
@@ -1202,38 +1216,25 @@ class SlackCallbackView(View):
                 logger.error(f"Invalid token data received from Slack: {token_data}")
                 return HttpResponseServerError("Failed to retrieve token from Slack")
 
-            # Check if integration already exists
-            existing_integration = Integration.objects.filter(
+            # Get or create integration
+            integration, created = Integration.objects.get_or_create(
                 organization_id=organization_id,
                 service_name=IntegrationServices.SLACK.value,
-            ).first()
+            )
 
-            if existing_integration:
-                # Update existing integration
-                slack_integration = SlackIntegration.objects.filter(
-                    integration=existing_integration
-                ).first()
-                if slack_integration:
-                    slack_integration.bot_access_token = token_data["access_token"]
-                    slack_integration.workspace_name = token_data["team"]["id"]
-                    slack_integration.save()
-                    logger.info(f"Updated existing Slack integration for organization {organization_id}")
-            else:
-                # Create new integration
-                integration = Integration.objects.create(
-                    organization_id=organization_id,
-                    service_name=IntegrationServices.SLACK.value,
-                )
-                SlackIntegration.objects.create(
-                    integration=integration,
-                    bot_access_token=token_data["access_token"],
-                    workspace_name=token_data["team"]["id"],
-                )
-                logger.info(f"Created new Slack integration for organization {organization_id}")
+            # Update or create SlackIntegration
+            slack_integration, slack_created = SlackIntegration.objects.update_or_create(
+                integration=integration,
+                defaults={
+                    "bot_access_token": token_data["access_token"],
+                    "workspace_name": token_data["team"]["id"],
+                }
+            )
 
-            # Redirect to the organization's integration dashboard
-            dashboard_url = reverse("organization_manage_integrations", args=[organization_id])
-            return redirect(dashboard_url)
+            action = "Created" if created else "Updated"
+            logger.info(f"{action} Slack integration for organization {organization_id}")
+
+            return redirect(reverse("organization_manage_integrations", args=[organization_id]))
 
         except Exception as e:
             logger.exception(f"Error during Slack OAuth callback: {e}")
@@ -1243,31 +1244,21 @@ class SlackCallbackView(View):
         """Exchanges OAuth code for Slack access token."""
         client_id = os.getenv("SLACK_ID_CLIENT")
         client_secret = os.getenv("SLACK_SECRET_CLIENT")
-        host = request.get_host()
-        scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-        
-        # For ngrok or other tunnels, always use https
-        if "ngrok" in host or "localhost.run" in host:
-            scheme = "https"
-        
-        redirect_uri = os.environ.get(
-            "SLACK_OAUTH_REDIRECT_URL",
-            f"{scheme}://{host}/oauth/slack/callback",
+        redirect_uri = self._get_redirect_uri(request)
+
+        response = requests.post(
+            "https://slack.com/api/oauth.v2.access",
+            data={
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+            }
         )
-
-        url = "https://slack.com/api/oauth.v2.access"
-        data = {
-            "code": code,
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "redirect_uri": redirect_uri,
-        }
-
-        response = requests.post(url, data=data)
         token_data = response.json()
 
         if token_data.get("ok"):
-            return token_data  # Return the full token data instead of just the access token
+            return token_data
         else:
             raise Exception(f"Error exchanging code for token: {token_data.get('error')}")
 
