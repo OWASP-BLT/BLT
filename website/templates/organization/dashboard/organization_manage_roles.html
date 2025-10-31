@@ -1,234 +1,404 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
 {% load static %}
 {% block title %}
-    Manage Roles
+    Manage Roles & Permissions
 {% endblock title %}
 {% block description %}
-    Oversee and manage roles within your domains. Add new managers, view existing ones, and ensure efficient role management for smooth operations.
+    Manage user roles, permissions, and access control for your organization. Assign administrators, moderators, and domain-specific roles.
 {% endblock description %}
 {% block keywords %}
-    Manage Roles, Role Management, Add Managers, View Managers, Domain Management, User Roles
+    Manage Roles, Role Management, Permissions, Access Control, Organization Admin, User Roles
 {% endblock keywords %}
 {% block og_title %}
-    Manage Roles - Efficient Role Management
+    Manage Roles & Permissions - Organization Dashboard
 {% endblock og_title %}
 {% block og_description %}
-    Oversee roles within your domains efficiently. Add new managers, view and manage existing ones to ensure smooth operations.
+    Comprehensive role management system for your organization. Control who has access to what.
 {% endblock og_description %}
 {% block body %}
-    <div class="fixed bottom-2.5 right-3.75">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_roles.html">
-            <i class="fab fa-github"></i>
-        </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma"></i>
-        </a>
-    </div>
-    <div class="bg-[#F3F5F7] h-full flex flex-col items-center">
-        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Roles</p>
-        </div>
-        {% for domain in domains %}
-            <div class="w-[96%] bg-white rounded-lg shadow-xl p-8 mt-10">
-                <div class="flex items-center justify-between">
-                    <h4 class="text-xl text-gray-900 font-bold">{{ domain.name }}</h4>
-                    <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <!-- Header Section -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Manage Roles</h1>
+                        <p class="mt-1 text-sm text-gray-500">Control user access and permissions within your organization</p>
+                    </div>
+                    {% if is_org_admin or user_role_level == 0 %}
                         <button type="button"
-                                onclick="ToggleDisplayForm({{ domain.id }})"
-                                class="flex items-center justify-center md:justify-center px-8 py-4 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
-                            <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
+                                onclick="openAddRoleModal()"
+                                class="inline-flex items-center px-4 py-2.5 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 select-none">
+                            <svg class="w-5 h-5 mr-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Role
                         </button>
-                    </div>
+                    {% endif %}
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-8 mt-8">
-                    {% for manager in domain.managers %}
-                        <div class="relative flex flex-col items-center justify-center text-gray-800 hover:text-red-600 group">
-                            <a href="{% url 'profile' manager.username %}"
-                               class="flex flex-col cursor-pointer items-center justify-center"
-                               title="View Profile">
-                                <img src="{% if manager.userprofile__user_avatar %}{{ MEDIA_URL }}{{ manager.userprofile__user_avatar }}{% else %}https://via.placeholder.com/80?text=No+Avatar{% endif %}"
-                                     class="w-20 h-20 object-cover rounded-full"
-                                     width="80px"
-                                     height="80px"
-                                     alt="profile">
-                                <p class="text-center font-bold text-md mt-1 group-hover:opacity-100">{{ manager.username }}</p>
-                                <p class="text-sm text-gray-500 text-center group-hover:opacity-100">Domain Manager</p>
-                            </a>
-                            {% if domain.organization_admin == request.user %}
-                                <button class="absolute top-0.5 right-0.5 w-8 h-8 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-700 transition-all flex items-center justify-center"
-                                        data-manager-id="{{ manager.id }}"
-                                        data-domain-id="{{ domain.id }}"
-                                        onclick="deleteManager(event)">
-                                    <span class="text-lg">-</span>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
+            <!-- Roles List -->
+            {% if roles %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">User Roles & Permissions</h2>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">User</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Role</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Domain</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Added</th>
+                                {% if is_org_admin or user_role_level == 0 %}
+                                    <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Actions</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for role in roles %}
+                                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ role.username }}
+                                            {% if role.is_owner %}
+                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    Owner
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-sm text-gray-500">{{ role.email }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {% if role.role == 0 %}
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Administrator</span>
+                                        {% else %}
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Moderator</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {% if role.domain_name %}
+                                            <div class="text-sm text-gray-900">{{ role.domain_name }}</div>
+                                        {% else %}
+                                            <div class="text-sm text-gray-500 italic">All Domains</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {% if role.is_active %}
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Active</span>
+                                        {% else %}
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-600">{{ role.created|date:"M j, Y" }}</div>
+                                    </td>
+                                    {% if is_org_admin or user_role_level == 0 %}
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex items-center justify-end space-x-2">
+                                                {% comment %} Only allow editing if NOT an owner AND NOT the user's own role {% endcomment %}
+                                                {% if not role.is_owner and role.user_id != request.user.id %}
+                                                    <button onclick="openEditRoleModal({{ role.id }}, '{{ role.username|escapejs }}', {{ role.role|default:"null" }}, {% if role.domain_id %}{{ role.domain_id }}{% else %}null{% endif %})"
+                                                            class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all font-medium text-sm"
+                                                            title="Edit Role">
+                                                        <svg class="w-4 h-4 mr-1.5"
+                                                             fill="none"
+                                                             stroke="currentColor"
+                                                             viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                            </path>
+                                                        </svg>
+                                                        Edit
+                                                    </button>
+                                                    <button onclick="confirmRemoveRole({{ role.id }}, '{{ role.username|escapejs }}')"
+                                                            class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all font-medium text-sm"
+                                                            title="Remove Role">
+                                                        <svg class="w-4 h-4 mr-1.5"
+                                                             fill="none"
+                                                             stroke="currentColor"
+                                                             viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                            </path>
+                                                        </svg>
+                                                        Remove
+                                                    </button>
+                                                {% else %}
+                                                    {% if role.is_owner %}
+                                                        <span class="text-gray-400 italic">Owner</span>
+                                                    {% else %}
+                                                        <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg cursor-not-allowed font-medium text-sm"
+                                                              title="You cannot edit or remove your own role">
+                                                            <svg class="w-4 h-4 mr-1.5"
+                                                                 fill="none"
+                                                                 stroke="currentColor"
+                                                                 viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m8-9a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                                </path>
+                                                            </svg>
+                                                            Self
+                                                        </span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="bg-white rounded-lg border border-gray-200 p-8">
+                    <div class="text-center">
+                        <svg class="mx-auto h-16 w-16 text-[#e74c3c]"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01m-6.938 4h13.856A2 2 0 0021 18.078V5.922A2 2 0 0018.928 4H5.072A2 2 0 003 5.922v12.156A2 2 0 005.062 20z" />
+                        </svg>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900">No roles assigned yet</h3>
+                        <p class="mt-2 text-gray-500">Get started by adding user roles to your organization.</p>
+                        {% if is_org_admin or user_role_level == 0 %}
+                            <div class="mt-6">
+                                <button onclick="openAddRoleModal()"
+                                        class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600">
+                                    <svg class="w-5 h-5 mr-2"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Add Role
                                 </button>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-                <script id="assigned_users{{ domain.id }}" type="application/json">{{ domain.managers|json_script:"" }}</script>
-            </div>
-        {% endfor %}
-    </div>
-    <!-- add domain popup overlay -->
-    <div id="addManagersFormCont"
-         class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-20">
-        <form class="flex flex-col w-[30%] h-[60%] bg-white rounded-lg p-8 z-10"
-              action="#"
-              method="post">
-            {% csrf_token %}
-            <div class="w-full">
-                <div class="flex w-full justify-between items-center cursor-pointer"
-                     onclick="ToggleDisplayForm(0)">
-                    <p class="text-[#464255] font-satoshi font-bold text-[25px]">Add Managers</p>
-                    <i class="fa-sharp fa-solid fa-xmark fa-xl text-black"></i>
-                </div>
-                <div class="border-b mt-5">
-                    <input type="hidden" name="domain_id" value="">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">Add Domain Managers</h2>
-                    <button onclick="add_user_selection()"
-                            type="button"
-                            class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
-                        Add User
-                    </button>
-                    <div class="mt-5 max-h-[150px] overflow-y-auto"
-                         id="user-selection-container">
-                        <label for="user" class="block text-sm font-medium leading-6 text-gray-900">Select Domain Manager</label>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
-                <button type="submit"
-                        class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
-                    Submit
-                </button>
-            </div>
-        </form>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Add Role Modal -->
+    <div id="addRoleModal"
+         class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-t-lg rounded-b-lg shadow-xl w-full max-w-md mx-4">
+            <form id="addRoleForm" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_role">
+                <div class="px-6 py-4 border-b border-gray-200 rounded-t-lg">
+                    <h3 class="text-xl font-bold text-gray-900">Add New Role</h3>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <!-- User Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            User Email <span class="text-red-500">*</span>
+                        </label>
+                        <input type="email"
+                               name="email"
+                               required
+                               placeholder="user@example.com"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Enter the email address of the user you want to add</p>
+                    </div>
+                    <!-- Role Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Role <span class="text-red-500">*</span>
+                        </label>
+                        <select name="role"
+                                required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                            <option value="">Choose role...</option>
+                            <option value="1">Moderator</option>
+                            <option value="0">Administrator</option>
+                        </select>
+                    </div>
+                    <!-- Domain Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Assign to Domain (Optional)</label>
+                        <select name="domain_id"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                            <option value="">All Domains</option>
+                            {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Leave empty for organization-wide access</p>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-lg">
+                    <button type="button"
+                            onclick="closeAddRoleModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-[#e74c3c] text-white rounded-md hover:bg-red-700 transition-colors font-medium">
+                        Add Role
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Edit Role Modal -->
+    <div id="editRoleModal"
+         class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <form id="editRoleForm" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_role">
+                <input type="hidden" id="edit_role_id" name="role_id">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900">Edit Role</h3>
+                    <p class="text-sm text-gray-500 mt-1">
+                        User: <span id="edit_username" class="font-medium"></span>
+                    </p>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <!-- Role Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Role <span class="text-red-500">*</span>
+                        </label>
+                        <select id="edit_role"
+                                name="role"
+                                required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                            <option value="1">Moderator</option>
+                            <option value="0">Administrator</option>
+                        </select>
+                    </div>
+                    <!-- Domain Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Assign to Domain (Optional)</label>
+                        <select id="edit_domain"
+                                name="domain_id"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                            <option value="">All Domains</option>
+                            {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                    <button type="button"
+                            onclick="closeEditRoleModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-[#e74c3c] text-white rounded-md hover:bg-red-700 transition-colors font-medium">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 {% endblock body %}
-{% block js %}
+{% block scripts %}
     <script>
-    let assignedUsers = [];
-    function remove_user_selection(event) {
-        let user_container = document.getElementById("user-selection-container");
-        let parentDiv = event.target.closest('.user-selection');
-        if (parentDiv) {
-            user_container.removeChild(parentDiv);
-            updateUserSelections();
+    // Modal Functions
+    function openAddRoleModal() {
+        const modal = document.getElementById('addRoleModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeAddRoleModal() {
+        const modal = document.getElementById('addRoleModal');
+        const form = document.getElementById('addRoleForm');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        form.reset();
+    }
+
+    function openEditRoleModal(roleId, username, role, domainId) {
+        document.getElementById('edit_role_id').value = roleId;
+        document.getElementById('edit_username').textContent = username;
+        document.getElementById('edit_role').value = role;
+        document.getElementById('edit_domain').value = domainId || '';
+        
+        const modal = document.getElementById('editRoleModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeEditRoleModal() {
+        const modal = document.getElementById('editRoleModal');
+        const form = document.getElementById('editRoleForm');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        form.reset();
+    }
+
+    function confirmRemoveRole(roleId, username) {
+        // Sanitize username for display - coerce to string and remove potentially dangerous characters
+        const sanitizedUsername = String(username || 'user').replace(/[<>'"&]/g, '');
+        
+        if (confirm(`Are you sure you want to remove ${sanitizedUsername}'s role? This will revoke their access to organization management features.`)) {
+            // Robustly find CSRF token
+            const csrfElement = document.querySelector('input[name="csrfmiddlewaretoken"]');
+            if (!csrfElement) {
+                alert('Error: CSRF token not found. Please refresh the page and try again.');
+                return;
+            }
+            const csrfToken = csrfElement.value;
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '';
+            
+            // Create CSRF token input
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            
+            // Create action input
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'remove_role';
+            
+            // Create role_id input
+            const roleIdInput = document.createElement('input');
+            roleIdInput.type = 'hidden';
+            roleIdInput.name = 'role_id';
+            roleIdInput.value = roleId;
+            
+            // Append inputs to form
+            form.appendChild(csrfInput);
+            form.appendChild(actionInput);
+            form.appendChild(roleIdInput);
+            
+            document.body.appendChild(form);
+            form.submit();
         }
     }
 
-    function add_user_selection() {
-        const user_selection_child_html = document.createElement('div');
-        user_selection_child_html.classList.add('mt-2', 'flex', 'flex-row', 'items-center', 'w-full', 'user-selection');
-        user_selection_child_html.innerHTML = `
-            <select name="user[]" class="w-full block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" onchange="updateUserSelections()">
-                ${getUserOptions([])}
-            </select>
-            <button type="button" onclick="remove_user_selection(event)">
-                <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>
-            </button>
-        `;
-
-        let user_container = document.getElementById("user-selection-container");
-        user_container.appendChild(user_selection_child_html);
-        updateUserSelections();
-    }
-
-    function getUserOptions(excludeList) {
-        let optionsHtml = '<option value="" disabled selected>Select a user</option>';
-        {% for user in organization_users %}
-            if (!assignedUsers.includes('{{ user.username }}') {
-                optionsHtml += `<option value="{{ user.username }}">{{ user.username }} ({{ user.email }})</option>`;
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Close modals on escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeAddRoleModal();
+                closeEditRoleModal();
             }
-        {% endfor %}
-        return optionsHtml;
-    }
-
-    function updateUserSelections() {
-        const selects = document.querySelectorAll('#user-selection-container select');
-        const selectedUsers = Array.from(selects).map(select => select.value);
-
-        selects.forEach(select => {
-            const currentValue = select.value;
-            select.innerHTML = getUserOptions(selectedUsers.filter(user => user !== currentValue));
-            select.value = currentValue;  // Preserve the current value after options are updated
         });
-    }
 
-    function ToggleDisplayForm(index) {
-        const modal = document.getElementById('addManagersFormCont');
-        if (index > 0) {
-            const domainIdInput = modal.querySelector('input[name="domain_id"]');
-            domainIdInput.value = index;
-            const scriptElement = document.getElementById('assigned_users' + index);
-            if (scriptElement) {
-                scriptElement.innerHTML = scriptElement.innerHTML.replace('<script type="application/json">', '');
-                const jsonData = scriptElement.textContent || scriptElement.innerText;
-                assignedUsers = JSON.parse(jsonData).map(user => user.username);
-            } else {
-                console.error('Script element with ID "assigned_users" not found.');
-            }
-        }
+        // Close modals on background click
+        document.getElementById('addRoleModal').addEventListener('click', function(event) {
+            if (event.target === this) closeAddRoleModal();
+        });
 
-        if (index == 0) {
-            modal.classList.add('hidden');
-            const user_container = document.getElementById("user-selection-container");
-            user_container.innerHTML = '';
-            assignedUsers = [];
-        } else {
-            if (modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex', 'items-center', 'justify-center');
-            } else {
-                modal.classList.add('hidden');
-                const user_container = document.getElementById("user-selection-container");
-                user_container.innerHTML = '';
-                assignedUsers = [];
-            }
-        }
-    }
-
-    function deleteManager(event) {
-        event.preventDefault();
-        var button = event.currentTarget;
-        var managerId = button.getAttribute('data-manager-id');
-        var domainId = button.getAttribute('data-domain-id'); // Make sure to pass domain_id in the button
-
-        if (confirm("Are you sure you want to remove this manager?")) {
-            fetch(`/organization/delete_manager/${managerId}/${domainId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while trying to delete the manager.');
-            });
-        }
-    }
-    
-     // Utility function to get CSRF token from cookies
-     function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-</script>
-{% endblock js %}
+        document.getElementById('editRoleModal').addEventListener('click', function(event) {
+            if (event.target === this) closeEditRoleModal();
+        });
+    });
+    </script>
+{% endblock scripts %}
