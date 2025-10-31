@@ -1,0 +1,99 @@
+{
+  "name": "OWASP BLT",
+  "description": "Bug Logging Tool - A bug bounty and vulnerability reporting platform",
+  "repository": "https://github.com/OWASP-BLT/BLT",
+  "logo": "https://blt.owasp.org/static/img/logo.png",
+  "keywords": ["python", "django", "bug-bounty", "security", "vulnerability"],
+  "success_url": "/",
+  "env": {
+    "SECRET_KEY": {
+      "description": "Django secret key for cryptographic signing",
+      "generator": "secret"
+    },
+    "DEBUG": {
+      "description": "Enable debug mode (use False in production)",
+      "value": "False",
+      "required": false
+    },
+    "ALLOWED_HOSTS": {
+      "description": "Comma-separated list of allowed hosts",
+      "value": ".herokuapp.com",
+      "required": false
+    },
+    "SENDGRID_USERNAME": {
+      "description": "SendGrid username for email",
+      "required": false
+    },
+    "SENDGRID_PASSWORD": {
+      "description": "SendGrid password for email",
+      "required": false
+    },
+    "GITHUB_CLIENT_ID": {
+      "description": "GitHub OAuth Client ID",
+      "required": false
+    },
+    "GITHUB_CLIENT_SECRET": {
+      "description": "GitHub OAuth Client Secret",
+      "required": false
+    },
+    "GOOGLE_CREDENTIALS": {
+      "description": "Google Cloud Storage credentials JSON",
+      "required": true
+    },
+    "SENTRY_DSN": {
+      "description": "Sentry DSN for error tracking",
+      "required": false
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key for AI features",
+      "required": false
+    },
+    "REDISCLOUD_URL": {
+      "description": "Redis Cloud URL for caching and channels",
+      "required": false
+    },
+    "BLUESKY_USERNAME": {
+      "description": "Bluesky username for social integration",
+      "required": false
+    },
+    "BLUESKY_PASSWORD": {
+      "description": "Bluesky password for social integration",
+      "required": false
+    },
+    "GITHUB_TOKEN": {
+      "description": "GitHub personal access token",
+      "required": false
+    },
+    "SLACK_BOT_TOKEN": {
+      "description": "Slack bot token for notifications",
+      "required": false
+    },
+    "SLACK_SIGNING_SECRET": {
+      "description": "Slack signing secret",
+      "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "https://github.com/heroku/heroku-buildpack-pgbouncer"
+    },
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "python manage.py migrate --noinput && python manage.py collectstatic --noinput"
+  }
+}
