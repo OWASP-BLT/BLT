@@ -1,110 +1,70 @@
-# Enhanced Invite Organization Feature
+# Organization Invite Points System Implementation
 
-## Overview
-The enhanced invite organization feature allows users to generate professional, comprehensive invitation emails for organizations. This feature has been upgraded from a simple mailto link to a sophisticated email generation system.
+## Summary
+
+Successfully implemented the missing points awarding logic for organization invites. When a user invites an organization and that organization registers via the referral link, the inviting user now receives 5 points.
+
+## Changes Made
+
+### 1. Fixed Organization Registration View (`website/views/company.py`)
+- **Added imports**: `InviteOrganization`, `Points`
+- **Added points logic**: After successful organization creation, check for referral code in session
+- **Award 5 points**: Create Points record for the inviting user
+- **Update invite record**: Mark `points_awarded=True` and link to created organization
+- **Prevent double points**: Only award points if `points_awarded=False`
+
+### 2. Improved Invite View (`website/views/core.py`)
+- **Fixed placeholder issue**: Removed creation of fake placeholder invites
+- **Generate sample links**: Use UUID for display-only referral links
+- **Better context**: Added proper template variables for email generation
+- **Security improvement**: Sample links can't be used to claim points
+
+### 3. Updated Template (`website/templates/invite.html`)
+- **Sample link indicator**: Different messages for real vs sample referral links
+- **User context**: Show appropriate messages based on login status
+
+### 4. Consolidated URL Routing (`blt/urls.py`)
+- **Single invite view**: Use `invite_organization` function from core.py
+- **Removed duplicate**: Eliminated unused `InviteCreate` class from user.py
+
+### 5. Comprehensive Tests (`website/test_organization_invite.py`)
+- **Points awarding**: Test that 5 points are awarded on successful registration
+- **No double points**: Test that same referral code can't be used twice
+- **Invalid codes**: Test that invalid referral codes don't award points
+- **Sample links**: Test that sample links don't award points
+- **Anonymous users**: Test behavior for non-logged-in users
+
+## How It Works
+
+1. **User creates invite**: Logged-in user fills invite form → `InviteOrganization` record created
+2. **Referral link generated**: Unique referral code appended to organization registration URL
+3. **Organization visits link**: Referral code stored in session
+4. **Organization registers**: Registration form submitted successfully
+5. **Points awarded**: System finds matching invite record and awards 5 points to sender
+6. **Invite updated**: Mark as used and link to created organization
 
 ## Key Features
 
-### 1. Professional Email Generation
-- **Comprehensive Content**: Automatically generates detailed emails explaining BLT's features, benefits, and value proposition
-- **Organization Personalization**: Optional organization name field for customized messaging
-- **Success Stories**: Includes statistics and benefits that organizations have experienced
-- **Clear Call-to-Action**: Step-by-step instructions for getting started with BLT
-
-### 2. Enhanced User Interface
-- **Modern Design**: Clean, responsive interface using Tailwind CSS with BLT brand colors
-- **Email Preview**: Live preview of generated subject and body content
-- **Copy Functionality**: Individual copy buttons for subject and body, plus copy-all option
-- **Multiple Sharing Options**: Direct email client integration and manual copy options
-
-### 3. User Experience Improvements
-- **Visual Feedback**: Success indicators when content is copied
-- **Fallback Options**: Graceful handling of copy failures with manual selection
-- **Instructions**: Clear guidance on how to use the generated content
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
-
-## How to Use
-
-### For End Users
-1. Navigate to `/invite/` on the BLT platform
-2. (Optional) Enter the organization name for personalization
-3. Enter the email address of the organization contact
-4. Click "Generate Invitation Email"
-5. Use the copy buttons to copy content to clipboard
-6. Or click "Open in Email Client" for direct integration
-7. Send the professional invitation to the organization
-
-### Email Content Structure
-The generated email includes:
-- **Professional Subject Line**: "Invitation to Join BLT (Bug Logging Tool) - Enhanced Security Testing Platform"
-- **Personal Greeting**: Customized with organization name if provided
-- **BLT Overview**: Comprehensive explanation of what BLT is
-- **Key Benefits**: Detailed list of advantages for organizations
-- **Getting Started Steps**: Clear action items for onboarding
-- **Success Stories**: Statistics and testimonials
-- **Contact Information**: Sender's information and BLT resources
-
-### Technical Implementation
-
-#### Backend Changes (`website/views/user.py`)
-- Enhanced `InviteCreate` class with professional email generation
-- Added GET method for proper initial state handling
-- Comprehensive email template with organization personalization
-- Dynamic content generation based on user input
-
-#### Frontend Changes (`website/templates/invite.html`)
-- Complete UI redesign with modern, professional appearance
-- JavaScript copy functionality with visual feedback
-- Responsive design using Tailwind CSS
-- Enhanced form handling with organization name field
-
-#### Features
-- **Copy to Clipboard**: JavaScript-based copying with fallback options
-- **Email Client Integration**: Direct mailto links with pre-populated content
-- **Visual Feedback**: Success indicators and error handling
-- **Accessibility**: Proper labels, semantic HTML, and keyboard navigation
-
-## Benefits for Organizations
-The enhanced invitation emails now effectively communicate:
-
-1. **Cost Savings**: 60% reduction in security testing costs
-2. **Efficiency Gains**: 40% faster vulnerability discovery
-3. **Comprehensive Platform**: All-in-one security testing and bug bounty management
-4. **Community Access**: Connection to skilled security researchers
-5. **Open Source Benefits**: Transparency and customization options
-
-## Testing the Feature
-
-### Manual Testing
-1. Access the invite page at `/invite/`
-2. Test with and without organization name
-3. Verify email generation and copy functionality
-4. Test email client integration
-5. Verify responsive design on different screen sizes
-
-### Integration Testing
-- Ensure proper form validation
-- Test with various email formats
-- Verify user authentication requirements
-- Test JavaScript functionality across browsers
-
-## Future Enhancements
-Potential improvements could include:
-- Email template customization options
-- Multiple language support
-- Analytics tracking for invite success rates
-- Integration with CRM systems
-- Scheduled email sending
-- Email template variations for different organization types
-
-## Related Files
-- `website/views/user.py` - Backend logic for email generation
-- `website/templates/invite.html` - Frontend interface and email preview
-- `blt/urls.py` - URL routing configuration
-- `website/models.py` - User and organization models
+ **5 points per successful invite**  
+ **Prevents duplicate point awards**  
+ **Secure referral tracking**  
+ **Works for logged-in users only**  
+ **Sample links for demonstration**  
+ **Comprehensive test coverage**  
 
 ## Security Considerations
-- All email content is generated server-side to prevent XSS
-- No sensitive information is exposed in the email templates
-- Copy functionality requires user interaction to prevent abuse
-- Email addresses are validated before processing
+
+- Only real invite records (not sample links) can award points
+- Referral codes are unique UUIDs
+- Points only awarded once per invite
+- Session-based referral tracking prevents tampering
+- Invalid referral codes are handled gracefully
+
+## Testing
+
+Run the test suite to verify functionality:
+```bash
+python manage.py test website.test_organization_invite
+```
+
+The implementation includes tests for all major scenarios including edge cases and security

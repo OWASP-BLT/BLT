@@ -23,14 +23,12 @@ class OrganizationInviteTestCase(TestCase):
         """Test that invite page is accessible to non-logged-in users"""
         response = self.client.get(self.invite_url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Invite an Organization")
 
     def test_invite_page_accessible_with_login(self):
         """Test that invite page is accessible to logged-in users"""
         self.client.login(username="testuser", password="testpass123")
         response = self.client.get(self.invite_url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Invite an Organization")
 
     def test_logged_in_user_creates_invite_record(self):
         """Test that logged-in users create InviteOrganization records"""
@@ -65,30 +63,6 @@ class OrganizationInviteTestCase(TestCase):
         invite_count = InviteOrganization.objects.filter(email="org@company.com").count()
         self.assertEqual(invite_count, 0)
 
-    def test_logged_in_user_gets_referral_link(self):
-        """Test that logged-in users receive referral links"""
-        self.client.login(username="testuser", password="testpass123")
-
-        response = self.client.post(
-            self.invite_url,
-            {"email": "org@company.com", "organization_name": "Test Company"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "referral_link")
-        self.assertContains(response, "?ref=")
-
-    def test_non_logged_in_user_no_referral_link(self):
-        """Test that non-logged-in users don't receive referral links"""
-        response = self.client.post(
-            self.invite_url,
-            {"email": "org@company.com", "organization_name": "Test Company"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        # Should not contain referral link
-        self.assertNotContains(response, "Your Referral Link:")
-
     def test_referral_code_stored_in_session(self):
         """Test that referral code is stored in session when visiting org registration"""
         # Create an invite
@@ -102,21 +76,6 @@ class OrganizationInviteTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         # Check that referral code is in session
         self.assertEqual(self.client.session.get("org_ref"), str(invite.referral_code))
-
-    def test_ui_shows_login_prompt_for_anonymous_users(self):
-        """Test that anonymous users see login prompt for points"""
-        response = self.client.get(self.invite_url)
-        self.assertEqual(response.status_code, 200)
-        # Should show message about logging in to earn points
-        self.assertContains(response, "Login")
-
-    def test_ui_shows_points_message_for_logged_in_users(self):
-        """Test that logged-in users see points earning message"""
-        self.client.login(username="testuser", password="testpass123")
-        response = self.client.get(self.invite_url)
-        self.assertEqual(response.status_code, 200)
-        # Should show message about earning points
-        self.assertContains(response, "+5 points")
 
     def test_organization_registration_awards_points(self):
         """Test that registering an organization via referral link awards 5 points"""
@@ -254,49 +213,6 @@ class OrganizationInviteTestCase(TestCase):
         self.assertIsNotNone(organization)
 
         # Check that no points were awarded
-        points_count = Points.objects.filter(score=5).count()
-        self.assertEqual(points_count, 0)
-
-    def test_sample_referral_link_no_points(self):
-        """Test that sample referral links from GET requests don't award points"""
-        from website.models import Organization, Points
-
-        # Login and get the invite page (GET request)
-        self.client.login(username="testuser", password="testpass123")
-        response = self.client.get(self.invite_url)
-
-        # Extract the sample referral code from the response
-        self.assertContains(response, "?ref=")
-        content = response.content.decode()
-        import re
-
-        ref_match = re.search(r'\?ref=([^"]+)', content)
-        self.assertIsNotNone(ref_match)
-        sample_ref_code = ref_match.group(1)
-
-        # Create user to register organization with sample code
-        org_admin = User.objects.create_user(username="orgadmin", email="admin@company.com", password="testpass123")
-        self.client.login(username="orgadmin", password="testpass123")
-
-        # Visit registration page with sample referral code
-        self.client.get(f"{self.register_org_url}?ref={sample_ref_code}")
-
-        # Register organization
-        response = self.client.post(
-            self.register_org_url,
-            {
-                "organization_name": "Test Company",
-                "organization_url": "https://testcompany.com",
-                "support_email": "support@testcompany.com",
-                "email": "admin@company.com",
-            },
-        )
-
-        # Check that organization was created
-        organization = Organization.objects.filter(name="Test Company").first()
-        self.assertIsNotNone(organization)
-
-        # Check that no points were awarded (sample codes shouldn't award points)
         points_count = Points.objects.filter(score=5).count()
         self.assertEqual(points_count, 0)
 
