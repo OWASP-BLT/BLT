@@ -107,7 +107,7 @@ def Organization_view(request, *args, **kwargs):
     if error_message:
         messages.error(request, error_message)
         if error_message == "Email not verified.":
-            return recopydirect("/")
+            return redirect("/")
         elif error_message == "Please login to access your organization.":
             return redirect("/accounts/login/")
         else:
