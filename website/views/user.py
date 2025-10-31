@@ -471,7 +471,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         Returns:
             dict: Context mapping names (as listed above) to their querysets or values.
         """
-        context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
         context["user_related_tags"] = user_related_tags
