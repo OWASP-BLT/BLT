@@ -120,10 +120,10 @@
                             {% for leader in code_review_leaderboard %}
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2 truncate">
-                                        {% if leader.reviews__reviewer__user__username %}
-                                            <img src="https://github.com/{{ leader.reviews__reviewer__user__username }}.png"
+                                        {% if leader.reviewer__user__username %}
+                                            <img src="https://github.com/{{ leader.reviewer__user__username }}.png"
                                                  class="border border-gray-200 rounded-full select-none size-11"
-                                                 alt="{{ leader.reviews__reviewer__user__username }}"
+                                                 alt="{{ leader.reviewer__user__username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
@@ -137,7 +137,7 @@
                                            class="text-lg transition-all duration-200">
                                             {{ leader.reviewer__user__username }}
                                         </a>
-                                        <a href="https://github.com/{{ leader.reviews__reviewer__user__username }}"
+                                        <a href="https://github.com/{{ leader.reviewer__user__username }}"
                                            target="_blank"
                                            class="ml-2">
                                             <i class="text-xl fab fa-github"></i>
