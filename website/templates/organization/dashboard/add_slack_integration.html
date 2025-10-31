@@ -40,6 +40,8 @@
                             <div class="w-16 h-16 bg-gradient-to-br from-[#e74c3c]/10 to-[#e74c3c]/5 rounded-xl flex items-center justify-center flex-shrink-0 border border-[#e74c3c]/20">
                                 <img src="{% static 'images/slack_icon.png' %}"
                                      alt="Slack"
+                                     width="40"
+                                     height="40"
                                      class="w-10 h-10">
                             </div>
                             <div>
@@ -76,7 +78,8 @@
                                          fill="none"
                                          stroke="currentColor"
                                          viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                                        </path>
                                     </svg>
                                 </div>
                                 <div class="flex-1">
@@ -92,15 +95,24 @@
                                                 id="toggleToken"
                                                 class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                                                 title="Show/Hide Token">
-                                            <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg id="eyeIcon"
+                                                 class="w-5 h-5"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                </path>
                                             </svg>
                                         </button>
                                     </div>
                                     <p class="mt-2 text-xs text-gray-500">
-                                        <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        <svg class="w-3 h-3 inline mr-1"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                            </path>
                                         </svg>
                                         Token is securely stored and cannot be modified
                                     </p>
@@ -117,9 +129,8 @@
                     </div>
                     <div class="p-6">
                         <div class="max-w-xl">
-                            <label for="target_channel" class="block text-sm font-medium text-gray-900 mb-2">
-                                Default Channel
-                            </label>
+                            <label for="target_channel"
+                                   class="block text-sm font-medium text-gray-900 mb-2">Default Channel</label>
                             <select id="target_channel"
                                     name="target_channel"
                                     class="block w-full rounded-lg border border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm px-4 py-3 bg-white">
@@ -150,21 +161,23 @@
                                        {% if slack_integration.daily_updates %}checked{% endif %}>
                             </div>
                             <div class="flex-1">
-                                <label for="daily_sizzle_timelogs_status" class="text-sm font-medium text-gray-900">
-                                    Daily Sizzle Timelogs Status
-                                </label>
+                                <label for="daily_sizzle_timelogs_status"
+                                       class="text-sm font-medium text-gray-900">Daily Sizzle Timelogs Status</label>
                                 <p class="text-sm text-gray-500 mt-1">Send daily timelog summaries to your team</p>
                             </div>
                         </div>
                         <div class="max-w-xl pl-8">
-                            <label for="daily_sizzle_timelogs_hour" class="block text-sm font-medium text-gray-900 mb-2">
-                                Update Time (UTC)
-                            </label>
+                            <label for="daily_sizzle_timelogs_hour"
+                                   class="block text-sm font-medium text-gray-900 mb-2">Update Time (UTC)</label>
                             <select id="daily_sizzle_timelogs_hour"
                                     name="daily_sizzle_timelogs_hour"
                                     class="block w-full rounded-lg border border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm px-4 py-3 bg-white"
                                     {% if not slack_integration.daily_updates %}disabled{% endif %}>
-                                <option value="" disabled {% if not slack_integration.daily_update_time %}selected{% endif %}>Select hour (0-23)</option>
+                                <option value=""
+                                        disabled
+                                        {% if not slack_integration.daily_update_time %}selected{% endif %}>
+                                    Select hour (0-23)
+                                </option>
                                 {% for hour in hours %}
                                     <option value="{{ hour }}"
                                             {% if slack_integration.daily_update_time == hour %}selected{% endif %}>
@@ -192,7 +205,8 @@
                                      stroke="currentColor"
                                      viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
                                 </svg>
                                 <span id="previewText">Preview</span>
                             </button>
@@ -202,9 +216,7 @@
                         <!-- Editor View -->
                         <div id="editorView">
                             <div class="flex items-center justify-between mb-2">
-                                <label for="welcome_message" class="block text-sm font-medium text-gray-900">
-                                    Message Content
-                                </label>
+                                <label for="welcome_message" class="block text-sm font-medium text-gray-900">Message Content</label>
                                 <span id="charCount" class="text-xs text-gray-500">0 characters</span>
                             </div>
                             <div class="relative">
@@ -221,11 +233,13 @@
                                                 class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                                                 title="Insert emoji">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                </path>
                                             </svg>
                                         </button>
                                         <!-- Emoji Picker Dropdown -->
-                                        <div id="emojiPicker" class="hidden absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-72 max-h-64 overflow-y-auto z-10">
+                                        <div id="emojiPicker"
+                                             class="hidden absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-72 max-h-64 overflow-y-auto z-10">
                                             <div class="mb-2">
                                                 <h4 class="text-xs font-semibold text-gray-700 mb-2">Frequently Used</h4>
                                                 <div class="grid grid-cols-8 gap-1" id="emojiFrequent"></div>
@@ -242,7 +256,6 @@
                                     </div>
                                 </div>
                             </div>
-                            
                             <!-- Formatting Toolbar -->
                             <div class="mt-3 flex flex-wrap items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                                 <span class="text-xs font-medium text-gray-700">Markdown Formatting:</span>
@@ -250,7 +263,10 @@
                                         class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
                                         data-format="*"
                                         title="Bold">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-3 h-3 mr-1"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 12h12M6 6h12M6 18h12"></path>
                                     </svg>
                                     *Bold*
@@ -273,7 +289,10 @@
                                         class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
                                         data-format="`"
                                         title="Code">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-3 h-3 mr-1"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
                                     </svg>
                                     `Code`
@@ -282,14 +301,17 @@
                                         class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
                                         data-format=">"
                                         title="Quote">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                    <svg class="w-3 h-3 mr-1"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                        </path>
                                     </svg>
                                     >Quote
                                 </button>
                             </div>
                         </div>
-                        
                         <!-- Preview View -->
                         <div id="previewView" class="hidden">
                             <div class="mb-2">

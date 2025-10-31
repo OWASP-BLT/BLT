@@ -470,10 +470,14 @@ class OrganizationDashboardIntegrations(View):
 
     def _get_slack_integration(self, organization_id):
         """Helper to fetch Slack integration for an organization."""
-        return SlackIntegration.objects.filter(
-            integration__organization_id=organization_id,
-            integration__service_name=IntegrationServices.SLACK.value,
-        ).select_related("integration").first()
+        return (
+            SlackIntegration.objects.filter(
+                integration__organization_id=organization_id,
+                integration__service_name=IntegrationServices.SLACK.value,
+            )
+            .select_related("integration")
+            .first()
+        )
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
@@ -486,9 +490,11 @@ class OrganizationDashboardIntegrations(View):
         # Get organizations for navigation (if authenticated)
         organizations = []
         if request.user.is_authenticated:
-            organizations = Organization.objects.values("name", "id").filter(
-                Q(managers__in=[request.user]) | Q(admin=request.user)
-            ).distinct()
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
 
         context = {
             "organization": id,
@@ -981,24 +987,25 @@ class AddSlackIntegrationView(View):
 
     def _get_slack_integration(self, organization_id):
         """Helper to fetch Slack integration for an organization."""
-        return SlackIntegration.objects.filter(
-            integration__organization_id=organization_id,
-            integration__service_name=IntegrationServices.SLACK.value,
-        ).select_related("integration").first()
+        return (
+            SlackIntegration.objects.filter(
+                integration__organization_id=organization_id,
+                integration__service_name=IntegrationServices.SLACK.value,
+            )
+            .select_related("integration")
+            .first()
+        )
 
     def _get_redirect_uri(self, request):
         """Helper to construct redirect URI with proper scheme detection."""
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-        
+
         # For ngrok or other tunnels, always use https
         if "ngrok" in host or "localhost.run" in host:
             scheme = "https"
-        
-        return os.environ.get(
-            "SLACK_OAUTH_REDIRECT_URL",
-            f"{scheme}://{host}/oauth/slack/callback"
-        )
+
+        return os.environ.get("SLACK_OAUTH_REDIRECT_URL", f"{scheme}://{host}/oauth/slack/callback")
 
     def _fetch_slack_conversations(self, app, filter_func=None):
         """Generic method to fetch Slack conversations with pagination."""
@@ -1047,7 +1054,9 @@ class AddSlackIntegrationView(View):
                 channels_list = self._fetch_slack_conversations(app)
 
                 if not channels_list:
-                    messages.warning(request, "Could not fetch Slack channels. Please verify the bot token and permissions.")
+                    messages.warning(
+                        request, "Could not fetch Slack channels. Please verify the bot token and permissions."
+                    )
 
                 return render(
                     request,
@@ -1062,7 +1071,9 @@ class AddSlackIntegrationView(View):
                 )
             except Exception as e:
                 logger.exception(f"Error loading Slack integration page: {e}")
-                messages.error(request, "Failed to load Slack integration settings. Please try reconnecting your Slack workspace.")
+                messages.error(
+                    request, "Failed to load Slack integration settings. Please try reconnecting your Slack workspace."
+                )
                 return redirect("organization_manage_integrations", id=id)
 
         # Redirect to Slack OAuth flow if no integration exists
@@ -1129,7 +1140,9 @@ class AddSlackIntegrationView(View):
                     slack_integration.default_channel_id = channel_id
                     slack_integration.default_channel_name = target_channel
                 else:
-                    messages.warning(request, f"Could not find channel '{target_channel}'. Please verify the channel name.")
+                    messages.warning(
+                        request, f"Could not find channel '{target_channel}'. Please verify the channel name."
+                    )
 
             # Update all settings
             slack_integration.daily_updates = daily_updates_enabled
@@ -1175,15 +1188,12 @@ class SlackCallbackView(View):
         """Helper to construct redirect URI with proper scheme detection."""
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-        
+
         # For ngrok or other tunnels, always use https
         if "ngrok" in host or "localhost.run" in host:
             scheme = "https"
-        
-        return os.environ.get(
-            "SLACK_OAUTH_REDIRECT_URL",
-            f"{scheme}://{host}/oauth/slack/callback"
-        )
+
+        return os.environ.get("SLACK_OAUTH_REDIRECT_URL", f"{scheme}://{host}/oauth/slack/callback")
 
     def get(self, request, *args, **kwargs):
         try:
@@ -1228,7 +1238,7 @@ class SlackCallbackView(View):
                 defaults={
                     "bot_access_token": token_data["access_token"],
                     "workspace_name": token_data["team"]["id"],
-                }
+                },
             )
 
             action = "Created" if created else "Updated"
@@ -1253,7 +1263,7 @@ class SlackCallbackView(View):
                 "client_id": client_id,
                 "client_secret": client_secret,
                 "redirect_uri": redirect_uri,
-            }
+            },
         )
         token_data = response.json()
 
