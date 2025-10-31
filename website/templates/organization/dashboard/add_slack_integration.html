@@ -422,30 +422,111 @@
             }
         });
 
-        // Update preview with Slack markdown rendering
+        // Update preview with Slack markdown rendering - XSS safe using DOM manipulation
         function updatePreview() {
-            let text = welcomeTextarea.value || 'No message set';
+            const text = welcomeTextarea.value || 'No message set';
             
-            // Escape HTML to prevent XSS
-            function escapeHtml(unsafe) {
-                return unsafe
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g , "&lt;") .replace( />/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
+            // Clear previous content
+            previewContent.textContent = '';
+            
+            // Parse text into lines
+            const lines = text.split('\n');
+            
+            lines.forEach((line, index) => {
+                const lineContainer = document.createElement('div');
+                
+                // Check for quote
+                if (line.startsWith('>')) {
+                    const blockquote = document.createElement('blockquote');
+                    blockquote.className = 'border-l-4 border-gray-300 pl-3 text-gray-600 italic';
+                    parseInlineFormatting(line.substring(1).trim(), blockquote);
+                    lineContainer.appendChild(blockquote);
+                } else {
+                    parseInlineFormatting(line, lineContainer);
+                }
+                
+                previewContent.appendChild(lineContainer);
+                
+                // Add spacing between lines except last
+                if (index < lines.length - 1 && line.trim() !== '') {
+                    previewContent.appendChild(document.createElement('br'));
+                }
+            });
+        }
+        
+        // Parse inline formatting (bold, italic, code, etc.) safely using DOM
+        function parseInlineFormatting(text, container) {
+            if (!text) {
+                container.textContent = '';
+                return;
             }
             
-            text = escapeHtml(text);
+            // Regex patterns for Slack markdown
+            const patterns = [
+                { regex: /\*([^*]+)\*/g, tag: 'strong' },  // *bold*
+                { regex: /_([^_]+)_/g, tag: 'em' },        // _italic_
+                { regex: /~([^~]+)~/g, tag: 'del' },       // ~strikethrough~
+                { regex: /`([^`]+)`/g, tag: 'code', className: 'bg-gray-100 px-1 py-0.5 rounded text-xs text-[#e74c3c]' }  // `code`
+            ];
             
-            // Convert Slack markdown to HTML (after escaping)
-            text = text.replace(/\*([^*]+)\*/g, '<strong>$1</strong>'); // *bold*
-            text = text.replace(/_([^_]+)_/g, '<em>$1</em>'); // _italic_
-            text = text.replace(/~([^~]+)~/g, '<del>$1</del>'); // ~strikethrough~
-            text = text.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-xs text-[#e74c3c]">$1</code>'); // `code`
-            text = text.replace(/^&gt;(.+)$/gm, '<blockquote class="border-l-4 border-gray-300 pl-3 text-gray-600 italic">$1</blockquote>'); // >quote
-            text = text.replace(/\n/g, '<br>'); // Line breaks
+            let segments = [{ text: text, type: 'text' }];
             
-            previewContent.innerHTML = text;
+            // Apply each pattern
+            patterns.forEach(pattern => {
+                const newSegments = [];
+                segments.forEach(segment => {
+                    if (segment.type !== 'text') {
+                        newSegments.push(segment);
+                        return;
+                    }
+                    
+                    let lastIndex = 0;
+                    let match;
+                    const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
+                    
+                    while ((match = regex.exec(segment.text)) !== null) {
+                        // Add text before match
+                        if (match.index > lastIndex) {
+                            newSegments.push({ 
+                                text: segment.text.substring(lastIndex, match.index), 
+                                type: 'text'
+                            });
+                        }
+                        // Add formatted match
+                        newSegments.push({ 
+                            text: match[1], 
+                            type: 'formatted',
+                            tag: pattern.tag,
+                            className: pattern.className
+                        });
+                        lastIndex = regex.lastIndex;
+                    }
+                    
+                    // Add remaining text
+                    if (lastIndex < segment.text.length) {
+                        newSegments.push({ 
+                            text: segment.text.substring(lastIndex), 
+                            type: 'text'
+                        });
+                    }
+                });
+                segments = newSegments;
+            });
+            
+            // Build DOM elements safely using textContent
+            segments.forEach(segment => {
+                if (segment.type === 'formatted') {
+                    const element = document.createElement(segment.tag);
+                    element.textContent = segment.text;  // ✅ Safe - uses textContent
+                    if (segment.className) {
+                        element.className = segment.className;
+                    }
+                    container.appendChild(element);
+                } else {
+                    const textNode = document.createTextNode(segment.text);  // ✅ Safe - text node
+                    container.appendChild(textNode);
+                }
+            });
         }
 
         // Formatting buttons
