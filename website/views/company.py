@@ -1290,6 +1290,7 @@ class SlackCallbackView(View):
                 "client_secret": client_secret,
                 "redirect_uri": redirect_uri,
             },
+            timeout=10,
         )
         token_data = response.json()
 
