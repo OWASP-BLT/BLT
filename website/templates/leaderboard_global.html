@@ -18,38 +18,38 @@
 {% load gravatar %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="row container-min-height flex justify-center pb-4">
-        <div class="col-lg-12 flex justify-center items-center">
+    <div class="flex justify-center pb-4 row container-min-height">
+        <div class="flex items-center justify-center col-lg-12">
             <h1 class="page-header">Global Leaderboard</h1>
         </div>
     </div>
-    <div class="flex flex-col md:gap-10 px-4  gap-2 md:px-0">
-        <div class="flex justify-center gap-6 flex-wrap">
+    <div class="flex flex-col gap-2 px-4 md:gap-10 md:px-0">
+        <div class="flex flex-wrap justify-center gap-6">
             <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Points Leaderboard</div>
-                <div class=" list-group w-full p-4">
+                <div class="py-4 text-3xl font-bold text-center border-2 border-red-500 rounded-t-lg">Points Leaderboard</div>
+                <div class="w-full p-4 list-group">
                     {% if not leaderboard %}
-                        <p class="text-red-500 text-center font-medium">No data for this month!</p>
+                        <p class="font-medium text-center text-red-500">No data for this month!</p>
                     {% else %}
                         <div class="flex flex-col gap-2">
                             {% for leader in leaderboard %}
-                                <div class=" flex justify-between items-center">
-                                    <div class="flex  gap-2 items-center truncate">
+                                <div class="flex items-center justify-between ">
+                                    <div class="flex items-center gap-2 truncate">
                                         {% if leader.userprofile.avatar %}
                                             <img src="{{ leader.userprofile.avatar }}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="{{ leader.username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% elif leader.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.email 50 %}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
@@ -62,34 +62,34 @@
                                             </kbd>
                                         </span>
                                         {% if leader.userprofile.winnings %}
-                                            <span class="pull-right badge px-2 py-1 select-none">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
+                                            <span class="px-2 py-1 select-none pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
                                         {% endif %}
                                     </div>
-                                    <span class="pull-right badge bg-gray-100 flex-shrink-0 rounded-md py-1 px-2 select-none">{{ leader.total_score }} Points</span>
+                                    <span class="flex-shrink-0 px-2 py-1 bg-gray-100 rounded-md select-none pull-right badge">{{ leader.total_score }} Points</span>
                                 </div>
-                                <div class="border-t border-gray-200 my-1"></div>
+                                <div class="my-1 border-t border-gray-200"></div>
                             {% endfor %}
                         </div>
                     {% endif %}
                 </div>
             </div>
             <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class=" text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Pull Request Leaderboard</div>
-                <div class=" list-group w-full p-4">
+                <div class="py-4 text-3xl font-bold text-center border-2 border-red-500 rounded-t-lg ">Pull Request Leaderboard</div>
+                <div class="w-full p-4 list-group">
                     {% if pr_leaderboard %}
                         <div class="flex flex-col gap-2">
                             {% for leader in pr_leaderboard %}
-                                <div class="flex justify-between items-center">
-                                    <div class="flex  gap-2 items-center truncate">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2 truncate">
                                         {% if leader.user_profile__github_url %}
                                             <img src="https://github.com/{{ leader.user_profile__user__username }}.png"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="{{ leader.user_profile__user__username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.user_profile__user__email 50 %}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
@@ -99,79 +99,79 @@
                                         <a href="{{ leader.user_profile__github_url }}"
                                            target="_blank"
                                            class="ml-2">
-                                            <i class="fab fa-github text-xl"></i>
+                                            <i class="text-xl fab fa-github"></i>
                                         </a>
                                     </div>
-                                    <span class="pull-right badge bg-gray-100 flex-shrink-0 rounded-md py-1 px-2 select-none">{{ leader.total_prs }} PRs</span>
+                                    <span class="flex-shrink-0 px-2 py-1 bg-gray-100 rounded-md select-none pull-right badge">{{ leader.total_prs }} PRs</span>
                                 </div>
-                                <div class="border-t border-gray-200 my-1"></div>
+                                <div class="my-1 border-t border-gray-200"></div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No pull request data available!</p>
+                        <p class="font-medium text-center text-red-500">No pull request data available!</p>
                     {% endif %}
                 </div>
             </div>
             <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Code Review Leaderboard</div>
-                <div class="list-group p-4">
+                <div class="py-4 text-3xl font-bold text-center border-2 border-red-500 rounded-t-lg">Code Review Leaderboard</div>
+                <div class="p-4 list-group">
                     {% if code_review_leaderboard %}
                         <div class="flex flex-col gap-2">
                             {% for leader in code_review_leaderboard %}
-                                <div class="flex justify-between items-center">
-                                    <div class="flex  gap-2 items-center truncate">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2 truncate">
                                         {% if leader.reviews__reviewer__user__username %}
                                             <img src="https://github.com/{{ leader.reviews__reviewer__user__username }}.png"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="{{ leader.reviews__reviewer__user__username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.reviews__reviewer__user__email 50 %}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
-                                        <a href="{% url 'profile' slug=leader.reviews__reviewer__user__username %}"
-                                           class="text-lg transition-all duration-200">
-                                            {{ leader.reviews__reviewer__user__username }}
+                                        <a href="{% url 'profile' slug=leader.reviewer__user__username %}"
+                                            class="text-lg transition-all duration-200">
+                                            {{ leader.reviewer__user__username }}
                                         </a>
                                         <a href="https://github.com/{{ leader.reviews__reviewer__user__username }}"
                                            target="_blank"
                                            class="ml-2">
-                                            <i class="fab fa-github text-xl"></i>
+                                            <i class="text-xl fab fa-github"></i>
                                         </a>
                                     </div>
-                                    <span class="pull-right badge bg-gray-100 flex-shrink-0 rounded-md py-1 px-2 select-none">Reviews: {{ leader.total_reviews }}</span>
+                                    <span class="flex-shrink-0 px-2 py-1 bg-gray-100 rounded-md select-none pull-right badge">Reviews: {{ leader.total_reviews }}</span>
                                 </div>
-                                <div class="border-t border-gray-200 my-1"></div>
+                                <div class="my-1 border-t border-gray-200"></div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No code review data available!</p>
+                        <p class="font-medium text-center text-red-500">No code review data available!</p>
                     {% endif %}
                 </div>
             </div>
         </div>
-        <div class="flex justify-center gap-6 flex-wrap">
+        <div class="flex flex-wrap justify-center gap-6">
             <div class="flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Top Visitors</div>
-                <div class="list-group w-full p-4">
+                <div class="py-4 text-3xl font-bold text-center border-2 border-red-500 rounded-t-lg">Top Visitors</div>
+                <div class="w-full p-4 list-group">
                     {% if top_visitors %}
                         <div class="flex flex-col gap-2">
                             {% for profile in top_visitors %}
-                                <div class="flex justify-between items-center">
-                                    <div class="flex gap-2 items-center truncate">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2 truncate">
                                         {% if profile.avatar %}
                                             <img src="{{ profile.avatar }}"
-                                                 class="size-11 select-none border border-gray-200 rounded-full rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="{{ profile.user.username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url profile.user.email 50 %}"
-                                                 class="size-11 select-none border border-gray-200 rounded-full rounded-full"
+                                                 class="border border-gray-200 rounded-full select-none size-11"
                                                  alt="{{ profile.user.username }}"
                                                  width="50px"
                                                  height="50px">
@@ -179,33 +179,33 @@
                                         <a href="{% url 'profile' profile.user.username %}"
                                            class="text-lg transition-all duration-200">{{ profile.user.username }}</a>
                                     </div>
-                                    <div class="flex flex-col items-end text-right text-sm">
-                                        <span class="badge bg-gray-100 rounded-md py-1 px-2 select-none">{{ profile.daily_visit_count }} visits</span>
+                                    <div class="flex flex-col items-end text-sm text-right">
+                                        <span class="px-2 py-1 bg-gray-100 rounded-md select-none badge">{{ profile.daily_visit_count }} visits</span>
                                         <span class="text-xs text-gray-500">Last Visit: {{ profile.last_visit_day|default:"Never" }}</span>
                                     </div>
                                 </div>
-                                <div class="border-t border-gray-200 my-1"></div>
+                                <div class="my-1 border-t border-gray-200"></div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-red-500 text-center font-medium">No visitor data available!</p>
+                        <p class="font-medium text-center text-red-500">No visitor data available!</p>
                     {% endif %}
                 </div>
             </div>
             <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Issue Bounties</div>
-                <div class=" list-group w-full p-4">
+                <div class="py-4 text-3xl font-bold text-center border-2 border-red-500 rounded-t-lg">Issue Bounties</div>
+                <div class="w-full p-4 list-group">
                     {% if not issue_bounties %}
-                        <p class="text-red-500 text-center font-medium">No issue bounties data available!</p>
+                        <p class="font-medium text-center text-red-500">No issue bounties data available!</p>
                     {% else %}
                     {% endif %}
                 </div>
             </div>
             <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Bug Bounties</div>
-                <div class=" list-group w-full p-4">
+                <div class="py-4 text-3xl font-bold text-center border-2 border-red-500 rounded-t-lg">Bug Bounties</div>
+                <div class="w-full p-4 list-group">
                     {% if not bug_bounties %}
-                        <p class="text-red-500 text-center font-medium">No bug bounties data available!</p>
+                        <p class="font-medium text-center text-red-500">No bug bounties data available!</p>
                     {% else %}
                     {% endif %}
                 </div>

@@ -527,44 +527,76 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_eachmonth.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
+        """
+        Assembles template context for the global leaderboard page, adding leaderboards and related data.
+
+        The context includes:
+        - `user_related_tags`: tags associated with user profiles.
+        - `wallet`: the requesting user's Wallet if authenticated.
+        - `leaderboard`: top users by total score (limited to 10).
+        - `pr_leaderboard`: top repositories/users by merged pull request count (top 10).
+        - `code_review_leaderboard`: top reviewers by review count (top 10).
+        - `top_visitors`: user profiles ordered by daily visit count (top 10).
+
+        Returns:
+            dict: Context mapping names (as listed above) to their querysets or values.
+        """
+        context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
+
+        user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
+        context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
-        year = self.request.GET.get("year")
+        context["leaderboard"] = self.get_leaderboard()[:10]  # Already filtered in get_leaderboard
 
-        if not year:
-            year = datetime.now().year
+        # Pull Request Leaderboard - Filter out empty usernames
+        pr_leaderboard = (
+            GitHubIssue.objects.filter(
+                type="pull_request",
+                is_merged=True,
+                user_profile__user__username__isnull=False,  # Add this
+            )
+            .exclude(user_profile__user__username='')  # Add this
+            .values(
+                "user_profile__user__username",
+                "user_profile__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_prs=Count("id"))
+            .order_by("-total_prs")[:10]
+        )
+        context["pr_leaderboard"] = pr_leaderboard
 
-        if isinstance(year, str) and not year.isdigit():
-            raise Http404(f"Invalid query passed | Year:{year}")
+        # Code Review Leaderboard - Filter out empty usernames AND fix field names
+        reviewed_pr_leaderboard = (
+            GitHubReview.objects.filter(
+                reviewer__user__username__isnull=False,  # Add this
+            )
+            .exclude(reviewer__user__username='')  # Add this
+            .values(
+                "reviewer__user__username",
+                "reviewer__user__email",
+                "reviewer__github_url",
+            )
+            .annotate(total_reviews=Count("id"))
+            .order_by("-total_reviews")[:10]
+        )
+        context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
-        year = int(year)
+        # Top visitors leaderboard - Filter out empty usernames
+        top_visitors = (
+            UserProfile.objects.select_related("user")
+            .filter(
+                daily_visit_count__gt=0,
+                user__username__isnull=False,  # Add this
+            )
+            .exclude(user__username='')  # Add this
+            .order_by("-daily_visit_count")[:10]
+        )
 
-        leaderboard = self.monthly_year_leaderboard(year)
-        month_winners = []
-
-        months = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "Novermber",
-            "December",
-        ]
-
-        for month_indx, usr in enumerate(leaderboard):
-            month_winner = {"user": usr, "month": months[month_indx]}
-            month_winners.append(month_winner)
-
-        context["leaderboard"] = month_winners
+        context["top_visitors"] = top_visitors
 
         return context
 
