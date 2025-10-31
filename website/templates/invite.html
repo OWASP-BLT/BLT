@@ -197,6 +197,7 @@
                 }
             }).catch(function(err) {
                 console.error('Failed to copy text: ', err);
+                alert('Unable to copy automatically. Please select and copy the text manually.');
                 // Fallback: Select text for manual copy
                 selectText(element);
             });

@@ -107,7 +107,7 @@ def Organization_view(request, *args, **kwargs):
     if error_message:
         messages.error(request, error_message)
         if error_message == "Email not verified.":
-            return redirect("/")
+            return recopydirect("/")
         elif error_message == "Please login to access your organization.":
             return redirect("/accounts/login/")
         else:
@@ -138,6 +138,12 @@ class RegisterOrganizationView(View):
         # Handle referral code parameter
         ref_code = request.GET.get("ref")
         if ref_code:
+            try:
+                # Validate that ref_code is a valid UUID
+                uuid.UUID(ref_code)
+            except (ValueError, AttributeError):
+                messages.warning(request, "Invalid referral code.")
+                return render(request, "organization/register_organization.html")
             request.session["org_ref"] = ref_code
 
         return render(request, "organization/register_organization.html")
@@ -196,7 +202,9 @@ class RegisterOrganizationView(View):
                 ref_code = request.session.get("org_ref")
                 if ref_code:
                     try:
-                        invite = InviteOrganization.objects.get(referral_code=ref_code, points_awarded=False)
+                        invite = InviteOrganization.objects.select_for_update().get(
+                            referral_code=ref_code, points_awarded=False
+                        )
                         # Award 5 points to the sender
                         Points.objects.create(
                             user=invite.sender, score=5, reason=f"Organization invite referral: {organization.name}"

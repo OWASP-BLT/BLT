@@ -2918,7 +2918,9 @@ def invite_organization(request):
             )
 
             # Generate referral link
-            base_url = request.build_absolute_uri("/organization/")
+            base_url = request.build_absolute_uri(reverse("register_organization"))
+            default_referral = request.build_absolute_uri(reverse("register_organization"))
+            referral_link = context.get("referral_link", default_referral)
             referral_link = f"{base_url}?ref={invite_record.referral_code}"
             context["referral_link"] = referral_link
             context["show_points_message"] = True
