@@ -558,7 +558,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
                 is_merged=True,
                 user_profile__user__username__isnull=False,
             )
-            .exclude(user_profile__user__username="") 
+            .exclude(user_profile__user__username="")
             .values(
                 "user_profile__user__username",
                 "user_profile__user__email",
@@ -574,7 +574,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
             GitHubReview.objects.filter(
                 reviewer__user__username__isnull=False,
             )
-            .exclude(reviewer__user__username="") 
+            .exclude(reviewer__user__username="")
             .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
@@ -590,7 +590,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
             UserProfile.objects.select_related("user")
             .filter(
                 daily_visit_count__gt=0,
-                user__username__isnull=False,  
+                user__username__isnull=False,
             )
             .exclude(user__username="")
             .order_by("-daily_visit_count")[:10]
