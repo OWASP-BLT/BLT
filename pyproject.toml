@@ -79,7 +79,7 @@ pre-commit = "^3.8.0"
 selenium = "^4.30.0"
 webdriver-manager = "^4.0.2"
 chromedriver-autoinstaller = "^0.6.4"
-django-debug-toolbar = "^4.4.6"
+django-debug-toolbar = "^6.1.0"
 django-livereload-server = "^0.5.1"
 watchfiles = "^1.0.4"
 
