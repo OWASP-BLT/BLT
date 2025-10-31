@@ -1083,15 +1083,41 @@ class AddSlackIntegrationView(View):
                 messages.error(request, "Slack integration is not configured. Please contact the administrator.")
                 return redirect("organization_manage_integrations", id=id)
 
-            scopes = "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands"
-            redirect_uri = self._get_redirect_uri(request)
-            state = urlencode({"organization_id": id})
+            # Validate organization ID is an integer
+            if not isinstance(id, int):
+                messages.error(request, "Invalid organization ID.")
+                return redirect("home")
 
-            auth_url = (
-                f"https://slack.com/oauth/v2/authorize"
-                f"?client_id={client_id}&scope={scopes}"
-                f"&state={state}&redirect_uri={redirect_uri}"
+            # Get and validate redirect URI
+            redirect_uri = self._get_redirect_uri(request)
+
+            # Validate redirect_uri is from our domain
+            parsed_uri = urlparse(redirect_uri)
+            allowed_hosts = [request.get_host()]
+            if os.getenv("ALLOWED_HOSTS"):
+                allowed_hosts.extend(os.getenv("ALLOWED_HOSTS").split(","))
+
+            if parsed_uri.netloc not in allowed_hosts:
+                logger.error(f"Invalid redirect URI host: {parsed_uri.netloc}")
+                messages.error(request, "Invalid redirect configuration.")
+                return redirect("organization_manage_integrations", id=id)
+
+            # Construct validated state parameter
+            state = urlencode({"organization_id": str(id)})
+
+            # Build OAuth URL using only validated components
+            from urllib.parse import urlencode as url_encode
+
+            params = url_encode(
+                {
+                    "client_id": client_id,
+                    "scope": "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands",
+                    "state": state,
+                    "redirect_uri": redirect_uri,
+                }
             )
+
+            auth_url = f"https://slack.com/oauth/v2/authorize?{params}"
 
             return redirect(auth_url)
         except Exception as e:
