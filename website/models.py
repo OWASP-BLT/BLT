@@ -757,6 +757,7 @@ class UserProfile(models.Model):
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)
+    slack_user_id = models.CharField(max_length=50, blank=True, null=True, help_text="Slack user ID for DM reminders")
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -2629,6 +2630,9 @@ class ReminderSettings(models.Model):
     reminder_time_utc = models.TimeField(help_text="Time to send daily reminders (in UTC)", null=True, blank=True)
     timezone = models.CharField(max_length=50, default="UTC")
     is_active = models.BooleanField(default=True, help_text="Enable/disable daily reminders")
+    slack_notifications_enabled = models.BooleanField(
+        default=False, help_text="Enable Slack DM notifications for daily reminders"
+    )
     last_reminder_sent = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

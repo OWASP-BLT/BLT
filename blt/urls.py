@@ -117,7 +117,14 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
-from website.views.daily_reminders import reminder_settings, send_test_reminder
+from website.views.daily_reminders import (
+    connect_slack_account,
+    disconnect_slack_account,
+    reminder_settings,
+    send_test_reminder,
+    send_test_slack_reminder,
+    slack_oauth_callback,
+)
 from website.views.education import (
     add_lecture,
     add_section,
@@ -1114,6 +1121,10 @@ urlpatterns = [
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
+    path("slack/connect/", connect_slack_account, name="connect_slack_account"),
+    path("slack/oauth/callback/", slack_oauth_callback, name="slack_oauth_callback"),
+    path("slack/disconnect/", disconnect_slack_account, name="disconnect_slack_account"),
+    path("slack/send-test-reminder/", send_test_slack_reminder, name="send_test_slack_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
 ]
 

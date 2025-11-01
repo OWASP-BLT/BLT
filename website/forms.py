@@ -381,9 +381,12 @@ class ReminderSettingsForm(forms.ModelForm):
 
     class Meta:
         model = ReminderSettings
-        fields = ["reminder_time", "timezone", "is_active"]
+        fields = ["reminder_time", "timezone", "is_active", "slack_notifications_enabled"]
         widgets = {
             "is_active": forms.CheckboxInput(
                 attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
-            )
+            ),
+            "slack_notifications_enabled": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
+            ),
         }
