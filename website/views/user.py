@@ -443,13 +443,20 @@ class LeaderboardBase:
         for month in range(1, 13):
             month_winner = self.get_leaderboard(month, year, api).first()
             month_names = [
-                "January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
             ]
-            monthly_winner.append({
-                "month": month_names[month - 1],
-                "user": month_winner
-            })
+            monthly_winner.append({"month": month_names[month - 1], "user": month_winner})
 
         return monthly_winner
 
