@@ -15,7 +15,6 @@ cd BLT
 cp .env.example .env
 ```
 - Modify the .env file as per your local setup.
-
 ## Step 2: Choose your setup method (Docker recommended)
 #### Prerequisites for Docker method
 Ensure the following are installed on your system before proceeding:
@@ -23,9 +22,30 @@ Ensure the following are installed on your system before proceeding:
 - Docker  
 - Docker Compose  
 - PostgreSQL client (optional, for manual database interaction)  
-
+---
 ---
 
+## Bounty Payout Automation Environment Variables
+
+To enable secure and automated bounty payouts via GitHub Sponsors, set the following environment variables in your `.env` file:
+
+- `BLT_API_TOKEN`: Secret token for authenticating payout requests from GitHub Actions. Must match the token used in your workflow.
+- `GITHUB_SPONSOR_USERNAME`: The GitHub account that will sponsor users (default: `DonnieBLT`).
+- `BLT_ALLOWED_BOUNTY_REPO_1`, `BLT_ALLOWED_BOUNTY_REPO_2`, `BLT_ALLOWED_BOUNTY_REPO_3`: List of repositories eligible for bounty payouts. Only issues from these repos will be processed for payouts. This is a critical security measure to prevent unauthorized repositories from draining the bounty budget.
+
+Example:
+
+```env
+BLT_API_TOKEN=your-bounty-api-token-here
+GITHUB_SPONSOR_USERNAME=DonnieBLT
+BLT_ALLOWED_BOUNTY_REPO_1=OWASP-BLT/BLT
+BLT_ALLOWED_BOUNTY_REPO_2=other-org/other-repo
+BLT_ALLOWED_BOUNTY_REPO_3=another-org/another-repo
+```
+
+**Important:**
+- Never share your `BLT_API_TOKEN` publicly.
+- Always keep the allowed repo list up to date to ensure only trusted repositories are eligible for payouts.
 ### 1. Ensure LF Line Endings
 Before building the Docker images, ensure all files, especially scripts like `entrypoint.sh`, `.env`, `docker-compose.yml`, `Dockerfile`, `settings.py` use LF line endings. Using CRLF can cause build failures. To verify and correct line endings:
 
