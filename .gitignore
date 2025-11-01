@@ -1,7 +1,7 @@
 venv
 *.pyc
 staticfiles
-.env
+.env.*
 /env
 /pvenv
 db.sqlite3
@@ -21,3 +21,5 @@ requirements.txt
 .vs
 .qodo
 ssl
+google-credentials.json
+ansible/inventory.yml
