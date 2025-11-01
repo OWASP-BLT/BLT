@@ -442,7 +442,14 @@ class LeaderboardBase:
         # iterating over months 1-12
         for month in range(1, 13):
             month_winner = self.get_leaderboard(month, year, api).first()
-            monthly_winner.append(month_winner)
+            month_names = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ]
+            monthly_winner.append({
+                "month": month_names[month - 1],
+                "user": month_winner
+            })
 
         return monthly_winner
 
@@ -481,76 +488,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard
-        pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
-            .values(
-                "user_profile__user__username",
-                "user_profile__user__email",
-                "user_profile__github_url",
-            )
-            .annotate(total_prs=Count("id"))
-            .order_by("-total_prs")[:10]
-        )
-        context["pr_leaderboard"] = pr_leaderboard
-
-        # Reviewed PR Leaderboard - Fixed query to properly count reviews
-        reviewed_pr_leaderboard = (
-            GitHubReview.objects.values(
-                "reviewer__user__username",
-                "reviewer__user__email",
-                "reviewer__github_url",
-            )
-            .annotate(total_reviews=Count("id"))
-            .order_by("-total_reviews")[:10]
-        )
-        context["code_review_leaderboard"] = reviewed_pr_leaderboard
-
-        # Top visitors leaderboard
-        top_visitors = (
-            UserProfile.objects.select_related("user")
-            .filter(daily_visit_count__gt=0)
-            .order_by("-daily_visit_count")[:10]
-        )
-
-        context["top_visitors"] = top_visitors
-
-        return context
-
-
-class EachmonthLeaderboardView(LeaderboardBase, ListView):
-    """
-    Returns: Grouped user:score data in months for current year
-    """
-
-    model = User
-    template_name = "leaderboard_eachmonth.html"
-
-    def get_context_data(self, *args, **kwargs):
-        """
-        Assembles template context for the global leaderboard page, adding leaderboards and related data.
-
-        The context includes:
-        - `user_related_tags`: tags associated with user profiles.
-        - `wallet`: the requesting user's Wallet if authenticated.
-        - `leaderboard`: top users by total score (limited to 10).
-        - `pr_leaderboard`: top repositories/users by merged pull request count (top 10).
-        - `code_review_leaderboard`: top reviewers by review count (top 10).
-        - `top_visitors`: user profiles ordered by daily visit count (top 10).
-
-        Returns:
-            dict: Context mapping names (as listed above) to their querysets or values.
-        """
-        context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
-
-        user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
-        context["user_related_tags"] = user_related_tags
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-
-        context["leaderboard"] = self.get_leaderboard()[:10]  # Already filtered in get_leaderboard
-
         # Pull Request Leaderboard - Filter out empty usernames
         pr_leaderboard = (
             GitHubIssue.objects.filter(
@@ -569,7 +506,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Code Review Leaderboard - Filter out empty usernames AND fix field names
+        # Code Review Leaderboard - Filter out empty usernames
         reviewed_pr_leaderboard = (
             GitHubReview.objects.filter(
                 reviewer__user__username__isnull=False,
@@ -597,6 +534,33 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         )
 
         context["top_visitors"] = top_visitors
+
+        return context
+
+
+class EachmonthLeaderboardView(LeaderboardBase, ListView):
+    """
+    Returns: Grouped user:score data in months for current year
+    """
+
+    model = User
+    template_name = "leaderboard_eachmonth.html"
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        Assembles template context for the each month leaderboard page.
+        Inherits most context from the parent class and adds month-specific data.
+        """
+        context = super().get_context_data(*args, **kwargs)
+
+        user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
+        context["user_related_tags"] = user_related_tags
+
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+
+        # Use the monthly year leaderboard for this view
+        context["leaderboard"] = self.monthly_year_leaderboard(datetime.now().year)
 
         return context
 
