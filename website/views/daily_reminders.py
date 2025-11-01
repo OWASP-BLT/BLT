@@ -4,7 +4,7 @@ import pytz
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -115,14 +115,6 @@ Thank you for keeping your team updated!
 Best regards,
 The BLT Team"""
 
-            # Create email message with HTML alternative
-            email = EmailMessage(
-                subject="Test Daily Check-in Reminder",
-                body=plain_body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[request.user.email],
-            )
-
             # Add HTML content
             html_content = f"""
             <html>
@@ -155,9 +147,14 @@ The BLT Team"""
             </html>
             """
 
-            # Attach HTML alternative
-            email.content_subtype = "html"
-            email.body = html_content
+            # Create email with plain text body and HTML alternative
+            email = EmailMultiAlternatives(
+                subject="Test Daily Check-in Reminder",
+                body=plain_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[request.user.email],
+            )
+            email.attach_alternative(html_content, "text/html")
 
             # Send the email
             email.send()

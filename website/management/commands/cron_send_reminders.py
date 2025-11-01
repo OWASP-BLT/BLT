@@ -99,10 +99,15 @@ class Command(LoggedBaseCommand):
             for i, (reminder_settings, profile) in enumerate(reminders_to_send, 1):
                 try:
                     # Add small delay between emails to avoid overwhelming the server
-                    if i > 1 and i % 10 == 0:
-                        delay = random.uniform(0.5, 2)
-                        logger.info(f"Processed {i} emails, waiting {delay:.2f} seconds")
+                    if i > 1:
+                        # Small delay between each email
+                        delay = random.uniform(0.1, 0.3)
                         time.sleep(delay)
+                        # Larger delay every 10 emails
+                        if i % 10 == 0:
+                            extra_delay = random.uniform(1, 2)
+                            logger.info(f"Processed {i} emails, waiting {extra_delay:.2f} seconds")
+                            time.sleep(extra_delay)
 
                     user = reminder_settings.user
 
@@ -124,7 +129,7 @@ class Command(LoggedBaseCommand):
                     # Create email message
                     plain_body = f"""Hello {user.username},
 
-This is your daily check-in reminder for {org_name if org_name else "your team"}.
+This is your daily check-in reminder{f" for {org_name}" if org_name else ""}.
 
 Reminder Time: {reminder_time_str} ({timezone_str})
 
