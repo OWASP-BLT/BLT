@@ -1306,6 +1306,8 @@ def home(request):
     current_time = timezone.now()
     top_bug_reporters = (
         User.objects.filter(points__created__month=current_time.month, points__created__year=current_time.year)
+        .exclude(username='') 
+        .exclude(username__isnull=True) 
         .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
         .order_by("-total_score")[:5]
     )
@@ -1326,11 +1328,19 @@ def home(request):
     )
 
     # Get top earners
-    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
+    top_earners = (
+                UserProfile.objects.filter(winnings__gt=0)
+                .exclude(user__username='')
+                .exclude(user__username__isnull=True)
+                .select_related("user")
+                .order_by("-winnings")[:5]
+    )
 
     # Get top referrals
     top_referrals = (
         InviteFriend.objects.filter(point_by_referral__gt=0)
+        .exclude(sender__username='')
+        .exclude(sender__username__isnull=True) 
         .annotate(signup_count=Count("recipients"), total_points=F("point_by_referral"))
         .select_related("sender", "sender__userprofile")
         .order_by("-point_by_referral")[:5]
