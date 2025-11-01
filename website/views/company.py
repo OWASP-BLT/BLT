@@ -218,13 +218,13 @@ class RegisterOrganizationView(View):
                             f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral.",
                         )
                 except InviteOrganization.DoesNotExist:
-                        # Invalid or already used referral code
-                        messages.success(request, "Organization registered successfully.")
+                    # Invalid or already used referral code
+                    messages.success(request, "Organization registered successfully.")
                 finally:
                     # Always clear session
                     if "org_ref" in request.session:
                         del request.session["org_ref"]
-                
+
                 if not ref_code:
                     messages.success(request, "Organization registered successfully.")
 
