@@ -72,18 +72,18 @@ def send_test_reminder(request):
         try:
             # Get user's reminder settings
             reminder_settings = ReminderSettings.objects.filter(user=request.user).first()
-            
+
             # Get organization info
             org_name = ""
             org_info_html = ""
-            if hasattr(request.user, 'userprofile') and request.user.userprofile.team:
+            if hasattr(request.user, "userprofile") and request.user.userprofile.team:
                 org_name = request.user.userprofile.team.name
                 org_info_html = f"""
                     <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #e74c3c;">
                         <p style="margin: 0; color: #666; font-size: 14px;"><strong>Organization:</strong> {org_name}</p>
                     </div>
                 """
-            
+
             # Format reminder time if settings exist
             reminder_time_str = ""
             timezone_str = ""
@@ -96,7 +96,7 @@ def send_test_reminder(request):
                         <p style="margin: 0; color: #666; font-size: 14px;"><strong>Your Reminder Time:</strong> {reminder_time_str} ({timezone_str})</p>
                     </div>
                 """
-            
+
             # Plain text body
             plain_body = f"""Hello {request.user.username},
 
@@ -104,9 +104,9 @@ This is a test reminder for your daily check-in{f" for {org_name}" if org_name e
 
 {f"Reminder Time: {reminder_time_str} ({timezone_str})" if reminder_time_str else ""}
 
-Click here to check in: {request.build_absolute_uri('/add-sizzle-checkin/')}
+Click here to check in: {request.build_absolute_uri("/add-sizzle-checkin/")}
 
-You can manage your reminder settings at: {request.build_absolute_uri('/reminder-settings/')}
+You can manage your reminder settings at: {request.build_absolute_uri("/reminder-settings/")}
 
 Regular check-ins help keep your team informed about your progress and any challenges you might be facing.
 
@@ -122,7 +122,7 @@ The BLT Team"""
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[request.user.email],
             )
-            
+
             # Add HTML content
             html_content = f"""
             <html>
@@ -137,7 +137,7 @@ The BLT Team"""
                     {org_info_html}
                     {time_info_html}
                     <div style="margin: 30px 0; text-align: center;">
-                        <a href="{request.build_absolute_uri('/add-sizzle-checkin/')}" 
+                        <a href="{request.build_absolute_uri("/add-sizzle-checkin/")}" 
                            style="display: inline-block; background-color: #e74c3c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; text-align: center; min-width: 200px;">
                            Check In Now
                         </a>
@@ -145,7 +145,7 @@ The BLT Team"""
                     <p>Regular check-ins help keep your team informed about your progress and any challenges you might be facing.</p>
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
                         <p style="font-size: 13px; color: #666;">
-                            <a href="{request.build_absolute_uri('/reminder-settings/')}" style="color: #e74c3c; text-decoration: none;">Manage your reminder settings</a>
+                            <a href="{request.build_absolute_uri("/reminder-settings/")}" style="color: #e74c3c; text-decoration: none;">Manage your reminder settings</a>
                         </p>
                     </div>
                     <p style="margin-top: 20px;">Thank you for keeping your team updated!</p>
@@ -154,7 +154,7 @@ The BLT Team"""
             </body>
             </html>
             """
-            
+
             # Attach HTML alternative
             email.content_subtype = "html"
             email.body = html_content

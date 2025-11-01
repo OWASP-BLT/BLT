@@ -105,7 +105,7 @@ class Command(LoggedBaseCommand):
                         time.sleep(delay)
 
                     user = reminder_settings.user
-                    
+
                     # Get organization info
                     org_name = ""
                     org_info_html = ""
@@ -116,15 +116,15 @@ class Command(LoggedBaseCommand):
                                 <p style="margin: 0; color: #666; font-size: 14px;"><strong>Organization:</strong> {org_name}</p>
                             </div>
                         """
-                    
+
                     # Format reminder time in user's timezone
                     reminder_time_str = reminder_settings.reminder_time.strftime("%I:%M %p")
                     timezone_str = reminder_settings.timezone
-                    
+
                     # Create email message
                     plain_body = f"""Hello {user.username},
 
-This is your daily check-in reminder for {org_name if org_name else 'your team'}.
+This is your daily check-in reminder for {org_name if org_name else "your team"}.
 
 Reminder Time: {reminder_time_str} ({timezone_str})
 
