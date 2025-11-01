@@ -24,16 +24,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Determine PR number based on event type
-          if [ "${{ github.event_name }}" = "pull_request_review" ]; then
-            PR_NUMBER="${{ github.event.review.pull_request_url }}"
-            PR_NUMBER="${PR_NUMBER##*/}"
-          else
-            PR_NUMBER="${{ github.event.pull_request.number }}"
-          fi
+          # Get PR number (available for both pull_request and pull_request_review events)
+          PR_NUMBER="${{ github.event.pull_request.number }}"
           
-          REPO_OWNER="${{ github.repository_owner }}"
-          REPO_NAME="${{ github.event.repository.name }}"
+          # Parse repository owner and name
+          REPO_FULL="${{ github.repository }}"
+          REPO_OWNER="${REPO_FULL%/*}"
+          REPO_NAME="${REPO_FULL#*/}"
           
           echo "Checking peer review for PR #$PR_NUMBER in $REPO_OWNER/$REPO_NAME"
           
@@ -58,8 +55,19 @@ jobs:
             exit 1
           fi
           
-          # Extract reviewer usernames from APPROVED reviews only (excluding bot accounts and specific users)
-          VALID_REVIEWERS=$(echo "$REVIEWS_RESPONSE" | jq -r '.[] | select(.state == "APPROVED" and .user.login != "'$PR_AUTHOR'" and .user.login != "DonnieBLT" and .user.login != "coderabbit[bot]" and (.user.login | contains("copilot") | not)) | .user.login' | sort -u)
+          # Define excluded users (users whose reviews don't count as valid peer reviews)
+          EXCLUDED_USERS=("$PR_AUTHOR" "DonnieBLT" "coderabbit[bot]")
+          
+          # Extract reviewer usernames from APPROVED reviews only
+          # Filter out the PR author, specific excluded users, and any user with "copilot" in their username
+          VALID_REVIEWERS=$(echo "$REVIEWS_RESPONSE" | jq -r --arg author "$PR_AUTHOR" \
+            '.[] | 
+            select(.state == "APPROVED") | 
+            select(.user.login != $author) | 
+            select(.user.login != "DonnieBLT") | 
+            select(.user.login != "coderabbit[bot]") | 
+            select(.user.login | contains("copilot") | not) | 
+            .user.login' | sort -u)
           
           echo "Reviews found: $(echo "$REVIEWS_RESPONSE" | jq length)"
           echo "Valid approved reviewers (excluding author, DonnieBLT, coderabbit, and copilot): $VALID_REVIEWERS"
