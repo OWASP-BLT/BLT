@@ -204,4 +204,22 @@
             </div>
         </div>
     </div>
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal"
+         class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Confirm Deletion</h3>
+            <p id="deleteConfirmText" class="text-gray-700 mb-6"></p>
+            <div class="flex justify-end gap-4">
+                <button onclick="closeDeleteModal()"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-300">Cancel</button>
+                <form id="deleteForm" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/education_delete.js' %}"></script>
 {% endblock content %}

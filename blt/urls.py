@@ -124,8 +124,10 @@ from website.views.education import (
     course_content_management,
     create_or_update_course,
     create_standalone_lecture,
+    delete_course,
     delete_lecture,
     delete_section,
+    delete_standalone_lecture,
     edit_course,
     edit_lecture,
     edit_section,
@@ -691,6 +693,13 @@ urlpatterns = [
     path("education/instructor_dashboard/sections/<int:section_id>/lectures/add/", add_lecture, name="add_lecture"),
     path("education/instructor_dashboard/lectures/<int:lecture_id>/edit/", edit_lecture, name="edit_lecture"),
     path("education/instructor_dashboard/lectures/<int:lecture_id>/delete/", delete_lecture, name="delete_lecture"),
+    # Delete endpoints for superusers
+    path("education/courses/<int:course_id>/delete/", delete_course, name="delete_course"),
+    path(
+        "education/standalone-lectures/<int:lecture_id>/delete/",
+        delete_standalone_lecture,
+        name="delete_standalone_lecture",
+    ),
     # API endpoints
     path("education/instructor_dashboard/api/lectures/<int:lecture_id>/", get_lecture_data, name="get_lecture_data"),
     path("education/instructor_dashboard/api/sections/<int:section_id>/", get_section_data, name="get_section_data"),

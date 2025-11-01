@@ -38,6 +38,12 @@
                                 Edit Lecture
                             </a>
                         {% endif %}
+                        {% if request.user.is_superuser %}
+                            <button onclick="confirmDelete('lecture', {{ lecture.id }}, '{{ lecture.title|escapejs }}')"
+                                    class="mt-auto inline-flex justify-center items-center bg-[#e74c3c] w-full text-white font-semibold py-2 px-4 rounded-lg hover:bg-[#c0392b] transition-colors duration-300 mb-4">
+                                <i class="fas fa-trash mr-2"></i> Delete Lecture
+                            </button>
+                        {% endif %}
                         <a href="{% url 'view_lecture' lecture.id %}"
                            class="mt-auto inline-flex justify-center items-center bg-blue-600 w-full text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition-colors duration-300">
                             <i class="fas fa-eye mr-2"></i> View

@@ -399,6 +399,38 @@ def delete_lecture(request, lecture_id):
     return redirect("course_content_management", course_id=course_id)
 
 
+@login_required(login_url="/accounts/login")
+@require_POST
+def delete_course(request, course_id):
+    """Delete a course (superuser only)"""
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to delete courses.")
+        return redirect("education")
+
+    course = get_object_or_404(Course, id=course_id)
+    course_title = course.title
+    course.delete()
+
+    messages.success(request, f"Course '{course_title}' was deleted successfully!")
+    return redirect("education")
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def delete_standalone_lecture(request, lecture_id):
+    """Delete a standalone lecture (superuser only)"""
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to delete lectures.")
+        return redirect("education")
+
+    lecture = get_object_or_404(Lecture, id=lecture_id, section__isnull=True)
+    lecture_title = lecture.title
+    lecture.delete()
+
+    messages.success(request, f"Lecture '{lecture_title}' was deleted successfully!")
+    return redirect("education")
+
+
 @instructor_required
 @require_GET
 def get_lecture_data(request, lecture_id):
