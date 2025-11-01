@@ -29,6 +29,7 @@ from website.models import (
     ForumComment,
     ForumPost,
     ForumVote,
+    GitHubComment,
     GitHubIssue,
     GitHubReview,
     Hunt,
@@ -842,6 +843,34 @@ admin.site.register(Enrollment)
 admin.site.register(Rating)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
+
+
+class GitHubCommentAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "comment_id",
+        "user_profile",
+        "contributor",
+        "comment_type",
+        "created_at",
+        "repo",
+    )
+    list_filter = [
+        "comment_type",
+        "created_at",
+        "repo",
+    ]
+    search_fields = [
+        "user_profile__user__username",
+        "contributor__name",
+        "body",
+        "url",
+    ]
+    date_hierarchy = "created_at"
+    raw_id_fields = ["github_issue", "user_profile", "contributor", "repo"]
+
+
+admin.site.register(GitHubComment, GitHubCommentAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
 admin.site.register(Room, RoomAdmin)
