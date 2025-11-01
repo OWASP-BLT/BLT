@@ -74,7 +74,7 @@ def reminder_settings(request):
             local_dt = utc_dt.astimezone(user_tz)
             form.initial["reminder_time"] = local_dt.time()
 
-    return render(request, "website/reminder_settings.html", {"form": form, "settings": settings})
+    return render(request, "website/reminder_settings.html", {"form": form, "settings": settings, "user": request.user})
 
 
 @login_required
