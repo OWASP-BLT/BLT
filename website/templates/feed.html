@@ -11,10 +11,57 @@
 {% block og_description %}
     Browse the global activity feed for the OWASP Bug Logging Tool, where you can see the latest activities, updates, and approved contributions.
 {% endblock %}
+{% block style %}
+    <style>
+        /* Hide white footer space on feed page */
+        body > div.pb-\[50px\] {
+            display: none !important;
+        }
+        /* Remove extra padding from main tag */
+        main {
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            min-height: auto !important;
+        }
+        /* Remove header spacing div */
+        body > div.w-full.h-\[50px\] {
+            display: none !important;
+        }
+        /* Ensure feed container fits viewport accounting for fixed header */
+        .feed-wrapper {
+            margin-top: 60px !important;
+            height: calc(100vh - 60px) !important;
+            box-sizing: border-box;
+            overflow-y: auto !important;
+            overflow-x: hidden;
+            padding: 0 1rem;
+        }
+        /* Prevent body from scrolling beyond viewport */
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+        /* Force scrollbar visibility for feed */
+        .feed-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+        .feed-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .feed-wrapper::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .feed-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <h1 class="text-center text-red-600 text-2xl mt-10 mb-5">Global Activity Feed</h1>
-    <div class="bg-gray-50 rounded-lg shadow-md mx-auto p-5 max-w-4xl overflow-y-auto max-h-[calc(100vh-60px)] mb-5 relative">
+    <div class="feed-wrapper">
+        <h1 class="text-center text-red-600 text-2xl mt-4 mb-4">Global Activity Feed</h1>
+        <div class="bg-gray-50 rounded-lg shadow-md mx-auto p-5 max-w-4xl mb-5 relative">
         <ul class="space-y-5 p-5">
             {% for activity in page_obj %}
                 <li class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:scale-105 hover:shadow-md transition-transform duration-300 ease-in-out transform origin-center z-10">
@@ -76,10 +123,9 @@
                 <p class="text-center text-gray-600">No activities recorded.</p>
             {% endfor %}
         </ul>
-    </div>
-    <!-- Pagination -->
-    {% if is_paginated %}
-        <div class="flex justify-center gap-3 mt-5">
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="flex justify-center gap-3 mt-5 pb-5">
             {% if page_obj.has_previous %}
                 <a href="?page=1"
                    class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">First</a>
@@ -93,8 +139,10 @@
                 <a href="?page={{ page_obj.paginator.num_pages }}"
                    class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Last</a>
             {% endif %}
+            </div>
+        {% endif %}
         </div>
-    {% endif %}
+    </div>
     <script>
       function getCookie(name) {
           let cookieValue = null;
