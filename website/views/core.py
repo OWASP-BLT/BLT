@@ -40,7 +40,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -900,31 +900,35 @@ def add_forum_comment(request):
 
 
 @login_required
+@require_POST
 def delete_forum_post(request):
-    if request.method == "POST":
-        if not request.user.is_superuser:
-            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
+    if not request.user.is_superuser:
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
+    try:
+        data = json.loads(request.body)
+        post_id = data.get("post_id")
+
+        if not post_id:
+            return JsonResponse({"status": "error", "message": "Post ID is required"})
+
+        # Validate post_id is an integer
         try:
-            data = json.loads(request.body)
-            post_id = data.get("post_id")
+            post_id = int(post_id)
+        except (ValueError, TypeError):
+            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
 
-            if not post_id:
-                return JsonResponse({"status": "error", "message": "Post ID is required"})
+        post = ForumPost.objects.get(id=post_id)
+        post.delete()
 
-            post = ForumPost.objects.get(id=post_id)
-            post.delete()
-
-            return JsonResponse({"status": "success", "message": "Post deleted successfully"})
-        except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
-        except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
-        except Exception as e:
-            logging.exception("Unexpected error deleting forum post")
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
+    except ForumPost.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Post not found"})
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+    except Exception as e:
+        logging.exception("Unexpected error deleting forum post")
+        return JsonResponse({"status": "error", "message": "Server error occurred"})
 
 
 def view_forum(request):
