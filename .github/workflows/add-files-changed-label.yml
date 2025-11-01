@@ -12,7 +12,6 @@ permissions:
   contents: read
   issues: write
   repository-projects: write
-  metadata: read
 
 jobs:
   add_files_changed_label:
