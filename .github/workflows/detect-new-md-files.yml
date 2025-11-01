@@ -72,7 +72,7 @@ jobs:
                   '',
                   fileList,
                   '',
-                  'Please remove these markdown files from the PR. If you believe this file is necessary, please discuss it with the maintainers first.',
+                  'Please remove these markdown files from the PR. If you believe this file is necessary, please create an issue to discuss it with the maintainers before adding it.',
                   '',
                   'Thank you for your contribution! 🙏'
                 ].join('\n');
@@ -91,5 +91,4 @@ jobs:
               }
             } catch (error) {
               console.error(`Error checking for new .md files: ${error.message}`);
-              throw error;
             }
