@@ -23,7 +23,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView, ListView, TemplateView, View
+from django.views.generic import DetailView, ListView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -173,22 +173,6 @@ class UserDeleteView(LoginRequiredMixin, View):
             messages.success(request, "Account successfully deleted")
             return redirect(reverse("home"))
         return render(request, "user_deletion.html", {"form": form})
-
-
-class InviteCreate(TemplateView):
-    template_name = "invite.html"
-
-    def post(self, request, *args, **kwargs):
-        email = request.POST.get("email")
-        exists = False
-        domain = None
-        if email:
-            domain = email.split("@")[-1]
-        context = {
-            "domain": domain,
-            "email": email,
-        }
-        return render(request, "invite.html", context)
 
 
 def get_github_stats(user_profile):

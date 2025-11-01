@@ -29,10 +29,12 @@ from website.models import (
     HuntPrize,
     Integration,
     IntegrationServices,
+    InviteOrganization,
     Issue,
     IssueScreenshot,
     Organization,
     OrganizationAdmin,
+    Points,
     SlackIntegration,
     Winner,
 )
@@ -133,6 +135,21 @@ def dashboard_view(request, *args, **kwargs):
 
 class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
+        # Handle referral code parameter
+        ref_code = request.GET.get("ref")
+        if ref_code:
+            try:
+                # Validate that ref_code is a valid UUID
+                uuid.UUID(ref_code)
+                # Verify the referral code exists in the database
+                if not InviteOrganization.objects.filter(referral_code=ref_code, points_awarded=False).exists():
+                    messages.warning(request, "Invalid or expired referral code.")
+                    return render(request, "organization/register_organization.html")
+            except (ValueError, AttributeError):
+                messages.warning(request, "Invalid referral code.")
+                return render(request, "organization/register_organization.html", {})
+            request.session["org_ref"] = ref_code
+
         return render(request, "organization/register_organization.html")
 
     def post(self, request, *args, **kwargs):
@@ -185,13 +202,49 @@ class RegisterOrganizationView(View):
                 organization.managers.set(managers)
                 organization.save()
 
+                ref_code = request.session.get("org_ref")
+                # Handle referral code and award points in a nested transaction
+                # so failures don't roll back organization creation
+                try:
+                    with transaction.atomic():
+                        if ref_code:
+                            invite = InviteOrganization.objects.select_for_update().get(
+                                referral_code=ref_code, points_awarded=False
+                            )
+                            if not invite.sender:
+                                raise ValueError("Invalid invite sender")
+                            # Award 5 points to the sender
+                            Points.objects.create(
+                                user=invite.sender, score=5, reason=f"Organization invite referral: {organization.name}"
+                            )
+                            # Mark points as awarded and link organization
+                            invite.points_awarded = True
+                            invite.organization = organization
+                            invite.save()
+                            messages.success(
+                                request,
+                                f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral.",
+                            )
+                except InviteOrganization.DoesNotExist:
+                    # Invalid or already used referral code
+                    messages.success(request, "Organization registered successfully.")
+                except Exception as e:
+                    # Log the error but don't fail organization creation
+                    logger.exception(f"Error processing referral: {e}")
+                    messages.success(request, "Organization registered successfully.")
+                finally:
+                    # Always clear session
+                    if "org_ref" in request.session:
+                        del request.session["org_ref"]
+                if not ref_code:
+                    messages.success(request, "Organization registered successfully.")
+
         except ValidationError as e:
             messages.error(request, f"Error saving organization: {e}")
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
 
-        messages.success(request, "organization registered successfully.")
         return redirect("organization_detail", slug=organization.slug)
 
 
