@@ -434,9 +434,9 @@ class LeaderboardBase:
             GitHubIssue.objects.filter(
                 type="pull_request",
                 is_merged=True,
-                user_profile__user__username__isnull=False,  
+                user_profile__user__username__isnull=False,
             )
-            .exclude(user_profile__user__username="") 
+            .exclude(user_profile__user__username="")
             .values(
                 "user_profile__user__username",
                 "user_profile__user__email",
@@ -450,9 +450,9 @@ class LeaderboardBase:
         # Code Review Leaderboard - Filter out empty usernames
         reviewed_pr_leaderboard = (
             GitHubReview.objects.filter(
-                reviewer__user__username__isnull=False, 
+                reviewer__user__username__isnull=False,
             )
-            .exclude(reviewer__user__username="") 
+            .exclude(reviewer__user__username="")
             .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
@@ -468,7 +468,7 @@ class LeaderboardBase:
             UserProfile.objects.select_related("user")
             .filter(
                 daily_visit_count__gt=0,
-                user__username__isnull=False,  
+                user__username__isnull=False,
             )
             .exclude(user__username="")
             .order_by("-daily_visit_count")[:10]
