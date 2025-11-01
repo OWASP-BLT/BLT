@@ -404,6 +404,58 @@ class UserProfileDetailView(DetailView):
 
 
 class LeaderboardBase:
+    def get_leaderboard(self, month=None, year=None, api=False):
+        data = User.objects
+
+        if year and not month:
+            data = data.filter(points__created__year=year)
+
+        if year and month:
+            data = data.filter(Q(points__created__year=year) & Q(points__created__month=month))
+
+        data = (
+            data.annotate(total_score=Sum("points__score"))
+            .order_by("-total_score")
+            .filter(
+                total_score__gt=0,
+                username__isnull=False,
+            )
+            .exclude(username="")
+        )
+        if api:
+            return data.values("id", "username", "total_score")
+        return data
+
+    def current_month_leaderboard(self, api=False):
+        """
+        leaderboard which includes current month users scores
+        """
+        return self.get_leaderboard(month=int(datetime.now().month), year=int(datetime.now().year), api=api)
+
+    def monthly_year_leaderboard(self, year, api=False):
+        """
+        leaderboard which includes current year top user from each month
+        """
+
+        monthly_winner = []
+
+        # iterating over months 1-12
+        for month in range(1, 13):
+            month_winner = self.get_leaderboard(month, year, api).first()
+            monthly_winner.append(month_winner)
+
+        return monthly_winner
+
+
+class GlobalLeaderboardView(LeaderboardBase, ListView):
+    """
+    Returns: All users:score data in descending order,
+    including pull requests, code reviews, top visitors, and top streakers
+    """
+
+    model = User
+    template_name = "leaderboard_global.html"
+
     def get_context_data(self, *args, **kwargs):
         """
         Assembles template context for the global leaderboard page, adding leaderboards and related data.
@@ -429,14 +481,9 @@ class LeaderboardBase:
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard - Filter out empty usernames
+        # Pull Request Leaderboard
         pr_leaderboard = (
-            GitHubIssue.objects.filter(
-                type="pull_request",
-                is_merged=True,
-                user_profile__user__username__isnull=False,
-            )
-            .exclude(user_profile__user__username="")
+            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
             .values(
                 "user_profile__user__username",
                 "user_profile__user__email",
@@ -447,13 +494,9 @@ class LeaderboardBase:
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Code Review Leaderboard - Filter out empty usernames
+        # Reviewed PR Leaderboard - Fixed query to properly count reviews
         reviewed_pr_leaderboard = (
-            GitHubReview.objects.filter(
-                reviewer__user__username__isnull=False,
-            )
-            .exclude(reviewer__user__username="")
-            .values(
+            GitHubReview.objects.values(
                 "reviewer__user__username",
                 "reviewer__user__email",
                 "reviewer__github_url",
@@ -463,14 +506,10 @@ class LeaderboardBase:
         )
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
-        # Top visitors leaderboard - Filter out empty usernames
+        # Top visitors leaderboard
         top_visitors = (
             UserProfile.objects.select_related("user")
-            .filter(
-                daily_visit_count__gt=0,
-                user__username__isnull=False,
-            )
-            .exclude(user__username="")
+            .filter(daily_visit_count__gt=0)
             .order_by("-daily_visit_count")[:10]
         )
 
