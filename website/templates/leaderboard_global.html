@@ -54,8 +54,12 @@
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
-                                        <a href="{% url 'profile' slug=leader.username %}"
-                                           class="text-lg transition-all duration-200">{{ leader.username }}</a>
+                                        {% if leader.username %}
+                                            <a href="{% url 'profile' slug=leader.username %}"
+                                               class="text-lg transition-all duration-200">{{ leader.username }}</a>
+                                        {% else %}
+                                            <span class="text-lg transition-all duration-200">{{ leader.username|default:"Unknown" }}</span>
+                                        {% endif %}
                                         <span>
                                             <kbd class="py-1 px-2 select-none rounded-md {% if leader.userprofile.get_title_display|lower == 'silver' %}bg-gray-400 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'gold' %}bg-yellow-600 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'bronze' %}bg-orange-700 text-white{% elif leader.userprofile.get_title_display|lower == 'platinum' %}bg-gray-200 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'unrated' %}bg-black text-white{% endif %}">
                                                 {{ leader.userprofile.get_title_display }}
@@ -94,8 +98,12 @@
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
-                                        <a href="{% url 'profile' slug=leader.user_profile__user__username %}"
-                                           class="text-lg transition-all duration-200">{{ leader.user_profile__user__username }}</a>
+                                        {% if leader.user_profile__user__username %}
+                                            <a href="{% url 'profile' slug=leader.user_profile__user__username %}"
+                                               class="text-lg transition-all duration-200">{{ leader.user_profile__user__username }}</a>
+                                        {% else %}
+                                            <span class="text-lg transition-all duration-200">{{ leader.user_profile__user__email|default:"Unknown User" }}</span>
+                                        {% endif %}
                                         <a href="{{ leader.user_profile__github_url }}"
                                            target="_blank"
                                            class="ml-2">
@@ -133,10 +141,14 @@
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
-                                        <a href="{% url 'profile' slug=leader.reviews__reviewer__user__username %}"
-                                           class="text-lg transition-all duration-200">
-                                            {{ leader.reviews__reviewer__user__username }}
-                                        </a>
+                                        {% if leader.reviews__reviewer__user__username %}
+                                            <a href="{% url 'profile' slug=leader.reviews__reviewer__user__username %}"
+                                               class="text-lg transition-all duration-200">
+                                                {{ leader.reviews__reviewer__user__username }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-lg transition-all duration-200">{{ leader.reviews__reviewer__user__email|default:"Unknown User" }}</span>
+                                        {% endif %}
                                         <a href="https://github.com/{{ leader.reviews__reviewer__user__username }}"
                                            target="_blank"
                                            class="ml-2">
