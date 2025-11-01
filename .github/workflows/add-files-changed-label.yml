@@ -44,7 +44,8 @@ jobs:
           
           # Check if the API request was successful by verifying it's a valid array
           if ! echo "$FILES_API_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            echo "Error: Could not fetch PR files. Response: $FILES_API_RESPONSE"
+            echo "Error: Could not fetch PR files. The API response was not a valid array."
+            echo "This could indicate an authentication issue or the PR may not exist."
             exit 1
           fi
           
@@ -88,7 +89,9 @@ jobs:
           if echo "$ALL_LABELS_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
             ALL_REPO_LABELS=$(echo "$ALL_LABELS_RESPONSE" | jq -r '.[].name')
           else
-            echo "Error: Failed to fetch repository labels. Response: $ALL_LABELS_RESPONSE"
+            ERROR_MSG=$(echo "$ALL_LABELS_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+            ERROR_MSG="${ERROR_MSG:-Invalid response}"
+            echo "Error: Failed to fetch repository labels. Error: $ERROR_MSG"
             exit 1
           fi
           
@@ -103,7 +106,9 @@ jobs:
             
             # Check if label creation was successful
             if [[ "$CREATE_LABEL_RESPONSE" == *"message"* ]]; then
-              echo "Warning: There might be an issue creating the label. Response: $CREATE_LABEL_RESPONSE"
+              ERROR_MSG=$(echo "$CREATE_LABEL_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+              ERROR_MSG="${ERROR_MSG:-Invalid response}"
+              echo "Warning: There might be an issue creating the label. Error: $ERROR_MSG"
               
               # Provide more detailed guidance for permission errors
               if [[ "$CREATE_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
@@ -129,7 +134,9 @@ jobs:
           if echo "$PR_LABELS_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
             EXISTING_LABELS=$(echo "$PR_LABELS_RESPONSE" | jq -r '.[].name')
           else
-            echo "Error: Failed to fetch PR labels. Response: $PR_LABELS_RESPONSE"
+            ERROR_MSG=$(echo "$PR_LABELS_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+            ERROR_MSG="${ERROR_MSG:-Invalid response}"
+            echo "Error: Failed to fetch PR labels. Error: $ERROR_MSG"
             exit 1
           fi
           
@@ -150,7 +157,9 @@ jobs:
               if [[ "$REMOVE_RESPONSE" == "" ]]; then
                 echo "Successfully removed label: $EXISTING_LABEL"
               else
-                echo "Warning: There might be an issue removing the label. Response: $REMOVE_RESPONSE"
+                ERROR_MSG=$(echo "$REMOVE_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+                ERROR_MSG="${ERROR_MSG:-Invalid response}"
+                echo "Warning: There might be an issue removing the label. Error: $ERROR_MSG"
               fi
             fi
           done
@@ -169,7 +178,9 @@ jobs:
           
           # Check if label was added successfully
           if [[ "$ADD_LABEL_RESPONSE" == *"message"* ]]; then
-            echo "Error: Failed to add label. Response: $ADD_LABEL_RESPONSE"
+            ERROR_MSG=$(echo "$ADD_LABEL_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+            ERROR_MSG="${ERROR_MSG:-Invalid response}"
+            echo "Error: Failed to add label. Error: $ERROR_MSG"
             
             # Check if it's a permissions issue
             if [[ "$ADD_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
