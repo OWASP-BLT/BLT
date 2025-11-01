@@ -715,17 +715,17 @@
 <!-- Chatbot -->
 <div class="bg-gray-100 chat-Zindex z-[9999]">
     <div id="chatbot"
-         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white rounded-lg shadow-lg h-[520px] overflow-hidden hidden">
-        <div class="bg-red-600 text-white p-3 rounded-t-lg flex justify-between items-center">
-            <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
-            <button id="closeChatbot" class="text-white text-2xl">×</button>
+         class="fixed bottom-4 left-4 right-4 md:bottom-3 md:right-3 md:left-auto max-w-[400px] md:max-w-[400px] w-[calc(100%-2rem)] md:w-full bg-white rounded-lg shadow-lg h-[420px] md:h-[520px] overflow-hidden hidden">
+        <div class="bg-red-600 text-white p-2 md:p-3 rounded-t-lg flex justify-between items-center">
+            <h3 class="text-lg md:text-xl font-bold">Chat with BLT Bot</h3>
+            <button id="closeChatbot" class="text-white text-xl md:text-2xl">×</button>
         </div>
-        <div class="p-4">
-            <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700">
-                <p class="text-base">We respond instantly!</p>
+        <div class="p-2 md:p-4">
+            <div class="bg-red-100 p-2 md:p-3 rounded-lg mb-2 text-red-700">
+                <p class="text-sm md:text-base">We respond instantly!</p>
             </div>
             <div id="chat-log"
-                 class="bg-gray-100 p-3 rounded-lg max-h-[295px] h-[295px] overflow-y-auto relative">
+                 class="bg-gray-100 p-2 md:p-3 rounded-lg max-h-[220px] md:max-h-[295px] h-[220px] md:h-[295px] overflow-y-auto relative">
                 <div id="loading"
                      class="hidden absolute bottom-1 left-1 flex items-center justify-center bg-white/90 p-2 rounded-lg">
                     <svg class="animate-spin h-5 w-5 text-red-600"
@@ -740,34 +740,34 @@
                 </div>
             </div>
             <!-- Quick Command Buttons -->
-            <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
-                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+            <div id="quick-commands" class="flex flex-wrap gap-1 md:gap-2 mb-1 md:mb-2 mt-1 md:mt-2">
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-2 md:px-4 py-1 text-xs md:text-sm rounded-lg"
                         data-command="/help">/help</button>
-                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-2 md:px-4 py-1 text-xs md:text-sm rounded-lg"
                         data-command="/stats">/stats</button>
-                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-2 md:px-4 py-1 text-xs md:text-sm rounded-lg"
                         data-command="/bid">/bid</button>
-                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-2 md:px-4 py-1 text-xs md:text-sm rounded-lg"
                         data-command="/bacon">/bacon</button>
             </div>
-            <div class="flex flex-row gap-4 items-center mt-1 w-full"
+            <div class="flex flex-row gap-2 md:gap-4 items-center mt-1 w-full"
                  id="chat-message-input-container">
                 <input id="chat-message-input"
                        type="text"
-                       class="w-full p-2 border-2 border-gray-300 placeholder:text-base rounded-lg"
+                       class="w-full p-1.5 md:p-2 text-sm md:text-base border-2 border-gray-300 placeholder:text-sm md:placeholder:text-base rounded-lg"
                        placeholder="Enter your message...">
-                <div class="flex flex-row gap-2 items-center shrink-0">
+                <div class="flex flex-row gap-1 md:gap-2 items-center shrink-0">
                     <button id="chat-message-submit"
-                            class="bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg">Send</button>
+                            class="bg-red-600 hover:bg-red-500 text-white p-1.5 md:p-2 text-xs md:text-sm rounded-lg">Send</button>
                     <button id="chat-message-clear"
-                            class="bg-gray-300 hover:bg-gray-200 text-black p-2 rounded-lg">Clear</button>
+                            class="bg-gray-300 hover:bg-gray-200 text-black p-1.5 md:p-2 text-xs md:text-sm rounded-lg">Clear</button>
                 </div>
             </div>
         </div>
     </div>
     <div id="chatIcon"
-         class="fixed bottom-3 right-2 bg-red-600 rounded-full p-3 w-[55px] h-[55px] flex items-center justify-center cursor-pointer shadow-lg hover:opacity-80 transition-opacity">
-        <svg class="w-10 h-10 text-white"
+         class="fixed bottom-4 right-4 md:bottom-3 md:right-2 bg-red-600 rounded-full p-2.5 md:p-3 w-[50px] h-[50px] md:w-[55px] md:h-[55px] flex items-center justify-center cursor-pointer shadow-lg hover:opacity-80 transition-opacity">
+        <svg class="w-8 h-8 md:w-10 md:h-10 text-white"
              aria-hidden="true"
              xmlns="http://www.w3.org/2000/svg"
              width="24"

@@ -18,37 +18,69 @@
 {% block og_description %}
     Log in to your account to access the bug logging tool. Enter your username and password or log in with Google or GitHub for a seamless experience.
 {% endblock og_description %}
+{% block style %}
+    <style>
+        /* Hide white footer space on login page */
+        body > div.pb-\[50px\] {
+            display: none !important;
+        }
+        /* Remove extra padding from main tag */
+        main {
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            min-height: auto !important;
+        }
+        /* Remove header spacing div */
+        body > div.w-full.h-\[50px\] {
+            display: none !important;
+        }
+        /* Ensure form container fits viewport accounting for fixed header */
+        .login-wrapper {
+            padding: 0 !important;
+            margin: 0 !important;
+            margin-top: 60px !important;
+            height: calc(100vh - 60px) !important;
+            box-sizing: border-box;
+        }
+        .login-container {
+            max-height: 100%;
+            overflow-y: auto;
+        }
+        /* Prevent body from scrolling beyond viewport */
+        body {
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+    </style>
+{% endblock style %}
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
     {% get_providers as socialaccount_providers %}
-    <div class="flex items-center min-h-screen p-4 bg-gray-100 lg:justify-center">
-        <div class="flex flex-col overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
+    <div class="flex items-center justify-center w-full p-0 md:p-1 bg-gray-100 overflow-hidden login-wrapper">
+        <div class="flex flex-col w-full max-w-2xl mx-4 md:mx-0 overflow-hidden bg-white rounded-md shadow-lg md:flex-row login-container">
             <!-- Left Side (Branding and Info) -->
-            <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
-                <div class="my-2 text-4xl font-bold tracking-wider text-center">
+            <div class="p-2 py-2 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+                <div class="my-2 text-3xl font-bold tracking-wider text-center">
                     <!-- Reduced margin-y -->
                     <a href="{% url 'home' %}"
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
-                <p class="mt-4 font-normal text-center text-white text-xl md:mt-0">
-                    <!-- Reduced margin-top -->
+                <p class="mt-2 font-normal text-center text-white text-base md:mt-0">
                     {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, Organizations are held accountable" %}.
                 </p>
-                <p class="flex flex-col items-center justify-center text-sm mt-6 text-center">
-                    <!-- Reduced margin-top -->
+                <p class="flex flex-col items-center justify-center text-xs mt-2 text-center">
                     <span>{% trans "Don't have an account" %}?</span>
                     <a href="{% url 'account_signup' %}{% if redirect_field_value %}?{{ redirect_field_name }}={{ redirect_field_value }}{% endif %}"
                        class="underline text-white">{% trans "Get Started" %}!</a>
                 </p>
-                <p class="mt-4 text-sm text-center text-white">
-                    <!-- Reduced margin-top -->
+                <p class="mt-2 text-xs text-center text-white">
                     {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "conditions" %}</a>
                 </p>
             </div>
             <!-- Right Side (Login Form) -->
-            <div class="p-5 bg-white md:flex-1">
-                <h3 class="text-2xl font-semibold text-gray-700">{% trans "Account Login" %}</h3>
-                <form class="flex flex-col space-y-4 login"
+            <div class="p-4 bg-white md:flex-1">
+                <h3 class="my-0 mb-3 text-xl font-semibold text-gray-700">{% trans "Account Login" %}</h3>
+                <form class="flex flex-col space-y-3 login"
                       method="post"
                       action="{% url 'account_login' %}?next={{ request.path }}">
                     {% csrf_token %}
@@ -64,8 +96,8 @@
                                id="id_login"
                                name="login"
                                value="{{ form.login.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
-                        <span class="help-block text-sm text-red-500">{{ form.login.errors }}</span>
+                               class="px-4 py-2 text-base w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                        <span class="help-block text-xs text-red-500">{{ form.login.errors }}</span>
                     </div>
                     <!-- Password Field -->
                     <div class="flex flex-col space-y-1">
@@ -79,7 +111,7 @@
                                    id="id_password"
                                    name="password"
                                    value="{{ form.password.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 text-base w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
@@ -94,7 +126,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <span class="help-block text-sm text-red-500">{{ form.password.errors }}</span>
+                        <span class="help-block text-xs text-red-500">{{ form.password.errors }}</span>
                     </div>
                     <!-- Remember Me Checkbox -->
                     <div class="flex items-center space-x-2">
@@ -109,19 +141,19 @@
                     <div>
                         <button type="submit"
                                 name="login_button"
-                                class="w-full px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
+                                class="w-full md:w-auto px-6 py-2.5 text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
                             {% trans "Log in" %}
                         </button>
                     </div>
                     <!-- Social Login Buttons -->
-                    <div class="flex flex-col space-y-4">
+                    <div class="flex flex-col space-y-2">
                         <span class="flex items-center justify-center space-x-2">
                             <span class="h-px bg-gray-400 w-14"></span>
-                            <span class="font-normal text-gray-500">{% trans "or login with" %}</span>
+                            <span class="font-normal text-xs text-gray-500">{% trans "or login with" %}</span>
                             <span class="h-px bg-gray-400 w-14"></span>
                         </span>
                         <a href="{% url 'github_login' %}"
-                           class="flex items-center justify-center px-4 py-2 space-x-2 transition-colors duration-300 border border-gray-800 rounded-md group hover:bg-gray-800 focus:outline-none">
+                           class="flex items-center justify-center px-4 py-2.5 space-x-2 transition-colors duration-300 border border-gray-800 rounded-md group hover:bg-gray-800 focus:outline-none">
                             <svg class="w-5 h-5 text-gray-800 fill-current group-hover:text-white"
                                  viewBox="0 0 16 16"
                                  version="1.1"
@@ -129,7 +161,7 @@
                                 <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z">
                                 </path>
                             </svg>
-                            <span class="text-sm font-medium text-gray-800 group-hover:text-white">Github</span>
+                            <span class="text-base font-medium text-gray-800 group-hover:text-white">Github</span>
                         </a>
                         <!-- <a href="{% url 'google_login' %}" class="w-[100%] h-[28px] flex items-center justify-center px-4 py-2 space-x-2 transition-colors duration-300 border border-gray-800 rounded-md group hover:bg-gray-800 focus:outline-none hover:no-underline">
                                 <span>
