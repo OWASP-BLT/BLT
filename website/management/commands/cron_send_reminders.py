@@ -3,7 +3,6 @@ import os
 import random
 import time
 from datetime import time as dt_time
-from itertools import islice
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -13,12 +12,6 @@ from website.management.base import LoggedBaseCommand
 from website.models import ReminderSettings, UserProfile
 
 logger = logging.getLogger(__name__)
-
-
-def batch(iterable, size):
-    """Helper function to create batches from an iterable"""
-    iterator = iter(iterable)
-    return iter(lambda: list(islice(iterator, size)), [])
 
 
 class Command(LoggedBaseCommand):
@@ -76,7 +69,7 @@ class Command(LoggedBaseCommand):
             user_ids = [rs.user_id for rs in active_settings]
             profile_map = {profile.user_id: profile for profile in UserProfile.objects.filter(user_id__in=user_ids)}
 
-            users_needing_reminders = []
+            reminders_to_send = []
 
             for reminder_settings in active_settings:
                 try:
@@ -85,7 +78,7 @@ class Command(LoggedBaseCommand):
                     if profile and profile.last_check_in and profile.last_check_in == now.date():
                         continue
 
-                    users_needing_reminders.append(reminder_settings.user)
+                    reminders_to_send.append((reminder_settings, profile))
                     logger.info(
                         f"User {reminder_settings.user.username} added to reminder list for time {reminder_settings.reminder_time} ({reminder_settings.timezone})"
                     )
@@ -94,33 +87,63 @@ class Command(LoggedBaseCommand):
                     logger.error(f"Error processing user {reminder_settings.user.username}: {str(e)}")
                     continue
 
-            if not users_needing_reminders:
+            if not reminders_to_send:
                 logger.info("No users need reminders at this time")
                 return
 
-            # Process users in batches of 50
-            batch_size = 50
-            successful_batches = 0
-            failed_batches = 0
-            total_users = len(users_needing_reminders)
+            # Process reminders individually for personalization
+            successful_count = 0
+            failed_count = 0
+            total_users = len(reminders_to_send)
 
-            for i, user_batch in enumerate(batch(users_needing_reminders, batch_size), 1):
+            for i, (reminder_settings, profile) in enumerate(reminders_to_send, 1):
                 try:
-                    # Add random delay between batches (1-5 seconds) if not the first batch
-                    if i > 1:
-                        delay = random.uniform(1, 5)
-                        logger.info(f"Waiting {delay:.2f} seconds before processing batch {i}")
+                    # Add small delay between emails to avoid overwhelming the server
+                    if i > 1 and i % 10 == 0:
+                        delay = random.uniform(0.5, 2)
+                        logger.info(f"Processed {i} emails, waiting {delay:.2f} seconds")
                         time.sleep(delay)
 
+                    user = reminder_settings.user
+                    
+                    # Get organization info
+                    org_name = ""
+                    org_info_html = ""
+                    if profile and profile.team:
+                        org_name = profile.team.name
+                        org_info_html = f"""
+                            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #e74c3c;">
+                                <p style="margin: 0; color: #666; font-size: 14px;"><strong>Organization:</strong> {org_name}</p>
+                            </div>
+                        """
+                    
+                    # Format reminder time in user's timezone
+                    reminder_time_str = reminder_settings.reminder_time.strftime("%I:%M %p")
+                    timezone_str = reminder_settings.timezone
+                    
                     # Create email message
+                    plain_body = f"""Hello {user.username},
+
+This is your daily check-in reminder for {org_name if org_name else 'your team'}.
+
+Reminder Time: {reminder_time_str} ({timezone_str})
+
+Click here to check in: https://{settings.PRODUCTION_DOMAIN}/add-sizzle-checkin/
+
+You can manage your reminder settings at: https://{settings.PRODUCTION_DOMAIN}/reminder-settings/
+
+Regular check-ins help keep your team informed about your progress and any challenges you might be facing.
+
+Thank you for keeping your team updated!
+
+Best regards,
+The BLT Team"""
+
                     email = EmailMultiAlternatives(
                         subject="Daily Check-in Reminder",
-                        body="It's time for your daily check-in! Please log in to update your status.\n\nClick here to check in: https://"
-                        + settings.PRODUCTION_DOMAIN
-                        + "/add-sizzle-checkin/",
+                        body=plain_body,
                         from_email=settings.DEFAULT_FROM_EMAIL,
-                        to=[settings.DEFAULT_FROM_EMAIL],  # Send to a single recipient
-                        bcc=[user.email for user in user_batch],  # BCC all users in batch
+                        to=[user.email],
                     )
 
                     # Add HTML content
@@ -129,15 +152,26 @@ class Command(LoggedBaseCommand):
                     <body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; color: #333;">
                         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
                             <h2 style="color: #333; margin-bottom: 20px;">Daily Check-in Reminder</h2>
-                            <p>It's time for your daily check-in! Please log in to update your status.</p>
-                            <div style="margin: 30px 0;">
+                            <p>Hello <strong>{user.username}</strong>,</p>
+                            <p>It's time for your daily check-in{f" for <strong>{org_name}</strong>" if org_name else ""}! Please log in to update your status.</p>
+                            {org_info_html}
+                            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                                <p style="margin: 0; color: #666; font-size: 14px;"><strong>Your Reminder Time:</strong> {reminder_time_str} ({timezone_str})</p>
+                            </div>
+                            <div style="margin: 30px 0; text-align: center;">
                                 <a href="https://{settings.PRODUCTION_DOMAIN}/add-sizzle-checkin/" 
                                    style="display: inline-block; background-color: #e74c3c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; text-align: center; min-width: 200px;">
                                    Check In Now
                                 </a>
                             </div>
                             <p>Regular check-ins help keep your team informed about your progress and any challenges you might be facing.</p>
-                            <p>Thank you for keeping your team updated!</p>
+                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
+                                <p style="font-size: 13px; color: #666;">
+                                    <a href="https://{settings.PRODUCTION_DOMAIN}/reminder-settings/" style="color: #e74c3c; text-decoration: none;">Manage your reminder settings</a>
+                                </p>
+                            </div>
+                            <p style="margin-top: 20px;">Thank you for keeping your team updated!</p>
+                            <p style="color: #666; font-size: 14px;">Best regards,<br>The BLT Team</p>
                         </div>
                     </body>
                     </html>
@@ -147,30 +181,28 @@ class Command(LoggedBaseCommand):
                     # Send email
                     email.send()
 
-                    # Update last_reminder_sent for successful batch
-                    ReminderSettings.objects.filter(user_id__in=[user.id for user in user_batch]).update(
-                        last_reminder_sent=now
-                    )
+                    # Update last_reminder_sent
+                    reminder_settings.last_reminder_sent = now
+                    reminder_settings.save(update_fields=["last_reminder_sent"])
 
-                    successful_batches += 1
-                    logger.info(f"Successfully sent batch {i} to {len(user_batch)} users")
+                    successful_count += 1
+                    logger.info(f"Successfully sent reminder to {user.username} ({user.email})")
 
                 except Exception as e:
-                    failed_batches += 1
-                    logger.error(f"Error sending batch {i}: {str(e)}")
+                    failed_count += 1
+                    logger.error(f"Error sending reminder to {reminder_settings.user.username}: {str(e)}")
 
             # Log summary
             logger.info(
                 f"""
             Reminder Summary:
             - Total users processed: {total_users}
-            - Successful batches: {successful_batches}
-            - Failed batches: {failed_batches}
-            - Batch size: {batch_size}
+            - Successfully sent: {successful_count}
+            - Failed: {failed_count}
             """
             )
 
-            return f"Processed {total_users} users, {successful_batches} successful batches, {failed_batches} failed batches"
+            return f"Processed {total_users} users, {successful_count} sent successfully, {failed_count} failed"
         except Exception as e:
             logger.error(f"Critical error in reminder process: {str(e)}")
             raise
