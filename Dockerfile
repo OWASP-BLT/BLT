@@ -20,20 +20,10 @@ RUN apt-get update && \
 #     chmod +x /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver && \
 #     ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
 
-# Install Google Chrome (amd64) or Chromium (ARM64 fallback)
-RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "amd64" ]; then \
-        echo "Installing Google Chrome (x86_64)..." && \
-        curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
-        > /etc/apt/sources.list.d/google-chrome.list && \
-        apt-get update && apt-get install -y google-chrome-stable && \
-        ln -sf /usr/bin/google-chrome-stable /usr/local/bin/google-chrome; \
-    else \
-        echo "Installing Chromium (ARM64 fallback)..." && \
-        apt-get update && apt-get install -y chromium && \
-        ln -sf /usr/bin/chromium /usr/local/bin/google-chrome; \
-    fi && \
+# Install Chromium (works on all architectures)
+RUN apt-get update && \
+    apt-get install -y chromium && \
+    ln -sf /usr/bin/chromium /usr/local/bin/google-chrome && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Poetry and dependencies
