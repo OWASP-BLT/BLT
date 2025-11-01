@@ -91,4 +91,7 @@ jobs:
               }
             } catch (error) {
               console.error(`Error checking for new .md files: ${error.message}`);
+              if (error.stack) {
+                console.error(error.stack);
+              }
             }
