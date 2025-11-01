@@ -1352,7 +1352,7 @@ def home(request):
         .order_by("-created")[:2]
     )
 
-    # Get 2 most recent hackathons (prioritize ongoing, then upcoming, then recent past)
+    # Get 2 most recent active hackathons ordered by start time
     recent_hackathons = Hackathon.objects.filter(is_active=True).order_by("-start_time")[:2]
 
     # Get repository star counts for the specific repositories shown on the homepage
