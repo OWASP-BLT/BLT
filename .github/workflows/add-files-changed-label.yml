@@ -104,20 +104,20 @@ jobs:
               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/labels" \
               -d "{\"name\":\"$LABEL\",\"color\":\"$LABEL_COLOR\",\"description\":\"$DESCRIPTION\"}")
             
-            # Check if label creation was successful
-            if [[ "$CREATE_LABEL_RESPONSE" == *"message"* ]]; then
+            # Check if label creation was successful (successful response has "name" field)
+            if echo "$CREATE_LABEL_RESPONSE" | jq -e 'has("name")' > /dev/null 2>&1; then
+              echo "Label '$LABEL' created successfully."
+            else
               ERROR_MSG=$(echo "$CREATE_LABEL_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
               ERROR_MSG="${ERROR_MSG:-Invalid response}"
               echo "Warning: There might be an issue creating the label. Error: $ERROR_MSG"
               
               # Provide more detailed guidance for permission errors
-              if [[ "$CREATE_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+              if [[ "$ERROR_MSG" == *"Resource not accessible by integration"* ]]; then
                 echo "This appears to be a permissions issue with creating labels."
                 echo "The workflow has been configured with appropriate permissions (pull-requests: write, issues: write)."
                 echo "If this error persists, please check the repository settings."
               fi
-            else
-              echo "Label '$LABEL' created successfully."
             fi
           else
             echo "Label '$LABEL' already exists in the repository."
@@ -176,20 +176,20 @@ jobs:
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels" \
             -d "{\"labels\":[\"$LABEL\"]}")
           
-          # Check if label was added successfully
-          if [[ "$ADD_LABEL_RESPONSE" == *"message"* ]]; then
+          # Check if label was added successfully (successful response is an array)
+          if echo "$ADD_LABEL_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            echo "Successfully applied label '$LABEL' to PR #$PR_NUMBER"
+          else
             ERROR_MSG=$(echo "$ADD_LABEL_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
             ERROR_MSG="${ERROR_MSG:-Invalid response}"
             echo "Error: Failed to add label. Error: $ERROR_MSG"
             
             # Check if it's a permissions issue
-            if [[ "$ADD_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+            if [[ "$ERROR_MSG" == *"Resource not accessible by integration"* ]]; then
               echo "This appears to be a permissions issue."
               echo "The workflow has been configured with appropriate permissions (pull-requests: write, issues: write)."
               echo "If this error persists, please verify the repository settings allow workflow actions."
             fi
             
             exit 1
-          else
-            echo "Successfully applied label '$LABEL' to PR #$PR_NUMBER"
           fi
