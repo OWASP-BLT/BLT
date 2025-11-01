@@ -97,23 +97,25 @@ def get_page_views(url_path, days=30):
     as a JSON dictionary with dates as keys and view counts as values.
     """
     # Get the date range
-    end_date = timezone.now()
-    start_date = end_date - timedelta(days=days)
+    end_day = timezone.localdate()
+    start_day = end_day - timedelta(days=days - 1)
+
+    # Base queryset for the last `days` calendar days (inclusive of today)
+    queryset = IP.objects.filter(created__date__range=(start_day, end_day))
+
+    # Only filter by path if url_path is provided
+    if url_path:
+        queryset = queryset.filter(path__icontains=url_path)
 
     # Query the IP table for views of this page
-    daily_views = (
-        IP.objects.filter(path__contains=url_path, created__gte=start_date, created__lte=end_date)
-        .values("created__date")
-        .annotate(total_views=models.Sum("count"))
-        .order_by("created__date")
-    )
+    daily_views = queryset.values("created__date").annotate(total_views=models.Sum("count")).order_by("created__date")
 
     # Create a dictionary with dates as keys and view counts as values
     view_counts_dict = {}
 
     # First, initialize the dictionary with zeros for all dates in the range
     for i in range(days):
-        current_date = (start_date + timedelta(days=i)).date()
+        current_date = start_day + timedelta(days=i)
         formatted_date = current_date.strftime("%Y-%m-%d")
         view_counts_dict[formatted_date] = 0
 
