@@ -6,6 +6,7 @@ import os
 import re
 import threading
 import time
+from urllib.parse import quote_plus
 
 import requests
 import yaml
@@ -1651,7 +1652,9 @@ def get_owasp_contributions(username, headers):
 def get_org_prs(username, org, headers):
     """Helper function to get PRs for a specific organization"""
     try:
-        search_url = f"https://api.github.com/search/issues?q=author:{username}+org:{org}+type:pr"
+        query = f"author:{username} org:{org} type:pr"
+        encoded_query = quote_plus(query)
+        search_url = f"https://api.github.com/search/issues?q={encoded_query}"
         pr_response = requests.get(search_url, headers=headers, timeout=10)
 
         if pr_response.status_code == 200:

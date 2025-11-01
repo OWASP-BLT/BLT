@@ -1,4 +1,6 @@
 import requests
+from urllib.parse import quote_plus
+
 from django.conf import settings
 from django.utils.dateparse import parse_datetime
 
@@ -53,7 +55,8 @@ class Command(LoggedBaseCommand):
 
                 # Fetch counts of issues and pull requests using the Search API
                 def get_issue_count(repo_name, query, headers):
-                    url = f"https://api.github.com/search/issues?q=repo:{repo_name}+{query}"
+                    encoded_query = quote_plus(f"repo:{repo_name} {query}")
+                    url = f"https://api.github.com/search/issues?q={encoded_query}"
                     response = requests.get(url, headers=headers)
                     if response.status_code == 200:
                         data = response.json()
@@ -66,10 +69,10 @@ class Command(LoggedBaseCommand):
                         )
                         return 0
 
-                project.open_issues = get_issue_count(repo_name, "type:issue+state:open", headers)
-                project.closed_issues = get_issue_count(repo_name, "type:issue+state:closed", headers)
-                project.open_pull_requests = get_issue_count(repo_name, "type:pr+state:open", headers)
-                project.closed_pull_requests = get_issue_count(repo_name, "type:pr+state:closed", headers)
+                project.open_issues = get_issue_count(repo_name, "type:issue state:open", headers)
+                project.closed_issues = get_issue_count(repo_name, "type:issue state:closed", headers)
+                project.open_pull_requests = get_issue_count(repo_name, "type:pr state:open", headers)
+                project.closed_pull_requests = get_issue_count(repo_name, "type:pr state:closed", headers)
 
                 # Fetch latest release
                 url = f"https://api.github.com/repos/{repo_name}/releases/latest"
