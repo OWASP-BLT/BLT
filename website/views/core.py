@@ -43,6 +43,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import ListView, TemplateView, View
 
+from website.core.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    rebuild_safe_url,
+    safe_redirect_allowed,
+    save_analysis_report,
+)
 from website.models import (
     IP,
     Activity,
@@ -68,13 +75,6 @@ from website.models import (
     UserBadge,
     UserProfile,
     Wallet,
-)
-from website.utils import (
-    analyze_pr_content,
-    fetch_github_data,
-    rebuild_safe_url,
-    safe_redirect_allowed,
-    save_analysis_report,
 )
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store

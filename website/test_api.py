@@ -13,7 +13,7 @@ from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from website.utils import rebuild_safe_url, validate_file_type
+from website.core.utils import rebuild_safe_url, validate_file_type
 
 
 class FileValidationTest(APITestCase):
