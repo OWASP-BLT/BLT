@@ -214,190 +214,71 @@
                 <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
             </div>
         </div>
-        <!-- Project Cards Section -->
-        <section class="py-6">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class=" mb-8">
-                    <div class="flex items-center gap-4">
-                        <i class="fas fa-code-branch text-2xl text-[#e74c3c]"></i>
-                        <h2 class="text-3xl font-bold">Our Components</h2>
-                        <div class="flex-grow h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
-                    </div>
-                    <p class="text-gray-600 text-base max-w-9xl mx-auto mt-3">
-                        Four key components power OWASP BLT. The core, mobile access, browser integration, and automation—working together to secure applications worldwide.
-                    </p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <!-- Core Card -->
-                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
-                        <div class="flex items-center gap-3 mb-4">
-                            <i class="fas fa-shield-alt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">
-                                <a href="{% url 'repo_detail' 'blt' %}"
-                                   class="hover:text-[#e74c3c] transition-colors">Django Core</a>
-                            </h4>
+        <!-- Recent Hackathons Section -->
+        {% if recent_hackathons %}
+            <section class="py-12 bg-white">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-3">
+                            <i class="fas fa-trophy text-2xl text-[#e74c3c]"></i>
+                            <h2 class="text-3xl font-bold">Recent Hackathons</h2>
+                            <div class="flex-grow h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
                         </div>
-                        <p class="text-gray-600 text-sm mb-4 flex-grow">The main engine powering OWASP BLT's system API and Slack Bot.</p>
-                        <div class="flex flex-col gap-2">
-                            <a href="https://github.com/OWASP-BLT/BLT"
-                               target="_blank"
-                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
-                                {% for repo in repo_stars %}
-                                    {% if repo.key == 'blt' %}
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
-                                    {% endif %}
-                                {% endfor %}
-                            </a>
-                            <a href="{% url 'report' %}"
-                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
-                                <i class="fas fa-bug mr-2"></i> Report a Bug
-                            </a>
-                        </div>
-                    </div>
-                    <!-- App Card -->
-                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
-                        <div class="flex items-center gap-3 mb-4">
-                            <i class="fas fa-mobile-alt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">
-                                <a href="{% url 'repo_detail' 'blt-flutter' %}"
-                                   class="hover:text-[#e74c3c] transition-colors">Flutter iOS App</a>
-                            </h4>
-                        </div>
-                        <p class="text-gray-600 text-sm mb-4 flex-grow">Mobile application for on-the-go bug reporting and management.</p>
-                        <div class="flex flex-col gap-2">
-                            <a href="https://github.com/OWASP-BLT/BLT-Flutter"
-                               target="_blank"
-                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
-                                {% for repo in repo_stars %}
-                                    {% if repo.key == 'flutter' %}
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
-                                    {% endif %}
-                                {% endfor %}
-                            </a>
-                            <a href="#"
-                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
-                                <i class="fab fa-apple mr-2"></i> Download App
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Extension Card -->
-                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
-                        <div class="flex items-center gap-3 mb-4">
-                            <i class="fas fa-puzzle-piece text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">
-                                <a href="{% url 'repo_detail' 'blt-extension' %}"
-                                   class="hover:text-[#e74c3c] transition-colors">Chrome Extension</a>
-                            </h4>
-                        </div>
-                        <p class="text-gray-600 text-sm mb-4 flex-grow">Browser extension for quick bug reporting and screenshots.</p>
-                        <div class="flex flex-col gap-2">
-                            <a href="https://github.com/OWASP-BLT/BLT-Extension"
-                               target="_blank"
-                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
-                                {% for repo in repo_stars %}
-                                    {% if repo.key == 'extension' %}
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
-                                    {% endif %}
-                                {% endfor %}
-                            </a>
-                            <a href="#"
-                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
-                                <i class="fab fa-chrome mr-2"></i> Install Extension
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Action Card -->
-                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
-                        <div class="flex items-center gap-3 mb-4">
-                            <i class="fas fa-bolt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">
-                                <a href="{% url 'repo_detail' 'blt-action' %}"
-                                   class="hover:text-[#e74c3c] transition-colors">GitHub Action</a>
-                            </h4>
-                        </div>
-                        <p class="text-gray-600 text-sm mb-4 flex-grow">GitHub Action for automated security checks and reporting.</p>
-                        <div class="flex flex-col gap-2">
-                            <a href="https://github.com/OWASP-BLT/BLT-Action"
-                               target="_blank"
-                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
-                                {% for repo in repo_stars %}
-                                    {% if repo.key == 'action' %}
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
-                                    {% endif %}
-                                {% endfor %}
-                            </a>
-                            <a href="#"
-                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
-                                <i class="fas fa-code-branch mr-2"></i> Use Latest
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- Referral Program Card -->
-        {% if user.is_authenticated %}
-            <div class="max-w-7xl mx-auto px-4 mb-8">
-                <div class="bg-white rounded-xl shadow-lg p-6 border border-[#e74c3c]">
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="p-3 bg-red-50 rounded-lg">
-                            <i class="fas fa-users text-[#e74c3c] text-2xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold">Referral Program</h3>
-                            <p class="text-gray-600">Invite friends to join BLT and earn points!</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="flex-1">
-                            <input type="text"
-                                   id="referralLink"
-                                   value="https://{{ request.get_host }}{% url 'referral_signup' %}?ref={{ referral_code }}"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                                   readonly>
-                        </div>
-                        <button onclick="copyReferralLink()"
-                                class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors">
-                            <i class="fas fa-copy mr-2"></i>Copy Link
-                        </button>
-                    </div>
-                    <div class="text-sm text-gray-600">
-                        <p>
-                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Earn 2 points for each friend who joins
-                        </p>
-                        <p>
-                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Track clicks and successful signups
-                        </p>
-                        <p>
-                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Compete on the referral leaderboard
+                        <p class="text-gray-600 text-base">
+                            Join our coding competitions, collaborate with the community, and win amazing prizes!
                         </p>
                     </div>
-                </div>
-            </div>
-        {% else %}
-            <div class="max-w-7xl mx-auto px-4 mb-8">
-                <div class="bg-white rounded-xl shadow-lg p-6 border border-[#e74c3c]">
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="p-3 bg-red-50 rounded-lg">
-                            <i class="fas fa-users text-[#e74c3c] text-2xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold">Join Our Referral Program</h3>
-                            <p class="text-gray-600">Sign in to get your referral link and start earning points!</p>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        {% for hackathon in recent_hackathons %}
+                            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+                                {% if hackathon.banner_image %}
+                                    <div class="h-48 bg-cover bg-center"
+                                         style="background-image: url('{{ hackathon.banner_image.url }}')"></div>
+                                {% else %}
+                                    <div class="h-48 bg-gradient-to-r from-[#e74c3c] to-red-700 flex items-center justify-center">
+                                        <i class="fas fa-code text-white text-5xl"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="p-6">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h3 class="text-xl font-bold text-gray-900">{{ hackathon.name }}</h3>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if hackathon.is_ongoing %} bg-green-100 text-green-800 {% elif hackathon.has_ended %} bg-gray-100 text-gray-800 {% else %} bg-blue-100 text-blue-800 {% endif %}">
+                                            {% if hackathon.is_ongoing %}
+                                                Ongoing
+                                            {% elif hackathon.has_ended %}
+                                                Ended
+                                            {% else %}
+                                                Upcoming
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-600 text-sm mb-3">
+                                        Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
+                                                        class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
+                                    </p>
+                                    <p class="text-gray-700 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
+                                    <div class="flex items-center text-sm text-gray-500 mb-4">
+                                        <i class="far fa-calendar mr-2"></i>
+                                        <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
+                                    </div>
+                                    <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
+                                       class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
+                                        View Details
+                                        <i class="fas fa-arrow-right ml-2"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
-                    <div class="flex justify-center">
-                        <a href="{% url 'account_login' %}?next={{ request.path }}"
-                           class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] hover:text-white transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Sign In to Participate
+                    <div class="text-center">
+                        <a href="{% url 'hackathons' %}"
+                           class="inline-flex items-center px-6 py-3 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-colors duration-200">
+                            View All Hackathons
+                            <i class="fas fa-arrow-right ml-2"></i>
                         </a>
                     </div>
                 </div>
-            </div>
+            </section>
         {% endif %}
         <!-- Leaderboard Section -->
         <section class="py-12 bg-gray-50">
@@ -618,6 +499,191 @@
                 </div>
             </div>
         </section>
+        <!-- Project Cards Section -->
+        <section class="py-6">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class=" mb-8">
+                    <div class="flex items-center gap-4">
+                        <i class="fas fa-code-branch text-2xl text-[#e74c3c]"></i>
+                        <h2 class="text-3xl font-bold">Our Components</h2>
+                        <div class="flex-grow h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
+                    </div>
+                    <p class="text-gray-600 text-base max-w-9xl mx-auto mt-3">
+                        Four key components power OWASP BLT. The core, mobile access, browser integration, and automation—working together to secure applications worldwide.
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Core Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-shield-alt text-2xl text-[#e74c3c]"></i>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Django Core</a>
+                            </h4>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">The main engine powering OWASP BLT's system API and Slack Bot.</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="https://github.com/OWASP-BLT/BLT"
+                               target="_blank"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'blt' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </a>
+                            <a href="{% url 'report' %}"
+                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                                <i class="fas fa-bug mr-2"></i> Report a Bug
+                            </a>
+                        </div>
+                    </div>
+                    <!-- App Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-mobile-alt text-2xl text-[#e74c3c]"></i>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-flutter' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Flutter iOS App</a>
+                            </h4>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">Mobile application for on-the-go bug reporting and management.</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="https://github.com/OWASP-BLT/BLT-Flutter"
+                               target="_blank"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'flutter' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </a>
+                            <a href="#"
+                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                                <i class="fab fa-apple mr-2"></i> Download App
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Extension Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-puzzle-piece text-2xl text-[#e74c3c]"></i>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-extension' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Chrome Extension</a>
+                            </h4>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">Browser extension for quick bug reporting and screenshots.</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="https://github.com/OWASP-BLT/BLT-Extension"
+                               target="_blank"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'extension' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </a>
+                            <a href="#"
+                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                                <i class="fab fa-chrome mr-2"></i> Install Extension
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Action Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-bolt text-2xl text-[#e74c3c]"></i>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-action' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">GitHub Action</a>
+                            </h4>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">GitHub Action for automated security checks and reporting.</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="https://github.com/OWASP-BLT/BLT-Action"
+                               target="_blank"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'action' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </a>
+                            <a href="#"
+                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                                <i class="fas fa-code-branch mr-2"></i> Use Latest
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Referral Program Card -->
+        {% if user.is_authenticated %}
+            <div class="max-w-7xl mx-auto px-4 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-[#e74c3c]">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="p-3 bg-red-50 rounded-lg">
+                            <i class="fas fa-users text-[#e74c3c] text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Referral Program</h3>
+                            <p class="text-gray-600">Invite friends to join BLT and earn points!</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <input type="text"
+                                   id="referralLink"
+                                   value="https://{{ request.get_host }}{% url 'referral_signup' %}?ref={{ referral_code }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                   readonly>
+                        </div>
+                        <button onclick="copyReferralLink()"
+                                class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors">
+                            <i class="fas fa-copy mr-2"></i>Copy Link
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        <p>
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Earn 2 points for each friend who joins
+                        </p>
+                        <p>
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Track clicks and successful signups
+                        </p>
+                        <p>
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Compete on the referral leaderboard
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="max-w-7xl mx-auto px-4 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-[#e74c3c]">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="p-3 bg-red-50 rounded-lg">
+                            <i class="fas fa-users text-[#e74c3c] text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Join Our Referral Program</h3>
+                            <p class="text-gray-600">Sign in to get your referral link and start earning points!</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-center">
+                        <a href="{% url 'account_login' %}?next={{ request.path }}"
+                           class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] hover:text-white transition-colors">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Sign In to Participate
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <!-- Decorative Divider -->
         <div class="max-w-7xl mx-auto px-4 py-8">
             <div class="flex items-center justify-center">

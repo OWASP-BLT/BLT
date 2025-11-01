@@ -1286,7 +1286,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Issue, Post, Repo, User, UserProfile
+    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1352,6 +1352,9 @@ def home(request):
         .order_by("-created")[:2]
     )
 
+    # Get 2 most recent hackathons (prioritize ongoing, then upcoming, then recent past)
+    recent_hackathons = Hackathon.objects.filter(is_active=True).order_by("-start_time")[:2]
+
     # Get repository star counts for the specific repositories shown on the homepage
     repo_stars = []
     repo_mappings = {
@@ -1408,6 +1411,7 @@ def home(request):
             "debug_mode": settings.DEBUG,
             "system_stats": system_stats,
             "latest_bugs": latest_bugs,
+            "recent_hackathons": recent_hackathons,
         },
     )
 
