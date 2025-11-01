@@ -200,8 +200,8 @@ class RegisterOrganizationView(View):
 
                 # Handle referral code and award points
                 ref_code = request.session.get("org_ref")
-                if ref_code:
-                    try:
+                try:
+                    if ref_code:
                         invite = InviteOrganization.objects.select_for_update().get(
                             referral_code=ref_code, points_awarded=False
                         )
@@ -213,17 +213,19 @@ class RegisterOrganizationView(View):
                         invite.points_awarded = True
                         invite.organization = organization
                         invite.save()
-                        # Clear session
-                        if "org_ref" in request.session:
-                            del request.session["org_ref"]
                         messages.success(
                             request,
                             f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral.",
                         )
-                    except InviteOrganization.DoesNotExist:
+                except InviteOrganization.DoesNotExist:
                         # Invalid or already used referral code
                         messages.success(request, "Organization registered successfully.")
-                else:
+                finally:
+                    # Always clear session
+                    if "org_ref" in request.session:
+                        del request.session["org_ref"]
+                
+                if not ref_code:
                     messages.success(request, "Organization registered successfully.")
 
         except ValidationError as e:

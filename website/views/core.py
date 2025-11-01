@@ -2919,8 +2919,7 @@ def invite_organization(request):
 
             # Generate referral link
             base_url = request.build_absolute_uri(reverse("register_organization"))
-            default_referral = f"{base_url}?ref={invite_record.referral_code}"
-            referral_link = context.get("referral_link", default_referral)
+            referral_link = f"{base_url}?ref={invite_record.referral_code}"
             context["referral_link"] = referral_link
             context["show_points_message"] = True
         elif email and organization_name:
@@ -2933,7 +2932,7 @@ def invite_organization(request):
         import uuid
 
         sample_ref_code = str(uuid.uuid4())
-        base_url = request.build_absolute_uri("/organization/")
+        base_url = request.build_absolute_uri(reverse("register_organization"))
         referral_link = f"{base_url}?ref={sample_ref_code}"
         context["referral_link"] = referral_link
         context["show_points_message"] = True
@@ -2958,7 +2957,8 @@ def invite_organization(request):
         sender_name = (
             request.user.get_full_name() or request.user.username if request.user.is_authenticated else "BLT Team"
         )
-        referral_link = context.get("referral_link", "https://blt.owasp.org/organization/")
+        default_referral_url = request.build_absolute_uri(reverse("register_organization"))
+        referral_link = context.get("referral_link", default_referral_url)
 
         email_body = f"""Dear {org_name} Team,
 
