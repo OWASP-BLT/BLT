@@ -1,0 +1,72 @@
+name: Detect New Markdown Files
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  check_new_md_files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for new .md files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const repo = context.repo.repo;
+            const owner = context.repo.owner;
+
+            console.log(`Checking PR #${prNumber} for new .md files...`);
+
+            // Get all files changed in the PR
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner,
+              repo,
+              pull_number: prNumber,
+              per_page: 100
+            });
+
+            console.log(`Total files changed: ${files.length}`);
+
+            // Filter for new .md files (status: "added")
+            const newMdFiles = files.filter(file => 
+              file.status === 'added' && file.filename.toLowerCase().endsWith('.md')
+            );
+
+            if (newMdFiles.length > 0) {
+              console.log(`Found ${newMdFiles.length} new .md file(s):`);
+              newMdFiles.forEach(file => console.log(`  - ${file.filename}`));
+
+              // Create the comment message
+              const fileList = newMdFiles.map(file => `- \`${file.filename}\``).join('\n');
+              const message = [
+                '⚠️ **New Markdown Files Detected**',
+                '',
+                'This PR adds the following new .md file(s):',
+                '',
+                fileList,
+                '',
+                'Please remove these markdown files from the PR. If you believe this file is necessary, please discuss it with the maintainers first.',
+                '',
+                'Thank you for your contribution! 🙏'
+              ].join('\n');
+
+              // Post the comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: message
+              });
+
+              console.log('Comment posted successfully.');
+            } else {
+              console.log('No new .md files detected.');
+            }
