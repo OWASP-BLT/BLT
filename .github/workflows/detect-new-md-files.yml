@@ -25,18 +25,29 @@ jobs:
 
             console.log(`Checking PR #${prNumber} for new .md files...`);
 
-            // Get all files changed in the PR
-            const { data: files } = await github.rest.pulls.listFiles({
-              owner,
-              repo,
-              pull_number: prNumber,
-              per_page: 100
-            });
+            // Get all files changed in the PR with pagination
+            let allFiles = [];
+            let page = 1;
+            let hasMorePages = true;
+            
+            while (hasMorePages) {
+              const { data: files } = await github.rest.pulls.listFiles({
+                owner,
+                repo,
+                pull_number: prNumber,
+                per_page: 100,
+                page: page
+              });
+              
+              allFiles = allFiles.concat(files);
+              hasMorePages = files.length === 100;
+              page++;
+            }
 
-            console.log(`Total files changed: ${files.length}`);
+            console.log(`Total files changed: ${allFiles.length}`);
 
             // Filter for new .md files (status: "added")
-            const newMdFiles = files.filter(file => 
+            const newMdFiles = allFiles.filter(file => 
               file.status === 'added' && file.filename.toLowerCase().endsWith('.md')
             );
 
