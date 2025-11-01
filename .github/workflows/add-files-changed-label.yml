@@ -29,8 +29,8 @@ jobs:
         run: |
           echo "Starting Files Changed Label workflow for PR #$PR_NUMBER in $REPO_OWNER/$REPO_NAME"
           
-          # Check if PR is from Copilot bot
-          if [[ "$PR_AUTHOR" == *"copilot"* ]] || [[ "$PR_AUTHOR" == *"Copilot"* ]]; then
+          # Check if PR is from Copilot bot (case-insensitive)
+          if [[ "${PR_AUTHOR,,}" == *"copilot"* ]]; then
             echo "This PR is from Copilot bot: $PR_AUTHOR"
             echo "Skipping label operations for Copilot PRs to avoid permission issues."
             exit 0
