@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% load i18n %}
+{% block natural_content %}
+    {% include "includes/sidenav.html" %}
+    {% block account_content_wrapper %}
+        <div class="flex items-center min-h-screen p-4 bg-gray-100 lg:justify-center">
+            {% block account_content %}
+                <!-- Account specific content goes here -->
+            {% endblock account_content %}
+        </div>
+    {% endblock account_content_wrapper %}
+{% endblock natural_content %}
+{% block extra_css %}
+    {{ block.super }}
+    {% block account_extra_css %}
+    {% endblock account_extra_css %}
+{% endblock extra_css %}
+{% block extra_js %}
+    {{ block.super }}
+    {% block account_extra_js %}
+    {% endblock account_extra_js %}
+{% endblock extra_js %}
