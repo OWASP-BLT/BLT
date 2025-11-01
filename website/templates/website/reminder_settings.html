@@ -1,14 +1,47 @@
 {% extends "base.html" %}
 {% load static %}
+{% block style %}
+    <style>
+        /* Hide white footer space */
+        body > div.pb-\[50px\] {
+            display: none !important;
+        }
+        /* Remove extra padding from main tag */
+        main {
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            min-height: auto !important;
+        }
+        /* Remove header spacing div */
+        body > div.w-full.h-\[50px\] {
+            display: none !important;
+        }
+        /* Ensure container fits viewport accounting for fixed header */
+        .reminder-wrapper {
+            margin-top: 60px !important;
+            height: calc(100vh - 60px) !important;
+            box-sizing: border-box;
+            overflow-y: hidden; /* Prevent wrapper from scrolling */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f9fafb; /* bg-gray-50 */
+        }
+        /* Prevent body from scrolling */
+        body {
+            overflow: hidden;
+        }
+    </style>
+{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 py-8">
-        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="reminder-wrapper">
+        <div class="max-w-2xl w-full mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
-            <div class="mb-8 text-center sm:text-left">
+            <div class="mb-6 text-center sm:text-left">
                 <h1 class="text-2xl font-bold text-gray-800">Reminder Settings</h1>
-                <div class="h-1 w-20 bg-[#e74c3c] mt-2 mb-3"></div>
-                <p class="mt-2 text-gray-600">Customize when and how you receive your daily reminders</p>
+                <div class="h-1 w-20 bg-[#e74c3c] mt-2 mb-3 mx-auto sm:mx-0"></div>
+                <p class="mt-2 text-gray-600 text-sm">Customize when and how you receive your daily reminders</p>
             </div>
             <!-- Card -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -44,10 +77,10 @@
                 {% endif %}
                 <!-- Form -->
                 <div class="p-4">
-                    <form method="post" class="space-y-6">
+                    <form method="post" class="space-y-4">
                         {% csrf_token %}
                         <!-- Reminder Status -->
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between">
                             <div class="flex items-center">
                                 <span class="mr-3 text-[#e74c3c]">
                                     <svg class="w-6 h-6"
@@ -59,7 +92,7 @@
                                     </svg>
                                 </span>
                                 <div>
-                                    <h3 class="font-medium text-gray-800">Daily Reminders</h3>
+                                    <h3 class="font-medium text-gray-800 text-sm">Daily Reminders</h3>
                                     <p class="text-sm text-gray-500">Receive a notification every day</p>
                                 </div>
                             </div>
@@ -69,9 +102,9 @@
                                 </div>
                             </label>
                         </div>
-                        <div class="flex flex-col gap-6">
+                        <div class="flex flex-col gap-4">
                             <!-- Reminder Time -->
-                            <div class="space-y-2">
+                            <div class="space-y-1">
                                 <label for="{{ form.reminder_time.id_for_label }}"
                                        class="block text-sm font-medium text-gray-700">
                                     What time would you like to be reminded?
@@ -79,8 +112,8 @@
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 z-20">
                                         <svg xmlns="http://www.w3.org/2000/svg"
-                                             width="20"
-                                             height="20"
+                                             width="18"
+                                             height="18"
                                              viewBox="0 0 20 20"
                                              fill="currentColor"
                                              class="w-5 h-5">
@@ -91,21 +124,21 @@
                                     <div class="time-input-wrapper w-full">{{ form.reminder_time }}</div>
                                 </div>
                                 {% if form.reminder_time.errors %}
-                                    <p class="mt-1 text-sm text-[#e74c3c]">{{ form.reminder_time.errors.0 }}</p>
+                                    <p class="mt-1 text-xs text-[#e74c3c]">{{ form.reminder_time.errors.0 }}</p>
                                 {% endif %}
                                 {% if form.reminder_time.help_text %}
                                     <p class="mt-1 text-xs text-gray-500">{{ form.reminder_time.help_text }}</p>
                                 {% endif %}
                             </div>
                             <!-- Timezone -->
-                            <div class="space-y-2">
+                            <div class="space-y-1">
                                 <label for="{{ form.timezone.id_for_label }}"
                                        class="block text-sm font-medium text-gray-700">Your timezone</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 z-20">
                                         <svg xmlns="http://www.w3.org/2000/svg"
-                                             width="20"
-                                             height="20"
+                                             width="18"
+                                             height="18"
                                              viewBox="0 0 20 20"
                                              fill="currentColor"
                                              class="w-5 h-5">
@@ -115,14 +148,14 @@
                                     </div>
                                     <div class="timezone-select-wrapper w-full">{{ form.timezone }}</div>
                                 </div>
-                                {% if form.timezone.errors %}<p class="mt-1 text-sm text-[#e74c3c]">{{ form.timezone.errors.0 }}</p>{% endif %}
+                                {% if form.timezone.errors %}<p class="mt-1 text-xs text-[#e74c3c]">{{ form.timezone.errors.0 }}</p>{% endif %}
                                 {% if form.timezone.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.timezone.help_text }}</p>{% endif %}
                             </div>
                         </div>
                         <!-- Submit Button -->
-                        <div class="pt-6">
+                        <div class="pt-4">
                             <button type="submit"
-                                    class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none transition-colors duration-200">
+                                    class="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none transition-colors duration-200">
                                 <svg class="w-5 h-5 mr-2"
                                      fill="currentColor"
                                      viewBox="0 0 20 20"
