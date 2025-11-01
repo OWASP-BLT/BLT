@@ -1,6 +1,6 @@
+import os
 from datetime import datetime
 
-import os
 import pytz
 import requests
 from django.conf import settings

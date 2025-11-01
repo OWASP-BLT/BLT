@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from website.models import Organization, ReminderSettings, UserProfile
+from website.models import Organization, ReminderSettings
 
 
 class SlackConnectionTests(TestCase):
@@ -48,9 +48,7 @@ class SlackConnectionTests(TestCase):
 
         with patch("website.views.daily_reminders.SLACK_CLIENT_ID", "test_client_id"):
             with patch("website.views.daily_reminders.SLACK_CLIENT_SECRET", "test_secret"):
-                response = self.client.get(
-                    reverse("slack_oauth_callback"), {"code": "test_code", "state": "testuser"}
-                )
+                response = self.client.get(reverse("slack_oauth_callback"), {"code": "test_code", "state": "testuser"})
 
                 self.assertEqual(response.status_code, 302)
                 self.assertRedirects(response, reverse("reminder_settings"))
