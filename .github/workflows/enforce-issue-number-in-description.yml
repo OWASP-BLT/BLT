@@ -20,7 +20,6 @@ jobs:
       github.actor != 'dependabot[bot]'
       && github.actor != 'dependabot-preview[bot]'
       && github.actor != 'dependabot'
-      && github.actor != github.repository_owner
       && github.actor != 'sentry-autofix'
       && github.actor != 'DonnieBLT'
     steps:
