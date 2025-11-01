@@ -42,8 +42,8 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/files")
           
-          # Check if the API request was successful
-          if [[ "$FILES_API_RESPONSE" == *"message"*"Not Found"* ]] || [[ "$FILES_API_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+          # Check if the API request was successful by verifying it's a valid array
+          if ! echo "$FILES_API_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
             echo "Error: Could not fetch PR files. Response: $FILES_API_RESPONSE"
             exit 1
           fi
