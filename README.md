@@ -71,7 +71,7 @@
 - 💰 **Staking System** - Innovative blockchain-based reward system for contributors
 - 📊 **Comprehensive Dashboard** - Track your progress, statistics, and impact
 - 🌐 **Open Source** - Built with transparency and collaboration at its core
-- 🛡️ **OWASP Project** - Part of the Open Web Application Security Project family
+- 🛡️ **OWASP Project** - Part of the Open Worldwide Application Security Project family
 
 ---
 
