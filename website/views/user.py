@@ -442,7 +442,21 @@ class LeaderboardBase:
         # iterating over months 1-12
         for month in range(1, 13):
             month_winner = self.get_leaderboard(month, year, api).first()
-            monthly_winner.append(month_winner)
+            month_names = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ]
+            monthly_winner.append({"month": month_names[month - 1], "user": month_winner})
 
         return monthly_winner
 
@@ -471,7 +485,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         Returns:
             dict: Context mapping names (as listed above) to their querysets or values.
         """
-        context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
         context["user_related_tags"] = user_related_tags
@@ -481,9 +495,14 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard
+        # Pull Request Leaderboard - Filter out empty usernames
         pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            GitHubIssue.objects.filter(
+                type="pull_request",
+                is_merged=True,
+                user_profile__user__username__isnull=False,
+            )
+            .exclude(user_profile__user__username="")
             .values(
                 "user_profile__user__username",
                 "user_profile__user__email",
@@ -494,9 +513,13 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Reviewed PR Leaderboard - Fixed query to properly count reviews
+        # Code Review Leaderboard - Filter out empty usernames
         reviewed_pr_leaderboard = (
-            GitHubReview.objects.values(
+            GitHubReview.objects.filter(
+                reviewer__user__username__isnull=False,
+            )
+            .exclude(reviewer__user__username="")
+            .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
                 "reviewer__github_url",
@@ -506,10 +529,14 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
-        # Top visitors leaderboard
+        # Top visitors leaderboard - Filter out empty usernames
         top_visitors = (
             UserProfile.objects.select_related("user")
-            .filter(daily_visit_count__gt=0)
+            .filter(
+                daily_visit_count__gt=0,
+                user__username__isnull=False,
+            )
+            .exclude(user__username="")
             .order_by("-daily_visit_count")[:10]
         )
 
@@ -527,44 +554,20 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_eachmonth.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
+        """
+        Assembles template context for the each month leaderboard page.
+        Inherits most context from the parent class and adds month-specific data.
+        """
+        context = super().get_context_data(*args, **kwargs)
+
+        user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
+        context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
-        year = self.request.GET.get("year")
-
-        if not year:
-            year = datetime.now().year
-
-        if isinstance(year, str) and not year.isdigit():
-            raise Http404(f"Invalid query passed | Year:{year}")
-
-        year = int(year)
-
-        leaderboard = self.monthly_year_leaderboard(year)
-        month_winners = []
-
-        months = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "Novermber",
-            "December",
-        ]
-
-        for month_indx, usr in enumerate(leaderboard):
-            month_winner = {"user": usr, "month": months[month_indx]}
-            month_winners.append(month_winner)
-
-        context["leaderboard"] = month_winners
+        # Use the monthly year leaderboard for this view
+        context["leaderboard"] = self.monthly_year_leaderboard(datetime.now().year)
 
         return context
 
