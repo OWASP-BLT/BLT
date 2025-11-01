@@ -14,6 +14,13 @@ permissions:
 jobs:
   check_new_md_files:
     runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != github.repository_owner
+      && github.actor != 'sentry-autofix'
+      && github.actor != 'DonnieBLT'
     steps:
       - name: Check for new .md files
         uses: actions/github-script@v7
@@ -23,61 +30,66 @@ jobs:
             const repo = context.repo.repo;
             const owner = context.repo.owner;
 
-            console.log(`Checking PR #${prNumber} for new .md files...`);
+            try {
+              console.log(`Checking PR #${prNumber} for new .md files...`);
 
-            // Get all files changed in the PR with pagination
-            let allFiles = [];
-            let page = 1;
-            let hasMorePages = true;
-            
-            while (hasMorePages) {
-              const { data: files } = await github.rest.pulls.listFiles({
-                owner,
-                repo,
-                pull_number: prNumber,
-                per_page: 100,
-                page: page
-              });
+              // Get all files changed in the PR with pagination
+              let allFiles = [];
+              let page = 1;
+              let hasMorePages = true;
               
-              allFiles = allFiles.concat(files);
-              hasMorePages = files.length === 100;
-              page++;
-            }
+              while (hasMorePages) {
+                const { data: files } = await github.rest.pulls.listFiles({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  per_page: 100,
+                  page: page
+                });
+                
+                allFiles = allFiles.concat(files);
+                hasMorePages = files.length === 100;
+                page++;
+              }
 
-            console.log(`Total files changed: ${allFiles.length}`);
+              console.log(`Total files changed: ${allFiles.length}`);
 
-            // Filter for new .md files (status: "added")
-            const newMdFiles = allFiles.filter(file => 
-              file.status === 'added' && file.filename.toLowerCase().endsWith('.md')
-            );
+              // Filter for new .md files (status: "added")
+              const newMdFiles = allFiles.filter(file => 
+                file.status === 'added' && file.filename.toLowerCase().endsWith('.md')
+              );
 
-            if (newMdFiles.length > 0) {
-              console.log(`Found ${newMdFiles.length} new .md file(s):`);
-              newMdFiles.forEach(file => console.log(`  - ${file.filename}`));
+              if (newMdFiles.length > 0) {
+                console.log(`Found ${newMdFiles.length} new .md file(s):`);
+                newMdFiles.forEach(file => console.log(`  - ${file.filename}`));
 
-              // Create the comment message
-              const fileList = newMdFiles.map(file => `- \`${file.filename}\``).join('\n');
-              const message = [
-                '⚠️ **New Markdown Files Detected**',
-                '',
-                'This PR adds the following new .md file(s):',
-                '',
-                fileList,
-                '',
-                'Please remove these markdown files from the PR. If you believe this file is necessary, please discuss it with the maintainers first.',
-                '',
-                'Thank you for your contribution! 🙏'
-              ].join('\n');
+                // Create the comment message
+                const fileList = newMdFiles.map(file => `- \`${file.filename}\``).join('\n');
+                const message = [
+                  '⚠️ **New Markdown Files Detected**',
+                  '',
+                  'This PR adds the following new .md file(s):',
+                  '',
+                  fileList,
+                  '',
+                  'Please remove these markdown files from the PR. If you believe this file is necessary, please discuss it with the maintainers first.',
+                  '',
+                  'Thank you for your contribution! 🙏'
+                ].join('\n');
 
-              // Post the comment
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: prNumber,
-                body: message
-              });
+                // Post the comment
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  body: message
+                });
 
-              console.log('Comment posted successfully.');
-            } else {
-              console.log('No new .md files detected.');
+                console.log('Comment posted successfully.');
+              } else {
+                console.log('No new .md files detected.');
+              }
+            } catch (error) {
+              console.error(`Error checking for new .md files: ${error.message}`);
+              throw error;
             }
