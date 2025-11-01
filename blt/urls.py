@@ -92,6 +92,7 @@ from website.views.core import (
     add_forum_post,
     badge_list,
     check_owasp_compliance,
+    delete_forum_post,
     donate_view,
     facebook_callback,
     features_view,
@@ -939,6 +940,7 @@ urlpatterns = [
     path("forum/vote/", vote_forum_post, name="vote_forum_post"),
     path("forum/set-vote-status/", set_vote_status, name="set_vote_status"),
     path("forum/comment/", add_forum_comment, name="add_forum_comment"),
+    path("forum/delete/", delete_forum_post, name="delete_forum_post"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s\W]+)$",
         trademark_detailview,

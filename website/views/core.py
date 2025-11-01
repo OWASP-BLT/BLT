@@ -899,17 +899,52 @@ def add_forum_comment(request):
     return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
+@login_required
+def delete_forum_post(request):
+    if request.method == "POST":
+        if not request.user.is_superuser:
+            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
+
+        try:
+            data = json.loads(request.body)
+            post_id = data.get("post_id")
+
+            if not post_id:
+                return JsonResponse({"status": "error", "message": "Post ID is required"})
+
+            post = ForumPost.objects.get(id=post_id)
+            post.delete()
+
+            return JsonResponse({"status": "success", "message": "Post deleted successfully"})
+        except ForumPost.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Post not found"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
 def view_forum(request):
     categories = ForumCategory.objects.all()
     selected_category = request.GET.get("category")
 
     posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+    total_posts_count = posts.count()
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
     return render(
-        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+        request,
+        "forum.html",
+        {
+            "categories": categories,
+            "posts": posts,
+            "selected_category": selected_category,
+            "total_posts_count": total_posts_count,
+        },
     )
 
 
