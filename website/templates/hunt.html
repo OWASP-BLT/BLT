@@ -67,7 +67,7 @@
                            name="name"
                            value="{{ form.url.value|default:'' }}">
                 </div>
-                    {% if form.errors %}<p class="text-red-500 text-xs mt-0.5">{{ form.url.errors }}</p>{% endif %}
+                    {% if form.errors %}<p class="text-red-500 text-xs mt-0.5">{{ form.name.errors }}</p>{% endif %}
                     <div class="flex items-center border rounded-lg overflow-hidden">
                         <i class="fa fa-link bg-red-500 text-white p-2.5 text-xs"></i>
                         <input class="w-full py-1.5 px-2.5 outline-none placeholder:text-xs text-xs"
@@ -76,7 +76,7 @@
                            name="url"
                            value="{{ form.url.value|default:'' }}">
                 </div>
-                    {% if form.errors %}<p class="text-red-500 text-xs mt-0.5">{{ form.name.errors }}</p>{% endif %}
+                    {% if form.errors %}<p class="text-red-500 text-xs mt-0.5">{{ form.url.errors }}</p>{% endif %}
                     <div class="relative flex flex-col border-2 border-dashed border-gray-300 rounded-lg p-2 hover:border-red-500 transition-colors duration-300 group">
                         <div class="flex items-center justify-center mb-1">
                             <i class="fa fa-cloud-upload text-lg text-red-500 group-hover:scale-110 transition-transform duration-300"></i>
@@ -99,7 +99,7 @@
                                   class="w-full py-1.5 px-2.5 outline-none placeholder:text-xs text-xs h-[60px]"
                                   placeholder="Describe bug issue">{{ form.description.value|default:'' }}</textarea>
                     </div>
-                    {% if form.description.errors %}<p class="text-red-500 text-xs mt-0.5">{{ form.descriptioon.errors }}</p>{% endif %}
+                    {% if form.description.errors %}<p class="text-red-500 text-xs mt-0.5">{{ form.description.errors }}</p>{% endif %}
                     <div>
                         <div class="flex items-center border rounded-lg overflow-hidden">
                             <i class="fa fa-tag bg-red-500 text-white p-2.5 text-xs"></i>
