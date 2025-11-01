@@ -920,7 +920,8 @@ def delete_forum_post(request):
             return JsonResponse({"status": "error", "message": "Post not found"})
         except json.JSONDecodeError:
             return JsonResponse({"status": "error", "message": "Invalid JSON data"})
-        except Exception:
+        except Exception as e:
+            logging.exception("Unexpected error deleting forum post")
             return JsonResponse({"status": "error", "message": "Server error occurred"})
 
     return JsonResponse({"status": "error", "message": "Invalid request method"})

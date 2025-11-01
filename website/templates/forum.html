@@ -126,8 +126,9 @@
                                     <button type="button"
                                             class="flex items-center gap-2 px-4 py-2 rounded-md bg-red-100 text-[#e74c3c] hover:bg-red-200 transition-colors duration-200"
                                             onclick="deletePost({{ post.id }})"
+                                            aria-label="Delete post: {{ post.title }}"
                                             title="Delete this post">
-                                        <i class="fas fa-trash"></i>
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
                                         Delete
                                     </button>
                                 {% endif %}
