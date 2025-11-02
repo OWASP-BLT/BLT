@@ -227,7 +227,7 @@ class RegisterOrganizationView(View):
                 except InviteOrganization.DoesNotExist:
                     # Invalid or already used referral code - use default message
                     pass
-                except Exception as e:
+                except Exception:
                     # Log the error but don't fail organization creation - use default message
                     logger.exception("Failed to process referral code during organization registration")
                 finally:
@@ -237,7 +237,7 @@ class RegisterOrganizationView(View):
 
                 messages.success(request, success_message)
 
-        except ValidationError as e:
+        except ValidationError:
             messages.error(
                 request,
                 "Failed to save organization. Please check that all required fields are filled correctly and the organization name/URL are unique.",

@@ -2912,6 +2912,11 @@ def invite_organization(request):
         email = request.POST.get("email", "").strip()
         organization_name = request.POST.get("organization_name", "").strip()
 
+        if request.user.is_authenticated and not (email and organization_name):
+            messages.error(request, "Please provide both email and organization name.")
+            context["exists"] = False
+            context["user_logged_in"] = True
+            return render(request, "invite.html", context)
         if request.user.is_authenticated and email and organization_name:
             # Create invite record for logged-in users
             invite_record = InviteOrganization.objects.create(

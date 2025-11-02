@@ -117,6 +117,8 @@ class OrganizationInviteTestCase(TestCase):
         invite.refresh_from_db()
         self.assertTrue(invite.points_awarded)
         self.assertEqual(invite.organization, organization)
+        # Session cleanup
+        self.assertIsNone(self.client.session.get("org_ref"))
 
     def test_organization_registration_without_referral_no_points(self):
         """Test that registering without referral doesn't award points"""

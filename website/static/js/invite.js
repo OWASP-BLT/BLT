@@ -5,9 +5,17 @@
 
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
-    const text = element.textContent;
+    if (!element) {
+        console.warn('copyToClipboard: element not found', elementId);
+        return;
+    }
+    const text = 'value' in element ? element.value : element.textContent || '';
     
-    navigator.clipboard.writeText(text).then(function() {
+    // Feature-detect clipboard API; fallback to manual selection
+    const write = navigator.clipboard && typeof navigator.clipboard.writeText === 'function'
+        ? navigator.clipboard.writeText(text)
+        : Promise.reject(new Error('Clipboard API not available'));
+    write.then(function() {
         // Show success feedback
         const button = document.querySelector(`button[onclick="copyToClipboard('${elementId}')"]`);
         if (button) {
@@ -35,7 +43,10 @@ function copyEmailContent() {
     const body = document.getElementById('email-body').textContent;
     const fullContent = `Subject: ${subject}\n\n${body}`;
     
-    navigator.clipboard.writeText(fullContent).then(function() {
+    (navigator.clipboard && typeof navigator.clipboard.writeText === 'function'
+        ? navigator.clipboard.writeText(fullContent)
+        : Promise.reject(new Error('Clipboard API not available'))
+    ).then(function() {
         // Show success feedback
         const button = document.querySelector('button[onclick="copyEmailContent()"]');
         if (button) {
@@ -52,13 +63,23 @@ function copyEmailContent() {
         }
     }).catch(function(err) {
         console.error('Failed to copy text: ', err);
-        alert('Copy functionality requires a secure context (HTTPS). Please copy manually.');
+        // Fallback: select the email body to aid manual copy
+        const bodyEl = document.getElementById('email-body');
+        if (bodyEl) selectText(bodyEl);
+        alert('Copy requires HTTPS or user gesture. Text selected for manual copy.');
     });
 }
 
 function selectText(element) {
+    if (!element) return;
+    if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+        element.focus();
+        element.select();
+        return;
+    }
     const range = document.createRange();
-    range.selectNode(element);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
+    range.selectNodeContents(element);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
 }
