@@ -10,8 +10,8 @@ from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.db import DatabaseError
 from django.shortcuts import redirect, render
-from django.utils.crypto import get_random_string
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
 

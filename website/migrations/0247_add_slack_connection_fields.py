@@ -12,9 +12,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="userprofile",
             name="slack_user_id",
-            field=models.CharField(
-                blank=True, help_text="Slack user ID for DM reminders", max_length=50, null=True
-            ),
+            field=models.CharField(blank=True, help_text="Slack user ID for DM reminders", max_length=50, null=True),
         ),
         migrations.AddField(
             model_name="remindersettings",
