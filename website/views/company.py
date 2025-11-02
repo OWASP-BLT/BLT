@@ -144,7 +144,7 @@ class RegisterOrganizationView(View):
                 # Verify the referral code exists in the database
                 if not InviteOrganization.objects.filter(referral_code=ref_code, points_awarded=False).exists():
                     messages.warning(request, "Invalid or expired referral code.")
-                    return render(request, "organization/register_organization.html")
+                    return render(request, "organization/register_organization.html", {})
             except (ValueError, AttributeError):
                 messages.warning(request, "Invalid referral code.")
                 return render(request, "organization/register_organization.html", {})
@@ -205,43 +205,82 @@ class RegisterOrganizationView(View):
                 ref_code = request.session.get("org_ref")
                 success_message = "Organization registered successfully."
 
-                # Handle referral code and award points in a nested transaction
-                # so failures don't roll back organization creation
-                try:
-                    with transaction.atomic():
+                # Handle referral code after transaction commits to prevent failures from rolling back organization creation
+                def handle_referral():
+                    try:
                         if ref_code:
-                            invite = InviteOrganization.objects.select_for_update().get(
-                                referral_code=ref_code, points_awarded=False
-                            )
-                            if not invite.sender:
-                                raise ValueError("Invalid invite sender")
-                            # Award 5 points to the sender
-                            Points.objects.create(
-                                user=invite.sender, score=5, reason=f"Organization invite referral: {organization.name}"
-                            )
-                            # Mark points as awarded and link organization
-                            invite.points_awarded = True
-                            invite.organization = organization
-                            invite.save()
-                            success_message = f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral."
-                except InviteOrganization.DoesNotExist:
-                    # Invalid or already used referral code - use default message
-                    pass
-                except Exception:
-                    # Log the error but don't fail organization creation - use default message
-                    logger.exception("Failed to process referral code during organization registration")
-                finally:
-                    # Always clear session
+                            with transaction.atomic():
+                                invite = InviteOrganization.objects.select_for_update().get(
+                                    referral_code=ref_code, points_awarded=False
+                                )
+                                if not invite.sender:
+                                    raise ValueError("Invalid invite sender")
+                                # Award 5 points to the sender
+                                Points.objects.create(
+                                    user=invite.sender,
+                                    score=5,
+                                    reason=f"Organization invite referral: {organization.name}",
+                                )
+                                # Mark points as awarded and link organization
+                                invite.points_awarded = True
+                                invite.organization = organization
+                                invite.save()
+                    except InviteOrganization.DoesNotExist:
+                        # Invalid or already used referral code - silently ignore
+                        pass
+                    except Exception:
+                        # Log the error but don't fail - organization creation already succeeded
+                        logger.exception("Failed to process referral code during organization registration")
+                    finally:
+                        # Always clear session
+                        if "org_ref" in request.session:
+                            del request.session["org_ref"]
+
+                # Schedule referral processing after transaction commits
+                if ref_code:
+                    transaction.on_commit(handle_referral)
+                    # Update success message optimistically - actual processing happens after commit
+                    try:
+                        invite = InviteOrganization.objects.get(referral_code=ref_code, points_awarded=False)
+                        if invite.sender:
+                            success_message = f"Organization registered successfully! {invite.sender.username} will earn 5 points for the referral."
+                    except InviteOrganization.DoesNotExist:
+                        pass
+                else:
+                    # Clear session immediately if no referral code
                     if "org_ref" in request.session:
                         del request.session["org_ref"]
 
                 messages.success(request, success_message)
 
-        except ValidationError:
-            messages.error(
-                request,
-                "Failed to save organization. Please check that all required fields are filled correctly and the organization name/URL are unique.",
-            )
+        except ValidationError as e:
+            # Construct a more specific error message based on validation errors
+            error_messages = []
+
+            if hasattr(e, "message_dict"):
+                # Field-specific validation errors
+                for field, messages_list in e.message_dict.items():
+                    if field == "name":
+                        error_messages.append("Organization name is invalid or already exists.")
+                    elif field == "url":
+                        error_messages.append("Organization URL is invalid or already exists.")
+                    elif field == "email":
+                        error_messages.append("Support email address is invalid.")
+                    else:
+                        error_messages.append(f"Invalid {field.replace('_', ' ')}: {', '.join(messages_list)}")
+            elif hasattr(e, "messages"):
+                # General validation errors
+                error_messages.extend(e.messages)
+            else:
+                # Fallback to generic message
+                error_messages.append(
+                    "Please check that all required fields are filled correctly and the organization name/URL are unique."
+                )
+
+            # Display all error messages
+            for error_msg in error_messages:
+                messages.error(request, error_msg)
+
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
@@ -1455,8 +1494,12 @@ class OrganizationDashboardManageRolesView(View):
         # Handle both with and without scheme
         if "://" not in organization_url:
             organization_url = f"https://{organization_url}"
-        parsed_url = urlparse(organization_url)
-        organization_domain = parsed_url.netloc.replace("www.", "").strip()
+        try:
+            parsed_url = urlparse(organization_url)
+            organization_domain = parsed_url.netloc.replace("www.", "").strip()
+        except Exception:
+            logger.warning(f"Failed to parse organization URL: {organization_obj.url}")
+            organization_domain = ""
 
         # Try to get users matching organization email domain
         if organization_domain:
@@ -1576,6 +1619,11 @@ class OrganizationDashboardManageRolesView(View):
 
                 if existing_role:
                     messages.error(request, f"{user.username} already has an active role in this organization")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Prevent assigning role to organization owner
+                if user == organization_obj.admin:
+                    messages.error(request, "Cannot assign role to organization owner (already has full access)")
                     return redirect("organization_manage_roles", id=id)
 
                 # Check if user is trying to assign themselves

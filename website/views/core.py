@@ -1761,8 +1761,8 @@ def management_commands(request):
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                command_instance = command_class()
+                command_instance.add_arguments(parser)
 
                 # Extract argument information
                 for action in parser._actions:
@@ -1901,8 +1901,8 @@ def run_management_command(request):
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                command_instance = command_class()
+                command_instance.add_arguments(parser)
 
                 # Extract argument information and collect values from POST
                 for action in parser._actions:
@@ -2915,8 +2915,6 @@ def invite_organization(request):
         if request.user.is_authenticated and not (email and organization_name):
             messages.error(request, "Please provide both email and organization name.")
             context["exists"] = False
-            context["user_logged_in"] = True
-            return render(request, "invite.html", context)
         if request.user.is_authenticated and email and organization_name:
             # Create invite record for logged-in users
             invite_record = InviteOrganization.objects.create(
@@ -2945,9 +2943,11 @@ def invite_organization(request):
     elif not request.user.is_authenticated:
         context["show_login_prompt"] = True
 
-    # Add template context variables
-    email = request.POST.get("email", "")
-    organization_name = request.POST.get("organization_name", "")
+    # Add template context variables - check if we have the data in context or POST
+    email = context.get("email") or (request.POST.get("email", "").strip() if request.method == "POST" else "")
+    organization_name = context.get("organization_name") or (
+        request.POST.get("organization_name", "").strip() if request.method == "POST" else ""
+    )
 
     if email and organization_name:
         context["exists"] = True
