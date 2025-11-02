@@ -226,6 +226,7 @@ def slack_oauth_callback(request):
                 "code": code,
                 "redirect_uri": redirect_uri,
             },
+            timeout=10,
         )
 
         data = response.json()
