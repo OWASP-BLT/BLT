@@ -321,7 +321,7 @@
                                             <a href="{% url 'profile' profile.user.username %}"
                                                class="font-medium hover:text-[#e74c3c]">{{ profile.user.username }}</a>
                                         </div>
-                                        <span class="text-green-600 font-medium">${{ profile.winnings|floatformat:2 }}</span>
+                                        <span class="text-green-600 font-medium">${{ profile.total_earnings|floatformat:2 }}</span>
                                     </div>
                                 {% empty %}
                                     <div class="text-center text-gray-500">
