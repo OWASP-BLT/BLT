@@ -32,7 +32,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.db import connection, models
-from django.db.models import Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import Case, Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -1327,8 +1327,6 @@ def home(request):
 
     # Get top earners - calculate from GitHub issues payments if they have linked GitHub issues,
     # otherwise use the existing winnings field
-    from django.db.models import Case, When
-
     # Annotate each UserProfile with total GitHub issue payments
     top_earners = (
         UserProfile.objects.annotate(

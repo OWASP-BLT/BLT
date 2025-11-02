@@ -130,11 +130,34 @@ class TopEarnersTests(TestCase):
         # Create a test repository
         self.repo = Repo.objects.create(name="TestRepo", repo_url="https://github.com/test/repo")
 
-    def test_top_earners_queryset_from_github_issues(self):
-        """Test that top earners queryset calculation uses GitHub issue payments when available"""
+    def _get_top_earners_queryset(self):
+        """Helper method that executes the same query as in the home view"""
         from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
         from django.db.models.functions import Coalesce
 
+        return (
+            UserProfile.objects.annotate(
+                github_earnings=Coalesce(
+                    Sum("github_issues__p2p_amount_usd", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
+                    Value(0),
+                    output_field=DecimalField(),
+                ),
+                has_github_issues=Count("github_issues", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
+                total_earnings=Case(
+                    # If user has GitHub issues with payments, use those
+                    When(has_github_issues__gt=0, then=F("github_earnings")),
+                    # Otherwise fall back to the existing winnings field
+                    default=Coalesce(F("winnings"), Value(0), output_field=DecimalField()),
+                    output_field=DecimalField(),
+                ),
+            )
+            .filter(total_earnings__gt=0)
+            .select_related("user")
+            .order_by("-total_earnings")[:5]
+        )
+
+    def test_top_earners_queryset_from_github_issues(self):
+        """Test that top earners queryset calculation uses GitHub issue payments when available"""
         # Create GitHub issues with payments for user1
         GitHubIssue.objects.create(
             issue_id=1,
@@ -163,29 +186,7 @@ class TopEarnersTests(TestCase):
         self.profile2.winnings = Decimal("60.00")
         self.profile2.save()
 
-        # Execute the same query as in the home view
-        top_earners = (
-            UserProfile.objects.annotate(
-                github_earnings=Coalesce(
-                    Sum("github_issues__p2p_amount_usd", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-                    Value(0),
-                    output_field=DecimalField(),
-                ),
-                has_github_issues=Count("github_issues", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-                total_earnings=Case(
-                    # If user has GitHub issues with payments, use those
-                    When(has_github_issues__gt=0, then=F("github_earnings")),
-                    # Otherwise fall back to the existing winnings field
-                    default=Coalesce(F("winnings"), Value(0), output_field=DecimalField()),
-                    output_field=DecimalField(),
-                ),
-            )
-            .filter(total_earnings__gt=0)
-            .select_related("user")
-            .order_by("-total_earnings")[:5]
-        )
-
-        top_earners_list = list(top_earners)
+        top_earners_list = list(self._get_top_earners_queryset())
 
         # Verify user1's total is calculated from GitHub issues (50 + 30 = 80)
         user1_earner = next((e for e in top_earners_list if e.user == self.user1), None)
@@ -203,9 +204,6 @@ class TopEarnersTests(TestCase):
 
     def test_top_earners_queryset_fallback_to_winnings(self):
         """Test that winnings field is used when no GitHub issues with payments exist"""
-        from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
-        from django.db.models.functions import Coalesce
-
         # Set winnings for user profiles without GitHub issues
         self.profile1.winnings = Decimal("100.00")
         self.profile1.save()
@@ -213,27 +211,7 @@ class TopEarnersTests(TestCase):
         self.profile2.winnings = Decimal("50.00")
         self.profile2.save()
 
-        # Execute the same query as in the home view
-        top_earners = (
-            UserProfile.objects.annotate(
-                github_earnings=Coalesce(
-                    Sum("github_issues__p2p_amount_usd", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-                    Value(0),
-                    output_field=DecimalField(),
-                ),
-                has_github_issues=Count("github_issues", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-                total_earnings=Case(
-                    When(has_github_issues__gt=0, then=F("github_earnings")),
-                    default=Coalesce(F("winnings"), Value(0), output_field=DecimalField()),
-                    output_field=DecimalField(),
-                ),
-            )
-            .filter(total_earnings__gt=0)
-            .select_related("user")
-            .order_by("-total_earnings")[:5]
-        )
-
-        top_earners_list = list(top_earners)
+        top_earners_list = list(self._get_top_earners_queryset())
 
         # All earnings should come from winnings field
         user1_earner = next((e for e in top_earners_list if e.user == self.user1), None)
@@ -246,9 +224,6 @@ class TopEarnersTests(TestCase):
 
     def test_top_earners_queryset_mixed_sources(self):
         """Test that the calculation works correctly with mixed payment sources"""
-        from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
-        from django.db.models.functions import Coalesce
-
         # User1: Has GitHub issues with payments
         GitHubIssue.objects.create(
             issue_id=10,
@@ -284,27 +259,7 @@ class TopEarnersTests(TestCase):
         self.profile3.winnings = Decimal("40.00")
         self.profile3.save()
 
-        # Execute the same query as in the home view
-        top_earners = (
-            UserProfile.objects.annotate(
-                github_earnings=Coalesce(
-                    Sum("github_issues__p2p_amount_usd", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-                    Value(0),
-                    output_field=DecimalField(),
-                ),
-                has_github_issues=Count("github_issues", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-                total_earnings=Case(
-                    When(has_github_issues__gt=0, then=F("github_earnings")),
-                    default=Coalesce(F("winnings"), Value(0), output_field=DecimalField()),
-                    output_field=DecimalField(),
-                ),
-            )
-            .filter(total_earnings__gt=0)
-            .select_related("user")
-            .order_by("-total_earnings")[:5]
-        )
-
-        top_earners_list = list(top_earners)
+        top_earners_list = list(self._get_top_earners_queryset())
 
         # User1 should use GitHub issue payment (75.00), not winnings (10.00)
         user1_earner = next((e for e in top_earners_list if e.user == self.user1), None)
