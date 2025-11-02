@@ -87,14 +87,14 @@ class OrganizationInviteTestCase(TestCase):
         )
 
         # Create another user to register the organization
-        org_admin = User.objects.create_user(username="orgadmin", email="admin@company.com", password="testpass123")
+        User.objects.create_user(username="orgadmin", email="admin@company.com", password="testpass123")
         self.client.login(username="orgadmin", password="testpass123")
 
         # Visit registration page with referral code
         self.client.get(f"{self.register_org_url}?ref={invite.referral_code}")
 
         # Register organization
-        response = self.client.post(
+        self.client.post(
             self.register_org_url,
             {
                 "organization_name": "Test Company",
@@ -123,11 +123,11 @@ class OrganizationInviteTestCase(TestCase):
         from website.models import Organization, Points
 
         # Create user to register organization
-        org_admin = User.objects.create_user(username="orgadmin", email="admin@company.com", password="testpass123")
+        User.objects.create_user(username="orgadmin", email="admin@company.com", password="testpass123")
         self.client.login(username="orgadmin", password="testpass123")
 
         # Register organization without referral
-        response = self.client.post(
+        self.client.post(
             self.register_org_url,
             {
                 "organization_name": "Test Company",
@@ -155,7 +155,7 @@ class OrganizationInviteTestCase(TestCase):
         )
 
         # Create first organization with referral
-        org_admin1 = User.objects.create_user(username="orgadmin1", email="admin1@company.com", password="testpass123")
+        User.objects.create_user(username="orgadmin1", email="admin1@company.com", password="testpass123")
         self.client.login(username="orgadmin1", password="testpass123")
         self.client.get(f"{self.register_org_url}?ref={invite.referral_code}")
         self.client.post(
@@ -169,7 +169,7 @@ class OrganizationInviteTestCase(TestCase):
         )
 
         # Try to create second organization with same referral
-        org_admin2 = User.objects.create_user(username="orgadmin2", email="admin2@company.com", password="testpass123")
+        User.objects.create_user(username="orgadmin2", email="admin2@company.com", password="testpass123")
         self.client.login(username="orgadmin2", password="testpass123")
         self.client.get(f"{self.register_org_url}?ref={invite.referral_code}")
         self.client.post(
@@ -191,14 +191,14 @@ class OrganizationInviteTestCase(TestCase):
         from website.models import Organization, Points
 
         # Create user to register organization
-        org_admin = User.objects.create_user(username="orgadmin", email="admin@company.com", password="testpass123")
+        User.objects.create_user(username="orgadmin", email="admin@company.com", password="testpass123")
         self.client.login(username="orgadmin", password="testpass123")
 
         # Visit registration page with invalid referral code
         self.client.get(f"{self.register_org_url}?ref=invalid-code-123")
 
         # Register organization
-        response = self.client.post(
+        self.client.post(
             self.register_org_url,
             {
                 "organization_name": "Test Company",

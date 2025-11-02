@@ -203,6 +203,8 @@ class RegisterOrganizationView(View):
                 organization.save()
 
                 ref_code = request.session.get("org_ref")
+                success_message = "Organization registered successfully."
+
                 # Handle referral code and award points in a nested transaction
                 # so failures don't roll back organization creation
                 try:
@@ -221,26 +223,25 @@ class RegisterOrganizationView(View):
                             invite.points_awarded = True
                             invite.organization = organization
                             invite.save()
-                            messages.success(
-                                request,
-                                f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral.",
-                            )
+                            success_message = f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral."
                 except InviteOrganization.DoesNotExist:
-                    # Invalid or already used referral code
-                    messages.success(request, "Organization registered successfully.")
+                    # Invalid or already used referral code - use default message
+                    pass
                 except Exception as e:
-                    # Log the error but don't fail organization creation
-                    logger.exception(f"Error processing referral: {e}")
-                    messages.success(request, "Organization registered successfully.")
+                    # Log the error but don't fail organization creation - use default message
+                    logger.exception("Failed to process referral code during organization registration")
                 finally:
                     # Always clear session
                     if "org_ref" in request.session:
                         del request.session["org_ref"]
-                if not ref_code:
-                    messages.success(request, "Organization registered successfully.")
+
+                messages.success(request, success_message)
 
         except ValidationError as e:
-            messages.error(request, f"Error saving organization: {e}")
+            messages.error(
+                request,
+                "Failed to save organization. Please check that all required fields are filled correctly and the organization name/URL are unique.",
+            )
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")

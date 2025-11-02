@@ -6,6 +6,7 @@ import re
 import subprocess
 import tracemalloc
 import urllib
+import uuid
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -2929,7 +2930,6 @@ def invite_organization(request):
     # Check if user is authenticated for referral tracking (GET request or after POST)
     if request.user.is_authenticated and "referral_link" not in context:
         # For GET requests, generate a sample referral link without creating records
-        import uuid
 
         sample_ref_code = str(uuid.uuid4())
         base_url = request.build_absolute_uri(reverse("register_organization"))
