@@ -505,9 +505,13 @@ class Listbounties(TemplateView):
 
         # Calculate bounty statistics
         BOUNTY_AMOUNT = 5  # Dollar amount per bounty issue
-        dollar5_issues = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed")
+        # Count open issues with $5 tag
+        dollar5_issues = GitHubIssue.objects.filter(has_dollar_tag=True, state="open")
         total_issues_count = dollar5_issues.count()
-        paid_issues = dollar5_issues.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
+        # Count paid issues (closed issues with payment info)
+        paid_issues = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed").filter(
+            Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False)
+        )
         paid_count = paid_issues.count()
         grand_total_payouts = paid_count * BOUNTY_AMOUNT
 
@@ -2429,8 +2433,7 @@ def update_organization_repos(request, slug):
                     elif response.status_code != 200:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                         yield (
-                            f"data: $ Error: GitHub API returned {response.status_code}. "
-                            f"Response: {response_text}\n\n"
+                            f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
                         )
                         yield "data: DONE\n\n"
                         return
@@ -2483,20 +2486,15 @@ def update_organization_repos(request, slug):
                         if response.status_code == 403:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             if "rate limit" in response.text.lower():
-                                yield (
-                                    f"data: $ Error: GitHub API rate limit exceeded. " f"Response: {response_text}\n\n"
-                                )
+                                yield (f"data: $ Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
                             else:
                                 yield (
-                                    f"data: $ Error: GitHub API access forbidden (403). "
-                                    f"Response: {response_text}\n\n"
+                                    f"data: $ Error: GitHub API access forbidden (403). Response: {response_text}\n\n"
                                 )
                             break
                         elif response.status_code == 401:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                            yield (
-                                f"data: $ Error: GitHub authentication failed (401). " f"Response: {response_text}\n\n"
-                            )
+                            yield (f"data: $ Error: GitHub authentication failed (401). Response: {response_text}\n\n")
                             yield "data: DONE\n\n"
                             return
                         elif response.status_code != 200:
@@ -3672,7 +3670,7 @@ class BountyPayoutsView(ListView):
                 if not comment_body:
                     continue
 
-                logger.info(f"Analyzing comment #{index+1} for issue #{issue_number}: {comment_body[:100]}...")
+                logger.info(f"Analyzing comment #{index + 1} for issue #{issue_number}: {comment_body[:100]}...")
 
                 # Process BCH patterns first if BCH label exists
                 if search_for_bch:
