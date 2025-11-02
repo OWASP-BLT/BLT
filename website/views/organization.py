@@ -503,12 +503,47 @@ class Listbounties(TemplateView):
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
 
+        # Calculate bounty statistics
+        dollar5_issues = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed")
+        total_issues_count = dollar5_issues.count()
+        paid_issues = dollar5_issues.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
+        paid_count = paid_issues.count()
+        grand_total_payouts = paid_count * 5  # Each issue is $5
+
+        # Build leaderboard of top earners
+        # Group by assignee and count their paid issues
+        from django.db.models import Count
+
+        top_earners = (
+            paid_issues.filter(assignee__isnull=False)
+            .values("assignee__name", "assignee__github_url", "assignee__avatar_url")
+            .annotate(issues_completed=Count("id"))
+            .order_by("-issues_completed")[:10]  # Top 10 earners
+        )
+
+        # Calculate earnings for each top earner
+        leaderboard = []
+        for earner in top_earners:
+            leaderboard.append(
+                {
+                    "name": earner["assignee__name"],
+                    "github_url": earner["assignee__github_url"],
+                    "avatar_url": earner["assignee__avatar_url"],
+                    "issues_completed": earner["issues_completed"],
+                    "total_earned": earner["issues_completed"] * 5,
+                }
+            )
+
         context = {
             "hunts": hunts,
             "domains": Domain.objects.values("id", "name").all(),
             "github_issues": github_issues,
             "current_page": 1,
             "selected_issue_state": issue_state,
+            "total_issues_count": total_issues_count,
+            "paid_count": paid_count,
+            "grand_total_payouts": grand_total_payouts,
+            "leaderboard": leaderboard,
         }
 
         return render(request, self.template_name, context)
