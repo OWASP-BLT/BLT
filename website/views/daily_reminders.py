@@ -6,9 +6,13 @@ import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
+from django.db import DatabaseError
 from django.shortcuts import redirect, render
+from django.utils.crypto import get_random_string
 from django.utils import timezone
+from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
 
 from website.forms import ReminderSettingsForm
@@ -186,7 +190,10 @@ def connect_slack_account(request):
         return redirect("reminder_settings")
 
     redirect_uri = request.build_absolute_uri("/slack/oauth/callback/")
-    state = request.user.username  # Using username as state for simplicity
+    # Generate a cryptographically secure random state value
+    state = get_random_string(32)
+    # Store state in session for verification
+    request.session["slack_oauth_state"] = state
 
     slack_oauth_url = (
         f"https://slack.com/oauth/v2/authorize?"
@@ -210,7 +217,9 @@ def slack_oauth_callback(request):
         messages.error(request, "Slack connection failed. No authorization code received.")
         return redirect("reminder_settings")
 
-    if state != request.user.username:
+    # Verify state parameter from session
+    expected_state = request.session.pop("slack_oauth_state", None)
+    if not expected_state or state != expected_state:
         messages.error(request, "Slack connection failed. Invalid state parameter.")
         return redirect("reminder_settings")
 
@@ -248,8 +257,14 @@ def slack_oauth_callback(request):
         else:
             messages.error(request, "Failed to retrieve Slack user ID.")
 
-    except Exception as e:
-        messages.error(request, "An error occurred while connecting to Slack. Please try again.")
+    except requests.exceptions.RequestException:
+        messages.error(
+            request, "Failed to communicate with Slack. Please check your internet connection and try again."
+        )
+    except (ValidationError, DatabaseError):
+        messages.error(request, "Failed to save Slack connection. Please try again or contact support.")
+    except Exception:
+        messages.error(request, "An unexpected error occurred while connecting to Slack. Please try again.")
 
     return redirect("reminder_settings")
 
@@ -270,8 +285,10 @@ def disconnect_slack_account(request):
                 reminder_settings.save()
 
             messages.success(request, "Your Slack account has been disconnected.")
-        except Exception:
+        except (ValidationError, DatabaseError):
             messages.error(request, "Failed to disconnect Slack account. Please try again.")
+        except Exception:
+            messages.error(request, "An unexpected error occurred. Please try again or contact support.")
 
     return redirect("reminder_settings")
 
@@ -307,7 +324,9 @@ def send_test_slack_reminder(request):
             else:
                 messages.error(request, "Failed to send Slack message.")
 
+        except SlackApiError:
+            messages.error(request, "Failed to send message to Slack. Please check your connection and try again.")
         except Exception:
-            messages.error(request, "Failed to send test Slack reminder. Please try again later.")
+            messages.error(request, "An unexpected error occurred. Please try again later.")
 
     return redirect("reminder_settings")

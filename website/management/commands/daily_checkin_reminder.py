@@ -1,7 +1,9 @@
 import logging
 import os
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
+from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
 
 from website.models import Notification, ReminderSettings, UserProfile
@@ -41,6 +43,10 @@ class Command(BaseCommand):
             slack_reminders_sent = 0
             client = WebClient(token=SLACK_BOT_TOKEN)
 
+            # Get the base URL from settings or use a default
+            base_url = getattr(settings, "BASE_URL", "https://www.owasp.org")
+            checkin_url = f"{base_url}/add-sizzle-checkin/"
+
             for userprofile in userprofiles_with_checkins:
                 try:
                     # Check if user has reminder settings with Slack enabled
@@ -53,7 +59,7 @@ class Command(BaseCommand):
                         message = (
                             f"Hello {userprofile.user.username}! 👋\n\n"
                             f"This is your daily reminder to complete your check-in for {userprofile.team.name}.\n\n"
-                            f"Complete your check-in here: https://www.owasp.org/add-sizzle-checkin/"
+                            f"Complete your check-in here: {checkin_url}"
                         )
 
                         response = client.chat_postMessage(channel=userprofile.slack_user_id, text=message)
@@ -65,8 +71,16 @@ class Command(BaseCommand):
                                 f"Failed to send Slack reminder to {userprofile.user.username}: {response.get('error')}"
                             )
 
-                except Exception as e:
-                    logger.error(f"Error sending Slack reminder to {userprofile.user.username}: {str(e)}")
+                except SlackApiError:
+                    logger.error(
+                        f"Slack API error when sending reminder to {userprofile.user.username}. "
+                        "Please verify the bot token and user's Slack connection."
+                    )
+                except Exception:
+                    logger.error(
+                        f"Unexpected error sending Slack reminder to {userprofile.user.username}. "
+                        "Please check the logs for more details."
+                    )
 
             if slack_reminders_sent > 0:
                 self.stdout.write(self.style.SUCCESS(f"Sent Slack reminders to {slack_reminders_sent} users."))

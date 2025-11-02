@@ -30,6 +30,8 @@ class SlackConnectionTests(TestCase):
             response = self.client.get(reverse("connect_slack_account"))
             self.assertEqual(response.status_code, 302)
             self.assertIn("slack.com/oauth/v2/authorize", response.url)
+            # Verify state is stored in session
+            self.assertIn("slack_oauth_state", self.client.session)
 
     def test_connect_slack_account_without_client_id(self):
         """Test error handling when Slack client ID is not configured"""
@@ -46,9 +48,16 @@ class SlackConnectionTests(TestCase):
         mock_response.json.return_value = {"ok": True, "authed_user": {"id": "U123456"}}
         mock_post.return_value = mock_response
 
+        # Set up session state
+        session = self.client.session
+        session["slack_oauth_state"] = "test_state"
+        session.save()
+
         with patch("website.views.daily_reminders.SLACK_CLIENT_ID", "test_client_id"):
             with patch("website.views.daily_reminders.SLACK_CLIENT_SECRET", "test_secret"):
-                response = self.client.get(reverse("slack_oauth_callback"), {"code": "test_code", "state": "testuser"})
+                response = self.client.get(
+                    reverse("slack_oauth_callback"), {"code": "test_code", "state": "test_state"}
+                )
 
                 self.assertEqual(response.status_code, 302)
                 self.assertRedirects(response, reverse("reminder_settings"))
@@ -59,7 +68,12 @@ class SlackConnectionTests(TestCase):
 
     def test_slack_oauth_callback_invalid_state(self):
         """Test OAuth callback with invalid state parameter"""
-        response = self.client.get(reverse("slack_oauth_callback"), {"code": "test_code", "state": "wronguser"})
+        # Set up session state
+        session = self.client.session
+        session["slack_oauth_state"] = "expected_state"
+        session.save()
+
+        response = self.client.get(reverse("slack_oauth_callback"), {"code": "test_code", "state": "wrong_state"})
 
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("reminder_settings"))
