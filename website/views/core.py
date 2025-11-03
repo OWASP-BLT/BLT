@@ -35,8 +35,8 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import connection, models
-from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models import Case, Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value, When
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -1291,7 +1291,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Issue, Post, Repo, User, UserProfile
+    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1330,8 +1330,29 @@ def home(request):
         .order_by("-total_prs")[:5]
     )
 
-    # Get top earners
-    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
+    # Get top earners - calculate from GitHub issues payments if they have linked GitHub issues,
+    # otherwise use the existing winnings field
+    # Annotate each UserProfile with total GitHub issue payments
+    top_earners = (
+        UserProfile.objects.annotate(
+            github_earnings=Coalesce(
+                Sum("github_issues__p2p_amount_usd", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
+                Value(0),
+                output_field=DecimalField(),
+            ),
+            has_github_issues=Count("github_issues", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
+            total_earnings=Case(
+                # If user has GitHub issues with payments, use those
+                When(has_github_issues__gt=0, then=F("github_earnings")),
+                # Otherwise fall back to the existing winnings field
+                default=Coalesce(F("winnings"), Value(0), output_field=DecimalField()),
+                output_field=DecimalField(),
+            ),
+        )
+        .filter(total_earnings__gt=0)
+        .select_related("user")
+        .order_by("-total_earnings")[:5]
+    )
 
     # Get top referrals
     top_referrals = (
@@ -1355,6 +1376,11 @@ def home(request):
         Issue.objects.filter(hunt=None)
         .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
         .order_by("-created")[:2]
+    )
+
+    # Get 2 most recent active hackathons ordered by start time (descending)
+    recent_hackathons = (
+        Hackathon.objects.filter(is_active=True).select_related("organization").order_by("-start_time")[:2]
     )
 
     # Get repository star counts for the specific repositories shown on the homepage
@@ -1413,6 +1439,7 @@ def home(request):
             "debug_mode": settings.DEBUG,
             "system_stats": system_stats,
             "latest_bugs": latest_bugs,
+            "recent_hackathons": recent_hackathons,
         },
     )
 
