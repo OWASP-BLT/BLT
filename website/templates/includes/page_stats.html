@@ -38,7 +38,7 @@
                 <span id="upvoteCount" class="text-sm">{{ upvotes }}</span>
             </div>
             <div class="text-xs text-center text-gray-500">
-                Total:  <span id="totalViews">0</span> Views
+                Total:  <span id="totalViews">{{ total_views }}</span> Views
             </div>
             <div class="flex items-center">
                 <button id="downvoteBtn"
@@ -144,9 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Calculate total views - ensure we're only summing numbers
-        const totalViews = pageViewsData.reduce((sum, count) => sum + (isNaN(count) ? 0 : count), 0);
-        document.getElementById('totalViews').textContent = totalViews;
+
+    
         
         // Create the chart
         new Chart(ctx, {
