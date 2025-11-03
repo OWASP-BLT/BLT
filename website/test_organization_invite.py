@@ -3,13 +3,13 @@ Tests for organization invite functionality
 """
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TransactionTestCase
 from django.urls import reverse
 
 from website.models import InviteOrganization
 
 
-class OrganizationInviteTestCase(TestCase):
+class OrganizationInviteTestCase(TransactionTestCase):
     """Test organization invite system"""
 
     def setUp(self):
@@ -219,7 +219,7 @@ class OrganizationInviteTestCase(TestCase):
         self.assertEqual(points_count, 0)
 
 
-class InviteOrganizationModelTestCase(TestCase):
+class InviteOrganizationModelTestCase(TransactionTestCase):
     """Test InviteOrganization model"""
 
     def setUp(self):

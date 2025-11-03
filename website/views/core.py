@@ -29,14 +29,17 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.validators import validate_email
 from django.db import connection, models
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -2912,6 +2915,15 @@ def invite_organization(request):
         email = request.POST.get("email", "").strip()
         organization_name = request.POST.get("organization_name", "").strip()
 
+        # Basic email validation
+        if email:
+            try:
+                validate_email(email)
+            except DjangoValidationError:
+                messages.error(request, "Please enter a valid email address.")
+                context["exists"] = False
+                return render(request, "invite.html", context)
+
         if request.user.is_authenticated and not (email and organization_name):
             messages.error(request, "Please provide both email and organization name.")
             context["exists"] = False
@@ -2965,41 +2977,14 @@ def invite_organization(request):
         default_referral_url = request.build_absolute_uri(reverse("register_organization"))
         referral_link = context.get("referral_link", default_referral_url)
 
-        email_body = f"""Dear {org_name} Team,
-
-I hope this message finds you well. I'm reaching out to introduce you to BLT (Bug Logging Tool), a comprehensive security testing platform that could significantly enhance {org_name}'s security posture and bug bounty initiatives.
-
-## What is BLT?
-
-BLT is an open-source bug logging and security testing platform developed by OWASP that enables organizations to:
-
-🔍 **Streamline Security Testing**
-- Centralize bug reporting and vulnerability management
-- Track security issues across multiple domains and applications
-- Integrate with existing development workflows
-
-🏆 **Launch Bug Bounty Programs**
-- Create and manage competitive bug hunting challenges
-- Set custom rewards and recognition systems
-- Access a community of skilled security researchers
-
-📊 **Gain Security Insights**
-- Real-time dashboards and analytics
-- Detailed vulnerability reporting and metrics
-
-## Getting Started:
-
-Use this special referral link to register your organization:
-{referral_link}
-
-Looking forward to helping {org_name} strengthen its security posture with BLT!
-
-Best regards,
-{sender_name}
-
----
-Learn more: https://blt.owasp.org
-This invitation was sent through BLT's organization invite feature."""
+        email_body = render_to_string(
+            "email/organization_invite.html",
+            {
+                "org_name": org_name,
+                "referral_link": referral_link,
+                "sender_name": sender_name,
+            },
+        )
 
         context.update(
             {
