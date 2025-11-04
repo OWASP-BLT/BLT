@@ -32,7 +32,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.db import connection, models
-from django.db.models import Case, Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value, When
+from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
