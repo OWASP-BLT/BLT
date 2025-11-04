@@ -1,8 +1,8 @@
 # website/testsuite/__init__.py
 
-from django.test.runner import DiscoverRunner
 import unittest
-import website
+
+from django.test.runner import DiscoverRunner
 
 
 class WebsiteDiscoverRunner(DiscoverRunner):
