@@ -408,14 +408,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 if not reactions[emoji]:
                     del reactions[emoji]
             else:
-                reactions[emoji] = reactions.get(emoji, []) + [username]
+                reactions[emoji].append(username)
 
             message.reactions = reactions
             message.save()
             return reactions
         except Message.DoesNotExist:
+            logger.error(f"Message {message_id} not found when adding reaction {emoji} by {username}")
             return None
         except Exception as e:
+            logger.error(f"Error adding reaction {emoji} to message {message_id} by {username}: {str(e)}")
             return None
 
     async def receive(self, text_data):
