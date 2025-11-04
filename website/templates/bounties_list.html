@@ -357,7 +357,8 @@ og_description %}
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Bug Bounties</h2>
                     <div class="space-y-6">
                         {% for hunt in hunts %}
-                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition duration-300">
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition duration-300"
+                                 data-bounty-card>
                                 <div class="flex flex-col md:flex-row">
                                     <div class="w-full md:w-2 bg-gray-700 flex items-center justify-center md:rotate-180">
                                         <p class="text-white md:rotate-90 font-bold text-xl tracking-widest">HUNT</p>
@@ -544,7 +545,7 @@ og_description %}
     function captureBugBounties() {
       if (bugBountyContainer) {
         const bountyElements = bugBountyContainer.querySelectorAll(
-          ".bg-white.rounded-lg.shadow-sm.border.border-gray-200"
+          "[data-bounty-card]"
         );
         return Array.from(bountyElements).map((element) => {
           return {
@@ -591,7 +592,7 @@ og_description %}
               // Build labels HTML
               let labelsHtml = "";
               issue.labels.forEach((label) => {
-                labelsHtml += `<span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">${label}</span>`;
+                labelsHtml += `<span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">${escapeHtml(label)}</span>`;
               });
 
               //builde the related PR
@@ -738,7 +739,7 @@ og_description %}
       if (
         originalBugBounties.length === 0 ||
         document.querySelectorAll(
-          ".bg-white.rounded-lg.shadow-sm.border.border-gray-200"
+          "[data-bounty-card]"
         ).length !== originalBugBounties.length
       ) {
         originalBugBounties = captureBugBounties();

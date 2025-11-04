@@ -1,8 +1,13 @@
 # website/testsuite/__init__.py
 
+import importlib
+import logging
+import os
 import unittest
 
 from django.test.runner import DiscoverRunner
+
+logger = logging.getLogger(__name__)
 
 
 class WebsiteDiscoverRunner(DiscoverRunner):
@@ -11,23 +16,21 @@ class WebsiteDiscoverRunner(DiscoverRunner):
 
         # Also include standalone test_*.py files under website/
         loader = unittest.defaultTestLoader
-        for modname in [
-            "test_api",
-            "test_badge_views",
-            "test_blog",
-            "test_bugs_list",
-            "test_hackathon_leaderboard",
-            "test_issues",
-            "test_organization",
-            "test_rooms",
-            "test_slack",
-            "test_user_profile",
-            "tests",
-        ]:
+
+        # Dynamically discover test modules
+        website_dir = os.path.dirname(os.path.dirname(__file__))
+        for filename in os.listdir(website_dir):
+            if filename.startswith("test_") and filename.endswith(".py"):
+                modname = filename[:-3]  # Remove .py extension
+            elif filename == "tests.py":
+                modname = "tests"
+            else:
+                continue
+
             try:
-                module = __import__(f"website.{modname}", fromlist=["*"])
+                module = importlib.import_module(f"website.{modname}")
                 suite.addTests(loader.loadTestsFromModule(module))
             except ModuleNotFoundError:
-                pass
+                logger.debug(f"Test module website.{modname} not found, skipping")
 
         return suite
