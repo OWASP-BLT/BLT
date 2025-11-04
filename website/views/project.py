@@ -10,30 +10,30 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
-import requests
-import sentry_sdk
-from dateutil.parser import parse as parse_datetime
-from dateutil.relativedelta import relativedelta
-from django.conf import settings
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.humanize.templatetags.humanize import naturaltime
-from django.core.exceptions import ValidationError
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.core.validators import URLValidator
-from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDate
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.utils import timezone
-from django.utils.text import slugify
-from django.utils.timezone import localtime, now
-from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView
-from django_filters.views import FilterView
-from PIL import Image, ImageDraw, ImageFont
-from rest_framework.views import APIView
+import requests  # pyright: ignore[reportMissingModuleSource]
+import sentry_sdk  # pyright: ignore[reportMissingImports]
+from dateutil.parser import parse as parse_datetime  # pyright: ignore[reportMissingModuleSource]
+from dateutil.relativedelta import relativedelta  # pyright: ignore[reportMissingModuleSource]
+from django.conf import settings  # pyright: ignore[reportMissingImports]
+from django.contrib import messages  # pyright: ignore[reportMissingImports]
+from django.contrib.auth.decorators import login_required, user_passes_test  # pyright: ignore[reportMissingImports]
+from django.contrib.humanize.templatetags.humanize import naturaltime  # pyright: ignore[reportMissingImports]
+from django.core.exceptions import ValidationError  # pyright: ignore[reportMissingImports]
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator  # pyright: ignore[reportMissingImports]
+from django.core.validators import URLValidator  # pyright: ignore[reportMissingImports]
+from django.db.models import Count, F, Q, Sum  # pyright: ignore[reportMissingImports]
+from django.db.models.functions import TruncDate  # pyright: ignore[reportMissingImports]
+from django.http import HttpResponse, JsonResponse  # pyright: ignore[reportMissingImports]
+from django.shortcuts import get_object_or_404, redirect, render  # pyright: ignore[reportMissingImports]
+from django.urls import reverse  # pyright: ignore[reportMissingImports]
+from django.utils import timezone  # pyright: ignore[reportMissingImports]
+from django.utils.text import slugify  # pyright: ignore[reportMissingImports]
+from django.utils.timezone import localtime, now  # pyright: ignore[reportMissingImports]
+from django.views.decorators.http import require_http_methods  # pyright: ignore[reportMissingImports]
+from django.views.generic import DetailView  # pyright: ignore[reportMissingImports]
+from django_filters.views import FilterView  # pyright: ignore[reportMissingImports]
+from PIL import Image, ImageDraw, ImageFont  # pyright: ignore[reportMissingImports]
+from rest_framework.views import APIView  # pyright: ignore[reportMissingImports]
 
 from website.bitcoin_utils import create_bacon_token
 from website.filters import ProjectRepoFilter
@@ -121,126 +121,91 @@ def distribute_bacon(request, contribution_id):
 
 class ProjectBadgeView(APIView):
     """
-    Generates a 30-day unique visits badge PNG for a Project, with zero-days shown as faint bars.
+    Generates a 30-day unique visits badge PNG for a Project.
+    - Tracks unique IP visits per day
+    - Updates project visit count once per day per IP
+    - Renders a bar chart badge image showing last 30 days of visits
     """
 
     def get_client_ip(self, request):
-        # Check X-Forwarded-For header first
+        """Retrieve the real client IP considering proxies."""
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
-            # Return first IP in chain (real client IP)
-            ip = x_forwarded_for.split(",")[0].strip()
-            return ip
-
-        # Try X-Real-IP header next
+            return x_forwarded_for.split(",")[0].strip()
         x_real_ip = request.META.get("HTTP_X_REAL_IP")
         if x_real_ip:
             return x_real_ip
-
-        # Finally fall back to REMOTE_ADDR
-        remote_addr = request.META.get("REMOTE_ADDR")
-        return remote_addr
+        return request.META.get("REMOTE_ADDR")
 
     def get(self, request, slug):
-        # Get the project or return 404
+        """Main GET handler to return badge PNG image."""
         project = get_object_or_404(Project, slug=slug)
-
-        # Get today's date
-        current_time = now()
-        today = current_time.date()
-
-        # Get the real client IP
+        today = now().date()
         user_ip = self.get_client_ip(request)
 
-        # Check if we have a record for today
-        visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).first()
+        # First hit of the day bumps project total; subsequent hits only bump per-IP count
+        visited_data = IP.objects.filter(
+            address=user_ip, path=request.path, created__date=today
+        ).first()
         if visited_data:
-            # If we have a record for today, only update project visit count if needed
-            if visited_data.count == 1:
-                project.project_visit_count = F("project_visit_count") + 1
-                project.save()
+            IP.objects.filter(pk=visited_data.pk).update(count=F("count") + 1)
         else:
-            # If no record exists for today, create a new one
-            IP.objects.create(address=user_ip, path=request.path, created=current_time, count=1)
+            IP.objects.create(address=user_ip, path=request.path, created=now(), count=1)
+            Project.objects.filter(pk=project.pk).update(project_visit_count=F("project_visit_count") + 1)
 
-            # Increment the project's visit count
-            project.project_visit_count = F("project_visit_count") + 1
-            project.save()
-
-        # Get unique visits, grouped by date (last 30 days)
+        # Calculate 30-day visit counts for chart
         thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
             IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address", distinct=True))  # Count only unique IPs
+            .annotate(visit_count=Count("address", distinct=True))
             .order_by("date")
         )
 
-        # Refresh project to get the latest visit count
+        # Prepare data for chart
         project.refresh_from_db()
 
         # Extract dates and counts for chart, including zero-visit days
         all_dates = []
         all_counts = []
         visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
-        for i in range(30):
-            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
-            all_dates.append(check_date)
-            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
-
-        dates = all_dates
-        counts = all_counts
+        counts = [visit_dict.get(today - timedelta(days=i), 0) for i in range(29, -1, -1)]
         total_views = project.project_visit_count
 
-        # Create a new image with a white background
-        width = 600
-        height = 200
-        img = Image.new("RGB", (width, height), color="white")
+        # Generate badge image
+        width, height = 600, 200
+        img = Image.new("RGB", (width, height), "white")
         draw = ImageDraw.Draw(img)
-
-        # Define colors for bars, grid, and text
-        bar_color = "#e05d44"
-        grid_color = "#eeeeee"
-
-        # Calculate chart dimensions and reserve space for the title
-        margin = 40
-        text_height = 50  # reserve space for title at top
+        bar_color = "#e74c3c"
+        grid_color = "#e74c3c"
+        margin, text_height = 40, 50
         chart_width = width - 2 * margin
         chart_height = height - 2 * margin - text_height
+        max_count = max(counts) if counts and max(counts) > 0 else 1
+        bar_width = chart_width / 32
+        bar_spacing = chart_width / 30
 
-        # Calculate max count and bar width for 30 bars
-        if counts and max(counts) > 0:
-            max_count = max(counts)
-        else:
-            max_count = 1
-
-        # Fixed width for exactly 30 bars, plus extra margins
-        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
-        bar_spacing = chart_width / 30  # Even spacing for 30 positions
-
-        # Draw grid lines, offset for reserved space at top
+        # Grid
         for i in range(5):
             y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars with proportional heights; faint for zero days
-        if dates and counts:
-            for i, count in enumerate(counts):
-                x1 = margin + (i * bar_spacing)
-                x2 = x1 + bar_width
-                if count > 0:
-                    bar_height = (count / max_count) * chart_height
-                    y1 = height - margin - bar_height
-                    y2 = height - margin
-                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
-                else:
-                    # Draw a faint line or a short, very light bar for 0 days
-                    faint_color = "#fcbab3"  # slightly lighter bar color for zero days
-                    y1 = y2 = height - margin - 2  # minimal height
-                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
+        # Bars
+        for i, count in enumerate(counts):
+            x1 = margin + (i * bar_spacing)
+            x2 = x1 + bar_width
+            if count > 0:
+                bar_height = (count / max_count) * chart_height
+                y1 = height - margin - bar_height
+                y2 = height - margin
+                draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+            else:
+                # Minimal-height bar for zero-day using brand red
+                y1 = y2 = height - margin - 2
+                draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=bar_color)
 
-        # Draw total views text centered at the top, uses bar_color
+        # Title
         try:
             font = ImageFont.truetype("DejaVuSans.ttf", 28)
         except OSError:
@@ -248,11 +213,10 @@ class ProjectBadgeView(APIView):
         text = f"Total Views: {total_views}"
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        text_x = (width - text_width) // 2
-        text_y = 15  # Fixed position at top
+        text_x, text_y = (width - text_width) // 2, 15
         draw.text((text_x, text_y), text, font=font, fill=bar_color)
 
-        # Save the image to a buffer
+        # Response
         buffer = BytesIO()
         img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
@@ -263,6 +227,61 @@ class ProjectBadgeView(APIView):
         response["Pragma"] = "no-cache"
         response["Expires"] = "0"
         return response
+
+
+class IssueBadgeDataView(APIView):
+    """
+    Returns JSON with last 30 days unique visit counts and total views.
+    - Used by GitHub Action to update issue badges
+    """
+
+    def get_client_ip(self, request):
+        """Retrieve real client IP (same as ProjectBadgeView)."""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        x_real_ip = request.META.get("HTTP_X_REAL_IP")
+        if x_real_ip:
+            return x_real_ip
+        return request.META.get("REMOTE_ADDR")
+
+    def get(self, request, slug):
+        """Return JSON of last 30 days of unique visits."""
+        project = get_object_or_404(Project, slug=slug)
+        today = now().date()
+        thirty_days_ago = today - timedelta(days=29)
+
+        visit_counts = (
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(visit_count=Count("address", distinct=True))
+            .order_by("date")
+        )
+
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+        counts = [visit_dict.get(today - timedelta(days=i), 0) for i in range(29, -1, -1)]
+        total = sum(counts)
+
+        return JsonResponse(
+            {"slug": slug, "days": 30, "daily_counts": counts, "total_views": total},
+            status=200,
+        )
+
+
+# ==============================
+# urls.py
+# ==============================
+
+from django.urls import path  # pyright: ignore[reportMissingImports]
+from .views import ProjectBadgeView, IssueBadgeDataView  # pyright: ignore[reportMissingImports]
+
+urlpatterns = [
+    # Endpoint for generating PNG badge
+    path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
+    # Endpoint for JSON visit data (used by GitHub Action)
+    path("projects/<slug:slug>/badge-data/", IssueBadgeDataView.as_view(), name="project-badge-data"),
+]
 
 
 class ProjectView(FilterView):
@@ -1685,7 +1704,7 @@ class RepoDetailView(DetailView):
 
         elif section == "community":
             try:
-                from django.core.management import call_command
+                from django.core.management import call_command  # pyright: ignore[reportMissingImports]
 
                 repo = self.get_object()
 
@@ -1734,7 +1753,7 @@ class RepoDetailView(DetailView):
             try:
                 repo = self.get_object()
                 # we have to run a management command to fetch the contributor stats
-                from django.core.management import call_command
+                from django.core.management import call_command  # pyright: ignore[reportMissingImports]
 
                 call_command("update_contributor_stats", "--repo_id", repo.id)
 
@@ -1849,25 +1868,18 @@ class RepoDetailView(DetailView):
 
 class RepoBadgeView(APIView):
     """
-    Generates a 30-day unique visits badge PNG for a Repo, with zero-days shown as faint bars.
+    Generates a 30-day unique visits badge PNG for a Repo, with zero-days shown as minimal bars.
     """
 
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
-            # Return first IP in chain (real client IP)
-            ip = x_forwarded_for.split(",")[0].strip()
-            return ip
-
-        # Try X-Real-IP header next
+            return x_forwarded_for.split(",")[0].strip()
         x_real_ip = request.META.get("HTTP_X_REAL_IP")
         if x_real_ip:
             return x_real_ip
-
-        # Finally fall back to REMOTE_ADDR
-        remote_addr = request.META.get("REMOTE_ADDR")
-        return remote_addr
+        return request.META.get("REMOTE_ADDR")
 
     def get(self, request, slug):
         # Get the repo or return 404
@@ -1884,17 +1896,11 @@ class RepoBadgeView(APIView):
         visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).first()
 
         if visited_data:
-            # If we have a record for today, only update repo visit count if needed
-            if visited_data.count == 1:
-                repo.repo_visit_count = F("repo_visit_count") + 1
-                repo.save()
+            IP.objects.filter(pk=visited_data.pk).update(count=F("count") + 1)
         else:
             # If no record exists for today, create a new one
             IP.objects.create(address=user_ip, path=request.path, created=current_time, count=1)
-
-            # Increment the repo's visit count
-            repo.repo_visit_count = F("repo_visit_count") + 1
-            repo.save()
+            Repo.objects.filter(pk=repo.pk).update(repo_visit_count=F("repo_visit_count") + 1)
 
         # Get unique visits, grouped by date (last 30 days)
         thirty_days_ago = today - timedelta(days=29)
@@ -1913,14 +1919,7 @@ class RepoBadgeView(APIView):
         all_dates = []
         all_counts = []
         visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
-
-        for i in range(30):
-            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
-            all_dates.append(check_date)
-            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
-
-        dates = all_dates
-        counts = all_counts
+        counts = [visit_dict.get(today - timedelta(days=i), 0) for i in range(29, -1, -1)]
         total_views = repo.repo_visit_count
 
         # Create a new image with a white background
@@ -1929,50 +1928,39 @@ class RepoBadgeView(APIView):
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
 
-        # Define colors
-        bar_color = "#e05d44"
-        grid_color = "#eeeeee"
+        # Colors: brand red
+        bar_color = "#e74c3c"
+        grid_color = "#e74c3c"
 
         # Calculate chart dimensions
         margin = 40
-        text_height = 50  # reserve space for title
+        text_height = 50
         chart_width = width - 2 * margin
         chart_height = height - 2 * margin - text_height
-
-        # calculating the max count and bar width for 30 bars
-        if counts and max(counts) > 0:
-            max_count = max(counts)
-        else:
-            max_count = 1
-
-        # Fixed width for exactly 30 bars with proper spacing
-        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
-        bar_spacing = chart_width / 30  # Even spacing for 30 positions
+        max_count = max(counts) if counts and max(counts) > 0 else 1
+        bar_width = chart_width / 32
+        bar_spacing = chart_width / 30
 
         # Draw grid lines
         for i in range(5):
             y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars (with zero-day case handled)
-        if dates and counts:
-            for i, count in enumerate(counts):
-                x1 = margin + (i * bar_spacing)
-                x2 = x1 + bar_width
-                if count > 0:
-                    bar_height = (count / max_count) * chart_height
-                    y1 = height - margin - bar_height
-                    y2 = height - margin
-                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
-                else:
-                    # Draw a faint line or a short, very light bar for 0 days
-                    faint_color = "#fcbab3"  # faint color used to show 0 days
-                    y1 = y2 = height - margin - 2  # minimal height
-                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
+        for i, count in enumerate(counts):
+            x1 = margin + (i * bar_spacing)
+            x2 = x1 + bar_width
+            if count > 0:
+                bar_height = (count / max_count) * chart_height
+                y1 = height - margin - bar_height
+                y2 = height - margin
+                draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+            else:
+                y1 = y2 = height - margin - 2
+                draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=bar_color)
 
         # Draw total views text
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", 28)  # Slightly smaller
+            font = ImageFont.truetype("DejaVuSans.ttf", 28)
         except OSError:
             font = ImageFont.load_default()
 
@@ -1980,9 +1968,8 @@ class RepoBadgeView(APIView):
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
         text_x = (width - text_width) // 2
-        text_y = 15  # Fixed position at top
-
-        draw.text((text_x, text_y), text, font=font, fill=bar_color)  # avoiding overlapping
+        text_y = 15
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)
 
         # Save the image to a buffer
         buffer = BytesIO()
