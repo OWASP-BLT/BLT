@@ -7,7 +7,7 @@ from django.test.runner import DiscoverRunner
 
 class WebsiteDiscoverRunner(DiscoverRunner):
     def build_suite(self, test_labels=None, extra_tests=None, **kwargs):
-        suite = super().build_suite(test_labels)
+        suite = super().build_suite(test_labels, extra_tests=extra_tests, **kwargs)
 
         # Also include standalone test_*.py files under website/
         loader = unittest.defaultTestLoader
