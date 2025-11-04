@@ -631,3 +631,4 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+TEST_RUNNER = "website.testsuite.WebsiteDiscoverRunner"
