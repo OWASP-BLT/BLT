@@ -217,6 +217,54 @@
                         </button>
                     </div>
                 </form>
+                <!-- Recently Registered Organizations Section -->
+                {% if recent_organizations %}
+                    <div class="mt-12 bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
+                        <div class="p-6 sm:p-8 border-b border-gray-200">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
+                                    <i class="fas fa-history fa-lg"></i>
+                                </div>
+                                <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Recently Registered Organizations" %}</h2>
+                            </div>
+                            <p class="mt-2 text-sm text-gray-600">
+                                {% trans "Check out the latest organizations that joined our platform" %}
+                            </p>
+                        </div>
+                        <div class="p-6 sm:p-8">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {% for org in recent_organizations %}
+                                    <a href="{% url 'organization_detail' slug=org.slug %}"
+                                       class="block group rounded-lg border border-gray-200 hover:border-[#e74c3c] hover:shadow-md transition-all duration-200 overflow-hidden">
+                                        <div class="p-4">
+                                            <div class="flex items-start space-x-4">
+                                                {% if org.logo %}
+                                                    <img src="{{ org.logo.url }}"
+                                                         alt="{{ org.name }}"
+                                                         class="h-12 w-12 rounded-lg object-cover flex-shrink-0" />
+                                                {% else %}
+                                                    <div class="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center text-[#e74c3c] flex-shrink-0">
+                                                        <i class="fas fa-building fa-lg"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="flex-1 min-w-0">
+                                                    <h3 class="text-base font-semibold text-gray-900 group-hover:text-[#e74c3c] truncate">
+                                                        {{ org.name }}
+                                                    </h3>
+                                                    <p class="mt-1 text-sm text-gray-500 truncate">{{ org.url }}</p>
+                                                    <p class="mt-1 text-xs text-gray-400">
+                                                        <i class="far fa-clock mr-1"></i>
+                                                        {% trans "Registered" %} {{ org.created|timesince }} {% trans "ago" %}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
         <!-- Notification Messages -->

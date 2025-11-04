@@ -55,3 +55,56 @@ class DomainViewTests(TestCase):
         # Check issues are displayed
         self.assertContains(response, self.open_issue.description)
         self.assertContains(response, self.closed_issue.description)
+
+
+class RegisterOrganizationViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        # Create multiple test organizations with is_active=True
+        for i in range(7):
+            Organization.objects.create(
+                name=f"Test Organization {i}",
+                url=f"https://example{i}.com",
+                slug=f"test-org-{i}",
+                is_active=True,
+            )
+
+    def test_register_organization_page_shows_last_5_organizations(self):
+        """Test that the register organization page shows the last 5 registered organizations"""
+        url = reverse("register_organization")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+        # Check that recent_organizations is in context and has exactly 5 items
+        self.assertIn("recent_organizations", response.context)
+        recent_orgs = response.context["recent_organizations"]
+        self.assertEqual(len(recent_orgs), 5)
+
+        # Check that organizations are ordered by creation date (newest first)
+        for i in range(len(recent_orgs) - 1):
+            self.assertGreaterEqual(recent_orgs[i].created, recent_orgs[i + 1].created)
+
+        # Check that the most recent organizations are shown
+        all_orgs = list(Organization.objects.filter(is_active=True).order_by("-created"))
+        for i in range(5):
+            self.assertEqual(recent_orgs[i].id, all_orgs[i].id)
+
+    def test_register_organization_page_only_shows_active_organizations(self):
+        """Test that only active organizations are shown"""
+        # Create an inactive organization
+        Organization.objects.create(
+            name="Inactive Organization",
+            url="https://inactive.com",
+            slug="inactive-org",
+            is_active=False,
+        )
+
+        url = reverse("register_organization")
+        response = self.client.get(url)
+
+        recent_orgs = response.context["recent_organizations"]
+
+        # Verify none of the recent organizations are inactive
+        for org in recent_orgs:
+            self.assertTrue(org.is_active)
