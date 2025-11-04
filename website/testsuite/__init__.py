@@ -30,7 +30,7 @@ class WebsiteDiscoverRunner(DiscoverRunner):
             try:
                 module = importlib.import_module(f"website.{modname}")
                 suite.addTests(loader.loadTestsFromModule(module))
-            except ModuleNotFoundError:
-                logger.debug(f"Test module website.{modname} not found, skipping")
+            except Exception as e:
+                logger.debug(f"Test module website.{modname} could not be loaded: {e}, skipping")
 
         return suite

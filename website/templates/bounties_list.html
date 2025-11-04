@@ -657,9 +657,7 @@ og_description %}
 
               issueElement.innerHTML = `
                                 <div class="flex justify-between items-start mb-3">
-                                    <h3 class="font-medium text-xl text-gray-800">${
-                                      issue.title
-                                    }</h3>
+                                    <h3 class="font-medium text-xl text-gray-800">${escapeHtml(issue.title)}</h3>
                                     <span class="px-3 py-1 text-xs rounded-full ${stateClass} font-medium">
                                         ${
                                           issue.state.charAt(0).toUpperCase() +
@@ -668,10 +666,8 @@ og_description %}
                                     </span>
                                 </div>
                                 <div class="text-sm text-gray-600 mb-3">
-                                    <span class="font-medium">Issue #${
-                                      issue.number
-                                    }</span> • 
-                                    Opened by ${issue.user} • 
+                                    <span class="font-medium">Issue #${escapeHtml(issue.number)}</span> • 
+                                    Opened by ${escapeHtml(issue.user)} • 
                                     Created ${createdDate}
                                     ${closedDateHtml}
                                 </div>
