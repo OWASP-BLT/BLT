@@ -149,7 +149,11 @@
                                             <div class="flex items-center">
                                                 <img src="{{ earner.avatar_url }}"
                                                      alt="{{ earner.name }}"
-                                                     class="w-10 h-10 rounded-full mr-3">
+                                                     width="40"
+                                                     height="40"
+                                                     class="w-10 h-10 rounded-full mr-3"
+                                                     loading="lazy"
+                                                     decoding="async" />
                                                 <a href="{{ earner.github_url }}"
                                                    target="_blank"
                                                    class="text-sm font-medium text-blue-600 hover:text-[#e74c3c]">
