@@ -15,8 +15,9 @@
                     </a>
                     {% for tag in top_tags %}
                         <a href="{% url 'organizations' %}?tag={{ tag.slug }}"
-                           class="px-4 py-2 rounded-full text-sm font-medium {% if selected_tag.slug == tag.slug %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-800 hover:bg-gray-200{% endif %} transition-colors">
-                            {{ tag.name }} ({{ tag.org_count }})
+                           class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 shadow-sm {% if selected_tag.slug == tag.slug %}text-white{% else %}text-white hover:opacity-80{% endif %}"
+                           style="background-color: {% if selected_tag.slug == tag.slug %}{{ tag.color }}{% else %}{{ tag.color }}{% endif %};">
+                            {% if tag.icon %}<i class="{{ tag.icon }} mr-2"></i>{% endif %}{{ tag.name }} ({{ tag.org_count }})
                         </a>
                     {% endfor %}
                 </div>
@@ -85,8 +86,9 @@
                                         <div class="flex flex-wrap gap-2">
                                             {% for tag in org.tags.all %}
                                                 <a href="{% url 'organizations' %}?tag={{ tag.slug }}"
-                                                   class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors">
-                                                    {{ tag.name }}
+                                                   class="px-3 py-1 rounded-full text-xs font-medium text-white hover:opacity-80 transition-all duration-200 shadow-sm"
+                                                   style="background-color: {{ tag.color }};">
+                                                    {% if tag.icon %}<i class="{{ tag.icon }} mr-1"></i>{% endif %}{{ tag.name }}
                                                 </a>
                                             {% endfor %}
                                         </div>

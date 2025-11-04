@@ -68,17 +68,140 @@ class Subscription(models.Model):
 
 
 class Tag(models.Model):
+    CATEGORY_CHOICES = [
+        ('general', 'General'),
+        ('security', 'Security'),
+        ('performance', 'Performance'),
+        ('ui_ux', 'UI/UX'),
+        ('bug', 'Bug'),  
+        ('feature', 'Feature'),
+        ('documentation', 'Documentation'),
+        ('infrastructure', 'Infrastructure'),
+        ('testing', 'Testing'),
+        ('data', 'Data'),
+    ]
+    
+    COLOR_CHOICES = [
+        ('#e74c3c', 'Red'),  # BLT's primary red
+        ('#3498db', 'Blue'),
+        ('#2ecc71', 'Green'),
+        ('#f39c12', 'Orange'),
+        ('#9b59b6', 'Purple'),
+        ('#1abc9c', 'Teal'),
+        ('#34495e', 'Dark Gray'),
+        ('#e67e22', 'Dark Orange'),
+        ('#95a5a6', 'Gray'),
+        ('#f1c40f', 'Yellow'),
+    ]
+    
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True, help_text="Optional description of what this tag represents")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general', help_text="Category to organize related tags")
+    color = models.CharField(max_length=7, choices=COLOR_CHOICES, default='#e74c3c', help_text="Display color for the tag")
+    icon = models.CharField(max_length=50, blank=True, help_text="FontAwesome icon class (e.g., 'fas fa-bug')")
+    is_active = models.BooleanField(default=True, help_text="Whether this tag is active and can be used")
     created = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        
+        # Normalize the tag name to prevent duplicates
+        self.name = self.normalize_name(self.name)
+        
         super(Tag, self).save(*args, **kwargs)
+    
+    @staticmethod
+    def normalize_name(name):
+        """
+        Normalize tag names to prevent duplicates like 'bug' vs 'bugs', 'Bug' vs 'BUG'
+        """
+        import re
+        
+        # Convert to lowercase
+        normalized = name.lower().strip()
+        
+        # Remove extra whitespace
+        normalized = re.sub(r'\s+', ' ', normalized)
+        
+        # Define common normalizations
+        normalizations = {
+            # Plural to singular
+            'bugs': 'bug',
+            'issues': 'issue', 
+            'features': 'feature',
+            'tests': 'test',
+            'docs': 'documentation',
+            'ui/ux': 'ui_ux',
+            'ui-ux': 'ui_ux',
+            'perf': 'performance',
+            'sec': 'security',
+            'infra': 'infrastructure',
+            'backend': 'back-end',
+            'frontend': 'front-end',
+            'db': 'database',
+            'api': 'api',
+            'css': 'css',
+            'js': 'javascript',
+            'html': 'html',
+            'python': 'python',
+            'java': 'java',
+            'node': 'nodejs',
+            'react': 'reactjs',
+            'vue': 'vuejs',
+            'angular': 'angularjs',
+        }
+        
+        # Apply normalizations
+        if normalized in normalizations:
+            normalized = normalizations[normalized]
+        
+        # Convert back to title case for display
+        return normalized.replace('_', ' ').title().replace(' ', '_').lower()
+    
+    @classmethod
+    def get_or_create_normalized(cls, name, **kwargs):
+        """
+        Get or create a tag with normalized name to prevent duplicates
+        """
+        normalized_name = cls.normalize_name(name)
+        slug = slugify(normalized_name)
+        
+        # Try to find existing tag with same normalized name
+        existing_tag = cls.objects.filter(
+            Q(name__iexact=normalized_name) | Q(slug=slug)
+        ).first()
+        
+        if existing_tag:
+            return existing_tag, False
+        
+        # Create new tag
+        tag = cls.objects.create(name=normalized_name, **kwargs)
+        return tag, True
 
     def __str__(self):
         return self.name
+    
+    @property
+    def usage_count(self):
+        """Count how many times this tag is used across all models"""
+        count = 0
+        # Count usage across different models
+        count += self.organization_set.count()
+        count += self.issue_set.count() 
+        count += self.domain_set.count()
+        count += self.userprofile_set.count()
+        count += self.repo_set.count()
+        count += self.courses.count()
+        count += self.lectures.count()
+        count += self.communities.count()
+        count += self.channels.count()
+        count += self.articles.count()
+        return count
+    
+    class Meta:
+        ordering = ['name']
 
 
 class IntegrationServices(Enum):

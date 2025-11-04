@@ -222,3 +222,103 @@ def static_safe(path, default_path=None):
             except ValueError:
                 pass
         return ""
+
+
+@register.inclusion_tag('includes/tag-cloud.html')
+def render_tag_cloud(tags, title=None, show_count=True, show_more_link=False, base_url=None):
+    """
+    Render a tag cloud component
+    
+    Usage:
+        {% render_tag_cloud popular_tags title="Popular Tags" show_count=True %}
+    """
+    return {
+        'tags': tags,
+        'title': title,
+        'show_count': show_count,
+        'show_more_link': show_more_link,
+        'base_url': base_url,
+    }
+
+
+@register.simple_tag
+def get_tag_by_category(category, limit=10):
+    """
+    Get tags filtered by category
+    
+    Usage:
+        {% get_tag_by_category 'security' 5 as security_tags %}
+    """
+    from website.models import Tag
+    
+    return Tag.objects.filter(
+        category=category,
+        is_active=True
+    ).annotate(
+        usage_count=models.Count('organization', distinct=True) +
+                   models.Count('issue', distinct=True) +
+                   models.Count('courses', distinct=True)
+    ).filter(usage_count__gt=0).order_by('-usage_count')[:limit]
+
+
+@register.simple_tag
+def get_trending_tags(days=30, limit=10):
+    """
+    Get trending tags from the last N days
+    
+    Usage:
+        {% get_trending_tags 7 5 as weekly_trending %}
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+    from website.models import Tag
+    
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=days)
+    
+    return Tag.objects.filter(
+        issue__created__gte=start_date,
+        is_active=True
+    ).annotate(
+        recent_usage=models.Count('issue', filter=models.Q(issue__created__gte=start_date))
+    ).filter(recent_usage__gt=0).order_by('-recent_usage')[:limit]
+
+
+@register.filter
+def tag_color_class(tag):
+    """
+    Get CSS class for tag color
+    
+    Usage:
+        {{ tag|tag_color_class }}
+    """
+    color_map = {
+        '#e74c3c': 'bg-red-500',
+        '#3498db': 'bg-blue-500', 
+        '#2ecc71': 'bg-green-500',
+        '#f39c12': 'bg-orange-500',
+        '#9b59b6': 'bg-purple-500',
+        '#1abc9c': 'bg-teal-500',
+        '#34495e': 'bg-gray-700',
+        '#e67e22': 'bg-orange-600',
+        '#95a5a6': 'bg-gray-500',
+        '#f1c40f': 'bg-yellow-500',
+    }
+    return color_map.get(tag.color, 'bg-gray-500')
+
+
+@register.simple_tag
+def tag_usage_summary(tag):
+    """
+    Get usage summary for a tag across all models
+    
+    Usage:
+        {% tag_usage_summary tag as usage %}
+    """
+    return {
+        'organizations': tag.organization_set.count(),
+        'issues': tag.issue_set.count(),
+        'courses': tag.courses.count(),
+        'lectures': tag.lectures.count(),
+        'total': tag.usage_count if hasattr(tag, 'usage_count') else 0,
+    }

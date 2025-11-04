@@ -1117,3 +1117,209 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
+
+
+def recommend_tags_for_issue(issue_description, issue_url=None, max_tags=5):
+    """
+    Recommend tags for an issue based on its description and URL
+    
+    Args:
+        issue_description (str): The issue description text
+        issue_url (str): Optional URL of the issue
+        max_tags (int): Maximum number of tags to recommend
+        
+    Returns:
+        list: List of recommended tag names
+    """
+    from website.models import Tag
+    
+    if not issue_description:
+        return []
+    
+    # Text to analyze
+    text_to_analyze = issue_description.lower()
+    if issue_url:
+        text_to_analyze += " " + issue_url.lower()
+    
+    # Keywords for different tag categories
+    tag_keywords = {
+        'bug': ['bug', 'error', 'issue', 'problem', 'broken', 'fail', 'crash', 'exception', 'not work'],
+        'security': ['security', 'vulnerability', 'xss', 'sql injection', 'csrf', 'auth', 'permission', 'access', 'hack', 'exploit'],
+        'performance': ['performance', 'slow', 'speed', 'optimization', 'load', 'latency', 'memory', 'cpu', 'timeout'],
+        'ui_ux': ['ui', 'ux', 'interface', 'design', 'layout', 'responsive', 'mobile', 'usability', 'user experience', 'frontend'],
+        'feature': ['feature', 'enhancement', 'improvement', 'add', 'implement', 'new', 'request'],
+        'documentation': ['documentation', 'docs', 'readme', 'help', 'guide', 'tutorial', 'wiki', 'manual'],
+        'testing': ['test', 'testing', 'unit test', 'integration', 'automated', 'qa', 'quality'],
+        'infrastructure': ['infrastructure', 'deployment', 'server', 'hosting', 'devops', 'ci/cd', 'docker', 'kubernetes'],
+        'data': ['database', 'data', 'sql', 'query', 'migration', 'backup', 'storage', 'json', 'api'],
+        'general': ['general', 'misc', 'other', 'various']
+    }
+    
+    # Technology-specific keywords
+    tech_keywords = {
+        'javascript': ['javascript', 'js', 'node', 'react', 'vue', 'angular', 'jquery'],
+        'python': ['python', 'django', 'flask', 'fastapi', 'py'],
+        'html': ['html', 'markup', 'dom'],
+        'css': ['css', 'style', 'styling', 'sass', 'scss', 'bootstrap', 'tailwind'],
+        'api': ['api', 'rest', 'graphql', 'endpoint', 'json', 'xml'],
+        'mobile': ['mobile', 'ios', 'android', 'app', 'responsive'],
+        'database': ['database', 'db', 'mysql', 'postgresql', 'mongodb', 'sql'],
+    }
+    
+    # Score each category
+    scores = {}
+    
+    # Check category keywords
+    for category, keywords in tag_keywords.items():
+        score = 0
+        for keyword in keywords:
+            if keyword in text_to_analyze:
+                score += text_to_analyze.count(keyword)
+        if score > 0:
+            scores[category] = score
+    
+    # Check tech keywords
+    for tech, keywords in tech_keywords.items():
+        score = 0
+        for keyword in keywords:
+            if keyword in text_to_analyze:
+                score += text_to_analyze.count(keyword)
+        if score > 0:
+            scores[tech] = score
+    
+    # Sort by score and get top recommendations
+    recommended = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:max_tags]
+    
+    # Get existing tags that match our recommendations
+    recommended_tags = []
+    for tag_name, score in recommended:
+        # Try to find existing tag with similar name
+        existing_tags = Tag.objects.filter(
+            name__icontains=tag_name, is_active=True
+        ).first()
+        
+        if existing_tags:
+            recommended_tags.append(existing_tags.name)
+        else:
+            # Suggest creating the tag
+            normalized_name = Tag.normalize_name(tag_name)
+            recommended_tags.append(normalized_name)
+    
+    return recommended_tags[:max_tags]
+
+
+def analyze_tag_trends(days=30):
+    """
+    Analyze tag usage trends over the specified period
+    
+    Args:
+        days (int): Number of days to analyze
+        
+    Returns:
+        dict: Analysis results including trending tags, declining tags, etc.
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+    from website.models import Tag, Issue, Organization
+    
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=days)
+    
+    # Get tags used in recent issues
+    recent_issue_tags = Tag.objects.filter(
+        issue__created__gte=start_date,
+        is_active=True
+    ).annotate(
+        recent_usage=models.Count('issue', filter=models.Q(issue__created__gte=start_date))
+    ).order_by('-recent_usage')
+    
+    # Get tags used in recent organizations
+    recent_org_tags = Tag.objects.filter(
+        organization__created__gte=start_date,
+        is_active=True
+    ).annotate(
+        recent_usage=models.Count('organization', filter=models.Q(organization__created__gte=start_date))
+    ).order_by('-recent_usage')
+    
+    # Combine and analyze trends
+    trending_tags = []
+    seen_tags = set()
+    
+    # Add issue tags
+    for tag in recent_issue_tags[:10]:
+        if tag.id not in seen_tags:
+            trending_tags.append({
+                'tag': tag,
+                'recent_usage': tag.recent_usage,
+                'total_usage': tag.usage_count,
+                'trend_type': 'issue'
+            })
+            seen_tags.add(tag.id)
+    
+    # Add organization tags
+    for tag in recent_org_tags[:10]:
+        if tag.id not in seen_tags and len(trending_tags) < 20:
+            trending_tags.append({
+                'tag': tag,
+                'recent_usage': tag.recent_usage,
+                'total_usage': tag.usage_count,
+                'trend_type': 'organization'
+            })
+            seen_tags.add(tag.id)
+    
+    # Sort by recent usage
+    trending_tags.sort(key=lambda x: x['recent_usage'], reverse=True)
+    
+    # Find unused or declining tags
+    unused_tags = Tag.objects.filter(
+        organization__isnull=True,
+        issue__isnull=True,
+        courses__isnull=True,
+        is_active=True
+    ).count()
+    
+    return {
+        'trending_tags': trending_tags[:15],
+        'total_active_tags': Tag.objects.filter(is_active=True).count(),
+        'unused_tags_count': unused_tags,
+        'period_days': days,
+        'analysis_date': end_date,
+    }
+
+
+def get_popular_tags_by_category(limit=10):
+    """
+    Get popular tags grouped by category
+    
+    Args:
+        limit (int): Maximum tags per category
+        
+    Returns:
+        dict: Tags grouped by category with usage counts
+    """
+    from website.models import Tag
+    
+    categories = {}
+    
+    for category_key, category_name in Tag.CATEGORY_CHOICES:
+        tags = Tag.objects.filter(
+            category=category_key,
+            is_active=True
+        ).annotate(
+            total_usage=models.Count('organization', distinct=True) +
+                       models.Count('issue', distinct=True) +
+                       models.Count('courses', distinct=True)
+        ).filter(total_usage__gt=0).order_by('-total_usage')[:limit]
+        
+        if tags:
+            categories[category_name] = [
+                {
+                    'tag': tag,
+                    'usage_count': tag.total_usage,
+                    'color': tag.color,
+                    'icon': tag.icon,
+                }
+                for tag in tags
+            ]
+    
+    return categories
