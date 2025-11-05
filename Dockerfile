@@ -1,42 +1,41 @@
-# DOCKERFILE DISABLED - USE POETRY ONLY
-# This project uses Poetry for dependency management and local development.
-# Docker-related files have been intentionally disabled per project preference.
-# To run the site locally with Poetry, run the following from the project root:
-#
-# cd /Users/aaradhychinche/Documents/blt/BLT
-# poetry install
-# poetry run pre-commit install || true
-# poetry run pre-commit run --all-files || true
-# poetry run python manage.py migrate --noinput
-# poetry run python manage.py collectstatic --noinput
-# poetry run python manage.py runserver 0.0.0.0:8000
-#
-# If you later decide to re-enable Docker, restore or replace this file with a proper Dockerfile.
-# syntax=docker/dockerfile:1
-
+# Start from an official Python image
 FROM python:3.13-slim
 
-# Set environment variables
+# Set environment variables to prevent Python from writing .pyc files and buffer issues
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Install Poetry
-RUN pip install poetry
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
-COPY pyproject.toml poetry.lock* /app/
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+# Add Poetry to PATH
+ENV PATH="/root/.local/bin:$PATH"
+
+# Copy only dependency files first for caching
+COPY pyproject.toml poetry.lock ./
 
 # Install dependencies
-RUN poetry install --no-root
+RUN poetry install --no-root --no-interaction --no-ansi
 
-# Copy rest of the app
-COPY . /app
+# Copy the rest of the project
+COPY . .
 
-# Expose the port Django will run on
+# Expose the port Django runs on
 EXPOSE 8000
 
-# Run Django server
+# NOTE:
+# This Dockerfile is for local development.
+# For production, replace 'runserver' with Gunicorn or uWSGI.
+
+# Start Django development server
 CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
