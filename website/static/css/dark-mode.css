@@ -261,7 +261,7 @@ a[class*="bg-[#e74c3c]"][class*="text-white"]:hover {
 
 /* Force BLACK text/icons on red CTA buttons in normal (light) mode regardless of text-* utilities */
 a[class*="bg-[#e74c3c]"],
-button[class*="bg[#e74c3c]"],
+button[class*="bg-[#e74c3c]"],
 button[class*="bg-[#e74c3c]"],
 a[class*="bg-red-"],
 button[class*="bg-red-"] {
@@ -270,12 +270,12 @@ button[class*="bg-red-"] {
 
 /* Ensure icons inside those buttons follow the text color */
 a[class*="bg-[#e74c3c]"] svg,
-button[class*="bg[#e74c3c]"] svg,
+button[class*="bg-[#e74c3c]"] svg,
 button[class*="bg-[#e74c3c]"] svg,
 a[class*="bg-red-"] svg,
 button[class*="bg-red-"] svg,
 a[class*="bg-[#e74c3c]"] i,
-button[class*="bg[#e74c3c]"] i,
+button[class*="bg-[#e74c3c]"] i,
 button[class*="bg-[#e74c3c]"] i,
 a[class*="bg-red-"] i,
 button[class*="bg-red-"] i {
@@ -285,7 +285,7 @@ button[class*="bg-red-"] i {
 
 /* Dark mode override: keep red CTAs white-on-red for readability */
 [data-theme="dark"] a[class*="bg-[#e74c3c]"],
-[data-theme="dark"] button[class*="bg[#e74c3c]"],
+[data-theme="dark"] button[class*="bg-[#e74c3c]"],
 [data-theme="dark"] button[class*="bg-[#e74c3c]"],
 [data-theme="dark"] a[class*="bg-red-"],
 [data-theme="dark"] button[class*="bg-red-"] {
@@ -741,7 +741,7 @@ html[data-theme="dark"] .bg-red-500 {
 /* Transitions */
 .panel,
 .card,
-modal-content,
+.modal-content,
 .form-control,
 .dropdown-menu,
 .btn,
