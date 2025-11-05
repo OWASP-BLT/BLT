@@ -29,14 +29,13 @@ RUN poetry config virtualenvs.create false
 COPY pyproject.toml poetry.lock* ./
 
 # Clean any existing httpx installation and update pip
-RUN pip uninstall -y httpx || true && \
-    pip install --no-cache-dir --upgrade pip
+# Upgrade pip (no ad-hoc package uninstalls)
+RUN pip install --no-cache-dir --upgrade pip
 
 # Install dependencies with Poetry
 RUN poetry install --no-root --no-interaction
 
-# Additional Python packages
-RUN pip install --no-cache-dir opentelemetry-api opentelemetry-instrumentation
+# Remove ad-hoc installs; rely on Poetry-managed dependencies only
 
 # Stage 2: Runtime stage
 FROM python:3.11.2-slim
