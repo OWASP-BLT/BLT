@@ -260,7 +260,6 @@ a[class*="bg-[#e74c3c]"][class*="text-white"]:hover {
 /* Force BLACK text/icons on red CTA buttons in normal (light) mode regardless of text-* utilities */
 a[class*="bg-[#e74c3c]"],
 button[class*="bg-[#e74c3c]"],
-button[class*="bg-[#e74c3c]"],
 a[class*="bg-red-"],
 button[class*="bg-red-"] {
     color: #000000 !important;
@@ -269,11 +268,9 @@ button[class*="bg-red-"] {
 /* Ensure icons inside those buttons follow the text color */
 a[class*="bg-[#e74c3c]"] svg,
 button[class*="bg-[#e74c3c]"] svg,
-button[class*="bg-[#e74c3c]"] svg,
 a[class*="bg-red-"] svg,
 button[class*="bg-red-"] svg,
 a[class*="bg-[#e74c3c]"] i,
-button[class*="bg-[#e74c3c]"] i,
 button[class*="bg-[#e74c3c]"] i,
 a[class*="bg-red-"] i,
 button[class*="bg-red-"] i {
@@ -283,7 +280,6 @@ button[class*="bg-red-"] i {
 
 /* Dark mode override: keep red CTAs white-on-red for readability */
 [data-theme="dark"] a[class*="bg-[#e74c3c]"],
-[data-theme="dark"] button[class*="bg-[#e74c3c]"],
 [data-theme="dark"] button[class*="bg-[#e74c3c]"],
 [data-theme="dark"] a[class*="bg-red-"],
 [data-theme="dark"] button[class*="bg-red-"] {
@@ -694,7 +690,7 @@ html[data-theme="dark"] .bg-100 {
     border-color: transparent !important;
 }
 
-/* Re-assert card/panel distinctness (safe guard) */
+/* Re-assert card/panel distinctness (safe guard): Keep card elements distinct so they retain the card background */
 html[data-theme="dark"] .card,
 html[data-theme="dark"] .panel,
 html[data-theme="dark"] .card .card-body,
@@ -704,14 +700,6 @@ html[data-theme="dark"] .well .panel {
     background-color: var(--card-bg) !important;
     color: var(--text-color) !important;
     border-color: var(--border-color) !important;
-}
-
-/* Keep card elements distinct so they retain the card background */
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .panel,
-html[data-theme="dark"] .card .card-body,
-html[data-theme="dark"] .panel .panel-body {
-    background-color: var(--card-bg) !important;
 }
 
 /* Exempt CTA buttons and brand accents from blanket color changes */
