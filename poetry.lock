@@ -878,14 +878,14 @@ with-social = ["django-allauth (>=0.56.0,<0.58.0)"]
 
 [[package]]
 name = "django"
-version = "5.1.8"
+version = "5.1.14"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "Django-5.1.8-py3-none-any.whl", hash = "sha256:11b28fa4b00e59d0def004e9ee012fefbb1065a5beb39ee838983fd24493ad4f"},
-    {file = "Django-5.1.8.tar.gz", hash = "sha256:42e92a1dd2810072bcc40a39a212b693f94406d0ba0749e68eb642f31dc770b4"},
+    {file = "django-5.1.14-py3-none-any.whl", hash = "sha256:2a4b9c20404fd1bf50aaaa5542a19d860594cba1354f688f642feb271b91df27"},
+    {file = "django-5.1.14.tar.gz", hash = "sha256:b98409fb31fdd6e8c3a6ba2eef3415cc5c0020057b43b21ba7af6eff5f014831"},
 ]
 
 [package.dependencies]
@@ -4107,4 +4107,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "2bc53c130818435264bbb1a10ed84b9818a705853828f84d826668801613d359"
+content-hash = "6e501224dfe711c002af5cf9f63a92a15fed38ddd987580f4a629b602c30ad5d"
