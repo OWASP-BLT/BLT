@@ -24,7 +24,6 @@ RUN apt-get update && apt-get install -y wget gnupg && \
     fi && \
     rm -rf /var/lib/apt/lists/*
 
-
 # Install Poetry and dependencies
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
@@ -34,11 +33,15 @@ RUN pip install --upgrade pip
 RUN poetry install --no-root --no-interaction
 RUN pip install opentelemetry-api opentelemetry-instrumentation
 
+
 # Stage 2: Runtime stage
 FROM python:3.11.2-slim
 
 ENV PYTHONUNBUFFERED 1
 WORKDIR /blt
+
+# 🧹 Removed duplicate Poetry install
+# (Poetry binary already copied from builder below)
 
 # Install runtime system dependencies
 RUN apt-get update && \
