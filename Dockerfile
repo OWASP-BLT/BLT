@@ -20,14 +20,11 @@ RUN apt-get update && \
 #     chmod +x /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver && \
 #     ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
 
-# Install Google Chrome
-RUN curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get -yqq update && \
-    apt-get -yqq install google-chrome-stable && \
+# Install Chromium and Chromium Driver
+RUN apt-get update && \
+    apt-get install -y chromium chromium-driver && \
     rm -rf /var/lib/apt/lists/*
 
-RUN ln -s /usr/bin/google-chrome-stable /usr/local/bin/google-chrome
 
 # Install Poetry and dependencies
 RUN pip install poetry
