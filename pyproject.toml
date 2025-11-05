@@ -70,10 +70,6 @@ tweepy = "^4.15.0"
 better-profanity = "^0.7.0"
 django-bleach = "^3.1.0"
 
-# Pin HTTP client stack to resolve transient conflicts (used by openai/atproto/etc.)
-httpx = "^0.27.2"
-httpcore = "^1.0.5"
-h2 = "^4.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
