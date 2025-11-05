@@ -366,39 +366,36 @@ code {
 }
 
 /* Dark mode specific adjustments */
-[data-theme="dark"] {
+/* Shadows and highlights */
+[data-theme="dark"] .panel,
+[data-theme="dark"] .card,
+[data-theme="dark"] .modal-content {
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
 
-    /* Shadows and highlights */
-    .panel,
-    .card,
-    .modal-content {
-        box-shadow: 0 4px 6px var(--shadow-color);
-    }
+/* Form focus states */
+[data-theme="dark"] .form-control:focus {
+    border-color: #00ACED;
+    box-shadow: 0 0 0 0.2rem rgba(0, 172, 237, 0.25);
+}
 
-    /* Form focus states */
-    .form-control:focus {
-        border-color: #00ACED;
-        box-shadow: 0 0 0 0.2rem rgba(0, 172, 237, 0.25);
-    }
+/* Custom scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
 
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-    }
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
 
-    ::-webkit-scrollbar-track {
-        background: var(--bg-color);
-    }
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 5px;
+}
 
-    ::-webkit-scrollbar-thumb {
-        background: #4a5568;
-        border-radius: 5px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: #5a6578;
-    }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #5a6578;
 }
 
 /* Additional overrides to cover hardcoded light-theme styles in main.css/templates */
