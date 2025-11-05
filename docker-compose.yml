@@ -1,12 +1,55 @@
-# DOCKER-COMPOSE DISABLED - POETRY ONLY
-# Docker is disabled per user request. Use Poetry to run and manage the project locally.
-# Commands to run from project root (/Users/aaradhychinche/Documents/blt/BLT):
-#
-# poetry install
-# poetry run pre-commit install
-# poetry run pre-commit run --all-files
-# poetry run python manage.py migrate --noinput
-# poetry run python manage.py collectstatic --noinput
-# poetry run python manage.py runserver 0.0.0.0:8000
-#
-# If you need a Docker setup later, I can re-create a docker-compose file configured for your environment.
+services:
+  db:
+    image: postgres
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    container_name: postgres-db
+    restart: always
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    container_name: app
+    restart: on-failure
+    env_file:
+      - .env
+    volumes:
+      - .:/blt
+    ports:
+      - "${PORT}:8000"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    command: ./entrypoint.sh
+
+  init:
+    profiles:
+      - init
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - .:/blt
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    command: ./entrypoint.sh
+
+volumes:
+  postgres_db:
