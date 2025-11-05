@@ -201,7 +201,6 @@ body {
 /* Cards and Panels */
 .panel,
 .modal-content,
-.mega-block,
 .card {
     background-color: var(--card-bg);
     border-color: var(--border-color);
@@ -216,8 +215,7 @@ h4,
 h5,
 h6,
 .panel-heading .col-xs-9,
-.modal-title,
-.mega-block h3 {
+.modal-title {
     color: var(--text-color);
 }
 
@@ -414,18 +412,8 @@ code {
     color: var(--text-color) !important;
 }
 
-[data-theme="dark"] .main-issue-form,
-[data-theme="dark"] .panel,
-[data-theme="dark"] .card,
-[data-theme="dark"] .modal-content,
-[data-theme="dark"] .mega-menu,
-[data-theme="dark"] .dropdown-menu,
-[data-theme="dark"] .chat-Zindex,
-[data-theme="dark"] .chat-Zindex * {
-    background-color: #e74d3e !important;
-    color: var(--text-color) !important;
-    border-color: #e74d3e !important;
-}
+/* Already covered by correct rules above (lines 202–209, 308–314, 375–408).
+   Remove this block to prevent orange override on all panels/cards/modals. */
 
 [data-theme="dark"] .bg-white {
     background-color: var(--card-bg) !important;
@@ -472,13 +460,13 @@ code {
 /* Scope to the login/signup layout containers seen on that page to avoid site-wide impact */
 [data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full h1,
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center h1 {
-    color: #e74d3e !important;
+    color: #e74c3c !important;
     /* login accent */
 }
 
 [data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full a:not(.btn),
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center a:not(.btn) {
-    color: #e74d3e !important;
+    color: #e74c3c !important;
 }
 
 [data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full button[type="submit"],
@@ -487,8 +475,8 @@ code {
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center .btn,
 [data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full a.btn,
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center a.btn {
-    background-color: #e74d3e !important;
-    border-color: #e74d3e !important;
+    background-color: #e74c3c !important;
+    border-color: #e74c3c !important;
     color: #ffffff !important;
     /* keep text readable on accent */
 }
@@ -501,7 +489,7 @@ code {
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center select:focus,
 [data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full textarea:focus,
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center textarea:focus {
-    border-color: #e74d3e !important;
+    border-color: #e74c3c !important;
     box-shadow: 0 0 0 0.2rem rgba(231, 77, 62, 0.35) !important;
 }
 
@@ -509,7 +497,7 @@ code {
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center .text-red-500,
 [data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full .hover\:text-red-500:hover,
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center .hover\:text-red-500:hover {
-    color: #e74d3e !important;
+    color: #e74c3c !important;
     /* convert any red accents to the specified accent within login */
 }
 
@@ -1115,7 +1103,7 @@ button#organizations-btn:hover {
 #sitemapPage h2 {
     background: transparent !important;
     box-shadow: none !important;
-    color: #e74d3e !important;
+    color: #e74c3c !important;
 }
 
 /* Statistics Dashboard: lighter text colors in dark mode */
