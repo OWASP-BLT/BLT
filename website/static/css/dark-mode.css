@@ -490,7 +490,7 @@ code {
 [data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full textarea:focus,
 [data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center textarea:focus {
     border-color: #e74c3c !important;
-    box-shadow: 0 0 0 0.2rem rgba(231, 77, 62, 0.35) !important;
+    box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.35) !important;
 }
 
 [data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full .text-red-500,
