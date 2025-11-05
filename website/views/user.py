@@ -467,7 +467,8 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Pull Request Leaderboard
         pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            GitHubIssue.objects.filter(type="pull_request", is_merged=True, user_profile__user__username__isnull=False)
+            .exclude(user_profile__user__username="")
             .values(
                 "user_profile__user__username",
                 "user_profile__user__email",
@@ -480,7 +481,9 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Reviewed PR Leaderboard - Fixed query to properly count reviews
         reviewed_pr_leaderboard = (
-            GitHubReview.objects.values(
+            GitHubReview.objects.filter(reviewer__user__username__isnull=False)
+            .exclude(reviewer__user__username="")
+            .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
                 "reviewer__github_url",

@@ -2973,7 +2973,7 @@ def invite_organization(request):
         org_name = organization_name if organization_name else "your organization"
         sender_name = (
             request.user.get_full_name() or request.user.username if request.user.is_authenticated else "BLT Team"
-        )
+        )  
         default_referral_url = request.build_absolute_uri(reverse("register_organization"))
         referral_link = context.get("referral_link", default_referral_url)
 
