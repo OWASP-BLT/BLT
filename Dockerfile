@@ -1,15 +1,14 @@
-# ======================
-# Stage 1: Build Stage
-# ======================
+# ==========================
+# STAGE 1: Build with Poetry
+# ==========================
 FROM python:3.11.2 AS builder
-
 ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
 
 # Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    postgresql-client libpq-dev libmemcached11 libmemcachedutil2 libmemcached-dev libz-dev dos2unix wget gnupg && \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential libpq-dev dos2unix wget gnupg curl \
+    postgresql-client libmemcached11 libmemcachedutil2 libmemcached-dev libz-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome or Chromium (for GitHub Actions compatibility)
@@ -24,29 +23,31 @@ RUN ARCH=$(dpkg --print-architecture) && \
     fi && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Poetry and dependencies
+# Install Poetry
 RUN pip install --upgrade pip && pip install poetry
 RUN poetry config virtualenvs.create false
 
+# Copy dependency files first (for caching)
 COPY pyproject.toml poetry.lock* ./
+
+# Remove any conflicting packages
 RUN pip uninstall -y httpx || true
+
+# Install dependencies
 RUN poetry install --no-root --no-interaction
 
 # Install additional Python packages for observability
 RUN pip install opentelemetry-api opentelemetry-instrumentation
 
-
-# ======================
-# Stage 2: Runtime Stage
-# ======================
-FROM python:3.11.2-slim
-
+# ================================
+# STAGE 2: Runtime container
+# ================================
+FROM python:3.11.2-slim AS runtime
 ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
 
-# Install minimal runtime dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+# Minimal runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client libpq-dev libmemcached11 libmemcachedutil2 dos2unix && \
     rm -rf /var/lib/apt/lists/*
 
@@ -62,8 +63,16 @@ RUN dos2unix Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py || tr
 RUN if [ -f /blt/.env ]; then dos2unix /blt/.env; fi
 RUN chmod +x /blt/entrypoint.sh
 
-# Entry point for the container
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=blt.settings \
+    PATH="/usr/local/bin:$PATH"
+
+# Expose port
+EXPOSE 8000
+
+# Entry point
 ENTRYPOINT ["/blt/entrypoint.sh"]
 
-# Default command — runs server in development mode
+# Default command — runs Django development server
 CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
