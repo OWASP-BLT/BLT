@@ -244,8 +244,31 @@ LANGUAGES = (
 
 MEDIA_ROOT = "media"
 MEDIA_URL = "/media/"
-db_from_env = dj_database_url.config(conn_max_age=500)
-
+# Previous: db_from_env = dj_database_url.config(conn_max_age=500)
+# Replace with robust handling that expands placeholders and falls back safely
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    # expand any ${VAR} placeholders in the string
+    DATABASE_URL = os.path.expandvars(DATABASE_URL)
+    try:
+        db_from_env = dj_database_url.parse(DATABASE_URL, conn_max_age=500)
+    except Exception:
+        # parsing failed (e.g. invalid port placeholder). Try to build from individual vars
+        pg_user = os.environ.get("POSTGRES_USER")
+        pg_pass = os.environ.get("POSTGRES_PASSWORD")
+        pg_host = os.environ.get("POSTGRES_HOST", "localhost")
+        pg_port = os.environ.get("POSTGRES_PORT")
+        pg_db = os.environ.get("POSTGRES_DB")
+        if pg_user and pg_pass and pg_db and pg_port and pg_port.isdigit():
+            constructed = f"postgres://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
+            try:
+                db_from_env = dj_database_url.parse(constructed, conn_max_age=500)
+            except Exception:
+                db_from_env = {}
+        else:
+            db_from_env = {}
+else:
+    db_from_env = {}
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 if SENTRY_DSN:
