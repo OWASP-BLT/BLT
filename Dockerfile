@@ -40,9 +40,6 @@ FROM python:3.11.2-slim
 ENV PYTHONUNBUFFERED 1
 WORKDIR /blt
 
-# Install Poetry directly in runtime (Option 2)
-RUN pip install poetry
-
 # Install runtime system dependencies
 RUN apt-get update && \
     apt-get install -y postgresql-client libpq-dev \
