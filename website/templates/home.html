@@ -1152,6 +1152,11 @@
                 </div>
             </div>
         </section>
+
+...
+</section>
+
+
         <!-- Footer -->
         <footer class="py-8">
             <div class="max-w-7xl mx-auto text-center">
@@ -1164,6 +1169,31 @@
                 <p>Last commit: {{ last_commit }}</p>
             </div>
         </footer>
+
+
+<!-- Scroll to Top Button -->
+<button id="backToTop"
+        style="display:none; position:fixed; bottom:30px; right:30px; background-color:#e74c3c; color:white; border:none; padding:12px 18px; border-radius:50%; cursor:pointer; font-size:18px; box-shadow:0 2px 8px rgba(0,0,0,0.2); transition:opacity 0.3s;">
+    ↑
+</button>
+
+<script>
+window.onscroll = function() {
+  const btn = document.getElementById("backToTop");
+  if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+      btn.style.display = "block";
+  } else {
+      btn.style.display = "none";
+  }
+};
+
+document.getElementById("backToTop").onclick = function() {
+  window.scrollTo({top: 0, behavior: 'smooth'});
+};
+</script>
+
+
+
     </div>
     <!-- Add GitHub Buttons Script at the end of the content block -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
