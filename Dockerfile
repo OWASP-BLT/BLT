@@ -12,3 +12,31 @@
 # poetry run python manage.py runserver 0.0.0.0:8000
 #
 # If you later decide to re-enable Docker, restore or replace this file with a proper Dockerfile.
+# syntax=docker/dockerfile:1
+
+FROM python:3.13-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set work directory
+WORKDIR /app
+
+# Install Poetry
+RUN pip install poetry
+
+# Copy project files
+COPY pyproject.toml poetry.lock* /app/
+
+# Install dependencies
+RUN poetry install --no-root
+
+# Copy rest of the app
+COPY . /app
+
+# Expose the port Django will run on
+EXPOSE 8000
+
+# Run Django server
+CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
