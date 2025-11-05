@@ -1,0 +1,1310 @@
+/* Ensure bg-red-600 badges have white text in both normal and dark modes */
+a.bg-red-600.text-white,
+.bg-red-600.text-white {
+    color: #ffffff !important;
+}
+
+/* Bugs page: prize section title text should be black in dark mode */
+html[data-theme="dark"] .leaderboard-prize-title {
+    color: #000000 !important;
+}
+
+/* Report IP page: dark background in dark mode */
+[data-theme="dark"] #reportIpPage {
+    background: var(--bg-color) !important;
+}
+
+[data-theme="dark"] #reportIpPage .bg-white {
+    background-color: var(--card-bg) !important;
+}
+
+[data-theme="dark"] #reportIpPage .bg-gray-50 {
+    background-color: #374151 !important;
+}
+
+[data-theme="dark"] #reportIpPage .text-gray-800,
+[data-theme="dark"] #reportIpPage .text-gray-700,
+[data-theme="dark"] #reportIpPage .text-gray-900 {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] #reportIpPage .text-gray-600 {
+    color: #d1d5db !important;
+}
+
+[data-theme="dark"] #reportIpPage .border-gray-100,
+[data-theme="dark"] #reportIpPage .border-gray-200,
+[data-theme="dark"] #reportIpPage .border-gray-300 {
+    border-color: var(--border-color) !important;
+}
+
+/* Ensure blue buttons have white text in dark mode */
+[data-theme="dark"] a.px-4.py-2.rounded-md.text-sm.font-medium.transition.duration-300.bg-blue-600.text-white {
+    color: #fff !important;
+}
+
+[data-theme="dark"] a.bg-blue-600.text-white {
+    color: #fff !important;
+}
+
+a.bg-blue-600.text-white {
+    color: #fff !important;
+}
+
+a.px-4.py-2.rounded-md.text-sm.font-medium.transition.duration-300.bg-gray-200.text-gray-800.hover\:bg-gray-300 {
+    color: #000 !important;
+}
+
+[data-theme="dark"] a.px-4.py-2.rounded-md.text-sm.font-medium.transition.duration-300.bg-gray-200.text-gray-800.hover\:bg-gray-300 {
+    color: #000 !important;
+}
+
+.star-btn {
+    color: #222 !important;
+}
+
+[data-theme="dark"] .star-btn {
+    color: #fff !important;
+}
+
+.component-title a {
+    color: #222 !important;
+}
+
+[data-theme="dark"] .component-title a {
+    color: #fff !important;
+}
+
+/* Only target referral program card background, not icon containers */
+.bg-white.rounded-xl.shadow-lg div.p-3.bg-red-50.rounded-lg {
+    background-color: #fff !important;
+}
+
+/* Dark mode: match icon background with dark theme */
+[data-theme="dark"] .bg-white.rounded-xl.shadow-lg div.p-3.bg-red-50.rounded-lg {
+    background-color: var(--card-bg) !important;
+}
+
+/* Latest Activity section headings - white in dark mode */
+[data-theme="dark"] .text-gray-800 {
+    color: #fff !important;
+}
+
+/* Search icon and nav icons - white in dark mode to match surrounding color, no background */
+[data-theme="dark"] .fa-search.text-red-500,
+[data-theme="dark"] i.fa-search.text-red-500,
+[data-theme="dark"] nav .fa-search,
+[data-theme="dark"] nav i.fa-search,
+[data-theme="dark"] .fa-arrow-right.text-red-500,
+[data-theme="dark"] i.fa-arrow-right.text-red-500,
+[data-theme="dark"] .fa-chevron-down.text-red-500,
+[data-theme="dark"] i.fa-chevron-down.text-red-500,
+[data-theme="dark"] .fa-check.text-red-500,
+[data-theme="dark"] i.fa-check.text-red-500 {
+    color: #fff !important;
+    background-color: transparent !important;
+}
+
+/* Register organization page - remove orange backgrounds in dark mode */
+[data-theme="dark"] .bg-\[\#e74c3c\].bg-opacity-10 {
+    background-color: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .bg-\[\#e74c3c\]:not(.hover\:bg-\[\#c0392b\]):not(button) {
+    background-color: var(--card-bg) !important;
+}
+
+/* Remove orange background from text-red-500 elements in dark mode */
+[data-theme="dark"] .text-red-500 {
+    background-color: transparent !important;
+}
+
+[data-theme="dark"] h1.text-red-500,
+[data-theme="dark"] h2.text-red-500,
+[data-theme="dark"] h3.text-red-500 {
+    background-color: transparent !important;
+    color: #e74c3c !important;
+}
+
+/* Search bar container - dark background in dark mode */
+[data-theme="dark"] .relative.flex.items-center.rounded-lg.overflow-hidden.bg-white.border-2.border-red-500 {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .relative.flex.items-center.rounded-lg.overflow-hidden.bg-white.border-2.border-red-500:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+/* Component title text: black in normal mode, blue in dark mode */
+.component-title {
+    color: #222 !important;
+}
+
+[data-theme="dark"] .component-title {
+    color: #00ACED !important;
+}
+
+/* Dark mode styles */
+:root {
+    --bg-color: #ffffff;
+    --text-color: #333333;
+    --panel-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --hover-bg: #f5f5f5;
+    --input-bg: #ffffff;
+    --card-bg: #ffffff;
+    --nav-bg: #ffffff;
+    --dropdown-bg: #ffffff;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+    --bg-color: #1C2434;
+    --text-color: #DEE4EE;
+    --panel-bg: #333A48;
+    --border-color: #4a5568;
+    --hover-bg: #2d3748;
+    --input-bg: #1C2434;
+    --card-bg: #2d3748;
+    --nav-bg: rgba(28, 36, 52, 0.95);
+    --dropdown-bg: #2d3748;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode toggle button styles */
+#darkModeToggle {
+    border: 2px solid #e74c3c;
+}
+
+[data-theme="dark"] #darkModeToggle {
+    border: 2px solid #e74c3c;
+}
+
+#darkModeToggle i {
+    color: #e74c3c !important;
+    transition: transform 0.3s ease;
+}
+
+/* Apply variables */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* Navigation */
+.fixed.top-0 {
+    background-color: var(--nav-bg) !important;
+    backdrop-filter: blur(8px);
+}
+
+/* Cards and Panels */
+.panel,
+.modal-content,
+.mega-block,
+.card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+/* Text and Headers */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.panel-heading .col-xs-9,
+.modal-title,
+.mega-block h3 {
+    color: var(--text-color);
+}
+
+/* Control font-medium centered spans color based on theme */
+span.font-medium.text-center {
+    color: #000000 !important;
+}
+
+[data-theme="dark"] span.font-medium.text-center {
+    color: #ffffff !important;
+}
+
+/* Links */
+a:not(.btn) {
+    color: #00ACED;
+}
+
+a:hover:not(.btn) {
+    color: #0088cc;
+}
+
+/* Specific CTA-like Tailwind anchor: force BLACK text in normal (light) mode */
+/* Targets: a.px-4.py-2.bg-\[\#e74c3c\].text-white.rounded-ig.hover\:bg-\[\#c0392b\].hover\:text-white.transition-colors */
+a.px-4.py-2.bg-\[\#e74c3c\].text-white.rounded-ig.hover\:bg-\[\#c0392b\].hover\:text-white.transition-colors,
+a.px-4.py-2.bg-\[\#e74c3c\].text-white.rounded-ig.hover\:bg-\[\#c0392b\].hover\:text-white.transition-colors:hover {
+    color: #000000 !important;
+    fill: currentColor !important;
+}
+
+/* Robust selector: match anchors that have the Tailwind-like utilities for red bg and white text
+   regardless of class order or small typos (e.g. rounded-lg vs rounded-ig). This uses two
+   attribute contains selectors so the anchor will match as long as both tokens exist in the
+   `class` attribute. It also enforces hover state. */
+a[class*="bg-[#e74c3c]"][class*="text-white"],
+a[class*="bg-[#e74c3c]"][class*="text-white"]:hover {
+    color: #000000 !important;
+    /* light mode: black text on red background */
+    fill: currentColor !important;
+    /* inline svgs/icons will inherit */
+}
+
+/* Force BLACK text/icons on red CTA buttons in normal (light) mode regardless of text-* utilities */
+a[class*="bg-[#e74c3c]"],
+button[class*="bg[#e74c3c]"],
+button[class*="bg-[#e74c3c]"],
+a[class*="bg-red-"],
+button[class*="bg-red-"] {
+    color: #000000 !important;
+}
+
+/* Ensure icons inside those buttons follow the text color */
+a[class*="bg-[#e74c3c]"] svg,
+button[class*="bg[#e74c3c]"] svg,
+button[class*="bg-[#e74c3c]"] svg,
+a[class*="bg-red-"] svg,
+button[class*="bg-red-"] svg,
+a[class*="bg-[#e74c3c]"] i,
+button[class*="bg[#e74c3c]"] i,
+button[class*="bg-[#e74c3c]"] i,
+a[class*="bg-red-"] i,
+button[class*="bg-red-"] i {
+    color: currentColor !important;
+    fill: currentColor !important;
+}
+
+/* Dark mode override: keep red CTAs white-on-red for readability */
+[data-theme="dark"] a[class*="bg-[#e74c3c]"],
+[data-theme="dark"] button[class*="bg[#e74c3c]"],
+[data-theme="dark"] button[class*="bg-[#e74c3c]"],
+[data-theme="dark"] a[class*="bg-red-"],
+[data-theme="dark"] button[class*="bg-red-"] {
+    color: #ffffff !important;
+}
+
+/* Form Elements */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+/* Dropdowns and Menus */
+.dropdown-menu,
+#organizations-dropdown,
+#dropdownMenu,
+#notificationDropdown {
+    background-color: var(--dropdown-bg);
+    border-color: var(--border-color);
+}
+
+.dropdown-menu a,
+#organizations-dropdown button,
+#dropdownMenu a {
+    color: var(--text-color);
+}
+
+.dropdown-menu a:hover,
+#organizations-dropdown button:hover,
+#dropdownMenu a:hover {
+    background-color: var(--hover-bg);
+}
+
+/* Tables */
+table {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+th,
+td {
+    border-color: var(--border-color);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #00ACED;
+    border-color: #00ACED;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #0088cc;
+    border-color: #0088cc;
+}
+
+/* Search Bar */
+.search-container input {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+/* Modal */
+.modal-content {
+    background-color: var(--card-bg);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--border-color);
+}
+
+/* Code blocks and pre */
+pre,
+code {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* Dark mode specific adjustments */
+[data-theme="dark"] {
+
+    /* Shadows and highlights */
+    .panel,
+    .card,
+    .modal-content {
+        box-shadow: 0 4px 6px var(--shadow-color);
+    }
+
+    /* Form focus states */
+    .form-control:focus {
+        border-color: #00ACED;
+        box-shadow: 0 0 0 0.2rem rgba(0, 172, 237, 0.25);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--bg-color);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #4a5568;
+        border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #5a6578;
+    }
+}
+
+/* Additional overrides to cover hardcoded light-theme styles in main.css/templates */
+[data-theme="dark"] body,
+[data-theme="dark"] html {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .main-issue-form,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .card,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .mega-menu,
+[data-theme="dark"] .dropdown-menu,
+[data-theme="dark"] .chat-Zindex,
+[data-theme="dark"] .chat-Zindex * {
+    background-color: #e74d3e !important;
+    color: var(--text-color) !important;
+    border-color: #e74d3e !important;
+}
+
+[data-theme="dark"] .bg-white {
+    background-color: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-zinc-700,
+[data-theme="dark"] .text-gray-900 {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border {
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+[data-theme="dark"] .form-control {
+    background-color: var(--input-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Login/Signup page backgrounds */
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center {
+    background-color: var(--bg-color) !important;
+}
+
+[data-theme="dark"] .flex.flex-col.w-full.max-w-md.bg-white.rounded-md.shadow-lg.md\:flex-row.md\:max-w-2xl.lg\:max-w-4xl,
+[data-theme="dark"] .flex.flex-col.overflow-hidden.bg-white.rounded-md.shadow-lg.max.md\:flex-row.md\:flex-1.lg\:max-w-screen-sm {
+    background-color: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .p-5.bg-white.md\:flex-1 {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+}
+
+/* Dark mode: make login page accents orange (headings, links, buttons, focus states) */
+/* Scope to the login/signup layout containers seen on that page to avoid site-wide impact */
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full h1,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center h1 {
+    color: #e74d3e !important;
+    /* login accent */
+}
+
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full a:not(.btn),
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center a:not(.btn) {
+    color: #e74d3e !important;
+}
+
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full button[type="submit"],
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center button[type="submit"],
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full .btn,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center .btn,
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full a.btn,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center a.btn {
+    background-color: #e74d3e !important;
+    border-color: #e74d3e !important;
+    color: #ffffff !important;
+    /* keep text readable on accent */
+}
+
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full input:focus,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center input:focus,
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full .form-control:focus,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center .form-control:focus,
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full select:focus,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center select:focus,
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full textarea:focus,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center textarea:focus {
+    border-color: #e74d3e !important;
+    box-shadow: 0 0 0 0.2rem rgba(231, 77, 62, 0.35) !important;
+}
+
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full .text-red-500,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center .text-red-500,
+[data-theme="dark"] .flex.items-center.justify-center.w-full.min-h-screen.p-4.bg-gray-100.h-full .hover\:text-red-500:hover,
+[data-theme="dark"] .flex.items-center.min-h-screen.p-4.bg-gray-100.lg\:justify-center .hover\:text-red-500:hover {
+    color: #e74d3e !important;
+    /* convert any red accents to the specified accent within login */
+}
+
+/* Button colors and search icon fixes */
+[data-theme="dark"] button.text-red-500,
+[data-theme="dark"] a.text-red-500 {
+    color: white !important;
+    border-color: white !important;
+}
+
+[data-theme="dark"] button.text-light-blue-600,
+[data-theme="dark"] a.text-light-blue-600 {
+    color: white !important;
+}
+
+[data-theme="light"] button.text-light-blue-600,
+[data-theme="light"] a.text-light-blue-600 {
+    color: black !important;
+}
+
+/* Style navigation buttons with borders */
+
+button.p-2.text-red-500.sm\:hidden,
+button.text-red-500,
+a.text-red-500 {
+    background: transparent !important;
+    border: 2px solid #e74c3c !important;
+    /* orange for normal mode */
+    border-radius: 0.5rem !important;
+}
+
+[data-theme="dark"] button.p-2.text-red-500.sm\:hidden,
+[data-theme="dark"] button.text-red-500,
+[data-theme="dark"] a.text-red-500 {
+    border: 2px solid #fff !important;
+    /* white for dark mode */
+}
+
+/* Navigation bar: explicitly preserve text/icon color for action buttons */
+nav .text-red-500 {
+    color: #e74c3c !important;
+    /* visible red text/icons in light mode */
+}
+
+[data-theme="dark"] nav .text-red-500 {
+    color: #ffffff !important;
+    /* white text/icons in dark mode */
+    background-color: transparent !important;
+    /* keep nav background transparent in dark mode */
+}
+
+/* Ensure icons inside nav buttons inherit the text color */
+nav .text-red-500 i,
+nav .text-red-500 svg {
+    color: currentColor !important;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+}
+
+/* Keep primary brand colors for filled buttons/badges only (not plain text) */
+[data-theme="dark"] .btn-red-500,
+[data-theme="dark"] .bg-red-500,
+[data-theme="dark"] [class*="bg-red-"] {
+    color: #fff !important;
+    background-color: #e74c3c !important;
+}
+
+/* Make sure images/logos are not affected */
+[data-theme="dark"] img:not([data-force-dark]) {
+    filter: none !important;
+}
+
+/*
+ Strong overrides: force dark background & text on common utility classes
+ This beats Tailwind utility classes and other less-specific rules by using
+ high specificity and !important. Keep this focused to avoid collateral effects.
+*/
+/* Narrowed overrides: target common components, not every element with a utility class */
+html[data-theme="dark"] body,
+html[data-theme="dark"] html {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Components that typically have white backgrounds in the light theme */
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .mega-menu,
+html[data-theme="dark"] .dropdown-menu,
+html[data-theme="dark"] .chat-Zindex,
+html[data-theme="dark"] .main-issue-form,
+html[data-theme="dark"] .search-container,
+html[data-theme="dark"] .navbar,
+html[data-theme="dark"] .fixed.top-0,
+html[data-theme="dark"] .sidebar,
+html[data-theme="dark"] .container {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Keep main structural wrappers transparent so page layout spacing isn't altered */
+html[data-theme="dark"] main,
+html[data-theme="dark"] #page-wrapper,
+html[data-theme="dark"] .main {
+    background-color: transparent !important;
+}
+
+/* Modals/backdrops: slightly darken overlays but avoid forcing text color on every child */
+html[data-theme="dark"] .modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Target large page sections that often use white backgrounds (hero bands, jumbotrons, sections) */
+html[data-theme="dark"] .jumbotron,
+html[data-theme="dark"] .hero,
+html[data-theme="dark"] .page-section,
+html[data-theme="dark"] .section,
+html[data-theme="dark"] .landing-hero,
+html[data-theme="dark"] .leaderboard-section,
+html[data-theme="dark"] .leaderboards,
+html[data-theme="dark"] .white-block,
+html[data-theme="dark"] .panel-body,
+html[data-theme="dark"] .well {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Force headings and lead text inside hero/jumbotron/leaderboard areas to use theme text color
+   (prevents legacy templates or utility classes from leaving black text on a dark background) */
+html[data-theme="dark"] .jumbotron h1,
+html[data-theme="dark"] .jumbotron h2,
+html[data-theme="dark"] .jumbotron h3,
+html[data-theme="dark"] .hero h1,
+html[data-theme="dark"] .hero h2,
+html[data-theme="dark"] .hero h3,
+html[data-theme="dark"] .leaderboard-section h1,
+html[data-theme="dark"] .leaderboard-section h2,
+html[data-theme="dark"] .leaderboard-section h3,
+html[data-theme="dark"] .white-block h1,
+html[data-theme="dark"] .white-block h2,
+html[data-theme="dark"] .white-block h3,
+html[data-theme="dark"] .page-section h1,
+html[data-theme="dark"] .page-section h2,
+html[data-theme="dark"] .page-section h3,
+html[data-theme="dark"] .landing-hero h1,
+html[data-theme="dark"] .landing-hero h2,
+html[data-theme="dark"] .landing-hero h3 {
+    color: var(--text-color) !important;
+}
+
+/* Lead/description text inside those areas should be slightly muted but still readable */
+html[data-theme="dark"] .jumbotron p,
+html[data-theme="dark"] .hero p,
+html[data-theme="dark"] .leaderboard-section p,
+html[data-theme="dark"] .white-block p,
+html[data-theme="dark"] .page-section p,
+html[data-theme="dark"] .landing-hero p,
+html[data-theme="dark"] .jumbotron .lead,
+html[data-theme="dark"] .hero .lead {
+    color: rgba(222, 228, 238, 0.88) !important;
+    /* slightly muted var(--text-color) */
+}
+
+/* Ensure strong/bold within those sections inherits the correct color */
+html[data-theme="dark"] .jumbotron strong,
+html[data-theme="dark"] .hero strong,
+html[data-theme="dark"] .leaderboard-section strong,
+html[data-theme="dark"] .white-block strong {
+    color: inherit !important;
+}
+
+/* Extra targeted rules: force section containers and common light-utility classes to the page background
+   while keeping .card/.panel backgrounds intact so cards stay visually distinct. These selectors
+   use high specificity and !important to defeat utility classes or inline styles used by templates. */
+html[data-theme="dark"] .page-section>.container,
+html[data-theme="dark"] .page-section>.container-fluid,
+html[data-theme="dark"] .leaderboard-section>.container,
+html[data-theme="dark"] .leaderboard-section>.container-fluid,
+html[data-theme="dark"] .hero>.container,
+html[data-theme="dark"] .landing-hero>.container,
+html[data-theme="dark"] .white-block>.container,
+html[data-theme="dark"] .white-block>.container-fluid,
+html[data-theme="dark"] .home-hero,
+html[data-theme="dark"] .hero-band,
+html[data-theme="dark"] .page-hero,
+html[data-theme="dark"] .section--light,
+html[data-theme="dark"] .bg-light,
+html[data-theme="dark"] .bg-gray-50,
+html[data-theme="dark"] .bg-100 {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+    border-color: transparent !important;
+}
+
+/* Re-assert card/panel distinctness (safe guard) */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .card .card-body,
+html[data-theme="dark"] .panel .panel-body,
+html[data-theme="dark"] .well .card,
+html[data-theme="dark"] .well .panel {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Keep card elements distinct so they retain the card background */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .card .card-body,
+html[data-theme="dark"] .panel .panel-body {
+    background-color: var(--card-bg) !important;
+}
+
+/* Exempt CTA buttons and brand accents from blanket color changes */
+html[data-theme="dark"] .btn,
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .btn-red-500,
+html[data-theme="dark"] .text-red-500,
+html[data-theme="dark"] .bg-red-500 {
+    /* explicitly preserve brand accent colors */
+    color: inherit !important;
+    background-color: inherit !important;
+    border-color: inherit !important;
+}
+
+/* Transitions */
+.panel,
+.card,
+modal-content,
+.form-control,
+.dropdown-menu,
+.btn,
+input,
+select,
+textarea {
+    transition: all 0.3s ease;
+}
+
+/* Status indicators */
+.text-success {
+    color: #48bb78 !important;
+}
+
+.text-warning {
+    color: #ecc94b !important;
+}
+
+.text-danger {
+    color: #f56565 !important;
+}
+
+.text-info {
+    color: #4299e1 !important;
+}
+
+/* Preserve original colors for specific elements */
+.btn-red-500,
+.text-red-500,
+[class*="text-red-"] {
+    color: #e74c3c !important;
+}
+
+.bg-red-500,
+[class*="bg-red-"] {
+    background-color: #e74c3c !important;
+}
+
+/* Tailwind container specific fix: target the exact utility-class container the user inspected
+   (div.max-w-7xl.mx-auto.px-4.sm:... etc) and force readable text colors for headings and
+   descriptive paragraphs inside it under dark theme. This defeats any utility classes that
+   might be setting dark text on a dark background. */
+html[data-theme="dark"] div.max-w-7xl.mx-auto.px-4.sm\:px-6.lg\:px-8.py-6,
+html[data-theme="dark"] div.max-w-7xl.mx-auto.px-4.sm\:px-6.lg\:px-8.py-6 h1,
+html[data-theme="dark"] div.max-w-7xl.mx-auto.px-4.sm\:px-6.lg\:px-8.py-6 h2,
+html[data-theme="dark"] div.max-w-7xl.mx-auto.px-4.sm\:px-6.lg\:px-8.py-6 h3,
+html[data-theme="dark"] div.max-w-7xl.mx-auto.px-4.sm\:px-6.lg\:px-8.py-6 p,
+html[data-theme="dark"] div.max-w-7xl.mx-auto.px-4.sm\:px-6.lg\:px-8.py-6 .lead {
+    background-color: transparent !important;
+    /* keep overall band as page bg */
+    color: var(--text-color) !important;
+}
+
+/* Ensure links and small metadata inside that container are visible */
+html[data-theme="dark"] div.max-w-7xl.mx-auto.px-4.sm\:px-6.lg\:px-8.py-6 a:not(.btn) {
+    color: rgba(0, 172, 237, 0.95) !important;
+}
+
+
+/* Emergency high-specificity hero fixes: force readable text color in large hero/jumbotron/landing bands.
+   This targets a wide set of hero-like containers and common display classes used by templates. We use
+   very specific selectors and !important to defeat template-level utility classes or inline styles
+   that were leaving headings black on a dark background. These rules are intentionally narrow to
+   avoid flattening cards and CTAs which should retain their accent colors. */
+html[data-theme="dark"] .hero h1,
+html[data-theme="dark"] .hero h2,
+html[data-theme="dark"] .hero h3,
+html[data-theme="dark"] .hero h4,
+html[data-theme="dark"] .hero .display-1,
+html[data-theme="dark"] .hero .display-2,
+html[data-theme="dark"] .jumbotron h1,
+html[data-theme="dark"] .jumbotron h2,
+html[data-theme="dark"] .jumbotron h3,
+html[data-theme="dark"] .landing-hero h1,
+html[data-theme="dark"] .landing-hero h2,
+html[data-theme="dark"] .page-hero h1,
+html[data-theme="dark"] .page-hero h2,
+html[data-theme="dark"] .page-section h1,
+html[data-theme="dark"] .page-section h2,
+html[data-theme="dark"] .leaderboard-section h1,
+html[data-theme="dark"] .leaderboard-section h2,
+html[data-theme="dark"] .home-hero h1,
+html[data-theme="dark"] .home-hero h2,
+html[data-theme="dark"] .white-block h1,
+html[data-theme="dark"] .white-block h2,
+html[data-theme="dark"] .hero .lead,
+html[data-theme="dark"] .jumbotron .lead,
+html[data-theme="dark"] .landing-hero .lead,
+html[data-theme="dark"] .page-section .lead,
+html[data-theme="dark"] .leaderboard-section .lead {
+    color: var(--text-color) !important;
+}
+
+/* Force paragraph/description text in those areas to a slightly muted readable color */
+html[data-theme="dark"] .hero p,
+html[data-theme="dark"] .jumbotron p,
+html[data-theme="dark"] .landing-hero p,
+html[data-theme="dark"] .page-section p,
+html[data-theme="dark"] .leaderboard-section p,
+html[data-theme="dark"] .white-block p {
+    color: rgba(222, 228, 238, 0.92) !important;
+}
+
+/* Ensure any strong/bold tags in hero-like sections inherit the forced color */
+html[data-theme="dark"] .hero strong,
+html[data-theme="dark"] .jumbotron strong,
+html[data-theme="dark"] .landing-hero strong,
+html[data-theme="dark"] .page-section strong,
+html[data-theme="dark"] .leaderboard-section strong {
+    color: inherit !important;
+}
+
+/* Anchors inside hero should preserve CTAs but default links should be visible */
+html[data-theme="dark"] .hero a:not(.btn),
+html[data-theme="dark"] .jumbotron a:not(.btn),
+html[data-theme="dark"] .landing-hero a:not(.btn) {
+    color: rgba(0, 172, 237, 0.95) !important;
+}
+
+/* CTA / button polish for dark mode
+   Ensure primary CTAs keep the brand accent (red) similar to the screenshot:
+   - Filled CTA buttons use the red accent with white text
+   - Outline / ghost CTAs keep red text on transparent background
+   - Plain link CTAs inside hero/sections use red and slightly bolder weight
+   These rules are intentionally targeted and use moderate specificity so they
+   don't unintentionally override all .btn styles site-wide. */
+html[data-theme="dark"] .btn-cta,
+html[data-theme="dark"] a.btn-cta,
+html[data-theme="dark"] .btn.btn-cta,
+html[data-theme="dark"] .btn-red-500,
+html[data-theme="dark"] .text-red-500 {
+    color: #ffffff !important;
+    background-color: #e74c3c !important;
+    /* brand red */
+    border-color: #e74c3c !important;
+    box-shadow: 0 6px 18px rgba(231, 76, 60, 0.12), 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Ghost / link-style CTA: keep red text, transparent background */
+html[data-theme="dark"] a.cta-link,
+html[data-theme="dark"] .link-cta,
+html[data-theme="dark"] a.cta,
+html[data-theme="dark"] a.view-bounties,
+html[data-theme="dark"] a.start-learning {
+    color: #e74c3c !important;
+    background: transparent !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+}
+
+/* Hover/focus states for CTAs */
+html[data-theme="dark"] .btn-cta:hover,
+html[data-theme="dark"] a.btn-cta:hover,
+html[data-theme="dark"] .btn-red-500:hover {
+    background-color: #cf4436 !important;
+    border-color: #cf4436 !important;
+}
+
+html[data-theme="dark"] a.cta-link:hover,
+html[data-theme="dark"] .link-cta:hover,
+html[data-theme="dark"] a.view-bounties:hover,
+html[data-theme="dark"] a.start-learning:hover {
+    color: #c93e34 !important;
+    text-decoration: underline !important;
+}
+
+/* Make sure small arrow glyphs or inline SVGs next to CTAs remain visible */
+html[data-theme="dark"] a.cta-link svg,
+html[data-theme="dark"] .link-cta svg,
+html[data-theme="dark"] a.view-bounties svg,
+html[data-theme="dark"] a.start-learning svg {
+    fill: currentColor !important;
+}
+
+/* Safety: don't accidentally convert primary blue buttons to red.
+   Only apply the red treatment where an element has an explicit "red"/"cta" marker
+   or known CTA classes used in templates. */
+html[data-theme="dark"] .btn-primary:not(.btn-cta) {
+    /* keep existing primary blue button behavior */
+    background-color: #00ACED !important;
+    border-color: #00ACED !important;
+    color: #ffffff !important;
+}
+
+/* Leaderboard widget: change white card backgrounds to dark theme background */
+[data-theme="dark"] .bg-white.p-4.rounded-lg.border-2.border-\[\#e74c3c\] {
+    background-color: var(--card-bg) !important;
+}
+
+/* Leaderboard container background - ensure it matches dark theme */
+[data-theme="dark"] .flex.flex-col.p-5.pt-3.bg-white.m-1.rounded-\[2\.5rem\] {
+    background-color: var(--card-bg) !important;
+}
+
+/* GitHub Issues page: Stats cards (Total, Open, Closed, Pull Requests, Issues) */
+[data-theme="dark"] .bg-white.rounded-lg.shadow.p-4.text-center {
+    background-color: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .bg-white.rounded-lg.shadow.p-4.text-center h3 {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .bg-white.rounded-lg.shadow.p-4.text-center p {
+    color: var(--text-color) !important;
+}
+
+/* BACON Rewards section background in dark mode */
+[data-theme="dark"] .bg-gray-50.p-6.rounded-lg.border-2.border-\[\#e74c3c\] {
+    background-color: var(--card-bg) !important;
+}
+
+/* Ensure bg-red-600 badges maintain white text in dark mode */
+[data-theme="dark"] a.bg-red-600.text-white,
+[data-theme="dark"] .bg-red-600.text-white {
+    color: #ffffff !important;
+}
+
+/* Domain Scoreboard: Force table header text to white in normal mode */
+thead.bg-\[\#e74c3c\] th,
+thead.bg-\[\#e74c3c\] th a {
+    color: #ffffff !important;
+}
+
+/* Domain Scoreboard: Keep table header text white in dark mode */
+[data-theme="dark"] thead.bg-\[\#e74c3c\] th,
+[data-theme="dark"] thead.bg-\[\#e74c3c\] th a {
+    color: #ffffff !important;
+}
+
+/* Organizations button: white background in normal mode */
+button#organizations-btn {
+    background-color: #ffffff !important;
+}
+
+/* Organizations button: keep appropriate background in dark mode */
+[data-theme="dark"] button#organizations-btn {
+    background-color: var(--card-bg) !important;
+}
+
+/* Remove orange/red background from search container */
+.relative.flex.items-center.rounded-lg.overflow-hidden.bg-white.border-2.border-red-500.hover\:bg-red-50 {
+    background-color: #ffffff !important;
+}
+
+.relative.flex.items-center.rounded-lg.overflow-hidden.bg-white.border-2.border-red-500.hover\:bg-red-50:hover {
+    background-color: #ffffff !important;
+}
+
+/* Remove orange background from organizations button hover */
+button#organizations-btn:hover {
+    background-color: #ffffff !important;
+}
+
+/* Dark mode: keep appropriate backgrounds */
+[data-theme="dark"] .relative.flex.items-center.rounded-lg.overflow-hidden.bg-white.border-2.border-red-500.hover\:bg-red-50 {
+    background-color: var(--input-bg) !important;
+}
+
+[data-theme="dark"] .relative.flex.items-center.rounded-lg.overflow-hidden.bg-white.border-2.border-red-500.hover\:bg-red-50:hover {
+    background-color: var(--input-bg) !important;
+}
+
+[data-theme="dark"] button#organizations-btn:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+/* Github Issue Bounties: Button text color overrides */
+.open-issues-btn {
+    color: #ffffff !important;
+}
+
+.closed-issues-btn {
+    color: #222222 !important;
+}
+
+[data-theme="dark"] .closed-issues-btn {
+    color: #222222 !important;
+}
+
+[data-theme="dark"] .open-issues-btn {
+    color: #ffffff !important;
+}
+
+/* Submit PR Analysis page: force orange background on the Submit button in dark mode */
+[data-theme="dark"] form.bg-white.shadow-md.rounded.px-8.pt-8.pb-8.mb-6 button[type="submit"] {
+    background-color: #e74c3c !important;
+    border-color: #e74c3c !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] form.bg-white.shadow-md.rounded.px-8.pt-8.pb-8.mb-6 button[type="submit"]:hover {
+    background-color: #cf4436 !important;
+    border-color: #cf4436 !important;
+}
+
+/* GitHub Issue Generator page: dark background for main container & form in dark mode */
+[data-theme="dark"] .bg-\[\#F3F5F7\] {
+    background-color: var(--bg-color) !important;
+}
+
+[data-theme="dark"] form.bg-white.rounded-2xl.p-10.my-10.shadow-md,
+[data-theme="dark"] form#githubIssueSubmitForm {
+    background-color: var(--card-bg) !important;
+}
+
+[data-theme="dark"] form#githubIssueSubmitForm label,
+[data-theme="dark"] form#githubIssueSubmitForm .text-gray-900 {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] form#githubIssueSubmitForm textarea,
+[data-theme="dark"] form#githubIssueSubmitForm input[type="text"] {
+    background-color: var(--input-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* GSoC page: switch hero and main wrappers to page dark background in dark mode */
+[data-theme="dark"] .gsoc-hero,
+[data-theme="dark"] .gsoc-main {
+    background-color: var(--bg-color) !important;
+}
+
+/* Chat icon button: ensure fully orange background in dark mode */
+[data-theme="dark"] #chatIcon,
+[data-theme="dark"] #chatIcon.bg-red-600 {
+    background-color: #e74c3c !important;
+}
+
+[data-theme="dark"] #chatIcon:hover,
+[data-theme="dark"] #chatIcon.bg-red-600:hover {
+    background-color: #cf4436 !important;
+    opacity: 1 !important;
+}
+
+/* Apply proper dark background to all white rounded cards in dark mode */
+[data-theme="dark"] div.bg-white.rounded-2xl {
+    background-color: var(--bg-color) !important;
+}
+
+/* Ensure main content wrapper area matches dark background */
+[data-theme="dark"] .p-4.sm\:ml-64 {
+    background-color: var(--bg-color) !important;
+}
+
+/* Ensure main page containers (e.g., video call) match dark background */
+[data-theme="dark"] div.container.mx-auto {
+    background-color: var(--bg-color) !important;
+}
+
+/* Sitemap page: remove orange backgrounds from icons and use neutral color */
+[data-theme="dark"] #sitemapPage i {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] #sitemapPage i.text-red-500,
+[data-theme="dark"] #sitemapPage i.text-\[\#e74c3c\] {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+}
+
+/* Keep a subtle accent only on hover */
+[data-theme="dark"] #sitemapPage a:hover i {
+    color: #e74c3c !important;
+}
+
+/* Sitemap page: ensure heading has no orange background and use brand color */
+#sitemapPage h1,
+#sitemapPage h2 {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #e74d3e !important;
+}
+
+/* Statistics Dashboard: lighter text colors in dark mode */
+[data-theme="dark"] #dashboardContainer h1,
+[data-theme="dark"] #dashboardContainer h2,
+[data-theme="dark"] #dashboardContainer h3 {
+    color: #e5e7eb !important;
+}
+
+[data-theme="dark"] #dashboardContainer .text-gray-600,
+[data-theme="dark"] #dashboardContainer .text-gray-700 {
+    color: #d1d5db !important;
+}
+
+[data-theme="dark"] #dashboardContainer .text-gray-500 {
+    color: #9ca3af !important;
+}
+
+[data-theme="dark"] #dashboardContainer .text-gray-800,
+[data-theme="dark"] #dashboardContainer .text-gray-900 {
+    color: #f3f4f6 !important;
+}
+
+/* Statistics Dashboard: Time Period selector text colors */
+/* Normal mode: black text for inactive buttons */
+#dashboardContainer .bg-gray-100 a.text-gray-700 {
+    color: #000000 !important;
+}
+
+/* Dark mode: black text for inactive buttons */
+[data-theme="dark"] #dashboardContainer .bg-gray-100 a.text-gray-700 {
+    color: #000000 !important;
+}
+
+/* Ensure selected button keeps white text on red background in both modes */
+#dashboardContainer .bg-gray-100 a.bg-\[#e74c3c\].text-white,
+[data-theme="dark"] #dashboardContainer .bg-gray-100 a.bg-\[#e74c3c\].text-white {
+    color: #ffffff !important;
+}
+
+/* Rooms List: Message count badge - white text in normal mode */
+span.inline-flex.items-center.px-3.py-1.rounded-full.text-sm.font-medium.bg-red-100.text-red-800 {
+    color: #ffffff !important;
+}
+
+/* Terms and Conditions: Change orange div to #fff3f2 */
+.bg-red-50.border-l-4.border-red-400 {
+    background-color: #fff3f2 !important;
+}
+
+/* Terms and Conditions: Change all numbered icon backgrounds to #fff3f2 */
+.bg-red-100.flex.items-center.justify-center,
+.bg-red-100.rounded-full,
+div.bg-red-100 {
+    background-color: #fff3f2 !important;
+}
+
+/* Terms and Conditions: Background color for numbers in dark mode */
+[data-theme="dark"] .bg-red-100.flex.items-center.justify-center,
+[data-theme="dark"] .bg-red-100.rounded-full,
+[data-theme="dark"] div.bg-red-100 {
+    background-color: #fff3f2 !important;
+}
+
+/* Terms and Conditions: Black text color for numbers in dark mode */
+[data-theme="dark"] .bg-red-100 span.text-red-500,
+[data-theme="dark"] .bg-red-100 .text-red-500 {
+    color: #000000 !important;
+}
+
+/* Terms and Conditions: Remove outline/border from links */
+.lg\:max-w-\[90\%\] a {
+    outline: none !important;
+    border: none !important;
+}
+
+.lg\:max-w-\[90\%\] a:focus {
+    outline: none !important;
+    border: none !important;
+}
+
+/* Terms and Conditions: Remove background color and border from links in dark mode, and set orange text */
+[data-theme="dark"] .lg\:max-w-\[90\%\] a {
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: #e74c3c !important;
+}
+
+/* Style Guide: Darker background for gray divs in dark mode */
+[data-theme="dark"] div.bg-gray-100.p-6.rounded-lg {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+}
+
+/* Style Guide: White text for all elements inside gray divs in dark mode */
+[data-theme="dark"] div.bg-gray-100.p-6.rounded-lg * {
+    color: #ffffff !important;
+}
+
+/* Style Guide: Dark background for gradient divs in dark mode */
+[data-theme="dark"] div.bg-gradient-to-br.from-gray-50.to-white.p-8.rounded-xl.border.border-gray-200.shadow-lg {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+}
+
+/* Support OWASP BLT: Change all icon backgrounds to #fff3f2 */
+.bg-red-50.rounded-2xl,
+.bg-red-50.rounded-full {
+    background-color: #fff3f2 !important;
+}
+
+/* Mega Menu (light mode): make blue text black without affecting hover */
+html:not([data-theme="dark"]) #mega-menu .text-blue-500,
+html:not([data-theme="dark"]) #mega-menu .text-blue-600,
+html:not([data-theme="dark"]) #mega-menu .text-blue-700,
+html:not([data-theme="dark"]) #mega-menu a.text-blue-500,
+html:not([data-theme="dark"]) #mega-menu a.text-blue-600,
+html:not([data-theme="dark"]) #mega-menu a.text-blue-700,
+html:not([data-theme="dark"]) #mega-menu i.text-blue-500,
+html:not([data-theme="dark"]) #mega-menu i.text-blue-600,
+html:not([data-theme="dark"]) #mega-menu i.text-blue-700 {
+    color: #1f2937 !important;
+}
+
+/* Mega Menu (light mode): force all link/icon text to black by default */
+html:not([data-theme="dark"]) #mega-menu a,
+html:not([data-theme="dark"]) #mega-menu a:visited,
+html:not([data-theme="dark"]) #mega-menu i,
+html:not([data-theme="dark"]) #mega-menu span.link-text {
+    color: #1f2937 !important;
+}
+
+/* Preserve hover intent (brand orange) in light mode */
+html:not([data-theme="dark"]) #mega-menu a:hover {
+    color: #e74c3c !important;
+}
+
+/* Sidebar/Hamburger menu (light mode): default text/icon color black */
+html:not([data-theme="dark"]) .sidebar a,
+html:not([data-theme="dark"]) .sidebar a:visited,
+html:not([data-theme="dark"]) .sidebar i,
+html:not([data-theme="dark"]) .sidebar .text-blue-500,
+html:not([data-theme="dark"]) .sidebar .text-blue-600,
+html:not([data-theme="dark"]) .sidebar .text-blue-700 {
+    color: #1f2937 !important; /* Tailwind gray-800: slightly lighter than black for better balance */
+}
+
+/* Sidebar/Hamburger menu (light mode): keep hover orange for links */
+html:not([data-theme="dark"]) .sidebar a:hover {
+    color: #e74c3c !important;
+}
+
+/* Map Page: Ensure organizations button text and icon are white when selected */
+a.inline-flex.items-center.px-4.py-2.rounded-lg.bg-\[#e74c3c\].text-white {
+    color: #ffffff !important;
+}
+
+a.inline-flex.items-center.px-4.py-2.rounded-lg.bg-\[#e74c3c\].text-white i {
+    color: #ffffff !important;
+}
+
+/* Map Page: Ensure organizations button text is black when not selected in normal mode */
+a.inline-flex.items-center.px-4.py-2.rounded-lg.bg-white.text-gray-700 {
+    color: #000000 !important;
+}
+
+/* Map Page: Ensure organizations button text is white when not selected in dark mode */
+/* Map Page: Ensure organizations button text is white when not selected in dark mode */
+[data-theme="dark"] a.inline-flex.items-center.px-4.py-2.rounded-lg.bg-white.text-gray-700 {
+    color: #ffffff !important;
+}
+
+/* Bugs page: change blue link styles to white (both modes) */
+#bugsPage a:not(.btn),
+#bugsPage a:visited:not(.btn) {
+    color: #ffffff !important;
+}
+#bugsPage a:hover:not(.btn) {
+    color: #ffffff !important;
+}
+#bugsPage .text-blue-500,
+#bugsPage .text-blue-600,
+#bugsPage .text-blue-700,
+#bugsPage a.text-blue-500,
+#bugsPage a.text-blue-600,
+#bugsPage a.text-blue-700,
+#bugsPage i.text-blue-500,
+#bugsPage i.text-blue-600,
+#bugsPage i.text-blue-700 {
+    color: #ffffff !important;
+}
