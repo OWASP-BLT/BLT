@@ -1,40 +1,71 @@
-# Start from an official Python image
-FROM python:3.13-slim
+# Stage 1: Build stage
+FROM python:3.11.2 AS builder
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Set working directory
-WORKDIR /app
+ENV PYTHONUNBUFFERED 1
+WORKDIR /blt
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    pkg-config \
-    libsecp256k1-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y postgresql-client libpq-dev \
+    libmemcached11 libmemcachedutil2 libmemcached-dev libz-dev \
+    dos2unix && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
+# # Install Chrome WebDriver
+# RUN CHROMEDRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE` && \
+#     mkdir -p /opt/chromedriver-$CHROMEDRIVER_VERSION && \
+#     curl -sS -o /tmp/chromedriver_linux64.zip http://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip && \
+#     unzip -qq /tmp/chromedriver_linux64.zip -d /opt/chromedriver-$CHROMEDRIVER_VERSION && \
+#     rm /tmp/chromedriver_linux64.zip && \
+#     chmod +x /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver && \
+#     ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
 
-# Add Poetry to PATH
-ENV PATH="/root/.local/bin:$PATH"
+# Install Google Chrome
+RUN curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get -yqq update && \
+    apt-get -yqq install google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy dependency files first for caching
-COPY pyproject.toml poetry.lock ./
+RUN ln -s /usr/bin/google-chrome-stable /usr/local/bin/google-chrome
 
-# Install Python dependencies
-RUN poetry install --no-root --no-interaction --no-ansi
+# Install Poetry and dependencies
+RUN pip install poetry
+RUN poetry config virtualenvs.create false
+COPY pyproject.toml poetry.lock* ./
+# Clean any existing httpx installation and update pip
+RUN pip uninstall -y httpx || true
+RUN pip install --upgrade pip
+# Install dependencies with Poetry
+RUN poetry install --no-root --no-interaction
 
-# Copy the rest of the project
-COPY . .
+# Install additional Python packages
+RUN pip install opentelemetry-api opentelemetry-instrumentation
 
-# Expose the port Django runs on
-EXPOSE 8000
+# Stage 2: Runtime stage
+FROM python:3.11.2-slim
 
-# Note: This Dockerfile is for local development.
-# For production, use Gunicorn or uWSGI instead of runserver.
+ENV PYTHONUNBUFFERED 1
+WORKDIR /blt
+
+# Copy only necessary files from builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Install runtime system dependencies
+RUN apt-get update && \
+    apt-get install -y postgresql-client libpq-dev \
+    libmemcached11 libmemcachedutil2 dos2unix && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy application code
+COPY . /blt
+
+# Convert line endings and set permissions
+RUN dos2unix Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
+# Check if .env exists and run dos2unix on it, otherwise skip
+RUN if [ -f /blt/.env ]; then dos2unix /blt/.env; fi
+RUN chmod +x /blt/entrypoint.sh
+
+ENTRYPOINT ["/blt/entrypoint.sh"]
 CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
