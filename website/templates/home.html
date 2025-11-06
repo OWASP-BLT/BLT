@@ -248,7 +248,7 @@
                                     </div>
                                     <p class="text-gray-600 text-sm mb-3">
                                         Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
-                                                        class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
+    class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                     </p>
                                     <p class="text-gray-700 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
                                     <div class="flex items-center text-sm text-gray-500 mb-4">
@@ -519,10 +519,10 @@
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">The main engine powering OWASP BLT's system API and Slack Bot.</p>
                         <div class="flex flex-col gap-2">
-                                     <a href="https://github.com/OWASP-BLT/BLT"
-                                         target="_blank"
-                                         rel="noopener noreferrer"
-                                         class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
+                            <a href="https://github.com/OWASP-BLT/BLT"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'blt' %}
@@ -546,10 +546,10 @@
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">Mobile application for on-the-go bug reporting and management.</p>
                         <div class="flex flex-col gap-2">
-                                     <a href="https://github.com/OWASP-BLT/BLT-Flutter"
-                                         target="_blank"
-                                         rel="noopener noreferrer"
-                                         class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
+                            <a href="https://github.com/OWASP-BLT/BLT-Flutter"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'flutter' %}
@@ -573,10 +573,10 @@
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">Browser extension for quick bug reporting and screenshots.</p>
                         <div class="flex flex-col gap-2">
-                                     <a href="https://github.com/OWASP-BLT/BLT-Extension"
-                                         target="_blank"
-                                         rel="noopener noreferrer"
-                                         class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
+                            <a href="https://github.com/OWASP-BLT/BLT-Extension"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'extension' %}
@@ -600,10 +600,10 @@
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">GitHub Action for automated security checks and reporting.</p>
                         <div class="flex flex-col gap-2">
-                                     <a href="https://github.com/OWASP-BLT/BLT-Action"
-                                         target="_blank"
-                                         rel="noopener noreferrer"
-                                         class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
+                            <a href="https://github.com/OWASP-BLT/BLT-Action"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'action' %}
@@ -1161,8 +1161,12 @@
             <div class="max-w-7xl mx-auto text-center">
                 <p class="mb-4">Follow us on:</p>
                 <div class="flex justify-center space-x-6">
-                    <a href="https://twitter.com/OWASP_BLT" target="_blank" rel="noopener noreferrer"><i class="fab fa-twitter fa-2x"></i></a>
-                    <a href="https://github.com/OWASP-BLT" target="_blank" rel="noopener noreferrer"><i class="fab fa-github fa-2x"></i></a>
+                    <a href="https://twitter.com/OWASP_BLT"
+                       target="_blank"
+                       rel="noopener noreferrer"><i class="fab fa-twitter fa-2x"></i></a>
+                    <a href="https://github.com/OWASP-BLT"
+                       target="_blank"
+                       rel="noopener noreferrer"><i class="fab fa-github fa-2x"></i></a>
                 </div>
                 <p class="mt-4">© {{ current_year }} OWASP BLT. All rights reserved.</p>
                 <p>Last commit: {{ last_commit }}</p>
