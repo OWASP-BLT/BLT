@@ -15,7 +15,11 @@ function toggleDarkMode() {
     const newTheme = isDarkMode ? 'light' : 'dark';
     
     document.documentElement.dataset.theme = newTheme;
-    localStorage.setItem('theme', newTheme);
+    try {
+        localStorage.setItem('theme', newTheme);
+    } catch (e) {
+        console.warn('Failed to save theme preference:', e);
+    }
     updateDarkModeIcon(!isDarkMode);
 
     // Update aria-pressed on the dark mode toggle button to reflect new state

@@ -395,6 +395,7 @@
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             <a href="{{ user.contributor__github_url }}"
                                                target="_blank"
+                                               rel="noopener noreferrer"
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
                                                 {% if user.contributor__avatar_url %}
                                                     <img src="{{ user.contributor__avatar_url }}"
@@ -420,6 +421,7 @@
                                         <p>No BLT PRs for {{ current_time|date:"F Y" }}</p>
                                         <a href="https://github.com/OWASP-BLT/BLT/pulls"
                                            target="_blank"
+                                           rel="noopener noreferrer"
                                            class="text-[#e74c3c] hover:underline text-sm mt-2 inline-block">
                                             <i class="fas fa-external-link-alt mr-1"></i>View PRs on GitHub
                                         </a>
@@ -519,6 +521,7 @@
                         <div class="flex flex-col gap-2">
                                      <a href="https://github.com/OWASP-BLT/BLT"
                                          target="_blank"
+                                         rel="noopener noreferrer"
                                          class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
@@ -545,6 +548,7 @@
                         <div class="flex flex-col gap-2">
                                      <a href="https://github.com/OWASP-BLT/BLT-Flutter"
                                          target="_blank"
+                                         rel="noopener noreferrer"
                                          class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
@@ -571,6 +575,7 @@
                         <div class="flex flex-col gap-2">
                                      <a href="https://github.com/OWASP-BLT/BLT-Extension"
                                          target="_blank"
+                                         rel="noopener noreferrer"
                                          class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
@@ -597,6 +602,7 @@
                         <div class="flex flex-col gap-2">
                                      <a href="https://github.com/OWASP-BLT/BLT-Action"
                                          target="_blank"
+                                         rel="noopener noreferrer"
                                          class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors star-btn">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
@@ -784,7 +790,8 @@
                                     <i class="fas fa-globe mr-2"></i>
                                     <a href="{{ bug.url }}"
                                        class="hover:text-[#e74c3c] truncate"
-                                       target="_blank">{{ bug.domain_name }}</a>
+                                       target="_blank"
+                                       rel="noopener noreferrer">{{ bug.domain_name }}</a>
                                 </div>
                                 {% if bug.screenshots.all.0 %}
                                     <div class="mb-4 rounded-lg overflow-hidden">
@@ -1117,6 +1124,7 @@
                         <p class="text-gray-700">
                             Donate to the BLT project to support our development and have your logo featured here. <a href="https://owasp.org/donate?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool"
     target="_blank"
+    rel="noopener noreferrer"
     class="text-[#e74c3c] hover:text-[#c0392b]">Become a Supporter</a>
                         </p>
                     </div>
@@ -1153,8 +1161,8 @@
             <div class="max-w-7xl mx-auto text-center">
                 <p class="mb-4">Follow us on:</p>
                 <div class="flex justify-center space-x-6">
-                    <a href="https://twitter.com/OWASP_BLT" target="_blank"><i class="fab fa-twitter fa-2x"></i></a>
-                    <a href="https://github.com/OWASP-BLT" target="_blank"><i class="fab fa-github fa-2x"></i></a>
+                    <a href="https://twitter.com/OWASP_BLT" target="_blank" rel="noopener noreferrer"><i class="fab fa-twitter fa-2x"></i></a>
+                    <a href="https://github.com/OWASP-BLT" target="_blank" rel="noopener noreferrer"><i class="fab fa-github fa-2x"></i></a>
                 </div>
                 <p class="mt-4">© {{ current_year }} OWASP BLT. All rights reserved.</p>
                 <p>Last commit: {{ last_commit }}</p>
