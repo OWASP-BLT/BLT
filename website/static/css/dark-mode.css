@@ -1,3 +1,15 @@
+/* Respect user's motion preferences for accessibility */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 /* Ensure bg-red-600 badges have white text in both normal and dark modes */
 a.bg-red-600.text-white,
 .bg-red-600.text-white {
@@ -721,7 +733,10 @@ html[data-theme="dark"] .bg-red-500 {
 input,
 select,
 textarea {
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease;
 }
 
 /* Status indicators */
@@ -1234,7 +1249,8 @@ html:not([data-theme="dark"]) .sidebar i,
 html:not([data-theme="dark"]) .sidebar .text-blue-500,
 html:not([data-theme="dark"]) .sidebar .text-blue-600,
 html:not([data-theme="dark"]) .sidebar .text-blue-700 {
-    color: #1f2937 !important; /* Tailwind gray-800: slightly lighter than black for better balance */
+    color: #1f2937 !important;
+    /* Tailwind gray-800: slightly lighter than black for better balance */
 }
 
 /* Sidebar/Hamburger menu (light mode): keep hover orange for links */
@@ -1267,9 +1283,11 @@ a.inline-flex.items-center.px-4.py-2.rounded-lg.bg-white.text-gray-700 {
 #bugsPage a:visited:not(.btn) {
     color: #ffffff !important;
 }
+
 #bugsPage a:hover:not(.btn) {
     color: #ffffff !important;
 }
+
 #bugsPage .text-blue-500,
 #bugsPage .text-blue-600,
 #bugsPage .text-blue-700,

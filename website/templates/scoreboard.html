@@ -1,25 +1,39 @@
 {% extends "base.html" %}
+
 {% load gravatar %}
 {% load static %}
+
 {% block title %}
     Domain Scoreboard
+
 {% endblock title %}
+
 {% block description %}
     Track and compare domain performance. View open and closed issues, email events, and the top tester for each domain to monitor activity and engagement.
+
 {% endblock description %}
+
 {% block keywords %}
     Domain Scoreboard, Track Domain Performance, Open Issues, Closed Issues, Email Events, Top Tester
+
 {% endblock keywords %}
+
 {% block og_title %}
     Domain Scoreboard - Monitor Domain Performance
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access the domain scoreboard to track and compare domain performance. View details on open and closed issues, email events, and the top tester for each domain.
+
 {% endblock og_description %}
 {% load humanize %}
+
 {% block style %}
     {% include "includes/sidenav.html" %}
+
 {% endblock style %}
+
 {% block content %}
     <div class="fixed bottom-4 right-4 space-x-2">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/scoreboard.html"
@@ -85,7 +99,10 @@
                                                  width="64"
                                                  height="64">
                                         {% endif %}
-                                        <div class="{% if domain.get_logo and domain.get_logo != 'None' %}hidden{% endif %} w-16 h-16 rounded bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-bold">
+                                        <div class="{% if domain.get_logo and domain.get_logo != 'None' %}
+                                                        hidden
+                                                    {% endif %}
+                                                    w-16 h-16 rounded bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-bold">
                                             {{ domain.name|slice:":1"|upper }}
                                         </div>
                                     </a>
@@ -125,4 +142,5 @@
             </div>
         {% endif %}
     </div>
+
 {% endblock content %}

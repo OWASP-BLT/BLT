@@ -1,23 +1,36 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
+
 {% block title %}
     Upcoming Hunts
+
 {% endblock title %}
+
 {% block description %}
     Stay updated with the upcoming hunts. View details on the latest hunts, their URLs, and prize amounts. Participate and win exciting prizes.
+
 {% endblock description %}
+
 {% block keywords %}
     Upcoming Hunts, Hunt Details, Prize Amounts, Participate, Win Prizes, Latest Hunts
+
 {% endblock keywords %}
+
 {% block og_title %}
     Upcoming Hunts - Stay Updated and Win Prizes
+
 {% endblock og_title %}
+
 {% block og_description %}
     Stay informed about the upcoming hunts. View the latest hunt details, including URLs and prize amounts. Participate and stand a chance to win exciting prizes.
+
 {% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     <div>
         <div class="col_3">
@@ -45,4 +58,5 @@
         <div class="clearfix"></div>
     </div>
 </div>
+
 {% endblock content %}

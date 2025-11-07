@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load gravatar %}
 {% load static %}
+
 {% block title %}
     Explore Our Community Members
+
 {% endblock title %}
+
 {% block description %}
     Discover and connect with our diverse community members. View profiles, roles, and contact information to engage with like-minded individuals.
+
 {% endblock description %}
+
 {% block keywords %}
     Community Members, Explore Members, View Profiles, Connect with Community, User Roles, Contact Information
+
 {% endblock keywords %}
+
 {% block og_title %}
     Explore Our Community Members - Connect and Discover
+
 {% endblock og_title %}
+
 {% block og_description %}
     Dive into our community and meet our members. View profiles, learn about their roles, and get in touch to build meaningful connections.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container py-8 min-h-[100vh] mx-auto">
         <!-- Hero Section -->
         <div class="flex flex-col text-center gap-6 mb-12 px-4 py-8 max-w-7xl mx-auto">
@@ -31,28 +44,52 @@
         <!-- Filter Tags Section -->
         <div class="flex flex-wrap items-center justify-center gap-4 my-12 px-4 max-w-5xl mx-auto">
             <a href="?contributors=true"
-               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if show_contributors %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
+               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform
+                      {% if show_contributors %}
+                          bg-[#e74c3c] text-white
+                      {% else %}
+                          bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200
+                      {% endif %}">
                 <i class="fas fa-users mr-2"></i>
                 <span>OWASP Contributors</span>
-                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if show_contributors %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
-                    {{ contributors_count }}
-                </span>
+                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px]
+                             {% if show_contributors %}
+                                 bg-white/20 text-white
+                             {% else %}
+                                 bg-gray-100 text-gray-600
+                             {% endif %}">{{ contributors_count }}</span>
             </a>
             <a href="?githubbers=true"
-               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if githubbers %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
+               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform
+                      {% if githubbers %}
+                          bg-[#e74c3c] text-white
+                      {% else %}
+                          bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200
+                      {% endif %}">
                 <i class="fab fa-github mr-2"></i>
                 <span>Githubbers</span>
-                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if githubbers %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
-                    {{ users_with_github_count }}
-                </span>
+                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px]
+                             {% if githubbers %}
+                                 bg-white/20 text-white
+                             {% else %}
+                                 bg-gray-100 text-gray-600
+                             {% endif %}">{{ users_with_github_count }}</span>
             </a>
             {% for tag_obj in tags_with_counts %}
                 <a href="?tag={{ tag_obj.name }}"
-                   class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if tag_obj.name == tag %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
+                   class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform
+                          {% if tag_obj.name == tag %}
+                              bg-[#e74c3c] text-white
+                          {% else %}
+                              bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200
+                          {% endif %}">
                     <span>{{ tag_obj.name }}</span>
-                    <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if tag_obj.name == tag %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
-                        {{ tag_obj.user_count }}
-                    </span>
+                    <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px]
+                                 {% if tag_obj.name == tag %}
+                                     bg-white/20 text-white
+                                 {% else %}
+                                     bg-gray-100 text-gray-600
+                                 {% endif %}">{{ tag_obj.user_count }}</span>
                 </a>
             {% endfor %}
         </div>
@@ -166,4 +203,5 @@
             {% endif %}
         </div>
     </div>
+
 {% endblock content %}

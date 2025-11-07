@@ -1,5 +1,6 @@
 {% load gravatar %}
 {% load humanize %}
+
 <div class="flex flex-col p-5 pt-3 bg-white m-1 rounded-[2.5rem] border-2 border-gray-200 font-['Inter'] h-[630px] shadow-sm hover:shadow-md transition-shadow duration-300">
     <!-- Header -->
     <div class="font-['Barlow_Semi_Condensed'] font-semibold text-black text-2xl mb-4 text-center">
@@ -140,22 +141,30 @@
 </div>
 <script>
     const openModal = (btc, eth, bch, userId) => {
-        const cryptoOptions = [
-            { name: 'Bitcoin Cash', address: bch },
-            { name: 'Ethereum', address: eth },
-            { name: 'Bitcoin', address: btc }
-        ];
+        const cryptoOptions = [{
+            name: 'Bitcoin Cash',
+            address: bch
+        }, {
+            name: 'Ethereum',
+            address: eth
+        }, {
+            name: 'Bitcoin',
+            address: btc
+        }];
         let currentIndex = 0;
 
         const updateSlide = () => {
-            let { name, address } = cryptoOptions[currentIndex];
+            let {
+                name,
+                address
+            } = cryptoOptions[currentIndex];
             if (address == '' || address == 'None') {
                 address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
-                document.getElementById('crypto-name-'+userId).textContent = `No address: Will go to BLT Donation`;
-                document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-                document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
+                document.getElementById('crypto-name-' + userId).textContent = `No address: Will go to BLT Donation`;
+                document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address-' + userId).textContent = `BCH: ${address}`;
             } else {
-                document.getElementById('crypto-name-'+userId).textContent = name;
+                document.getElementById('crypto-name-' + userId).textContent = name;
                 document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
                 document.getElementById('crypto-address-' + userId).textContent = `${address}`;
             }

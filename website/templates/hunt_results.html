@@ -1,26 +1,39 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
+
 {% block title %}
     Hunt Results
+
 {% endblock title %}
+
 {% block description %}
     Explore the results of the completed hunt. View details about the domain, hunt description, and the hunt URL.
+
 {% endblock description %}
+
 {% block keywords %}
     Hunt Results, Completed Hunt, Hunt Details, Domain Information, Hunt URL
+
 {% endblock keywords %}
+
 {% block og_title %}
     Hunt Results - Completed Hunt Details
+
 {% endblock og_title %}
+
 {% block og_description %}
     Discover the details of the completed hunt including the domain, hunt description, and URL. Explore the results and insights from the hunt.
+
 {% endblock og_description %}
+
 {% block content %}
     <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
           rel="stylesheet">
     <section>
         {% include "includes/user_sidenav.html" %}
+
     </section>
     <main>
         <!-- Banner Section -->
@@ -57,7 +70,7 @@
     <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
     <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
     <script>
-        $(function () {
+        $(function() {
             editormd.markdownToHTML("content", {
                 emoji: true,
                 taskList: true,
@@ -66,9 +79,10 @@
                 sequenceDiagram: true,
             });
 
-            $(".reference-link").each(function (i, obj) {
+            $(".reference-link").each(function(i, obj) {
                 console.log(obj);
             });
         });
     </script>
+
 {% endblock content %}

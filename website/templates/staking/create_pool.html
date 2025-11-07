@@ -1,12 +1,17 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Create Staking Pool
     | OWASP BLT
+
 {% endblock %}
+
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-2xl mx-auto">
             <div class="mb-6">
@@ -138,23 +143,24 @@
         </div>
     </div>
     <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const stakeAmountInput = document.getElementById("stake_amount");
-    const poolTypeSelect = document.getElementById("pool_type");
-    const potPreview2 = document.getElementById("pot-preview-2");
-    const potPreview3 = document.getElementById("pot-preview-3");
+        document.addEventListener("DOMContentLoaded", function() {
+            const stakeAmountInput = document.getElementById("stake_amount");
+            const poolTypeSelect = document.getElementById("pool_type");
+            const potPreview2 = document.getElementById("pot-preview-2");
+            const potPreview3 = document.getElementById("pot-preview-3");
 
-    function updatePotPreviews() {
-      const stakeAmount = parseFloat(stakeAmountInput.value) || 0;
-      const pot2 = stakeAmount * 2;
-      const pot3 = stakeAmount * 3;
+            function updatePotPreviews() {
+                const stakeAmount = parseFloat(stakeAmountInput.value) || 0;
+                const pot2 = stakeAmount * 2;
+                const pot3 = stakeAmount * 3;
 
-      potPreview2.textContent = pot2.toFixed(0) + " BACON";
-      potPreview3.textContent = pot3.toFixed(0) + " BACON";
-    }
+                potPreview2.textContent = pot2.toFixed(0) + " BACON";
+                potPreview3.textContent = pot3.toFixed(0) + " BACON";
+            }
 
-    stakeAmountInput.addEventListener("input", updatePotPreviews);
-    updatePotPreviews();
-  });
+            stakeAmountInput.addEventListener("input", updatePotPreviews);
+            updatePotPreviews();
+        });
     </script>
+
 {% endblock %}

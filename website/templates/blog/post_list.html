@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Blog Posts | {% env 'PROJECT_NAME' %}
+
 {% endblock title %}
+
 {% block description %}
     Explore a collection of blog posts by various authors on {% env 'PROJECT_NAME' %}. Stay informed, inspired, and engaged with the latest updates!
+
 {% endblock description %}
+
 {% block keywords %}
     blog posts, {% env 'PROJECT_NAME' %}, authors, latest updates, blogging, community, articles
+
 {% endblock keywords %}
+
 {% block og_title %}
     Explore Blog Posts on {% env 'PROJECT_NAME' %}
+
 {% endblock og_title %}
+
 {% block og_description %}
     Dive into a variety of blog posts on {% env 'PROJECT_NAME' %}. From insightful articles to engaging stories, there's something for everyone!
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <!-- Simple Header Section -->
     <div class="bg-white py-8 mb-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -166,4 +179,5 @@
     </a>
     <!-- Blog JavaScript -->
     <script src="{% static 'js/blog.js' %}"></script>
+
 {% endblock content %}

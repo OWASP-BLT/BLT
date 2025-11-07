@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-100">
         <header class="bg-white shadow">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -86,7 +88,12 @@
                                                     <div class="flex items-center">
                                                         <span class="text-sm font-medium text-gray-500 mr-3">{{ task.order }}.</span>
                                                         <p class="text-sm font-medium text-gray-900">{{ task.name }}</p>
-                                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if task.task_type == 'theory' %}bg-blue-100 text-blue-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                                     {% if task.task_type == 'theory' %}
+                                                                         bg-blue-100 text-blue-800
+                                                                     {% else %}
+                                                                         bg-red-100 text-red-800
+                                                                     {% endif %}">
                                                             {{ task.get_task_type_display }}
                                                         </span>
                                                     </div>
@@ -115,4 +122,5 @@
             </div>
         </main>
     </div>
+
 {% endblock %}

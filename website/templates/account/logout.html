@@ -1,24 +1,37 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Logout
+
 {% endblock title %}
+
 {% block description %}
     Successfully logout from {% env 'PROJECT_NAME' %}. Ensure your account's security by logging out after each session.
+
 {% endblock description %}
+
 {% block keywords %}
     Logout, Secure Logout, Account Security, Log Out, End Session
+
 {% endblock keywords %}
+
 {% block og_title %}
     Logout - Secure Your Account
+
 {% endblock og_title %}
+
 {% block og_description %}
     Successfully logout from {% env 'PROJECT_NAME' %} to secure your account. Ensure your account's security by logging out after each session.
+
 {% endblock og_description %}
 {% load i18n %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <h1>{% trans "Sign Out" %}</h1>
     <p>{% trans "Are you sure?" %}</p>
     <form method="post"
@@ -32,4 +45,5 @@
         <button class="btn btn-primary text-black" type="submit">{% trans "Yes" %}</button>
         <a href="{% url 'account_profile' %}" class="btn btn-default">{% trans "Cancel" %}</a>
     </form>
+
 {% endblock content %}

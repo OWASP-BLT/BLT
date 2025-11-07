@@ -1,24 +1,37 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
 {% load humanize %}
+
 {% block title %}
     Service Status
+
 {% endblock title %}
+
 {% block description %}
     Check the status of various services including Bitcoin Node, SendGrid API, and GitHub API. Stay informed about their current operational status and block information.
+
 {% endblock description %}
+
 {% block keywords %}
     Service Status, Bitcoin Node, SendGrid API, GitHub API, Operational Status, Block Information
+
 {% endblock keywords %}
+
 {% block og_title %}
     Service Status - Monitor Operational Status
+
 {% endblock og_title %}
+
 {% block og_description %}
     View the current status of services such as Bitcoin Node, SendGrid API, and GitHub API. Stay updated on their operational status and block information.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="max-w-7xl mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold text-center mb-8">Service Status</h1>
         <a href="{% url 'management_commands' %}"
@@ -30,8 +43,14 @@
                 <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
                     <h3 class="text-xl font-semibold mb-4">Bitcoin Node</h3>
                     <div class="flex items-center">
-                        <div class="w-3 h-3 rounded-full mr-3 {% if status.bitcoin == None %}bg-gray-400{% elif status.bitcoin %}bg-green-500{% else %}bg-red-500{% endif %}">
-                        </div>
+                        <div class="w-3 h-3 rounded-full mr-3
+                                    {% if status.bitcoin == None %}
+                                        bg-gray-400
+                                    {% elif status.bitcoin %}
+                                        bg-green-500
+                                    {% else %}
+                                        bg-red-500
+                                    {% endif %}"></div>
                         {% if status.bitcoin == None %}
                             <span>Status Unknown</span>
                         {% elif status.bitcoin %}
@@ -51,8 +70,14 @@
                 <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
                     <h3 class="text-xl font-semibold mb-4">SendGrid API</h3>
                     <div class="flex items-center">
-                        <div class="w-3 h-3 rounded-full mr-3 {% if status.sendgrid == None %}bg-gray-400{% elif status.sendgrid %}bg-green-500{% else %}bg-red-500{% endif %}">
-                        </div>
+                        <div class="w-3 h-3 rounded-full mr-3
+                                    {% if status.sendgrid == None %}
+                                        bg-gray-400
+                                    {% elif status.sendgrid %}
+                                        bg-green-500
+                                    {% else %}
+                                        bg-red-500
+                                    {% endif %}"></div>
                         {% if status.sendgrid == None %}
                             <span>Status Unknown</span>
                         {% elif status.sendgrid %}
@@ -66,8 +91,14 @@
                 <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
                     <h3 class="text-xl font-semibold mb-4">OpenAI API</h3>
                     <div class="flex items-center">
-                        <div class="w-3 h-3 rounded-full mr-3 {% if status.openai == None %}bg-gray-400{% elif status.openai %}bg-green-500{% else %}bg-red-500{% endif %}">
-                        </div>
+                        <div class="w-3 h-3 rounded-full mr-3
+                                    {% if status.openai == None %}
+                                        bg-gray-400
+                                    {% elif status.openai %}
+                                        bg-green-500
+                                    {% else %}
+                                        bg-red-500
+                                    {% endif %}"></div>
                         {% if status.openai == None %}
                             <span>Status Unknown</span>
                         {% elif status.openai %}
@@ -81,8 +112,14 @@
                 <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
                     <h3 class="text-xl font-semibold mb-4">GitHub API</h3>
                     <div class="flex items-center mb-4">
-                        <div class="w-3 h-3 rounded-full mr-3 {% if status.github == None %}bg-gray-400{% elif status.github %}bg-green-500{% else %}bg-red-500{% endif %}">
-                        </div>
+                        <div class="w-3 h-3 rounded-full mr-3
+                                    {% if status.github == None %}
+                                        bg-gray-400
+                                    {% elif status.github %}
+                                        bg-green-500
+                                    {% else %}
+                                        bg-red-500
+                                    {% endif %}"></div>
                         {% if status.github == None %}
                             <span>Status Unknown</span>
                         {% elif status.github %}
@@ -206,9 +243,11 @@
                     <div>
                         <p class="mb-2">
                             <strong>Status:</strong>
-                            <span class="{% if status.redis_stats.status == 'Connected' %}text-green-600{% else %}text-red-600{% endif %}">
-                                {{ status.redis_stats.status }}
-                            </span>
+                            <span class="{% if status.redis_stats.status == 'Connected' %}
+                                             text-green-600
+                                         {% else %}
+                                             text-red-600
+                                         {% endif %}">{{ status.redis_stats.status }}</span>
                         </p>
                         {% if status.redis_stats.error %}
                             <p class="text-red-600 mb-2">
@@ -292,7 +331,12 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{ activity.created|date:"M d, H:i" }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                     <span class="inline-flex items-center">
-                                                        <div class="w-2 h-2 rounded-full mr-2 {% if activity.success %}bg-green-500{% else %}bg-red-500{% endif %}"></div>
+                                                        <div class="w-2 h-2 rounded-full mr-2
+                                                                    {% if activity.success %}
+                                                                        bg-green-500
+                                                                    {% else %}
+                                                                        bg-red-500
+                                                                    {% endif %}"></div>
                                                         {{ activity.success|yesno:"Success,Failed" }}
                                                     </span>
                                                 </td>
@@ -307,126 +351,123 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}
+
 {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('activityChart').getContext('2d');
-    const dates = JSON.parse('{{ status.template_chart_data.dates|escapejs }}');
-    const teamJoins = JSON.parse('{{ status.template_chart_data.team_joins|escapejs }}');
-    const commands = JSON.parse('{{ status.template_chart_data.commands|escapejs }}');
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            const dates = JSON.parse('{{ status.template_chart_data.dates|escapejs }}');
+            const teamJoins = JSON.parse('{{ status.template_chart_data.team_joins|escapejs }}');
+            const commands = JSON.parse('{{ status.template_chart_data.commands|escapejs }}');
 
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: dates,
-            datasets: [
-                {
-                    label: 'Team Joins',
-                    data: teamJoins,
-                    backgroundColor: '#e74c3c',
-                    borderColor: '#c0392b',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Commands',
-                    data: commands,
-                    backgroundColor: '#e74c3c80',
-                    borderColor: '#c0392b80',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-    
-    // GitHub API Usage History Chart
-    const githubApiChartElement = document.getElementById('githubApiChart');
-    if (githubApiChartElement) {
-        let githubApiHistory = [];
-        try {
-            githubApiHistory = JSON.parse('{{ status.github_api_history|escapejs|default:"[]" }}');
-        } catch (e) {
-            console.error('Error parsing GitHub API history:', e);
-        }
-        
-        if (githubApiHistory && githubApiHistory.length > 0) {
-            // Format the data for the chart
-            const timestamps = githubApiHistory.map(entry => entry.timestamp);
-            const remaining = githubApiHistory.map(entry => parseInt(entry.remaining) || 0);
-            const used = githubApiHistory.map(entry => parseInt(entry.used) || 0);
-            
-            new Chart(githubApiChartElement, {
-                type: 'line',
+            const chart = new Chart(ctx, {
+                type: 'bar',
                 data: {
-                    labels: timestamps,
-                    datasets: [
-                        {
-                            label: 'Remaining',
-                            data: remaining,
-                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                            borderColor: '#e74c3c',
-                            borderWidth: 2,
-                            tension: 0.1,
-                            fill: true
-                        },
-                        {
-                            label: 'Used',
-                            data: used,
-                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                            borderColor: '#3498db',
-                            borderWidth: 2,
-                            tension: 0.1,
-                            fill: true
-                        }
-                    ]
+                    labels: dates,
+                    datasets: [{
+                        label: 'Team Joins',
+                        data: teamJoins,
+                        backgroundColor: '#e74c3c',
+                        borderColor: '#c0392b',
+                        borderWidth: 1
+                    }, {
+                        label: 'Commands',
+                        data: commands,
+                        backgroundColor: '#e74c3c80',
+                        borderColor: '#c0392b80',
+                        borderWidth: 1
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
                         y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'API Calls'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Time'
-                            }
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'GitHub API Usage History'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.dataset.label || '';
-                                    const value = context.parsed.y;
-                                    return `${label}: ${value}`;
-                                }
-                            }
+                            beginAtZero: true
                         }
                     }
                 }
             });
-        }
-    }
-});
+
+            // GitHub API Usage History Chart
+            const githubApiChartElement = document.getElementById('githubApiChart');
+            if (githubApiChartElement) {
+                let githubApiHistory = [];
+                try {
+                    githubApiHistory = JSON.parse('{{ status.github_api_history|escapejs|default:"[]" }}');
+                } catch (e) {
+                    console.error('Error parsing GitHub API history:', e);
+                }
+
+                if (githubApiHistory && githubApiHistory.length > 0) {
+                    // Format the data for the chart
+                    const timestamps = githubApiHistory.map(entry => entry.timestamp);
+                    const remaining = githubApiHistory.map(entry => parseInt(entry.remaining) || 0);
+                    const used = githubApiHistory.map(entry => parseInt(entry.used) || 0);
+
+                    new Chart(githubApiChartElement, {
+                        type: 'line',
+                        data: {
+                            labels: timestamps,
+                            datasets: [{
+                                label: 'Remaining',
+                                data: remaining,
+                                backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                                borderColor: '#e74c3c',
+                                borderWidth: 2,
+                                tension: 0.1,
+                                fill: true
+                            }, {
+                                label: 'Used',
+                                data: used,
+                                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                                borderColor: '#3498db',
+                                borderWidth: 2,
+                                tension: 0.1,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'API Calls'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'GitHub API Usage History'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.dataset.label || '';
+                                            const value = context.parsed.y;
+                                            return `${label}: ${value}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });
     </script>
+
 {% endblock extra_js %}

@@ -1,24 +1,37 @@
 {% extends "base.html" %}
+
 {% load custom_tags %}
 {% load i18n %}
 {% load static %}
+
 {% block title %}
     Support OWASP BLT - Donate & Sponsor
+
 {% endblock title %}
+
 {% block description %}
     Support the development of OWASP BLT by donating or sponsoring our monthly leaderboard prizes. Make a difference in web security today.
+
 {% endblock description %}
+
 {% block keywords %}
     OWASP BLT Donation, Sponsor Security, Bug Bounty Support, Monthly Prize, BCH Donation, Community Support
+
 {% endblock keywords %}
+
 {% block og_title %}
     Support OWASP BLT - Make a Difference in Web Security
+
 {% endblock og_title %}
+
 {% block og_description %}
     Support OWASP BLT's mission to make the web more secure. Donate to our development or sponsor monthly prizes to recognize top contributors.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header Section -->
@@ -150,4 +163,5 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}

@@ -1,10 +1,15 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     {{ title }} - Hackathon
+
 {% endblock title %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto">
             <h1 class="text-4xl font-bold mb-8 text-gray-900">{{ title }}</h1>
@@ -161,82 +166,106 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}
+
 {% block scripts %}
     <script>
-    $(document).ready(function() {
-        // Function to fetch repositories for an organization
-        function fetchRepositories(organizationId) {
-            if (!organizationId) {
-                $('#repositories-loading').hide();
+        $(document).ready(function() {
+            // Function to fetch repositories for an organization
+            function fetchRepositories(organizationId) {
+                if (!organizationId) {
+                    $('#repositories-loading').hide();
+                    $('#no-repositories-message').hide();
+                    $('#id_repositories').empty();
+                    return;
+                }
+
+                $('#repositories-loading').show();
                 $('#no-repositories-message').hide();
                 $('#id_repositories').empty();
-                return;
-            }
 
-            $('#repositories-loading').show();
-            $('#no-repositories-message').hide();
-            $('#id_repositories').empty();
+                $.ajax({
+                    url: `/api/v1/organizations/${organizationId}/repositories/`,
+                    method: 'GET',
+                    success: function(data) {
+                        $('#repositories-loading').hide();
 
-            $.ajax({
-                url: `/api/v1/organizations/${organizationId}/repositories/`,
-                method: 'GET',
-                success: function(data) {
-                    $('#repositories-loading').hide();
-                    
-                    if (data.length === 0) {
-                        $('#no-repositories-message').show();
-                    } else {
-                        $('#no-repositories-message').hide();
-                        
-                        // Add repositories to select
-                        data.forEach(function(repo) {
-                            let option = new Option(repo.name, repo.id, false, false);
-                            $('#id_repositories').append(option);
-                        });
-                        
-                        // If editing, restore selected repositories
-                        {% if form.instance.pk %}
-                        let selectedRepos = [{% for repo in form.instance.repositories.all %}{{ repo.id }}{% if not forloop.last %},{% endif %}{% endfor %}];
-                        if (selectedRepos.length > 0) {
-                            $('#id_repositories').val(selectedRepos);
+                        if (data.length === 0) {
+                            $('#no-repositories-message').show();
+                        } else {
+                            $('#no-repositories-message').hide();
+
+                            // Add repositories to select
+                            data.forEach(function(repo) {
+                                let option = new Option(repo.name, repo.id, false, false);
+                                $('#id_repositories').append(option);
+                            });
+
+                            // If editing, restore selected repositories
+                            {
+                                %
+                                if form.instance.pk %
+                            }
+                            let selectedRepos = [{
+                                %
+                                for repo in form.instance.repositories.all %
+                            } {
+                                {
+                                    repo.id
+                                }
+                            } {
+                                %
+                                if not forloop.last %
+                            }, {
+                                %
+                                endif %
+                            } {
+                                %
+                                endfor %
+                            }];
+                            if (selectedRepos.length > 0) {
+                                $('#id_repositories').val(selectedRepos);
+                            } {
+                                %
+                                endif %
+                            }
                         }
-                        {% endif %}
-                    }
-                },
-                error: function() {
-                    $('#repositories-loading').hide();
-                    $('#no-repositories-message').show().text('Error loading repositories. Please try again.');
-                }
-            });
-        }
-
-        // Listen for changes on the organization select
-        $('#id_organization').change(function() {
-            let organizationId = $(this).val();
-            fetchRepositories(organizationId);
-        });
-
-        // Initial load of repositories if organization is selected
-        let initialOrganizationId = $('#id_organization').val();
-        if (initialOrganizationId) {
-            fetchRepositories(initialOrganizationId);
-        }
-
-        // Handle form submission
-        $('form').on('submit', function(e) {
-            let selectedRepos = $('#id_repositories').val();
-            if (selectedRepos && selectedRepos.length > 0) {
-                // Ensure all selected values are valid
-                let validRepos = [];
-                $('#id_repositories option').each(function() {
-                    if (selectedRepos.includes($(this).val())) {
-                        validRepos.push($(this).val());
+                    },
+                    error: function() {
+                        $('#repositories-loading').hide();
+                        $('#no-repositories-message').show().text('Error loading repositories. Please try again.');
                     }
                 });
-                $('#id_repositories').val(validRepos);
             }
+
+            // Listen for changes on the organization select
+            $('#id_organization').change(function() {
+                let organizationId = $(this).val();
+                fetchRepositories(organizationId);
+            });
+
+            // Initial load of repositories if organization is selected
+            let initialOrganizationId = $('#id_organization').val();
+            if (initialOrganizationId) {
+                fetchRepositories(initialOrganizationId);
+            }
+
+            // Handle form submission
+            $('form').on('submit', function(e) {
+                let selectedRepos = $('#id_repositories').val();
+                if (selectedRepos && selectedRepos.length > 0) {
+                    // Ensure all selected values are valid
+                    let validRepos = [];
+                    $('#id_repositories option').each(function() {
+                        if (selectedRepos.includes($(this).val())) {
+                            validRepos.push($(this).val());
+                        }
+                    });
+                    $('#id_repositories').val(validRepos);
+                }
+            });
         });
-    });
     </script>
+
 {% endblock scripts %}

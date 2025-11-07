@@ -9,7 +9,17 @@
                             {{ lecture.description|truncatewords:25|default:"No description provided." }}
                         </div>
                         <div class="flex items-center text-gray-700 font-bold mb-4">
-                            <i class="fas {% if lecture.content_type == 'VIDEO' %}fa-video{% elif lecture.content_type == 'LIVE' %}fa-video{% elif lecture.content_type == 'DOCUMENT' %}fa-file-alt{% elif lecture.content_type == 'QUIZ' %}fa-question-circle{% endif %} text-blue-500 mr-2"></i>
+                            <i class="fas
+                                      {% if lecture.content_type == 'VIDEO' %}
+                                          fa-video
+                                      {% elif lecture.content_type == 'LIVE' %}
+                                          fa-video
+                                      {% elif lecture.content_type == 'DOCUMENT' %}
+                                          fa-file-alt
+                                      {% elif lecture.content_type == 'QUIZ' %}
+                                          fa-question-circle
+                                      {% endif %}
+                                      text-blue-500 mr-2"></i>
                             <span>
                                 <strong>Type:</strong>
                                 <span class="text-blue-600">{{ lecture.get_content_type_display }}</span>

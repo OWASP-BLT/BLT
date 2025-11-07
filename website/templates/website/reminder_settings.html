@@ -1,7 +1,10 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
@@ -16,7 +19,13 @@
                 {% if messages %}
                     <div class="px-6 pt-6">
                         {% for message in messages %}
-                            <div class="p-4 mb-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %} flex items-center"
+                            <div class="p-4 mb-4 rounded-lg
+                                        {% if message.tags == 'success' %}
+                                            bg-green-50 text-green-700 border border-green-200
+                                        {% else %}
+                                            bg-red-50 text-red-700 border border-red-200
+                                        {% endif %}
+                                        flex items-center"
                                  role="alert">
                                 <span class="mr-2">
                                     {% if message.tags == 'success' %}
@@ -154,4 +163,5 @@
         </div>
     </div>
     <script src="{% static 'js/reminder_settings.js' %}"></script>
+
 {% endblock %}

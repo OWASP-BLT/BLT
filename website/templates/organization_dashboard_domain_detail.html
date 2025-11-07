@@ -1,26 +1,39 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
 {% load tz_detect %}
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Edit Domain - {% env 'PROJECT_NAME' %}
+
 {% endblock title %}
+
 {% block description %}
     Edit the details of your domain on {% env 'PROJECT_NAME' %}. Update the name, website URL, logo, email address, and more.
+
 {% endblock description %}
+
 {% block keywords %}
     {% env 'PROJECT_NAME' %}, domain, edit, update, website, logo, email
+
 {% endblock keywords %}
+
 {% block og_title %}
     Edit Domain - {% env 'PROJECT_NAME' %}
+
 {% endblock og_title %}
+
 {% block og_description %}
     Edit the details of your domain on {% env 'PROJECT_NAME' %}. Update domain name, URL, logo, email, and more.
+
 {% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     <div class="fixed bottom-2.5 right-3.5">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization_dashboard_domain_detail.html"
@@ -98,4 +111,5 @@
         </div>
     </div>
     {% tz_detect %}
+
 {% endblock content %}

@@ -1,20 +1,32 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}GitHub Issues - {{ block.super }}{% endblock %}
+
 {% block description %}
     Browse through all GitHub issues and pull requests
+
 {% endblock description %}
+
 {% block keywords %}
     GitHub Issues, Pull Requests, Open Source, Contributions
+
 {% endblock keywords %}
+
 {% block og_title %}
     GitHub Issues - Track and Browse GitHub Issues
+
 {% endblock og_title %}
+
 {% block og_description %}
     Explore all GitHub issues and pull requests. Track progress and contribute to open source.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <h2 class="text-3xl font-bold mb-4">Bacon Requests</h2>
         <!-- Filter Form -->
@@ -37,7 +49,14 @@
         <!-- Cards Container -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for submission in submissions %}
-                <div class="bg-white shadow-md rounded-lg p-4 relative border-2 {% if submission.status == 'accepted' %} border-green-500 {% elif submission.status == 'declined' %} border-red-500 {% else %} border-gray-300 {% endif %}">
+                <div class="bg-white shadow-md rounded-lg p-4 relative border-2
+                            {% if submission.status == 'accepted' %}
+                                border-green-500
+                            {% elif submission.status == 'declined' %}
+                                border-red-500
+                            {% else %}
+                                border-gray-300
+                            {% endif %}">
                     <!-- User Info -->
                     <div class="flex justify-between">
                         <div>
@@ -112,41 +131,42 @@
         </a>
     </div>
     <script>
-function toggleDescription(id) {
-    let desc = document.getElementById("description-" + id);
-    desc.classList.toggle("hidden");
-}
-
-function toggleInspect(id) {
-    let inspectBox = document.getElementById("inspect-" + id);
-    inspectBox.classList.toggle("hidden");
-}
-
-function updateSubmission(id, status) {
-    let baconAmount = document.getElementById("bacon-input-" + id).value;
-
-    fetch(`/update-submission-status/${id}/`, {
-        method: "POST",
-        headers: {
-            "X-CSRFToken": "{{ csrf_token }}",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            status: status,
-            bacon_amount: baconAmount
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById("status-" + id).innerText = status.charAt(0).toUpperCase() + status.slice(1);
-            document.getElementById("bacon-amount-" + id).innerText = baconAmount;
-            window.location.reload();  // Reload the page to confirm the update
-        } else {
-            alert("Error updating submission.");
+        function toggleDescription(id) {
+            let desc = document.getElementById("description-" + id);
+            desc.classList.toggle("hidden");
         }
-    })
-    .catch(error => console.error("Error:", error));
-}
+
+        function toggleInspect(id) {
+            let inspectBox = document.getElementById("inspect-" + id);
+            inspectBox.classList.toggle("hidden");
+        }
+
+        function updateSubmission(id, status) {
+            let baconAmount = document.getElementById("bacon-input-" + id).value;
+
+            fetch(`/update-submission-status/${id}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        status: status,
+                        bacon_amount: baconAmount
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("status-" + id).innerText = status.charAt(0).toUpperCase() + status.slice(1);
+                        document.getElementById("bacon-amount-" + id).innerText = baconAmount;
+                        window.location.reload(); // Reload the page to confirm the update
+                    } else {
+                        alert("Error updating submission.");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
     </script>
+
 {% endblock content %}

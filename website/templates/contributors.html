@@ -1,30 +1,46 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     {% load custom_tags %}
+
     OWASP {% env 'PROJECT_NAME' %} - Community Members
+
 {% endblock %}
+
 {% block description %}
     Meet the contributors to the OWASP {% env 'PROJECT_NAME' %} project. Discover their profiles, including their contributions, social media links, and more.
+
 {% endblock %}
+
 {% block keywords %}
     OWASP, {% env 'PROJECT_NAME' %}, community members, contributors, open source, social links, GitHub, LinkedIn, Twitter
+
 {% endblock %}
+
 {% block og_title %}
     OWASP {% env 'PROJECT_NAME' %} - Community Members
+
 {% endblock %}
+
 {% block og_description %}
     Explore the profiles of contributors to the OWASP {% env 'PROJECT_NAME' %} project. Learn more about their contributions, locations, and social media links.
+
 {% endblock %}
+
 {% block style %}
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
           integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
+
 {% endblock style %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <main class="container mx-auto py-12 px-4 min-h-screen bg-white">
         <!-- Hero Section -->
         <section class="text-center space-y-8 mb-20">
@@ -100,4 +116,5 @@
             {% endfor %}
         </section>
     </main>
+
 {% endblock content %}

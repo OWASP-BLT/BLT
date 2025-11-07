@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_filters %}
+
 {% block head %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,15 +32,20 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer" />
     <title>Hunt Info</title>
+
 {% endblock head %}
+
 {% block style %}
     <style>
         .cursive {
             font-family: 'Nanum Pen Script', cursive;
         }
-        [x-cloak] { display: none; }
 
-        .CodeMirror-focused {   
+        [x-cloak] {
+            display: none;
+        }
+
+        .CodeMirror-focused {
             border-radius: .375rem;
             outline: 2px solid transparent;
             outline-offset: 2px;
@@ -48,6 +55,7 @@
             --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
             box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
         }
+
         .CodeMirror {
             padding: 0.75rem;
             font-family: inherit;
@@ -57,6 +65,7 @@
             --tw-border-opacity: 1;
             border: 1px solid rgba(209, 213, 219, var(--tw-border-opacity));
         }
+
         .CodeMirror.CodeMirror-focused {
             --tw-border-opacity: 1;
             border-color: rgba(165, 180, 252, var(--tw-border-opacity));
@@ -73,14 +82,18 @@
         }
 
         .pagination-button:disabled {
-            background-color: #d1d5db; /* Gray background */
-            color: #6b7280; /* Gray text */
-            cursor: not-allowed; /* Change cursor to indicate disabled */
-            box-shadow: none; /* Remove shadow for disabled state */
+            background-color: #d1d5db;
+            /* Gray background */
+            color: #6b7280;
+            /* Gray text */
+            cursor: not-allowed;
+            /* Change cursor to indicate disabled */
+            box-shadow: none;
+            /* Remove shadow for disabled state */
         }
 
         .crypto-address {
-        text-align: center;
+            text-align: center;
         }
 
         .dialog {
@@ -94,7 +107,8 @@
             color: white;
             background-color: #ff4444;
             display: inline-block;
-            margin: 0 auto; /* Center the element horizontally */
+            margin: 0 auto;
+            /* Center the element horizontally */
         }
 
         .navigation {
@@ -108,22 +122,28 @@
 
         .nav-btn {
             cursor: pointer;
-            transition: 0.4s;;
+            transition: 0.4s;
+            ;
         }
+
         .nav-btn.active {
-            background: red; /* Change to whatever red color you prefer */
-            color: white; /* Change text color to contrast with the red background */
+            background: red;
+            /* Change to whatever red color you prefer */
+            color: white;
+            /* Change text color to contrast with the red background */
         }
 
         input[name="r"] {
             position: absolute;
             visibility: hidden;
         }
-
     </style>
+
 {% endblock style %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="h-full bg-gray-200 p-8">
         <div class="bg-white rounded-lg shadow-xl pb-8">
             <div class="w-full h-[250px]">
@@ -424,7 +444,7 @@
             </div>
             <div class="w-full">
                 <div x-data="markdown()"
-                     x-init=" convertHtmlToMarkdown(); codeMirrorEditor = CodeMirror.fromTextArea($refs.input, { mode: 'markdown', theme: 'default', lineWrapping: true });  codeMirrorEditor.setValue(content); codeMirrorEditor.setSize('100%', height); setTimeout(function() { codeMirrorEditor.refresh(); }, 1);  codeMirrorEditor.on('change', () => content = codeMirrorEditor.getValue()) "
+                     x-init="convertHtmlToMarkdown(); codeMirrorEditor = CodeMirror.fromTextArea($refs.input, { mode: 'markdown', theme: 'default', lineWrapping: true });  codeMirrorEditor.setValue(content); codeMirrorEditor.setSize('100%', height); setTimeout(function() { codeMirrorEditor.refresh(); }, 1);  codeMirrorEditor.on('change', () => content = codeMirrorEditor.getValue())"
                      class="relative"
                      x-cloak>
                     <div class="bg-gray-50 border border-b-0 border-gray-300 top-0 left-0 right-0 block rounded-t-md">
@@ -593,6 +613,7 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/codemirror@5.59.2/lib/codemirror.min.js"></script>
@@ -609,7 +630,9 @@
             convertedContent: '',
             convertedMarkdown() {
                 this.showConvertedMarkdown = true;
-                this.convertedContent = marked(`{{ hunt_obj.description }}`, { sanitize: true });
+                this.convertedContent = marked(`{{ hunt_obj.description }}`, {
+                    sanitize: true
+                });
             },
             convertHtmlToMarkdown() {
                 turndownService = new TurndownService({
@@ -679,7 +702,7 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const rowsPerPage = 5;
         const table = document.getElementById('winnersTable');
         const rows = Array.from(table.getElementsByClassName('winner-row'));
@@ -698,14 +721,14 @@
             document.getElementById('nextPage').disabled = page === totalPages;
         }
 
-        document.getElementById('prevPage').addEventListener('click', function () {
+        document.getElementById('prevPage').addEventListener('click', function() {
             if (currentPage > 1) {
                 currentPage--;
                 showPage(currentPage);
             }
         });
 
-        document.getElementById('nextPage').addEventListener('click', function () {
+        document.getElementById('nextPage').addEventListener('click', function() {
             if (currentPage < totalPages) {
                 currentPage++;
                 showPage(currentPage);
@@ -721,16 +744,24 @@
         document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close());
 
         // Set up the crypto options
-        const cryptoOptions = [
-            { name: 'Bitcoin Cash', address: bch },
-            { name: 'Ethereum', address: eth },
-            { name: 'Bitcoin', address: btc }
-        ];
-        
+        const cryptoOptions = [{
+            name: 'Bitcoin Cash',
+            address: bch
+        }, {
+            name: 'Ethereum',
+            address: eth
+        }, {
+            name: 'Bitcoin',
+            address: btc
+        }];
+
         let currentIndex = 0;
 
         const updateSlide = () => {
-            let { name, address } = cryptoOptions[currentIndex];
+            let {
+                name,
+                address
+            } = cryptoOptions[currentIndex];
             if (address === '' || address === 'None') {
                 address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
                 document.getElementById('crypto-name-' + userId).textContent = `No address: Will go to BLT Donation`;
@@ -745,7 +776,7 @@
 
         updateSlide();
 
-        
+
         // Set up the navigation buttons
         const bchBtn = document.getElementById('bch-btn-' + userId);
         const ethBtn = document.getElementById('eth-btn-' + userId);

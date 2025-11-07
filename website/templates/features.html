@@ -1,27 +1,39 @@
 {% extends 'base.html' %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}Features - OWASP BLT{% endblock %}
+
 {% block description %}
     "OWASP Bug Logging Tool (BLT) - A community-driven platform for bug reporting and bounty hunting"
+
 {% endblock description %}
+
 {% block keywords %}
     OWASP, BLT, Bug Logging Tool, Bug Bounty, Bug Tracking, Security, Open Source, AI, GitHub, Issues, Bugs, Time Tracking, Scoreboard, Bug Bounties, Trademark Search, Bid on Issues, Funding, Coin, Leaderboard, Contributors, Sponsorships, Donations, BLTV, Suggestions, Steak, Rooms, Report IP, Similarity Scan, AI-Powered GitHub Issue Generator, PR Reviews, Activity Feed, Sizzle, Scoreboard, Bug Bounties, Trademark Search, Bid on Issues, Tomato, BACON, Leaderboard, Contributors, Sponsorships, Donations, Education, Suggestions, Steak, Rooms, Report IP"
+
 {% endblock keywords %}
+
 {% block og_title %}
     Blt Features - OWASP BLT
+
 {% endblock og_title %}
+
 {% block og_description %}
     "Learn about BLT - The open-source bug logging platform that rewards security researchers and helps organizations maintain secure software"
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <!-- BLT Features  -->
     <div class="container mx-auto px-4 py-6 m-2 ">
         <div class="relative sm:flex sm:flex-col">
             <h1 class="text-3xl font-bold mb-4 text-center">BLT Features</h1>
             <a href="/forum/"
-               class=" absolute top-0 right-9 border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors shadow-md">Suggest New Feature</a>
+               class="absolute top-0 right-9 border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors shadow-md">Suggest New Feature</a>
             <p class="text-gray-600 mb-6 text-center">
                 Explore the key features of OWASP BLT, designed to enhance bug tracking and security collaboration.
             </p>
@@ -461,7 +473,7 @@
                 </div>
             </div>
             <!-- Issues (Bugs) -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full ">
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/report-bug.png' %}"
                      alt="issues"
                      height="100"
@@ -653,7 +665,7 @@
             <!-- Sponsorships -->
             <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/sponsor.png' %}"
-                     alt="sponsor "
+                     alt="sponsor"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
@@ -939,4 +951,5 @@
             </div>
         </div>
     </div>
+
 {% endblock %}

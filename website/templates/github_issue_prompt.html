@@ -1,28 +1,42 @@
 {% extends "base.html" %}
+
 {% load i18n %}
 {% load static %}
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}
+
 {% providers_media_js %}
 {% load custom_tags %}
+
 {% block title %}
     Submit GitHub Issue
+
 {% endblock title %}
+
 {% block description %}
     Describe the issue you want to create on GitHub. Provide details such as the issue description and any relevant repository URL.
+
 {% endblock description %}
+
 {% block keywords %}
     Submit GitHub Issue, GitHub Issue, Issue Description, Repository URL
+
 {% endblock keywords %}
+
 {% block og_title %}
     Submit GitHub Issue - Detailed Reporting
+
 {% endblock og_title %}
+
 {% block og_description %}
     Efficiently submit a GitHub issue by providing necessary details such as the issue description and relevant repository URL.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <!-- Form -->
         <form id="githubIssueSubmitForm"
@@ -73,18 +87,21 @@
             </div>
         </form>
     </div>
+
 {% endblock content %}
+
 {% block after_js %}
     <script type="text/javascript">
-    function validateGithubIssueSubmit() {
-        const descriptionInput = document.getElementById('description').value.trim();
+        function validateGithubIssueSubmit() {
+            const descriptionInput = document.getElementById('description').value.trim();
 
-        if (descriptionInput) {
-            return true;
-        } else {
-            alert("Please fill in the description.")
-            return false;
+            if (descriptionInput) {
+                return true;
+            } else {
+                alert("Please fill in the description.")
+                return false;
+            }
         }
-    }
     </script>
+
 {% endblock after_js %}

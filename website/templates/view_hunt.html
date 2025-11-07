@@ -1,23 +1,36 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
+
 {% block title %}
     View Bug Bounty
+
 {% endblock title %}
+
 {% block description %}
     View detailed information about the Bug Bounty, including the hunt name, duration, description, and domain URL. Check the status and participate in the event.
+
 {% endblock description %}
+
 {% block keywords %}
     View Bug Bounty, Bug Bounty Details, Hunt Information, Hunt Description, Domain URL, Participate in Bug Bounty
+
 {% endblock keywords %}
+
 {% block og_title %}
     View Bug Bounty - Detailed Hunt Information
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access comprehensive details about the Bug Bounty, including the name, duration, description, and domain URL. Stay informed and get ready to participate.
+
 {% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/user_sidenav.html" %}
+
     </section>
     <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
@@ -69,7 +82,7 @@
     <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
     <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
     <script>
-        $(function () {
+        $(function() {
             editormd.markdownToHTML("content", {
                 emoji: true,
                 taskList: true,
@@ -78,9 +91,10 @@
                 sequenceDiagram: true,
             });
 
-            $(".reference-link").each(function (i, obj) {
+            $(".reference-link").each(function(i, obj) {
                 console.log(obj)
             })
         })
     </script>
+
 {% endblock content %}

@@ -1,27 +1,41 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     {{ hackathon.name }} - Hackathon | OWASP BLT
+
 {% endblock title %}
+
 {% block description %}
     {{ hackathon.name }} - {{ hackathon.description|truncatechars:150 }}
+
 {% endblock description %}
+
 {% block og_title %}
     {{ hackathon.name }} - OWASP BLT
+
 {% endblock og_title %}
+
 {% block og_description %}
     {{ hackathon.name }} - {{ hackathon.description|truncatechars:200 }}
+
 {% endblock og_description %}
+
 {% block og_image %}
     {% if hackathon.banner_image %}
         {{ request.scheme }}://{{ request.get_host }}{{ hackathon.banner_image.url }}
     {% endif %}
+
 {% endblock og_image %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <!-- Breadcrumbs -->
         {% include "includes/breadcrumbs.html" %}
+
         <!-- Hackathon Header -->
         <div class="relative rounded-lg overflow-hidden mb-8">
             {% if hackathon.banner_image %}
@@ -263,11 +277,21 @@
                     {% if leaderboard %}
                         <div class="space-y-6">
                             {% for entry in leaderboard %}
-                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50{% endif %} rounded-lg border border-gray-200">
+                                <div class="p-4
+                                            {% if forloop.counter <= 3 %}bg-gray-50{% endif %}
+                                            rounded-lg border border-gray-200">
                                     <div class="flex items-center mb-3">
-                                        <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
-                                            {{ forloop.counter }}
-                                        </div>
+                                        <div class="w-8 h-8 flex items-center justify-center mr-3
+                                                    {% if forloop.counter == 1 %}
+                                                        bg-yellow-100 text-yellow-600
+                                                    {% elif forloop.counter == 2 %}
+                                                        bg-gray-100 text-gray-600
+                                                    {% elif forloop.counter == 3 %}
+                                                        bg-amber-100 text-amber-600
+                                                    {% else %}
+                                                        bg-gray-100 text-gray-500
+                                                    {% endif %}
+                                                    rounded-full font-bold">{{ forloop.counter }}</div>
                                         <div class="w-8 h-8 mr-3">
                                             {% if entry.is_contributor %}
                                                 {% if entry.contributor.avatar_url %}
@@ -394,117 +418,137 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}
+
 {% block scripts %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the sparkline chart
-    const ctx = document.getElementById('viewsSparkline').getContext('2d');
-    const dates = {{ view_dates|safe }};
-    const counts = {{ view_counts|safe }};
-    
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: dates,
-            datasets: [{
-                data: counts,
-                backgroundColor: 'rgba(231, 76, 60, 0.7)',
-                borderColor: 'rgba(231, 76, 60, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the sparkline chart
+            const ctx = document.getElementById('viewsSparkline').getContext('2d');
+            const dates = {
+                {
+                    view_dates | safe
+                }
+            };
+            const counts = {
+                {
+                    view_counts | safe
+                }
+            };
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1
+                    }]
                 },
-                tooltip: {
-                    enabled: true,
-                    callbacks: {
-                        title: function(tooltipItems) {
-                            return tooltipItems[0].label;
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
                         },
-                        label: function(context) {
-                            return 'Views: ' + context.raw;
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return tooltipItems[0].label;
+                                },
+                                label: function(context) {
+                                    return 'Views: ' + context.raw;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: false,
+                            beginAtZero: true
                         }
                     }
                 }
-            },
-            scales: {
-                x: {
-                    display: false
-                },
-                y: {
-                    display: false,
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-    
-    // Initialize the PR activity chart
-    const prCtx = document.getElementById('prActivityChart').getContext('2d');
-    const prDates = {{ pr_dates|safe }};
-    const prCounts = {{ pr_counts|safe }};
-    const mergedPrCounts = {{ merged_pr_counts|safe }};
-    
-    new Chart(prCtx, {
-        type: 'bar',
-        data: {
-            labels: prDates,
-            datasets: [
+            });
+
+            // Initialize the PR activity chart
+            const prCtx = document.getElementById('prActivityChart').getContext('2d');
+            const prDates = {
                 {
-                    label: 'All Pull Requests',
-                    data: prCounts,
-                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
-                    borderColor: 'rgba(52, 152, 219, 1)',
-                    borderWidth: 1
-                },
+                    pr_dates | safe
+                }
+            };
+            const prCounts = {
                 {
-                    label: 'Merged Pull Requests',
-                    data: mergedPrCounts,
-                    backgroundColor: 'rgba(231, 76, 60, 0.7)',
-                    borderColor: 'rgba(231, 76, 60, 1)',
-                    borderWidth: 1
+                    pr_counts | safe
                 }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top'
-                },
-                tooltip: {
-                    enabled: true
+            };
+            const mergedPrCounts = {
+                {
+                    merged_pr_counts | safe
                 }
-            },
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Date'
-                    }
+            };
+
+            new Chart(prCtx, {
+                type: 'bar',
+                data: {
+                    labels: prDates,
+                    datasets: [{
+                        label: 'All Pull Requests',
+                        data: prCounts,
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Merged Pull Requests',
+                        data: mergedPrCounts,
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1
+                    }]
                 },
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Number of Pull Requests'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            enabled: true
+                        }
                     },
-                    ticks: {
-                        precision: 0
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Pull Requests'
+                            },
+                            ticks: {
+                                precision: 0
+                            }
+                        }
                     }
                 }
-            }
-        }
-    });
-});
+            });
+        });
     </script>
+
 {% endblock scripts %}

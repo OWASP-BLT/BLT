@@ -1,22 +1,35 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     {{ user.username }}'s Sizzle Report
+
 {% endblock title %}
+
 {% block description %}
     View the Sizzle report for {{ user.username }}. Track daily activities, issue titles, durations, and start times for an overview of their work progress.
+
 {% endblock description %}
+
 {% block keywords %}
     Sizzle Report, {{ user.username }}'s Report, Time Tracking, Work Progress, Issue Titles, Daily Activities
+
 {% endblock keywords %}
+
 {% block og_title %}
     {{ user.username }}'s Sizzle Report - Track Work Progress
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access the Sizzle report for {{ user.username }} to track daily activities, issue titles, durations, and start times. Get an overview of their work progress and time management.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container">
         <h1>{{ user.username }}'s Sizzle Report</h1>
         <table class="table">
@@ -44,11 +57,22 @@
         <canvas id="timeLogChart"></canvas>
     </div>
     <script>
-        {% comment %} 
+        {
+            %
+            comment %
+        }
         // this seems to have a syntax issue
         const ctx = document.getElementById('timeLogChart').getContext('2d');
-        const labels = {{ response_data|json_script:"labels" }};
-        const data = {{ response_data|json_script:"data" }};
+        const labels = {
+            {
+                response_data | json_script: "labels"
+            }
+        };
+        const data = {
+            {
+                response_data | json_script: "data"
+            }
+        };
         const timeLogChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -68,6 +92,11 @@
                     }
                 }
             }
-}); {% endcomment %}
+        });
+        {
+            %
+            endcomment %
+        }
     </script>
+
 {% endblock content %}

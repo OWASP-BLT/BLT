@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Manage Domains
+
 {% endblock title %}
+
 {% block description %}
     View and manage all your domains efficiently. Add new domains, edit existing ones, or delete those you no longer need to maintain an updated system.
+
 {% endblock description %}
+
 {% block keywords %}
     Manage Domains, Domain Management, Add Domain, Edit Domain, Delete Domain, View Domains
+
 {% endblock keywords %}
+
 {% block og_title %}
     Manage Domains - Efficient Domain Management
+
 {% endblock og_title %}
+
 {% block og_description %}
     Easily view, add, edit, or delete domains. Keep your domain list organized and up-to-date with our management tools.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <!-- Header Section -->
@@ -167,36 +179,37 @@
                 const form = document.createElement('form');
                 form.method = 'post';
                 form.action = '{% url "add_domain" organization %}';
-                
+
                 const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
                 const csrfToken = csrfElement ? csrfElement.value : '{{ csrf_token }}';
-                
+
                 // Create CSRF token input
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = 'csrfmiddlewaretoken';
                 csrfInput.value = csrfToken;
-                
+
                 // Create method input
                 const methodInput = document.createElement('input');
                 methodInput.type = 'hidden';
                 methodInput.name = '_method';
                 methodInput.value = 'delete';
-                
+
                 // Create domain_id input
                 const domainIdInput = document.createElement('input');
                 domainIdInput.type = 'hidden';
                 domainIdInput.name = 'domain_id';
                 domainIdInput.value = domainId;
-                
+
                 // Append inputs to form
                 form.appendChild(csrfInput);
                 form.appendChild(methodInput);
                 form.appendChild(domainIdInput);
-                
+
                 document.body.appendChild(form);
                 form.submit();
             }
         }
     </script>
+
 {% endblock body %}

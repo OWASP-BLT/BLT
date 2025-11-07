@@ -2,9 +2,11 @@
 {% load gravatar %}
 {% load socialaccount %}
 {% load user_score %}
+
 {% providers_media_js %}
 {% load i18n %}
 {% load custom_tags %}
+
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 <nav class="fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-1.5 py-2 px-1">
@@ -202,9 +204,7 @@
                                         {% get_available_languages as LANGUAGES %}
                                         {% for lang_code, lang_name in LANGUAGES %}
                                             <option value="{{ lang_code }}"
-                                                    {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
-                                                {{ lang_name }}
-                                            </option>
+                                                    {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>{{ lang_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </form>
@@ -705,14 +705,14 @@
     document.addEventListener('DOMContentLoaded', function() {
         const hamburgerButton = document.getElementById('hamburger-button');
         const sidebar = document.querySelector('.sidebar');
-        
+
         if (hamburgerButton && sidebar) {
             hamburgerButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 sidebar.classList.toggle('-translate-x-full');
             });
-            
+
             // Close sidebar when clicking outside
             document.addEventListener('click', function(e) {
                 if (!hamburgerButton.contains(e.target) && !sidebar.contains(e.target)) {
@@ -790,288 +790,291 @@
 </div>
 <!-- Scripts -->
 <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const organizationsBtn = document.getElementById('organizations-btn');
-            const organizationsDropdown = document.getElementById('organizations-dropdown');
-            const queryInput = document.getElementById('query-input');
-    
-            // Function to get URL parameters
-            function getUrlParameter(name) {
-                const params = new URLSearchParams(window.location.search);
-                return params.get(name);
+    document.addEventListener('DOMContentLoaded', function() {
+        const organizationsBtn = document.getElementById('organizations-btn');
+        const organizationsDropdown = document.getElementById('organizations-dropdown');
+        const queryInput = document.getElementById('query-input');
+
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        // Set initial values from URL parameters if they exist
+        const savedQuery = getUrlParameter('query');
+        const savedType = getUrlParameter('type');
+
+        if (queryInput && savedQuery) {
+            queryInput.value = savedQuery;
+        }
+
+        if (savedType) {
+            // Find the matching filter option
+            const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
+            if (matchingOption) {
+                const iconElement = matchingOption.querySelector('i');
+                const textContent = matchingOption.textContent.trim();
+
+                const selectedIcon = document.getElementById('selected-icon');
+                const selectedFilter = document.getElementById('selected-filter');
+                const filterType = document.getElementById('filter-type');
+
+                // Update the button display if elements exist
+                if (selectedIcon && selectedFilter && filterType) {
+                    selectedIcon.className = iconElement.className + ' mr-2';
+                    selectedFilter.textContent = textContent;
+                    filterType.value = savedType;
+                }
             }
-    
-            // Set initial values from URL parameters if they exist
-            const savedQuery = getUrlParameter('query');
-            const savedType = getUrlParameter('type');
-    
-            if (queryInput && savedQuery) {
-                queryInput.value = savedQuery;
-            }
-    
-            if (savedType) {
-                // Find the matching filter option
-                const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
-                if (matchingOption) {
-                    const iconElement = matchingOption.querySelector('i');
-                    const textContent = matchingOption.textContent.trim();
-                    
+        }
+
+        if (organizationsBtn && organizationsDropdown) {
+            organizationsBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isHidden = organizationsDropdown.classList.toggle('hidden');
+
+                if (!isHidden) {
+                    const btnRect = organizationsBtn.getBoundingClientRect();
+                    Object.assign(organizationsDropdown.style, {
+                        position: 'fixed',
+                        top: `${btnRect.bottom}px`,
+                        left: `${btnRect.left}px`,
+                        minWidth: `${btnRect.width}px`,
+                        display: 'block',
+                    });
+                } else {
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+                    organizationsDropdown.classList.add('hidden');
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        // Only add event listeners to filter options if they exist
+        const filterOptions = document.querySelectorAll('.filter-option');
+        if (filterOptions.length > 0) {
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const iconElement = this.querySelector('i');
+                    const textContent = this.textContent.trim();
+                    const filterValue = this.getAttribute('data-value');
+
                     const selectedIcon = document.getElementById('selected-icon');
                     const selectedFilter = document.getElementById('selected-filter');
                     const filterType = document.getElementById('filter-type');
-                    
-                    // Update the button display if elements exist
+
                     if (selectedIcon && selectedFilter && filterType) {
                         selectedIcon.className = iconElement.className + ' mr-2';
                         selectedFilter.textContent = textContent;
-                        filterType.value = savedType;
+                        filterType.value = filterValue;
                     }
-                }
-            }
-    
-            if (organizationsBtn && organizationsDropdown) {
-                organizationsBtn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-    
-                    const isHidden = organizationsDropdown.classList.toggle('hidden');
-    
-                    if (!isHidden) {
-                        const btnRect = organizationsBtn.getBoundingClientRect();
-                        Object.assign(organizationsDropdown.style, {
-                            position: 'fixed',
-                            top: `${btnRect.bottom}px`,
-                            left: `${btnRect.left}px`,
-                            minWidth: `${btnRect.width}px`,
-                            display: 'block',
-                        });
-                    } else {
-                        organizationsDropdown.style.display = 'none';
-                    }
-                });
-    
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function (e) {
-                    if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+
+                    if (organizationsDropdown) {
                         organizationsDropdown.classList.add('hidden');
                         organizationsDropdown.style.display = 'none';
                     }
                 });
-            }
-    
-            // Only add event listeners to filter options if they exist
-            const filterOptions = document.querySelectorAll('.filter-option');
-            if (filterOptions.length > 0) {
-                filterOptions.forEach(option => {
-                    option.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        const iconElement = this.querySelector('i');
-                        const textContent = this.textContent.trim();
-                        const filterValue = this.getAttribute('data-value');
-                        
-                        const selectedIcon = document.getElementById('selected-icon');
-                        const selectedFilter = document.getElementById('selected-filter');
-                        const filterType = document.getElementById('filter-type');
-                        
-                        if (selectedIcon && selectedFilter && filterType) {
-                            selectedIcon.className = iconElement.className + ' mr-2';
-                            selectedFilter.textContent = textContent;
-                            filterType.value = filterValue;
-                        }
-    
-                        if (organizationsDropdown) {
-                            organizationsDropdown.classList.add('hidden');
-                            organizationsDropdown.style.display = 'none';
-                        }
-                    });
-                });
-            }
-        });
+            });
+        }
+    });
 </script>
 <script>
-        document.getElementById('chatIcon').addEventListener('click', function () {
-            document.getElementById('chatbot').classList.remove('hidden');
-            this.classList.add('hidden');
-        });
-    
-        document.getElementById('closeChatbot').addEventListener('click', function () {
-            document.getElementById('chatbot').classList.add('hidden');
-            document.getElementById('chatIcon').classList.remove('hidden');
-        });
-    
-        document.addEventListener('DOMContentLoaded', (event) => {
-            const chatLog = document.querySelector('#chat-log');
-            const chatInput = document.querySelector('#chat-message-input');
-            const chatSubmit = document.querySelector('#chat-message-submit');
-            const chatClear = document.querySelector('#chat-message-clear');
-            const chatClose = document.querySelector('#closeChatbot');
-            const loading = document.querySelector('#loading');
-            const quickCommands = document.querySelectorAll('.quick-command');
-        
-            function escapeHtml(text) {
-                return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
-            }
-        
-            function handleSlashCommand(command, args) {
-                let response = '';
-                switch (command) {
-                    case '/help':
-                        response = '<strong>Available Commands:</strong><br>' +
-                            '/help - Show this message<br>' +
-                            '/report &lt;description&gt; - Report a bug<br>' +
-                            '/gsoc - Get GSoC info<br>' +
-                            '/stats - View platform stats<br>';
+    document.getElementById('chatIcon').addEventListener('click', function() {
+        document.getElementById('chatbot').classList.remove('hidden');
+        this.classList.add('hidden');
+    });
+
+    document.getElementById('closeChatbot').addEventListener('click', function() {
+        document.getElementById('chatbot').classList.add('hidden');
+        document.getElementById('chatIcon').classList.remove('hidden');
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const chatLog = document.querySelector('#chat-log');
+        const chatInput = document.querySelector('#chat-message-input');
+        const chatSubmit = document.querySelector('#chat-message-submit');
+        const chatClear = document.querySelector('#chat-message-clear');
+        const chatClose = document.querySelector('#closeChatbot');
+        const loading = document.querySelector('#loading');
+        const quickCommands = document.querySelectorAll('.quick-command');
+
+        function escapeHtml(text) {
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function handleSlashCommand(command, args) {
+            let response = '';
+            switch (command) {
+                case '/help':
+                    response = '<strong>Available Commands:</strong><br>' +
+                        '/help - Show this message<br>' +
+                        '/report &lt;description&gt; - Report a bug<br>' +
+                        '/gsoc - Get GSoC info<br>' +
+                        '/stats - View platform stats<br>';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                case '/report':
+                    if (!args) {
+                        response = 'Please provide a description. Usage: /report &lt;description&gt;';
                         chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
                         chatLog.scrollTop = chatLog.scrollHeight;
                         return true;
-                    case '/report':
-                        if (!args) {
-                            response = 'Please provide a description. Usage: /report &lt;description&gt;';
-                            chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                            chatLog.scrollTop = chatLog.scrollHeight;
-                            return true;
-                        }
-                        return false;
-                    case '/gsoc':
-                        response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
-                            'Explore OWASP\'s GSoC participation:<br>' +
-                            '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
-                            'Get involved with open-source at OWASP!';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
-                    case '/stats':
-                        response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        
-            chatSubmit.onclick = function () {
-                const message = chatInput.value.trim();
-                chatInput.value = '';
-                if (message === "") return;
-        
-                const escapedMessage = escapeHtml(message);
-                chatLog.innerHTML += '<div class="bg-green-300 text-black p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
-                loading.classList.remove('hidden');
-        
-                // Check for slash command
-                if (message.startsWith('/')) {
-                    const [command, ...argsArr] = message.split(' ');
-                    const args = argsArr.join(' ').trim();
-                    if (handleSlashCommand(command, args)) {
-                        loading.classList.add('hidden');
-                        return;
                     }
-                }
-        
-                fetch('/api/chatbot/conversation/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ question: message }),
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            if (response.status === 429) {
-                                throw new Error('Rate limit exceeded');
-                            }
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const escapedAnswer = escapeHtml(data.answer);
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        loading.classList.add('hidden');
-                    })
-                    .catch((error) => {
-                        let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
-                        if (error.message === 'Rate limit exceeded') {
-                            errorMessage = 'The request limit has been reached. Please try again later.';
-                        }
-                        chatLog.innerHTML += '<div class="bg-red-300 text-black p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        loading.classList.add('hidden');
-                    });
-            };
-        
-            function clearChat() {
-                loading.classList.remove('hidden');
-                fetch('/api/chatbot/conversation/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ question: "exit" }),
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        chatLog.innerHTML = '';
-                        loading.classList.add('hidden');
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        loading.classList.add('hidden');
-                    });
+                    return false;
+                case '/gsoc':
+                    response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
+                        'Explore OWASP\'s GSoC participation:<br>' +
+                        '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
+                        'Get involved with open-source at OWASP!';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                case '/stats':
+                    response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                default:
+                    return false;
             }
-        
-            chatClear.onclick = clearChat;
-            chatClose.onclick = clearChat;
-        
-            chatInput.addEventListener('keyup', function (event) {
-                if (event.keyCode === 13) {  // Enter key
-                    chatSubmit.click();
+        }
+
+        chatSubmit.onclick = function() {
+            const message = chatInput.value.trim();
+            chatInput.value = '';
+            if (message === "") return;
+
+            const escapedMessage = escapeHtml(message);
+            chatLog.innerHTML += '<div class="bg-green-300 text-black p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
+            loading.classList.remove('hidden');
+
+            // Check for slash command
+            if (message.startsWith('/')) {
+                const [command, ...argsArr] = message.split(' ');
+                const args = argsArr.join(' ').trim();
+                if (handleSlashCommand(command, args)) {
+                    loading.classList.add('hidden');
+                    return;
                 }
-            });
-        
-            // Handle quick command button clicks
-            quickCommands.forEach(button => {
-                button.addEventListener('click', function () {
-                    const command = this.getAttribute('data-command');
-                    chatInput.value = command;
-                    chatSubmit.click();
+            }
+
+            fetch('/api/chatbot/conversation/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message
+                    }),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 429) {
+                            throw new Error('Rate limit exceeded');
+                        }
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const escapedAnswer = escapeHtml(data.answer);
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    loading.classList.add('hidden');
+                })
+                .catch((error) => {
+                    let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
+                    if (error.message === 'Rate limit exceeded') {
+                        errorMessage = 'The request limit has been reached. Please try again later.';
+                    }
+                    chatLog.innerHTML += '<div class="bg-red-300 text-black p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    loading.classList.add('hidden');
                 });
-            });
+        };
+
+        function clearChat() {
+            loading.classList.remove('hidden');
+            fetch('/api/chatbot/conversation/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: "exit"
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    chatLog.innerHTML = '';
+                    loading.classList.add('hidden');
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    loading.classList.add('hidden');
+                });
+        }
+
+        chatClear.onclick = clearChat;
+        chatClose.onclick = clearChat;
+
+        chatInput.addEventListener('keyup', function(event) {
+            if (event.keyCode === 13) { // Enter key
+                chatSubmit.click();
+            }
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const dropdownButton = document.getElementById('dropdownButton');
-            const dropdownMenu = document.getElementById('dropdownMenu');
-        
-            if (dropdownButton && dropdownMenu) {
-                // Toggle dropdown on button click
-                dropdownButton.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropdownMenu.classList.toggle('hidden');
-                });
-        
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function (e) {
-                    if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                        dropdownMenu.classList.add('hidden');
-                    }
-                });
-            }
+        // Handle quick command button clicks
+        quickCommands.forEach(button => {
+            button.addEventListener('click', function() {
+                const command = this.getAttribute('data-command');
+                chatInput.value = command;
+                chatSubmit.click();
+            });
         });
-        
-</script>
-<script>
-        function toggleMobileSearch() {
-            const mobileSearch = document.getElementById('mobile-search');
-            mobileSearch.classList.toggle('hidden');
-            mobileSearch.classList.toggle('active');
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdownButton = document.getElementById('dropdownButton');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+
+        if (dropdownButton && dropdownMenu) {
+            // Toggle dropdown on button click
+            dropdownButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
         }
+    });
 </script>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    function toggleMobileSearch() {
+        const mobileSearch = document.getElementById('mobile-search');
+        mobileSearch.classList.toggle('hidden');
+        mobileSearch.classList.toggle('active');
+    }
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
         const notificationButton = document.getElementById("notificationButton");
         const notificationDropdown = document.getElementById("notificationDropdown");
         const unreadCount = document.getElementById("unreadCount");
@@ -1101,19 +1104,19 @@
                     notificationList.innerHTML = "<p class='text-sm text-gray-500'>Unable to load notifications.</p>";
                     return;
                 }
-        
+
                 const notifications = data.notifications;
-        
+
 
                 notificationList.innerHTML = "";
 
                 const unreadNotifications = notifications.filter(notification => !notification.is_read);
                 if (unreadNotifications.length > 0) {
                     unreadCount.textContent = unreadNotifications.length;
-                    unreadCount.classList.remove("hidden"); 
+                    unreadCount.classList.remove("hidden");
                 } else {
-                    unreadCount.textContent = ""; 
-                    unreadCount.classList.add("hidden"); 
+                    unreadCount.textContent = "";
+                    unreadCount.classList.add("hidden");
                 }
 
                 if (notifications.length === 0) {
@@ -1125,8 +1128,8 @@
                     const notificationItem = document.createElement("div");
                     notificationItem.classList.add(
                         "flex", "items-start", "gap-3", "p-3", "rounded-lg", "hover:bg-gray-100", "transition-colors",
-                        !notification.is_read ? "bg-gray-50" : "bg-white", 
-                        !notification.is_read ? "font-semibold" : "font-normal" 
+                        !notification.is_read ? "bg-gray-50" : "bg-white",
+                        !notification.is_read ? "font-semibold" : "font-normal"
                     );
 
                     if (notification.link) {
@@ -1153,11 +1156,11 @@
                 });
 
                 document.querySelectorAll(".delete-notification").forEach(button => {
-                    button.addEventListener("click", function (e) {
+                    button.addEventListener("click", function(e) {
                         e.stopPropagation();
                         const notificationId = this.getAttribute("data-notification-id");
                         console.log("Deleting notification with ID:", notificationId);
-                        deleteNotification(notificationId, this.closest("div")); 
+                        deleteNotification(notificationId, this.closest("div"));
                     });
                 });
             } catch (error) {
@@ -1210,24 +1213,24 @@
                     console.error("Notification ID is undefined");
                     return;
                 }
-                
+
                 const response = await fetch(`/notifications/delete_notification/${notificationId}`, {
                     method: "DELETE",
                     headers: {
                         "X-CSRFToken": "{{ csrf_token }}",
-                        "Content-Type": "application/json", 
+                        "Content-Type": "application/json",
                     },
                     credentials: "include",
                 });
-        
+
                 if (!response.ok) {
                     throw new Error(`Failed to delete notification: ${response.statusText}`);
                 }
-        
-                const data = await response.json(); 
+
+                const data = await response.json();
                 if (data.status === "success") {
                     notificationElement.remove();
-        
+
                     const unreadNotifications = document.querySelectorAll(".bg-gray-50");
                     if (unreadNotifications.length === 0) {
                         unreadCount.textContent = "";
@@ -1244,24 +1247,24 @@
 
         fetchNotifications();
 
-        notificationButton.addEventListener("click", function () {
+        notificationButton.addEventListener("click", function() {
             notificationDropdown.classList.toggle("hidden");
 
             if (!notificationDropdown.classList.contains("hidden")) {
                 fetchNotifications();
 
                 fetch("{% url 'mark_all_read' %}", {
-                    method: "PATCH",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
-                        "Content-Type": "application/json",
-                    },
-                })
+                        method: "PATCH",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/json",
+                        },
+                    })
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === "success") {
                             unreadCount.textContent = "";
-                            unreadCount.classList.add("hidden"); 
+                            unreadCount.classList.add("hidden");
                             document.querySelectorAll(".bg-gray-50").forEach(el => {
                                 el.classList.remove("bg-gray-50", "font-semibold");
                                 el.classList.add("bg-white", "font-normal");
@@ -1271,60 +1274,59 @@
             }
         });
 
-        document.addEventListener("click", function (event) {
+        document.addEventListener("click", function(event) {
             const isClickInside = notificationButton.contains(event.target) || notificationDropdown.contains(event.target);
             if (!isClickInside) {
                 notificationDropdown.classList.add("hidden");
             }
         });
     });
-
 </script>
 <!-- Add this script before the closing body tag -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const megaMenuButton = document.getElementById('mega-menu-button');
-    const megaMenu = document.querySelector('.mega-menu');
-    let isMenuOpen = false;
+    document.addEventListener('DOMContentLoaded', function() {
+        const megaMenuButton = document.getElementById('mega-menu-button');
+        const megaMenu = document.querySelector('.mega-menu');
+        let isMenuOpen = false;
 
-    // Toggle menu on button click
-    megaMenuButton.addEventListener('click', function(e) {
-        e.stopPropagation();
-        isMenuOpen = !isMenuOpen;
-        megaMenu.classList.toggle('hidden');
-        
-        // Update button aria attributes
-        megaMenuButton.setAttribute('aria-expanded', isMenuOpen);
-    });
+        // Toggle menu on button click
+        megaMenuButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            isMenuOpen = !isMenuOpen;
+            megaMenu.classList.toggle('hidden');
 
-    // Close menu when clicking outside
-    document.addEventListener('click', function(e) {
-        if (isMenuOpen && !megaMenu.contains(e.target) && e.target !== megaMenuButton) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-    });
+            // Update button aria attributes
+            megaMenuButton.setAttribute('aria-expanded', isMenuOpen);
+        });
 
-    // Close menu on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && isMenuOpen) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-    });
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (isMenuOpen && !megaMenu.contains(e.target) && e.target !== megaMenuButton) {
+                megaMenu.classList.add('hidden');
+                isMenuOpen = false;
+                megaMenuButton.setAttribute('aria-expanded', 'false');
+            }
+        });
 
-    // Close menu on scroll
-    let lastScrollPosition = window.pageYOffset;
-    window.addEventListener('scroll', function() {
-        const currentScrollPosition = window.pageYOffset;
-        if (isMenuOpen && Math.abs(currentScrollPosition - lastScrollPosition) > 10) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-        lastScrollPosition = currentScrollPosition;
+        // Close menu on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isMenuOpen) {
+                megaMenu.classList.add('hidden');
+                isMenuOpen = false;
+                megaMenuButton.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close menu on scroll
+        let lastScrollPosition = window.pageYOffset;
+        window.addEventListener('scroll', function() {
+            const currentScrollPosition = window.pageYOffset;
+            if (isMenuOpen && Math.abs(currentScrollPosition - lastScrollPosition) > 10) {
+                megaMenu.classList.add('hidden');
+                isMenuOpen = false;
+                megaMenuButton.setAttribute('aria-expanded', 'false');
+            }
+            lastScrollPosition = currentScrollPosition;
+        });
     });
-});
 </script>

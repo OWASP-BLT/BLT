@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Edit Bug Bounty
+
 {% endblock title %}
+
 {% block description %}
     Update and modify your existing Bug Bounty details. Adjust timelines, prizes, and contest assets to keep your competition current.
+
 {% endblock description %}
+
 {% block keywords %}
     Edit Bug Bounty, Update Bug Bounty, Modify Contest, Adjust Timeline, Change Prizes, Update Assets
+
 {% endblock keywords %}
+
 {% block og_title %}
     Edit Bug Bounty - Update Your Online Contest
+
 {% endblock og_title %}
+
 {% block og_description %}
     Make changes to your Bug Bounty contest. Update timelines, prizes, and upload new logos and banners to keep your competition engaging.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="w-full bg-[#fdfeff]">
         <div class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -83,9 +95,7 @@
                                             class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 bg-white transition-colors duration-200 cursor-pointer sm:text-sm sm:leading-6">
                                         {% for domain in domains %}
                                             <option value="{{ domain.id }}"
-                                                    {% if domain.id == hunt.domain.id %}selected{% endif %}>
-                                                {{ domain.name }}
-                                            </option>
+                                                    {% if domain.id == hunt.domain.id %}selected{% endif %}>{{ domain.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -108,7 +118,9 @@
                                                id="start_date"
                                                required
                                                type="text"
-                                               value="{% if hunt.starts_on %}{{ hunt.starts_on|date:'m/d/Y' }}{% endif %}"
+                                               value="{% if hunt.starts_on %}
+                                                          {{ hunt.starts_on|date:'m/d/Y' }}
+                                                      {% endif %}"
                                                {% if hunt.is_published %}disabled{% endif %}
                                                class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
                                                placeholder="MM/DD/YYYY">
@@ -133,7 +145,9 @@
                                                id="end_date"
                                                required
                                                type="text"
-                                               value="{% if hunt.end_on %}{{ hunt.end_on|date:'m/d/Y' }}{% endif %}"
+                                               value="{% if hunt.end_on %}
+                                                          {{ hunt.end_on|date:'m/d/Y' }}
+                                                      {% endif %}"
                                                class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
                                                placeholder="MM/DD/YYYY">
                                     </div>
@@ -188,7 +202,10 @@
                                                     <button type="button"
                                                             id="removeLogo"
                                                             onclick="removeUploadedImage('logo', 'logoPreview', 'defaultLogoIcon', 'removeLogo')"
-                                                            class="{% if not hunt.logo %}hidden{% endif %} text-sm text-[#e74c3c] hover:text-red-700 px-4 py-2 border border-[#e74c3c] rounded-md hover:bg-red-50 transition-colors duration-200">
+                                                            class="{% if not hunt.logo %}
+                                                                       hidden
+                                                                   {% endif %}
+                                                                   text-sm text-[#e74c3c] hover:text-red-700 px-4 py-2 border border-[#e74c3c] rounded-md hover:bg-red-50 transition-colors duration-200">
                                                         <span class="inline-flex items-center">
                                                             <svg class="w-5 h-5 mr-2"
                                                                  fill="none"
@@ -268,7 +285,12 @@
                                                         <button type="button"
                                                                 id="removeBanner"
                                                                 onclick="removeUploadedImage('banner', 'bannerPreview', 'defaultBannerIcon', 'removeBanner')"
-                                                                class="{% if hunt.banner %}inline-flex{% else %}hidden{% endif %} text-sm text-[#e74c3c] hover:text-red-700 px-4 py-2 border border-[#e74c3c] rounded-md hover:bg-red-50 transition-colors duration-200">
+                                                                class="{% if hunt.banner %}
+                                                                           inline-flex
+                                                                       {% else %}
+                                                                           hidden
+                                                                       {% endif %}
+                                                                       text-sm text-[#e74c3c] hover:text-red-700 px-4 py-2 border border-[#e74c3c] rounded-md hover:bg-red-50 transition-colors duration-200">
                                                             <span class="inline-flex items-center">
                                                                 <svg class="w-5 h-5 mr-2"
                                                                      fill="none"
@@ -291,7 +313,10 @@
                                 <div class="border-b border-gray-900/10 pb-12 mt-10">
                                     <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Description</h2>
                                     <p class="mt-1 text-sm text-gray-600">Provide a detailed description of your bug bounty program, scope, and rules.</p>
-                                    <div class="mt-6">{% include "organization/organization_includes/md_editor.html" %}</div>
+                                    <div class="mt-6">
+                                        {% include "organization/organization_includes/md_editor.html" %}
+
+                                    </div>
                                 </div>
                                 <div class="border-b border-gray-900/10 pb-12 mt-10">
                                     <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Prizes</h2>
@@ -472,7 +497,9 @@
             </div>
         </div>
     </div>
+
 {% endblock body %}
+
 {% block scripts %}
     <!-- No external datepicker scripts to avoid style conflicts -->
     <!-- FontAwesome for icons -->
@@ -485,16 +512,20 @@
     <script src="{% static 'organization/js/hunt_controller.js' %}?v=2.9"></script>
     <script>
         // Set organization ID for JavaScript access
-        window.organizationId = {{ organization.id }};
-        
+        window.organizationId = {
+            {
+                organization.id
+            }
+        };
+
         // Date inputs are now plain text with MM/DD/YYYY format
         console.log('[Date] Using plain text inputs for manual date entry');
-        
+
         // Add date validation and formatting
         function validateDateFormat(input) {
             const datePattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
             const value = input.value.trim();
-            
+
             if (value && !datePattern.test(value)) {
                 input.style.borderColor = '#e74c3c';
                 // Show error message if error div exists
@@ -514,26 +545,27 @@
                 }
             }
         }
-        
+
         // Add event listeners for date validation
         document.addEventListener('DOMContentLoaded', function() {
             const startDate = document.getElementById('start_date');
             const endDate = document.getElementById('end_date');
-            
+
             if (startDate) {
                 startDate.addEventListener('blur', function() {
                     validateDateFormat(this);
                 });
             }
-            
+
             if (endDate) {
                 endDate.addEventListener('blur', function() {
                     validateDateFormat(this);
                 });
             }
         });
-        
+
         // Wait for hunt_controller.js to load and use its functions
         console.log('[Edit Hunt] Using external hunt controller functions with date validation');
     </script>
+
 {% endblock scripts %}

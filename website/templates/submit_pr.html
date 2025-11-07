@@ -1,22 +1,35 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Submit Pull Request
+
 {% endblock title %}
+
 {% block description %}
     Submit your pull request by providing the issue link, BCH address, and PR link. Fetch issue data and place a bid to contribute effectively.
+
 {% endblock description %}
+
 {% block keywords %}
     Submit Pull Request, Pull Request Submission, Issue Link, BCH Address, PR Link, Fetch Data, Place Bid
+
 {% endblock keywords %}
+
 {% block og_title %}
     Submit Pull Request - Contribute Effectively
+
 {% endblock og_title %}
+
 {% block og_description %}
     Easily submit your pull request by providing necessary details such as issue link, BCH address, and PR link. Fetch data and place a bid for efficient contribution.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <script>
         function fetchData() {
             const issueUrl = document.getElementById('issue_link').value;
@@ -29,37 +42,39 @@
                 document.getElementById('invalidUrlMessage').style.display = "none";
             }
             fetch(`/fetch-current-bid/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken,
-                },
-                body: JSON.stringify({ issue_url: issueUrl }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if ('current_bid' in data) {
-                    const currentBid = data.current_bid;
-                    const status = data.status;
-                    if (status === "Selected") { 
-                        document.getElementById('pr_label').style.display = "block";
-                        document.getElementById('bch_label').style.display = "block";
-                        document.getElementById('pr_link').style.display = "block";
-                        document.getElementById('bch_address').style.display = "block";
-                    } else if (status === "Submitted") {
-                        document.getElementById('pr_label').style.display = "block";
-                        document.getElementById('pr_label').textContent = "PR is submitted, Please contact your repository head";
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({
+                        issue_url: issueUrl
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if ('current_bid' in data) {
+                        const currentBid = data.current_bid;
+                        const status = data.status;
+                        if (status === "Selected") {
+                            document.getElementById('pr_label').style.display = "block";
+                            document.getElementById('bch_label').style.display = "block";
+                            document.getElementById('pr_link').style.display = "block";
+                            document.getElementById('bch_address').style.display = "block";
+                        } else if (status === "Submitted") {
+                            document.getElementById('pr_label').style.display = "block";
+                            document.getElementById('pr_label').textContent = "PR is submitted, Please contact your repository head";
+                        } else {
+                            document.getElementById('pr_label').style.display = "block";
+                            document.getElementById('pr_link').style.display = "none";
+                            document.getElementById('pr_label').textContent = "Bid is not selected: Status is Open/Closed";
+                        }
+                        document.getElementById('bid_amount').value = currentBid;
+                        document.getElementById('BidDisplay').innerHTML = `Current Bid: ${currentBid} <br>`;
                     } else {
-                        document.getElementById('pr_label').style.display = "block";
-                        document.getElementById('pr_link').style.display = "none";
-                        document.getElementById('pr_label').textContent = "Bid is not selected: Status is Open/Closed";
+                        document.getElementById('BidDisplay').innerHTML = 'No current bid';
                     }
-                    document.getElementById('bid_amount').value = currentBid;
-                    document.getElementById('BidDisplay').innerHTML = `Current Bid: ${currentBid} <br>`;
-                } else {
-                    document.getElementById('BidDisplay').innerHTML = 'No current bid';
-                }
-            });
+                });
         }
 
         function getCookie(name) {
@@ -120,4 +135,5 @@
                class="inline-block px-6 py-3 bg-red-500 text-black rounded hover:bg-red-600 transition duration-300">Place a Bid</a>
         </div>
     </div>
+
 {% endblock content %}

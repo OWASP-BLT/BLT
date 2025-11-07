@@ -1,9 +1,14 @@
 {% extends "base.html" %}
+
 {% load humanize %}
+
 {% block title %}Location Map{% endblock %}
+
 {% block extra_css %}{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">Location Map</h1>
@@ -13,7 +18,13 @@
             <div class="flex flex-wrap gap-4">
                 {% for type in marker_types %}
                     <a href="?type={{ type.id }}"
-                       class="inline-flex items-center px-4 py-2 rounded-lg {% if marker_type == type.id %}bg-[#e74c3c] text-white{% else %}bg-white text-gray-700 hover:bg-gray-50 border border-gray-200{% endif %} transition-colors duration-200">
+                       class="inline-flex items-center px-4 py-2 rounded-lg
+                              {% if marker_type == type.id %}
+                                  bg-[#e74c3c] text-white
+                              {% else %}
+                                  bg-white text-gray-700 hover:bg-gray-50 border border-gray-200
+                              {% endif %}
+                              transition-colors duration-200">
                         <i class="fas {{ type.icon }} mr-2"></i>
                         {{ type.name }}
                     </a>
@@ -88,66 +99,81 @@
             </div>
         </div>
     </div>
+
 {% endblock %}
+
 {% block extra_js %}
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const loadingEl = document.getElementById('map-loading');
-        loadingEl.classList.remove('hidden');
+        document.addEventListener('DOMContentLoaded', function() {
+            const loadingEl = document.getElementById('map-loading');
+            loadingEl.classList.remove('hidden');
 
-        try {
-            const map = L.map('map', {
-                center: [20, 0],
-                zoom: 2,
-                minZoom: 2,
-                maxZoom: 18,
-                zoomControl: false,
-                scrollWheelZoom: true,
-                worldCopyJump: true
-            });
+            try {
+                const map = L.map('map', {
+                    center: [20, 0],
+                    zoom: 2,
+                    minZoom: 2,
+                    maxZoom: 18,
+                    zoomControl: false,
+                    scrollWheelZoom: true,
+                    worldCopyJump: true
+                });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 19
+                }).addTo(map);
 
-            L.control.zoom({
-                position: 'topright'
-            }).addTo(map);
+                L.control.zoom({
+                    position: 'topright'
+                }).addTo(map);
 
-            const markers = L.markerClusterGroup({
-                showCoverageOnHover: false,
-                maxClusterRadius: 40,
-                spiderfyOnMaxZoom: true,
-                zoomToBoundsOnClick: true,
-                chunkedLoading: true,
-                disableClusteringAtZoom: 16,
-                iconCreateFunction: function(cluster) {
-                    const count = cluster.getChildCount();
-                    let size = 40;
-                    if (count > 100) size = 60;
-                    else if (count > 50) size = 50;
-                    
-                    return L.divIcon({
-                        html: `<div style=" background-color: rgba(231, 76, 60, 0.8); color: white; width: ${size}px; height: ${size}px; line-height: ${size}px; text-align: center; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: bold; ">${count}</div>`,
-                        className: 'marker-cluster-custom',
-                        iconSize: L.point(size, size)
-                    });
+                const markers = L.markerClusterGroup({
+                    showCoverageOnHover: false,
+                    maxClusterRadius: 40,
+                    spiderfyOnMaxZoom: true,
+                    zoomToBoundsOnClick: true,
+                    chunkedLoading: true,
+                    disableClusteringAtZoom: 16,
+                    iconCreateFunction: function(cluster) {
+                        const count = cluster.getChildCount();
+                        let size = 40;
+                        if (count > 100) size = 60;
+                        else if (count > 50) size = 50;
+
+                        return L.divIcon({
+                            html: `<div style=" background-color: rgba(231, 76, 60, 0.8); color: white; width: ${size}px; height: ${size}px; line-height: ${size}px; text-align: center; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: bold; ">${count}</div>`,
+                            className: 'marker-cluster-custom',
+                            iconSize: L.point(size, size)
+                        });
+                    }
+                });
+
+                const customIcon = L.divIcon({
+                    html: `<div style=" background-color: #e74c3c; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); "></div>`,
+                    className: 'custom-marker',
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                });
+
+                {
+                    %
+                    for location in locations %
+                } {
+                    %
+                    if location.latitude and location.longitude %
                 }
-            });
-
-            const customIcon = L.divIcon({
-                html: `<div style=" background-color: #e74c3c; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); "></div>`,
-                className: 'custom-marker',
-                iconSize: [12, 12],
-                iconAnchor: [6, 6]
-            });
-
-            {% for location in locations %}
-                {% if location.latitude and location.longitude %}
-                    const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}], {
-                        icon: customIcon
-                    }).bindPopup(`
+                const marker = L.marker([{
+                    {
+                        location.latitude
+                    }
+                }, {
+                    {
+                        location.longitude
+                    }
+                }], {
+                    icon: customIcon
+                }).bindPopup(`
                         <div class="text-center p-3">
                             {% if location.logo %}
                                 <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-20 h-20 mx-auto mb-4 object-contain" width="80" height="80" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.3s" />
@@ -167,41 +193,47 @@
                             {% endif %}
                         </div>
                     `, {
-                        maxWidth: 300,
-                        className: 'custom-popup'
-                    });
-                    markers.addLayer(marker);
-                {% endif %}
-            {% endfor %}
-
-            map.addLayer(markers);
-
-            if (markers.getLayers().length > 0) {
-                map.fitBounds(markers.getBounds(), {
-                    padding: [50, 50],
-                    maxZoom: 12
+                    maxWidth: 300,
+                    className: 'custom-popup'
                 });
-            }
+                markers.addLayer(marker);
+                {
+                    %
+                    endif %
+                } {
+                    %
+                    endfor %
+                }
 
-            loadingEl.classList.add('hidden');
+                map.addLayer(markers);
 
-            let resizeTimeout;
-            window.addEventListener('resize', function() {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(function() {
-                    map.invalidateSize();
-                }, 250);
-            });
+                if (markers.getLayers().length > 0) {
+                    map.fitBounds(markers.getBounds(), {
+                        padding: [50, 50],
+                        maxZoom: 12
+                    });
+                }
 
-        } catch (error) {
-            console.error('Map initialization error:', error);
-            loadingEl.innerHTML = `
+                loadingEl.classList.add('hidden');
+
+                let resizeTimeout;
+                window.addEventListener('resize', function() {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(function() {
+                        map.invalidateSize();
+                    }, 250);
+                });
+
+            } catch (error) {
+                console.error('Map initialization error:', error);
+                loadingEl.innerHTML = `
                 <div class="text-red-600 flex items-center">
                     <i class="fas fa-exclamation-triangle mr-2"></i>
                     <span>Error initializing map</span>
                 </div>
             `;
-        }
-    });
+            }
+        });
     </script>
+
 {% endblock %}

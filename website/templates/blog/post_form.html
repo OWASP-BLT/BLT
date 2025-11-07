@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     {% if form.instance.pk %}
         Edit Post
@@ -8,21 +10,27 @@
         New Post
     {% endif %}
     | {% env 'PROJECT_NAME' %}
+
 {% endblock title %}
+
 {% block description %}
     {% if form.instance.pk %}
         Edit the existing post "{{ form.instance.title }}" on {% env 'PROJECT_NAME' %}. Update the title, content, and image to keep your post fresh and relevant.
     {% else %}
         Create a new post on {% env 'PROJECT_NAME' %}. Share your thoughts by adding a title, content, and an optional image to engage with the community.
     {% endif %}
+
 {% endblock description %}
+
 {% block keywords %}
     {% if form.instance.pk %}
         edit post, update post, {{ form.instance.title|slugify }}, {% env 'PROJECT_NAME' %}
     {% else %}
         new post, create post, blogging, {% env 'PROJECT_NAME' %}
     {% endif %}
+
 {% endblock keywords %}
+
 {% block og_title %}
     {% if form.instance.pk %}
         Edit Post: {{ form.instance.title }}
@@ -30,16 +38,21 @@
         Create a New Post
     {% endif %}
     - {% env 'PROJECT_NAME' %}
+
 {% endblock og_title %}
+
 {% block og_description %}
     {% if form.instance.pk %}
         Edit your post "{{ form.instance.title }}" on {% env 'PROJECT_NAME' %}. Keep your content updated and engaging for your readers.
     {% else %}
         Start a new journey with your post on {% env 'PROJECT_NAME' %}. Share your ideas and connect with the community.
     {% endif %}
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="font-sans p-5">
         <!-- Form Title -->
         <h1 id="form-title"
@@ -106,4 +119,5 @@
             hideIcons: ['fullscreen']
         });
     </script>
+
 {% endblock content %}

@@ -1,8 +1,12 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}Repositories{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="w-full px-4 py-8">
         <div class="max-w-[1920px] mx-auto">
             <div class="flex justify-between items-center mb-8">
@@ -25,14 +29,20 @@
                     <span class="text-gray-700 font-semibold mr-4">Organizations:</span>
                     <div class="flex flex-wrap gap-2">
                         <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if current_language %}language={{ current_language }}{% endif %}"
-                           class="px-3 py-1 rounded-full {% if not current_organization %}bg-red-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                            All
-                        </a>
+                           class="px-3 py-1 rounded-full
+                                  {% if not current_organization %}
+                                      bg-red-600 text-white
+                                  {% else %}
+                                      bg-gray-200 text-gray-700 hover:bg-gray-300
+                                  {% endif %}">All</a>
                         {% for org in organizations %}
                             <a href="?organization={{ org.id }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}"
-                               class="px-3 py-1 rounded-full whitespace-nowrap {% if current_organization == org.id|stringformat:'s' %}bg-red-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                                {{ org.name }}
-                            </a>
+                               class="px-3 py-1 rounded-full whitespace-nowrap
+                                      {% if current_organization == org.id|stringformat:'s' %}
+                                          bg-red-600 text-white
+                                      {% else %}
+                                          bg-gray-200 text-gray-700 hover:bg-gray-300
+                                      {% endif %}">{{ org.name }}</a>
                         {% endfor %}
                     </div>
                 </div>
@@ -44,12 +54,20 @@
                         <h2 class="text-lg font-semibold text-gray-900 mb-4">Languages</h2>
                         <div class="space-y-2">
                             <a href="{% url 'repo_list' %}{% if request.GET.q %}?q={{ request.GET.q }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
-                               class="block px-3 py-2 rounded-md {% if not current_language %}bg-red-50 text-red-700{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
-                                All Languages
-                            </a>
+                               class="block px-3 py-2 rounded-md
+                                      {% if not current_language %}
+                                          bg-red-50 text-red-700
+                                      {% else %}
+                                          text-gray-700 hover:bg-gray-50
+                                      {% endif %}">All Languages</a>
                             {% for lang in languages %}
                                 <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if current_organization %}organization={{ current_organization }}&{% endif %}language={{ lang.primary_language }}"
-                                   class="flex justify-between items-center px-3 py-2 rounded-md {% if current_language == lang.primary_language %}bg-red-50 text-red-700{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+                                   class="flex justify-between items-center px-3 py-2 rounded-md
+                                          {% if current_language == lang.primary_language %}
+                                              bg-red-50 text-red-700
+                                          {% else %}
+                                              text-gray-700 hover:bg-gray-50
+                                          {% endif %}">
                                     <span>{{ lang.primary_language }}</span>
                                     <span class="text-sm text-gray-500">{{ lang.count }}</span>
                                 </a>
@@ -310,67 +328,70 @@
             </div>
         </div>
     </div>
+
 {% endblock %}
+
 {% block extra_js %}
     <script>
-document.getElementById('addRepoForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const form = e.target;
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.innerHTML;
-    
-    try {
-        submitButton.disabled = true;
-        submitButton.innerHTML = `
+        document.getElementById('addRepoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
+
+            try {
+                submitButton.disabled = true;
+                submitButton.innerHTML = `
             <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             Adding...
         `;
-        
-        const response = await fetch('{% url "add_repo" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: new URLSearchParams(new FormData(form))
+
+                const response = await fetch('{% url "add_repo" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: new URLSearchParams(new FormData(form))
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to add repository');
+                }
+
+                // Show success message
+                const successMessage = document.createElement('div');
+                successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                successMessage.textContent = 'Repository added successfully!';
+                document.body.appendChild(successMessage);
+
+                // Refresh the page after 1 second
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+
+            } catch (error) {
+                // Show error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                errorMessage.textContent = error.message;
+                document.body.appendChild(errorMessage);
+
+                // Remove error message after 5 seconds
+                setTimeout(() => {
+                    errorMessage.remove();
+                }, 5000);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            }
         });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to add repository');
-        }
-        
-        // Show success message
-        const successMessage = document.createElement('div');
-        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        successMessage.textContent = 'Repository added successfully!';
-        document.body.appendChild(successMessage);
-        
-        // Refresh the page after 1 second
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
-        
-    } catch (error) {
-        // Show error message
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        errorMessage.textContent = error.message;
-        document.body.appendChild(errorMessage);
-        
-        // Remove error message after 5 seconds
-        setTimeout(() => {
-            errorMessage.remove();
-        }, 5000);
-    } finally {
-        submitButton.disabled = false;
-        submitButton.innerHTML = originalButtonText;
-    }
-});
     </script>
+
 {% endblock %}

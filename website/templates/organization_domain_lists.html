@@ -1,23 +1,36 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
+
 {% block title %}
     Manage Domains - {% env 'PROJECT_NAME' %} Dashboard
+
 {% endblock title %}
+
 {% block description %}
     Manage and create new domains in the {% env 'PROJECT_NAME' %} dashboard. Add domain details such as name, URL, logo, email, and GitHub link.
+
 {% endblock description %}
+
 {% block keywords %}
     {% env 'PROJECT_NAME' %}, domains, manage, create, add, dashboard, name, url, logo, email, github
+
 {% endblock keywords %}
+
 {% block og_title %}
     Manage Domains - {% env 'PROJECT_NAME' %} Dashboard
+
 {% endblock og_title %}
+
 {% block og_description %}
     Manage and create new domains with details like name, URL, logo, email, and GitHub in the {% env 'PROJECT_NAME' %} dashboard.
+
 {% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     <div class="p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -163,4 +176,5 @@
             data-target="#addDomainModal">
         <i class="fas fa-plus text-xl"></i>
     </button>
+
 {% endblock content %}

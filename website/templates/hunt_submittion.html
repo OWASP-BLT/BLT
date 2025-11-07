@@ -1,32 +1,48 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
+
 {% block title %}
     Report a Bug
+
 {% endblock title %}
+
 {% block description %}
     Report a bug by providing the website URL, detailed description, and category. Upload a screenshot to help with the bug resolution process.
+
 {% endblock description %}
+
 {% block keywords %}
     Report a Bug, Bug Reporting, Website URL, Bug Description, Bug Category, Upload Screenshot
+
 {% endblock keywords %}
+
 {% block og_title %}
     Report a Bug - Help Improve Software Quality
+
 {% endblock og_title %}
+
 {% block og_description %}
     Report a bug by providing the necessary details such as website URL, description, and category. Upload a screenshot to aid in the bug resolution process.
+
 {% endblock og_description %}
 {% load custom_tags %}
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}
+
 {% providers_media_js %}
 <section>
     {% include "includes/user_sidenav.html" %}
+
 </section>
+
 {% endblock style %}
+
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
+
     {% block content %}
         <form action="{% url 'submit_bug' hunt.pk %}"
               method="post"
@@ -39,6 +55,7 @@
             </div>
             <section>
                 {% include "includes/user_sidenav.html" %}
+
             </section>
             <div class="space-y-4">
                 <!-- URL Input -->
@@ -59,7 +76,8 @@
                     {% if form.url.errors %}<span class="text-red-500 text-sm">{{ form.url.errors }}</span>{% endif %}
                 </div>
                 <!-- Description Textarea -->
-                <div class="form-group{% if form.description.errors %} has-error{% endif %}">
+                <div class="form-group
+                            {% if form.description.errors %}has-error{% endif %}">
                     <div class="flex items-center">
                         <span class="bg-gray-200 p-3 rounded-l-lg">
                             <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
@@ -89,7 +107,8 @@
                     </select>
                 </div>
                 <!-- Screenshot Upload -->
-                <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
+                <div class="form-group
+                            {% if form.screenshot.errors %}has-error{% endif %}">
                     {% if request.GET.hash %}
                         <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
                              class="w-full h-auto rounded-lg mb-4"
@@ -141,53 +160,55 @@
                 </table>
             </div>
         {% endif %}
+
     {% endblock content %}
     <script type="text/javascript">
-  function sanitizeInput(input) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode(input));
-    return div.innerHTML;
-  }
-  $(function () {
-    $('button[name="test_files"]').on('click', function () {
-      $(this).parent().find('input[type=file]').click();
-    });
-    $('input[name="screenshot"]').on('change', function () {
-      var file = $(this).val().replace('C:\\fakepath\\', '');
-      file = sanitizeInput(file);
-      $(this).parent().find('.badge').html(file);
-    });
-    $(".duplicates").click(function () {
-      var uri = $("input[name='url']").val();
-      $.ajax({
-        type: "POST",
-        data: {
-          dom_url: uri
-        },
-        url: "/domain_check/",
-        dataType: 'json',
-        success: function (response) {
-          var trint = response;
-          if (trint.number == 3) {
-            $('.message').html("<br>Sweet! We haven't got any bug from this domain till now");
-          } else if (trint.number == 2) {
-            var link = "{% env 'FQDN' %}/domain/" + trint.domain;
-            $('.message').html(
-              "<br>Multiple bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here:<br> " +
-              link);
-          } else if (trint.number == 1) {
-            var link = "{% env 'FQDN' %}/issue/" + trint.id;
-            $('.message').html(
-              "<br><div class='row'>A bug with same URL already exists <br>Description: " + trint
-              .description + "<br>Created on: " + trint.date + "/" + trint.month + "/" + trint.year +
-              "<br>Ensure you are not submitting a duplicate bug by checking here</div>: " + link);
-          }
-        },
-        error: function (response) {
-          $('.message').text('Something went wrong!');
-        },
-      });
-    });
-  });
+        function sanitizeInput(input) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(input));
+            return div.innerHTML;
+        }
+        $(function() {
+            $('button[name="test_files"]').on('click', function() {
+                $(this).parent().find('input[type=file]').click();
+            });
+            $('input[name="screenshot"]').on('change', function() {
+                var file = $(this).val().replace('C:\\fakepath\\', '');
+                file = sanitizeInput(file);
+                $(this).parent().find('.badge').html(file);
+            });
+            $(".duplicates").click(function() {
+                var uri = $("input[name='url']").val();
+                $.ajax({
+                    type: "POST",
+                    data: {
+                        dom_url: uri
+                    },
+                    url: "/domain_check/",
+                    dataType: 'json',
+                    success: function(response) {
+                        var trint = response;
+                        if (trint.number == 3) {
+                            $('.message').html("<br>Sweet! We haven't got any bug from this domain till now");
+                        } else if (trint.number == 2) {
+                            var link = "{% env 'FQDN' %}/domain/" + trint.domain;
+                            $('.message').html(
+                                "<br>Multiple bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here:<br> " +
+                                link);
+                        } else if (trint.number == 1) {
+                            var link = "{% env 'FQDN' %}/issue/" + trint.id;
+                            $('.message').html(
+                                "<br><div class='row'>A bug with same URL already exists <br>Description: " + trint
+                                .description + "<br>Created on: " + trint.date + "/" + trint.month + "/" + trint.year +
+                                "<br>Ensure you are not submitting a duplicate bug by checking here</div>: " + link);
+                        }
+                    },
+                    error: function(response) {
+                        $('.message').text('Something went wrong!');
+                    },
+                });
+            });
+        });
     </script>
+
 {% endblock body %}

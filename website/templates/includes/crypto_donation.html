@@ -1,10 +1,16 @@
 {% load static %}
+
 <div class="{% if included_in_issue_page %} {% else %} {% endif %}">
     <div class="flex flex-col gap-3 items-center">
         <!-- Crypto currency selection buttons -->
         <div class="flex flex-row gap-2 flex-wrap justify-center">
             <button id="btn-btc"
-                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.btc_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm
+                           {% if user.userprofile.btc_address %}
+                               border-[#e74c3c]
+                           {% else %}
+                               opacity-50
+                           {% endif %}"
                     {% if not user.userprofile.btc_address %}disabled{% endif %}>
                 <svg width="16"
                      height="16"
@@ -16,7 +22,12 @@
                 BTC
             </button>
             <button id="btn-bch"
-                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.bch_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm
+                           {% if user.userprofile.bch_address %}
+                               border-[#e74c3c]
+                           {% else %}
+                               opacity-50
+                           {% endif %}"
                     {% if not user.userprofile.bch_address %}disabled{% endif %}>
                 <svg width="16"
                      height="16"
@@ -28,7 +39,12 @@
                 BCH
             </button>
             <button id="btn-eth"
-                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.eth_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm
+                           {% if user.userprofile.eth_address %}
+                               border-[#e74c3c]
+                           {% else %}
+                               opacity-50
+                           {% endif %}"
                     {% if not user.userprofile.eth_address %}disabled{% endif %}>
                 <svg width="16"
                      height="16"
@@ -59,20 +75,24 @@
             <div id="btc-address" class="crypto-address hidden">
                 {% if user.userprofile.btc_address %}
                     {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=user.userprofile.btc_address lessWidth=True editCrypto=True %}
+
                 {% endif %}
             </div>
             <div id="bch-address" class="crypto-address hidden">
                 {% if user.userprofile.bch_address %}
                     {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=user.userprofile.bch_address lessWidth=True editCrypto=True %}
+
                 {% endif %}
             </div>
             <div id="eth-address" class="crypto-address hidden">
                 {% if user.userprofile.eth_address %}
                     {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=user.userprofile.eth_address lessWidth=True editCrypto=True %}
+
                 {% endif %}
             </div>
             <div id="no-crypto" class="hidden">
                 {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True editCrypto=True %}
+
                 <i class="text-[12px]">No Address, will go to BLT Donation</i>
             </div>
         </div>
@@ -85,7 +105,7 @@
     const bchAddress = "{{user.userprofile.bch_address}}";
     const ethAddress = "{{user.userprofile.eth_address}}";
     const bltAddress = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
-    
+
     // DOM elements
     const cryptoQrImage = document.getElementById('crypto-qr-image');
     const btcBtn = document.getElementById('btn-btc');
@@ -95,23 +115,23 @@
     const bchAddressDiv = document.getElementById('bch-address');
     const ethAddressDiv = document.getElementById('eth-address');
     const noCryptoDiv = document.getElementById('no-crypto');
-    
+
     // Helper functions
     function setActiveButton(button) {
         document.querySelectorAll('.crypto-btn').forEach(btn => {
             btn.classList.remove('bg-[#e74c3c]', 'text-white');
         });
-        
+
         button.classList.add('bg-[#e74c3c]', 'text-white');
     }
-    
+
     function hideAllAddresses() {
         document.querySelectorAll('.crypto-address').forEach(div => {
             div.classList.add('hidden');
         });
         noCryptoDiv.classList.add('hidden');
     }
-    
+
     function updateQRCode(address) {
         if (address && address !== "None") {
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
@@ -120,11 +140,11 @@
         }
         return false;
     }
-    
+
     function selectCrypto(type, address) {
         currentCrypto = type;
         hideAllAddresses();
-        
+
         if (updateQRCode(address)) {
             document.getElementById(`${type.toLowerCase()}-address`).classList.remove('hidden');
         } else {
@@ -132,15 +152,15 @@
             noCryptoDiv.classList.remove('hidden');
             updateQRCode(bltAddress);
         }
-        
+
         setActiveButton(document.getElementById(`btn-${type.toLowerCase()}`));
     }
-    
+
     // Button click handlers
     btcBtn.addEventListener('click', () => selectCrypto('BTC', btcAddress));
     bchBtn.addEventListener('click', () => selectCrypto('BCH', bchAddress));
     ethBtn.addEventListener('click', () => selectCrypto('ETH', ethAddress));
-    
+
     // Initialize with preferred crypto
     function initializeDefault() {
         // preference order: BCH > BTC > ETH
@@ -156,20 +176,20 @@
             updateQRCode(bltAddress);
         }
     }
-    
+
     document.addEventListener('DOMContentLoaded', initializeDefault);
-    
+
     // Update to handle all copy buttons
     document.addEventListener('DOMContentLoaded', () => {
         const copyTextElements = document.getElementsByClassName("copy_text");
-        
+
         Array.from(copyTextElements).forEach(element => {
             element.addEventListener("click", () => {
                 navigator.clipboard.writeText(element.innerText);
                 $.notify("Crypto Address Copied to Clipboard!", {
                     className: "success",
                     position: "top right"
-                }); 
+                });
             });
         });
     });

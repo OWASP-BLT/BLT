@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load humanize %}
+
 {% block title %}
     All Issues
+
 {% endblock title %}
+
 {% block description %}
     Browse through all reported issues. Filter by label and user to find specific issues and track progress.
+
 {% endblock description %}
+
 {% block keywords %}
     All Issues, Reported Issues, Issue Tracking, Filter Issues, User Issues, Label Issues
+
 {% endblock keywords %}
+
 {% block og_title %}
     All Issues - Track and Browse Reported Issues
+
 {% endblock og_title %}
+
 {% block og_description %}
     Explore all reported issues. Filter by label and user to efficiently find and track the progress of specific issues.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div id="bugsPage" class="p-6 lg:p-8 bg-gray-50 min-h-screen">
         <!-- Header -->
         <div class="max-w-7xl mx-auto">
@@ -46,6 +59,7 @@
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                         {% for bug in bugs %}
                             {% include "includes/_bug.html" %}
+
                         {% endfor %}
                     </div>
                     <!-- Enhanced Pagination -->
@@ -133,6 +147,7 @@
                             </h2>
                         </div>
                         {% include "includes/_leaderboard_widget.html" %}
+
                     </div>
                 </div>
             </div>
@@ -152,4 +167,5 @@
             });
         }
     </script>
+
 {% endblock content %}

@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load humanize %}
+
 {% block title %}
     Badges
+
 {% endblock title %}
+
 {% block description %}
     Explore the various badges available in the platform and learn how to earn them
+
 {% endblock description %}
+
 {% block keywords %}
     badges, rewards, achievements, recognition, platform
+
 {% endblock keywords %}
+
 {% block og_title %}
     Badges - Platform
+
 {% endblock og_title %}
+
 {% block og_description %}
     Discover and earn various badges as you contribute and achieve milestones on the platform
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold mb-12 mt-6 text-center">Badges</h1>
         <hr>
@@ -59,7 +72,13 @@
                         </h2>
                         <p class="text-gray-600 text-center mb-6 font-['Inter'] leading-relaxed opacity-80">{{ badge.description }}</p>
                         <div class="w-full text-center">
-                            <span class="inline-block px-8 py-3 text-sm font-['Inter'] font-semibold rounded-full tracking-wider uppercase {% if badge.type == 'automatic' %} bg-gradient-to-r from-green-500 to-emerald-600 text-white {% else %} bg-gradient-to-r from-indigo-500 to-blue-600 text-white {% endif %} shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                            <span class="inline-block px-8 py-3 text-sm font-['Inter'] font-semibold rounded-full tracking-wider uppercase
+                                         {% if badge.type == 'automatic' %}
+                                             bg-gradient-to-r from-green-500 to-emerald-600 text-white
+                                         {% else %}
+                                             bg-gradient-to-r from-indigo-500 to-blue-600 text-white
+                                         {% endif %}
+                                         shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                                 {{ badge.get_type_display }}
                             </span>
                         </div>
@@ -68,4 +87,5 @@
             {% endfor %}
         </div>
     </div>
+
 {% endblock content %}

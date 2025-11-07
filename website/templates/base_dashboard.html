@@ -3,124 +3,136 @@
 {% load gravatar %}
 {% load socialaccount %}
 {% load user_score %}
+
 {% providers_media_js %}
 {% load i18n %}
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <title>
+
             {% block title %}
                 {% env 'PROJECT_NAME' %}
+
             {% endblock title %}
         </title>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description"
-              content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and organizations can get involved and help out.{% endblock description %}">
-        <meta name="keywords"
-              content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, organization, easy{% endblock keywords %}">
-        <meta name="author" content="">
-        <meta property="og:title"
-              content="{% block og_title %}{% env 'PROJECT_NAME' %}{% endblock og_title %}" />
-        <meta property="og:image" content="" />
-        <meta property="og:description"
-              content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and organizations can get involved and help out.{% endblock og_description %}" />
-        <meta property="og:type" content="website" />
-        <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
-              rel="stylesheet">
-        <link href="{% static 'css/style-dashboard.css' %}" rel="stylesheet">
-        <link href="{% static 'css/lightbox.min.css' %}" rel="stylesheet">
-        <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}"
-              rel="stylesheet"
-              type="text/css">
-        <link href="{% static 'css/icon-font.min.css' %}"
-              rel="stylesheet"
-              type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400"
-              rel="stylesheet">
-        <link href="{% static 'css/introjs.css' %}"
-              rel="stylesheet"
-              type="text/css">
-        <link href="{% static 'css/main.css' %}" rel="stylesheet" type="text/css">
-        <link href="{% static 'css/text-slider.css' %}"
-              rel="stylesheet"
-              type="text/css">
-        <link href="{% static 'css/activity.css' %}"
-              rel="stylesheet"
-              type="text/css">
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-                integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-                crossorigin="anonymous"></script>
-        <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
-                crossorigin="anonymous"></script>
-        {% block style %}
-        {% endblock style %}
-    </head>
-    <body class="sticky-header left-side-collapsed">
-        <section>
-            <div class="main-content">
-                <div class="header-section">
-                    <a class="toggle-btn  menu-collapsed"><i class="fa fa-bars"></i></a>
-                    <div class="menu-right">
-                        <div class="user-panel-top">
-                            <a class="navbar-brand" href="#">
-                                <img src="{% static 'img/logo-small-transparent.png' %}"
-                                     alt="logo"
-                                     width="100%"
-                                     height="100%">
-                                <div>
-                                    <p class="inline-block text-base lg:text-xl mb-0 ml-1">
-                                        <span class="font-bold text-[#e11d48]">B</span>ugs, <span class="font-bold text-[#e11d48]">B</span>ounties, and <span class="font-bold text-[#e11d48]">B</span>eyond...
-                                    </p>
-                                </div>
-                            </a>
-                            <div class="profile_details">
-                                <ul>
-                                    <li class="dropdown profile_details_drop">
-                                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                            {% if request.user.userprofile.avatar %}
-                                                <img src="{{ request.user.userprofile.avatar }}"
-                                                     alt="avatar"
-                                                     width="20"
-                                                     height="20">
-                                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                                     alt="avatar"
-                                                     width="20"
-                                                     height="20">
-                                            {% else %}
-                                                {% gravatar request.user.email 20 %}
-                                            {% endif %}
-                                            {{ request.user.username }} <i class="fa fa-caret-down"></i>
-                                        </a>
-                                        <ul class="dropdown-menu drp-mnu">
+        <meta name="description" content=" 
+            {% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and organizations can get involved and help out. 
+            {% endblock description %}">
+            <meta name="keywords" content=" 
+                {% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, organization, easy 
+                {% endblock keywords %}">
+                <meta name="author" content="">
+                <meta property="og:title" content=" 
+                    {% block og_title %}{% env 'PROJECT_NAME' %} 
+                    {% endblock og_title %}" />
+                    <meta property="og:image" content="" />
+                    <meta property="og:description" content=" 
+                        {% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and organizations can get involved and help out. 
+                        {% endblock og_description %}" />
+                        <meta property="og:type" content="website" />
+                        <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
+                              rel="stylesheet">
+                        <link href="{% static 'css/style-dashboard.css' %}" rel="stylesheet">
+                        <link href="{% static 'css/lightbox.min.css' %}" rel="stylesheet">
+                        <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}"
+                              rel="stylesheet"
+                              type="text/css">
+                        <link href="{% static 'css/icon-font.min.css' %}"
+                              rel="stylesheet"
+                              type="text/css">
+                        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400"
+                              rel="stylesheet">
+                        <link href="{% static 'css/introjs.css' %}"
+                              rel="stylesheet"
+                              type="text/css">
+                        <link href="{% static 'css/main.css' %}" rel="stylesheet" type="text/css">
+                        <link href="{% static 'css/text-slider.css' %}"
+                              rel="stylesheet"
+                              type="text/css">
+                        <link href="{% static 'css/activity.css' %}"
+                              rel="stylesheet"
+                              type="text/css">
+                        <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+                                integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+                                crossorigin="anonymous"></script>
+                        <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
+                                crossorigin="anonymous"></script>
+
+                        {% block style %}
+
+                        {% endblock style %}
+                    </head>
+                    <body class="sticky-header left-side-collapsed">
+                        <section>
+                            <div class="main-content">
+                                <div class="header-section">
+                                    <a class="toggle-btn  menu-collapsed"><i class="fa fa-bars"></i></a>
+                                    <div class="menu-right">
+                                        <div class="user-panel-top">
+                                            <a class="navbar-brand" href="#">
+                                                <img src="{% static 'img/logo-small-transparent.png' %}"
+                                                     alt="logo"
+                                                     width="100%"
+                                                     height="100%">
+                                                <div>
+                                                    <p class="inline-block text-base lg:text-xl mb-0 ml-1">
+                                                        <span class="font-bold text-[#e11d48]">B</span>ugs, <span class="font-bold text-[#e11d48]">B</span>ounties, and <span class="font-bold text-[#e11d48]">B</span>eyond...
+                                                    </p>
+                                                </div>
+                                            </a>
+                                            <div class="profile_details">
+                                                <ul>
+                                                    <li class="dropdown profile_details_drop">
+                                                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                                            {% if request.user.userprofile.avatar %}
+                                                                <img src="{{ request.user.userprofile.avatar }}"
+                                                                     alt="avatar"
+                                                                     width="20"
+                                                                     height="20">
+                                                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                                                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                                     alt="avatar"
+                                                                     width="20"
+                                                                     height="20">
+                                                            {% else %}
+                                                                {% gravatar request.user.email 20 %}
+                                                            {% endif %}
+                                                            {{ request.user.username }} <i class="fa fa-caret-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu drp-mnu">
+                                                            <li>
+                                                            <a href="{% url 'account_profile' %}"><i class="fa fa-user"></i>
+                                                        {% trans "User Profile" %}</a>
+                                                    </li>
+                                                    <li>
+                                                    <a href="{% url 'account_change_password' %}"><i class="fa fa-cog"></i>
+                                                {% trans "Change Password" %}</a>
+                                            </li>
                                             <li>
-                                            <a href="{% url 'account_profile' %}"><i class="fa fa-user"></i>
-                                        {% trans "User Profile" %}</a>
+                                            <a href="{% url 'account_logout' %}?next={{ request.path }}"><i class="fa fa-sign-out"></i>
+                                        {% trans "Logout" %}</a>
                                     </li>
-                                    <li>
-                                    <a href="{% url 'account_change_password' %}"><i class="fa fa-cog"></i>
-                                {% trans "Change Password" %}</a>
+                                </ul>
                             </li>
-                            <li>
-                            <a href="{% url 'account_logout' %}?next={{ request.path }}"><i class="fa fa-sign-out"></i>
-                        {% trans "Logout" %}</a>
-                    </li>
-                </ul>
-            </li>
-            <div class="clearfix"></div>
-        </ul>
+                            <div class="clearfix"></div>
+                        </ul>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+            </div>
+        </div>
+        <div id="page-wrapper">
+
+            {% block content %}
+
+            {% endblock content %}
+        </div>
     </div>
-    <div class="clearfix"></div>
-</div>
-</div>
-</div>
-<div id="page-wrapper">
-    {% block content %}
-    {% endblock content %}
-</div>
-</div>
 </section>
 </body>
 <script src="{% static 'js/jquery.nicescroll.js' %}"></script>

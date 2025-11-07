@@ -1,11 +1,16 @@
 {% load gravatar %}
 {% load custom_tags %}
+
 <div class="flex flex-wrap gap-x-3 gap-y-3">
-    <button class="like_unlike border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm "
+    <button class="like_unlike border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm"
             type="button">
         <span id="likes" class="flex flex-row gap-2 items-center">
             {{ likes }}
-            <span {% if request.user.is_authenticated %} name="{{ object.pk }}" id="like_unlike" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}>Likes</span>
+            <span {% if request.user.is_authenticated %}
+                      name="{{ object.pk }}" id="like_unlike"
+                  {% else %}
+                      onclick="window.location.href='/accounts/login'"
+                  {% endif %}>Likes</span>
             {% if isLiked %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="#ff0000"
@@ -31,7 +36,11 @@
             {% endif %}
         </span>
     </button>
-    <button {% if request.user.is_authenticated %} name="{{ object.pk }}" type="submit" id="dislike-btn" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}
+    <button {% if request.user.is_authenticated %}
+                name="{{ object.pk }}" type="submit" id="dislike-btn"
+            {% else %}
+                onclick="window.location.href='/accounts/login'"
+            {% endif %}
             class="dislike border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm"
             type="button">
         <span id="dislikes" class="flex flex-row gap-2 items-center">
@@ -56,11 +65,15 @@
             {% endif %}
         </span>
     </button>
-    <button class="flag-unflag border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm "
+    <button class="flag-unflag border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm"
             type="button">
         <span id="flags" class="flex flex-row gap-2 items-center">
             {{ flags }}
-            <span {% if request.user.is_authenticated %} name="{{ object.pk }}" id="flag-unflag" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}>Flag</span>
+            <span {% if request.user.is_authenticated %}
+                      name="{{ object.pk }}" id="flag-unflag"
+                  {% else %}
+                      onclick="window.location.href='/accounts/login'"
+                  {% endif %}>Flag</span>
             {% if isFlagged %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      height="13px"
@@ -86,8 +99,12 @@
             {% endif %}
         </span>
     </button>
-    <button {% if request.user.is_authenticated %} name="{{ object.pk }}" id="bookmark" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}
-            class="bookmark border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm "
+    <button {% if request.user.is_authenticated %}
+                name="{{ object.pk }}" id="bookmark"
+            {% else %}
+                onclick="window.location.href='/accounts/login'"
+            {% endif %}
+            class="bookmark border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm"
             type="button">
         <span id="bookmark" class="flex flex-row gap-2 items-center">
             {% if bookmarked %}
@@ -112,7 +129,11 @@
         </span>
     </button>
     <button class="border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm"
-            onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}?next={{ request.path }}`{% endif %}"
+            onclick="{% if user.is_authenticated %}
+                         subscribe_domain()
+                     {% else %}
+                         window.location.href=`{% url 'account_login' %}?next={{ request.path }}`
+                     {% endif %}"
             id="subscribe_domain_btn">
         {% if user.is_authenticated and subscribed_to_domain %}
             <div class="flex flex-row gap-2 items-center">
@@ -138,7 +159,11 @@
        target="_blank"
        rel="noopener noreferrer"
        class="border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] hover:text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm">Tweet &nbsp;<i class="fa-brands fa-x-twitter fa-lg"></i></a>
-    <a {% if github_link != "empty" %} target="_blank" href="{{ github_link }}" {% else %} onclick="createIssue()" name="{{ object.pk }}" id="create_issue" {% endif %}
+    <a {% if github_link != "empty" %}
+           target="_blank" href="{{ github_link }}"
+       {% else %}
+           onclick="createIssue()" name="{{ object.pk }}" id="create_issue"
+       {% endif %}
        rel="noopener noreferrer"
        class="border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] hover:text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm">
         {% if github_link != "empty" %}

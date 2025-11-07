@@ -1,23 +1,36 @@
 <!-- website/templates/website/video_call.html -->
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Secure Video Call
+
 {% endblock title %}
+
 {% block description %}
     Make secure video calls with end-to-end encryption. Create a private room and share with others.
+
 {% endblock description %}
+
 {% block keywords %}
     Video Call, Secure Call, WebRTC, Private Room, Video Chat
+
 {% endblock keywords %}
+
 {% block og_title %}
     Secure Video Call - BLT Platform
+
 {% endblock og_title %}
+
 {% block og_description %}
     Make secure and private video calls with end-to-end encryption on BLT Platform.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="p-4 sm:ml-64">
         <div class="container mx-auto">
             <!-- Header Section -->
@@ -193,7 +206,10 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}
+
 {% block extra_js %}
     <script src="{% static 'js/video_call.js' %}"></script>
+
 {% endblock extra_js %}

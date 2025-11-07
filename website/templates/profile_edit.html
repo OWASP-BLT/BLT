@@ -1,22 +1,35 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Edit Profile | {{ user.username }}
+
 {% endblock title %}
+
 {% block description %}
     Update your profile information including username, email, avatar, domain, and other details. Ensure your profile is up-to-date and accurate.
+
 {% endblock description %}
+
 {% block keywords %}
     Edit Profile, Update Profile Information, Username, Email, Avatar, Domain, Profile Details
+
 {% endblock keywords %}
+
 {% block og_title %}
     Edit Profile - Update Your Information
+
 {% endblock og_title %}
+
 {% block og_description %}
     Edit your profile to keep your information current. Update your username, email, avatar, domain, and other personal details.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <div class="lg:max-w-[1700px] mx-auto">
             <!-- Header -->
@@ -27,7 +40,7 @@
             <!-- Main Form -->
             <form method="post"
                   enctype="multipart/form-data"
-                  class=" bg-white rounded-xl w-full border border-gray-200 shadow-md py-10 px-8">
+                  class="bg-white rounded-xl w-full border border-gray-200 shadow-md py-10 px-8">
                 {% csrf_token %}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <!-- Left Column -->
@@ -245,9 +258,12 @@
                                                    class="hidden"
                                                    {% if tag.id in form.tags.value %}checked{% endif %}>
                                             <label for="tag_{{ tag.id }}"
-                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if tag.id in form.tags.value %} bg-[#e74c3c] text-white {% else %} bg-gray-100 text-gray-700 hover:bg-gray-200 {% endif %}">
-                                                {{ tag.name }}
-                                            </label>
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors
+                                                          {% if tag.id in form.tags.value %}
+                                                              bg-[#e74c3c] text-white
+                                                          {% else %}
+                                                              bg-gray-100 text-gray-700 hover:bg-gray-200
+                                                          {% endif %}">{{ tag.name }}</label>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -274,9 +290,12 @@
                                                    class="hidden"
                                                    {% if domain.id in form.subscribed_domains.value %}checked{% endif %}>
                                             <label for="domain_{{ domain.id }}"
-                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if domain.id in form.subscribed_domains.value %}bg-[#e74c3c] text-white hover:bg-red-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-                                                {{ domain.name }}
-                                            </label>
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors
+                                                          {% if domain.id in form.subscribed_domains.value %}
+                                                              bg-[#e74c3c] text-white hover:bg-red-700
+                                                          {% else %}
+                                                              bg-gray-100 text-gray-700 hover:bg-gray-200
+                                                          {% endif %}">{{ domain.name }}</label>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -303,9 +322,12 @@
                                                    class="hidden"
                                                    {% if user.id in form.subscribed_users.value %}checked{% endif %}>
                                             <label for="user_{{ user.id }}"
-                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if user.id in form.subscribed_users.value %}bg-[#e74c3c] text-white hover:bg-red-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-                                                {{ user.username }}
-                                            </label>
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors
+                                                          {% if user.id in form.subscribed_users.value %}
+                                                              bg-[#e74c3c] text-white hover:bg-red-700
+                                                          {% else %}
+                                                              bg-gray-100 text-gray-700 hover:bg-gray-200
+                                                          {% endif %}">{{ user.username }}</label>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -355,7 +377,7 @@
             tagItems.forEach(item => {
                 const checkbox = item.querySelector('input[type="checkbox"]');
                 const label = item.querySelector('label');
-                
+
                 label.addEventListener('click', function(e) {
                     e.preventDefault();
                     checkbox.checked = !checkbox.checked;
@@ -385,7 +407,7 @@
             domainItems.forEach(item => {
                 const checkbox = item.querySelector('input[type="checkbox"]');
                 const label = item.querySelector('label');
-                
+
                 label.addEventListener('click', function(e) {
                     e.preventDefault();
                     checkbox.checked = !checkbox.checked;
@@ -415,7 +437,7 @@
             userItems.forEach(item => {
                 const checkbox = item.querySelector('input[type="checkbox"]');
                 const label = item.querySelector('label');
-                
+
                 label.addEventListener('click', function(e) {
                     e.preventDefault();
                     checkbox.checked = !checkbox.checked;
@@ -430,4 +452,5 @@
             });
         });
     </script>
+
 {% endblock content %}

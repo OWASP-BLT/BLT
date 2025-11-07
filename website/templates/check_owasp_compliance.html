@@ -1,10 +1,16 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}OWASP Project Compliance Checker{% endblock %}
+
 {% block description %}Check if your OWASP project follows compliance guidelines and best practices.{% endblock %}
+
 {% block keywords %}OWASP, compliance, project guidelines, best practices, open source{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">OWASP Project Compliance Checker</h1>
@@ -155,4 +161,5 @@
             </div>
         {% endif %}
     </div>
+
 {% endblock %}

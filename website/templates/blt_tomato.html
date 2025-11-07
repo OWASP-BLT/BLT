@@ -1,25 +1,40 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     {% env 'PROJECT_NAME' %} Tomato - OWASP {% env 'PROJECT_NAME' %} Project
+
 {% endblock title %}
+
 {% block description %}
     Explore the OWASP {% env 'PROJECT_NAME' %} Tomato project and discover other OWASP projects seeking funding. You can also donate to support these projects.
+
 {% endblock description %}
+
 {% block keywords %}
     OWASP, {% env 'PROJECT_NAME' %} Tomato, funding, OWASP projects, donation, open-source, funding.yml
+
 {% endblock keywords %}
+
 {% block og_title %}
     {% env 'PROJECT_NAME' %} Tomato - OWASP {% env 'PROJECT_NAME' %} Project
+
 {% endblock og_title %}
+
 {% block og_description %}
     Support the OWASP {% env 'PROJECT_NAME' %} Tomato project and other OWASP projects by donating through funding.yml. Help fund open-source initiatives.
+
 {% endblock og_description %}
+
 {% block content %}
     <div class="min-h-screen bg-white">
         <!-- Sidebar -->
-        <div class="fixed left-0 top-0 h-full lg:w-64 z-30">{% include "includes/sidenav.html" %}</div>
+        <div class="fixed left-0 top-0 h-full lg:w-64 z-30">
+            {% include "includes/sidenav.html" %}
+
+        </div>
         <!-- Main Content -->
         <div class="lg:ml-64">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -82,4 +97,5 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}

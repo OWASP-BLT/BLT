@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Add Domain Information
+
 {% endblock title %}
+
 {% block description %}
     Fill out and update your domain's information. Include domain name, URL, organization details, and social media links to ensure comprehensive records.
+
 {% endblock description %}
+
 {% block keywords %}
     Add Domain Information, Domain Details, Domain Name, Domain URL, Organization Information, Social Media Links
+
 {% endblock keywords %}
+
 {% block og_title %}
     Add Domain Information - Comprehensive Domain Details
+
 {% endblock og_title %}
+
 {% block og_description %}
     Update and maintain your domain information. Include domain name, URL, organization details, and social media links for a complete profile.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <div class="w-full mt-5">
@@ -53,7 +65,7 @@
                     </div>
                     <div class="sm:col-span-3">
                         <label for="organization"
-                               class="block text-sm font-medium leading-6 text-gray-900 ">Organization</label>
+                               class="block text-sm font-medium leading-6 text-gray-900">Organization</label>
                         <div class="mt-2">
                             <select id="organization"
                                     name="organization"
@@ -210,16 +222,18 @@
             </div>
         </form>
     </div>
+
 {% endblock body %}
+
 {% block js %}
     <script>
-        function remove_email_container(){
+        function remove_email_container() {
             let email_container = document.getElementById("email-container");
             let lst_child = email_container.lastElementChild;
             email_container.removeChild(lst_child);
         }
 
-        function add_email_container(){
+        function add_email_container() {
             const email_container_child_html = document.createElement('div');
             email_container_child_html.innerHTML = `
                 <div class="mt-2 flex flex-row items-center">
@@ -233,6 +247,6 @@
             let email_container = document.getElementById("email-container");
             email_container.appendChild(email_container_child_html)
         }
-
     </script>
+
 {% endblock js %}

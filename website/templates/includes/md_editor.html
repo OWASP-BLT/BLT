@@ -52,85 +52,87 @@
         integrity="sha384-KpuxVjTC2hfOkg5KV3jSdx1eA6xy0PGS0wNfDrwf4sZBnZdzlIsnkH+LzLkavmH7"
         crossorigin="anonymous"></script>
 <script>
-  const converter = new showdown.Converter({ parseImgDimensions: true });
-
-  const markdownInput = document.getElementById('markdownInput');
-  const previewButton = document.getElementById('previewButton');
-  const editButton = document.getElementById('editButton');
-  const previewContainer = document.getElementById('previewContainer');
-  const markdownPreview = document.getElementById('markdownPreview');
-  const boldButton = document.getElementById('boldButton');
-  const italicButton = document.getElementById('italicButton');
-  const imageButton = document.getElementById('imageButton');
-  const linkButton = document.getElementById('linkButton');
-  
-  const createIssueForm = document.getElementById('createIssueForm');
-
-  const embedded_image_markdown = (markdownText) => {
-    const image = /\$\[img[1-5]\]/g;
-    const screenshotDiv = document.querySelectorAll("#files_manage img");
-    let screenshots = [];
-    screenshotDiv.forEach((element) => {
-      screenshots.push(element.attributes.src.value);
+    const converter = new showdown.Converter({
+        parseImgDimensions: true
     });
-    if (image.test(markdownText)) {
-      const matches = markdownText.match(image);
-      matches.forEach(element => {
-        const index = element.replace(/\D/g, '');
-        const image = screenshots[index - 1];
-        if (image !== undefined) {
-          markdownText = markdownText.replace(element, `![img${index}](${image} =100x80)`);
+
+    const markdownInput = document.getElementById('markdownInput');
+    const previewButton = document.getElementById('previewButton');
+    const editButton = document.getElementById('editButton');
+    const previewContainer = document.getElementById('previewContainer');
+    const markdownPreview = document.getElementById('markdownPreview');
+    const boldButton = document.getElementById('boldButton');
+    const italicButton = document.getElementById('italicButton');
+    const imageButton = document.getElementById('imageButton');
+    const linkButton = document.getElementById('linkButton');
+
+    const createIssueForm = document.getElementById('createIssueForm');
+
+    const embedded_image_markdown = (markdownText) => {
+        const image = /\$\[img[1-5]\]/g;
+        const screenshotDiv = document.querySelectorAll("#files_manage img");
+        let screenshots = [];
+        screenshotDiv.forEach((element) => {
+            screenshots.push(element.attributes.src.value);
+        });
+        if (image.test(markdownText)) {
+            const matches = markdownText.match(image);
+            matches.forEach(element => {
+                const index = element.replace(/\D/g, '');
+                const image = screenshots[index - 1];
+                if (image !== undefined) {
+                    markdownText = markdownText.replace(element, `![img${index}](${image} =100x80)`);
+                }
+            });
         }
-      });
+        return markdownText;
+    };
+
+    previewButton.addEventListener('click', () => {
+        let markdownText = markdownInput.value;
+        markdownText = embedded_image_markdown(markdownText);
+        const markdownHTML = converter.makeHtml(markdownText);
+        markdownPreview.innerHTML = markdownHTML;
+        previewContainer.classList.remove('hidden');
+        markdownInput.classList.add('hidden');
+        previewButton.classList.add('hidden');
+        editButton.classList.remove('hidden');
+    });
+
+    editButton.addEventListener('click', () => {
+        markdownInput.classList.remove('hidden');
+        previewContainer.classList.add('hidden');
+        previewButton.classList.remove('hidden');
+        editButton.classList.add('hidden');
+    });
+
+    boldButton.addEventListener('click', () => {
+        insertMarkdownSyntax('**', '**');
+    });
+
+    italicButton.addEventListener('click', () => {
+        insertMarkdownSyntax('_', '_');
+    });
+
+    imageButton.addEventListener('click', () => {
+        const imageURL = prompt('Enter the URL of the image:');
+        if (imageURL) {
+            insertMarkdownSyntax('![alt text]', `(${imageURL})`);
+        }
+    });
+
+    linkButton.addEventListener('click', () => {
+        const linkURL = prompt('Enter the URL:');
+        if (linkURL) {
+            insertMarkdownSyntax('[link text]', `(${linkURL})`);
+        }
+    });
+
+    function insertMarkdownSyntax(startTag, endTag) {
+        const startPos = markdownInput.selectionStart;
+        const endPos = markdownInput.selectionEnd;
+        const selectedText = markdownInput.value.substring(startPos, endPos);
+        const modifiedText = `${startTag}${selectedText}${endTag}`;
+        markdownInput.value = markdownInput.value.substring(0, startPos) + modifiedText + markdownInput.value.substring(endPos);
     }
-    return markdownText;
-  };
-
-  previewButton.addEventListener('click', () => {
-    let markdownText = markdownInput.value;
-    markdownText = embedded_image_markdown(markdownText);
-    const markdownHTML = converter.makeHtml(markdownText);
-    markdownPreview.innerHTML = markdownHTML;
-    previewContainer.classList.remove('hidden');
-    markdownInput.classList.add('hidden');
-    previewButton.classList.add('hidden');
-    editButton.classList.remove('hidden');
-  });
-
-  editButton.addEventListener('click', () => {
-    markdownInput.classList.remove('hidden');
-    previewContainer.classList.add('hidden');
-    previewButton.classList.remove('hidden');
-    editButton.classList.add('hidden');
-  });
-
-  boldButton.addEventListener('click', () => {
-    insertMarkdownSyntax('**', '**');
-  });
-
-  italicButton.addEventListener('click', () => {
-    insertMarkdownSyntax('_', '_');
-  });
-
-  imageButton.addEventListener('click', () => {
-    const imageURL = prompt('Enter the URL of the image:');
-    if (imageURL) {
-      insertMarkdownSyntax('![alt text]', `(${imageURL})`);
-    }
-  });
-
-  linkButton.addEventListener('click', () => {
-    const linkURL = prompt('Enter the URL:');
-    if (linkURL) {
-      insertMarkdownSyntax('[link text]', `(${linkURL})`);
-    }
-  });
-
-  function insertMarkdownSyntax(startTag, endTag) {
-    const startPos = markdownInput.selectionStart;
-    const endPos = markdownInput.selectionEnd;
-    const selectedText = markdownInput.value.substring(startPos, endPos);
-    const modifiedText = `${startTag}${selectedText}${endTag}`;
-    markdownInput.value = markdownInput.value.substring(0, startPos) + modifiedText + markdownInput.value.substring(endPos);
-  }
 </script>

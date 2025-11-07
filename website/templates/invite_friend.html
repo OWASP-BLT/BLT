@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Invite a Friend
+
 {% endblock title %}
+
 {% block description %}
     Invite a friend to join the site and earn 2 points. Share your referral link or send an invitation via email.
+
 {% endblock description %}
+
 {% block keywords %}
     Invite Friend, Earn Points, Referral Link, Send Invitation, Share and Earn, Join Site
+
 {% endblock keywords %}
+
 {% block og_title %}
     Invite a Friend - Earn Points for Referrals
+
 {% endblock og_title %}
+
 {% block og_description %}
     Invite a friend to join the site and earn 2 points. Share your referral link or send an invitation via email.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     {% comment %} <div class="absolute bottom-2.5 right-4 flex space-x-4">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/invite_friend.html">
             <i class="fab fa-github text-2xl text-gray-700 hover:text-gray-900 transition-colors duration-300"></i>
@@ -86,26 +99,29 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}
+
 {% block after_js %}
     <script>
-    function copyReferralLink() {
-        var copyText = document.getElementById("referralLink");
-        copyText.select();
-        copyText.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(copyText.value);
-        
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-12 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out';
-        toast.innerHTML = '<div class="flex items-center"><i class="fas fa-check-circle text-green-400 mr-2"></i> Link copied to clipboard!</div>';
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.classList.add('opacity-0');
+        function copyReferralLink() {
+            var copyText = document.getElementById("referralLink");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-12 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out';
+            toast.innerHTML = '<div class="flex items-center"><i class="fas fa-check-circle text-green-400 mr-2"></i> Link copied to clipboard!</div>';
+            document.body.appendChild(toast);
+
             setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 500);
-        }, 3000);
-    }
+                toast.classList.add('opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 500);
+            }, 3000);
+        }
     </script>
+
 {% endblock after_js %}

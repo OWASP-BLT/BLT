@@ -1,29 +1,44 @@
 {% extends "base.html" %}
+
 {% load gravatar %}
 {% load static %}
+
 {% block title %}
     Monthly Leaderboard
+
 {% endblock title %}
+
 {% block description %}
     Check out the top performers on the monthly leaderboard. View scores, usernames, and their achievements for the month.
+
 {% endblock description %}
+
 {% block keywords %}
     Monthly Leaderboard, Top Performers, Scores, Usernames, Achievements, Leaderboard Rankings
+
 {% endblock keywords %}
+
 {% block og_title %}
     Monthly Leaderboard - Top Performers and Achievements
+
 {% endblock og_title %}
+
 {% block og_description %}
     Explore the monthly leaderboard to see the top performers. View scores, usernames, and their achievements for the month.
+
 {% endblock og_description %}
+
 {% block before_js %}
     <script async
             type="text/javascript"
             src="//cdn.carbonads.com/carbon.js?serve=CESDK2J7&placement=getbutterflycom"
             id="_carbonads_js"></script>
+
 {% endblock before_js %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50 p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
             <!-- Header Section -->
@@ -116,9 +131,16 @@
                                                class="text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
                                                 {{ leader.username }}
                                             </a>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if leader.userprofile.get_title_display == 'GOLD' %}bg-yellow-100 text-yellow-800{% elif leader.userprofile.get_title_display == 'SILVER' %}bg-gray-100 text-gray-800{% elif leader.userprofile.get_title_display == 'BRONZE' %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
-                                                {{ leader.userprofile.get_title_display }}
-                                            </span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                         {% if leader.userprofile.get_title_display == 'GOLD' %}
+                                                             bg-yellow-100 text-yellow-800
+                                                         {% elif leader.userprofile.get_title_display == 'SILVER' %}
+                                                             bg-gray-100 text-gray-800
+                                                         {% elif leader.userprofile.get_title_display == 'BRONZE' %}
+                                                             bg-orange-100 text-orange-800
+                                                         {% else %}
+                                                             bg-blue-100 text-blue-800
+                                                         {% endif %}">{{ leader.userprofile.get_title_display }}</span>
                                         </div>
                                         <div class="flex items-center gap-2 mt-1">
                                             <span class="text-sm text-gray-500">{{ leader.total_score }} Points</span>
@@ -223,7 +245,7 @@
                     _renderMonths: function() {
                         var self = this;
                         var container = $('<div class="grid grid-cols-3 gap-2">');
-                        
+
                         $.each(months, function(i, month) {
                             $('<button>')
                                 .attr('data-value', i)
@@ -231,7 +253,7 @@
                                 .text(month)
                                 .appendTo(container);
                         });
-                        
+
                         this._container.append(container);
                     }
                 };
@@ -261,4 +283,5 @@
             });
         });
     </script>
+
 {% endblock content %}

@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Bid on Issues - Submit and Manage Bids
+
 {% endblock title %}
+
 {% block description %}
     Place bids on issues by providing a GitHub issue link, view current bids, and submit new bids. Manage and track your bids efficiently.
+
 {% endblock description %}
+
 {% block keywords %}
     bids, GitHub issues, bidding platform, submit bid, bid status, manage bids, pull requests
+
 {% endblock keywords %}
+
 {% block og_title %}
     Bid on Issues - Submit and Manage Bids
+
 {% endblock og_title %}
+
 {% block og_description %}
     Place bids on GitHub issues, view current bids, and manage your submissions. An efficient platform to submit, track, and update your bids.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Bidding Form Section -->
@@ -83,7 +96,9 @@
                                    name="user"
                                    class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
                                    placeholder="Enter GitHub username"
-                                   value="{% if request.user.is_authenticated %}{{ request.user.username }}{% endif %}">
+                                   value="{% if request.user.is_authenticated %}
+                                              {{ request.user.username }}
+                                          {% endif %}">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fab fa-github text-gray-400"></i>
                             </div>
@@ -250,87 +265,90 @@
         </div>
     </div>
     <script>
-    function fetchBid() {
-        const issueUrl = document.getElementById('issueLinkInput').value;
-        const csrftoken = getCookie('csrftoken');
-        const githubUrlPattern = /^https?:\/\/github\.com\/.*$/i;
-        
-        if (!githubUrlPattern.test(issueUrl)) {
-            document.getElementById('invalidUrlMessage').style.display = "block";
-            return;
-        } else {
-            document.getElementById('invalidUrlMessage').style.display = "none";
-        }
+        function fetchBid() {
+            const issueUrl = document.getElementById('issueLinkInput').value;
+            const csrftoken = getCookie('csrftoken');
+            const githubUrlPattern = /^https?:\/\/github\.com\/.*$/i;
 
-        fetch(`/fetch-current-bid/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({issue_url: issueUrl}),
-        })
-            .then(response => response.json())
-            .then(data => {
-                if ('current_bid' in data) {
-                    const currentBid = data.current_bid;
-                document.getElementById('BidDisplay').innerHTML = `
+            if (!githubUrlPattern.test(issueUrl)) {
+                document.getElementById('invalidUrlMessage').style.display = "block";
+                return;
+            } else {
+                document.getElementById('invalidUrlMessage').style.display = "none";
+            }
+
+            fetch(`/fetch-current-bid/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({
+                        issue_url: issueUrl
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if ('current_bid' in data) {
+                        const currentBid = data.current_bid;
+                        document.getElementById('BidDisplay').innerHTML = `
                     <div class="flex items-center gap-2 text-gray-900">
                         <i class="fas fa-info-circle text-[#e74c3c]"></i>
                         Current Bid: <span class="font-bold">$${currentBid}</span>
                     </div>
                 `;
-                    const bidAmountInput = document.getElementById('bid_amount');
-                    bidAmountInput.setAttribute('max', currentBid - 1);
-                } else {
-                document.getElementById('BidDisplay').innerHTML = `
+                        const bidAmountInput = document.getElementById('bid_amount');
+                        bidAmountInput.setAttribute('max', currentBid - 1);
+                    } else {
+                        document.getElementById('BidDisplay').innerHTML = `
                     <div class="flex items-center gap-2 text-gray-900">
                         <i class="fas fa-info-circle text-[#e74c3c]"></i>
                         No current bid for this issue
                     </div>
                 `;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            document.getElementById('BidDisplay').innerHTML = `
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('BidDisplay').innerHTML = `
                 <div class="flex items-center gap-2 text-red-600">
                     <i class="fas fa-exclamation-circle"></i>
                     Error fetching bid information
                 </div>
             `;
-        });
-    }
+                });
+        }
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
 
-    function selectBidAmount(button, amount) {
-        // Remove active state from all buttons
-        document.querySelectorAll('.bid-button').forEach(btn => {
-            btn.classList.remove('bg-[#e74c3c]', 'text-white');
-            btn.classList.add('text-[#e74c3c]');
-        });
-        
-        // Add active state to clicked button
-        button.classList.add('bg-[#e74c3c]');
-        button.classList.remove('text-[#e74c3c]');
-        button.classList.add('text-white');
-        
-        // Set the bid amount
-        document.getElementById('bid_amount').value = amount;
-    }
+        function selectBidAmount(button, amount) {
+            // Remove active state from all buttons
+            document.querySelectorAll('.bid-button').forEach(btn => {
+                btn.classList.remove('bg-[#e74c3c]', 'text-white');
+                btn.classList.add('text-[#e74c3c]');
+            });
+
+            // Add active state to clicked button
+            button.classList.add('bg-[#e74c3c]');
+            button.classList.remove('text-[#e74c3c]');
+            button.classList.add('text-white');
+
+            // Set the bid amount
+            document.getElementById('bid_amount').value = amount;
+        }
     </script>
+
 {% endblock content %}

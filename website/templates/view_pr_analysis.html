@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <title>PR Analysis Reports</title>
     <div class="container mx-auto bg-gray-100 p-5 max-w-2xl rounded-lg shadow-md mt-20">
         <h1 class="text-center text-3xl text-gray-800 mb-8">PR Analysis Reports</h1>
@@ -32,4 +34,5 @@
             <p class="text-center text-gray-500">No analysis reports available.</p>
         {% endfor %}
     </div>
+
 {% endblock content %}

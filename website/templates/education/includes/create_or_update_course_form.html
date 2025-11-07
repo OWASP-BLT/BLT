@@ -68,7 +68,9 @@
         <input type="hidden"
                name="id"
                id="course-id"
-               value="{% if course %}{{ course.id }}{% endif %}">
+               value="{% if course %}
+                          {{ course.id }}
+                      {% endif %}">
         <div>
             <button id="create-course-btn"
                     type="submit"
@@ -83,19 +85,25 @@
     </form>
 </div>
 <script>
-const preSelectedTags = [
-    {% for tag in course.tags.all %}"{{ tag.id }}",{% endfor %}
-];
+    const preSelectedTags = [{
+            %
+            for tag in course.tags.all %
+        }
+        "{{ tag.id }}", {
+            %
+            endfor %
+        }
+    ];
 
-new TomSelect("#tags", {
-    plugins: ['remove_button'],
-    persist: false,
-    create: true,
-    maxItems: 10,
-    placeholder: "Select up to 10 tags",
-    hideSelected: true,
-    items: preSelectedTags
-});
+    new TomSelect("#tags", {
+        plugins: ['remove_button'],
+        persist: false,
+        create: true,
+        maxItems: 10,
+        placeholder: "Select up to 10 tags",
+        hideSelected: true,
+        items: preSelectedTags
+    });
 </script>
 <script>
     document.getElementById('thumbnail').addEventListener('change', function(event) {
@@ -110,38 +118,38 @@ new TomSelect("#tags", {
         }
     });
 
-            document.getElementById('create-course-btn').addEventListener('click', async (event) => {
-                event.preventDefault();
+    document.getElementById('create-course-btn').addEventListener('click', async (event) => {
+        event.preventDefault();
 
-                const button = event.target;
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        const button = event.target;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
-                const form = document.getElementById('course-form');
-                const formData = new FormData(form);
+        const form = document.getElementById('course-form');
+        const formData = new FormData(form);
 
-                await createOrUpdateCourse(formData);
+        await createOrUpdateCourse(formData);
+    });
+
+    const createOrUpdateCourse = async (formData) => {
+        try {
+            const response = await fetch('/education/instructor_dashboard/create-or-update-course/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData,
             });
 
-            const createOrUpdateCourse = async (formData) => {
-                try {
-                    const response = await fetch('/education/instructor_dashboard/create-or-update-course/', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: formData,
-                    });
-
-                    const result = await response.json();
-                    if (!result.success) {
-                        alert(result.message);
-                    } else {
-                        alert("Course {% if course %} edited {% else %} created {% endif %} successfully.");
-                        window.location.reload();
-                    }
-                } catch (error) {
-                    alert('An error occurred. Please try again later.');
-                }
-            };
+            const result = await response.json();
+            if (!result.success) {
+                alert(result.message);
+            } else {
+                alert("Course {% if course %} edited {% else %} created {% endif %} successfully.");
+                window.location.reload();
+            }
+        } catch (error) {
+            alert('An error occurred. Please try again later.');
+        }
+    };
 </script>

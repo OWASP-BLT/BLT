@@ -1,22 +1,35 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Sitemap
+
 {% endblock title %}
+
 {% block description %}
     Explore the sitemap to navigate through all the pages and sections of our website. Find the information you need quickly and efficiently.
+
 {% endblock description %}
+
 {% block keywords %}
     Sitemap, Website Navigation, Page Links, Website Structure, Site Map
+
 {% endblock keywords %}
+
 {% block og_title %}
     Sitemap - Navigate Our Website
+
 {% endblock og_title %}
+
 {% block og_description %}
     Use our sitemap to easily navigate through all the sections and pages of our website. Quickly find the information and resources you're looking for.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div id="sitemapPage"
          class="flex flex-col mt-10 lg:w-[95%] lg:mx-auto mx-2">
         <div class="flex flex-col gap-4 items-center justify-center mb-8">
@@ -26,7 +39,7 @@
             </p>
         </div>
         <div class="w-full ">
-            <div class=" grid lg:grid-cols-4 grid-cols-1 gap-4 auto-rows-min grid-flow-dense">
+            <div class="grid lg:grid-cols-4 grid-cols-1 gap-4 auto-rows-min grid-flow-dense">
                 <div class="h-fit border border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
                     <div class=" border-b border-gray-200">
                         <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
@@ -329,7 +342,7 @@
                             </li>
                         </ul>
                     </div>
-                    <div class=" border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                    <div class="border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
                         <div class="border-b border-gray-200">
                             <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
                                 <i class="fas fa-bug text-[#e74c3c]"></i>
@@ -737,4 +750,5 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}

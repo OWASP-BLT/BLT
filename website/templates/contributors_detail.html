@@ -1,19 +1,30 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}Contributor Profile - {{ contributor.name }}{% endblock %}
+
 {% block description %}
     Learn more about {{ contributor.name }}, their contributions to the OWASP {% env 'PROJECT_NAME' %} project, and explore their profile, including repository, location, and social links.
+
 {% endblock %}
+
 {% block keywords %}
     OWASP, {% env 'PROJECT_NAME' %}, contributor, profile, repository, location, social links, Twitter, LinkedIn, website
+
 {% endblock %}
+
 {% block og_title %}Contributor Profile - {{ contributor.name }}{% endblock %}
+
 {% block og_description %}
     Explore the profile of {{ contributor.name }}, a contributor to the OWASP {% env 'PROJECT_NAME' %} project, with details about their contributions, repository, and social media links.
+
 {% endblock %}
+
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
+
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
           integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
@@ -66,4 +77,5 @@
             </div>
         </div>
     </section>
+
 {% endblock natural_content %}

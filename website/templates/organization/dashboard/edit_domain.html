@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Edit Domain
+
 {% endblock title %}
+
 {% block description %}
     Update and modify existing domain details. Adjust domain name, URL, organization information, and social media links to keep your records current.
+
 {% endblock description %}
+
 {% block keywords %}
     Edit Domains, Update Domain Details, Modify Domain, Change Domain Information, Update URL, Update Organization
+
 {% endblock keywords %}
+
 {% block og_title %}
     Edit Domains - Update Your Domain Information
+
 {% endblock og_title %}
+
 {% block og_description %}
     Make changes to your domains by updating names, URLs, organization details, and social media links. Keep your domain records up-to-date and accurate.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="bg-[#fdfeff] flex flex-col items-center md:max-w-[1700px] md:mx-auto mx-2 mt-10">
         <div class="w-full mt-5 px-8">
@@ -75,9 +87,7 @@
                                 {% for organization in organizations %}
                                     <option value="{{ organization.id }}"
                                             class="py-2"
-                                            {% if domain.organization.id == organization.id %}selected{% endif %}>
-                                        {{ organization.name }}
-                                    </option>
+                                            {% if domain.organization.id == organization.id %}selected{% endif %}>{{ organization.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -173,7 +183,12 @@
                                         <button type="button"
                                                 id="removeLogo"
                                                 onclick="removeUploadedImage('logo', 'logoPreview', 'defaultLogoIcon', 'removeLogo')"
-                                                class="{% if domain.logo %}block{% else %}hidden{% endif %} text-sm text-[#e74c3c] hover:text-red-700 px-4 py-2 border border-[#e74c3c] rounded-md hover:bg-red-50 transition-colors duration-200">
+                                                class="{% if domain.logo %}
+                                                           block
+                                                       {% else %}
+                                                           hidden
+                                                       {% endif %}
+                                                       text-sm text-[#e74c3c] hover:text-red-700 px-4 py-2 border border-[#e74c3c] rounded-md hover:bg-red-50 transition-colors duration-200">
                                             <span class="inline-flex items-center">
                                                 <svg class="w-5 h-5 mr-2"
                                                      fill="none"
@@ -247,9 +262,7 @@
                                         onchange="updateUserSelections()">
                                     {% for user in users %}
                                         <option value="{{ user.email }}"
-                                                {% if user.email == manager.email %}selected{% endif %}>
-                                            {{ user.username }} ({{ user.email }})
-                                        </option>
+                                                {% if user.email == manager.email %}selected{% endif %}>{{ user.username }} ({{ user.email }})</option>
                                     {% endfor %}
                                 </select>
                                 <button type="button" onclick="remove_user_selection(event)">
@@ -305,7 +318,9 @@
             </form>
         </div>
     </div>
+
 {% endblock body %}
+
 {% block js %}
     <script>
         function remove_user_selection(event) {
@@ -334,11 +349,16 @@
 
         function getUserOptions(excludeList) {
             let optionsHtml = '<option value="" disabled selected>Select a user</option>';
-            {% for user in users %}
-                if (!excludeList.includes('{{ user.email }}')) {
-                    optionsHtml += `<option value="{{ user.email }}">{{ user.username }} ({{ user.email }})</option>`;
-                }
-            {% endfor %}
+            {
+                %
+                for user in users %
+            }
+            if (!excludeList.includes('{{ user.email }}')) {
+                optionsHtml += `<option value="{{ user.email }}">{{ user.username }} ({{ user.email }})</option>`;
+            } {
+                %
+                endfor %
+            }
             return optionsHtml;
         }
 
@@ -349,7 +369,7 @@
             selects.forEach(select => {
                 const currentValue = select.value;
                 select.innerHTML = getUserOptions(selectedUsers.filter(user => user !== currentValue));
-                select.value = currentValue;  // Preserve the current value after options are updated
+                select.value = currentValue; // Preserve the current value after options are updated
             });
         }
 
@@ -396,12 +416,12 @@
                 defaultIconId,
                 removeButtonId
             });
-            
+
             const preview = document.getElementById(previewId);
             const defaultIcon = document.getElementById(defaultIconId);
             const removeButton = document.getElementById(removeButtonId);
             const errorDiv = document.getElementById('logoError');
-            
+
             console.log('Elements found:', {
                 preview: preview !== null,
                 defaultIcon: defaultIcon !== null,
@@ -422,7 +442,7 @@
 
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                
+
                 // Validate file type
                 const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
                 if (!validTypes.includes(file.type)) {
@@ -434,7 +454,7 @@
                     input.value = '';
                     return;
                 }
-                
+
                 // Validate file size (5MB = 5 * 1024 * 1024 bytes)
                 const maxSize = 5 * 1024 * 1024;
                 if (file.size > maxSize) {
@@ -448,26 +468,26 @@
                 }
 
                 const reader = new FileReader();
-                
+
                 reader.onload = function(e) {
                     console.log('Image loaded, updating elements');
-                    
+
                     // Set the image source
                     preview.src = e.target.result;
-                    
+
                     // Use style.display for more reliable showing/hiding
                     preview.style.display = 'block';
                     defaultIcon.style.display = 'none';
                     removeButton.style.display = 'inline-flex';
-                    
+
                     // Also use classList as backup
                     preview.classList.remove('hidden');
                     defaultIcon.classList.add('hidden');
                     removeButton.classList.remove('hidden');
-                    
+
                     console.log('Image preview updated successfully');
                 }
-                
+
                 reader.onerror = function() {
                     console.error('Error reading file');
                     if (errorDiv) {
@@ -476,7 +496,7 @@
                     }
                     input.value = '';
                 }
-                
+
                 reader.readAsDataURL(file);
             } else {
                 console.log('No file selected');
@@ -490,7 +510,7 @@
                 defaultIconId,
                 removeButtonId
             });
-            
+
             const input = document.getElementById(inputId);
             const preview = document.getElementById(previewId);
             const defaultIcon = document.getElementById(defaultIconId);
@@ -501,28 +521,29 @@
                 console.error('One or more required elements not found');
                 return;
             }
-            
+
             // Clear the file input and preview
             input.value = '';
             preview.src = '';
-            
+
             // Use style.display for more reliable showing/hiding
             preview.style.display = 'none';
             defaultIcon.style.display = 'flex';
             removeButton.style.display = 'none';
-            
+
             // Also use classList as backup
             preview.classList.add('hidden');
             defaultIcon.classList.remove('hidden');
             removeButton.classList.add('hidden');
-            
+
             // Clear any errors
             if (errorDiv) {
                 errorDiv.style.display = 'none';
                 errorDiv.textContent = '';
             }
-            
+
             console.log('Logo removed successfully');
         }
     </script>
+
 {% endblock js %}

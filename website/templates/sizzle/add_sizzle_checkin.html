@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block content %}
     <link rel="stylesheet"
           type="text/css"
@@ -8,6 +10,7 @@
             src="https://cdn.jsdelivr.net/npm/emoji-picker-element@latest/index.js"></script>
     <div class="container mx-auto p-6">
         {% include "includes/sidenav.html" %}
+
         <div class="main-content w-full py-8">
             <div class="mb-6">
                 <h1 class="text-4xl font-semibold text-gray-800 text-center">Add Daily Check-In</h1>
@@ -156,4 +159,5 @@
             });
         });
     </script>
+
 {% endblock content %}

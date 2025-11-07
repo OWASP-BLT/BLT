@@ -1,22 +1,35 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     All Issues
+
 {% endblock title %}
+
 {% block description %}
     Browse through all reported issues. Filter by label and user to find specific issues and track progress.
+
 {% endblock description %}
+
 {% block keywords %}
     All Issues, Reported Issues, Issue Tracking, Filter Issues, User Issues, Label Issues
+
 {% endblock keywords %}
+
 {% block og_title %}
     All Issues - Track and Browse Reported Issues
+
 {% endblock og_title %}
+
 {% block og_description %}
     Explore all reported issues. Filter by label and user to efficiently find and track the progress of specific issues.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex flex-col lg:flex-row lg:items-start lg:space-x-8">
             <!-- Main Content -->
@@ -35,9 +48,13 @@
                     <!-- Filter Pills -->
                     <div class="flex flex-wrap gap-2">
                         <a href="{% url 'all_activity' %}"
-                           class="inline-flex items-center px-3 py-1 rounded-full text-sm {% if not label and not user %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">
-                            All Issues
-                        </a>
+                           class="inline-flex items-center px-3 py-1 rounded-full text-sm
+                                  {% if not label and not user %}
+                                      bg-[#e74c3c] text-white
+                                  {% else %}
+                                      bg-gray-100 text-gray-700 hover:bg-gray-200
+                                  {% endif %}
+                                  transition-colors">All Issues</a>
                         {% if label %}
                             <a href="{% url 'all_activity' %}?label={{ label }}"
                                class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-[#e74c3c] text-white">
@@ -58,6 +75,7 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {% for activity in activities %}
                         {% include "includes/_activity.html" %}
+
                     {% endfor %}
                 </div>
                 <!-- Pagination -->
@@ -129,4 +147,5 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}

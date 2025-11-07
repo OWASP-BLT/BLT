@@ -1,20 +1,31 @@
 {% extends "base.html" %}
+
 {% load gravatar %}
 {% load static %}
+
 {% block title %}
     Leaderboard Each Month
+
 {% endblock title %}
+
 {% block description %}
     Discover the top performers on the leaderboard for each month. View scores, usernames, and their achievements month by month.
+
 {% endblock description %}
+
 {% block keywords %}
     Leaderboard Each Month, Monthly Leaderboard, Top Performers, Scores, Usernames, Monthly Achievements
+
 {% endblock keywords %}
+
 {% block og_title %}
     Leaderboard Each Month - Monthly Top Performers and Achievements
+
 {% endblock og_title %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50 p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
             <!-- Header Section -->
@@ -95,7 +106,16 @@
                                                    class="text-xl font-bold text-gray-900 hover:text-[#e74c3c] transition-colors">
                                                     {{ month.user.username }}
                                                 </a>
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if month.user.userprofile.get_title_display == 'GOLD' %}bg-yellow-100 text-yellow-800{% elif month.user.userprofile.get_title_display == 'SILVER' %}bg-gray-100 text-gray-800{% elif month.user.userprofile.get_title_display == 'BRONZE' %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                             {% if month.user.userprofile.get_title_display == 'GOLD' %}
+                                                                 bg-yellow-100 text-yellow-800
+                                                             {% elif month.user.userprofile.get_title_display == 'SILVER' %}
+                                                                 bg-gray-100 text-gray-800
+                                                             {% elif month.user.userprofile.get_title_display == 'BRONZE' %}
+                                                                 bg-orange-100 text-orange-800
+                                                             {% else %}
+                                                                 bg-blue-100 text-blue-800
+                                                             {% endif %}">
                                                     {{ month.user.userprofile.get_title_display }}
                                                 </span>
                                             </div>
@@ -125,4 +145,5 @@
             {% endif %}
         </div>
     </div>
+
 {% endblock content %}

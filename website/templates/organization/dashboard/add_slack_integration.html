@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Add Slack Integration
+
 {% endblock title %}
+
 {% block description %}
     Integrate Slack with your system. Configure the Slack bot, select channels, and set up necessary services for seamless communication.
+
 {% endblock description %}
+
 {% block keywords %}
     Add Slack Integration, Configure Slack Bot, Select Channels, Set Up Services, Slack Integration, Communication Setup
+
 {% endblock keywords %}
+
 {% block og_title %}
     Add Slack Integration - Configure Your Communication
+
 {% endblock og_title %}
+
 {% block og_description %}
     Set up Slack integration by configuring the bot, selecting channels, and enabling necessary services. Ensure smooth communication within your team.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <div class="w-full mt-5">
@@ -51,9 +63,7 @@
                                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 {% for channel_name in channels %}
                                     <option value="{{ channel_name }}"
-                                            {% if slack_integration.default_channel_name == channel_name %}selected="selected"{% endif %}>
-                                        {{ channel_name }}
-                                    </option>
+                                            {% if slack_integration.default_channel_name == channel_name %}selected="selected"{% endif %}>{{ channel_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -83,9 +93,7 @@
                         <!-- Loop to generate options from 0 to 23 -->
                         {% for hour in hours %}
                             <option value="{{ hour }}"
-                                    {% if slack_integration.daily_update_time == hour %}selected="selected"{% endif %}>
-                                {{ hour }}
-                            </option>
+                                    {% if slack_integration.daily_update_time == hour %}selected="selected"{% endif %}>{{ hour }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -115,34 +123,43 @@
             </div>
         </div>
     </form>
+
 {% endblock body %}
+
 {% block extra_head %}
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
 {% endblock %}
+
 {% block extra_js %}
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var quill = new Quill('#welcome_message', {
-            theme: 'snow',
-            modules: {
-                toolbar: [
-                    ['bold', 'italic', 'strike'],
-                    ['code-block', 'blockquote'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    ['link'],
-                    ['clean']
-                ]
-            },
-            placeholder: 'Write your welcome message here...'
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            var quill = new Quill('#welcome_message', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'strike'],
+                        ['code-block', 'blockquote'],
+                        [{
+                            'list': 'ordered'
+                        }, {
+                            'list': 'bullet'
+                        }],
+                        ['link'],
+                        ['clean']
+                    ]
+                },
+                placeholder: 'Write your welcome message here...'
+            });
 
-        // When form is submitted, update hidden input with Quill content
-        document.querySelector('form').onsubmit = function() {
-            var content = quill.root.innerHTML;
-            document.querySelector('#welcome_message').value = content;
-            return true;
-        };
-    });
+            // When form is submitted, update hidden input with Quill content
+            document.querySelector('form').onsubmit = function() {
+                var content = quill.root.innerHTML;
+                document.querySelector('#welcome_message').value = content;
+                return true;
+            };
+        });
     </script>
+
 {% endblock %}

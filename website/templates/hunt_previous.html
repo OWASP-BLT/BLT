@@ -1,23 +1,36 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
+
 {% block title %}
     Previous Hunts
+
 {% endblock title %}
+
 {% block description %}
     Explore the details of previous hunts. View information about past hunts, including domain details, descriptions, and outcomes.
+
 {% endblock description %}
+
 {% block keywords %}
     Previous Hunts, Past Hunts, Hunt History, Domain Details, Hunt Outcomes
+
 {% endblock keywords %}
+
 {% block og_title %}
     Previous Hunts - Explore Past Hunts
+
 {% endblock og_title %}
+
 {% block og_description %}
     Discover the details of previous hunts, including domain information, descriptions, and outcomes. Explore the history of hunts.
+
 {% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     {% if hunts %}
         <div class="p-4">
@@ -52,4 +65,5 @@
             </ul>
         </div>
     {% endif %}
+
 {% endblock content %}

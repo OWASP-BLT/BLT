@@ -1,4 +1,5 @@
 {% load static %}
+
 <section id="comment_root"
          class="w-full bg-white rounded-lg shadow-md border border-gray-300 p-6">
     <div class="flex justify-between items-center mb-6">
@@ -133,7 +134,11 @@
                             <div class="flex justify-between items-start mb-4">
                                 <div class="flex items-center space-x-3">
                                     <img class="w-8 h-8 rounded-full object-cover"
-                                         {% if user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}" {% else %} src="{% static 'images/dummy-user.png' %}" {% endif %}
+                                         {% if user.userprofile.user_avatar %}
+                                             src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}"
+                                         {% else %}
+                                             src="{% static 'images/dummy-user.png' %}"
+                                         {% endif %}
                                          alt="{{ child_comment.author }} profile"
                                          width="32"
                                          height="32">
@@ -187,22 +192,24 @@
         {% endfor %}
     </div>
     <script>
-        function initDropDown(){
+        function initDropDown() {
             document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
                 toggle.addEventListener("click", (e) => {
                     e.stopPropagation();
-                    const { dropdownToggle } = toggle.dataset;
+                    const {
+                        dropdownToggle
+                    } = toggle.dataset;
                     const dropdown = document.getElementById(dropdownToggle);
-                    
+
                     // Close all other dropdowns first
                     document.querySelectorAll('[id^="dropdownComment"]').forEach(menu => {
                         if (menu.id !== dropdownToggle && !menu.classList.contains('hidden')) {
                             menu.classList.add('hidden');
                         }
                     });
-                    
+
                     dropdown.classList.toggle("hidden");
-                    
+
                     if (!dropdown.classList.contains("hidden")) {
                         const rect = toggle.getBoundingClientRect();
                         dropdown.style.position = "absolute";
@@ -211,7 +218,7 @@
                     }
                 });
             });
-            
+
             // Close dropdowns when clicking outside
             document.addEventListener('click', () => {
                 document.querySelectorAll('[id^="dropdownComment"]').forEach(menu => {
@@ -222,13 +229,13 @@
             });
         }
 
-        function remove_reply(){
+        function remove_reply() {
             document.getElementById("replying_to_cont").remove();
             document.getElementById("replying_to_input").value = "";
         }
 
-        function add_reply(comment_id, comment_author){
-            let replying_to_root = document.getElementById("replying_to_root");          
+        function add_reply(comment_id, comment_author) {
+            let replying_to_root = document.getElementById("replying_to_root");
             let reply_text = "@" + comment_author + "#" + comment_id;
 
             replying_to_root.innerHTML = `
@@ -242,18 +249,18 @@
                 </div>
             `;
             document.getElementById("replying_to_input").value = reply_text;
-            
+
             // Focus on the comment textarea
             document.getElementById("comment").focus();
         }
 
-        function see_replies(comment_id){
+        function see_replies(comment_id) {
             let id = "comment_replies_" + comment_id;
             let comment_container = document.getElementById(id);
             comment_container.toggleAttribute('hidden');
         }
 
-        function comment_on_content(e){
+        function comment_on_content(e) {
             e.preventDefault();
             let content_pk = '{{ object.pk|safe }}';
             let content_type = '{{ content_type }}';
@@ -261,10 +268,10 @@
 
             let replying_to_input = document.getElementById("replying_to_input").value;
             let comment = document.getElementById("comment").value;
-            if(comment == ""){
+            if (comment == "") {
                 return;
             }
-            
+
             // Show loading state
             const btn = document.getElementById('post_comment_btn');
             const originalText = btn.textContent;
@@ -276,7 +283,7 @@
                 </svg>
                 Posting...
             `;
-            
+
             $.ajax({
                 type: 'POST',
                 url: '/content/' + content_pk + '/comment/',
@@ -288,7 +295,7 @@
                 beforeSend: function(xhr, settings) {
                     xhr.setRequestHeader("X-CSRFToken", csrftoken);
                 },
-                success: function (data) {
+                success: function(data) {
                     $('#comment_root').replaceWith(data);
                     location.reload();
                 },
@@ -299,20 +306,20 @@
                 }
             });
         }
-        
+
         $('#post_comment_btn').click((e) => comment_on_content(e));
-        
-        function update_comment(e, comment_id){
+
+        function update_comment(e, comment_id) {
             e.preventDefault();
             let content_pk = '{{ object.pk|safe }}';
             let content_type = '{{ content_type }}';
             var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
             let comment = document.getElementById("comment").value;
-            if(comment == ""){
+            if (comment == "") {
                 return;
             }
-            
+
             // Show loading state
             const btn = document.getElementById('update_comment_btn');
             const originalText = btn.textContent;
@@ -324,7 +331,7 @@
                 </svg>
                 Updating...
             `;
-            
+
             $.ajax({
                 type: 'POST',
                 url: '/content/' + content_pk + '/comment/update/' + comment_id + '/',
@@ -335,7 +342,7 @@
                 beforeSend: function(xhr, settings) {
                     xhr.setRequestHeader("X-CSRFToken", csrftoken);
                 },
-                success: function (data) {
+                success: function(data) {
                     $('#comment_root').replaceWith(data);
                     location.reload();
                 },
@@ -346,8 +353,8 @@
                 }
             });
         }
-        
-        function remove_update_label(){
+
+        function remove_update_label() {
             let add_update_label = document.getElementById("add_update_label");
             add_update_label.innerHTML = "";
             $('#comment').val("");
@@ -356,8 +363,8 @@
             $('#update_comment_btn').off('click');
             $('#post_comment_btn').off('click').on('click', (e) => comment_on_content(e));
         }
-        
-        $('body').on('click', '.edit_comment', function (e) {
+
+        $('body').on('click', '.edit_comment', function(e) {
             e.preventDefault();
             let comment_id = $(this).data('name');
             let comment_text = $(this).closest('article').find('.main_text').text();
@@ -365,7 +372,7 @@
             $('#comment').val(comment_text);
             $('#post_comment_btn').text('Update comment');
             $('#post_comment_btn').attr('id', 'update_comment_btn');
-            
+
             let add_update_label = document.getElementById("add_update_label");
             add_update_label.innerHTML = `
                 <div class="flex items-center bg-blue-50 text-blue-800 rounded-md p-2 max-w-max">
@@ -377,18 +384,20 @@
                     </button>
                 </div>
             `;
-            
+
             $('#update_comment_btn').off('click').on('click', (e) => update_comment(e, comment_id));
-            
+
             // Scroll to comment form
-            document.getElementById('comments').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('comments').scrollIntoView({
+                behavior: 'smooth'
+            });
         });
-        
-        $('body').off('click', '.del_comment').on('click', '.del_comment', function (e) {
+
+        $('body').off('click', '.del_comment').on('click', '.del_comment', function(e) {
             e.preventDefault();
 
             var clickedElement = $(this);
-            
+
             // Create a confirmation dialog
             const confirmDialog = document.createElement('div');
             confirmDialog.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
@@ -402,20 +411,20 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(confirmDialog);
             document.body.style.overflow = 'hidden';
-            
+
             // Handle cancel
             document.getElementById('cancel-delete').addEventListener('click', function() {
                 document.body.removeChild(confirmDialog);
                 document.body.style.overflow = '';
             });
-            
+
             // Handle confirm
             document.getElementById('confirm-delete').addEventListener('click', function() {
                 var csrftoken = $("[name=csrfmiddlewaretoken]").val();
-                
+
                 // Show loading state
                 this.disabled = true;
                 this.innerHTML = `
@@ -434,10 +443,10 @@
                         "content_pk": '{{ object.pk|safe }}',
                         "content_type": '{{ content_type }}'
                     },
-                    beforeSend: function (xhr, settings) {
+                    beforeSend: function(xhr, settings) {
                         xhr.setRequestHeader("X-CSRFToken", csrftoken);
                     },
-                    success: function (data) {
+                    success: function(data) {
                         $('#comment_root').replaceWith(data);
                         location.reload();
                     },
@@ -449,7 +458,7 @@
             });
         });
 
-        $(document).ready(function(){
+        $(document).ready(function() {
             initDropDown();
         });
     </script>

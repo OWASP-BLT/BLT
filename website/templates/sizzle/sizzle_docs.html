@@ -1,24 +1,37 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     How to Use Sizzle
+
 {% endblock title %}
+
 {% block description %}
     A comprehensive guide on how to use Sizzle. Learn how to download the app, log in, and start tracking your work time efficiently.
+
 {% endblock description %}
+
 {% block keywords %}
     How to Use Sizzle, Sizzle Guide, Sizzle Instructions, Download Sizzle, Time Tracking, Sizzle Tutorial
+
 {% endblock keywords %}
+
 {% block og_title %}
     How to Use Sizzle - Your Comprehensive Guide
+
 {% endblock og_title %}
+
 {% block og_description %}
     Follow this step-by-step guide to download and use the Sizzle app. Learn how to track your work time efficiently with Sizzle.
+
 {% endblock og_description %}
+
 {% block content %}
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
         {% include "includes/sidenav.html" %}
+
         <!-- Main Content Section -->
         <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
             <h1 class="text-center text-3xl font-bold text-gray-800 mb-8">How to Use Sizzle</h1>
@@ -193,4 +206,5 @@
             }
         });
     </script>
+
 {% endblock content %}

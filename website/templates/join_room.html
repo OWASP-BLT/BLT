@@ -1,17 +1,25 @@
 {% extends "base.html" %}
+
 {% load humanize %}
+
 {% block title %}
     {{ room.name }}
+
 {% endblock title %}
+
 {% block extra_css %}
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/emoji-mart@latest/css/emoji-mart.css">
+
 {% endblock extra_css %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="max-w-4xl mx-auto py-8 px-4">
         <!-- Breadcrumbs -->
         {% include "includes/breadcrumbs.html" %}
+
         <div class="flex items-center justify-between mt-4">
             <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
             <div class="flex items-center gap-2">
@@ -112,126 +120,171 @@
             </button>
         </form>
     </div>
+
 {% endblock content %}
+
 {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
     <script>
-// WebSocket connection management
-let chatSocket = null;
-let isConnecting = false;
-let reconnectAttempts = 0;
-const maxReconnectAttempts = 5;
-const reconnectDelay = 2000;
-let activeEmojiButton = null;
+        // WebSocket connection management
+        let chatSocket = null;
+        let isConnecting = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectDelay = 2000;
+        let activeEmojiButton = null;
 
-const connectionStatus = document.getElementById('connection-status');
-const connectionText = document.getElementById('connection-text');
-const messageInput = document.getElementById('message-input');
-const chatForm = document.getElementById('chat-form');
-const messagesContainer = document.getElementById('messages-container');
-const logHistory = document.getElementById('log-history');
-const emojiPicker = document.getElementById('emoji-picker');
+        const connectionStatus = document.getElementById('connection-status');
+        const connectionText = document.getElementById('connection-text');
+        const messageInput = document.getElementById('message-input');
+        const chatForm = document.getElementById('chat-form');
+        const messagesContainer = document.getElementById('messages-container');
+        const logHistory = document.getElementById('log-history');
+        const emojiPicker = document.getElementById('emoji-picker');
 
-function updateConnectionStatus(connected) {
-    if (connected) {
-        connectionStatus.className = 'w-3 h-3 rounded-full bg-green-500';
-        connectionText.textContent = 'Connected';
-        connectionText.className = 'text-sm text-green-600';
-        messageInput.disabled = false;
-    } else {
-        connectionStatus.className = 'w-3 h-3 rounded-full bg-red-500';
-        connectionText.textContent = 'Disconnected';
-        connectionText.className = 'text-sm text-red-600';
-        messageInput.disabled = true;
-    }
-}
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                connectionStatus.className = 'w-3 h-3 rounded-full bg-green-500';
+                connectionText.textContent = 'Connected';
+                connectionText.className = 'text-sm text-green-600';
+                messageInput.disabled = false;
+            } else {
+                connectionStatus.className = 'w-3 h-3 rounded-full bg-red-500';
+                connectionText.textContent = 'Disconnected';
+                connectionText.className = 'text-sm text-red-600';
+                messageInput.disabled = true;
+            }
+        }
 
-const QUICK_EMOJIS = [
-    { id: 'thumbsup', emoji: '👍', name: '+1', keywords: ['thumbsup', 'yes', 'like'] },
-    { id: 'heart', emoji: '❤️', name: 'heart', keywords: ['love', 'like'] },
-    { id: 'smile', emoji: '😊', name: 'smile', keywords: ['happy', 'joy'] },
-    { id: 'joy', emoji: '😂', name: 'joy', keywords: ['laugh', 'happy'] },
-    { id: 'tada', emoji: '🎉', name: 'tada', keywords: ['party', 'celebration'] },
-    { id: 'rocket', emoji: '🚀', name: 'rocket', keywords: ['launch', 'ship'] },
-    { id: 'clap', emoji: '👏', name: 'clap', keywords: ['applause', 'praise'] },
-    { id: 'fire', emoji: '🔥', name: 'fire', keywords: ['hot', 'trending'] },
-    { id: 'star', emoji: '⭐', name: 'star', keywords: ['favorite', 'rating'] },
-    { id: 'sparkles', emoji: '✨', name: 'sparkles', keywords: ['shine', 'special'] }
-];
+        const QUICK_EMOJIS = [{
+            id: 'thumbsup',
+            emoji: '👍',
+            name: '+1',
+            keywords: ['thumbsup', 'yes', 'like']
+        }, {
+            id: 'heart',
+            emoji: '❤️',
+            name: 'heart',
+            keywords: ['love', 'like']
+        }, {
+            id: 'smile',
+            emoji: '😊',
+            name: 'smile',
+            keywords: ['happy', 'joy']
+        }, {
+            id: 'joy',
+            emoji: '😂',
+            name: 'joy',
+            keywords: ['laugh', 'happy']
+        }, {
+            id: 'tada',
+            emoji: '🎉',
+            name: 'tada',
+            keywords: ['party', 'celebration']
+        }, {
+            id: 'rocket',
+            emoji: '🚀',
+            name: 'rocket',
+            keywords: ['launch', 'ship']
+        }, {
+            id: 'clap',
+            emoji: '👏',
+            name: 'clap',
+            keywords: ['applause', 'praise']
+        }, {
+            id: 'fire',
+            emoji: '🔥',
+            name: 'fire',
+            keywords: ['hot', 'trending']
+        }, {
+            id: 'star',
+            emoji: '⭐',
+            name: 'star',
+            keywords: ['favorite', 'rating']
+        }, {
+            id: 'sparkles',
+            emoji: '✨',
+            name: 'sparkles',
+            keywords: ['shine', 'special']
+        }];
 
-let pickerInstance = null;
-let isInitializing = false;
-let initializationPromise = null;
+        let pickerInstance = null;
+        let isInitializing = false;
+        let initializationPromise = null;
 
-// Initialize emoji picker
-async function initEmojiPicker() {
-    if (isInitializing) {
-        // If already initializing, wait for the existing initialization
-        return initializationPromise;
-    }
-
-    if (pickerInstance) {
-        // If already initialized, return resolved promise
-        return Promise.resolve();
-    }
-
-    isInitializing = true;
-    initializationPromise = (async () => {
-        try {
-            const pickerContainer = document.getElementById('emoji-mart-container');
-            if (!pickerContainer) {
-                throw new Error('Emoji picker container not found');
+        // Initialize emoji picker
+        async function initEmojiPicker() {
+            if (isInitializing) {
+                // If already initializing, wait for the existing initialization
+                return initializationPromise;
             }
 
-            // Show loading state
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'p-4 text-center text-gray-500';
-            loadingDiv.textContent = 'Loading emoji picker...';
-            pickerContainer.appendChild(loadingDiv);
+            if (pickerInstance) {
+                // If already initialized, return resolved promise
+                return Promise.resolve();
+            }
 
-            // Initialize quick emojis
-            const quickEmojisContainer = document.getElementById('quick-emojis');
-            QUICK_EMOJIS.forEach(({ emoji, name, keywords }) => {
-                const button = document.createElement('button');
-                button.className = 'p-2 hover:bg-gray-100 rounded text-xl transition-colors duration-200';
-                button.innerHTML = emoji;
-                button.title = `${name} ${keywords.join(' ')}`;
-                button.onclick = () => {
-                    if (activeEmojiButton) {
-                        addReaction(activeEmojiButton.messageId, emoji);
+            isInitializing = true;
+            initializationPromise = (async () => {
+                try {
+                    const pickerContainer = document.getElementById('emoji-mart-container');
+                    if (!pickerContainer) {
+                        throw new Error('Emoji picker container not found');
                     }
-                };
-                quickEmojisContainer.appendChild(button);
-            });
 
-            // Initialize full picker
-            try {
-                const response = await fetch('https://cdn.jsdelivr.net/npm/@emoji-mart/data');
-                const data = await response.json();
+                    // Show loading state
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.className = 'p-4 text-center text-gray-500';
+                    loadingDiv.textContent = 'Loading emoji picker...';
+                    pickerContainer.appendChild(loadingDiv);
 
-                pickerInstance = new EmojiMart.Picker({
-                    data,
-                    onEmojiSelect: (emoji) => {
-                        if (activeEmojiButton) {
-                            addReaction(activeEmojiButton.messageId, emoji.native);
-                        }
-                    },
-                    theme: 'light',
-                    set: 'native',
-                    autoFocus: true,
-                    showPreview: true,
-                    showSkinTones: true,
-                    emojiSize: 20,
-                    perLine: 8,
-                    maxFrequentRows: 4,
-                });
+                    // Initialize quick emojis
+                    const quickEmojisContainer = document.getElementById('quick-emojis');
+                    QUICK_EMOJIS.forEach(({
+                        emoji,
+                        name,
+                        keywords
+                    }) => {
+                        const button = document.createElement('button');
+                        button.className = 'p-2 hover:bg-gray-100 rounded text-xl transition-colors duration-200';
+                        button.innerHTML = emoji;
+                        button.title = `${name} ${keywords.join(' ')}`;
+                        button.onclick = () => {
+                            if (activeEmojiButton) {
+                                addReaction(activeEmojiButton.messageId, emoji);
+                            }
+                        };
+                        quickEmojisContainer.appendChild(button);
+                    });
 
-                // Remove loading state and append picker
-                pickerContainer.innerHTML = '';
-                pickerContainer.appendChild(pickerInstance);
-            } catch (error) {
-                console.error('Error initializing emoji picker:', error);
-                pickerContainer.innerHTML = `
+                    // Initialize full picker
+                    try {
+                        const response = await fetch('https://cdn.jsdelivr.net/npm/@emoji-mart/data');
+                        const data = await response.json();
+
+                        pickerInstance = new EmojiMart.Picker({
+                            data,
+                            onEmojiSelect: (emoji) => {
+                                if (activeEmojiButton) {
+                                    addReaction(activeEmojiButton.messageId, emoji.native);
+                                }
+                            },
+                            theme: 'light',
+                            set: 'native',
+                            autoFocus: true,
+                            showPreview: true,
+                            showSkinTones: true,
+                            emojiSize: 20,
+                            perLine: 8,
+                            maxFrequentRows: 4,
+                        });
+
+                        // Remove loading state and append picker
+                        pickerContainer.innerHTML = '';
+                        pickerContainer.appendChild(pickerInstance);
+                    } catch (error) {
+                        console.error('Error initializing emoji picker:', error);
+                        pickerContainer.innerHTML = `
                     <div class="p-4 text-center text-red-500">
                         Failed to load emoji picker. 
                         <button onclick="initEmojiPicker()" class="text-red-600 underline">
@@ -239,247 +292,250 @@ async function initEmojiPicker() {
                         </button>
                     </div>
                 `;
-                throw error;
+                        throw error;
+                    }
+                } finally {
+                    isInitializing = false;
+                }
+            })();
+
+            return initializationPromise;
+        }
+
+        // Update showEmojiPicker function
+        async function showEmojiPicker(button, messageId) {
+            const buttonRect = button.getBoundingClientRect();
+            const picker = document.getElementById('emoji-picker');
+            const isMobile = window.innerWidth < 640;
+
+            // Show loading state
+            picker.classList.remove('hidden');
+            picker.classList.add('opacity-0');
+
+            try {
+                // Initialize picker if not already done
+                await initEmojiPicker();
+
+                picker.style.position = 'fixed';
+
+                // Calculate available space
+                const spaceBelow = window.innerHeight - buttonRect.bottom;
+                const spaceAbove = buttonRect.top;
+                const pickerHeight = 400;
+
+                // Position horizontally
+                if (isMobile) {
+                    picker.style.left = '50%';
+                    picker.style.transform = 'translateX(-50%)';
+                    picker.style.width = '90vw';
+                    picker.style.maxWidth = '400px';
+                } else {
+                    const leftPosition = Math.min(
+                        buttonRect.left,
+                        window.innerWidth - picker.offsetWidth - 10
+                    );
+                    picker.style.left = `${leftPosition}px`;
+                    picker.style.transform = 'none';
+                    picker.style.width = '352px';
+                }
+
+                // Position vertically
+                if (spaceBelow >= pickerHeight || spaceBelow >= spaceAbove) {
+                    picker.style.top = `${buttonRect.bottom + 5}px`;
+                    picker.style.bottom = 'auto';
+                } else {
+                    picker.style.bottom = `${window.innerHeight - buttonRect.top + 5}px`;
+                    picker.style.top = 'auto';
+                }
+
+                // Show the picker with animation
+                requestAnimationFrame(() => {
+                    picker.classList.add('opacity-100');
+                    picker.classList.remove('opacity-0');
+                });
+
+                activeEmojiButton = {
+                    button,
+                    messageId
+                };
+
+                // Close emoji picker when clicking outside
+                document.addEventListener('click', closeEmojiPickerOnClickOutside);
+            } catch (error) {
+                console.error('Error showing emoji picker:', error);
+                showNotification('Failed to load emoji picker. Please try again.');
+                picker.classList.add('hidden');
             }
-        } finally {
-            isInitializing = false;
         }
-    })();
 
-    return initializationPromise;
-}
+        // Update closeEmojiPicker function
+        function closeEmojiPicker() {
+            const picker = document.getElementById('emoji-picker');
+            picker.classList.add('opacity-0');
 
-// Update showEmojiPicker function
-async function showEmojiPicker(button, messageId) {
-    const buttonRect = button.getBoundingClientRect();
-    const picker = document.getElementById('emoji-picker');
-    const isMobile = window.innerWidth < 640;
+            setTimeout(() => {
+                picker.classList.add('hidden');
+                picker.classList.remove('opacity-0');
+            }, 200);
 
-    // Show loading state
-    picker.classList.remove('hidden');
-    picker.classList.add('opacity-0');
-
-    try {
-        // Initialize picker if not already done
-        await initEmojiPicker();
-
-        picker.style.position = 'fixed';
-        
-        // Calculate available space
-        const spaceBelow = window.innerHeight - buttonRect.bottom;
-        const spaceAbove = buttonRect.top;
-        const pickerHeight = 400;
-        
-        // Position horizontally
-        if (isMobile) {
-            picker.style.left = '50%';
-            picker.style.transform = 'translateX(-50%)';
-            picker.style.width = '90vw';
-            picker.style.maxWidth = '400px';
-        } else {
-            const leftPosition = Math.min(
-                buttonRect.left,
-                window.innerWidth - picker.offsetWidth - 10
-            );
-            picker.style.left = `${leftPosition}px`;
-            picker.style.transform = 'none';
-            picker.style.width = '352px';
+            activeEmojiButton = null;
+            document.removeEventListener('click', closeEmojiPickerOnClickOutside);
         }
-        
-        // Position vertically
-        if (spaceBelow >= pickerHeight || spaceBelow >= spaceAbove) {
-            picker.style.top = `${buttonRect.bottom + 5}px`;
-            picker.style.bottom = 'auto';
-        } else {
-            picker.style.bottom = `${window.innerHeight - buttonRect.top + 5}px`;
-            picker.style.top = 'auto';
+
+        function closeEmojiPickerOnClickOutside(event) {
+            if (!emojiPicker.contains(event.target) && !event.target.closest('.add-reaction-btn')) {
+                closeEmojiPicker();
+            }
         }
-        
-        // Show the picker with animation
-        requestAnimationFrame(() => {
-            picker.classList.add('opacity-100');
-            picker.classList.remove('opacity-0');
-        });
-        
-        activeEmojiButton = { button, messageId };
-        
-        // Close emoji picker when clicking outside
-        document.addEventListener('click', closeEmojiPickerOnClickOutside);
-    } catch (error) {
-        console.error('Error showing emoji picker:', error);
-        showNotification('Failed to load emoji picker. Please try again.');
-        picker.classList.add('hidden');
-    }
-}
 
-// Update closeEmojiPicker function
-function closeEmojiPicker() {
-    const picker = document.getElementById('emoji-picker');
-    picker.classList.add('opacity-0');
-    
-    setTimeout(() => {
-        picker.classList.add('hidden');
-        picker.classList.remove('opacity-0');
-    }, 200);
-    
-    activeEmojiButton = null;
-    document.removeEventListener('click', closeEmojiPickerOnClickOutside);
-}
-
-function closeEmojiPickerOnClickOutside(event) {
-    if (!emojiPicker.contains(event.target) && !event.target.closest('.add-reaction-btn')) {
-        closeEmojiPicker();
-    }
-}
-
-// Add this notification system at the start of your JavaScript
-function showNotification(message, type = 'error') {
-    const notification = document.createElement('div');
-    notification.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg transition-all transform translate-y-0 opacity-100 z-50 ${
+        // Add this notification system at the start of your JavaScript
+        function showNotification(message, type = 'error') {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg transition-all transform translate-y-0 opacity-100 z-50 ${
         type === 'error' ? 'bg-red-500' : 'bg-green-500'
     } text-white`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // Animate in
-    requestAnimationFrame(() => {
-        notification.style.transform = 'translateY(0)';
-        notification.style.opacity = '1';
-    });
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.style.transform = 'translateY(20px)';
-        notification.style.opacity = '0';
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 3000); 
-}
+            notification.textContent = message;
 
-async function addReaction(messageId, emoji) {
-    try {
-        if (!chatSocket) {
-            showNotification('Connection not initialized. Please refresh the page.');
-            return;
-        }
+            document.body.appendChild(notification);
 
-        if (chatSocket.readyState !== WebSocket.OPEN) {
-            // Try to reconnect
-            await new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 3;
-                const tryConnect = () => {
-                    if (chatSocket.readyState === WebSocket.OPEN) {
-                        resolve();
-                        return;
-                    }
-                    
-                    if (attempts >= maxAttempts) {
-                        reject(new Error('Could not establish connection'));
-                        return;
-                    }
-                    
-                    attempts++;
-                    connectWebSocket();
-                    setTimeout(tryConnect, 1000);
-                };
-                tryConnect();
+            // Animate in
+            requestAnimationFrame(() => {
+                notification.style.transform = 'translateY(0)';
+                notification.style.opacity = '1';
             });
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateY(20px)';
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
         }
 
-        chatSocket.send(JSON.stringify({
-            'type': 'add_reaction',
-            'message_id': messageId,
-            'emoji': emoji,
-            'room_id': '{{ room.id }}'
-        }));
-
-        closeEmojiPicker();
-    } catch (error) {
-        console.error('Error adding reaction:', error);
-        showNotification('Could not add reaction. Please check your connection.');
-    }
-}
-
-function updateReactions(messageId, reactions) {
-    try {
-        console.log('[updateReactions] Updating for messageId:', messageId, 'with reactions:', reactions);
-
-        
-        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (!messageElement) {
-            console.warn(`[updateReactions] Message element ${messageId} not found`);
-            return;
-        }
-
-        const reactionsContainer = messageElement.querySelector('.reactions-container');
-        if (!reactionsContainer) {
-            console.warn(`[updateReactions] Reactions container for ${messageId} not found`);
-            return;
-        }
-
-        // Clear existing reactions
-        reactionsContainer.innerHTML = '';
-
-        const commonEmojis = ['👍', '❤️', '😊', '👏', '🔥'];
-        const displayedEmojis = new Set(); // Keep track of emojis already displayed
-
-        // 1. Display existing reactions
-        if (reactions && Object.keys(reactions).length > 0) {
-            Object.entries(reactions).forEach(([emoji, users]) => {
-                if (!Array.isArray(users)) {
-                    console.warn(`[updateReactions] Invalid users data for ${emoji} on ${messageId}`);
+        async function addReaction(messageId, emoji) {
+            try {
+                if (!chatSocket) {
+                    showNotification('Connection not initialized. Please refresh the page.');
                     return;
                 }
-                if (users.length === 0) return; // Don't show reactions with 0 users
 
-                console.log(`[updateReactions] Adding existing reaction ${emoji} (${users.length}) for ${messageId}`);
-                const reactionButton = document.createElement('button');
-                reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200';
-                reactionButton.innerHTML = `
+                if (chatSocket.readyState !== WebSocket.OPEN) {
+                    // Try to reconnect
+                    await new Promise((resolve, reject) => {
+                        let attempts = 0;
+                        const maxAttempts = 3;
+                        const tryConnect = () => {
+                            if (chatSocket.readyState === WebSocket.OPEN) {
+                                resolve();
+                                return;
+                            }
+
+                            if (attempts >= maxAttempts) {
+                                reject(new Error('Could not establish connection'));
+                                return;
+                            }
+
+                            attempts++;
+                            connectWebSocket();
+                            setTimeout(tryConnect, 1000);
+                        };
+                        tryConnect();
+                    });
+                }
+
+                chatSocket.send(JSON.stringify({
+                    'type': 'add_reaction',
+                    'message_id': messageId,
+                    'emoji': emoji,
+                    'room_id': '{{ room.id }}'
+                }));
+
+                closeEmojiPicker();
+            } catch (error) {
+                console.error('Error adding reaction:', error);
+                showNotification('Could not add reaction. Please check your connection.');
+            }
+        }
+
+        function updateReactions(messageId, reactions) {
+            try {
+                console.log('[updateReactions] Updating for messageId:', messageId, 'with reactions:', reactions);
+
+
+                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (!messageElement) {
+                    console.warn(`[updateReactions] Message element ${messageId} not found`);
+                    return;
+                }
+
+                const reactionsContainer = messageElement.querySelector('.reactions-container');
+                if (!reactionsContainer) {
+                    console.warn(`[updateReactions] Reactions container for ${messageId} not found`);
+                    return;
+                }
+
+                // Clear existing reactions
+                reactionsContainer.innerHTML = '';
+
+                const commonEmojis = ['👍', '❤️', '😊', '👏', '🔥'];
+                const displayedEmojis = new Set(); // Keep track of emojis already displayed
+
+                // 1. Display existing reactions
+                if (reactions && Object.keys(reactions).length > 0) {
+                    Object.entries(reactions).forEach(([emoji, users]) => {
+                        if (!Array.isArray(users)) {
+                            console.warn(`[updateReactions] Invalid users data for ${emoji} on ${messageId}`);
+                            return;
+                        }
+                        if (users.length === 0) return; // Don't show reactions with 0 users
+
+                        console.log(`[updateReactions] Adding existing reaction ${emoji} (${users.length}) for ${messageId}`);
+                        const reactionButton = document.createElement('button');
+                        reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200';
+                        reactionButton.innerHTML = `
                     <span class="mr-1">${emoji}</span>
                     <span class="text-xs text-gray-600">${users.length}</span>
                 `;
-                reactionButton.onclick = () => addReaction(messageId, emoji);
-                reactionsContainer.appendChild(reactionButton);
-                displayedEmojis.add(emoji); // Mark as displayed
-            });
+                        reactionButton.onclick = () => addReaction(messageId, emoji);
+                        reactionsContainer.appendChild(reactionButton);
+                        displayedEmojis.add(emoji); // Mark as displayed
+                    });
+                }
+
+                // 2. Display common quick reaction buttons (if not already displayed)
+                commonEmojis.forEach(emoji => {
+                    if (!displayedEmojis.has(emoji)) {
+                        console.log(`[updateReactions] Adding common quick reaction ${emoji} for ${messageId}`);
+                        const quickReactionBtn = document.createElement('button');
+                        quickReactionBtn.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200';
+                        quickReactionBtn.innerHTML = `<span>${emoji}</span>`;
+                        quickReactionBtn.title = `React with ${emoji}`; // Add title for accessibility
+                        quickReactionBtn.onclick = () => addReaction(messageId, emoji);
+                        reactionsContainer.appendChild(quickReactionBtn);
+                    }
+                });
+
+            } catch (error) {
+                console.error('[updateReactions] Error updating reactions for messageId:', messageId, error);
+
+                showNotification('Error displaying reactions. Please refresh the page.');
+            }
         }
 
-        // 2. Display common quick reaction buttons (if not already displayed)
-        commonEmojis.forEach(emoji => {
-            if (!displayedEmojis.has(emoji)) {
-                 console.log(`[updateReactions] Adding common quick reaction ${emoji} for ${messageId}`);
-                const quickReactionBtn = document.createElement('button');
-                quickReactionBtn.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200';
-                quickReactionBtn.innerHTML = `<span>${emoji}</span>`;
-                 quickReactionBtn.title = `React with ${emoji}`; // Add title for accessibility
-                quickReactionBtn.onclick = () => addReaction(messageId, emoji);
-                reactionsContainer.appendChild(quickReactionBtn);
-            }
-        });
+        function appendMessage(data) {
+            if (!messagesContainer) return;
 
-    } catch (error) {
-        console.error('[updateReactions] Error updating reactions for messageId:', messageId, error);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item';
+            messageDiv.dataset.messageId = data.message_id;
+            // Embed reactions data directly for new messages too
+            messageDiv.dataset.reactions = JSON.stringify(data.reactions || {});
 
-        showNotification('Error displaying reactions. Please refresh the page.');
-    }
-}
+            const isCurrentUser = data.username === '{{ request.user.username }}';
 
-function appendMessage(data) {
-    if (!messagesContainer) return;
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item';
-    messageDiv.dataset.messageId = data.message_id;
-    // Embed reactions data directly for new messages too
-    messageDiv.dataset.reactions = JSON.stringify(data.reactions || {});
-    
-    const isCurrentUser = data.username === '{{ request.user.username }}';
-    
-    messageDiv.innerHTML = ` 
+            messageDiv.innerHTML = ` 
         <div class="flex items-start justify-between">
             <div class="flex-1">
                 <p class="text-sm font-medium">${escapeHtml(data.username)}</p>
@@ -501,212 +557,212 @@ function appendMessage(data) {
             ` : ''}
         </div>
     `;
-    
-    messagesContainer.appendChild(messageDiv);
-    logHistory.scrollTop = logHistory.scrollHeight;
-    
-    // Add event listeners
-    if (isCurrentUser) {
-        const deleteBtn = messageDiv.querySelector('.delete-message-btn');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', () => deleteMessage(data.message_id));
-        }
-    }
 
-    const addReactionBtn = messageDiv.querySelector('.add-reaction-btn');
-    if (addReactionBtn) {
-        addReactionBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showEmojiPicker(addReactionBtn, data.message_id);
-        });
-    }
+            messagesContainer.appendChild(messageDiv);
+            logHistory.scrollTop = logHistory.scrollHeight;
 
-    // Initialize reactions for the new message
-    updateReactions(data.message_id, data.reactions || {});
-}
-
-function handleWebSocketMessage(event) {
-    try {
-        const data = JSON.parse(event.data);
-        console.log('Received websocket message:', data);
-        
-        switch (data.type) {
-            case 'chat_message':
-                appendMessage(data);
-                break;
-            case 'delete_message':
-                handleDeleteMessage(data);
-                break;
-            case 'connection_status':
-                updateConnectionStatus(data.status === 'connected');
-                if (data.status === 'connected') {
-                    showNotification('Connected to chat room', 'success');
+            // Add event listeners
+            if (isCurrentUser) {
+                const deleteBtn = messageDiv.querySelector('.delete-message-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', () => deleteMessage(data.message_id));
                 }
-                break;
-            case 'reaction_update':
-                console.log('Reaction update received:', data);
-                // Update the data attribute as well
-                const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
-                if (messageElement) {
-                    messageElement.dataset.reactions = JSON.stringify(data.reactions || {});
-                }
-                updateReactions(data.message_id, data.reactions);
-                break;
-            case 'error':
-                showNotification(data.message || 'An error occurred');
-                break;
-        }
-    } catch (error) {
-        console.error('Error handling WebSocket message:', error);
-        showNotification('Error processing message');
-    }
-}
-
-function connectWebSocket() {
-    if (chatSocket && (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING)) {
-        return;
-    }
-
-    if (isConnecting) {
-        return;
-    }
-
-    isConnecting = true;
-    updateConnectionStatus(false);
-    
-    try {
-        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-        chatSocket = new WebSocket(protocol + window.location.host + '/ws/discussion-rooms/chat/{{ room.id }}/');
-        
-        chatSocket.onopen = function() {
-            isConnecting = false;
-            reconnectAttempts = 0;
-            updateConnectionStatus(true);
-        };
-
-        chatSocket.onclose = function(e) {
-            isConnecting = false;
-            updateConnectionStatus(false);
-            
-            if (reconnectAttempts < maxReconnectAttempts) {
-                reconnectAttempts++;
-                setTimeout(connectWebSocket, reconnectDelay);
             }
-        };
 
-        chatSocket.onerror = function(error) {
-            isConnecting = false;
-            updateConnectionStatus(false);
-        };
+            const addReactionBtn = messageDiv.querySelector('.add-reaction-btn');
+            if (addReactionBtn) {
+                addReactionBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showEmojiPicker(addReactionBtn, data.message_id);
+                });
+            }
 
-        chatSocket.onmessage = handleWebSocketMessage;
-    } catch (error) {
-        isConnecting = false;
-        updateConnectionStatus(false);
-    }
-}
+            // Initialize reactions for the new message
+            updateReactions(data.message_id, data.reactions || {});
+        }
 
-function handleDeleteMessage(data) {
-    const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
-    if (messageElement) {
-        messageElement.remove();
-    }
-}
+        function handleWebSocketMessage(event) {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('Received websocket message:', data);
 
-function deleteMessage(messageId) {
-    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-        return;
-    }
+                switch (data.type) {
+                    case 'chat_message':
+                        appendMessage(data);
+                        break;
+                    case 'delete_message':
+                        handleDeleteMessage(data);
+                        break;
+                    case 'connection_status':
+                        updateConnectionStatus(data.status === 'connected');
+                        if (data.status === 'connected') {
+                            showNotification('Connected to chat room', 'success');
+                        }
+                        break;
+                    case 'reaction_update':
+                        console.log('Reaction update received:', data);
+                        // Update the data attribute as well
+                        const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+                        if (messageElement) {
+                            messageElement.dataset.reactions = JSON.stringify(data.reactions || {});
+                        }
+                        updateReactions(data.message_id, data.reactions);
+                        break;
+                    case 'error':
+                        showNotification(data.message || 'An error occurred');
+                        break;
+                }
+            } catch (error) {
+                console.error('Error handling WebSocket message:', error);
+                showNotification('Error processing message');
+            }
+        }
 
-    chatSocket.send(JSON.stringify({
-        'type': 'delete_message',
-        'message_id': messageId,
-        'room_id': '{{ room.id }}'
-    }));
-}
-
-function escapeHtml(unsafe) {
-    return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g , "&lt;") .replace( />/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-// Initialize WebSocket connection and other event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing chat room...');
-    connectWebSocket();
-    
-    // Set up form handler
-    if (chatForm) {
-        chatForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (!messageInput) return;
-            
-            const message = messageInput.value.trim();
-            if (!message) return;
-            
-            if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-                connectWebSocket();
+        function connectWebSocket() {
+            if (chatSocket && (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING)) {
                 return;
             }
-            
+
+            if (isConnecting) {
+                return;
+            }
+
+            isConnecting = true;
+            updateConnectionStatus(false);
+
             try {
-                chatSocket.send(JSON.stringify({
-                    'type': 'chat_message',
-                    'message': message,
-                    'room_id': '{{ room.id }}'
-                }));
-                messageInput.value = '';
+                const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                chatSocket = new WebSocket(protocol + window.location.host + '/ws/discussion-rooms/chat/{{ room.id }}/');
+
+                chatSocket.onopen = function() {
+                    isConnecting = false;
+                    reconnectAttempts = 0;
+                    updateConnectionStatus(true);
+                };
+
+                chatSocket.onclose = function(e) {
+                    isConnecting = false;
+                    updateConnectionStatus(false);
+
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        setTimeout(connectWebSocket, reconnectDelay);
+                    }
+                };
+
+                chatSocket.onerror = function(error) {
+                    isConnecting = false;
+                    updateConnectionStatus(false);
+                };
+
+                chatSocket.onmessage = handleWebSocketMessage;
             } catch (error) {
-                // Error handling
+                isConnecting = false;
+                updateConnectionStatus(false);
             }
-        });
-    }
-    
-    // Set up reaction buttons that were directly rendered in the template
-    document.querySelectorAll('.reaction-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const messageId = btn.dataset.messageId;
-            const emoji = btn.dataset.emoji;
-            if (messageId && emoji) {
-                addReaction(messageId, emoji);
+        }
+
+        function handleDeleteMessage(data) {
+            const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+            if (messageElement) {
+                messageElement.remove();
             }
-        });
-    });
-    
-    // Set up add reaction buttons for existing messages
-    document.querySelectorAll('.add-reaction-btn').forEach(btn => {
-        const messageItem = btn.closest('[data-message-id]');
-        if (messageItem) {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                showEmojiPicker(btn, messageItem.dataset.messageId);
+        }
+
+        function deleteMessage(messageId) {
+            if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            chatSocket.send(JSON.stringify({
+                'type': 'delete_message',
+                'message_id': messageId,
+                'room_id': '{{ room.id }}'
+            }));
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Initialize WebSocket connection and other event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing chat room...');
+            connectWebSocket();
+
+            // Set up form handler
+            if (chatForm) {
+                chatForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    if (!messageInput) return;
+
+                    const message = messageInput.value.trim();
+                    if (!message) return;
+
+                    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+                        connectWebSocket();
+                        return;
+                    }
+
+                    try {
+                        chatSocket.send(JSON.stringify({
+                            'type': 'chat_message',
+                            'message': message,
+                            'room_id': '{{ room.id }}'
+                        }));
+                        messageInput.value = '';
+                    } catch (error) {
+                        // Error handling
+                    }
+                });
+            }
+
+            // Set up reaction buttons that were directly rendered in the template
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const messageId = btn.dataset.messageId;
+                    const emoji = btn.dataset.emoji;
+                    if (messageId && emoji) {
+                        addReaction(messageId, emoji);
+                    }
+                });
             });
-        }
-    });
-    
-    // Set up delete message handlers
-    document.querySelectorAll('.delete-message-btn').forEach(btn => {
-        const messageItem = btn.closest('[data-message-id]');
-        if (messageItem) {
-            btn.addEventListener('click', () => deleteMessage(messageItem.dataset.messageId));
-        }
-    });
-});
 
-// Clean up WebSocket connection when leaving the page
-window.addEventListener('beforeunload', function() {
-    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
-        chatSocket.close();
-    }
-});
+            // Set up add reaction buttons for existing messages
+            document.querySelectorAll('.add-reaction-btn').forEach(btn => {
+                const messageItem = btn.closest('[data-message-id]');
+                if (messageItem) {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showEmojiPicker(btn, messageItem.dataset.messageId);
+                    });
+                }
+            });
 
-// Add to your existing styles
-const styles = document.createElement('style');
-styles.textContent = `
+            // Set up delete message handlers
+            document.querySelectorAll('.delete-message-btn').forEach(btn => {
+                const messageItem = btn.closest('[data-message-id]');
+                if (messageItem) {
+                    btn.addEventListener('click', () => deleteMessage(messageItem.dataset.messageId));
+                }
+            });
+        });
+
+        // Clean up WebSocket connection when leaving the page
+        window.addEventListener('beforeunload', function() {
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.close();
+            }
+        });
+
+        // Add to your existing styles
+        const styles = document.createElement('style');
+        styles.textContent = `
     #emoji-picker {
         transition: opacity 0.2s ease-in-out;
     }
@@ -722,6 +778,7 @@ styles.textContent = `
         flex-wrap: wrap;
     }
 `;
-document.head.appendChild(styles);
+        document.head.appendChild(styles);
     </script>
+
 {% endblock extra_js %}

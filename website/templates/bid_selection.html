@@ -1,47 +1,62 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Bids - Fetch and Manage Issues
+
 {% endblock title %}
+
 {% block description %}
     Use this page to fetch and manage bids associated with issues by pasting the issue URL and changing the status of the bids.
+
 {% endblock description %}
+
 {% block keywords %}
     bids, issues, fetch, manage, bid status, issue URL, platform
+
 {% endblock keywords %}
+
 {% block og_title %}
     Bids - Fetch and Manage Issues
+
 {% endblock og_title %}
+
 {% block og_description %}
     Manage bids by fetching them with the issue URL and updating the status. A platform to handle bid statuses efficiently
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <script>
         function fetchBid(event) {
             const issueUrl = document.getElementById("issueLinkInput").value;
             const csrftoken = getCookie('csrftoken');
             fetch(`/get_unique_issues/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken,
-                },
-                body: JSON.stringify({ issue_url: issueUrl })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const bidContainer = document.getElementById("BidDisplay");
-                bidContainer.innerHTML = '';
-                if (data.success === false) {
-                    alert(data.error);
-                } else {
-                    data.forEach(bid => {
-                        console.log('Data fetched:', bid.user);
-                        const bidElement = document.createElement("div");
-                        bidElement.classList.add("bg-red-500", "text-black", "p-4", "rounded", "text-center", "mb-2");
-                        bidElement.innerHTML = `
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({
+                        issue_url: issueUrl
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const bidContainer = document.getElementById("BidDisplay");
+                    bidContainer.innerHTML = '';
+                    if (data.success === false) {
+                        alert(data.error);
+                    } else {
+                        data.forEach(bid => {
+                            console.log('Data fetched:', bid.user);
+                            const bidElement = document.createElement("div");
+                            bidElement.classList.add("bg-red-500", "text-black", "p-4", "rounded", "text-center", "mb-2");
+                            bidElement.innerHTML = `
                             <div class="p-4 border rounded-lg shadow-md bg-white">
                                 <p class="font-bold">User: ${bid.user}</p>
                                 <p>Current Bid: ${bid.amount}</p>
@@ -51,33 +66,35 @@
                                 <button class="bg-blue-500 text-white px-4 py-2 rounded mt-2" onclick="changeStatus(${bid.id})">Change Status</button>
                             </div>
                         `;
-                        bidContainer.appendChild(bidElement);
-                    });
-                }
-            })
-            .catch(error => console.error('Error fetching bids:', error));
+                            bidContainer.appendChild(bidElement);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching bids:', error));
         }
 
         function changeStatus(bidId) {
             const csrftoken = getCookie('csrftoken');
             fetch(`/change_bid_status/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken,
-                },
-                body: JSON.stringify({ id: bidId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Status changed successfully');
-                    fetchBid();
-                } else {
-                    alert(data.error);
-                }
-            })
-            .catch(error => console.error('Error changing status:', error));
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({
+                        id: bidId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Status changed successfully');
+                        fetchBid();
+                    } else {
+                        alert(data.error);
+                    }
+                })
+                .catch(error => console.error('Error changing status:', error));
         }
 
         function getCookie(name) {
@@ -110,4 +127,5 @@
         </form>
         <div id="BidDisplay" class="mt-6 w-96"></div>
     </div>
+
 {% endblock content %}

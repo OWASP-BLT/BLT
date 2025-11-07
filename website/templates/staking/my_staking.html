@@ -1,12 +1,17 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     My Stakes - OWASP
     BLT
+
 {% endblock %}
+
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header Section -->
@@ -138,7 +143,14 @@
                             {% for transaction in recent_transactions %}
                                 <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                     <div class="flex items-center">
-                                        <div class="w-10 h-10 rounded-full flex items-center justify-center {% if transaction.transaction_type == 'stake' %}bg-blue-100{% elif transaction.transaction_type == 'unstake' %}bg-red-100{% else %}bg-green-100{% endif %}">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center
+                                                    {% if transaction.transaction_type == 'stake' %}
+                                                        bg-blue-100
+                                                    {% elif transaction.transaction_type == 'unstake' %}
+                                                        bg-red-100
+                                                    {% else %}
+                                                        bg-green-100
+                                                    {% endif %}">
                                             {% if transaction.transaction_type == 'stake' %}
                                                 <span class="text-blue-600">📈</span>
                                             {% elif transaction.transaction_type == 'unstake' %}
@@ -154,7 +166,12 @@
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                        <p class="text-sm font-bold {% if transaction.transaction_type == 'stake' %}text-red-600{% else %}text-green-600{% endif %}">
+                                        <p class="text-sm font-bold
+                                                  {% if transaction.transaction_type == 'stake' %}
+                                                      text-red-600
+                                                  {% else %}
+                                                      text-green-600
+                                                  {% endif %}">
                                             {% if transaction.transaction_type == 'stake' %}
                                                 -
                                             {% else %}
@@ -175,4 +192,5 @@
             </div>
         </div>
     </div>
+
 {% endblock %}

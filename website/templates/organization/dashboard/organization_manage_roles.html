@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Manage Roles & Permissions
+
 {% endblock title %}
+
 {% block description %}
     Manage user roles, permissions, and access control for your organization. Assign administrators, moderators, and domain-specific roles.
+
 {% endblock description %}
+
 {% block keywords %}
     Manage Roles, Role Management, Permissions, Access Control, Organization Admin, User Roles
+
 {% endblock keywords %}
+
 {% block og_title %}
     Manage Roles & Permissions - Organization Dashboard
+
 {% endblock og_title %}
+
 {% block og_description %}
     Comprehensive role management system for your organization. Control who has access to what.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <!-- Header Section -->
@@ -105,7 +117,13 @@
                                             <div class="flex items-center justify-end space-x-2">
                                                 {% comment %} Only allow editing if NOT an owner AND NOT the user's own role {% endcomment %}
                                                 {% if not role.is_owner and role.user_id != request.user.id %}
-                                                    <button onclick="openEditRoleModal({{ role.id }}, '{{ role.username|escapejs }}', {{ role.role|default:"null" }}, {% if role.domain_id %}{{ role.domain_id }}{% else %}null{% endif %})"
+                                                    <button onclick="openEditRoleModal({{ role.id }}, '{{ role.username|escapejs }}', {{ role.role|default:"null" }},
+                                                                     {% if role.domain_id %}
+                                                                         {{ role.domain_id }}
+                                                                     {% else %}
+                                                                         null
+                                                                     {% endif %}
+                                                                     )"
                                                             class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all font-medium text-sm"
                                                             title="Edit Role">
                                                         <svg class="w-4 h-4 mr-1.5"
@@ -299,106 +317,109 @@
             </form>
         </div>
     </div>
+
 {% endblock body %}
+
 {% block scripts %}
     <script>
-    // Modal Functions
-    function openAddRoleModal() {
-        const modal = document.getElementById('addRoleModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-
-    function closeAddRoleModal() {
-        const modal = document.getElementById('addRoleModal');
-        const form = document.getElementById('addRoleForm');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        form.reset();
-    }
-
-    function openEditRoleModal(roleId, username, role, domainId) {
-        document.getElementById('edit_role_id').value = roleId;
-        document.getElementById('edit_username').textContent = username;
-        document.getElementById('edit_role').value = role;
-        document.getElementById('edit_domain').value = domainId || '';
-        
-        const modal = document.getElementById('editRoleModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-
-    function closeEditRoleModal() {
-        const modal = document.getElementById('editRoleModal');
-        const form = document.getElementById('editRoleForm');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        form.reset();
-    }
-
-    function confirmRemoveRole(roleId, username) {
-        // Sanitize username for display - coerce to string and remove potentially dangerous characters
-        const sanitizedUsername = String(username || 'user').replace(/[<>'"&]/g, '');
-        
-        if (confirm(`Are you sure you want to remove ${sanitizedUsername}'s role? This will revoke their access to organization management features.`)) {
-            // Robustly find CSRF token
-            const csrfElement = document.querySelector('input[name="csrfmiddlewaretoken"]');
-            if (!csrfElement) {
-                alert('Error: CSRF token not found. Please refresh the page and try again.');
-                return;
-            }
-            const csrfToken = csrfElement.value;
-            
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '';
-            
-            // Create CSRF token input
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = csrfToken;
-            
-            // Create action input
-            const actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            actionInput.value = 'remove_role';
-            
-            // Create role_id input
-            const roleIdInput = document.createElement('input');
-            roleIdInput.type = 'hidden';
-            roleIdInput.name = 'role_id';
-            roleIdInput.value = roleId;
-            
-            // Append inputs to form
-            form.appendChild(csrfInput);
-            form.appendChild(actionInput);
-            form.appendChild(roleIdInput);
-            
-            document.body.appendChild(form);
-            form.submit();
+        // Modal Functions
+        function openAddRoleModal() {
+            const modal = document.getElementById('addRoleModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
-    }
 
-    // Event Listeners
-    document.addEventListener('DOMContentLoaded', function() {
-        // Close modals on escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeAddRoleModal();
-                closeEditRoleModal();
+        function closeAddRoleModal() {
+            const modal = document.getElementById('addRoleModal');
+            const form = document.getElementById('addRoleForm');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            form.reset();
+        }
+
+        function openEditRoleModal(roleId, username, role, domainId) {
+            document.getElementById('edit_role_id').value = roleId;
+            document.getElementById('edit_username').textContent = username;
+            document.getElementById('edit_role').value = role;
+            document.getElementById('edit_domain').value = domainId || '';
+
+            const modal = document.getElementById('editRoleModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeEditRoleModal() {
+            const modal = document.getElementById('editRoleModal');
+            const form = document.getElementById('editRoleForm');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            form.reset();
+        }
+
+        function confirmRemoveRole(roleId, username) {
+            // Sanitize username for display - coerce to string and remove potentially dangerous characters
+            const sanitizedUsername = String(username || 'user').replace(/[<>'"&]/g, '');
+
+            if (confirm(`Are you sure you want to remove ${sanitizedUsername}'s role? This will revoke their access to organization management features.`)) {
+                // Robustly find CSRF token
+                const csrfElement = document.querySelector('input[name="csrfmiddlewaretoken"]');
+                if (!csrfElement) {
+                    alert('Error: CSRF token not found. Please refresh the page and try again.');
+                    return;
+                }
+                const csrfToken = csrfElement.value;
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+
+                // Create CSRF token input
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+
+                // Create action input
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'remove_role';
+
+                // Create role_id input
+                const roleIdInput = document.createElement('input');
+                roleIdInput.type = 'hidden';
+                roleIdInput.name = 'role_id';
+                roleIdInput.value = roleId;
+
+                // Append inputs to form
+                form.appendChild(csrfInput);
+                form.appendChild(actionInput);
+                form.appendChild(roleIdInput);
+
+                document.body.appendChild(form);
+                form.submit();
             }
-        });
+        }
 
-        // Close modals on background click
-        document.getElementById('addRoleModal').addEventListener('click', function(event) {
-            if (event.target === this) closeAddRoleModal();
-        });
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close modals on escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeAddRoleModal();
+                    closeEditRoleModal();
+                }
+            });
 
-        document.getElementById('editRoleModal').addEventListener('click', function(event) {
-            if (event.target === this) closeEditRoleModal();
+            // Close modals on background click
+            document.getElementById('addRoleModal').addEventListener('click', function(event) {
+                if (event.target === this) closeAddRoleModal();
+            });
+
+            document.getElementById('editRoleModal').addEventListener('click', function(event) {
+                if (event.target === this) closeEditRoleModal();
+            });
         });
-    });
     </script>
+
 {% endblock scripts %}

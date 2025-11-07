@@ -1,12 +1,17 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Staking Leaderboard
     - OWASP BLT
+
 {% endblock %}
+
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header Section -->
@@ -38,7 +43,14 @@
             {% if top_users %}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     {% for user in top_users|slice:":3" %}
-                        <div class="bg-white rounded-lg shadow-lg p-6 text-center {% if forloop.counter == 1 %}order-2 md:order-2 transform md:scale-110{% elif forloop.counter == 2 %}order-1 md:order-1{% else %}order-3 md:order-3{% endif %}">
+                        <div class="bg-white rounded-lg shadow-lg p-6 text-center
+                                    {% if forloop.counter == 1 %}
+                                        order-2 md:order-2 transform md:scale-110
+                                    {% elif forloop.counter == 2 %}
+                                        order-1 md:order-1
+                                    {% else %}
+                                        order-3 md:order-3
+                                    {% endif %}">
                             <div class="relative mb-4">
                                 {% if forloop.counter == 1 %}
                                     <div class="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -84,7 +96,9 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             {% for user in leaderboard_users %}
-                                <tr class="{% if user.username == request.user.username %}bg-blue-50{% endif %}">
+                                <tr class="{% if user.username == request.user.username %}
+                                               bg-blue-50
+                                           {% endif %}">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             {% if forloop.counter <= 3 %}
@@ -163,4 +177,5 @@
             </div>
         </div>
     </div>
+
 {% endblock %}

@@ -1,25 +1,38 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Contribute to OWASP {% env 'PROJECT_NAME' %}
+
 {% endblock %}
+
 {% block description %}
     Learn how you can contribute to the OWASP {% env 'PROJECT_NAME' %} project, including code contributions, bug reports, documentation, and community engagement.
+
 {% endblock %}
+
 {% block keywords %}
     OWASP, {% env 'PROJECT_NAME' %}, contribute, code contributions, bug reports, documentation, community engagement, security research
+
 {% endblock %}
+
 {% block og_title %}
     Contribute to OWASP {% env 'PROJECT_NAME' %}
+
 {% endblock %}
+
 {% block og_description %}
     Discover the many ways you can contribute to the OWASP {% env 'PROJECT_NAME' %} project and become part of a global community working to improve web security.
+
 {% endblock %}
+
 {% block content %}
     <div class="w-full">
         <!-- Include the left navigation -->
         {% include "includes/sidenav.html" %}
+
         <!-- Main Content Section -->
         <div class="w-full mx-auto">
             <section id="contribute-overview"
@@ -42,7 +55,7 @@
                         Our project leverages these modern technologies to create a robust and scalable platform.
                     </p>
                 </div>
-                <div class=" max-w-[90%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 ">
+                <div class="max-w-[90%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <div class="bg-white p-6 rounded-md  transition-shadow duration-300 border border-gray-200 shadow-sm hover:shadow-md">
                         <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">Front-End</h4>
                         <ul class="space-y-4">
@@ -257,7 +270,7 @@
                     <h3 class="md:text-3xl text-2xl font-bold mb-2 text-gray-800 relative inline-block">Ways to Contribute</h3>
                     <p class=" text-gray-600 max-w-3xl mx-auto">Join our community and make a difference in various ways.</p>
                 </div>
-                <div class=" max-w-[90%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="max-w-[90%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <div class="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition duration-300">
                         <div class="h-3 bg-[#e74c3c]"></div>
                         <div class="p-6">
@@ -741,4 +754,5 @@
             </section>
         </div>
     </div>
+
 {% endblock content %}

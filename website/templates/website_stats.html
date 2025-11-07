@@ -1,8 +1,12 @@
 {% extends "base.html" %}
+
 {% load humanize %}
+
 {% block title %}Website Statistics{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <div class="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200 mb-8">
             <div class="flex items-center justify-between mb-4">
@@ -16,9 +20,14 @@
                     </div>
                 </div>
                 {% if web_stats.date %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if web_stats.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif web_stats.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
-                        {{ web_stats.date|timesince }} ago
-                    </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                 {% if web_stats.status == 'danger' %}
+                                     bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                 {% elif web_stats.status == 'warning' %}
+                                     bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                 {% else %}
+                                     bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                 {% endif %}">{{ web_stats.date|timesince }} ago</span>
                 {% else %}
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
                         No data
@@ -142,160 +151,189 @@
             </div>
         </div>
     </div>
+
 {% endblock %}
+
 {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Traffic Chart
-    const ctx = document.getElementById('trafficChart').getContext('2d');
-    
-    const data = {
-        labels: {{ web_stats.dates|safe }},
-        datasets: [{
-            label: 'Daily Views',
-            data: {{ web_stats.views|safe }},
-            borderColor: '#e74c3c',
-            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-            fill: true,
-            tension: 0.4,
-            borderWidth: 2,
-            pointRadius: 4,
-            pointBackgroundColor: '#e74c3c'
-        }]
-    };
+        document.addEventListener('DOMContentLoaded', function() {
+            // Traffic Chart
+            const ctx = document.getElementById('trafficChart').getContext('2d');
 
-    const config = {
-        type: 'line',
-        data: data,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
+            const data = {
+                labels: {
+                    {
+                        web_stats.dates | safe
+                    }
                 },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
+                datasets: [{
+                    label: 'Daily Views',
+                    data: {
+                        {
+                            web_stats.views | safe
+                        }
+                    },
                     borderColor: '#e74c3c',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#e74c3c'
+                }]
+            };
+
+            const config = {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#e74c3c',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false
+                        }
                     },
-                    ticks: {
-                        maxTicksLimit: 7,
-                        color: '#718096'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 7,
+                                color: '#718096'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                color: '#718096'
+                            }
+                        }
                     },
-                    ticks: {
-                        color: '#718096'
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            }
-        }
-    };
+            };
 
-    new Chart(ctx, config);
+            new Chart(ctx, config);
 
-    // User Agent Chart
-    const userAgentCtx = document.getElementById('userAgentChart').getContext('2d');
-    const userAgentData = {
-        labels: [{% for agent in user_agents %}'{{ agent.agent|truncatechars:50|escapejs }}',{% endfor %}],
-        datasets: [{
-            label: 'User Agent Count',
-            data: [{% for agent in user_agents %}{{ agent.total_count }},{% endfor %}],
-            backgroundColor: 'rgba(231, 76, 60, 0.8)',
-            borderColor: '#e74c3c',
-            borderWidth: 1
-        }]
-    };
-
-    const userAgentConfig = {
-        type: 'bar',
-        data: userAgentData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
+            // User Agent Chart
+            const userAgentCtx = document.getElementById('userAgentChart').getContext('2d');
+            const userAgentData = {
+                labels: [{
+                        %
+                        for agent in user_agents %
+                    }
+                    '{{ agent.agent|truncatechars:50|escapejs }}', {
+                        %
+                        endfor %
+                    }
+                ],
+                datasets: [{
+                    label: 'User Agent Count',
+                    data: [{
+                        %
+                        for agent in user_agents %
+                    } {
+                        {
+                            agent.total_count
+                        }
+                    }, {
+                        %
+                        endfor %
+                    }],
+                    backgroundColor: 'rgba(231, 76, 60, 0.8)',
                     borderColor: '#e74c3c',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
+                    borderWidth: 1
+                }]
+            };
+
+            const userAgentConfig = {
+                type: 'bar',
+                data: userAgentData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#e74c3c',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false
+                        }
                     },
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45,
-                        color: '#718096'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    },
-                    ticks: {
-                        color: '#718096'
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                color: '#718096'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                color: '#718096'
+                            }
+                        }
                     }
                 }
-            }
+            };
+
+            new Chart(userAgentCtx, userAgentConfig);
+        });
+
+        // Tab switching functionality
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabId).classList.remove('hidden');
+
+            // Update tab button styles
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('text-[#e74c3c]', 'border-[#e74c3c]');
+                button.classList.add('text-gray-500', 'border-transparent');
+            });
+
+            // Update active tab button
+            const activeButton = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+            activeButton.classList.remove('text-gray-500', 'border-transparent');
+            activeButton.classList.add('text-[#e74c3c]', 'border-[#e74c3c]');
         }
-    };
-
-    new Chart(userAgentCtx, userAgentConfig);
-});
-
-// Tab switching functionality
-function switchTab(tabId) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
-    });
-    
-    // Show selected tab content
-    document.getElementById(tabId).classList.remove('hidden');
-    
-    // Update tab button styles
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('text-[#e74c3c]', 'border-[#e74c3c]');
-        button.classList.add('text-gray-500', 'border-transparent');
-    });
-    
-    // Update active tab button
-    const activeButton = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
-    activeButton.classList.remove('text-gray-500', 'border-transparent');
-    activeButton.classList.add('text-[#e74c3c]', 'border-[#e74c3c]');
-}
     </script>
+
 {% endblock %}

@@ -1,8 +1,12 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}Organizations{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <!-- Top Tags Section -->
         {% if top_tags %}
@@ -10,14 +14,22 @@
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">Popular Tags</h2>
                 <div class="flex flex-wrap gap-2">
                     <a href="{% url 'organizations' %}"
-                       class="px-4 py-2 rounded-full text-sm font-medium {% if not selected_tag %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-800 hover:bg-gray-200{% endif %} transition-colors">
-                        All
-                    </a>
+                       class="px-4 py-2 rounded-full text-sm font-medium
+                              {% if not selected_tag %}
+                                  bg-[#e74c3c] text-white
+                              {% else %}
+                                  bg-gray-100 text-gray-800 hover:bg-gray-200
+                              {% endif %}
+                              transition-colors">All</a>
                     {% for tag in top_tags %}
                         <a href="{% url 'organizations' %}?tag={{ tag.slug }}"
-                           class="px-4 py-2 rounded-full text-sm font-medium {% if selected_tag.slug == tag.slug %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-800 hover:bg-gray-200{% endif %} transition-colors">
-                            {{ tag.name }} ({{ tag.org_count }})
-                        </a>
+                           class="px-4 py-2 rounded-full text-sm font-medium
+                                  {% if selected_tag.slug == tag.slug %}
+                                      bg-[#e74c3c] text-white
+                                  {% else %}
+                                      bg-gray-100 text-gray-800 hover:bg-gray-200
+                                  {% endif %}
+                                  transition-colors">{{ tag.name }} ({{ tag.org_count }})</a>
                     {% endfor %}
                 </div>
             </div>
@@ -308,4 +320,5 @@
             </div>
         </div>
     </div>
+
 {% endblock %}

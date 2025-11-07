@@ -1,25 +1,38 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Edit Hunt: {{ hunt.name }} - {% env 'PROJECT_NAME' %} Dashboard
+
 {% endblock title %}
+
 {% block description %}
     Edit the details of the hunt "{{ hunt.name }}" in the {% env 'PROJECT_NAME' %} dashboard. Update the description, start time, and end time of the hunt.
+
 {% endblock description %}
+
 {% block keywords %}
     {% env 'PROJECT_NAME' %}, hunt, edit, update, description, time, schedule, "{{ hunt.name }}", dashboard
+
 {% endblock keywords %}
+
 {% block og_title %}
     Edit Hunt: {{ hunt.name }} - {% env 'PROJECT_NAME' %} Dashboard
+
 {% endblock og_title %}
+
 {% block og_description %}
     Update the hunt "{{ hunt.name }}" details including name, description, start and end times in the {% env 'PROJECT_NAME' %} dashboard.
+
 {% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
@@ -65,18 +78,19 @@
     <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
     <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
     <script>
-  $(function () {
-      editormd.markdownToHTML("content", {
-          emoji           : true,
-          taskList        : true,
-          tex             : true,  
-          flowChart       : true,  
-          sequenceDiagram : true,  
-      });
+        $(function() {
+            editormd.markdownToHTML("content", {
+                emoji: true,
+                taskList: true,
+                tex: true,
+                flowChart: true,
+                sequenceDiagram: true,
+            });
 
-      $(".reference-link").each(function (i,obj) {
-        console.log(obj)
-      })
-  })
+            $(".reference-link").each(function(i, obj) {
+                console.log(obj)
+            })
+        })
     </script>
+
 {% endblock content %}

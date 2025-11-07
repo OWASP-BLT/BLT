@@ -1,12 +1,17 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Stake in {{
     pool.name }} - OWASP BLT
+
 {% endblock %}
+
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Back Button -->
@@ -124,7 +129,12 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Unstaking Allowed:</span>
-                            <span class="font-semibold {% if pool.allow_unstaking %}text-green-600{% else %}text-red-600{% endif %}">
+                            <span class="font-semibold
+                                         {% if pool.allow_unstaking %}
+                                             text-green-600
+                                         {% else %}
+                                             text-red-600
+                                         {% endif %}">
                                 {% if pool.allow_unstaking %}
                                     Yes
                                 {% else %}
@@ -152,35 +162,46 @@
         </div>
     </div>
     <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      const amountInput = document.getElementById('amount');
-      const quickAmountButtons = document.querySelectorAll('.quick-amount');
+        document.addEventListener('DOMContentLoaded', function() {
+            const amountInput = document.getElementById('amount');
+            const quickAmountButtons = document.querySelectorAll('.quick-amount');
 
-      quickAmountButtons.forEach(button => {
-          button.addEventListener('click', function() {
-              const amount = this.dataset.amount;
-              amountInput.value = amount;
-          });
-      });
+            quickAmountButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const amount = this.dataset.amount;
+                    amountInput.value = amount;
+                });
+            });
 
-      // Form validation
-      document.getElementById('staking-form').addEventListener('submit', function(e) {
-          const amount = parseInt(amountInput.value);
-          const userBalance = {{ user_balance|default:0 }};
-          const minAmount = {{ pool.entry_fee|default:0 }};
+            // Form validation
+            document.getElementById('staking-form').addEventListener('submit', function(e) {
+                const amount = parseInt(amountInput.value);
+                const userBalance = {
+                    {
+                        user_balance |
+                            default: 0
+                    }
+                };
+                const minAmount = {
+                    {
+                        pool.entry_fee |
+                            default: 0
+                    }
+                };
 
-          if (amount < minAmount) {
-              e.preventDefault();
-              alert('Minimum stake amount is ' + minAmount + ' BACON');
-              return;
-          }
+                if (amount < minAmount) {
+                    e.preventDefault();
+                    alert('Minimum stake amount is ' + minAmount + ' BACON');
+                    return;
+                }
 
-          if (amount > userBalance) {
-              e.preventDefault();
-              alert('You don\'t have enough BACON. Available: ' + userBalance + ' BACON');
-              return;
-          }
-      });
-  });
+                if (amount > userBalance) {
+                    e.preventDefault();
+                    alert('You don\'t have enough BACON. Available: ' + userBalance + ' BACON');
+                    return;
+                }
+            });
+        });
     </script>
+
 {% endblock %}

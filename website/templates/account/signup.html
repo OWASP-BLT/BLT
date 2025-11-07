@@ -1,25 +1,38 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Sign Up | {% env 'PROJECT_NAME' %}
+
 {% endblock title %}
+
 {% block description %}
     Create an account to join the community. Sign up with your email and username to start discovering and reporting bugs.
+
 {% endblock description %}
+
 {% block keywords %}
     Sign Up, Create Account, Join Community, Email, Username, Discover Bugs, Report Bugs
+
 {% endblock keywords %}
+
 {% block og_title %}
     Sign Up - Join Our Community
+
 {% endblock og_title %}
+
 {% block og_description %}
     Create an account to join our community. Sign up with your email and username to start discovering and reporting bugs.
+
 {% endblock og_description %}
 {% load i18n %}
 {% load custom_tags %}
+
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
+
     <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 h-full">
         <div class="flex flex-col w-full max-w-md bg-white rounded-md shadow-lg md:flex-row md:max-w-2xl lg:max-w-4xl">
             <!-- Left Section -->
@@ -179,22 +192,22 @@
     <script>
         function refreshCaptcha() {
             const captchaContainer = document.querySelector('.captcha-container');
-            
+
             fetch('/captcha/refresh/', {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                captchaContainer.innerHTML = `
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    captchaContainer.innerHTML = `
                     <input type="hidden" name="captcha_0" value="${data.key}">
                     <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 rounded">
                 `;
-            })
-            .catch(error => console.error('Error:', error));
+                })
+                .catch(error => console.error('Error:', error));
         }
-        
+
         window.addEventListener('load', function() {
             const captchaImg = document.getElementById('captcha-image');
             if (!captchaImg || !captchaImg.getAttribute('src').trim()) {
@@ -202,4 +215,5 @@
             }
         });
     </script>
+
 {% endblock natural_content %}

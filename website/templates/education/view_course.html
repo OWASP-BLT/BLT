@@ -1,7 +1,10 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto mt-10 bg-gray-2 rounded-sm shadow-md p-7">
         <div class="flex items-center justify-center">
             <div class="flex items-center space-x-8 max-w-4xl mx-auto p-8 bg-white relative">
@@ -79,15 +82,15 @@
         document.addEventListener("DOMContentLoaded", function() {
             const loader = document.getElementById("loader");
             const contentSections = document.getElementById("content-sections");
-    
+
             const startTime = Date.now();
-    
+
             fetch("{% url 'get_course_content' course.id %}")
                 .then(response => response.text())
                 .then(html => {
                     const elapsedTime = Date.now() - startTime;
                     const delay = Math.max(2000 - elapsedTime, 0);
-    
+
                     setTimeout(() => {
                         contentSections.innerHTML = html;
                     }, delay);
@@ -99,4 +102,5 @@
                 });
         });
     </script>
+
 {% endblock content %}

@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Google Summer of Code with OWASP
+
 {% endblock title %}
+
 {% block description %}
     Join the Google Summer of Code program with OWASP and contribute to open source security projects.
+
 {% endblock description %}
+
 {% block keywords %}
     GSoC, Google Summer of Code, OWASP, Open Source, Student Program, Mentorship
+
 {% endblock keywords %}
+
 {% block og_title %}
     Google Summer of Code with OWASP
+
 {% endblock og_title %}
+
 {% block og_description %}
     Learn about the Google Summer of Code (GSoC) program, its benefits, and its partnership with OWASP {% env 'PROJECT_NAME' %}.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <!-- Hero Section -->
     <div class="mt-[100px] bg-zinc-100 py-16 gsoc-hero">
         <div class="w-[85%] mx-auto">
@@ -763,4 +776,5 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}

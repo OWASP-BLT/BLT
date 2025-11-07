@@ -1,11 +1,16 @@
 {% extends "base.html" %}
+
 {% load humanize %}
 {% load static %}
+
 {% block title %}
     {{ project.name }} - Project Details
+
 {% endblock title %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8 max-w-7xl">
         <!-- Breadcrumb Navigation -->
         <nav class="mb-8 text-sm">
@@ -307,38 +312,41 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}
+
 {% block after_js %}
     <script>
-    function copyToClipboard(elementId) {
-        const element = document.getElementById(elementId);
-        
-        // Select the text
-        element.select();
-        element.setSelectionRange(0, 99999); // For mobile devices
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
 
-        // Copy the text
-        try {
-            navigator.clipboard.writeText(element.value).then(() => {
-                // Get the button
-                const button = element.nextElementSibling;
-                const originalText = button.textContent;
-                
-                // Change button style to show success
-                button.textContent = 'Copied!';
-                button.classList.remove('bg-red-500', 'hover:bg-red-600');
-                button.classList.add('bg-green-500', 'hover:bg-green-600');
-                
-                // Reset button after 2 seconds
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    button.classList.add('bg-red-500', 'hover:bg-red-600');
-                }, 2000);
-            });
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
+            // Select the text
+            element.select();
+            element.setSelectionRange(0, 99999); // For mobile devices
+
+            // Copy the text
+            try {
+                navigator.clipboard.writeText(element.value).then(() => {
+                    // Get the button
+                    const button = element.nextElementSibling;
+                    const originalText = button.textContent;
+
+                    // Change button style to show success
+                    button.textContent = 'Copied!';
+                    button.classList.remove('bg-red-500', 'hover:bg-red-600');
+                    button.classList.add('bg-green-500', 'hover:bg-green-600');
+
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                        button.classList.add('bg-red-500', 'hover:bg-red-600');
+                    }, 2000);
+                });
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
         }
-    }
     </script>
+
 {% endblock after_js %}

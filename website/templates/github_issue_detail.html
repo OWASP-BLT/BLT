@@ -1,18 +1,27 @@
 {% extends "base.html" %}
+
 {% load i18n %}
 {% load static %}
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}
+
 {% providers_media_js %}
 {% load custom_tags %}
+
 {% block title %}{{ issue.title }} - GitHub Issue{% endblock %}
+
 {% block description %}View details of GitHub issue: {{ issue.title }}{% endblock %}
+
 {% block keywords %}github, issue, pull request, bug, repository, open source{% endblock %}
+
 {% block og_title %}{{ issue.title }} - GitHub Issue{% endblock %}
+
 {% block og_description %}View details of GitHub issue: {{ issue.title }}{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <!-- Back button -->
         <a href="{% url 'github_issues' %}"
@@ -43,9 +52,12 @@
                         </svg>
                     </a>
                 </div>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if issue.state == 'open' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                    {{ issue.state|title }}
-                </span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                             {% if issue.state == 'open' %}
+                                 bg-green-100 text-green-800
+                             {% else %}
+                                 bg-red-100 text-red-800
+                             {% endif %}">{{ issue.state|title }}</span>
             </div>
             <div class="flex items-center text-gray-600 mb-6">
                 {% if issue.user_profile and issue.user_profile.github_url %}
@@ -169,4 +181,5 @@
             </div>
         {% endif %}
     </div>
+
 {% endblock content %}

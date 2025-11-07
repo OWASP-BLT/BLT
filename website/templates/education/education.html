@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     OWASP {% env 'PROJECT_NAME' %} Education - Security Courses & Learning Resources
+
 {% endblock title %}
+
 {% block description %}
     Access comprehensive security education with OWASP {% env 'PROJECT_NAME' %} Education. Learn web security, bug hunting, and ethical hacking through expert-led courses, lectures, and video tutorials.
+
 {% endblock description %}
+
 {% block keywords %}
     OWASP {% env 'PROJECT_NAME' %}, security education, bug hunting courses, web security training, ethical hacking, security lectures, video tutorials
+
 {% endblock keywords %}
+
 {% block og_title %}
     OWASP {% env 'PROJECT_NAME' %} Education - Security Courses & Learning Resources
+
 {% endblock og_title %}
+
 {% block og_description %}
     Master security skills with OWASP {% env 'PROJECT_NAME' %} Education. Expert-led courses in web security, bug hunting, and ethical hacking for beginners and professionals.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto mt-10">
         <div class="text-center mb-8">
             <h1 class="text-5xl font-bold flex items-center justify-center gap-3 text-gray-800">
@@ -73,6 +86,7 @@
             </div>
             {% if courses %}
                 {% include "education/includes/course_list.html" %}
+
             {% else %}
                 <div class="text-center py-16">
                     <h2 class="text-2xl font-semibold text-gray-700">No courses available</h2>
@@ -204,4 +218,5 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}

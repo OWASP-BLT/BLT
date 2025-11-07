@@ -2,11 +2,13 @@
 {% load gravatar %}
 {% load socialaccount %}
 {% load user_score %}
+
 {% providers_media_js %}
 {% load i18n %}
 {% load custom_tags %}
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const desktopDropdownButton = document.getElementById('dropdownButton');
         const desktopDropdownMenu = document.getElementById('dropdownMenu');
 
@@ -124,13 +126,13 @@
                             type="button">
                         {% if request.user.userprofile.avatar %}
                             <img src="{{ request.user.userprofile.avatar }}"
-                                 class="h-[30px] w-[30px] rounded-full "
+                                 class="h-[30px] w-[30px] rounded-full"
                                  alt="User Avatar"
                                  width="30"
                                  height="30">
                         {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
                             <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="h-[30px] w-[30px] rounded-full "
+                                 class="h-[30px] w-[30px] rounded-full"
                                  alt="User Avatar"
                                  width="30"
                                  height="30">

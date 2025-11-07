@@ -1,10 +1,12 @@
 {% load gravatar %}
 {% load custom_tags %}
+
 <!-- Modern redesigned like/dislike/share component -->
 <div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 py-6 my-3">
     <!-- We're removing the three-dot dropdown button for mobile -->
     <!-- Like/dislike widget for all screen sizes -->
     {% include "./_like_dislike_widget.html" %}
+
     <!-- Flag modal -->
     <div id="flag-modal"
          class="hidden relative z-10"
@@ -15,7 +17,7 @@
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
                     <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
@@ -69,7 +71,7 @@
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
                     <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
@@ -118,9 +120,9 @@
 <script>
     function copyClipboard() {
         var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
-        
+
         navigator.clipboard.writeText(textToCopy);
-      
+
         $.notify("Bug details copied to clipboard!", {
             style: "custom",
             className: "success"
@@ -134,7 +136,7 @@
             type: 'GET',
             url: '/like_issue/' + issue_pk + '/',
             data: {},
-            success: function (data) {
+            success: function(data) {
                 window.location.reload();
             },
         });
@@ -142,14 +144,14 @@
 
     $('body').on('click', '#like_unlike', like_unlike_handler);
 
-    function dislike_handler(e){
+    function dislike_handler(e) {
         e.preventDefault();
         var issue_pk = document.getElementById("dislike-btn").getAttribute("name");
         $.ajax({
             type: 'GET',
             url: '/dislike_issue/' + issue_pk + '/',
             data: {},
-            success: function (data) {
+            success: function(data) {
                 window.location.reload();
             },
         });
@@ -157,34 +159,33 @@
     $('body').on('click', '#dislike-btn', dislike_handler);
 </script>
 <script>
-    function flag_unflag_handler(e){
+    function flag_unflag_handler(e) {
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
             type: 'GET',
             url: '/flag_issue/' + issue_pk + '/',
             data: {},
-            success: function (data) {
+            success: function(data) {
                 window.location.reload();
             },
         });
     }
 
     $('body').on('click', '#flag-unflag', flag_unflag_handler);
-
 </script>
 <script>
-    function bookmark_handler(e){
+    function bookmark_handler(e) {
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
             type: 'GET',
             url: '/save_issue/' + issue_pk + '/',
             data: {},
-            success: function (data) {
+            success: function(data) {
                 window.location.reload();
             },
-            error: function (e) {
+            error: function(e) {
                 $.notify("Some error occurred!", {
                     style: "custom",
                     className: "danger"
@@ -196,12 +197,16 @@
     $('body').on('click', '#bookmark', bookmark_handler);
 </script>
 <script>
-    async function resolveIssue(){
-        var id = {{object.pk}};
+    async function resolveIssue() {
+        var id = {
+            {
+                object.pk
+            }
+        };
 
         const request = await fetch(`/resolve/${id}/`)
         window.location.reload();
-        if (request.status == 403){
+        if (request.status == 403) {
             $.notify("Permission Denied", {
                 style: "custom",
                 className: "danger"
@@ -210,19 +215,19 @@
     }
 </script>
 <script>
-    function createIssue(){
+    function createIssue() {
         var issue_pk = $("#create_issue").attr('name');
         $.ajax({
             type: 'GET',
             url: '/create_github_issue/' + issue_pk,
             data: {},
-            success: function (data) {
-                if(data["status"] != "ok"){
+            success: function(data) {
+                if (data["status"] != "ok") {
                     $.notify(data["status_reason"], {
                         style: "custom",
                         className: "danger"
                     });
-                }else{
+                } else {
                     window.location.reload();
                 }
             },
@@ -236,7 +241,7 @@
     }
     var label = "{{object.label}}";
 
-    $(document).on('click', '.edit-issue', function (e) {
+    $(document).on('click', '.edit-issue', function(e) {
         $issue_desc = $('.issue-desc').text().trim();
         $('.form input[name=description]').val($issue_desc);
         $('.form input[name=domain]').val($('.issue-domain').text());
@@ -245,12 +250,12 @@
         $('.form').show();
     });
 
-    $(document).on('click', '.cancel-edit', function (e) {
+    $(document).on('click', '.cancel-edit', function(e) {
         $('.form').hide();
         $('.editables').show();
     });
 
-    $(document).on('click', '.save-issue', function (e) {
+    $(document).on('click', '.save-issue', function(e) {
         e.preventDefault();
 
         if ($('.form input[name=description]').val().trim().length == 0 ||
@@ -276,7 +281,7 @@
                 label: $('.form select').val(),
                 csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
             },
-            success: function (data) {
+            success: function(data) {
                 $('.issue-desc').text($('.form input[name=description]').val());
                 $('.issue-domain').text($('.form input[name=domain]').val());
                 var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
@@ -296,7 +301,7 @@
                         className: "success"
                     });
             },
-            error: function () {
+            error: function() {
                 $.notify("Some error occurred!", {
                     style: "custom",
                     className: "danger"
@@ -306,15 +311,15 @@
     });
 </script>
 <script>
-    function subscribe_domain(){
+    function subscribe_domain() {
         $.ajax({
             type: 'GET',
             url: '/domain/{{ object.domain.id }}/subscribe/',
             data: {},
-            success: function (data) {
+            success: function(data) {
                 window.location.reload();
             },
-            error: function () {
+            error: function() {
                 $.notify("Some error occurred!", {
                     style: "custom",
                     className: "danger"
@@ -322,19 +327,19 @@
             }
         })
     }
-    
+
     function likeOpenn() {
         document.getElementById('like-modal').classList.remove('hidden');
     }
-    
+
     function flagOpenn() {
         document.getElementById('flag-modal').classList.remove('hidden');
     }
-    
+
     document.getElementById('close-like').addEventListener('click', function() {
         document.getElementById('like-modal').classList.add('hidden');
     });
-    
+
     document.getElementById('close-flag').addEventListener('click', function() {
         document.getElementById('flag-modal').classList.add('hidden');
     });

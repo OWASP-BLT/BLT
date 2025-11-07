@@ -1,9 +1,13 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load i18n %}
+
 {% block title %}
     Statistics Dashboard
+
 {% endblock title %}
+
 {% block head %}
     <!-- ApexCharts for stunning visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"
@@ -13,9 +17,12 @@
     <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.8/dist/countUp.min.js"
             integrity="sha384-tQEpccDXgg1ZNQvKV7JdKyfYeUarcXVDgt7fh0TSgUHOWwW4Nc9QQ1dDI7B/eqFR"
             crossorigin="anonymous"></script>
+
 {% endblock head %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div id="dashboardContainer"
          class="bg-gray-50 min-h-screen transition-all duration-300 pt-16">
         <!-- Dashboard Header -->
@@ -34,9 +41,13 @@
                     <div class="bg-gray-100 rounded-lg p-1 flex">
                         {% for option in period_options %}
                             <a href="?period={{ option.value }}"
-                               class="px-4 py-2 rounded-md text-sm font-medium {% if period == option.value %}bg-[#e74c3c] text-white{% else %}text-gray-700 hover:bg-gray-200{% endif %} transition-colors duration-200">
-                                {{ option.label }}
-                            </a>
+                               class="px-4 py-2 rounded-md text-sm font-medium
+                                      {% if period == option.value %}
+                                          bg-[#e74c3c] text-white
+                                      {% else %}
+                                          text-gray-700 hover:bg-gray-200
+                                      {% endif %}
+                                      transition-colors duration-200">{{ option.label }}</a>
                         {% endfor %}
                     </div>
                 </div>
@@ -76,8 +87,11 @@
                     <div class="px-5 py-2 bg-gray-50">
                         <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
                             <div class="h-full bg-[#e74c3c] rounded-full"
-                                 {% if stats.users.active_percentage %}style="width: {{ stats.users.active_percentage }}%"{% else %}style="width: 0%"{% endif %}>
-                            </div>
+                                 {% if stats.users.active_percentage %}
+                                     style="width: {{ stats.users.active_percentage }}%"
+                                 {% else %}
+                                     style="width: 0%"
+                                 {% endif %}></div>
                         </div>
                     </div>
                 </div>
@@ -109,8 +123,11 @@
                     <div class="px-5 py-2 bg-gray-50">
                         <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
                             <div class="h-full bg-[#e74c3c] rounded-full"
-                                 {% if stats.issues.open_percentage %}style="width: {{ stats.issues.open_percentage }}%"{% else %}style="width: 0%"{% endif %}>
-                            </div>
+                                 {% if stats.issues.open_percentage %}
+                                     style="width: {{ stats.issues.open_percentage }}%"
+                                 {% else %}
+                                     style="width: 0%"
+                                 {% endif %}></div>
                         </div>
                     </div>
                 </div>
@@ -144,8 +161,11 @@
                     <div class="px-5 py-2 bg-gray-50">
                         <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
                             <div class="h-full bg-[#e74c3c] rounded-full"
-                                 {% if stats.organizations.active_percentage %}style="width: {{ stats.organizations.active_percentage }}%"{% else %}style="width: 0%"{% endif %}>
-                            </div>
+                                 {% if stats.organizations.active_percentage %}
+                                     style="width: {{ stats.organizations.active_percentage }}%"
+                                 {% else %}
+                                     style="width: 0%"
+                                 {% endif %}></div>
                         </div>
                     </div>
                 </div>
@@ -179,8 +199,11 @@
                     <div class="px-5 py-2 bg-gray-50">
                         <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
                             <div class="h-full bg-[#e74c3c] rounded-full"
-                                 {% if stats.points.percentage %}style="width: {{ stats.points.percentage }}%"{% else %}style="width: 0%"{% endif %}>
-                            </div>
+                                 {% if stats.points.percentage %}
+                                     style="width: {{ stats.points.percentage }}%"
+                                 {% else %}
+                                     style="width: 0%"
+                                 {% endif %}></div>
                         </div>
                     </div>
                 </div>
@@ -285,288 +308,403 @@
           class="hidden">
         {% csrf_token %}
     </form>
+
 {% endblock content %}
+
 {% block scripts %}
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get data from Django template variables
-        const statsData = {
-            users: {
-                active: {{ stats.users.active|default:0 }},
-                totalAllTime: {{ stats.users.total_all_time|default:0 }}
-            },
-            issues: {
-                open: {{ stats.issues.open|default:0 }},
-                totalAllTime: {{ stats.issues.total_all_time|default:0 }}
-            },
-            organizations: {
-                active: {{ stats.organizations.active|default:0 }},
-                totalAllTime: {{ stats.organizations.total_all_time|default:0 }}
-            },
-            points: {
-                total: {{ stats.points.total|default:0 }},
-                totalAllTime: {{ stats.points.total_all_time|default:0 }}
-            },
-            domains: {
-                active: {{ stats.domains.active|default:0 }},
-                total: {{ stats.domains.total|default:0 }},
-                totalAllTime: {{ stats.domains.total_all_time|default:0 }}
-            },
-            hunts: {
-                active: {{ stats.hunts.active|default:0 }},
-                total: {{ stats.hunts.total|default:0 }},
-                totalAllTime: {{ stats.hunts.total_all_time|default:0 }}
-            },
-            projects: {
-                total: {{ stats.projects.total|default:0 }},
-                totalAllTime: {{ stats.projects.total_all_time|default:0 }}
-            },
-            activities: {
-                total: {{ stats.activities.total|default:0 }},
-                totalAllTime: {{ stats.activities.total_all_time|default:0 }}
-            }
-        };
-        
-        // Initialize animated counters
-        const counterOptions = {
-            duration: 2,
-            useEasing: true
-        };
-        
-        // Initialize counters using data attributes
-        function initializeCounters() {
-            const counters = [
-                'usersCounter', 'issuesCounter', 'orgsCounter', 'pointsCounter',
-                'domainsCounter', 'huntsCounter', 'projectsCounter', 'activitiesCounter'
-            ];
-            
-            counters.forEach(counterId => {
-                const element = document.getElementById(counterId);
-                if (element) {
-                    const value = parseInt(element.getAttribute('data-value') || '0', 10);
-                    new CountUp(counterId, 0, value, 0, 2, counterOptions).start();
-                }
-            });
-        }
-        
-        // Initialize counters on page load
-        initializeCounters();
-        
-        // Handle Sync Projects button
-        document.getElementById('syncProjectsBtn').addEventListener('click', function() {
-            document.getElementById('syncProjectsForm').submit();
-            this.disabled = true;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Syncing...';
-        });
-        
-        // Activity Over Time Chart
-        const activityChartOptions = {
-            series: [{
-                name: 'Issues',
-                data: {{ issues_time_series|safe|default:'[0,0,0,0,0,0,0,0,0,0,0,0]' }}
-            }, {
-                name: 'Users',
-                data: {{ users_time_series|safe|default:'[0,0,0,0,0,0,0,0,0,0,0,0]' }}
-            }],
-            chart: {
-                type: 'area',
-                height: 300,
-                fontFamily: 'Inter, sans-serif',
-                toolbar: {
-                    show: false
-                },
-                animations: {
-                    enabled: true,
-                    easing: 'easeinout',
-                    speed: 800
-                }
-            },
-            colors: ['#e74c3c', '#e74c3c'],
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shade: 'light',
-                    type: 'vertical',
-                    opacityFrom: 0.4,
-                    opacityTo: 0.1,
-                    stops: [0, 100]
-                }
-            },
-            stroke: {
-                curve: 'smooth',
-                width: 3
-            },
-            grid: {
-                borderColor: '#e0e0e0',
-                strokeDashArray: 3,
-                row: {
-                    colors: ['transparent']
-                },
-                column: {
-                    colors: ['transparent']
-                },
-                xaxis: {
-                    lines: {
-                        show: false
-                    }
-                },
-                padding: {
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 10
-                }
-            },
-            markers: {
-                size: 0,
-                hover: {
-                    size: 5
-                }
-            },
-            xaxis: {
-                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                labels: {
-                    style: {
-                        colors: '#9ca3af'
-                    }
-                },
-                axisBorder: {
-                    show: false
-                },
-                axisTicks: {
-                    show: false
-                }
-            },
-            yaxis: {
-                labels: {
-                    style: {
-                        colors: '#9ca3af'
-                    }
-                }
-            },
-            legend: {
-                show: false
-            },
-            dataLabels: {
-                enabled: false
-            },
-            tooltip: {
-                x: {
-                    show: true
-                },
-                y: {
-                    title: {
-                        formatter: function(seriesName) {
-                            return seriesName;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get data from Django template variables
+            const statsData = {
+                users: {
+                    active: {
+                        {
+                            stats.users.active |
+                                default: 0
+                        }
+                    },
+                    totalAllTime: {
+                        {
+                            stats.users.total_all_time |
+                                default: 0
                         }
                     }
                 },
-                marker: {
-                    show: false
-                },
-                theme: 'light'
-            }
-        };
-        
-        // Initialize Activity Chart
-        const activityChart = new ApexCharts(document.querySelector("#activityChart"), activityChartOptions);
-        activityChart.render();
-        
-        // Issue Status Pie Chart
-        const issueStatusChartOptions = {
-            series: [
-                parseInt(document.getElementById('issuesCounter').getAttribute('data-value') || '0', 10),
-                {{ stats.issues.fixed|default:0 }}, 
-                {{ stats.issues.in_review|default:0 }}, 
-                {{ stats.issues.invalid|default:0 }}
-            ],
-            chart: {
-                type: 'donut',
-                height: 300,
-                fontFamily: 'Inter, sans-serif',
-                animations: {
-                    enabled: true,
-                    easing: 'easeinout',
-                    speed: 800,
-                    animateGradually: {
-                        enabled: true,
-                        delay: 150
+                issues: {
+                    open: {
+                        {
+                            stats.issues.open |
+                                default: 0
+                        }
                     },
-                    dynamicAnimation: {
-                        enabled: true,
-                        speed: 350
+                    totalAllTime: {
+                        {
+                            stats.issues.total_all_time |
+                                default: 0
+                        }
+                    }
+                },
+                organizations: {
+                    active: {
+                        {
+                            stats.organizations.active |
+                                default: 0
+                        }
+                    },
+                    totalAllTime: {
+                        {
+                            stats.organizations.total_all_time |
+                                default: 0
+                        }
+                    }
+                },
+                points: {
+                    total: {
+                        {
+                            stats.points.total |
+                                default: 0
+                        }
+                    },
+                    totalAllTime: {
+                        {
+                            stats.points.total_all_time |
+                                default: 0
+                        }
+                    }
+                },
+                domains: {
+                    active: {
+                        {
+                            stats.domains.active |
+                                default: 0
+                        }
+                    },
+                    total: {
+                        {
+                            stats.domains.total |
+                                default: 0
+                        }
+                    },
+                    totalAllTime: {
+                        {
+                            stats.domains.total_all_time |
+                                default: 0
+                        }
+                    }
+                },
+                hunts: {
+                    active: {
+                        {
+                            stats.hunts.active |
+                                default: 0
+                        }
+                    },
+                    total: {
+                        {
+                            stats.hunts.total |
+                                default: 0
+                        }
+                    },
+                    totalAllTime: {
+                        {
+                            stats.hunts.total_all_time |
+                                default: 0
+                        }
+                    }
+                },
+                projects: {
+                    total: {
+                        {
+                            stats.projects.total |
+                                default: 0
+                        }
+                    },
+                    totalAllTime: {
+                        {
+                            stats.projects.total_all_time |
+                                default: 0
+                        }
+                    }
+                },
+                activities: {
+                    total: {
+                        {
+                            stats.activities.total |
+                                default: 0
+                        }
+                    },
+                    totalAllTime: {
+                        {
+                            stats.activities.total_all_time |
+                                default: 0
+                        }
                     }
                 }
-            },
-            labels: ['Open', 'Fixed', 'In Review', 'Invalid'],
-            colors: ['#e74c3c', '#e76c3c', '#e74c6c', '#e7463c'],
-            plotOptions: {
-                pie: {
-                    expandOnClick: false,
-                    donut: {
-                        size: '60%',
-                        labels: {
-                            show: true,
-                            name: {
+            };
+
+            // Initialize animated counters
+            const counterOptions = {
+                duration: 2,
+                useEasing: true
+            };
+
+            // Initialize counters using data attributes
+            function initializeCounters() {
+                const counters = [
+                    'usersCounter', 'issuesCounter', 'orgsCounter', 'pointsCounter',
+                    'domainsCounter', 'huntsCounter', 'projectsCounter', 'activitiesCounter'
+                ];
+
+                counters.forEach(counterId => {
+                    const element = document.getElementById(counterId);
+                    if (element) {
+                        const value = parseInt(element.getAttribute('data-value') || '0', 10);
+                        new CountUp(counterId, 0, value, 0, 2, counterOptions).start();
+                    }
+                });
+            }
+
+            // Initialize counters on page load
+            initializeCounters();
+
+            // Handle Sync Projects button
+            document.getElementById('syncProjectsBtn').addEventListener('click', function() {
+                document.getElementById('syncProjectsForm').submit();
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Syncing...';
+            });
+
+            // Activity Over Time Chart
+            const activityChartOptions = {
+                series: [{
+                    name: 'Issues',
+                    data: {
+                        {
+                            issues_time_series | safe |
+                                default: '[0,0,0,0,0,0,0,0,0,0,0,0]'
+                        }
+                    }
+                }, {
+                    name: 'Users',
+                    data: {
+                        {
+                            users_time_series | safe |
+                                default: '[0,0,0,0,0,0,0,0,0,0,0,0]'
+                        }
+                    }
+                }],
+                chart: {
+                    type: 'area',
+                    height: 300,
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: {
+                        show: false
+                    },
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 800
+                    }
+                },
+                colors: ['#e74c3c', '#e74c3c'],
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shade: 'light',
+                        type: 'vertical',
+                        opacityFrom: 0.4,
+                        opacityTo: 0.1,
+                        stops: [0, 100]
+                    }
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 3
+                },
+                grid: {
+                    borderColor: '#e0e0e0',
+                    strokeDashArray: 3,
+                    row: {
+                        colors: ['transparent']
+                    },
+                    column: {
+                        colors: ['transparent']
+                    },
+                    xaxis: {
+                        lines: {
+                            show: false
+                        }
+                    },
+                    padding: {
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        left: 10
+                    }
+                },
+                markers: {
+                    size: 0,
+                    hover: {
+                        size: 5
+                    }
+                },
+                xaxis: {
+                    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    labels: {
+                        style: {
+                            colors: '#9ca3af'
+                        }
+                    },
+                    axisBorder: {
+                        show: false
+                    },
+                    axisTicks: {
+                        show: false
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        style: {
+                            colors: '#9ca3af'
+                        }
+                    }
+                },
+                legend: {
+                    show: false
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                tooltip: {
+                    x: {
+                        show: true
+                    },
+                    y: {
+                        title: {
+                            formatter: function(seriesName) {
+                                return seriesName;
+                            }
+                        }
+                    },
+                    marker: {
+                        show: false
+                    },
+                    theme: 'light'
+                }
+            };
+
+            // Initialize Activity Chart
+            const activityChart = new ApexCharts(document.querySelector("#activityChart"), activityChartOptions);
+            activityChart.render();
+
+            // Issue Status Pie Chart
+            const issueStatusChartOptions = {
+                series: [
+                    parseInt(document.getElementById('issuesCounter').getAttribute('data-value') || '0', 10), {
+                        {
+                            stats.issues.fixed |
+                                default: 0
+                        }
+                    }, {
+                        {
+                            stats.issues.in_review |
+                                default: 0
+                        }
+                    }, {
+                        {
+                            stats.issues.invalid |
+                                default: 0
+                        }
+                    }
+                ],
+                chart: {
+                    type: 'donut',
+                    height: 300,
+                    fontFamily: 'Inter, sans-serif',
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 800,
+                        animateGradually: {
+                            enabled: true,
+                            delay: 150
+                        },
+                        dynamicAnimation: {
+                            enabled: true,
+                            speed: 350
+                        }
+                    }
+                },
+                labels: ['Open', 'Fixed', 'In Review', 'Invalid'],
+                colors: ['#e74c3c', '#e76c3c', '#e74c6c', '#e7463c'],
+                plotOptions: {
+                    pie: {
+                        expandOnClick: false,
+                        donut: {
+                            size: '60%',
+                            labels: {
                                 show: true,
-                                fontSize: '14px',
-                                fontWeight: 500,
-                                color: undefined,
-                                offsetY: -10
-                            },
-                            value: {
-                                show: true,
-                                fontSize: '16px',
-                                fontWeight: 600,
-                                color: undefined,
-                                offsetY: 5,
-                                formatter: function(val) {
-                                    return val;
-                                }
-                            },
-                            total: {
-                                show: true,
-                                label: 'Total',
-                                color: '#9ca3af',
-                                formatter: function(w) {
-                                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                name: {
+                                    show: true,
+                                    fontSize: '14px',
+                                    fontWeight: 500,
+                                    color: undefined,
+                                    offsetY: -10
+                                },
+                                value: {
+                                    show: true,
+                                    fontSize: '16px',
+                                    fontWeight: 600,
+                                    color: undefined,
+                                    offsetY: 5,
+                                    formatter: function(val) {
+                                        return val;
+                                    }
+                                },
+                                total: {
+                                    show: true,
+                                    label: 'Total',
+                                    color: '#9ca3af',
+                                    formatter: function(w) {
+                                        return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            },
-            stroke: {
-                show: false
-            },
-            dataLabels: {
-                enabled: false
-            },
-            legend: {
-                position: 'bottom',
-                offsetY: 0,
-                height: 40,
-                fontSize: '13px',
-                markers: {
-                    width: 10,
-                    height: 10,
-                    offsetX: -2
                 },
-                itemMargin: {
-                    horizontal: 10,
-                    vertical: 0
+                stroke: {
+                    show: false
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                legend: {
+                    position: 'bottom',
+                    offsetY: 0,
+                    height: 40,
+                    fontSize: '13px',
+                    markers: {
+                        width: 10,
+                        height: 10,
+                        offsetX: -2
+                    },
+                    itemMargin: {
+                        horizontal: 10,
+                        vertical: 0
+                    }
+                },
+                tooltip: {
+                    enabled: true,
+                    fillSeriesColor: false,
+                    theme: 'light'
                 }
-            },
-            tooltip: {
-                enabled: true,
-                fillSeriesColor: false,
-                theme: 'light'
-            }
-        };
-        
-        // Initialize Issue Status Chart
-        const issueStatusChart = new ApexCharts(document.querySelector("#issueStatusChart"), issueStatusChartOptions);
-        issueStatusChart.render();
-    });
+            };
+
+            // Initialize Issue Status Chart
+            const issueStatusChart = new ApexCharts(document.querySelector("#issueStatusChart"), issueStatusChartOptions);
+            issueStatusChart.render();
+        });
     </script>
+
 {% endblock scripts %}

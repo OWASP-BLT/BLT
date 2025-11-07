@@ -1,9 +1,13 @@
 {% extends "base.html" %}
+
 {% load humanize %}
 {% load static %}
+
 {% block title %}
     Project List
+
 {% endblock title %}
+
 {% block content %}
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-4"></div>
     <!-- Loading Overlay -->
@@ -16,6 +20,7 @@
     </div>
     <div class="flex">
         {% include "includes/sidenav.html" %}
+
         <div class="container py-6 mx-auto px-14 max-w-[1300px]">
             <!-- Stats Overview - Made more compact -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6 max-w-6xl mx-auto">
@@ -78,9 +83,7 @@
                                 <option value="">All Organizations</option>
                                 {% for org in organizations %}
                                     <option value="{{ org.id }}"
-                                            {% if request.GET.organization == org.id %}selected{% endif %}>
-                                        {{ org.name }}
-                                    </option>
+                                            {% if request.GET.organization == org.id %}selected{% endif %}>{{ org.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -90,17 +93,13 @@
                             <select name="repo_type"
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500">
                                 <option value="all"
-                                        {% if request.GET.repo_type == 'all' %}selected{% endif %}>
-                                    All Repositories
-                                </option>
+                                        {% if request.GET.repo_type == 'all' %}selected{% endif %}>All Repositories</option>
                                 <option value="main"
                                         {% if request.GET.repo_type == 'main' %}selected{% endif %}>Main Repos</option>
                                 <option value="wiki"
                                         {% if request.GET.repo_type == 'wiki' %}selected{% endif %}>Wiki Repos</option>
                                 <option value="normal"
-                                        {% if request.GET.repo_type == 'normal' %}selected{% endif %}>
-                                    Normal Repos
-                                </option>
+                                        {% if request.GET.repo_type == 'normal' %}selected{% endif %}>Normal Repos</option>
                             </select>
                         </div>
                         <div class="space-y-2">
@@ -110,17 +109,11 @@
                                 <option value="stars" {% if request.GET.sort == 'stars' %}selected{% endif %}>Stars</option>
                                 <option value="forks" {% if request.GET.sort == 'forks' %}selected{% endif %}>Forks</option>
                                 <option value="open_issues"
-                                        {% if request.GET.sort == 'open_issues' %}selected{% endif %}>
-                                    Open Issues
-                                </option>
+                                        {% if request.GET.sort == 'open_issues' %}selected{% endif %}>Open Issues</option>
                                 <option value="last_updated"
-                                        {% if request.GET.sort == 'last_updated' %}selected{% endif %}>
-                                    Recently Updated
-                                </option>
+                                        {% if request.GET.sort == 'last_updated' %}selected{% endif %}>Recently Updated</option>
                                 <option value="contributor_count"
-                                        {% if request.GET.sort == 'contributor_count' %}selected{% endif %}>
-                                    Contributors
-                                </option>
+                                        {% if request.GET.sort == 'contributor_count' %}selected{% endif %}>Contributors</option>
                             </select>
                         </div>
                         <div class="space-y-2">
@@ -261,9 +254,13 @@
                         {% for num in paginator.page_range %}
                             {% if num > page_obj.number|add:'-4' and num < page_obj.number|add:'4' %}
                                 <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                                   class="inline-flex items-center px-4 py-2 text-sm font-medium {% if page_obj.number == num %}bg-red-500 text-white border border-red-600{% else %}bg-white text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200{% endif %} rounded-lg transition-colors duration-200">
-                                    {{ num }}
-                                </a>
+                                   class="inline-flex items-center px-4 py-2 text-sm font-medium
+                                          {% if page_obj.number == num %}
+                                              bg-red-500 text-white border border-red-600
+                                          {% else %}
+                                              bg-white text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200
+                                          {% endif %}
+                                          rounded-lg transition-colors duration-200">{{ num }}</a>
                             {% elif num == page_obj.number|add:'-4' or num == page_obj.number|add:'4' %}
                                 <span class="px-2 text-gray-400">...</span>
                             {% endif %}
@@ -584,4 +581,5 @@
             </script>
         </div>
     </div>
+
 {% endblock content %}

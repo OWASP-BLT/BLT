@@ -1,5 +1,6 @@
 <div class="flex w-full h-full">
     {% include "education/includes/course_sidebar.html" %}
+
     <div class="flex-1 p-8 lg:ml-72">
         <div class="w-full mx-auto">
             {% if request.user == course.instructor.user %}
@@ -36,9 +37,16 @@
                                             <h3 class="font-semibold text-lg text-gray-800">
                                                 {{ forloop.parentloop.counter }}.{{ forloop.counter }} - {{ lecture.title }}
                                             </h3>
-                                            <span class="px-3 py-1 rounded-md font-medium text-sm {% if lecture.content_type == 'VIDEO' %} bg-blue-100 text-blue-800 {% elif lecture.content_type == 'LIVE' %} bg-green-100 text-green-800 {% elif lecture.content_type == 'DOCUMENT' %} bg-yellow-100 text-yellow-800 {% else %} bg-gray-200 text-gray-800 {% endif %}">
-                                                {{ lecture.get_content_type_display }}
-                                            </span>
+                                            <span class="px-3 py-1 rounded-md font-medium text-sm
+                                                         {% if lecture.content_type == 'VIDEO' %}
+                                                             bg-blue-100 text-blue-800
+                                                         {% elif lecture.content_type == 'LIVE' %}
+                                                             bg-green-100 text-green-800
+                                                         {% elif lecture.content_type == 'DOCUMENT' %}
+                                                             bg-yellow-100 text-yellow-800
+                                                         {% else %}
+                                                             bg-gray-200 text-gray-800
+                                                         {% endif %}">{{ lecture.get_content_type_display }}</span>
                                         </div>
                                         <div class="flex flex-wrap items-center gap-3 text-sm text-gray-700">
                                             {% if lecture.video_url %}
@@ -86,18 +94,18 @@
     </div>
 </div>
 <script>
-function scrollToElement(elementId) {
-    event.preventDefault();
-    const element = document.getElementById(elementId);
-    if (element) {
-        const offset = 24;
-        const elementPosition = element.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - offset;
-        
-        window.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth'
-        });
+    function scrollToElement(elementId) {
+        event.preventDefault();
+        const element = document.getElementById(elementId);
+        if (element) {
+            const offset = 24;
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+        }
     }
-}
 </script>

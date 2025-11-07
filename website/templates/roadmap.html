@@ -1,12 +1,18 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}OWASP BLT Roadmap - Future of Web Security{% endblock %}
+
 {% block description %}
     Explore OWASP BLT's development roadmap and upcoming features. See how we're shaping the future of web security.
+
 {% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-white py-12 relative overflow-hidden">
         <!-- Enhanced Cyber Background Elements -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
@@ -180,7 +186,9 @@
             position: relative;
             color: #333;
         }
-        .glitch::before, .glitch::after {
+
+        .glitch::before,
+        .glitch::after {
             content: attr(data-text);
             position: absolute;
             left: 0;
@@ -189,69 +197,171 @@
             clip: rect(0, 900px, 0, 0);
             color: #e74c3c;
         }
+
         .glitch::before {
             animation: glitch-anim 2s infinite linear alternate-reverse;
         }
+
         .glitch::after {
             animation: glitch-anim2 3s infinite linear alternate-reverse;
         }
+
         @keyframes glitch-anim {
-            0% { clip: rect(42px, 9999px, 44px, 0); transform: translate(2px, -2px); }
-            20% { clip: rect(85px, 9999px, 10px, 0); transform: translate(-2px, 2px); }
-            40% { clip: rect(24px, 9999px, 68px, 0); transform: translate(-2px, -2px); }
-            60% { clip: rect(5px, 9999px, 85px, 0); transform: translate(2px, 2px); }
-            80% { clip: rect(42px, 9999px, 44px, 0); transform: translate(-2px, 2px); }
-            100% { clip: rect(85px, 9999px, 10px, 0); transform: translate(2px, -2px); }
+            0% {
+                clip: rect(42px, 9999px, 44px, 0);
+                transform: translate(2px, -2px);
+            }
+
+            20% {
+                clip: rect(85px, 9999px, 10px, 0);
+                transform: translate(-2px, 2px);
+            }
+
+            40% {
+                clip: rect(24px, 9999px, 68px, 0);
+                transform: translate(-2px, -2px);
+            }
+
+            60% {
+                clip: rect(5px, 9999px, 85px, 0);
+                transform: translate(2px, 2px);
+            }
+
+            80% {
+                clip: rect(42px, 9999px, 44px, 0);
+                transform: translate(-2px, 2px);
+            }
+
+            100% {
+                clip: rect(85px, 9999px, 10px, 0);
+                transform: translate(2px, -2px);
+            }
         }
+
         @keyframes glitch-anim2 {
-            0% { clip: rect(12px, 9999px, 18px, 0); transform: translate(-2px, 2px); }
-            20% { clip: rect(85px, 9999px, 10px, 0); transform: translate(2px, -2px); }
-            40% { clip: rect(24px, 9999px, 68px, 0); transform: translate(2px, 2px); }
-            60% { clip: rect(5px, 9999px, 85px, 0); transform: translate(-2px, -2px); }
-            80% { clip: rect(12px, 9999px, 18px, 0); transform: translate(2px, 2px); }
-            100% { clip: rect(85px, 9999px, 10px, 0); transform: translate(-2px, -2px); }
+            0% {
+                clip: rect(12px, 9999px, 18px, 0);
+                transform: translate(-2px, 2px);
+            }
+
+            20% {
+                clip: rect(85px, 9999px, 10px, 0);
+                transform: translate(2px, -2px);
+            }
+
+            40% {
+                clip: rect(24px, 9999px, 68px, 0);
+                transform: translate(2px, 2px);
+            }
+
+            60% {
+                clip: rect(5px, 9999px, 85px, 0);
+                transform: translate(-2px, -2px);
+            }
+
+            80% {
+                clip: rect(12px, 9999px, 18px, 0);
+                transform: translate(2px, 2px);
+            }
+
+            100% {
+                clip: rect(85px, 9999px, 10px, 0);
+                transform: translate(-2px, -2px);
+            }
         }
 
         /* Enhanced Matrix Rain Animation */
         @keyframes matrix-fall {
-            0% { transform: translateY(-100%); opacity: 0; }
-            10% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { transform: translateY(1000%); opacity: 0; }
+            0% {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(1000%);
+                opacity: 0;
+            }
         }
+
         .animate-matrix-fall {
             animation: matrix-fall 18s linear infinite;
         }
-        
+
         /* Floating Particles Animation with Rotation */
         @keyframes float {
-            0% { transform: translateY(0) translateX(0) rotate(0deg); }
-            25% { transform: translateY(-15px) translateX(5px) rotate(10deg); }
-            50% { transform: translateY(0) translateX(10px) rotate(0deg); }
-            75% { transform: translateY(15px) translateX(5px) rotate(-10deg); }
-            100% { transform: translateY(0) translateX(0) rotate(0deg); }
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+            }
+
+            25% {
+                transform: translateY(-15px) translateX(5px) rotate(10deg);
+            }
+
+            50% {
+                transform: translateY(0) translateX(10px) rotate(0deg);
+            }
+
+            75% {
+                transform: translateY(15px) translateX(5px) rotate(-10deg);
+            }
+
+            100% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+            }
         }
+
         .animate-float {
             animation: float 6s ease-in-out infinite;
         }
-        
+
         /* Pulsing Nodes */
         @keyframes pulse-node {
-            0% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.7); opacity: 0.5; }
-            100% { transform: scale(1); opacity: 0.3; }
+            0% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: scale(1.7);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
         }
+
         .animate-pulse-node {
             animation: pulse-node 3s ease-in-out infinite;
         }
 
         /* Animated Connection Lines */
         @keyframes pulse-line {
-            0%, 100% { stroke-width: 1; opacity: 0.2; }
-            50% { stroke-width: 2; opacity: 0.5; }
+
+            0%,
+            100% {
+                stroke-width: 1;
+                opacity: 0.2;
+            }
+
+            50% {
+                stroke-width: 2;
+                opacity: 0.5;
+            }
         }
+
         .animate-pulse-line {
             animation: pulse-line 4s ease-in-out infinite;
         }
     </style>
+
 {% endblock %}

@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Manage Bug Bounties
+
 {% endblock title %}
+
 {% block description %}
     Easily manage your bug bounties. Filter, view, edit, or delete hunts as needed. Access all your bug bounties in one place.
+
 {% endblock description %}
+
 {% block keywords %}
     Manage Bug Bounties, Bug Bounty Management, Online Contest, Filter Bug Bounties, Edit Bug Bounty, View Bug Bounty, Delete Bug Bounty
+
 {% endblock keywords %}
+
 {% block og_title %}
     Manage Bug Bounties - Easily Handle Your Online Contests
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access and manage all your bug bounties effortlessly. Filter by status, view details, and edit or delete hunts with ease.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <!-- Header Section -->
@@ -218,7 +230,9 @@
             </div>
         </div>
     </div>
+
 {% endblock body %}
+
 {% block js %}
     <script>
         // Modern JavaScript for enhanced UX
@@ -227,20 +241,20 @@
             const filterButton = document.getElementById('filterButton');
             const filterDropdown = document.getElementById('filterDropdown');
             const loadingOverlay = document.getElementById('loadingOverlay');
-            
+
             if (filterButton && filterDropdown) {
                 filterButton.addEventListener('click', function(e) {
                     e.stopPropagation();
                     filterDropdown.classList.toggle('hidden');
                 });
-                
+
                 // Close dropdown when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!filterButton.contains(e.target) && !filterDropdown.contains(e.target)) {
                         filterDropdown.classList.add('hidden');
                     }
                 });
-                
+
                 // Close dropdown when pressing Escape
                 document.addEventListener('keydown', function(e) {
                     if (e.key === 'Escape') {
@@ -248,19 +262,19 @@
                     }
                 });
             }
-            
+
             // Add hover effects to bug bounty items
             const bughuntItems = document.querySelectorAll('.bughunt-item');
             bughuntItems.forEach(item => {
                 item.addEventListener('mouseenter', function() {
                     this.style.transform = 'translateX(4px)';
                 });
-                
+
                 item.addEventListener('mouseleave', function() {
                     this.style.transform = 'translateX(0)';
                 });
             });
-            
+
             // Show loading overlay for navigation links
             const navigationLinks = document.querySelectorAll('a[href*="add_bughunt"], a[href*="show_bughunt"]');
             navigationLinks.forEach(link => {
@@ -270,7 +284,7 @@
                     }
                 });
             });
-            
+
             // Filter functionality (client-side)
             function filterBounties(status) {
                 const items = document.querySelectorAll('.bughunt-item');
@@ -283,9 +297,10 @@
                     }
                 });
             }
-            
+
             // Add click handlers for filter options
 
         });
     </script>
+
 {% endblock js %}

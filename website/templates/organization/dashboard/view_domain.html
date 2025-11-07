@@ -1,15 +1,23 @@
 {% extends "base.html" %}
+
 {% block head %}
     Domain Info
+
 {% endblock head %}
+
 {% block description %}
     View domain details, including domain name, URL, organization information, and social media links. Keep track of all your domains easily.
+
 {% endblock description %}
+
 {% block keywords %}
     view domain, domain details, domain information, domain URL, organization information, social media links
+
 {% endblock keywords %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div>
         <div class="fixed bottom-2.5 right-3.75">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/view_domains.html">
@@ -98,7 +106,9 @@
                             <li class="flex items-center border-b py-2 space-x-2 my-2">
                                 <span class="font-bold w-24">Socials:</span>
                                 <a href="{% if facebook %} {{ facebook }} {% else %} # {% endif %}"
-                                   target="{% if facebook %} _blank {% endif %}"
+                                   target="{% if facebook %}
+                                               _blank
+                                           {% endif %}"
                                    title="Facebook"
                                    rel="noopener noreferrer">
                                     <svg class="w-5 h-5"
@@ -113,7 +123,9 @@
                                     </svg>
                                 </a>
                                 <a href="{% if twitter %} {{ twitter }} {% else %} # {% endif %}"
-                                   target="{% if twitter %} _blank {% endif %}"
+                                   target="{% if twitter %}
+                                               _blank
+                                           {% endif %}"
                                    title="Twitter"
                                    rel="noopener noreferrer">
                                     <svg class="w-5 h-5"
@@ -129,7 +141,9 @@
                                     </svg>
                                 </a>
                                 <a href="{% if github %} {{ github }} {% else %} # {% endif %}"
-                                   target="{% if github %} _blank {% endif %}"
+                                   target="{% if github %}
+                                               _blank
+                                           {% endif %}"
                                    title="Github"
                                    rel="noopener noreferrer">
                                     <svg class="w-5 h-5"
@@ -395,47 +409,48 @@
             </div>
         </div>
     </div>
+
     {% block script %}
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Monthly Activity Chart
-            const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart|escapejs | safe }}');
+            document.addEventListener('DOMContentLoaded', function() {
+                // Monthly Activity Chart
+                const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart|escapejs | safe }}');
 
-            const labels_vertical_bar_chart = ['January', 'February', 'Mart', 'April', 'May', 'Jun', 'July', 'August', 'September', 'October', 'November', 'December'];
+                const labels_vertical_bar_chart = ['January', 'February', 'Mart', 'April', 'May', 'Jun', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-            const dataVerticalBarChart= {
-                labels: labels_vertical_bar_chart,
-                datasets: [
-                    {
+                const dataVerticalBarChart = {
+                    labels: labels_vertical_bar_chart,
+                    datasets: [{
                         label: 'Bugs Reported',
                         data: DATA_SET_VERTICAL_BAR_CHART_1,
                         borderColor: 'rgb(54, 162, 235)',
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    }
-                ]
-            };
-            const configVerticalBarChart = {
-                type: 'bar',
-                data: dataVerticalBarChart,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Monthly Activity'
+                    }]
+                };
+                const configVerticalBarChart = {
+                    type: 'bar',
+                    data: dataVerticalBarChart,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Monthly Activity'
+                            }
                         }
-                    }
-                },
-            };
+                    },
+                };
 
-            var verticalBarChart = new Chart(
-                document.getElementById('verticalBarChart'),
-                configVerticalBarChart
-            );
-        });
+                var verticalBarChart = new Chart(
+                    document.getElementById('verticalBarChart'),
+                    configVerticalBarChart
+                );
+            });
         </script>
+
     {% endblock script %}
+
 {% endblock content %}

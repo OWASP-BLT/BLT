@@ -1,11 +1,15 @@
 {% extends "base.html" %}
+
 {% load gravatar %}
 {% load custom_tags %}
 {% load static %}
+
 {% block metaTags %}
     <title>
+
         {% block title %}
             {% env 'PROJECT_NAME' %} Issue - {{ object.description|escapejs }}
+
         {% endblock title %}
     </title>
     <meta name="description"
@@ -15,437 +19,456 @@
     {% else %}
         <meta name="author" content="Anonymous">
     {% endif %}
-    <meta property="og:title"
-          content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
-    {% for screenshot in screenshots %}
-        <meta property="og:image"
-              content="{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
-    {% endfor %}
-    <meta property="og:description"
-          content="{% block og_description %}{{ object.markdown_description|escapejs }}{% endblock og_description %}" />
-    <meta name="keywords"
-          content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, organization, easy{% endblock keywords %}">
-    <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
-    <meta property="og:url"
-          content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
-    <meta property="og:type" content="website" />
-    <meta name="robots" content="index, follow">
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css"
-          integrity="sha256-5uKiXEwbaQh9cgd2/5Vp6WmMnsUr3VZZw0a8rKnOKNU="
-          crossorigin="anonymous">
-{% endblock metaTags %}
-{% load static %}
-{% load gravatar %}
-{% block content %}
-    {% include "includes/sidenav.html" %}
-    <div class="flex flex-col gap-5 lg:w-[95%] lg:mx-auto mx-2">
-        <div class=" flex lg:flex-row flex-col gap-4 mt-10">
-            <div class="lg:w-[75%] flex flex-col gap-6 w-full border border-gray-300 shadow-md rounded-xl p-4">
-                <nav class="flex flex-col sm:flex-row items-center justify-between p-3 sm:p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-                    <div class="flex items-center w-full sm:w-auto mb-3 sm:mb-0">
-                        <div class="flex flex-wrap items-center space-x-2 sm:space-x-3 w-full min-w-0">
-                            <a href="{% url 'issues' %}"
-                               class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 flex items-center shrink-0">
-                                <i class="fas fa-bug mr-1.5"></i>
-                                <span class="font-medium text-sm">Issues</span>
-                            </a>
-                            <i class="fas fa-chevron-right text-gray-400 text-xs shrink-0"></i>
-                            <a href="{% url 'domain' object.domain.name %}"
-                               class="flex items-center hover:text-[#e74c3c] transition-colors duration-200 min-w-0">
-                                <img src="{{ object.domain.get_logo }}"
-                                     alt="Organization Logo"
-                                     class="w-4 h-4 rounded-md shadow-sm flex-shrink-0"
-                                     width="20"
-                                     height="20">
-                                <span class="ml-1.5 font-medium text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">{{ object.domain.name }}</span>
-                            </a>
-                            <span class="text-gray-400 shrink-0">/</span>
-                            <span class="font-mono text-gray-600 text-xs shrink-0">
-                                {% if object.id < 100 %}#{% endif %}
-                            {{ object.id }}</span>
-                            <div class="ml-2 sm:ml-3 shrink-0">
-                                {% if status == "open" %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
-                                        <span class="w-1.5 h-1.5 bg-[#e74c3c] rounded-full mr-1 animate-pulse"></span>
-                                        Ongoing
-                                    </span>
-                                {% else %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                        Resolved
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    <span id="likes"
-                          class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-100 text-xs whitespace-nowrap shrink-0">
-                        {{ object.views }}
-                        <span>Views</span>
-                        <i class="fa-solid fa-eye"></i>
-                    </span>
-                </nav>
-                <div class="flex flex-col gap-5 px-2">
-                    <div class="flex flex-col gap-5 px-2">
-                        <div class="flex flex-col gap-2">
-                            <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight tracking-tight w-full break-words issue-description"
-                                title="{{ object.description|escapejs }}">{{ object.description|escapejs }}</h2>
-                            {% if object.markdown_description %}
-                                <p class="text-base sm:text-lg text-gray-700 font-medium break-words"
-                                   id="bug_report"
-                                   data-markdown="{{ object.markdown_description|escapejs }}">
-                                    <!-- This content will be replaced by rendered markdown -->
-                                </p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <a href="{{ object.url }}"
-                       title="{{ object.url }}"
-                       target="_blank"
-                       class="flex items-center gap-3 border px-3 sm:px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 w-full overflow-hidden">
-                        <img src="{{ object.domain.get_logo }}"
-                             alt="Organization Logo"
-                             class="w-5 h-5 rounded-md shadow-sm flex-shrink-0"
-                             width="20"
-                             height="20">
-                        <p class="text-[#e74c3c] font-medium min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap transition-colors duration-200"
-                           rel="noopener noreferrer">{{ object.url }}</p>
-                    </a>
-                    <div class="flex items-center">
-                        <img class="size-8 rounded-full object-cover"
-                             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
-                             alt="User Profile Logo"
-                             width="32px"
-                             height="32px">
-                        <div class="ml-3">
-                            <div class="text-gray-700">
-                                {% if object.user.username %}
-                                    <a href="{% url 'profile' slug=object.user.username %}"
-                                       class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">@{{ object.user.username }}</a>
-                                {% else %}
-                                    Anonymous
-                                {% endif %}
-                                <span class="text-gray-900">found this issue on {{ object.created }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    {% include "includes/_like_dislike_share.html" %}
-                    {% include "./includes/issue_left_info.html" %}
-                </div>
-            </div>
-            <div class="lg:w-[25%] flex flex-col gap-4 w-full ">
-                {% if request.user.is_superuser or request.user == object.user %}
-                    <div class="border border-gray-300 shadow-md rounded-xl p-4 flex flex-wrap gap-x-3 gap-y-3 justify-center items-center">
-                        {% if request.user.is_superuser or request.user == object.user %}
-                            {% if object.user %}
-                                <form method="post"
-                                      action="{% url 'remove_user_from_issue' id=object.id %}"
-                                      class=" flex flex-row gap-x-3 items-center">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
-                                    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200"
-                                            id="report-anonymously"
-                                            type="submit"
-                                            onclick="return confirm('Are you sure you want to report it anonymously?')">
-                                        <div class="flex flex-row gap-2 items-center">
-                                            <span>Anonymous</span>
-                                            <i class="fa-regular fa-user"></i>
+    <meta property="og:title" content=" 
+        {% block og_title %}{{ object.description }} 
+        {% endblock og_title %}" />
+        {% for screenshot in screenshots %}
+            <meta property="og:image" content=" 
+                {% block og_image %}{{ screenshot.image.url }} 
+                {% endblock og_image %}" />
+            {% endfor %}
+            <meta property="og:description" content=" 
+                {% block og_description %}{{ object.markdown_description|escapejs }} 
+                {% endblock og_description %}" />
+                <meta name="keywords" content=" 
+                    {% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, organization, easy 
+                    {% endblock keywords %}">
+                    <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
+                    <meta property="og:url"
+                          content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
+                    <meta property="og:type" content="website" />
+                    <meta name="robots" content="index, follow">
+                    <link rel="stylesheet"
+                          href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css"
+                          integrity="sha256-5uKiXEwbaQh9cgd2/5Vp6WmMnsUr3VZZw0a8rKnOKNU="
+                          crossorigin="anonymous">
+
+                {% endblock metaTags %}
+                {% load static %}
+                {% load gravatar %}
+
+                {% block content %}
+                    {% include "includes/sidenav.html" %}
+
+                    <div class="flex flex-col gap-5 lg:w-[95%] lg:mx-auto mx-2">
+                        <div class=" flex lg:flex-row flex-col gap-4 mt-10">
+                            <div class="lg:w-[75%] flex flex-col gap-6 w-full border border-gray-300 shadow-md rounded-xl p-4">
+                                <nav class="flex flex-col sm:flex-row items-center justify-between p-3 sm:p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                                    <div class="flex items-center w-full sm:w-auto mb-3 sm:mb-0">
+                                        <div class="flex flex-wrap items-center space-x-2 sm:space-x-3 w-full min-w-0">
+                                            <a href="{% url 'issues' %}"
+                                               class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 flex items-center shrink-0">
+                                                <i class="fas fa-bug mr-1.5"></i>
+                                                <span class="font-medium text-sm">Issues</span>
+                                            </a>
+                                            <i class="fas fa-chevron-right text-gray-400 text-xs shrink-0"></i>
+                                            <a href="{% url 'domain' object.domain.name %}"
+                                               class="flex items-center hover:text-[#e74c3c] transition-colors duration-200 min-w-0">
+                                                <img src="{{ object.domain.get_logo }}"
+                                                     alt="Organization Logo"
+                                                     class="w-4 h-4 rounded-md shadow-sm flex-shrink-0"
+                                                     width="20"
+                                                     height="20">
+                                                <span class="ml-1.5 font-medium text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">{{ object.domain.name }}</span>
+                                            </a>
+                                            <span class="text-gray-400 shrink-0">/</span>
+                                            <span class="font-mono text-gray-600 text-xs shrink-0">
+                                                {% if object.id < 100 %}#{% endif %}
+                                            {{ object.id }}</span>
+                                            <div class="ml-2 sm:ml-3 shrink-0">
+                                                {% if status == "open" %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
+                                                        <span class="w-1.5 h-1.5 bg-[#e74c3c] rounded-full mr-1 animate-pulse"></span>
+                                                        Ongoing
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                                                        Resolved
+                                                    </span>
+                                                {% endif %}
+                                            </div>
                                         </div>
-                                    </button>
-                                </form>
-                            {% endif %}
-                            <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200"
-                                    id="edit-issue">
-                                <div class="flex flex-row gap-2 items-center">
-                                    <span class="max-sm:text-[12px]">Edit</span>
-                                    <i class="fa-regular fa-pen-to-square"></i>
+                                    </div>
+                                    <span id="likes"
+                                          class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-100 text-xs whitespace-nowrap shrink-0">
+                                        {{ object.views }}
+                                        <span>Views</span>
+                                        <i class="fa-solid fa-eye"></i>
+                                    </span>
+                                </nav>
+                                <div class="flex flex-col gap-5 px-2">
+                                    <div class="flex flex-col gap-5 px-2">
+                                        <div class="flex flex-col gap-2">
+                                            <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight tracking-tight w-full break-words issue-description"
+                                                title="{{ object.description|escapejs }}">
+                                                {{ object.description|escapejs }}
+                                            </h2>
+                                            {% if object.markdown_description %}
+                                                <p class="text-base sm:text-lg text-gray-700 font-medium break-words"
+                                                   id="bug_report"
+                                                   data-markdown="{{ object.markdown_description|escapejs }}">
+                                                    <!-- This content will be replaced by rendered markdown -->
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <a href="{{ object.url }}"
+                                       title="{{ object.url }}"
+                                       target="_blank"
+                                       class="flex items-center gap-3 border px-3 sm:px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 w-full overflow-hidden">
+                                        <img src="{{ object.domain.get_logo }}"
+                                             alt="Organization Logo"
+                                             class="w-5 h-5 rounded-md shadow-sm flex-shrink-0"
+                                             width="20"
+                                             height="20">
+                                        <p class="text-[#e74c3c] font-medium min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap transition-colors duration-200"
+                                           rel="noopener noreferrer">{{ object.url }}</p>
+                                    </a>
+                                    <div class="flex items-center">
+                                        <img class="size-8 rounded-full object-cover"
+                                             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+                                             alt="User Profile Logo"
+                                             width="32px"
+                                             height="32px">
+                                        <div class="ml-3">
+                                            <div class="text-gray-700">
+                                                {% if object.user.username %}
+                                                    <a href="{% url 'profile' slug=object.user.username %}"
+                                                       class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">@{{ object.user.username }}</a>
+                                                {% else %}
+                                                    Anonymous
+                                                {% endif %}
+                                                <span class="text-gray-900">found this issue on {{ object.created }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% include "includes/_like_dislike_share.html" %}
+                                    {% include "./includes/issue_left_info.html" %}
+
                                 </div>
-                            </button>
-                        {% endif %}
-                        {% if request.user.is_superuser or request.user == object.user %}
-                            <button onclick="deleteIssue({{ object.id }})"
-                                    class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200">
-                                <div class="flex flex-row gap-2 items-center">
-                                    <span class="max-sm:text-[12px]">Delete</span>
-                                    <i class="fa-solid fa-trash"></i>
-                                </div>
-                            </button>
-                        {% endif %}
-                        {% if request.user.is_superuser or request.user == object.user %}
-                            <button type="button"
-                                    onclick="resolveIssue()"
-                                    class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-red-500 hover:bg-red-600 transition-all duration-200 border-gray-300 px-4 py-3 ">
-                                {% if status == "open" %}
-                                    Close Issue
-                                {% else %}
-                                    Open Issue
+                            </div>
+                            <div class="lg:w-[25%] flex flex-col gap-4 w-full ">
+                                {% if request.user.is_superuser or request.user == object.user %}
+                                    <div class="border border-gray-300 shadow-md rounded-xl p-4 flex flex-wrap gap-x-3 gap-y-3 justify-center items-center">
+                                        {% if request.user.is_superuser or request.user == object.user %}
+                                            {% if object.user %}
+                                                <form method="post"
+                                                      action="{% url 'remove_user_from_issue' id=object.id %}"
+                                                      class="flex flex-row gap-x-3 items-center">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
+                                                    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200"
+                                                            id="report-anonymously"
+                                                            type="submit"
+                                                            onclick="return confirm('Are you sure you want to report it anonymously?')">
+                                                        <div class="flex flex-row gap-2 items-center">
+                                                            <span>Anonymous</span>
+                                                            <i class="fa-regular fa-user"></i>
+                                                        </div>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200"
+                                                    id="edit-issue">
+                                                <div class="flex flex-row gap-2 items-center">
+                                                    <span class="max-sm:text-[12px]">Edit</span>
+                                                    <i class="fa-regular fa-pen-to-square"></i>
+                                                </div>
+                                            </button>
+                                        {% endif %}
+                                        {% if request.user.is_superuser or request.user == object.user %}
+                                            <button onclick="deleteIssue({{ object.id }})"
+                                                    class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200">
+                                                <div class="flex flex-row gap-2 items-center">
+                                                    <span class="max-sm:text-[12px]">Delete</span>
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </div>
+                                            </button>
+                                        {% endif %}
+                                        {% if request.user.is_superuser or request.user == object.user %}
+                                            <button type="button"
+                                                    onclick="resolveIssue()"
+                                                    class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-red-500 hover:bg-red-600 transition-all duration-200 border-gray-300 px-4 py-3">
+                                                {% if status == "open" %}
+                                                    Close Issue
+                                                {% else %}
+                                                    Open Issue
+                                                {% endif %}
+                                            </button>
+                                        {% endif %}
+                                    </div>
                                 {% endif %}
-                            </button>
-                        {% endif %}
+                                <div class="border border-gray-300 shadow-md rounded-xl p-4">
+                                    {% include "./includes/issue_right_info.html" %}
+
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            {% include "comments2.html" %}
+
+                        </div>
                     </div>
-                {% endif %}
-                <div class="border border-gray-300 shadow-md rounded-xl p-4">{% include "./includes/issue_right_info.html" %}</div>
-            </div>
-        </div>
-        <div>{% include "comments2.html" %}</div>
-    </div>
-    <!-- Scripts -->
-    <script>
-        function deleteIssue(issueId) {
-            if (!confirm('Are you sure you want to delete this issue?')) {
-                return;
-            }
-            
-            fetch(`/delete_issue/${issueId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = '/';
-                } else {
-                    throw new Error('Delete failed');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                $.notify("Failed to delete issue", {
-                    style: "custom",
-                    className: "danger"
-                });
-            });
-        }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
-    <script>
-    var flagClose = document.getElementById("close-flag");
-    var likeClose = document.getElementById("close-like");
-    var flagModal = document.getElementById("flag-modal");
-    var likeModal = document.getElementById("like-modal");
-    var flagOpen = document.getElementById("open-flag");
+                    <!-- Scripts -->
+                    <script>
+                        function deleteIssue(issueId) {
+                            if (!confirm('Are you sure you want to delete this issue?')) {
+                                return;
+                            }
 
-    flagClose.addEventListener("click", () => {
-        flagModal.style.display = "none";
-    });
+                            fetch(`/delete_issue/${issueId}/`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRFToken': '{{ csrf_token }}',
+                                        'Content-Type': 'application/json'
+                                    },
+                                    credentials: 'same-origin'
+                                })
+                                .then(response => {
+                                    if (response.ok) {
+                                        window.location.href = '/';
+                                    } else {
+                                        throw new Error('Delete failed');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    $.notify("Failed to delete issue", {
+                                        style: "custom",
+                                        className: "danger"
+                                    });
+                                });
+                        }
+                    </script>
+                    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+                    <script>
+                        var flagClose = document.getElementById("close-flag");
+                        var likeClose = document.getElementById("close-like");
+                        var flagModal = document.getElementById("flag-modal");
+                        var likeModal = document.getElementById("like-modal");
+                        var flagOpen = document.getElementById("open-flag");
 
-    likeClose.addEventListener("click", () => {
-        likeModal.style.display = "none";
-    });
+                        flagClose.addEventListener("click", () => {
+                            flagModal.style.display = "none";
+                        });
 
-    function flagOpenn() {
-        flagModal.style.cssText = "display:block !important;";
-    }
+                        likeClose.addEventListener("click", () => {
+                            likeModal.style.display = "none";
+                        });
 
-    function likeOpenn() {
-        likeModal.style.cssText = "display:block !important;";
-    }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        
-    const bugReportElement = document.getElementById('bug_report');
-    
-    if (bugReportElement && window.markdownit) {
-        const md = new window.markdownit();
-        const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
-        
-        // First render the markdown
-        let renderedHtml = md.render(markdownContent);
-        
-        // Then transform issue references to clickable links
-        renderedHtml = renderedHtml.replace(
-            /#(\d+)/g, 
-            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
-        );
-        
-        // Update the content
-        bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
-        ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
-        ALLOWED_ATTR: ['href', 'class']
-});
-    }
-    
-    // Also process the issue title/description for issue references
-    const issueDescriptionElement = document.querySelector('.issue-description');
-    if (issueDescriptionElement) {
-        const originalText = issueDescriptionElement.textContent;
-        
-        // Transform issue references to clickable links
-        const transformedText = originalText.replace(
-            /#(\d+)/g, 
-            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
-        );
-        
-        issueDescriptionElement.innerHTML = DOMPurify.sanitize(transformedText, {
-        ALLOWED_TAGS: ['a'],
-        ALLOWED_ATTR: ['href', 'class']
-});
-    }
-});
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
-            integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
-            crossorigin="anonymous"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var elms = document.getElementsByClassName('splide');
-        for (var i = 0; i < elms.length; i++) {
-            new Splide(elms[i], {
-                perPage: 3,
-                breakpoints: {
-                    640: {
-                        perPage: 1,
-                    },
-                },
-            }).mount();
-        }
-    });
-    </script>
-    <!-- <script>
-    function edit(){
-        $(document).on('click', '.edit-issue-status',(e)=>{
-            var s = $('.status').text();
-            var action = s == "open" ? "close" : "open";
-            $.ajax({
-                type: 'POST',
-                url: '/issue/update/',
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('X-CSRFToken', "{{csrf_token}}");
-                },
-                data: {
-                    issue_pk: "{{object.id}}",
-                    action: action
-                },
-                success: function (data) {
-                    console.log(data);
-    
-                    if (data == "Updated") {
-                        if (action == "open") {
-                            $('.status').text('open');
-                            //$('.status').removeClass('label-danger');
-                            //$('.status').addClass('label-success');
-                            $('#issue_stat').html(`
+                        function flagOpenn() {
+                            flagModal.style.cssText = "display:block !important;";
+                        }
+
+                        function likeOpenn() {
+                            likeModal.style.cssText = "display:block !important;";
+                        }
+                    </script>
+                    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+
+                            const bugReportElement = document.getElementById('bug_report');
+
+                            if (bugReportElement && window.markdownit) {
+                                const md = new window.markdownit();
+                                const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
+
+                                // First render the markdown
+                                let renderedHtml = md.render(markdownContent);
+
+                                // Then transform issue references to clickable links
+                                renderedHtml = renderedHtml.replace(
+                                    /#(\d+)/g,
+                                    '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+                                );
+
+                                // Update the content
+                                bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
+                                    ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
+                                    ALLOWED_ATTR: ['href', 'class']
+                                });
+                            }
+
+                            // Also process the issue title/description for issue references
+                            const issueDescriptionElement = document.querySelector('.issue-description');
+                            if (issueDescriptionElement) {
+                                const originalText = issueDescriptionElement.textContent;
+
+                                // Transform issue references to clickable links
+                                const transformedText = originalText.replace(
+                                    /#(\d+)/g,
+                                    '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+                                );
+
+                                issueDescriptionElement.innerHTML = DOMPurify.sanitize(transformedText, {
+                                    ALLOWED_TAGS: ['a'],
+                                    ALLOWED_ATTR: ['href', 'class']
+                                });
+                            }
+                        });
+                    </script>
+                    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
+                            integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
+                            crossorigin="anonymous"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var elms = document.getElementsByClassName('splide');
+                            for (var i = 0; i < elms.length; i++) {
+                                new Splide(elms[i], {
+                                    perPage: 3,
+                                    breakpoints: {
+                                        640: {
+                                            perPage: 1,
+                                        },
+                                    },
+                                }).mount();
+                            }
+                        });
+                    </script>
+                    <!-- <script>
+     function edit() {
+         $(document).on('click', '.edit-issue-status', (e) => {
+             var s = $('.status').text();
+             var action = s == "open" ? "close" : "open";
+             $.ajax({
+                 type: 'POST',
+                 url: '/issue/update/',
+                 beforeSend: function(xhr) {
+                     xhr.setRequestHeader('X-CSRFToken', "{{csrf_token}}");
+                 },
+                 data: {
+                     issue_pk: "{{object.id}}",
+                     action: action
+                 },
+                 success: function(data) {
+                     console.log(data);
+
+                     if (data == "Updated") {
+                         if (action == "open") {
+                             $('.status').text('open');
+                             //$('.status').removeClass('label-danger');
+                             //$('.status').addClass('label-success');
+                             $('#issue_stat').html(`
         <svg width='19' height='19' viewBox='0 0 25 19' fill='none' xmlns='http://www.w3.org/2000/svg'>
             <path d='M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z' fill='white' />
         </svg>
     `);
-                            $.notify("Issue opened!", {
-                            style: "custom",
-                            className: "success"
-                            });
-                        } else {
-                            $('.status').text('closed');
-                            //$('.status').removeClass('label-success');
-                            //$('.status').addClass('label-danger');
-                            $('#issue_stat').html("");
-                            $('#issue_stat').html(
-                                "<i class='fa-solid fa-retweet'></i>"
-                            );
-                            $.notify("Issue closed!", {
-                            style: "custom",
-                            className: "success"
-                            });
-                        }
-                    } else {
-                        $.notify(
-                            "Only the user who has submitted the bug and superuser can close/open an issue"
-                        ), {
-                            style: "custom",
-                            className: "danger"
-                        }
-                    }
-                },
-                error: function () {
-                    $.notify("Some error occurred!", {
-                        style: "custom",
-                        className: "danger"
-                    });
-                }
-            })
-        })
-    
-        function sanitizeURL(url) {
-            var a = document.createElement('a');
-            a.href = encodeURI(url);
-            return a.href;
-        }
-    
-        var label = "{{object.label}}";
-        $(document).on('click', '.edit-issue', function (e) {
-            $issue_desc = $('.issue-desc').text().trim();
-            $('.form input[name=description]').val($issue_desc);
-            $('.form input[name=domain]').val($('.issue-domain').text());
-            $('.form select').val(label);
-            $('.editables').hide();
-            $('.form').show();
-        });
-    
-        $(document).on('click', '.cancel-edit', function (e) {
-            $('.form').hide();
-            $('.editables').show();
-        });
-    
-        $(document).on('click', '.save-issue', function (e) {
-            e.preventDefault();
-    
-            if ($('.form input[name=description]').val().trim().length == 0 ||
-                $('.form input[name=domain]').val().trim().length == 0) {
-                return;
-            }
-            var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
-            dom_regex = new RegExp(dom_regex);
-            var domain_url = $('.form input[name=domain]').val();
-            if (domain_url.match(dom_regex) == null) {
-                alert('Enter a valid url');
-                return;
-            }
-    
-    
-            $.ajax({
-                type: 'POST',
-                url: '/issue/edit/',
-                data: {
-                    issue_pk: $('#issue_pk').val(),
-                    domain: $('.form input[name=domain]').val(),
-                    description: $('.form input[name=description]').val(),
-                    label: $('.form select').val(),
-                    csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
-                },
-                success: function (data) {
-                    $('.issue-desc').text($('.form input[name=description]').val());
-                    $('.issue-domain').text($('.form input[name=domain]').val());
-                    var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
-                    $('.issue-domain').attr("href", sanitizedDomain);
-                    label = $('.form select').val();
-                    var l = $(".form select option[value='" + label + "']").text();
-                    $('.bug-label').text(l);
-                    $('.form').hide();
-                    $('.editables').show();
-                    $.notify("Issue updated!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                    if (data === "Domain Created")
-                        $.notify("Domain Added!", {
-                            style: "custom",
-                            className: "success"
-                        });
-                },
-                error: function () {
-                    $.notify("Some error occurred!", {
-                        style: "custom",
-                        className: "danger"
-                    });
-                }
-            });
-        });
-    }
-    </script> -->
-    <script type="module">import lineClamp from 'https://cdn.jsdelivr.net/npm/line-clamp@1.0.0/+esm'</script>
-{% endblock content %}
+                             $.notify("Issue opened!", {
+                                 style: "custom",
+                                 className: "success"
+                             });
+                         } else {
+                             $('.status').text('closed');
+                             //$('.status').removeClass('label-success');
+                             //$('.status').addClass('label-danger');
+                             $('#issue_stat').html("");
+                             $('#issue_stat').html(
+                                 "<i class='fa-solid fa-retweet'></i>"
+                             );
+                             $.notify("Issue closed!", {
+                                 style: "custom",
+                                 className: "success"
+                             });
+                         }
+                     } else {
+                         $.notify(
+                             "Only the user who has submitted the bug and superuser can close/open an issue"
+                         ), {
+                             style: "custom",
+                             className: "danger"
+                         }
+                     }
+                 },
+                 error: function() {
+                     $.notify("Some error occurred!", {
+                         style: "custom",
+                         className: "danger"
+                     });
+                 }
+             })
+         })
+
+         function sanitizeURL(url) {
+             var a = document.createElement('a');
+             a.href = encodeURI(url);
+             return a.href;
+         }
+
+         var label = "{{object.label}}";
+         $(document).on('click', '.edit-issue', function(e) {
+             $issue_desc = $('.issue-desc').text().trim();
+             $('.form input[name=description]').val($issue_desc);
+             $('.form input[name=domain]').val($('.issue-domain').text());
+             $('.form select').val(label);
+             $('.editables').hide();
+             $('.form').show();
+         });
+
+         $(document).on('click', '.cancel-edit', function(e) {
+             $('.form').hide();
+             $('.editables').show();
+         });
+
+         $(document).on('click', '.save-issue', function(e) {
+             e.preventDefault();
+
+             if ($('.form input[name=description]').val().trim().length == 0 ||
+                 $('.form input[name=domain]').val().trim().length == 0) {
+                 return;
+             }
+             var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+             dom_regex = new RegExp(dom_regex);
+             var domain_url = $('.form input[name=domain]').val();
+             if (domain_url.match(dom_regex) == null) {
+                 alert('Enter a valid url');
+                 return;
+             }
+
+
+             $.ajax({
+                 type: 'POST',
+                 url: '/issue/edit/',
+                 data: {
+                     issue_pk: $('#issue_pk').val(),
+                     domain: $('.form input[name=domain]').val(),
+                     description: $('.form input[name=description]').val(),
+                     label: $('.form select').val(),
+                     csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
+                 },
+                 success: function(data) {
+                     $('.issue-desc').text($('.form input[name=description]').val());
+                     $('.issue-domain').text($('.form input[name=domain]').val());
+                     var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
+                     $('.issue-domain').attr("href", sanitizedDomain);
+                     label = $('.form select').val();
+                     var l = $(".form select option[value='" + label + "']").text();
+                     $('.bug-label').text(l);
+                     $('.form').hide();
+                     $('.editables').show();
+                     $.notify("Issue updated!", {
+                         style: "custom",
+                         className: "success"
+                     });
+                     if (data === "Domain Created")
+                         $.notify("Domain Added!", {
+                             style: "custom",
+                             className: "success"
+                         });
+                 },
+                 error: function() {
+                     $.notify("Some error occurred!", {
+                         style: "custom",
+                         className: "danger"
+                     });
+                 }
+             });
+         });
+     }
+ </script> -->
+                    <script type="module">
+                        import lineClamp from 'https://cdn.jsdelivr.net/npm/line-clamp@1.0.0/+esm'
+                    </script>
+
+                {% endblock content %}

@@ -1,10 +1,14 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load humanize %}
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;600&display=swap"
       rel="stylesheet">
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-12">
         <div class="bg-white rounded-2xl shadow-md max-w-7xl mx-auto">
             <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 md:p-10">
@@ -75,4 +79,5 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}

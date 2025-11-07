@@ -1,26 +1,39 @@
 {% extends "base.html" %}
+
 {% load custom_tags %}
 {% load i18n %}
 {% load static %}
 {% load humanize %}
 {% load gravatar %}
+
 {% block title %}
     About Page | {% env 'PROJECT_NAME' %}
+
 {% endblock title %}
+
 {% block description %}
     {% trans "OWASP Bug Logging Tool (BLT) - A community-driven platform for bug reporting and bounty hunting" %}
+
 {% endblock description %}
+
 {% block keywords %}
     bug reporting, bug bounty, security testing, OWASP, open source, community platform
+
 {% endblock keywords %}
+
 {% block og_title %}
     About Us - {% env 'PROJECT_NAME' %}
+
 {% endblock og_title %}
+
 {% block og_description %}
     {% trans "Learn about BLT - The open-source bug logging platform that rewards security researchers and helps organizations maintain secure software" %}
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="flex-1 p-4 md:p-8">
         <div class="container mx-auto">
             <!-- Hero Section -->
@@ -172,6 +185,7 @@
             </div>
         </div>
     </div>
+
     {% block edit_link %}
         <div class="fixed bottom-4 right-4 space-x-2">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/about.html"
@@ -183,5 +197,7 @@
                 <i class="fab fa-figma text-white"></i>
             </a>
         </div>
+
     {% endblock edit_link %}
+
 {% endblock content %}

@@ -1,7 +1,10 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto mt-8 px-4">
         <div>
             <a href="/education/instructor_dashboard/"
@@ -135,7 +138,7 @@
         </div>
     </div>
     <div id="editSectionModal"
-         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50 ">
+         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-y-auto">
             <form method="post"
                   action="{% url 'edit_section' 0 %}"
@@ -412,7 +415,7 @@
             const modal = document.getElementById(modalId);
             modal.classList.toggle('hidden');
         }
-    
+
         document.querySelectorAll('[data-modal-toggle]').forEach(button => {
             button.addEventListener('click', () => {
                 const modalId = button.getAttribute('data-modal-toggle');
@@ -427,241 +430,247 @@
             form.action = `{% url 'add_lecture' 0 %}`.replace('0', sectionId);
         }
 
-        async function toggleEditSectionModal(sectionId){
+        async function toggleEditSectionModal(sectionId) {
             const modal = document.getElementById('editSectionModal');
             modal.classList.toggle('hidden');
             const form = document.getElementById('editSectionForm');
             form.action = `{% url 'edit_section' 0 %}`.replace('0', sectionId);
-            
+
             await fetchSectionData(sectionId)
 
         }
 
-        async function toggleDeleteModal(itemType, itemId){
+        async function toggleDeleteModal(itemType, itemId) {
             const modal = document.getElementById('confirmDeleteModal');
             modal.classList.toggle('hidden');
-            
+
             confirmText = ''
             action = ''
-            if (itemType == 'lec'){
+            if (itemType == 'lec') {
                 confirmText = 'Are you sure you want to delete this lecture?'
                 action = `{% url 'delete_lecture' 0 %}`.replace('0', itemId)
-            } else if (itemType == 'sec'){
+            } else if (itemType == 'sec') {
                 confirmText = 'Are you sure you want to delete this section? All related lectures will also be deleted.'
                 action = `{% url 'delete_section' 0 %}`.replace('0', itemId)
             } else {
                 confirmText = 'Are you sure you want to delete this item?'
             }
-            
+
             document.getElementById('deleteConfirmationText').textContent = confirmText;
 
             const form = document.getElementById('confirmDeleteForm');
             form.action = action
 
         }
-
     </script>
+
     {% block extra_js %}
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize sortable for sections
-            const sectionsContainer = document.getElementById('sections-container');
-            if (sectionsContainer) {
-                new Sortable(sectionsContainer, {
-                    handle: '.section-handle',
-                    animation: 150,
-                    onEnd: function(evt) {
-                        updateSectionsOrder();
-                    }
-                });
-            }
-            
-            // Initialize sortable for lectures within sections
-            document.querySelectorAll('.lectures-container').forEach(container => {
-                new Sortable(container, {
-                    handle: '.lecture-handle',
-                    animation: 150,
-                    onEnd: function(evt) {
-                        updateLecturesOrder(evt.to);
-                    }
-                });
-            });
-            
-            document.getElementById('contentType').addEventListener('change', function() {
-                toggleContentFields(this.value);
-            });
-            
-            document.getElementById('editContentType').addEventListener('change', function() {
-                toggleEditContentFields(this.value);
-            });
-
-            
-    
-            document.querySelectorAll('.edit-lecture').forEach(button => {
-                button.addEventListener('click', async function() {
-                    const lectureId = this.getAttribute('data-lecture-id');
-                    await fetchLectureData(lectureId);
-                });
-            });
-
-        });
-        
-        function toggleContentFields(contentType) {
-            document.querySelectorAll('.content-fields').forEach(field => {
-                field.classList.add('hidden');
-            });
-
-            if (contentType === 'VIDEO') {
-                document.getElementById('videoFields').classList.remove('hidden');
-                document.getElementById('documentFields').classList.remove('hidden');
-            } else if (contentType === 'LIVE') {
-                document.getElementById('liveFields').classList.remove('hidden');
-            } else if (contentType === 'DOCUMENT') {
-                document.getElementById('documentFields').classList.remove('hidden');
-            }
-        }
-
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const defaultContentType = document.getElementById('contentType').value;
-            toggleContentFields(defaultContentType);
-        });
-        
-        function toggleEditContentFields(contentType) {
-            document.querySelectorAll('.edit-content-fields').forEach(field => {
-                field.classList.add('hidden');
-            });
-            
-            if (contentType === 'VIDEO') {
-                document.getElementById('editVideoFields').classList.remove('hidden');
-            } else if (contentType === 'LIVE') {
-                document.getElementById('editLiveFields').classList.remove('hidden');
-            } else if (contentType === 'DOCUMENT') {
-                document.getElementById('editDocumentFields').classList.remove('hidden');
-            }
-        }
-
-        async function fetchSectionData(sectionId){
-            try{
-                const response = await fetch(`/education/instructor_dashboard/api/sections/${sectionId}/`)
-                if (!response.ok) throw new Error('Failed to fetch section data');
-
-                const section = await response.json()
-
-                document.getElementById('editSectionTitle').value = section.title
-                document.getElementById('editSectionDescription').value = section.description
-                
-            } catch (error) {
-                console.error('Error fetching lecture data:', error);
-                alert('Failed to load lecture data. Please try again.');
-            }
-        }
-        
-        async function fetchLectureData(lectureId) {
-            try {
-                const response = await fetch(`/education/instructor_dashboard/api/lectures/${lectureId}/`);
-                if (!response.ok) throw new Error('Failed to fetch lecture data');
-                
-                const lecture = await response.json();
-                
-                document.getElementById('editLectureForm').action = "{% url 'edit_lecture' 0 %}".replace('0', lectureId);
-                
-                document.getElementById('editLectureTitle').value = lecture.title;
-                document.getElementById('editContentType').value = lecture.content_type;
-                document.getElementById('editLectureDuration').value = lecture.duration || '';
-                document.getElementById('editLectureDescription').value = lecture.description || '';
-                
-                toggleEditContentFields(lecture.content_type);
-                
-                if (lecture.content_type === 'VIDEO') {
-                    document.getElementById('editVideoUrl').value = lecture.video_url || '';
-                    document.getElementById('editDocumentContent').value = lecture.content || '';
-                } else if (lecture.content_type === 'LIVE') {
-                    document.getElementById('editLiveUrl').value = lecture.live_url || '';
-                    document.getElementById('editScheduledTime').value = formatDateForInput(lecture.scheduled_time);
-                    document.getElementById('editRecordingUrl').value = lecture.recording_url || '';
-                } else if (lecture.content_type === 'DOCUMENT') {
-                    document.getElementById('editDocumentContent').value = lecture.content || '';
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialize sortable for sections
+                const sectionsContainer = document.getElementById('sections-container');
+                if (sectionsContainer) {
+                    new Sortable(sectionsContainer, {
+                        handle: '.section-handle',
+                        animation: 150,
+                        onEnd: function(evt) {
+                            updateSectionsOrder();
+                        }
+                    });
                 }
-            } catch (error) {
-                console.error('Error fetching lecture data:', error);
-                alert('Failed to load lecture data. Please try again.');
+
+                // Initialize sortable for lectures within sections
+                document.querySelectorAll('.lectures-container').forEach(container => {
+                    new Sortable(container, {
+                        handle: '.lecture-handle',
+                        animation: 150,
+                        onEnd: function(evt) {
+                            updateLecturesOrder(evt.to);
+                        }
+                    });
+                });
+
+                document.getElementById('contentType').addEventListener('change', function() {
+                    toggleContentFields(this.value);
+                });
+
+                document.getElementById('editContentType').addEventListener('change', function() {
+                    toggleEditContentFields(this.value);
+                });
+
+
+
+                document.querySelectorAll('.edit-lecture').forEach(button => {
+                    button.addEventListener('click', async function() {
+                        const lectureId = this.getAttribute('data-lecture-id');
+                        await fetchLectureData(lectureId);
+                    });
+                });
+
+            });
+
+            function toggleContentFields(contentType) {
+                document.querySelectorAll('.content-fields').forEach(field => {
+                    field.classList.add('hidden');
+                });
+
+                if (contentType === 'VIDEO') {
+                    document.getElementById('videoFields').classList.remove('hidden');
+                    document.getElementById('documentFields').classList.remove('hidden');
+                } else if (contentType === 'LIVE') {
+                    document.getElementById('liveFields').classList.remove('hidden');
+                } else if (contentType === 'DOCUMENT') {
+                    document.getElementById('documentFields').classList.remove('hidden');
+                }
             }
-        }
-        
-        function formatDateForInput(dateString) {
-            if (!dateString) return '';
-            
-            const date = new Date(dateString);
-            
-            return date.getFullYear() + '-' + 
-                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                   String(date.getDate()).padStart(2, '0') + 'T' +
-                   String(date.getHours()).padStart(2, '0') + ':' +
-                   String(date.getMinutes()).padStart(2, '0');
-        }
-        
-        function updateSectionsOrder() {
-            const sections = [];
-            
-            document.querySelectorAll('.section-item').forEach((item, index) => {
-                sections.push({
-                    id: item.getAttribute('data-section-id'),
-                    order: index + 1
+
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const defaultContentType = document.getElementById('contentType').value;
+                toggleContentFields(defaultContentType);
+            });
+
+            function toggleEditContentFields(contentType) {
+                document.querySelectorAll('.edit-content-fields').forEach(field => {
+                    field.classList.add('hidden');
                 });
-            });
-            
-            fetch("{% url 'update_sections_order' course.id %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ sections })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to update sections order');
-                return response.json();
-            })
-            .then(data => {
-                console.log('Sections order updated successfully');
-            })
-            .catch(error => {
-                console.error('Error updating sections order:', error);
-            });
-        }
-        
-        function updateLecturesOrder(container) {
-            const sectionId = container.closest('.section-item').getAttribute('data-section-id');
-            const lectures = [];
-            
-            container.querySelectorAll('.lecture-item').forEach((item, index) => {
-                lectures.push({
-                    id: item.getAttribute('data-lecture-id'),
-                    order: index + 1
+
+                if (contentType === 'VIDEO') {
+                    document.getElementById('editVideoFields').classList.remove('hidden');
+                } else if (contentType === 'LIVE') {
+                    document.getElementById('editLiveFields').classList.remove('hidden');
+                } else if (contentType === 'DOCUMENT') {
+                    document.getElementById('editDocumentFields').classList.remove('hidden');
+                }
+            }
+
+            async function fetchSectionData(sectionId) {
+                try {
+                    const response = await fetch(`/education/instructor_dashboard/api/sections/${sectionId}/`)
+                    if (!response.ok) throw new Error('Failed to fetch section data');
+
+                    const section = await response.json()
+
+                    document.getElementById('editSectionTitle').value = section.title
+                    document.getElementById('editSectionDescription').value = section.description
+
+                } catch (error) {
+                    console.error('Error fetching lecture data:', error);
+                    alert('Failed to load lecture data. Please try again.');
+                }
+            }
+
+            async function fetchLectureData(lectureId) {
+                try {
+                    const response = await fetch(`/education/instructor_dashboard/api/lectures/${lectureId}/`);
+                    if (!response.ok) throw new Error('Failed to fetch lecture data');
+
+                    const lecture = await response.json();
+
+                    document.getElementById('editLectureForm').action = "{% url 'edit_lecture' 0 %}".replace('0', lectureId);
+
+                    document.getElementById('editLectureTitle').value = lecture.title;
+                    document.getElementById('editContentType').value = lecture.content_type;
+                    document.getElementById('editLectureDuration').value = lecture.duration || '';
+                    document.getElementById('editLectureDescription').value = lecture.description || '';
+
+                    toggleEditContentFields(lecture.content_type);
+
+                    if (lecture.content_type === 'VIDEO') {
+                        document.getElementById('editVideoUrl').value = lecture.video_url || '';
+                        document.getElementById('editDocumentContent').value = lecture.content || '';
+                    } else if (lecture.content_type === 'LIVE') {
+                        document.getElementById('editLiveUrl').value = lecture.live_url || '';
+                        document.getElementById('editScheduledTime').value = formatDateForInput(lecture.scheduled_time);
+                        document.getElementById('editRecordingUrl').value = lecture.recording_url || '';
+                    } else if (lecture.content_type === 'DOCUMENT') {
+                        document.getElementById('editDocumentContent').value = lecture.content || '';
+                    }
+                } catch (error) {
+                    console.error('Error fetching lecture data:', error);
+                    alert('Failed to load lecture data. Please try again.');
+                }
+            }
+
+            function formatDateForInput(dateString) {
+                if (!dateString) return '';
+
+                const date = new Date(dateString);
+
+                return date.getFullYear() + '-' +
+                    String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(date.getDate()).padStart(2, '0') + 'T' +
+                    String(date.getHours()).padStart(2, '0') + ':' +
+                    String(date.getMinutes()).padStart(2, '0');
+            }
+
+            function updateSectionsOrder() {
+                const sections = [];
+
+                document.querySelectorAll('.section-item').forEach((item, index) => {
+                    sections.push({
+                        id: item.getAttribute('data-section-id'),
+                        order: index + 1
+                    });
                 });
-            });
-            
-            fetch("{% url 'update_lectures_order' 0 %}".replace('0', sectionId), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ lectures })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to update lectures order');
-                return response.json();
-            })
-            .then(data => {
-                console.log('Lectures order updated successfully');
-            })
-            .catch(error => {
-                console.error('Error updating lectures order:', error);
-            });
-        }
+
+                fetch("{% url 'update_sections_order' course.id %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            sections
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Failed to update sections order');
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Sections order updated successfully');
+                    })
+                    .catch(error => {
+                        console.error('Error updating sections order:', error);
+                    });
+            }
+
+            function updateLecturesOrder(container) {
+                const sectionId = container.closest('.section-item').getAttribute('data-section-id');
+                const lectures = [];
+
+                container.querySelectorAll('.lecture-item').forEach((item, index) => {
+                    lectures.push({
+                        id: item.getAttribute('data-lecture-id'),
+                        order: index + 1
+                    });
+                });
+
+                fetch("{% url 'update_lectures_order' 0 %}".replace('0', sectionId), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            lectures
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Failed to update lectures order');
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Lectures order updated successfully');
+                    })
+                    .catch(error => {
+                        console.error('Error updating lectures order:', error);
+                    });
+            }
         </script>
+
     {% endblock %}
+
 {% endblock content %}

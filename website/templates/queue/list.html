@@ -1,10 +1,15 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Queue Management
+
 {% endblock title %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50">
         <div class="max-w-[95%] mx-auto px-4 py-8">
             <!-- Header Section -->
@@ -68,7 +73,15 @@
             {% if messages %}
                 <div class="mb-6 space-y-4">
                     {% for message in messages %}
-                        <div class="p-4 rounded-xl {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %} shadow-sm">
+                        <div class="p-4 rounded-xl
+                                    {% if message.tags == 'success' %}
+                                        bg-green-50 text-green-700 border border-green-200
+                                    {% elif message.tags == 'error' %}
+                                        bg-red-50 text-red-700 border border-red-200
+                                    {% else %}
+                                        bg-blue-50 text-blue-700 border border-blue-200
+                                    {% endif %}
+                                    shadow-sm">
                             <div class="flex items-center">
                                 {% if message.tags == 'success' %}
                                     <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -565,12 +578,20 @@
                                                             <div class="flex flex-col space-y-2">
                                                                 <input type="text"
                                                                        name="txid"
-                                                                       placeholder="{% if item.txid %}Update Transaction ID{% else %}Add Transaction ID{% endif %}"
+                                                                       placeholder="{% if item.txid %}
+                                                                                        Update Transaction ID
+                                                                                    {% else %}
+                                                                                        Add Transaction ID
+                                                                                    {% endif %}"
                                                                        class="text-xs border rounded px-2 py-1 w-full"
                                                                        value="{{ item.txid|default:'' }}">
                                                                 <input type="url"
                                                                        name="url"
-                                                                       placeholder="{% if item.url %}Update post URL{% else %}Add post URL (optional){% endif %}"
+                                                                       placeholder="{% if item.url %}
+                                                                                        Update post URL
+                                                                                    {% else %}
+                                                                                        Add post URL (optional)
+                                                                                    {% endif %}"
                                                                        class="text-xs border rounded px-2 py-1 w-full"
                                                                        value="{{ item.url|default:'' }}">
                                                                 <button type="submit"
@@ -732,12 +753,20 @@
                                                     <div class="flex flex-col space-y-2">
                                                         <input type="text"
                                                                name="txid"
-                                                               placeholder="{% if item.txid %}Update Transaction ID{% else %}Add Transaction ID{% endif %}"
+                                                               placeholder="{% if item.txid %}
+                                                                                Update Transaction ID
+                                                                            {% else %}
+                                                                                Add Transaction ID
+                                                                            {% endif %}"
                                                                class="text-xs border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
                                                                value="{{ item.txid|default:'' }}">
                                                         <input type="url"
                                                                name="url"
-                                                               placeholder="{% if item.url %}Update post URL{% else %}Add post URL (optional){% endif %}"
+                                                               placeholder="{% if item.url %}
+                                                                                Update post URL
+                                                                            {% else %}
+                                                                                Add post URL (optional)
+                                                                            {% endif %}"
                                                                class="text-xs border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
                                                                value="{{ item.url|default:'' }}">
                                                         <button type="submit"
@@ -825,227 +854,230 @@
         </div>
     </div>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Launch Control functionality
-    const showLaunchControlBtn = document.getElementById('showLaunchControlBtn');
-    const closeLaunchControlBtn = document.getElementById('closeLaunchControlBtn');
-    const launchControlContainer = document.getElementById('launchControlContainer');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Launch Control functionality
+            const showLaunchControlBtn = document.getElementById('showLaunchControlBtn');
+            const closeLaunchControlBtn = document.getElementById('closeLaunchControlBtn');
+            const launchControlContainer = document.getElementById('launchControlContainer');
 
-    if (showLaunchControlBtn && launchControlContainer) {
-        showLaunchControlBtn.addEventListener('click', function() {
-            launchControlContainer.classList.remove('hidden');
-            launchControlContainer.scrollIntoView({ behavior: 'smooth' });
-        });
-    }
-
-    if (closeLaunchControlBtn && launchControlContainer) {
-        closeLaunchControlBtn.addEventListener('click', function() {
-            launchControlContainer.classList.add('hidden');
-        });
-    }
-
-    // Modal functionality
-    function showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function hideModal(modalId) {
-        const modal = document.getElementById(modalId);
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
-
-    // Create form functionality
-    const showCreateFormBtn = document.getElementById('showCreateFormBtn');
-    const closeCreateFormBtn = document.getElementById('closeCreateFormBtn');
-    const createFormContainer = document.getElementById('createFormContainer');
-    const createMessage = document.getElementById('createMessage');
-    const createCharCount = document.getElementById('createCharCount');
-    const createImage = document.getElementById('createImage');
-    const createImagePreview = document.getElementById('createImagePreview');
-    const createPreviewImg = document.getElementById('createPreviewImg');
-
-    if (showCreateFormBtn) {
-        showCreateFormBtn.addEventListener('click', () => showModal('createFormContainer'));
-    }
-
-    if (closeCreateFormBtn) {
-        closeCreateFormBtn.addEventListener('click', () => hideModal('createFormContainer'));
-    }
-
-    if (createMessage) {
-        createMessage.addEventListener('input', function() {
-            createCharCount.textContent = this.value.length;
-        });
-    }
-
-    if (createImage) {
-        createImage.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    createPreviewImg.src = e.target.result;
-                    createImagePreview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(this.files[0]);
-            } else {
-                createImagePreview.classList.add('hidden');
+            if (showLaunchControlBtn && launchControlContainer) {
+                showLaunchControlBtn.addEventListener('click', function() {
+                    launchControlContainer.classList.remove('hidden');
+                    launchControlContainer.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
             }
-        });
-    }
 
-    // Edit form functionality
-    const editBtns = document.querySelectorAll('.edit-btn');
-    const closeEditFormBtn = document.getElementById('closeEditFormBtn');
-    const editFormContainer = document.getElementById('editFormContainer');
-    const editQueueId = document.getElementById('editQueueId');
-    const editMessage = document.getElementById('editMessage');
-    const editCharCount = document.getElementById('editCharCount');
-    const editImage = document.getElementById('editImage');
-    const currentImageContainer = document.getElementById('currentImageContainer');
-    const currentImage = document.getElementById('currentImage');
-    const editImagePreview = document.getElementById('editImagePreview');
-    const editPreviewImg = document.getElementById('editPreviewImg');
-
-    editBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const message = this.getAttribute('data-message');
-            const imageUrl = this.getAttribute('data-image');
-            
-            editQueueId.value = id;
-            editMessage.value = message;
-            editCharCount.textContent = message.length;
-            
-            if (imageUrl) {
-                currentImage.src = imageUrl;
-                currentImageContainer.classList.remove('hidden');
-            } else {
-                currentImageContainer.classList.add('hidden');
+            if (closeLaunchControlBtn && launchControlContainer) {
+                closeLaunchControlBtn.addEventListener('click', function() {
+                    launchControlContainer.classList.add('hidden');
+                });
             }
-            
-            editImagePreview.classList.add('hidden');
-            showModal('editFormContainer');
-        });
-    });
 
-    if (closeEditFormBtn) {
-        closeEditFormBtn.addEventListener('click', () => hideModal('editFormContainer'));
-    }
-
-    if (editMessage) {
-        editMessage.addEventListener('input', function() {
-            editCharCount.textContent = this.value.length;
-        });
-    }
-
-    if (editImage) {
-        editImage.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    editPreviewImg.src = e.target.result;
-                    editImagePreview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(this.files[0]);
-            } else {
-                editImagePreview.classList.add('hidden');
+            // Modal functionality
+            function showModal(modalId) {
+                const modal = document.getElementById(modalId);
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
             }
-        });
-    }
 
-    // Delete confirmation functionality
-    const deleteBtns = document.querySelectorAll('.delete-btn');
-    const closeDeleteConfirmBtn = document.getElementById('closeDeleteConfirmBtn');
-    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-    const deleteConfirmContainer = document.getElementById('deleteConfirmContainer');
-    const deleteQueueId = document.getElementById('deleteQueueId');
-    const deleteItemId = document.getElementById('deleteItemId');
-    const deleteItemMessage = document.getElementById('deleteItemMessage');
-
-    deleteBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const message = this.getAttribute('data-message');
-            
-            deleteQueueId.value = id;
-            deleteItemId.textContent = id;
-            deleteItemMessage.textContent = message;
-            
-            showModal('deleteConfirmContainer');
-        });
-    });
-
-    if (closeDeleteConfirmBtn) {
-        closeDeleteConfirmBtn.addEventListener('click', () => hideModal('deleteConfirmContainer'));
-    }
-
-    if (cancelDeleteBtn) {
-        cancelDeleteBtn.addEventListener('click', () => hideModal('deleteConfirmContainer'));
-    }
-
-    // View modal functionality
-    const viewBtns = document.querySelectorAll('.view-btn');
-    const closeViewModalBtn = document.getElementById('closeViewModalBtn');
-    const viewModalContainer = document.getElementById('viewModalContainer');
-    const viewMessage = document.getElementById('viewMessage');
-    const viewImageContainer = document.getElementById('viewImageContainer');
-    const viewImage = document.getElementById('viewImage');
-    const noImageText = document.getElementById('noImageText');
-    const copyMessageBtn = document.getElementById('copyMessageBtn');
-    const copySuccessMessage = document.getElementById('copySuccessMessage');
-
-    function showCopySuccess() {
-        copySuccessMessage.classList.remove('hidden');
-        setTimeout(() => {
-            copySuccessMessage.classList.add('hidden');
-        }, 2000);
-    }
-
-    viewBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const message = this.getAttribute('data-message');
-            const imageUrl = this.getAttribute('data-image');
-            
-            viewMessage.value = message;
-            
-            if (imageUrl) {
-                viewImage.src = imageUrl;
-                viewImageContainer.classList.remove('hidden');
-                noImageText.classList.add('hidden');
-            } else {
-                viewImageContainer.classList.add('hidden');
-                noImageText.classList.remove('hidden');
+            function hideModal(modalId) {
+                const modal = document.getElementById(modalId);
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
             }
-            
-            showModal('viewModalContainer');
-        });
-    });
 
-    if (closeViewModalBtn) {
-        closeViewModalBtn.addEventListener('click', () => hideModal('viewModalContainer'));
-    }
+            // Create form functionality
+            const showCreateFormBtn = document.getElementById('showCreateFormBtn');
+            const closeCreateFormBtn = document.getElementById('closeCreateFormBtn');
+            const createFormContainer = document.getElementById('createFormContainer');
+            const createMessage = document.getElementById('createMessage');
+            const createCharCount = document.getElementById('createCharCount');
+            const createImage = document.getElementById('createImage');
+            const createImagePreview = document.getElementById('createImagePreview');
+            const createPreviewImg = document.getElementById('createPreviewImg');
 
-    if (copyMessageBtn) {
-        copyMessageBtn.addEventListener('click', function() {
-            viewMessage.select();
-            document.execCommand('copy');
-            showCopySuccess();
-        });
-    }
-
-    // Close modals when clicking outside
-    document.querySelectorAll('[id$="Container"]').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                hideModal(this.id);
+            if (showCreateFormBtn) {
+                showCreateFormBtn.addEventListener('click', () => showModal('createFormContainer'));
             }
+
+            if (closeCreateFormBtn) {
+                closeCreateFormBtn.addEventListener('click', () => hideModal('createFormContainer'));
+            }
+
+            if (createMessage) {
+                createMessage.addEventListener('input', function() {
+                    createCharCount.textContent = this.value.length;
+                });
+            }
+
+            if (createImage) {
+                createImage.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            createPreviewImg.src = e.target.result;
+                            createImagePreview.classList.remove('hidden');
+                        };
+                        reader.readAsDataURL(this.files[0]);
+                    } else {
+                        createImagePreview.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Edit form functionality
+            const editBtns = document.querySelectorAll('.edit-btn');
+            const closeEditFormBtn = document.getElementById('closeEditFormBtn');
+            const editFormContainer = document.getElementById('editFormContainer');
+            const editQueueId = document.getElementById('editQueueId');
+            const editMessage = document.getElementById('editMessage');
+            const editCharCount = document.getElementById('editCharCount');
+            const editImage = document.getElementById('editImage');
+            const currentImageContainer = document.getElementById('currentImageContainer');
+            const currentImage = document.getElementById('currentImage');
+            const editImagePreview = document.getElementById('editImagePreview');
+            const editPreviewImg = document.getElementById('editPreviewImg');
+
+            editBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const message = this.getAttribute('data-message');
+                    const imageUrl = this.getAttribute('data-image');
+
+                    editQueueId.value = id;
+                    editMessage.value = message;
+                    editCharCount.textContent = message.length;
+
+                    if (imageUrl) {
+                        currentImage.src = imageUrl;
+                        currentImageContainer.classList.remove('hidden');
+                    } else {
+                        currentImageContainer.classList.add('hidden');
+                    }
+
+                    editImagePreview.classList.add('hidden');
+                    showModal('editFormContainer');
+                });
+            });
+
+            if (closeEditFormBtn) {
+                closeEditFormBtn.addEventListener('click', () => hideModal('editFormContainer'));
+            }
+
+            if (editMessage) {
+                editMessage.addEventListener('input', function() {
+                    editCharCount.textContent = this.value.length;
+                });
+            }
+
+            if (editImage) {
+                editImage.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            editPreviewImg.src = e.target.result;
+                            editImagePreview.classList.remove('hidden');
+                        };
+                        reader.readAsDataURL(this.files[0]);
+                    } else {
+                        editImagePreview.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Delete confirmation functionality
+            const deleteBtns = document.querySelectorAll('.delete-btn');
+            const closeDeleteConfirmBtn = document.getElementById('closeDeleteConfirmBtn');
+            const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+            const deleteConfirmContainer = document.getElementById('deleteConfirmContainer');
+            const deleteQueueId = document.getElementById('deleteQueueId');
+            const deleteItemId = document.getElementById('deleteItemId');
+            const deleteItemMessage = document.getElementById('deleteItemMessage');
+
+            deleteBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const message = this.getAttribute('data-message');
+
+                    deleteQueueId.value = id;
+                    deleteItemId.textContent = id;
+                    deleteItemMessage.textContent = message;
+
+                    showModal('deleteConfirmContainer');
+                });
+            });
+
+            if (closeDeleteConfirmBtn) {
+                closeDeleteConfirmBtn.addEventListener('click', () => hideModal('deleteConfirmContainer'));
+            }
+
+            if (cancelDeleteBtn) {
+                cancelDeleteBtn.addEventListener('click', () => hideModal('deleteConfirmContainer'));
+            }
+
+            // View modal functionality
+            const viewBtns = document.querySelectorAll('.view-btn');
+            const closeViewModalBtn = document.getElementById('closeViewModalBtn');
+            const viewModalContainer = document.getElementById('viewModalContainer');
+            const viewMessage = document.getElementById('viewMessage');
+            const viewImageContainer = document.getElementById('viewImageContainer');
+            const viewImage = document.getElementById('viewImage');
+            const noImageText = document.getElementById('noImageText');
+            const copyMessageBtn = document.getElementById('copyMessageBtn');
+            const copySuccessMessage = document.getElementById('copySuccessMessage');
+
+            function showCopySuccess() {
+                copySuccessMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    copySuccessMessage.classList.add('hidden');
+                }, 2000);
+            }
+
+            viewBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const message = this.getAttribute('data-message');
+                    const imageUrl = this.getAttribute('data-image');
+
+                    viewMessage.value = message;
+
+                    if (imageUrl) {
+                        viewImage.src = imageUrl;
+                        viewImageContainer.classList.remove('hidden');
+                        noImageText.classList.add('hidden');
+                    } else {
+                        viewImageContainer.classList.add('hidden');
+                        noImageText.classList.remove('hidden');
+                    }
+
+                    showModal('viewModalContainer');
+                });
+            });
+
+            if (closeViewModalBtn) {
+                closeViewModalBtn.addEventListener('click', () => hideModal('viewModalContainer'));
+            }
+
+            if (copyMessageBtn) {
+                copyMessageBtn.addEventListener('click', function() {
+                    viewMessage.select();
+                    document.execCommand('copy');
+                    showCopySuccess();
+                });
+            }
+
+            // Close modals when clicking outside
+            document.querySelectorAll('[id$="Container"]').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        hideModal(this.id);
+                    }
+                });
+            });
         });
-    });
-});
     </script>
+
 {% endblock content %}

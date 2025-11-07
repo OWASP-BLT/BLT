@@ -1,0 +1,20 @@
+{
+  "profile": "django",
+  "indent": 4,
+  "max_line_length": 120,
+  "format_css": true,
+  "format_js": true,
+  "ignore": "H006,H013,H025,H030,H031,T002,T003,D018",
+  "exclude": ".venv,venv,node_modules,staticfiles,media",
+  "extension": "html",
+  "custom_blocks": "",
+  "custom_html": "",
+  "blank_line_after_tag": "load,extends,include",
+  "blank_line_before_tag": "block,endblock",
+  "close_void_tags": false,
+  "format_attribute_template_tags": true,
+  "linter_output_format": "{filename}:{line}: {code} {message}",
+  "preserve_leading_space": false,
+  "preserve_blank_lines": false,
+  "max_blank_lines": 1
+}

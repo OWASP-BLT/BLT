@@ -1,19 +1,29 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}Style Guide - BLT{% endblock %}
+
 {% block description %}
     Comprehensive style guide for the BLT website, defining our design system, components, and visual standards.
+
 {% endblock %}
+
 {% block keywords %}
     style guide, design system, UI components, BLT website, design standards, responsive design
+
 {% endblock %}
+
 {% block extra_css %}
     <!-- Font Awesome for icons -->
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 {% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="relative">
         <img src="{% static 'img/style-guide.webp' %}"
              alt="BLT Style Guide Header"
@@ -923,4 +933,5 @@
             </div>
         </section>
     </div>
+
 {% endblock %}

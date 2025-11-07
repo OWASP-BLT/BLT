@@ -1,7 +1,10 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto mt-10 bg-white rounded-lg shadow-md p-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Edit Lecture</h2>
         <form method="post"
@@ -49,7 +52,10 @@
                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{{ lecture.description }}</textarea>
                 </div>
                 <div id="videoFields"
-                     class="content-fields space-y-4 {% if lecture.content_type != 'VIDEO' %}hidden{% endif %}">
+                     class="content-fields space-y-4
+                            {% if lecture.content_type != 'VIDEO' %}
+                                hidden
+                            {% endif %}">
                     <div>
                         <label for="videoUrl" class="block text-sm font-medium text-gray-700">Video URL</label>
                         <input type="url"
@@ -60,7 +66,8 @@
                     </div>
                 </div>
                 <div id="liveFields"
-                     class="content-fields space-y-4 {% if lecture.content_type != 'LIVE' %}hidden{% endif %}">
+                     class="content-fields space-y-4
+                            {% if lecture.content_type != 'LIVE' %}hidden{% endif %}">
                     <div>
                         <label for="liveUrl" class="block text-sm font-medium text-gray-700">Live Session URL</label>
                         <input type="url"
@@ -87,7 +94,9 @@
                     </div>
                 </div>
                 <div id="contentField"
-                     class="{% if lecture.content_type != 'VIDEO' and lecture.content_type != 'DOCUMENT' %}hidden{% endif %}">
+                     class="{% if lecture.content_type != 'VIDEO' and lecture.content_type != 'DOCUMENT' %}
+                                hidden
+                            {% endif %}">
                     <label for="documentContent" class="block text-sm font-medium text-gray-700">Content</label>
                     <textarea id="documentContent"
                               name="content"
@@ -124,4 +133,5 @@
             });
         </script>
     </div>
+
 {% endblock content %}

@@ -1,22 +1,35 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Trademark Search
+
 {% endblock title %}
+
 {% block description %}
     Conduct trademark searches efficiently. Use our tool to search for trademarks and fetch data from the United States Patent and Trademark Office.
+
 {% endblock description %}
+
 {% block keywords %}
     Trademark Search, USPTO, Patent and Trademark, Search Trademarks, Trademark Data, Trademark Office
+
 {% endblock keywords %}
+
 {% block og_title %}
     Trademark Search - Find Trademark Information
+
 {% endblock og_title %}
+
 {% block og_description %}
     Use our tool to search for trademarks and retrieve data from the United States Patent and Trademark Office. Conduct your trademark searches efficiently.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="h-[calc(100vh-72px)] flex items-center">
         <div class="flex flex-col gap-4 lg:gap-12 h-screen w-screen sm:h-fit sm:w-5/6 sm:rounded-2xl sm:shadow-lg sm:mx-auto py-24 px-4 lg:px-24 bg-white font-light">
             <img class="w-full"
@@ -44,16 +57,17 @@
         </div>
     </div>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var form = document.getElementById('form');
-        var searchInput = document.getElementById('query'); // Corrected ID
-        var searchButton = document.getElementById('search_button');
-        
-        form.addEventListener('submit', function(event) {
-            if (searchInput.value.trim() === '') {
-                event.preventDefault(); // Prevent the form from submitting
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            var form = document.getElementById('form');
+            var searchInput = document.getElementById('query'); // Corrected ID
+            var searchButton = document.getElementById('search_button');
+
+            form.addEventListener('submit', function(event) {
+                if (searchInput.value.trim() === '') {
+                    event.preventDefault(); // Prevent the form from submitting
+                }
+            });
         });
-    });
     </script>
+
 {% endblock content %}

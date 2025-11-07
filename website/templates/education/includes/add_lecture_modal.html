@@ -97,7 +97,7 @@
     </div>
 </div>
 <script>
-        function toggleContentFields(contentType) {
+    function toggleContentFields(contentType) {
         document.querySelectorAll('.content-fields').forEach(field => {
             field.classList.add('hidden');
         });
@@ -110,15 +110,13 @@
         } else if (contentType === 'DOCUMENT') {
             document.getElementById('documentFields').classList.remove('hidden');
         }
-        }
-        document.addEventListener('DOMContentLoaded', function () {
-            const defaultContentType = document.getElementById('contentType').value;
-            toggleContentFields(defaultContentType);
-        });
-        
-        document.getElementById('contentType').addEventListener('change', function() {
-                toggleContentFields(this.value);
-            });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const defaultContentType = document.getElementById('contentType').value;
+        toggleContentFields(defaultContentType);
+    });
 
-        
+    document.getElementById('contentType').addEventListener('change', function() {
+        toggleContentFields(this.value);
+    });
 </script>

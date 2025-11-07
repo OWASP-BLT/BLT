@@ -1,26 +1,41 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     System Statistics Dashboard
+
 {% endblock title %}
+
 {% block description %}
     View real-time system statistics in a comprehensive dashboard. Track key metrics, trends, and historical data to monitor your system's performance effectively.
+
 {% endblock description %}
+
 {% block keywords %}
     System Statistics Dashboard, Real-Time Metrics, System Performance, Track Trends, Historical Data, Key Metrics
+
 {% endblock keywords %}
+
 {% block og_title %}
     System Statistics Dashboard - Monitor Performance
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access a detailed system statistics dashboard. Track real-time metrics, view trends, and analyze historical data to ensure optimal system performance.
+
 {% endblock og_description %}
 {% load humanize %}
+
 {% block style %}
     <!-- No custom styles needed as Tailwind handles everything -->
+
 {% endblock style %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-8">
             <h2 class="text-3xl font-bold">Statistics</h2>
@@ -76,98 +91,103 @@
             {% endfor %}
         </div>
     </div>
+
     {% block extra_js %}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-        // Store chart instances globally
-        window.chartInstances = window.chartInstances || {};
+            // Store chart instances globally
+            window.chartInstances = window.chartInstances || {};
 
-        function destroyCharts() {
-            // Destroy all existing chart instances
-            Object.values(window.chartInstances).forEach(chart => {
-                if (chart) {
-                    chart.destroy();
-                }
-            });
-            window.chartInstances = {};
-        }
-
-        function initializeCharts() {
-            // First destroy any existing charts
-            destroyCharts();
-
-            // Initialize new charts
-            document.querySelectorAll('.sparkline').forEach(function(canvas) {
-                const values = JSON.parse(canvas.dataset.values);
-                const dates = JSON.parse(canvas.dataset.dates);
-                const ctx = canvas.getContext('2d');
-
-                // Create new chart instance and store it
-                window.chartInstances[canvas.id] = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: dates,
-                        datasets: [{
-                            data: values,
-                            borderColor: 'rgba(231, 76, 60, 0.7)',
-                            borderWidth: 2,
-                            fill: true,
-                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                            pointRadius: 0,
-                            tension: 0.4,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                enabled: true,
-                                mode: 'index',
-                                intersect: false,
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                titleColor: '#fff',
-                                bodyColor: '#fff',
-                                callbacks: {
-                                    title: function(tooltipItems) {
-                                        return tooltipItems[0].label;
-                                    },
-                                    label: function(context) {
-                                        return 'Count: ' + context.raw;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: { 
-                                display: false,
-                                grid: {
-                                    display: false
-                                }
-                            },
-                            y: { 
-                                display: false,
-                                beginAtZero: true,
-                                grid: {
-                                    display: false
-                                }
-                            }
-                        },
-                        interaction: {
-                            intersect: false,
-                            mode: 'index'
-                        }
+            function destroyCharts() {
+                // Destroy all existing chart instances
+                Object.values(window.chartInstances).forEach(chart => {
+                    if (chart) {
+                        chart.destroy();
                     }
                 });
-            });
-        }
+                window.chartInstances = {};
+            }
 
-        // Initialize charts when DOM is loaded
-        document.addEventListener('DOMContentLoaded', initializeCharts);
+            function initializeCharts() {
+                // First destroy any existing charts
+                destroyCharts();
 
-        // Clean up charts when navigating away
-        window.addEventListener('beforeunload', destroyCharts);
+                // Initialize new charts
+                document.querySelectorAll('.sparkline').forEach(function(canvas) {
+                    const values = JSON.parse(canvas.dataset.values);
+                    const dates = JSON.parse(canvas.dataset.dates);
+                    const ctx = canvas.getContext('2d');
+
+                    // Create new chart instance and store it
+                    window.chartInstances[canvas.id] = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [{
+                                data: values,
+                                borderColor: 'rgba(231, 76, 60, 0.7)',
+                                borderWidth: 2,
+                                fill: true,
+                                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                pointRadius: 0,
+                                tension: 0.4,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    enabled: true,
+                                    mode: 'index',
+                                    intersect: false,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#fff',
+                                    bodyColor: '#fff',
+                                    callbacks: {
+                                        title: function(tooltipItems) {
+                                            return tooltipItems[0].label;
+                                        },
+                                        label: function(context) {
+                                            return 'Count: ' + context.raw;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    display: false,
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    display: false,
+                                    beginAtZero: true,
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            },
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Initialize charts when DOM is loaded
+            document.addEventListener('DOMContentLoaded', initializeCharts);
+
+            // Clean up charts when navigating away
+            window.addEventListener('beforeunload', destroyCharts);
         </script>
+
     {% endblock extra_js %}
+
 {% endblock content %}

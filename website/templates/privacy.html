@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Privacy Policy
+
 {% endblock title %}
+
 {% block description %}
     Learn about our privacy practices. Understand how we handle your data and the measures we take to protect your privacy. {% env 'PROJECT_NAME' %} is committed to transparency and trust.
+
 {% endblock description %}
+
 {% block keywords %}
     Privacy Policy, Data Protection, Privacy Practices, User Data, Data Security, Transparency, Trust
+
 {% endblock keywords %}
+
 {% block og_title %}
     Privacy Policy - Data Protection and Transparency
+
 {% endblock og_title %}
+
 {% block og_description %}
     Read our privacy policy to understand how we handle and protect your data. {% env 'PROJECT_NAME' %} is dedicated to ensuring your privacy and maintaining transparency in our practices.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="w-[85%] mx-auto py-10">
         <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
             <div class="border-b border-gray-200 pb-6 mb-8">
@@ -27,6 +40,7 @@
                 </p>
             </div>
             {% include "mobile_privacy.html" %}
+
             <div class="mt-12 border-t border-gray-200 pt-8">
                 <h2 class="text-3xl font-bold text-[#e74c3c] mb-6">Our Commitment</h2>
                 <p class="text-xl mb-8">BLT is 100% free to use, Open Source and a non-commercial, not for profit initiative.</p>
@@ -36,6 +50,7 @@
             <p class="text-sm">Last Updated: June 5, 2025</p>
         </div>
     </div>
+
     {% block edit_link %}
         <div class="bottom-right">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/privacy.html">
@@ -45,5 +60,7 @@
                 <i class="fab fa-figma"></i>
             </a>
         </div>
+
     {% endblock edit_link %}
+
 {% endblock content %}

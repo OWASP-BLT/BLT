@@ -1,13 +1,17 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}
+
 {% providers_media_js %}
 {% load i18n %}
+
 {% block content %}
     <section>
         {% include "includes/user_sidenav.html" %}
+
     </section>
     <div class="p-4">
         <!-- Upcoming Hunts -->
@@ -122,4 +126,5 @@
             <i class="fab fa-figma text-2xl"></i>
         </a>
     </div>
+
 {% endblock content %}

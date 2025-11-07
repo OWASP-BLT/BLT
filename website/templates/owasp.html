@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Welcome to OWASP
+
 {% endblock title %}
+
 {% block description %}
     A guide for new community members to get involved with OWASP.
+
 {% endblock description %}
+
 {% block keywords %}
     OWASP, security, open source, community, software security, projects, chapters, membership
+
 {% endblock keywords %}
+
 {% block og_title %}
     Welcome to OWASP
+
 {% endblock og_title %}
+
 {% block og_description %}
     Learn how to get involved with OWASP, join local chapters, contribute to projects, and more.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="bg-gradient-to-b from-gray-50 to-white min-h-screen">
         <!-- Hero Section -->
         <div class="bg-gray-900 text-white">
@@ -31,11 +44,11 @@
                     </p>
                     <div class="flex flex-wrap gap-3">
                         <a href="https://owasp.org/chapters"
-                           class="px-6 py-3 bg-[#e74c3c] hover:bg-opacity-90 text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl hover:text-white "
+                           class="px-6 py-3 bg-[#e74c3c] hover:bg-opacity-90 text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl hover:text-white"
                            target="_blank"
                            rel="noopener noreferrer">Find Local Chapter</a>
                         <a href="https://owasp.org/membership"
-                           class="px-6 py-3 bg-white text-gray-900 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl "
+                           class="px-6 py-3 bg-white text-gray-900 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl"
                            target="_blank"
                            rel="noopener noreferrer">Become a Member</a>
                     </div>
@@ -422,11 +435,11 @@
                             </p>
                             <div class="flex flex-wrap justify-center gap-4">
                                 <a href="https://owasp.org/membership"
-                                   class="px-8 py-4 bg-[#e74c3c] hover:bg-opacity-90 text-white hover:text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl ">
+                                   class="px-8 py-4 bg-[#e74c3c] hover:bg-opacity-90 text-white hover:text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl">
                                     Join OWASP
                                 </a>
                                 <a href="https://owasp.org/"
-                                   class="px-8 py-4 bg-white text-gray-900 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl ">
+                                   class="px-8 py-4 bg-white text-gray-900 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl">
                                     Learn More
                                 </a>
                             </div>
@@ -436,4 +449,5 @@
             </section>
         </div>
     </div>
+
 {% endblock content %}

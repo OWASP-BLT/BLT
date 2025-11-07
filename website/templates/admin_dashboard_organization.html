@@ -1,23 +1,36 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
+
 {% block title %}
     Manage Organizations
+
 {% endblock title %}
+
 {% block description %}
     Manage and create organizations
+
 {% endblock description %}
+
 {% block keywords %}
     manage, organizations, create, admin
+
 {% endblock keywords %}
+
 {% block og_title %}
     Manage Organizations
+
 {% endblock og_title %}
+
 {% block og_description %}
     Manage and create new organizations. View active and inactive organizations, and perform administrative tasks.
+
 {% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/admin_sidenav.html" %}
+
     </section>
     <div>
         <div class="col_3">
@@ -30,7 +43,7 @@
                                class="list-group-item">{{ organization.name }}</a>
                         {% else %}
                             <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
-                               class="list-group-item list-group-item-danger ">{{ organization.name }}</a>
+                               class="list-group-item list-group-item-danger">{{ organization.name }}</a>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -114,4 +127,5 @@
         data-target="#addDomainModal">
     <i class="lnr lnr-plus-circle"> </i>
 </button>
+
 {% endblock content %}

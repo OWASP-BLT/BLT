@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Add Bug Bounty
+
 {% endblock title %}
+
 {% block description %}
     Create a new Bug Bounty and add prizes for the contest. Specify the domain, timeline, and upload related assets like logos and banners.
+
 {% endblock description %}
+
 {% block keywords %}
     Bug Bounty, Add Bug Bounty, Online Contest, Domain URL, Create Bug Bounty, Hunt Prizes
+
 {% endblock keywords %}
+
 {% block og_title %}
     Add Bug Bounty - Create a New Online Contest
+
 {% endblock og_title %}
+
 {% block og_description %}
     Set up a Bug Bounty contest, add prizes, and upload logos and banners to start the competition. Specify timelines and contest details.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="w-full bg-[#fdfeff]">
         <div class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -258,7 +270,10 @@
                         <div class="border-b border-gray-900/10 pb-12 mt-10">
                             <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Description</h2>
                             <p class="mt-1 text-sm text-gray-600">Provide a detailed description of your bug bounty program, scope, and rules.</p>
-                            <div class="mt-6">{% include "organization/organization_includes/md_editor.html" %}</div>
+                            <div class="mt-6">
+                                {% include "organization/organization_includes/md_editor.html" %}
+
+                            </div>
                         </div>
                         <div class="border-b border-gray-900/10 pb-12 mt-10">
                             <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Prizes</h2>
@@ -363,20 +378,27 @@
             </div>
         </div>
     </div>
+
 {% endblock body %}
+
 {% block scripts %}
     <!-- No external datepicker scripts to avoid style conflicts -->
     <!-- Hunt Controller Script -->
     <script src="{% static 'organization/js/hunt_controller.js' %}?v=2.8"></script>
     <script>
         // Set organization ID for JavaScript access
-        window.organizationId = {{ organization.id }};
-        
-       
+        window.organizationId = {
+            {
+                organization.id
+            }
+        };
+
+
         // Date inputs are now plain text with MM/DD/YYYY format
         console.log('[Date] Using plain text inputs for manual date entry');
-        
+
         // Image preview functions are now handled by hunt_controller.js
         console.log('[Images] Using shared previewUploadedImage and removeUploadedImage functions from hunt_controller.js');
     </script>
+
 {% endblock scripts %}

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <div class="container mx-auto w-4/5 mt-16 p-5 border border-black rounded-lg bg-white shadow-md relative">
         <h1 class="text-center text-black text-3xl font-bold">Similarity Check</h1>
@@ -99,7 +101,7 @@
         const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
         const wsUrl = `${protocol}${window.location.host}/ws/similarity/`;
         const fetchButton = document.getElementById("fetchReports");
-        
+
         // Connect to WebSocket server
         function connectWebSocket() {
             return new Promise((resolve, reject) => {
@@ -137,7 +139,7 @@
                     fetchButton.innerHTML = "Fetch Reports";
                     fetchButton.disabled = false;
                     document.getElementById("cancelRequest").style.display = "none";
-                    cancelRequest();    
+                    cancelRequest();
                     break;
                 case "error":
                     alert(data.error);
@@ -145,7 +147,7 @@
                     fetchButton.disabled = false;
                     document.getElementById("cancelRequest").style.display = "none";
                     cancelRequest();
-                    break;  
+                    break;
 
             }
         }
@@ -197,7 +199,7 @@
                     type1: type1,
                     repo2: repo2,
                     type2: type2,
-                    branch1: branch1,   
+                    branch1: branch1,
                     branch2: branch2
 
                 }));
@@ -220,12 +222,15 @@
         });
 
         window.addEventListener("beforeunload", () => {
-            cancelRequest();  
+            cancelRequest();
         });
 
         // Function to display the chart with results
         function displayChart(matchingDetails) {
-            const { functions, models } = matchingDetails;
+            const {
+                functions,
+                models
+            } = matchingDetails;
             const downloadButton = document.getElementById("downloadCsv");
             // Prepare data for the chart
             const labels = [];
@@ -255,13 +260,11 @@
                 type: "bar",
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: "Similarity (%)",
-                            data: data,
-                            backgroundColor: backgroundColors,
-                        }
-                    ]
+                    datasets: [{
+                        label: "Similarity (%)",
+                        data: data,
+                        backgroundColor: backgroundColors,
+                    }]
                 },
                 options: {
                     scales: {
@@ -342,7 +345,9 @@
 
             // Convert rows to CSV and download
             const csvString = csvRows.join("\n");
-            const blob = new Blob([csvString], { type: "text/csv" });
+            const blob = new Blob([csvString], {
+                type: "text/csv"
+            });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.style.display = "none";
@@ -353,4 +358,5 @@
             window.URL.revokeObjectURL(url);
         }
     </script>
+
 {% endblock content %}

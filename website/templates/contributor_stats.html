@@ -1,43 +1,66 @@
 {% extends "base.html" %}
+
 {% block style %}
     <!-- DataTables CSS -->
     <link rel="stylesheet"
           href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+
 {% endblock style %}
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     OWASP {% env 'PROJECT_NAME' %} - User Statistics
+
 {% endblock %}
+
 {% block description %}
     View user statistics for contributions, including commits, opened/closed issues, PRs, and comments for a selected time period.
+
 {% endblock %}
+
 {% block keywords %}
     user statistics, OWASP {% env 'PROJECT_NAME' %}, commits, issues, PRs, contributions
+
 {% endblock %}
+
 {% block og_title %}
     OWASP {% env 'PROJECT_NAME' %} - User Statistics
+
 {% endblock %}
+
 {% block og_description %}
     Explore the statistics for contributors in the OWASP {% env 'PROJECT_NAME' %} project, showcasing activity like commits, issues, and pull requests.
+
 {% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="w-full p-6">
         <!-- Period Selection Buttons -->
         <div class="flex gap-4 mb-6 mt-10 justify-center">
             <a href="?period=1"
-               class="px-6 py-3 rounded-md text-lg {% if period == '1' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
-                Daily
-            </a>
+               class="px-6 py-3 rounded-md text-lg
+                      {% if period == '1' %}
+                          bg-blue-600 text-white
+                      {% else %}
+                          bg-gray-200 hover:bg-gray-300
+                      {% endif %}">Daily</a>
             <a href="?period=30"
-               class="px-6 py-3 rounded-md text-lg {% if period == '30' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
-                Weekly
-            </a>
+               class="px-6 py-3 rounded-md text-lg
+                      {% if period == '30' %}
+                          bg-blue-600 text-white
+                      {% else %}
+                          bg-gray-200 hover:bg-gray-300
+                      {% endif %}">Weekly</a>
             <a href="?period=365"
-               class="px-6 py-3 rounded-md text-lg {% if period == '365' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
-                Yearly
-            </a>
+               class="px-6 py-3 rounded-md text-lg
+                      {% if period == '365' %}
+                          bg-blue-600 text-white
+                      {% else %}
+                          bg-gray-200 hover:bg-gray-300
+                      {% endif %}">Yearly</a>
         </div>
         <!-- Date Range Display -->
         <div class="text-lg text-gray-700 mb-6 text-center">Showing contributions from {{ start_date }} to {{ end_date }}</div>
@@ -72,7 +95,9 @@
             </table>
         </div>
     </div>
+
 {% endblock content %}
+
 {% block scripts %}
     <!-- jQuery and DataTables JS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
@@ -80,17 +105,21 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <script>
-    $(document).ready(function() {
-        $('#userStatsTable').DataTable({
-            "paging": true,
-            "info": false,
-            "searching": true,
-            "order": [[6, 'desc']],
-            "columnDefs": [
-                { "orderable": false, "targets": [0] }
-            ],
-            "autoWidth": false
+        $(document).ready(function() {
+            $('#userStatsTable').DataTable({
+                "paging": true,
+                "info": false,
+                "searching": true,
+                "order": [
+                    [6, 'desc']
+                ],
+                "columnDefs": [{
+                    "orderable": false,
+                    "targets": [0]
+                }],
+                "autoWidth": false
+            });
         });
-    });
     </script>
+
 {% endblock scripts %}

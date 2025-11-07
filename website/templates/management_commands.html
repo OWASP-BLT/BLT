@@ -1,13 +1,20 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Management Commands
+
 {% endblock title %}
+
 {% block extra_head %}
     {# Removed custom CSS styles in favor of Tailwind classes #}
+
 {% endblock extra_head %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h1 class="text-2xl font-bold mb-6">Management Commands</h1>
@@ -19,9 +26,12 @@
             {% endif %}
             {% if messages %}
                 {% for message in messages %}
-                    <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% endif %}">
-                        {{ message }}
-                    </div>
+                    <div class="mb-4 p-4 rounded-lg
+                                {% if message.tags == 'success' %}
+                                    bg-green-100 text-green-700
+                                {% elif message.tags == 'error' %}
+                                    bg-red-100 text-red-700
+                                {% endif %}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
             <div class="overflow-x-auto">
@@ -178,7 +188,12 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     {% if command.last_run %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if command.last_success %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                     {% if command.last_success %}
+                                                         bg-green-100 text-green-800
+                                                     {% else %}
+                                                         bg-red-100 text-red-800
+                                                     {% endif %}">
                                             {% if command.last_success %}
                                                 Success
                                             {% else %}
@@ -206,8 +221,20 @@
                                             <div class="flex items-end h-[30px] w-[120px] gap-[1px] relative"
                                                  title="30-day activity">
                                                 {% for data in command.stats_data %}
-                                                    <div class="flex-1 {% if data.value > 0 %}bg-[#e74c3c] hover:bg-red-700{% else %}bg-gray-200 hover:bg-gray-300{% endif %} min-w-[2px] rounded-t-sm transition-all duration-200"
-                                                         style="height: {% if data.value > 0 %}{{ data.height_percent|floatformat:0 }}{% else %}1{% endif %}%"
+                                                    <div class="flex-1
+                                                                {% if data.value > 0 %}
+                                                                    bg-[#e74c3c] hover:bg-red-700
+                                                                {% else %}
+                                                                    bg-gray-200 hover:bg-gray-300
+                                                                {% endif %}
+                                                                min-w-[2px] rounded-t-sm transition-all duration-200"
+                                                         style="height:
+                                                                {% if data.value > 0 %}
+                                                                    {{ data.height_percent|floatformat:0 }}
+                                                                {% else %}
+                                                                    1
+                                                                {% endif %}
+                                                                %"
                                                          title="{{ data.date }}: {{ data.value }}"></div>
                                                 {% endfor %}
                                             </div>
@@ -371,23 +398,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, setting up event listeners');
             const commandRows = document.querySelectorAll('tr[data-command]');
-            
+
             commandRows.forEach(row => {
                 row.addEventListener('click', function(e) {
                     // Don't toggle if clicking on a button
                     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
                         return;
                     }
-                    
+
                     const commandName = this.getAttribute('data-command');
                     const argsRow = document.getElementById(`args-${commandName}`);
-                    
+
                     if (argsRow) {
                         argsRow.classList.toggle('hidden');
                     }
                 });
             });
-            
+
             // Set up form submission handling
             const runCommandForm = document.getElementById('runCommandForm');
             if (runCommandForm) {
@@ -404,18 +431,18 @@
                 bar.addEventListener('mouseenter', function() {
                     const title = this.getAttribute('title');
                     if (!title) return;
-                    
+
                     // Parse the title to get date and value
                     const [date, valueStr] = title.split(': ');
                     const value = parseInt(valueStr) || 0;
-                    
+
                     // Format the date
                     const formattedDate = new Date(date).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
                     });
-                    
+
                     // Create tooltip
                     const tooltip = document.createElement('div');
                     tooltip.className = 'absolute z-10 bg-gray-900 text-white text-xs rounded py-1 px-2 pointer-events-none';
@@ -430,16 +457,16 @@
                     tooltip.style.left = '50%';
                     tooltip.style.transform = 'translateX(-50%)';
                     tooltip.style.whiteSpace = 'nowrap';
-                    
+
                     // Position tooltip
                     this.style.position = 'relative';
                     this.appendChild(tooltip);
-                    
+
                     // Remove title to prevent default tooltip
                     this.setAttribute('data-original-title', title);
                     this.removeAttribute('title');
                 });
-                
+
                 bar.addEventListener('mouseleave', function() {
                     // Restore title
                     const originalTitle = this.getAttribute('data-original-title');
@@ -447,7 +474,7 @@
                         this.setAttribute('title', originalTitle);
                         this.removeAttribute('data-original-title');
                     }
-                    
+
                     // Remove tooltip
                     const tooltip = this.querySelector('div');
                     if (tooltip) {
@@ -456,7 +483,7 @@
                 });
             });
         });
-        
+
         // Command modal functions
         function openCommandModal(commandName) {
             console.log('Opening modal for command:', commandName);
@@ -467,7 +494,7 @@
             const modalTitle = document.getElementById('modalCommandName');
             const resultsSection = document.getElementById('commandResults');
             const loadingSection = document.getElementById('commandLoading');
-            
+
             if (!modal || !form || !argsContainer || !commandNameInput) {
                 console.error('Missing required elements:', {
                     modal: !!modal,
@@ -477,77 +504,77 @@
                 });
                 return;
             }
-            
+
             // Reset form and hide results/loading
             form.reset();
             if (resultsSection) resultsSection.classList.add('hidden');
             if (loadingSection) loadingSection.classList.add('hidden');
-            
+
             // Set command name
             commandNameInput.value = commandName;
             if (modalTitle) modalTitle.textContent = `Run Command: ${commandName}`;
-            
+
             // Clear previous arguments
             argsContainer.innerHTML = '';
-            
+
             // Get command arguments
             const argsRow = document.getElementById(`args-${commandName}`);
             console.log('Args row found:', !!argsRow);
-            
+
             if (argsRow) {
                 const argRows = argsRow.querySelectorAll('tbody tr');
                 console.log('Found argument rows:', argRows.length);
-                
+
                 argRows.forEach((row, index) => {
                     const cells = row.querySelectorAll('td');
                     if (cells.length < 6) {
                         console.error('Not enough cells in argument row', index);
                         return;
                     }
-                    
+
                     const argName = cells[0].textContent.trim();
                     const argFlags = cells[1].textContent.trim();
                     const argHelp = cells[2].textContent.trim();
                     const argType = cells[3].textContent.trim();
                     const argRequired = cells[4].textContent.trim().includes('Yes');
                     const argDefault = cells[5].textContent.trim();
-                    
+
                     console.log('Processing argument:', argName, argType);
-                    
+
                     // Create form field
                     const fieldDiv = document.createElement('div');
-                    
+
                     // Label
                     const label = document.createElement('label');
                     label.className = 'block text-sm font-medium text-gray-700 mb-1';
                     label.textContent = argName + (argRequired ? ' *' : '');
                     fieldDiv.appendChild(label);
-                    
+
                     // Help text
                     const helpText = document.createElement('p');
                     helpText.className = 'text-xs text-gray-500 mb-1';
                     helpText.textContent = argHelp;
                     fieldDiv.appendChild(helpText);
-                    
+
                     // Input field
                     let input;
-                    
+
                     if (argType.includes('bool')) {
                         // Checkbox for boolean
                         const checkboxDiv = document.createElement('div');
                         checkboxDiv.className = 'flex items-center';
-                        
+
                         input = document.createElement('input');
                         input.type = 'checkbox';
                         input.name = argName;
                         input.id = `arg-${argName}`;
                         input.className = 'h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded';
-                        
+
                         const checkboxLabel = document.createElement('label');
                         checkboxLabel.htmlFor = `arg-${argName}`;
                         checkboxLabel.className = 'ml-2 block text-sm text-gray-900';
                         checkboxLabel.textContent = 'Enable';
-                        
+
                         checkboxDiv.appendChild(input);
                         checkboxDiv.appendChild(checkboxLabel);
                         fieldDiv.appendChild(checkboxDiv);
@@ -559,40 +586,40 @@
                         input.id = `arg-${argName}`;
                         input.className = 'mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#e74c3c] focus:border-[#e74c3c] sm:text-sm';
                         input.placeholder = argFlags;
-                        
+
                         if (argRequired) {
                             input.required = true;
                         }
-                        
+
                         // Set default value if available
                         if (argDefault !== 'None') {
                             input.value = argDefault;
                         }
-                        
+
                         fieldDiv.appendChild(input);
                     }
-                    
+
                     // Type hint
                     const typeHint = document.createElement('p');
                     typeHint.className = 'mt-1 text-xs text-gray-500';
                     typeHint.textContent = `Type: ${argType}`;
                     fieldDiv.appendChild(typeHint);
-                    
+
                     argsContainer.appendChild(fieldDiv);
                 });
             }
-            
+
             // Show modal
             modal.classList.remove('hidden');
             console.log('Modal should now be visible');
         }
-        
+
         function closeCommandModal() {
             console.log('Closing modal');
             const modal = document.getElementById('commandModal');
             if (modal) modal.classList.add('hidden');
         }
-        
+
         function submitCommandForm(form) {
             console.log('Submitting command form');
             const formData = new FormData(form);
@@ -601,7 +628,7 @@
             const resultsSection = document.getElementById('commandResults');
             const outputContainer = document.getElementById('commandOutput');
             const loadingSection = document.getElementById('commandLoading');
-            
+
             // Show loading state
             if (runBtn) {
                 runBtn.disabled = true;
@@ -609,68 +636,69 @@
             }
             if (loadingSection) loadingSection.classList.remove('hidden');
             if (resultsSection) resultsSection.classList.add('hidden');
-            
+
             console.log('Sending AJAX request for command:', commandName);
-            
+
             // Submit form via AJAX
             fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                console.log('Received response:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Command result:', data);
-                // Hide loading state
-                if (loadingSection) loadingSection.classList.add('hidden');
-                if (runBtn) {
-                    runBtn.disabled = false;
-                    runBtn.innerHTML = 'Run Command';
-                }
-                
-                // Show results
-                if (outputContainer) outputContainer.innerHTML = '';
-                if (resultsSection) resultsSection.classList.remove('hidden');
-                
-                if (data.success) {
-                    if (outputContainer) {
-                        outputContainer.innerHTML = `
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    console.log('Received response:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Command result:', data);
+                    // Hide loading state
+                    if (loadingSection) loadingSection.classList.add('hidden');
+                    if (runBtn) {
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = 'Run Command';
+                    }
+
+                    // Show results
+                    if (outputContainer) outputContainer.innerHTML = '';
+                    if (resultsSection) resultsSection.classList.remove('hidden');
+
+                    if (data.success) {
+                        if (outputContainer) {
+                            outputContainer.innerHTML = `
                             <div class="text-green-600 mb-2">✅ Command executed successfully</div>
                             <div class="whitespace-pre-wrap">${data.output || 'No output returned'}</div>
                         `;
-                    }
-                } else {
-                    if (outputContainer) {
-                        outputContainer.innerHTML = `
+                        }
+                    } else {
+                        if (outputContainer) {
+                            outputContainer.innerHTML = `
                             <div class="text-red-600 mb-2">❌ Command failed</div>
                             <div class="whitespace-pre-wrap">${data.error || 'Unknown error occurred'}</div>
                         `;
+                        }
                     }
-                }
-            })
-            .catch(error => {
-                console.error('Error executing command:', error);
-                // Hide loading state
-                if (loadingSection) loadingSection.classList.add('hidden');
-                if (runBtn) {
-                    runBtn.disabled = false;
-                    runBtn.innerHTML = 'Run Command';
-                }
-                
-                // Show error
-                if (outputContainer) {
-                    outputContainer.innerHTML = `
+                })
+                .catch(error => {
+                    console.error('Error executing command:', error);
+                    // Hide loading state
+                    if (loadingSection) loadingSection.classList.add('hidden');
+                    if (runBtn) {
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = 'Run Command';
+                    }
+
+                    // Show error
+                    if (outputContainer) {
+                        outputContainer.innerHTML = `
                         <div class="text-red-600 mb-2">❌ Request failed</div>
                         <div>There was a problem communicating with the server. Please try again.</div>
                     `;
-                }
-                if (resultsSection) resultsSection.classList.remove('hidden');
-            });
+                    }
+                    if (resultsSection) resultsSection.classList.remove('hidden');
+                });
         }
     </script>
+
 {% endblock content %}

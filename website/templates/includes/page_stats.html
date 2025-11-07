@@ -1,4 +1,5 @@
 {% load custom_tags %}
+
 {% get_current_template as current_template %}
 {% get_current_url_path as current_url_path %}
 {% get_page_views current_url_path 30 as page_views %}
@@ -56,289 +57,289 @@
     </div>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const initializeChart = function() {
-        // Wait for Chart.js to be available
-        if (typeof Chart === 'undefined') {
-            console.log('Chart.js not yet loaded, retrying...');
-            setTimeout(initializeChart, 100);
-            return;
-        }
-        
-        const ctx = document.getElementById('pageViewsChart').getContext('2d');
-        
-        // Initialize default empty data structure
-        let viewsByDate = {};
-        
-        // Safely parse the page views data from Django template
-        try {
-            // Get the raw JSON string and ensure it's properly escaped/formatted
-            const rawData = '{{ page_views|escapejs }}';
-            
-            // Parse the JSON data only if it's not empty
-            if (rawData && rawData.trim() !== '') {
-                viewsByDate = JSON.parse(rawData);
-                console.log('Successfully parsed view data:', viewsByDate);
-            } else {
-                console.warn('Empty page views data received');
+    document.addEventListener('DOMContentLoaded', function() {
+        const initializeChart = function() {
+            // Wait for Chart.js to be available
+            if (typeof Chart === 'undefined') {
+                console.log('Chart.js not yet loaded, retrying...');
+                setTimeout(initializeChart, 100);
+                return;
             }
-        } catch (e) {
-            console.error('Failed to parse page views data:', e);
-        }
-        
-        // Ensure viewsByDate is an object, not null or undefined
-        if (!viewsByDate || typeof viewsByDate !== 'object') {
-            console.warn('Invalid view data structure, creating empty object');
-            viewsByDate = {};
-        }
-        
-        // Sort the dates chronologically
-        const sortedDates = Object.keys(viewsByDate).sort();
-        
-        // Extract data in chronological order
-        const dateLabels = [];
-        const pageViewsData = [];
-        
-        // Format dates for display
-        const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        
-        // Process each date if we have any
-        if (sortedDates.length > 0) {
-            for (const dateStr of sortedDates) {
-                try {
-                    // Parse the date from the YYYY-MM-DD format
-                    const dateParts = dateStr.split('-');
-                    if (dateParts.length !== 3) {
-                        console.warn(`Invalid date format: ${dateStr}`);
-                        continue;
+
+            const ctx = document.getElementById('pageViewsChart').getContext('2d');
+
+            // Initialize default empty data structure
+            let viewsByDate = {};
+
+            // Safely parse the page views data from Django template
+            try {
+                // Get the raw JSON string and ensure it's properly escaped/formatted
+                const rawData = '{{ page_views|escapejs }}';
+
+                // Parse the JSON data only if it's not empty
+                if (rawData && rawData.trim() !== '') {
+                    viewsByDate = JSON.parse(rawData);
+                    console.log('Successfully parsed view data:', viewsByDate);
+                } else {
+                    console.warn('Empty page views data received');
+                }
+            } catch (e) {
+                console.error('Failed to parse page views data:', e);
+            }
+
+            // Ensure viewsByDate is an object, not null or undefined
+            if (!viewsByDate || typeof viewsByDate !== 'object') {
+                console.warn('Invalid view data structure, creating empty object');
+                viewsByDate = {};
+            }
+
+            // Sort the dates chronologically
+            const sortedDates = Object.keys(viewsByDate).sort();
+
+            // Extract data in chronological order
+            const dateLabels = [];
+            const pageViewsData = [];
+
+            // Format dates for display
+            const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            // Process each date if we have any
+            if (sortedDates.length > 0) {
+                for (const dateStr of sortedDates) {
+                    try {
+                        // Parse the date from the YYYY-MM-DD format
+                        const dateParts = dateStr.split('-');
+                        if (dateParts.length !== 3) {
+                            console.warn(`Invalid date format: ${dateStr}`);
+                            continue;
+                        }
+
+                        const year = parseInt(dateParts[0], 10);
+                        const month = parseInt(dateParts[1], 10) - 1; // 0-based month
+                        const day = parseInt(dateParts[2], 10);
+
+                        // Validate date parts
+                        if (isNaN(year) || isNaN(month) || isNaN(day) || month < 0 || month > 11 || day < 1 || day > 31) {
+                            console.warn(`Invalid date parts: ${year}-${month+1}-${day}`);
+                            continue;
+                        }
+
+                        // Format for display
+                        dateLabels.push(`${shortMonthNames[month]} ${day}`);
+
+                        // Add view count for this date (ensure it's a number)
+                        const viewCount = parseInt(viewsByDate[dateStr], 10);
+                        pageViewsData.push(isNaN(viewCount) ? 0 : viewCount);
+                    } catch (e) {
+                        console.warn(`Error processing date ${dateStr}:`, e);
+                        // Skip this date if there's an error
                     }
-                    
-                    const year = parseInt(dateParts[0], 10);
-                    const month = parseInt(dateParts[1], 10) - 1; // 0-based month
-                    const day = parseInt(dateParts[2], 10);
-                    
-                    // Validate date parts
-                    if (isNaN(year) || isNaN(month) || isNaN(day) || month < 0 || month > 11 || day < 1 || day > 31) {
-                        console.warn(`Invalid date parts: ${year}-${month+1}-${day}`);
-                        continue;
-                    }
-                    
-                    // Format for display
-                    dateLabels.push(`${shortMonthNames[month]} ${day}`);
-                    
-                    // Add view count for this date (ensure it's a number)
-                    const viewCount = parseInt(viewsByDate[dateStr], 10);
-                    pageViewsData.push(isNaN(viewCount) ? 0 : viewCount);
-                } catch (e) {
-                    console.warn(`Error processing date ${dateStr}:`, e);
-                    // Skip this date if there's an error
+                }
+            } else {
+                const today = new Date();
+                for (let i = 29; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    dateLabels.push(`${shortMonthNames[date.getMonth()]} ${date.getDate()}`);
+                    pageViewsData.push(0);
                 }
             }
-        } else {
-            const today = new Date();
-            for (let i = 29; i >= 0; i--) {
-                const date = new Date(today);
-                date.setDate(date.getDate() - i);
-                dateLabels.push(`${shortMonthNames[date.getMonth()]} ${date.getDate()}`);
-                pageViewsData.push(0);
-            }
-        }
-        
-        // Calculate total views - ensure we're only summing numbers
-        const totalViews = pageViewsData.reduce((sum, count) => sum + (isNaN(count) ? 0 : count), 0);
-        document.getElementById('totalViews').textContent = totalViews;
-        
-        // Create the chart
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: dateLabels,
-                datasets: [{
-                    label: 'Views',
-                    data: pageViewsData,
-                    backgroundColor: 'rgba(231, 76, 60, 0.7)',
-                    borderColor: '#e74c3c',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    barPercentage: 0.8,
-                    categoryPercentage: 0.9
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        enabled: true,
-                        callbacks: {
-                            title: function(tooltipItems) {
-                                const index = tooltipItems[0].dataIndex;
-                                if (sortedDates.length > 0 && index < sortedDates.length) {
-                                    try {
-                                        const dateStr = sortedDates[index];
-                                        const date = new Date(dateStr);
-                                        if (!isNaN(date.getTime())) {
-                                            return date.toLocaleDateString('en-US', { 
-                                                weekday: 'long', 
-                                                year: 'numeric', 
-                                                month: 'long', 
-                                                day: 'numeric' 
-                                            });
-                                        }
-                                    } catch (e) {
-                                        console.warn('Error formatting tooltip date:', e);
-                                    }
-                                }
-                                // Fallback to just showing the label if we can't format the date
-                                return dateLabels[index] || 'Unknown Date';
-                            },
-                            label: function(context) {
-                                const count = isNaN(context.raw) ? 0 : context.raw;
-                                return count + ' view' + (count !== 1 ? 's' : '');
-                            }
-                        }
-                    }
+
+            // Calculate total views - ensure we're only summing numbers
+            const totalViews = pageViewsData.reduce((sum, count) => sum + (isNaN(count) ? 0 : count), 0);
+            document.getElementById('totalViews').textContent = totalViews;
+
+            // Create the chart
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dateLabels,
+                    datasets: [{
+                        label: 'Views',
+                        data: pageViewsData,
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: '#e74c3c',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.9
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: {
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
                             display: false
                         },
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45,
-                            autoSkip: true,
-                            maxTicksLimit: 15,
-                            font: {
-                                size: 9
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const index = tooltipItems[0].dataIndex;
+                                    if (sortedDates.length > 0 && index < sortedDates.length) {
+                                        try {
+                                            const dateStr = sortedDates[index];
+                                            const date = new Date(dateStr);
+                                            if (!isNaN(date.getTime())) {
+                                                return date.toLocaleDateString('en-US', {
+                                                    weekday: 'long',
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                });
+                                            }
+                                        } catch (e) {
+                                            console.warn('Error formatting tooltip date:', e);
+                                        }
+                                    }
+                                    // Fallback to just showing the label if we can't format the date
+                                    return dateLabels[index] || 'Unknown Date';
+                                },
+                                label: function(context) {
+                                    const count = isNaN(context.raw) ? 0 : context.raw;
+                                    return count + ' view' + (count !== 1 ? 's' : '');
+                                }
                             }
                         }
                     },
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(200, 200, 200, 0.2)'
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkip: true,
+                                maxTicksLimit: 15,
+                                font: {
+                                    size: 9
+                                }
+                            }
                         },
-                        ticks: {
-                            precision: 0,
-                            stepSize: 1,
-                            // Ensure we only show integer values
-                            callback: function(value) {
-                                if (value % 1 === 0) {
-                                    return value;
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(200, 200, 200, 0.2)'
+                            },
+                            ticks: {
+                                precision: 0,
+                                stepSize: 1,
+                                // Ensure we only show integer values
+                                callback: function(value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-        });
-    };
-    
-    // Initialize the chart
-    initializeChart();
-    
-    // Set up vote functionality
-    const pageStatsContainer = document.getElementById('pageStatsContainer');
-    const upvoteBtn = document.getElementById('upvoteBtn');
-    const downvoteBtn = document.getElementById('downvoteBtn');
-    const upvoteCount = document.getElementById('upvoteCount');
-    const downvoteCount = document.getElementById('downvoteCount');
-    const currentUrlPath = '{{ current_url_path }}';
-    
-    // Toggle container on click of the handle
-    const handleElement = pageStatsContainer.querySelector('.flex.justify-center');
-    if (handleElement) {
-        handleElement.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (pageStatsContainer.classList.contains('translate-y-0')) {
-                pageStatsContainer.classList.remove('translate-y-0');
-                pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
-            } else {
-                pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
-                pageStatsContainer.classList.add('translate-y-0');
-            }
-        });
-    }
-    
-    // Add touch support for mobile devices
-    pageStatsContainer.addEventListener('touchstart', function(e) {
-        // Only handle touch events on the handle element
-        if (e.target.closest('.flex.justify-center')) {
-            e.preventDefault();
-            if (pageStatsContainer.classList.contains('translate-y-0')) {
-                pageStatsContainer.classList.remove('translate-y-0');
-                pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
-            } else {
-                pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
-                pageStatsContainer.classList.add('translate-y-0');
-            }
+            });
+        };
+
+        // Initialize the chart
+        initializeChart();
+
+        // Set up vote functionality
+        const pageStatsContainer = document.getElementById('pageStatsContainer');
+        const upvoteBtn = document.getElementById('upvoteBtn');
+        const downvoteBtn = document.getElementById('downvoteBtn');
+        const upvoteCount = document.getElementById('upvoteCount');
+        const downvoteCount = document.getElementById('downvoteCount');
+        const currentUrlPath = '{{ current_url_path }}';
+
+        // Toggle container on click of the handle
+        const handleElement = pageStatsContainer.querySelector('.flex.justify-center');
+        if (handleElement) {
+            handleElement.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (pageStatsContainer.classList.contains('translate-y-0')) {
+                    pageStatsContainer.classList.remove('translate-y-0');
+                    pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
+                } else {
+                    pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
+                    pageStatsContainer.classList.add('translate-y-0');
+                }
+            });
         }
-    });
-    
-    // CSRF token helper
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+
+        // Add touch support for mobile devices
+        pageStatsContainer.addEventListener('touchstart', function(e) {
+            // Only handle touch events on the handle element
+            if (e.target.closest('.flex.justify-center')) {
+                e.preventDefault();
+                if (pageStatsContainer.classList.contains('translate-y-0')) {
+                    pageStatsContainer.classList.remove('translate-y-0');
+                    pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
+                } else {
+                    pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
+                    pageStatsContainer.classList.add('translate-y-0');
                 }
             }
-        }
-        return cookieValue;
-    }
-    
-    const csrftoken = getCookie('csrftoken');
-    
-    // Vote submission handler
-    function submitVote(voteType) {
-        const formData = new FormData();
-        formData.append('url_path', currentUrlPath);
-        formData.append('vote_type', voteType);
-        
-        fetch('{% url "page_vote" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrftoken
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                upvoteCount.textContent = data.upvotes;
-                downvoteCount.textContent = data.downvotes;
-            } else {
-                console.error('Error:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error submitting vote:', error);
         });
-    }
-    
-    // Event listeners for vote buttons
-    upvoteBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        submitVote('upvote');
+
+        // CSRF token helper
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        // Vote submission handler
+        function submitVote(voteType) {
+            const formData = new FormData();
+            formData.append('url_path', currentUrlPath);
+            formData.append('vote_type', voteType);
+
+            fetch('{% url "page_vote" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        upvoteCount.textContent = data.upvotes;
+                        downvoteCount.textContent = data.downvotes;
+                    } else {
+                        console.error('Error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error submitting vote:', error);
+                });
+        }
+
+        // Event listeners for vote buttons
+        upvoteBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            submitVote('upvote');
+        });
+
+        downvoteBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            submitVote('downvote');
+        });
     });
-    
-    downvoteBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        submitVote('downvote');
-    });
-});
 </script>

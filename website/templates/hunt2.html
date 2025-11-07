@@ -1,9 +1,12 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
 {% load tz_detect %}
+
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     <script src="{% static 'js/jquery.validate.js' %}"></script>
     <link rel="stylesheet"
@@ -137,11 +140,13 @@
             exportFormats: 'datepicker-2-res',
         });
     </script>
+
 {% endblock content %}
+
 {% block after_js %}
     <script src="{% static 'js/bootstrap-slider.js' %}"></script>
     <script>
-        $('.btn').on('click', function () {
+        $('.btn').on('click', function() {
             $(".hunt-form").valid();
         });
 
@@ -153,9 +158,10 @@
 
         $(".slider").slider({
             tooltip: 'always',
-            formatter: function (value) {
+            formatter: function(value) {
                 return '$' + numberWithCommas(value);
             }
         });
     </script>
+
 {% endblock after_js %}

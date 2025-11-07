@@ -1,25 +1,38 @@
 {% extends "base.html" %}
+
 {% load gravatar %}
 {% load static %}
+
 {% block title %}
     Search Results
+
 {% endblock title %}
+
 {% block description %}
     View the results of your search, including activities, domains, and users. Find the information you are looking for quickly and efficiently.
+
 {% endblock description %}
+
 {% block keywords %}
     Search Results, Search Activities, Search Domains, Search Users, Find Information, Efficient Search
+
 {% endblock keywords %}
+
 {% block og_title %}
     Search Results - Find What You Need
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access detailed search results, including activities, domains, and users. Quickly find the information and resources you're looking for.
+
 {% endblock og_description %}
 {% load humanize %}
+
 {% block content %}
     <!-- Include Sidenav -->
     {% include "includes/sidenav.html" %}
+
     <div class="absolute bottom-[10px] right-[15px]">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/search.html">
             <i class="fab fa-github"></i>
@@ -112,6 +125,7 @@
                                 <div class="list-group">
                                     {% for activity in issues %}
                                         {% include "includes/_activity.html" %}
+
                                     {% endfor %}
                                 </div>
                             </div>
@@ -774,56 +788,57 @@
         </div>
     {% endif %}
     <script>
-    function scrollToSection(sectionId) {
-        const section = document.getElementById(sectionId);
-        if (section) {
-            section.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    }
-document.addEventListener("DOMContentLoaded", function () {
-    const messageButtons = document.querySelectorAll(".start-chat");
-    console.log(messageButtons)
-    messageButtons.forEach(button => {
-        button.addEventListener("click", function () {
-            const userId = this.getAttribute("data-user-id");
-
-            fetch(`/messaging/start-thread/${userId}/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = `/messaging/?thread=${data.thread_id}`;
-                } else {
-                    alert("Error starting chat.");
-                }
-            })
-            .catch(error => console.error("Error:", error));
-        });
-    });
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.startsWith(name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
             }
         }
-        return cookieValue;
-    }
-});
+        document.addEventListener("DOMContentLoaded", function() {
+            const messageButtons = document.querySelectorAll(".start-chat");
+            console.log(messageButtons)
+            messageButtons.forEach(button => {
+                button.addEventListener("click", function() {
+                    const userId = this.getAttribute("data-user-id");
+
+                    fetch(`/messaging/start-thread/${userId}/`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": getCookie("csrftoken")
+                            },
+                            body: JSON.stringify({})
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.href = `/messaging/?thread=${data.thread_id}`;
+                            } else {
+                                alert("Error starting chat.");
+                            }
+                        })
+                        .catch(error => console.error("Error:", error));
+                });
+            });
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.startsWith(name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        });
     </script>
+
 {% endblock content %}

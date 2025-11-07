@@ -1,21 +1,32 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load gravatar %}
 {% load custom_tags %}
+
 {% block title %}Home - Bug Logging Tool{% endblock %}
+
 {% block description %}
     Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
+
 {% endblock %}
+
 {% block keywords %}
     Bug Logging Tool, OWASP, security, bug reporting, rewards, open source, community, web security, contributions
+
 {% endblock %}
+
 {% block og_title %}Home - Bug Logging Tool{% endblock %}
+
 {% block og_description %}
     Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
+
 {% endblock %}
+
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
+
     {% if debug_mode %}
         <!-- Local Mode Panel -->
         <div id="dev-panel"
@@ -206,7 +217,7 @@
                 <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
                 <div class="mx-2">
                     <a href="{% url 'register_organization' %}"
-                       class=" flex items-center justify-center gap-3 px-4 py-3 text-xl rounded-md border border-gray-300  hover:text-black hover:shadow-md transition-all duration-300">
+                       class="flex items-center justify-center gap-3 px-4 py-3 text-xl rounded-md border border-gray-300  hover:text-black hover:shadow-md transition-all duration-300">
                         <i class="fas fa-building text-[#e74c3c]"></i>
                         <span class="font-medium text-center">Register Organization</span>
                     </a>
@@ -1181,7 +1192,7 @@
             copyText.select();
             copyText.setSelectionRange(0, 99999);
             document.execCommand("copy");
-            
+
             // Show feedback
             var button = event.target.closest('button');
             var originalText = button.innerHTML;
@@ -1191,4 +1202,5 @@
             }, 2000);
         }
     </script>
+
 {% endblock content %}

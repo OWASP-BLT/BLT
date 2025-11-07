@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Team Leaderboard
+
 {% endblock title %}
+
 {% block description %}
     Check out the top performing teams on the leaderboard. View their scores, names, and rankings.
+
 {% endblock description %}
+
 {% block keywords %}
     Team Leaderboard, Top Teams, Scores, Rankings, Team Performance
+
 {% endblock keywords %}
+
 {% block og_title %}
     Team Leaderboard - Top Performing Teams
+
 {% endblock og_title %}
+
 {% block og_description %}
     Explore the leaderboard to see the top performing teams and their rankings.
+
 {% endblock og_description %}
 {% load gravatar %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto">
             <!-- Header Section -->
@@ -63,18 +76,36 @@
                                         {% endif %}
                                         <!-- Rank Badge -->
                                         {% if team.rank %}
-                                            <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold {% if team.rank == 'GOLD' %}bg-[#D4AF37] text-white {% elif team.rank == 'SILVER' %}bg-[#C0C0C0] text-gray-800 {% elif team.rank == 'BRONZE' %}bg-[#be7225] text-white {% elif team.rank == 'PLATINUM' %}bg-[#E5E4E2] text-gray-800 {% else %}bg-gray-800 text-white{% endif %}">
-                                                {{ forloop.counter }}
-                                            </div>
+                                            <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                                                        {% if team.rank == 'GOLD' %}
+                                                            bg-[#D4AF37] text-white
+                                                        {% elif team.rank == 'SILVER' %}
+                                                            bg-[#C0C0C0] text-gray-800
+                                                        {% elif team.rank == 'BRONZE' %}
+                                                            bg-[#be7225] text-white
+                                                        {% elif team.rank == 'PLATINUM' %}
+                                                            bg-[#E5E4E2] text-gray-800
+                                                        {% else %}
+                                                            bg-gray-800 text-white
+                                                        {% endif %}">{{ forloop.counter }}</div>
                                         {% endif %}
                                     </div>
                                     <!-- Team Info -->
                                     <div>
                                         <h3 class="text-xl font-bold text-gray-800">{{ team.name }}</h3>
                                         {% if team.rank %}
-                                            <span class="inline-block px-3 py-1 text-sm rounded-full mt-1 {% if team.rank == 'GOLD' %}bg-[#D4AF37] text-white {% elif team.rank == 'SILVER' %}bg-[#C0C0C0] text-gray-800 {% elif team.rank == 'BRONZE' %}bg-[#be7225] text-white {% elif team.rank == 'PLATINUM' %}bg-[#E5E4E2] text-gray-800 {% else %}bg-gray-800 text-white{% endif %}">
-                                                {{ team.rank }}
-                                            </span>
+                                            <span class="inline-block px-3 py-1 text-sm rounded-full mt-1
+                                                         {% if team.rank == 'GOLD' %}
+                                                             bg-[#D4AF37] text-white
+                                                         {% elif team.rank == 'SILVER' %}
+                                                             bg-[#C0C0C0] text-gray-800
+                                                         {% elif team.rank == 'BRONZE' %}
+                                                             bg-[#be7225] text-white
+                                                         {% elif team.rank == 'PLATINUM' %}
+                                                             bg-[#E5E4E2] text-gray-800
+                                                         {% else %}
+                                                             bg-gray-800 text-white
+                                                         {% endif %}">{{ team.rank }}</span>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -138,4 +169,5 @@
             {% endif %}
         </div>
     </div>
+
 {% endblock content %}

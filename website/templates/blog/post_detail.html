@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     {{ post.title }} | {% env 'PROJECT_NAME' %}
+
 {% endblock title %}
+
 {% block description %}
     Read "{{ post.title }}" by {{ post.author }}. Published on {{ post.created_at }}. Explore this and more on {% env 'PROJECT_NAME' %}.
+
 {% endblock description %}
+
 {% block keywords %}
     {{ post.title }}, blog post, {{ post.author }}, {% env 'PROJECT_NAME' %}, {{ post.created_at }}, {{ post.title|slugify }}
+
 {% endblock keywords %}
+
 {% block og_title %}
     {{ post.title }} - {% env 'PROJECT_NAME' %}
+
 {% endblock og_title %}
+
 {% block og_description %}
     Discover "{{ post.title }}" by {{ post.author }} on {% env 'PROJECT_NAME' %}. Published on {{ post.created_at }}, dive into the content to learn more!
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="font-sans p-5">
         <article class="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
             <h1 class="text-4xl font-bold text-gray-900 text-center mb-4">{{ post.title }}</h1>
@@ -44,8 +57,12 @@
                     </a>
                 </div>
             {% endif %}
-            <div class="mt-8 px-6 py-4 bg-white rounded-lg">{% include "../comments2.html" %}</div>
+            <div class="mt-8 px-6 py-4 bg-white rounded-lg">
+                {% include "../comments2.html" %}
+
+            </div>
         </article>
     </div>
     <script src="{% static 'js/blog.js' %}"></script>
+
 {% endblock content %}

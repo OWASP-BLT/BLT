@@ -1,25 +1,38 @@
 {% extends "base_dashboard.html" %}
+
 {% load socialaccount %}
 {% load gravatar %}
 {% load static %}
+
 {% block title %}
     Admin Management - {{ organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
+
 {% endblock title %}
+
 {% block description %}
     Manage admins and their roles within the {% env 'PROJECT_NAME' %} dashboard. You can update, assign new roles, and more.
+
 {% endblock description %}
+
 {% block keywords %}
     admin management, {% env 'PROJECT_NAME' %}, role management, organization, dashboard, user roles, moderator, admin, user profile
+
 {% endblock keywords %}
+
 {% block og_title %}
     Admin Management - {{ organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
+
 {% endblock og_title %}
+
 {% block og_description %}
     View and manage admins and their roles within the organization using the {% env 'PROJECT_NAME' %} dashboard.
+
 {% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     <div class="col-md-6 widget_middle_left">
         <div class="online">
@@ -191,4 +204,5 @@ no more admins !
         data-target="#addUserModal">
     <i class="lnr lnr-plus-circle"> </i>
 </button>
+
 {% endblock content %}

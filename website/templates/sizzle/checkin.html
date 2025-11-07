@@ -1,11 +1,14 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block content %}
     <link rel="stylesheet"
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <div class="container mx-auto p-6">
         {% include "includes/sidenav.html" %}
+
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
                 <h1 class="text-4xl font-semibold text-gray-800">Check-In Reports</h1>
@@ -86,37 +89,39 @@
     <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <script>
-function initializeDaterangepicker(retryCount = 0) {
-    try {
-        if (typeof $.fn.daterangepicker === 'function') {
-            // Use the default_start_date and default_end_date from the backend if provided
-            const defaultStart = "{{ default_start_date }}";
-            const defaultEnd = "{{ default_end_date }}";
+        function initializeDaterangepicker(retryCount = 0) {
+            try {
+                if (typeof $.fn.daterangepicker === 'function') {
+                    // Use the default_start_date and default_end_date from the backend if provided
+                    const defaultStart = "{{ default_start_date }}";
+                    const defaultEnd = "{{ default_end_date }}";
 
-            // Initialize date range picker with default dates
-            $('#daterange').daterangepicker({
-                opens: 'left',
-                locale: {
-                    format: 'YYYY-MM-DD'
-                },
-                startDate: defaultStart,
-                endDate: defaultEnd
-            }, function(start, end) {
-                $('#report-title').text(`Check-In Reports from ${start.format('D MMM YYYY')} to ${end.format('D MMM YYYY')}`);
+                    // Initialize date range picker with default dates
+                    $('#daterange').daterangepicker({
+                        opens: 'left',
+                        locale: {
+                            format: 'YYYY-MM-DD'
+                        },
+                        startDate: defaultStart,
+                        endDate: defaultEnd
+                    }, function(start, end) {
+                        $('#report-title').text(`Check-In Reports from ${start.format('D MMM YYYY')} to ${end.format('D MMM YYYY')}`);
 
-                // AJAX call to fetch check-in details for the selected date range
-                $.ajax({
-                    url: '{% url "checkIN" %}',
-                    data: {
-                        start_date: start.format('YYYY-MM-DD'),
-                        end_date: end.format('YYYY-MM-DD')
-                    },
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function(data) {
-                        $('#report-container').empty();
+                        // AJAX call to fetch check-in details for the selected date range
+                        $.ajax({
+                            url: '{% url "checkIN" %}',
+                            data: {
+                                start_date: start.format('YYYY-MM-DD'),
+                                end_date: end.format('YYYY-MM-DD')
+                            },
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            success: function(data) {
+                                $('#report-container').empty();
 
-                        if (data.length === 0) {
-                            $('#report-container').append(`
+                                if (data.length === 0) {
+                                    $('#report-container').append(`
                                 <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
                                     <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
                                         No Data
@@ -124,26 +129,26 @@ function initializeDaterangepicker(retryCount = 0) {
                                     <div class="p-4 text-gray-600">No check-in reports found for the selected range.</div>
                                 </div>
                             `);
-                            return;
-                        }
+                                    return;
+                                }
 
-                        // Group data by date
-                        const reportsByDate = {};
-                        data.forEach(item => {
-                            if (!reportsByDate[item.date]) {
-                                reportsByDate[item.date] = [];
-                            }
-                            reportsByDate[item.date].push(item);
-                        });
+                                // Group data by date
+                                const reportsByDate = {};
+                                data.forEach(item => {
+                                    if (!reportsByDate[item.date]) {
+                                        reportsByDate[item.date] = [];
+                                    }
+                                    reportsByDate[item.date].push(item);
+                                });
 
-                        // Render each date's report
-                        for (const reportDate in reportsByDate) {
-                            const dayReports = reportsByDate[reportDate];
+                                // Render each date's report
+                                for (const reportDate in reportsByDate) {
+                                    const dayReports = reportsByDate[reportDate];
 
-                            let rows = '';
-                            dayReports.forEach(item => {
-                                const detailUrl = "/check-in/" + item.id + "/"; // Construct URL directly
-                                rows += `
+                                    let rows = '';
+                                    dayReports.forEach(item => {
+                                        const detailUrl = "/check-in/" + item.id + "/"; // Construct URL directly
+                                        rows += `
                                     <tr class="hover:bg-gray-50">
                                         <td class="py-3 px-4 border-b border-gray-200">${item.username}</td>
                                         <td class="py-3 px-4 border-b border-gray-200">${item.previous_work}</td>
@@ -154,9 +159,9 @@ function initializeDaterangepicker(retryCount = 0) {
                                         </td>
                                     </tr>
                                 `;
-                            });
+                                    });
 
-                            $('#report-container').append(`
+                                    $('#report-container').append(`
                                 <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
                                     <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
                                         ${reportDate}
@@ -177,32 +182,33 @@ function initializeDaterangepicker(retryCount = 0) {
                                     </table>
                                 </div>
                             `);
-                        }
-                    },
-                    error: function() {
-                        alert('An error occurred while fetching the check-in details.');
+                                }
+                            },
+                            error: function() {
+                                alert('An error occurred while fetching the check-in details.');
+                            }
+                        });
+                    });
+                } else {
+                    if (retryCount < 5) {
+                        setTimeout(() => initializeDaterangepicker(retryCount + 1), 500);
+                    } else {
+                        $('#daterange').prop('type', 'date').css('width', 'auto');
                     }
-                });
-            });
-        } else {
-            if (retryCount < 5) {
-                setTimeout(() => initializeDaterangepicker(retryCount + 1), 500);
-            } else {
+                }
+            } catch (e) {
                 $('#daterange').prop('type', 'date').css('width', 'auto');
             }
         }
-    } catch (e) {
-        $('#daterange').prop('type', 'date').css('width', 'auto');
-    }
-}
 
-$(function() {
-    initializeDaterangepicker();
-    
-    // Trigger initial load if daterangepicker was successfully initialized
-    if (typeof $.fn.daterangepicker === 'function') {
-        $('#daterange').trigger('apply.daterangepicker');
-    }
-});
+        $(function() {
+            initializeDaterangepicker();
+
+            // Trigger initial load if daterangepicker was successfully initialized
+            if (typeof $.fn.daterangepicker === 'function') {
+                $('#daterange').trigger('apply.daterangepicker');
+            }
+        });
     </script>
+
 {% endblock content %}

@@ -1,9 +1,13 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}Hackathons - OWASP BLT{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header Section -->
@@ -121,7 +125,14 @@
                             <div class="p-6">
                                 <div class="flex justify-between items-start">
                                     <h2 class="text-xl font-bold text-gray-900 mb-2">{{ hackathon.name }}</h2>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if hackathon.is_ongoing %} bg-green-100 text-green-800 {% elif hackathon.has_ended %} bg-gray-100 text-gray-800 {% else %} bg-blue-100 text-blue-800 {% endif %} ">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                 {% if hackathon.is_ongoing %}
+                                                     bg-green-100 text-green-800
+                                                 {% elif hackathon.has_ended %}
+                                                     bg-gray-100 text-gray-800
+                                                 {% else %}
+                                                     bg-blue-100 text-blue-800
+                                                 {% endif %}">
                                         {% if hackathon.is_ongoing %}
                                             Ongoing
                                         {% elif hackathon.has_ended %}
@@ -185,4 +196,5 @@
             {% endif %}
         </div>
     </div>
+
 {% endblock %}

@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Add Domain
+
 {% endblock title %}
+
 {% block description %}
     Add a new domain, organization details, URL, and relevant images to set up your Bug Bounty contest. Ensure all necessary assets are uploaded for a smooth start.
+
 {% endblock description %}
+
 {% block keywords %}
     Add Domain, Organization Details, URL, Upload Image, New Contest, Setup Bug Bounty, Contest Assets
+
 {% endblock keywords %}
+
 {% block og_title %}
     Add Domain, Organization, URL, Image - Set Up Your Contest
+
 {% endblock og_title %}
+
 {% block og_description %}
     Set up your Bug Bounty contest by adding domain information, organization details, URLs, and uploading necessary images. Start your competition with all the right assets.
+
 {% endblock og_description %}
+
 {% block body %}
     <div class="bg-[#fdfeff] flex flex-col items-center md:max-w-[1700px] md:mx-auto mx-2">
         <div class="w-full mt-5 px-8">
@@ -258,7 +270,9 @@
             </div>
         </form>
     </div>
+
 {% endblock body %}
+
 {% block js %}
     <script>
         function remove_user_selection(event) {
@@ -287,11 +301,16 @@
 
         function getUserOptions(excludeList) {
             let optionsHtml = '<option value="" disabled selected>Select a user</option>';
-            {% for user in users %}
-                if (!excludeList.includes('{{ user.email }}')) {
-                    optionsHtml += `<option value="{{ user.email }}">{{ user.username }} ({{ user.email }})</option>`;
-                }
-            {% endfor %}
+            {
+                %
+                for user in users %
+            }
+            if (!excludeList.includes('{{ user.email }}')) {
+                optionsHtml += `<option value="{{ user.email }}">{{ user.username }} ({{ user.email }})</option>`;
+            } {
+                %
+                endfor %
+            }
             return optionsHtml;
         }
 
@@ -302,7 +321,7 @@
             selects.forEach(select => {
                 const currentValue = select.value;
                 select.innerHTML = getUserOptions(selectedUsers.filter(user => user !== currentValue));
-                select.value = currentValue;  // Preserve the current value after options are updated
+                select.value = currentValue; // Preserve the current value after options are updated
             });
         }
 
@@ -349,12 +368,12 @@
                 defaultIconId,
                 removeButtonId
             });
-            
+
             const preview = document.getElementById(previewId);
             const defaultIcon = document.getElementById(defaultIconId);
             const removeButton = document.getElementById(removeButtonId);
             const errorDiv = document.getElementById('logoError');
-            
+
             console.log('Elements found:', {
                 preview: preview !== null,
                 defaultIcon: defaultIcon !== null,
@@ -375,7 +394,7 @@
 
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                
+
                 // Validate file type
                 const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
                 if (!validTypes.includes(file.type)) {
@@ -387,7 +406,7 @@
                     input.value = '';
                     return;
                 }
-                
+
                 // Validate file size (5MB = 5 * 1024 * 1024 bytes)
                 const maxSize = 5 * 1024 * 1024;
                 if (file.size > maxSize) {
@@ -401,26 +420,26 @@
                 }
 
                 const reader = new FileReader();
-                
+
                 reader.onload = function(e) {
                     console.log('Image loaded, updating elements');
-                    
+
                     // Set the image source
                     preview.src = e.target.result;
-                    
+
                     // Use style.display for more reliable showing/hiding
                     preview.style.display = 'block';
                     defaultIcon.style.display = 'none';
                     removeButton.style.display = 'inline-flex';
-                    
+
                     // Also use classList as backup
                     preview.classList.remove('hidden');
                     defaultIcon.classList.add('hidden');
                     removeButton.classList.remove('hidden');
-                    
+
                     console.log('Image preview updated successfully');
                 }
-                
+
                 reader.onerror = function() {
                     console.error('Error reading file');
                     if (errorDiv) {
@@ -429,7 +448,7 @@
                     }
                     input.value = '';
                 }
-                
+
                 reader.readAsDataURL(file);
             } else {
                 console.log('No file selected');
@@ -443,7 +462,7 @@
                 defaultIconId,
                 removeButtonId
             });
-            
+
             const input = document.getElementById(inputId);
             const preview = document.getElementById(previewId);
             const defaultIcon = document.getElementById(defaultIconId);
@@ -454,28 +473,29 @@
                 console.error('One or more required elements not found');
                 return;
             }
-            
+
             // Clear the file input and preview
             input.value = '';
             preview.src = '';
-            
+
             // Use style.display for more reliable showing/hiding
             preview.style.display = 'none';
             defaultIcon.style.display = 'flex';
             removeButton.style.display = 'none';
-            
+
             // Also use classList as backup
             preview.classList.add('hidden');
             defaultIcon.classList.remove('hidden');
             removeButton.classList.add('hidden');
-            
+
             // Clear any errors
             if (errorDiv) {
                 errorDiv.style.display = 'none';
                 errorDiv.textContent = '';
             }
-            
+
             console.log('Logo removed successfully');
         }
     </script>
+
 {% endblock js %}

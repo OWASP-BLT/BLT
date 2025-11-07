@@ -1,24 +1,38 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
+
 {% block title %}
     Hunt Results - {{ hunt.domain.organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
+
 {% endblock title %}
+
 {% block description %}
     View the results of the hunt in the {% env 'PROJECT_NAME' %} dashboard. Check the top winners and manage results if not published yet.
+
 {% endblock description %}
+
 {% block keywords %}
     {% env 'PROJECT_NAME' %}, hunt, results, publish, winner, runner, second runner, dashboard, organization, domain
+
 {% endblock keywords %}
+
 {% block og_title %}
     Hunt Results - {{ hunt.domain.organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
+
 {% endblock og_title %}
+
 {% block og_description %}
     View the published results of the hunt or manage the results before publishing in the {% env 'PROJECT_NAME' %} dashboard.
+
 {% endblock og_description %}
+
 {% block content %}
     {% load static %}
+
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
@@ -122,50 +136,49 @@
     <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
     <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
     <script type="text/javascript">
-  $(document).ready(function() {
-  $(".checkAll").on("click", function() {
-    $(this)
-      .closest("table")
-      .find("tbody :checkbox")
-      .prop("checked", this.checked)
-      .closest("tr")
-      .toggleClass("selected", this.checked);
-  });
+        $(document).ready(function() {
+            $(".checkAll").on("click", function() {
+                $(this)
+                    .closest("table")
+                    .find("tbody :checkbox")
+                    .prop("checked", this.checked)
+                    .closest("tr")
+                    .toggleClass("selected", this.checked);
+            });
 
-  $("tbody :checkbox").on("click", function() {
-    $(this)
-      .closest("tr")
-      .toggleClass("selected", this.checked);
+            $("tbody :checkbox").on("click", function() {
+                $(this)
+                    .closest("tr")
+                    .toggleClass("selected", this.checked);
 
-    // add selected class on check all
-    $(this).closest("table")
-      .find(".checkAll")
-      .prop("checked",
-        $(this)
-          .closest("table")
-          .find("tbody :checkbox:checked").length ==
-          $(this)
-            .closest("table")
-            .find("tbody :checkbox").length
-      );
-  });
-});
-
+                // add selected class on check all
+                $(this).closest("table")
+                    .find(".checkAll")
+                    .prop("checked",
+                        $(this)
+                        .closest("table")
+                        .find("tbody :checkbox:checked").length ==
+                        $(this)
+                        .closest("table")
+                        .find("tbody :checkbox").length
+                    );
+            });
+        });
     </script>
     <script>
-  $(function () {
-      editormd.markdownToHTML("content", {
-          emoji           : true,
-          taskList        : true,
-          tex             : true,  
-          flowChart       : true,  
-          sequenceDiagram : true,  
-      });
+        $(function() {
+            editormd.markdownToHTML("content", {
+                emoji: true,
+                taskList: true,
+                tex: true,
+                flowChart: true,
+                sequenceDiagram: true,
+            });
 
-      $(".reference-link").each(function (i,obj) {
-        console.log(obj)
-      })
-  })
-
+            $(".reference-link").each(function(i, obj) {
+                console.log(obj)
+            })
+        })
     </script>
+
 {% endblock content %}

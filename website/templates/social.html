@@ -1,24 +1,37 @@
 {% extends "base.html" %}
+
 {% load custom_tags %}
 {% load i18n %}
 {% load static %}
+
 {% block title %}
     Social Feeds
+
 {% endblock title %}
+
 {% block description %}
     Stay updated with our social feeds. Follow our latest tweets, GitHub updates, and Figma designs to stay connected with our community.
+
 {% endblock description %}
+
 {% block keywords %}
     Social Feeds, Twitter Timeline, GitHub Updates, Figma Designs, Community Updates, Stay Connected
+
 {% endblock keywords %}
+
 {% block og_title %}
     Social Feeds - Stay Connected with Us
+
 {% endblock og_title %}
+
 {% block og_description %}
     Follow our social feeds to stay updated with the latest tweets, GitHub updates, and Figma designs. Engage with our community and stay informed.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen">
         <div class="max-w-[50%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header Section -->
@@ -150,4 +163,5 @@
             {% endif %}
         </div>
     </div>
+
 {% endblock content %}

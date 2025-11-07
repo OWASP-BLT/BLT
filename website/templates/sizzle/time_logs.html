@@ -1,27 +1,40 @@
 <!-- templates/time_logs.html -->
 {% extends "base.html" %}
+
 {% load custom_filters %}
 {% load static %}
+
 {% block title %}
     Time Log
+
 {% endblock title %}
+
 {% block description %}
     Manage your time logs efficiently. Start new time logs, view active logs, and review existing time logs to keep track of your progress.
+
 {% endblock description %}
+
 {% block keywords %}
     Time Log, Start Time Log, Active Time Log, Existing Time Logs, Track Time, Time Management
+
 {% endblock keywords %}
+
 {% block og_title %}
     Time Log - Efficient Time Management
+
 {% endblock og_title %}
+
 {% block og_description %}
     Start new time logs, manage active logs, and review existing ones to effectively track and manage your work time.
+
 {% endblock og_description %}
+
 {% block content %}
     <script src="https://cdn.tailwindcss.com" defer></script>
     <div class="container mx-auto mt-12 p-6 bg-white rounded-lg shadow-md">
         <!-- Left Navigation -->
         {% include "includes/sidenav.html" %}
+
         <!-- Message Container -->
         <div id="message-container" class="mb-4" aria-live="polite"></div>
         <!-- Start Time Log Form -->
@@ -206,14 +219,18 @@
             const token = '{{ token }}'; // Ensure token is securely passed from the view
             let timeLogId = null;
             let timerInterval = null;
-            const organizations_list = {{organizations_list | safe}};
+            const organizations_list = {
+                {
+                    organizations_list | safe
+                }
+            };
 
             // Handle organization search
-            $("#organization_search_input").on("input", function () {
+            $("#organization_search_input").on("input", function() {
                 const searchTerm = $(this).val().trim().toLowerCase();
                 let searchResults = [];
                 if (searchTerm !== "") {
-                    searchResults = organizations_list.filter(function (item) {
+                    searchResults = organizations_list.filter(function(item) {
                         return item.name.toLowerCase().includes(searchTerm);
                     });
                 }
@@ -221,11 +238,11 @@
                 // Update the search results display
                 $("#search_results").empty();
                 if (searchResults.length > 0) {
-                    $.each(searchResults, function (index, result) {
+                    $.each(searchResults, function(index, result) {
                         const listItem = $("<li>")
                             .addClass("flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition")
                             .text(result.name)
-                            .on("click", function () {
+                            .on("click", function() {
                                 $("#organization_search_input").val(result.url);
                                 $("#search_results").html(`Selected organization: ${result.name} 🎯`);
                                 $("#search_results").removeClass("hidden");
@@ -251,24 +268,34 @@
             });
 
             // Initialize active time log if exists
-            {% if active_time_log %}
-                timeLogId = {{ active_time_log.id }};
-                const startTime = new Date('{{ active_time_log.start_time|date:"c" }}').getTime();
-
-                function updateElapsedTime() {
-                    const now = Date.now();
-                    const elapsedMilliseconds = now - startTime;
-                    const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
-                    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-                    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-                    const seconds = String(totalSeconds % 60).padStart(2, '0');
-                    $('#elapsed-time').text(`${hours}:${minutes}:${seconds}`);
+            {
+                %
+                if active_time_log %
+            }
+            timeLogId = {
+                {
+                    active_time_log.id
                 }
+            };
+            const startTime = new Date('{{ active_time_log.start_time|date:"c" }}').getTime();
 
-                // Initial update and start interval
-                updateElapsedTime();
-                timerInterval = setInterval(updateElapsedTime, 1000);
-            {% endif %}
+            function updateElapsedTime() {
+                const now = Date.now();
+                const elapsedMilliseconds = now - startTime;
+                const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+                const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+                const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+                const seconds = String(totalSeconds % 60).padStart(2, '0');
+                $('#elapsed-time').text(`${hours}:${minutes}:${seconds}`);
+            }
+
+            // Initial update and start interval
+            updateElapsedTime();
+            timerInterval = setInterval(updateElapsedTime, 1000);
+            {
+                %
+                endif %
+            }
 
             // Form Validation
             (function() {
@@ -285,7 +312,7 @@
             })();
 
             // Handle Start Time Log Form Submission
-            $('#start-time-log-form').on('submit', function(event){
+            $('#start-time-log-form').on('submit', function(event) {
                 event.preventDefault();
                 const githubIssueUrl = $('#github_issue_url').val().trim();
                 const organizationURL = $('#organization_search_input').val().trim();
@@ -310,7 +337,7 @@
 
                 const $button = $(this).find('button[type="submit"]');
                 $button.prop('disabled', true)
-                      .html(`<svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                    .html(`<svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 118-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                              </svg> Starting...`);
@@ -323,10 +350,10 @@
                         'Content-Type': 'application/json'
                     },
                     data: JSON.stringify(ajaxData),
-                    success: function(data){
+                    success: function(data) {
                         location.reload();
                     },
-                    error: function(xhr){
+                    error: function(xhr) {
                         let error = 'An unexpected error occurred.';
                         if (xhr.responseJSON && xhr.responseJSON.detail) {
                             error = xhr.responseJSON.detail;
@@ -340,7 +367,7 @@
             });
 
             // Handle Stop Time Log Button Click
-            $('#stop-button').on('click', function(){
+            $('#stop-button').on('click', function() {
                 if (!timeLogId) {
                     showMessage("No active time log to stop.", "error");
                     return;
@@ -352,7 +379,7 @@
 
                 const $button = $(this);
                 $button.prop('disabled', true)
-                      .html(`<svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                    .html(`<svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 118-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                              </svg> Stopping...`);
@@ -364,11 +391,11 @@
                         'Authorization': `Token ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    success: function(data){
+                    success: function(data) {
                         clearInterval(timerInterval);
                         location.reload();
                     },
-                    error: function(xhr){
+                    error: function(xhr) {
                         let error = 'An unexpected error occurred.';
                         if (xhr.responseJSON && xhr.responseJSON.detail) {
                             error = xhr.responseJSON.detail;
@@ -387,7 +414,7 @@
                     error: 'bg-red-100 text-red-700 border-red-200',
                     success: 'bg-green-100 text-green-700 border-green-200'
                 };
-                
+
                 $('#message-container').html(`
                     <div class="rounded-md p-4 mb-4 ${colors[type]} border">
                         <div class="flex">
@@ -407,4 +434,5 @@
             }
         });
     </script>
+
 {% endblock content %}

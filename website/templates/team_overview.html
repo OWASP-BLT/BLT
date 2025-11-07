@@ -1,7 +1,10 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <aside id="toast-container" class="fixed top-5 right-5 z-50">
     </aside>
     <div class="container mx-auto px-4 py-8">
@@ -64,7 +67,8 @@
                         <div class="overflow-hidden px-12 h-full">
                             <div class="flex gap-4 transition-transform duration-300 ease-in-out h-full items-center">
                                 {% for member in team_members %}
-                                    <div class="member-card flex-shrink-0 w-48 bg-gray-50 rounded-xl p-4 text-center transform transition-all duration-300 hover:shadow-lg {% if member.username == user.userprofile.team.admin.username %}border-2 border-[#e74c3c]{% endif %}"
+                                    <div class="member-card flex-shrink-0 w-48 bg-gray-50 rounded-xl p-4 text-center transform transition-all duration-300 hover:shadow-lg
+                                                {% if member.username == user.userprofile.team.admin.username %}border-2 border-[#e74c3c]{% endif %}"
                                          id="member-{{ member.username }}">
                                         <div class="relative inline-block">
                                             <div class="w-16 h-16 mx-auto mb-3 bg-gray-200 rounded-full flex items-center justify-center">
@@ -395,6 +399,7 @@
     <script>
         // JavaScript for Slider Navigation
         let currentIndex = 0;
+
         function updateSlider() {
             const members = document.querySelectorAll('.member-card');
             members.forEach((member, index) => {
@@ -434,23 +439,25 @@
         // Kick member function
         function kickMember(username) {
             fetch('/teams/kick-member/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ member: username })
-            }).then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    alert(data.error);
-                }
-            }).catch(error => {
-                console.error('Error:', error);
-                alert('Failed to kick member. Please try again.');
-            });
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        member: username
+                    })
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert(data.error);
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to kick member. Please try again.');
+                });
         }
 
         // Function to set the active member and show the "Kick" button
@@ -514,25 +521,25 @@
         const createTeamForm = document.getElementById('createTeamForm');
         if (createTeamForm) {
             createTeamForm.onsubmit = function(event) {
-            event.preventDefault();
-            const formData = new FormData(this);
-            fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                }
-            }).then(response => {
-                if (response.ok) {
-                    closeModal();
-                    window.location.reload();
-                } else {
+                event.preventDefault();
+                const formData = new FormData(this);
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        closeModal();
+                        window.location.reload();
+                    } else {
+                        alert('Failed to create team. Please try again.');
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
                     alert('Failed to create team. Please try again.');
-                }
-            }).catch(error => {
-                console.error('Error:', error);
-                alert('Failed to create team. Please try again.');
-            });
+                });
             }
         }
 
@@ -608,25 +615,25 @@
             event.preventDefault();
             const formData = new FormData(this);
             fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
                     closeAddMemberModal();
-                if (data.success) {
-                    showMessage("Join request sent successfully!", false);
-                } else {
-                    showMessage(data.error || "Failed to send join request.", true);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage("Failed to send join request. Please try again.", true);
-            });
+                    if (data.success) {
+                        showMessage("Join request sent successfully!", false);
+                    } else {
+                        showMessage(data.error || "Failed to send join request.", true);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage("Failed to send join request. Please try again.", true);
+                });
         }
 
         // Search users and display in dropdown for adding a new member
@@ -674,38 +681,38 @@
             const userUsername = "{{ request.user.username|default:'' }}";
             const sender = userUsername || "{{ user.username }}";
             console.log(sender)
-            fetch("/teams/give-kudos/", { 
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": document.querySelector("#kudosModal [name=csrfmiddlewaretoken]").value,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    kudosReceiver: receiver,
-                    kudosSender: sender,
-                    link: linkUrl,
-                    comment: commentText
+            fetch("/teams/give-kudos/", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": document.querySelector("#kudosModal [name=csrfmiddlewaretoken]").value,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        kudosReceiver: receiver,
+                        kudosSender: sender,
+                        link: linkUrl,
+                        comment: commentText
+                    })
                 })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    closeKudosModal();
-                    updateKudosCount(receiver);
-                    showMessage("Kudos sent successfully!", false);
-                } else {
-                    throw new Error(data.error || "Failed to send kudos.");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                showMessage(error.message, true);
-            });
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        closeKudosModal();
+                        updateKudosCount(receiver);
+                        showMessage("Kudos sent successfully!", false);
+                    } else {
+                        throw new Error(data.error || "Failed to send kudos.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    showMessage(error.message, true);
+                });
         }
 
         function updateKudosCount(username) {
@@ -713,14 +720,14 @@
             if (!kudosMemberCard) {
                 console.error(`Member card not found for ${username}`);
                 return;
-            } 
+            }
             let memberInfo = kudosMemberCard.querySelector('.member-info');
             if (!memberInfo) {
                 memberInfo = document.createElement('div');
                 memberInfo.className = 'member-info';
             }
             let countBadge = memberInfo.querySelector('.kudos-count-badge');
-            const currentCount = countBadge ? 
+            const currentCount = countBadge ?
                 parseInt(countBadge.textContent.split(' ')[0]) : 0;
 
             if (countBadge) {
@@ -741,26 +748,27 @@
 
             const toast = document.createElement('div');
             toast.className = `flex items-center gap-3 p-4 rounded-lg shadow-lg ${isError ? 'bg-red-500' : 'bg-green-500'} text-white transform transition-all duration-300`;
-            
+
             // Add icon based on message type
             const icon = document.createElement('i');
             icon.className = `fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} text-xl`;
             toast.appendChild(icon);
-            
+
             // Add message text
             const text = document.createElement('span');
             text.className = 'font-medium';
             text.textContent = message;
             toast.appendChild(text);
-            
+
             container.appendChild(toast);
 
             // Animate the toast
             setTimeout(() => {
-                     toast.style.opacity = '0';
+                toast.style.opacity = '0';
                 toast.style.transform = 'translateY(-100%)';
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
     </script>
+
 {% endblock content %}

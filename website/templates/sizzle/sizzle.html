@@ -1,20 +1,32 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Sizzle
+
 {% endblock title %}
+
 {% block description %}
     View and manage your Sizzle reports. Track your time, review daily status updates, and see leaderboard rankings to monitor your progress.
+
 {% endblock description %}
+
 {% block keywords %}
     Sizzle Report, Time Tracking, Daily Status Report, Leaderboard, Work Progress, Track Time
+
 {% endblock keywords %}
+
 {% block og_title %}
     Sizzle Report - Monitor Your Progress
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access your Sizzle reports to track time, review daily status updates, and view leaderboard rankings. Stay on top of your work progress.
+
 {% endblock og_description %}
+
 {% block content %}
     <link rel="stylesheet"
           type="text/css"
@@ -22,6 +34,7 @@
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
         {% include "includes/sidenav.html" %}
+
         <!-- Main Content Section -->
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
@@ -146,7 +159,7 @@
         <script type="text/javascript"
                 src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
         <script type="text/javascript">
-           $(function() {
+            $(function() {
                 // Initialize daterange picker
                 $('input[name="daterange"]').daterangepicker({
                     opens: 'left',
@@ -214,27 +227,30 @@
                     }
                     if (confirm("Are you sure you want to delete this time entry?")) {
                         fetch("{% url 'delete_time_entry' %}", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded",
-                                "X-CSRFToken": "{{ csrf_token }}",
-                            },
-                            body: new URLSearchParams({ id: entryId }),
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log("Success");
-                                // Remove the row from the table if the delete was successful
-                                this.closest("tr").remove();
-                            } else {
-                                console.log("Failed");
-                                alert("Failed to delete time entry.");
-                            }
-                        });
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "X-CSRFToken": "{{ csrf_token }}",
+                                },
+                                body: new URLSearchParams({
+                                    id: entryId
+                                }),
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Success");
+                                    // Remove the row from the table if the delete was successful
+                                    this.closest("tr").remove();
+                                } else {
+                                    console.log("Failed");
+                                    alert("Failed to delete time entry.");
+                                }
+                            });
                     }
                 });
             });
         </script>
     {% endif %}
+
 {% endblock content %}

@@ -1,29 +1,44 @@
 {% extends "base.html" %}
+
 {% load gravatar %}
 {% load static %}
+
 {% block title %}
     {{ user.username }}'s Profile
+
 {% endblock title %}
+
 {% block description %}
     Explore the detailed profile of {{ user.username }}. View their activity, reported bugs, social tags, badges, and other profile information.
+
 {% endblock description %}
+
 {% block keywords %}
     {{ user.username }}'s Profile, User Activity, Reported Bugs, Social Tags, Badges, User Details, User Profile
+
 {% endblock keywords %}
+
 {% block og_title %}
     {{ user.username }}'s Profile - User Activity and Details
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access {{ user.username }}'s profile to see detailed information on their activity, bugs reported, social tags, badges, and more. Engage with their profile and stay connected.
+
 {% endblock og_description %}
 {% load custom_tags %}
 {% load i18n %}
+
 {% block head %}
     <link href="https://fonts.googleapis.com/css2?family=Poppins"
           rel="stylesheet">
+
 {% endblock head %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="flex md:flex-row flex-col w-full mt-10 lg:max-w-[1700px] lg:mx-auto mx-2 border rounded-lg  min-h-[500px]">
         <div class="flex flex-col gap-6 lg:w-[25%] w-full border-r border-gray-300/80 500 p-4">
             <div class="w-full rounded-lg select-none ">
@@ -142,9 +157,10 @@
             <div class="select-none">
                 <div class="font-bold text-black/90 mb-3">{% trans "Crypto Addresses" %}</div>
                 {% include "./includes/crypto_donation.html" %}
+
             </div>
             <!-- Points Section -->
-            <div class=" score-container select-none flex gap-2 items-center justify-center bg-gray-100 text-black/80 p-4 rounded-lg  w-full cursor-pointer hover:bg-gray-200/80 transition-all duration-200">
+            <div class="score-container select-none flex gap-2 items-center justify-center bg-gray-100 text-black/80 p-4 rounded-lg  w-full cursor-pointer hover:bg-gray-200/80 transition-all duration-200">
                 <span class=" text-2xl font-bold text-yellow-500">{{ my_score|default:0 }}</span>
                 <span class=" text-lg font-bold">{% trans "POINTS" %}</span>
                 <i class="fa fa-chevron-down transition-transform duration-200"
@@ -247,16 +263,17 @@
                     {% if activities %}
                         {% load gravatar %}
                         {% load static %}
+
                         <div class=" flex flex-col gap-3 items-center justify-center w-full">
                             {% for activity in activities %}
-                                <div class=" bg-gray-100 rounded-lg  flex flex-col gap-3 items-start justify-between p-5 w-full">
-                                    <div class="rounded-lg w-full border-2  hover:border-red-500 transition-all duration-200 ">
+                                <div class="bg-gray-100 rounded-lg  flex flex-col gap-3 items-start justify-between p-5 w-full">
+                                    <div class="rounded-lg w-full border-2  hover:border-red-500 transition-all duration-200">
                                         {% for screenshot_activity,screenshot in activity_screenshots.items %}
                                             {% if activity == screenshot_activity and screenshot.image and screenshot.image.url %}
                                                 <a href="{{ activity.get_absolute_url }}">
                                                     <img src="{{ screenshot.image.url }}"
                                                          loading="lazy"
-                                                         class="rounded-lg w-full object-cover lg:max-h-[300px] h-full "
+                                                         class="rounded-lg w-full object-cover lg:max-h-[300px] h-full"
                                                          alt="screenshot"
                                                          width="50%"
                                                          height="50%">
@@ -275,7 +292,7 @@
                                         {% endif %}
                                     </div>
                                     <a href="{{ activity.get_absolute_url }}"
-                                       class="hover:text-red-600 w-full text-xl font-semibold px-2 text-black/85 ">
+                                       class="hover:text-red-600 w-full text-xl font-semibold px-2 text-black/85">
                                         {{ activity.description|truncatechars:35 }}
                                     </a>
                                     <div class="flex flex-row gap-2 items-start">
@@ -283,7 +300,7 @@
                                             <img src="https://www.{{ activity.domain_name }}/favicon.ico"
                                                  height="30"
                                                  width="30"
-                                                 class=" rounded-full size-[32px] "
+                                                 class="rounded-full size-[32px]"
                                                  alt="Organization logo"
                                                  onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                         </a>
@@ -308,10 +325,10 @@
                                         </a>
                                     </div>
                                     <div class="flex flex-row gap-2 items-center justify-between w-full my-2">
-                                        <button class=" flex-1 bg-red-500 hover:bg-red-600 text-white  font-bold py-2 px-4 rounded-lg label label-default pull-right">
+                                        <button class="flex-1 bg-red-500 hover:bg-red-600 text-white  font-bold py-2 px-4 rounded-lg label label-default pull-right">
                                             {{ activity.status }}
                                         </button>
-                                        <button class=" flex-1 bg-red-500 hover:bg-red-600 text-white  font-bold py-2 px-4 rounded-lg label label-default pull-right">
+                                        <button class="flex-1 bg-red-500 hover:bg-red-600 text-white  font-bold py-2 px-4 rounded-lg label label-default pull-right">
                                             {{ activity.get_label_display }}
                                         </button>
                                     </div>
@@ -467,7 +484,7 @@
                 </h1>
                 <div class="badges flex flex-wrap gap-4">
                     {% for user_badge in user_badges %}
-                        <div class="badge-item flex flex-col items-center justify-center gap-1 text-center border select-none border-red-500 bg-red-100/20 px-5 py-3 rounded-lg ">
+                        <div class="badge-item flex flex-col items-center justify-center gap-1 text-center border select-none border-red-500 bg-red-100/20 px-5 py-3 rounded-lg">
                             {% if user_badge.badge.icon %}
                                 <img src="{{ user_badge.badge.icon.url }}"
                                      alt="{{ user_badge.badge.title }}"
@@ -524,7 +541,7 @@
                                         <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                                             <i class="fas fa-book text-gray-600"></i>
                                             <a href="{{ repo_data.repo_url }}"
-                                               class=" hover:text-red-600 text-black/80 font-bold hover:underline transition-all duration-200">{{ repo_name }}</a>
+                                               class="hover:text-red-600 text-black/80 font-bold hover:underline transition-all duration-200">{{ repo_name }}</a>
                                         </h3>
                                         <div class="flex gap-3 text-md">
                                             <span class="flex items-center gap-1 text-purple-700 font-bold">
@@ -544,7 +561,15 @@
                                         <div class="flex justify-between items-center p-4 hover:bg-gray-50 transition-all duration-200">
                                             <a href="{{ pr.url }}"
                                                class="text-blue-600 hover:text-red-600 font-medium hover:underline transition-all duration-200">{{ pr.title }}</a>
-                                            <span class="flex  items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {% if pr.is_merged %} = text-purple-700 {% elif pr.state == 'open' %}  text-yellow-700 {% else %}  text-red-700 {% endif %} text-lg">
+                                            <span class="flex  items-center gap-2 px-3 py-1 rounded-full text-sm font-medium
+                                                         {% if pr.is_merged %}
+                                                             = text-purple-700
+                                                         {% elif pr.state == 'open' %}
+                                                             text-yellow-700
+                                                         {% else %}
+                                                             text-red-700
+                                                         {% endif %}
+                                                         text-lg">
                                                 {% if pr.is_merged %}
                                                     <i class="fas fa-check-circle rounded-full text-lg"></i>
                                                 {% elif pr.state == 'open' %}
@@ -1021,7 +1046,7 @@
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
                     <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
@@ -1081,7 +1106,7 @@
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
                     <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
@@ -1141,7 +1166,7 @@
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
                     <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
@@ -1200,7 +1225,7 @@
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
                     <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
@@ -1304,14 +1329,15 @@
         </div>
     </div>
     <script defer>
-            var closeKudos = document.getElementById("close-kudos");
-            var openKudos = document.getElementById("Kudos");
-            closeKudos.addEventListener("click", ()=>{
-                openKudos.style.display="none";
-            });
-            function openKudosModal(){
-                openKudos.style.cssText = "display:block !important;";
-            }
+        var closeKudos = document.getElementById("close-kudos");
+        var openKudos = document.getElementById("Kudos");
+        closeKudos.addEventListener("click", () => {
+            openKudos.style.display = "none";
+        });
+
+        function openKudosModal() {
+            openKudos.style.cssText = "display:block !important;";
+        }
     </script>
     <script>
         // Assign Badge Modal Logic
@@ -1329,42 +1355,42 @@
         }
     </script>
     <script defer>
-    var closeFollow = document.getElementById("close-follow");
-    var openFollow = document.getElementById("followers");
-    closeFollow.addEventListener("click",()=>{
-        openFollow.style.display="none";
-    });
-    var closeFollowing = document.getElementById("close-following");
-    var openFollowing = document.getElementById("following");
-    closeFollowing.addEventListener("click",()=>{
-        openFollowing.style.display="none";
-    });
-    var closeBookmark = document.getElementById("close-Bookmark");
-    var openBookmark = document.getElementById("Bookmark");
-    closeBookmark.addEventListener("click",()=>{
-        openBookmark.style.display="none";
-    });
+        var closeFollow = document.getElementById("close-follow");
+        var openFollow = document.getElementById("followers");
+        closeFollow.addEventListener("click", () => {
+            openFollow.style.display = "none";
+        });
+        var closeFollowing = document.getElementById("close-following");
+        var openFollowing = document.getElementById("following");
+        closeFollowing.addEventListener("click", () => {
+            openFollowing.style.display = "none";
+        });
+        var closeBookmark = document.getElementById("close-Bookmark");
+        var openBookmark = document.getElementById("Bookmark");
+        closeBookmark.addEventListener("click", () => {
+            openBookmark.style.display = "none";
+        });
 
-    function openFollowers(){
-        openFollow.style.cssText = "display:block !important;"
-    }
+        function openFollowers() {
+            openFollow.style.cssText = "display:block !important;"
+        }
 
-    
-    function openFollowingModal(){
-        openFollowing.style.cssText = "display:block !important;"
-    }
 
-    
-    function openBookmarkModal(){
-        openBookmark.style.cssText = "display:block !important;"
-    }
+        function openFollowingModal() {
+            openFollowing.style.cssText = "display:block !important;"
+        }
+
+
+        function openBookmarkModal() {
+            openBookmark.style.cssText = "display:block !important;"
+        }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         document.querySelector('.score-container').addEventListener('click', function() {
             var accordion = document.querySelector('.accordion-content');
             var arrow = document.querySelector('#accordion-toggle');
-            
+
             accordion.classList.toggle('hidden'); // Toggles the visibility of the accordion
             arrow.classList.toggle('fa-chevron-down'); // Changes the arrow to point down
             arrow.classList.toggle('fa-chevron-up'); // Changes the arrow to point up
@@ -1373,57 +1399,72 @@
     <script>
         var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
         var months = [],
-        data = [];
-    var all_data = new Array(12).fill(0);
-    var current_month = {{ current_month }};
+            data = [];
+        var all_data = new Array(12).fill(0);
+        var current_month = {
+            {
+                current_month
+            }
+        };
 
-    {% for i in graph %}all_data['{{i.month}}' - 1] = {{ i.c }};{% endfor %}
+        {
+            %
+            for i in graph %
+        }
+        all_data['{{i.month}}' - 1] = {
+            {
+                i.c
+            }
+        };
+        {
+            %
+            endfor %
+        }
 
-    if (current_month - 6 < 0) {
-        months = all_months.slice(current_month - 6);
-        months = months.concat(all_months.slice(0, current_month));
-        data = all_data.slice(current_month - 6);
-        data = data.concat(all_data.slice(0, current_month));
-    } else {
-        months = all_months.slice(current_month - 6, current_month);
-        data = all_data.slice(current_month - 6, current_month);
-    }
+        if (current_month - 6 < 0) {
+            months = all_months.slice(current_month - 6);
+            months = months.concat(all_months.slice(0, current_month));
+            data = all_data.slice(current_month - 6);
+            data = data.concat(all_data.slice(0, current_month));
+        } else {
+            months = all_months.slice(current_month - 6, current_month);
+            data = all_data.slice(current_month - 6, current_month);
+        }
         var options = {
             series: [{
-            name: 'Monthly Activity',
-            data: data
-          }],
+                name: 'Monthly Activity',
+                data: data
+            }],
             chart: {
-            height: 350,
-            type: 'area'
-          },
-          dataLabels: {
-            enabled: false
-          },
-          stroke: {
-            curve: 'smooth'
-          },
-          xaxis: {
-            type: 'String',
-            categories: months
-          },
-          };
-  
-          var chart = new ApexCharts(document.querySelector("#chart"), options);
-          chart.render();
+                height: 350,
+                type: 'area'
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                curve: 'smooth'
+            },
+            xaxis: {
+                type: 'String',
+                categories: months
+            },
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chart"), options);
+        chart.render();
     </script>
     <script>
-        async function followUser(){
+        async function followUser() {
             var user = document.getElementsByClassName("follow_unfollow")[0].getAttribute("name");
             const request = await fetch(`/follow/${user}/`)
-            if (request.status == 200){
+            if (request.status == 200) {
                 $.notify("Done!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                    window.location.reload();
-            }
-            else{
+                    style: "custom",
+                    className: "success"
+                });
+                window.location.reload();
+            } else {
                 $.notify("Permission Denied", {
                     style: "custom",
                     className: "danger"
@@ -1432,24 +1473,24 @@
         }
     </script>
     <script type="text/javascript">
-    $(function () {
-        $('.img-thumbnail, .upload-btn').on('mouseenter', function () {
-            $('.upload-btn').show();
+        $(function() {
+            $('.img-thumbnail, .upload-btn').on('mouseenter', function() {
+                $('.upload-btn').show();
+            });
+            $('.img-thumbnail, .upload-btn').on('mouseleave', function() {
+                $('.upload-btn').hide();
+            });
+            $('.upload-btn').on('click', function() {
+                $('input[name="user_avatar"]').click();
+            });
+            $('input[name="user_avatar"]').on('change', function() {
+                var file = $(this).val().replace('C:\\fakepath\\', '');
+                // $('.badge-avatar').html(file);
+                $('.upload').show();
+            });
         });
-        $('.img-thumbnail, .upload-btn').on('mouseleave', function () {
-            $('.upload-btn').hide();
-        });
-        $('.upload-btn').on('click', function () {
-            $('input[name="user_avatar"]').click();
-        });
-        $('input[name="user_avatar"]').on('change', function () {
-            var file = $(this).val().replace('C:\\fakepath\\', '');
-            // $('.badge-avatar').html(file);
-            $('.upload').show();
-        });
-    });
 
-        $('body').on('click', '.follow_unfollow', function (e) {
+        $('body').on('click', '.follow_unfollow', function(e) {
             e.preventDefault();
             var usr = $(this).attr('name');
             console.log(usr)
@@ -1457,7 +1498,7 @@
                 type: 'GET',
                 url: '/follow/' + usr + '/',
                 data: {},
-                success: function (data) {
+                success: function(data) {
                     var txt = $('.follow_unfollow').text();
                     if (txt == "Follow")
                         $('.follow_unfollow').text("Unfollow");
@@ -1468,7 +1509,7 @@
                         className: "success"
                     });
                 },
-                error: function () {
+                error: function() {
                     $.notify("Some error occurred!", {
                         style: "custom",
                         className: "danger"
@@ -1477,30 +1518,30 @@
             });
         });
 
-    $('body').on('click', '.list-group-item button', function (e) {
-        e.preventDefault();
-        var issue_pk = $(this).attr('name');
-        var el = $(this);
-        $.ajax({
-            type: 'GET',
-            url: '/unsave_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                el.parent().remove();
-                $.notify("Bookmark Removed!", {
-                    style: "custom",
-                    className: "success"
-                });
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
+        $('body').on('click', '.list-group-item button', function(e) {
+            e.preventDefault();
+            var issue_pk = $(this).attr('name');
+            var el = $(this);
+            $.ajax({
+                type: 'GET',
+                url: '/unsave_issue/' + issue_pk + '/',
+                data: {},
+                success: function(data) {
+                    el.parent().remove();
+                    $.notify("Bookmark Removed!", {
+                        style: "custom",
+                        className: "success"
+                    });
+                },
+                error: function() {
+                    $.notify("Some error occurred!", {
+                        style: "custom",
+                        className: "danger"
+                    });
+                }
+            });
         });
-    });
-
     </script>
     <script src="{% static 'js/validate-btc.js' %}"></script>
+
 {% endblock content %}

@@ -1,73 +1,92 @@
 {% extends "base.html" %}
+
 {% load i18n %}
 {% load static %}
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}
+
 {% providers_media_js %}
 {% load custom_tags %}
+
 {% block title %}
     Create GitHub Issue
+
 {% endblock title %}
+
 {% block description %}
     Describe the issue you want to create on GitHub. Provide details such as the issue title, description, and any relevant labels.
+
 {% endblock description %}
+
 {% block keywords %}
     Create GitHub Issue, GitHub Issue, Issue Title, Issue Description, Issue Labels
+
 {% endblock keywords %}
+
 {% block og_title %}
     Create GitHub Issue - Detailed Reporting
+
 {% endblock og_title %}
+
 {% block og_description %}
     Efficiently create a GitHub issue by providing necessary details such as the issue title, description, and relevant labels.
+
 {% endblock og_description %}
+
 {% block style %}
     <style>
-    .captcha-form img{
-        width: 100px;
-        margin-right: 10px;
-    }
-    .captcha-form input{
-        width: 100%;
-        border-width: 1px;
-        border-color: black;
-        padding: 10px;
-        font-size: 1.4rem;
-    }
-
-    @media (max-width:1130px) {
-        #issue-description-container{
-            flex-direction: column;
+        .captcha-form img {
+            width: 100px;
+            margin-right: 10px;
         }
-        #issue-description-container div{
+
+        .captcha-form input {
             width: 100%;
+            border-width: 1px;
+            border-color: black;
+            padding: 10px;
+            font-size: 1.4rem;
         }
-    }
 
-    @media (max-width: 1514px) {
-        #files_manage{
-            width: 100%;
-            height: max-content;
-            justify-content: space-around;
-        }
-        #files_manage div{
-            margin-top: 20px;
-        }
-        #screenshot-container{
-            width: 73vw
-        }
-    }
+        @media (max-width:1130px) {
+            #issue-description-container {
+                flex-direction: column;
+            }
 
-    .bottom-right {
+            #issue-description-container div {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 1514px) {
+            #files_manage {
+                width: 100%;
+                height: max-content;
+                justify-content: space-around;
+            }
+
+            #files_manage div {
+                margin-top: 20px;
+            }
+
+            #screenshot-container {
+                width: 73vw
+            }
+        }
+
+        .bottom-right {
             position: absolute;
             bottom: 10px;
             right: 15px;
-    }
-
+        }
     </style>
+
 {% endblock style %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <form id="githubIssueForm"
               method='post'
@@ -154,7 +173,7 @@
                     </div>
                 </div>
                 <!-- Captcha -->
-                <div class="w-full mt-6 flex flex-col md:flex-row items-center justify-between gap-x-6 ">
+                <div class="w-full mt-6 flex flex-col md:flex-row items-center justify-between gap-x-6">
                     <div class="flex h-full justify-between items-center flex-col my-16 md:flex-row md:mt-0">
                         <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
                     </div>
@@ -171,70 +190,76 @@
             </div>
         </form>
     </div>
+
 {% endblock content %}
+
 {% block after_js %}
     <script type="text/javascript">
-    function validateGithubIssue() {
-        const titleInput = document.getElementById('issue_title').value;
-        const descriptionInput = document.getElementById('description').value.trim();
-        const repository = document.getElementById('repository').value;
-        const repositoryUrl = document.getElementById('repository_url').value;
+        function validateGithubIssue() {
+            const titleInput = document.getElementById('issue_title').value;
+            const descriptionInput = document.getElementById('description').value.trim();
+            const repository = document.getElementById('repository').value;
+            const repositoryUrl = document.getElementById('repository_url').value;
 
-        if (titleInput && descriptionInput && (repository || repositoryUrl)) {
-            return true;
-        } else {
-            alert("Please fill in all required fields.")
-            return false;
-        }
-    }
-
-    function generateAIDetails() {
-        const description = document.getElementById('description').value.trim();
-        const title = document.getElementById('issue_title').value;
-        const generateButton = document.getElementById('generate-ai-button');
-
-        if (!description) {
-            alert('Please enter a brief description first.');
-            return;
-        }
-
-        // Change button to loading state
-        generateButton.disabled = true;
-        generateButton.innerHTML = 'Loading...';
-
-        // AJAX request to send user input to backend
-        fetch('/api/generate-github-issue/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ title: title, description: description })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.issue_details) {
-                document.getElementById('description').value = data.issue_details;
+            if (titleInput && descriptionInput && (repository || repositoryUrl)) {
+                return true;
             } else {
-                alert('Failed to generate suggestions.');
+                alert("Please fill in all required fields.")
+                return false;
             }
-        })
-        .catch(error => console.error('Error:', error))
-        .finally(() => {
-            // Revert button to original state
-            generateButton.disabled = false;
-            generateButton.innerHTML = 'Generate with AI';
-        });
-    }
-
-    // Remove success message after 10 seconds
-    document.addEventListener('DOMContentLoaded', function() {
-        const successMessage = document.getElementById('success-message');
-        if (successMessage) {
-            setTimeout(() => {
-                successMessage.remove();
-            }, 10000);
         }
-    });
+
+        function generateAIDetails() {
+            const description = document.getElementById('description').value.trim();
+            const title = document.getElementById('issue_title').value;
+            const generateButton = document.getElementById('generate-ai-button');
+
+            if (!description) {
+                alert('Please enter a brief description first.');
+                return;
+            }
+
+            // Change button to loading state
+            generateButton.disabled = true;
+            generateButton.innerHTML = 'Loading...';
+
+            // AJAX request to send user input to backend
+            fetch('/api/generate-github-issue/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.issue_details) {
+                        document.getElementById('description').value = data.issue_details;
+                    } else {
+                        alert('Failed to generate suggestions.');
+                    }
+                })
+                .catch(error => console.error('Error:', error))
+                .finally(() => {
+                    // Revert button to original state
+                    generateButton.disabled = false;
+                    generateButton.innerHTML = 'Generate with AI';
+                });
+        }
+
+        // Remove success message after 10 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessage = document.getElementById('success-message');
+            if (successMessage) {
+                setTimeout(() => {
+                    successMessage.remove();
+                }, 10000);
+            }
+        });
     </script>
+
 {% endblock after_js %}

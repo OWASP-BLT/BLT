@@ -22,12 +22,20 @@
         <div class="flex flex-col space-y-2">
             <input type="text"
                    name="txid"
-                   placeholder="{% if item.txid %}Update Transaction ID{% else %}Add Transaction ID{% endif %}"
+                   placeholder="{% if item.txid %}
+                                    Update Transaction ID
+                                {% else %}
+                                    Add Transaction ID
+                                {% endif %}"
                    class="text-xs border rounded px-2 py-1 w-full"
                    value="{{ item.txid|default:'' }}">
             <input type="url"
                    name="url"
-                   placeholder="{% if item.url %}Update post URL{% else %}Add post URL (optional){% endif %}"
+                   placeholder="{% if item.url %}
+                                    Update post URL
+                                {% else %}
+                                    Add post URL (optional)
+                                {% endif %}"
                    class="text-xs border rounded px-2 py-1 w-full"
                    value="{{ item.url|default:'' }}">
             <button type="submit"

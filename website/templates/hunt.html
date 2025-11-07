@@ -1,9 +1,12 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load i18n %}
 {% load custom_tags %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <!-- Add jQuery UI CSS and JS -->
     <link rel="stylesheet"
@@ -115,4 +118,5 @@
             {% env 'PROJECT_NAME' %} is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.
         </h1>
     </form>
+
 {% endblock content %}

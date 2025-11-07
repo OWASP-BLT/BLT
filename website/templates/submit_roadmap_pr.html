@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8 mt-10">
         <h1 class="text-3xl font-bold mb-8">Submit Pull Request For Analysis</h1>
         {% if request.user.is_superuser %}
@@ -41,4 +43,5 @@
             </div>
         </form>
     </div>
+
 {% endblock %}

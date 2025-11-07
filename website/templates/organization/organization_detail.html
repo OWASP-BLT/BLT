@@ -1,14 +1,21 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load gravatar %}
 {% load humanize %}
+
 {% block title %}{{ organization.name }} - Organization Details{% endblock %}
+
 {% block description %}
     View organization details, including name, description, domains, and team information.
+
 {% endblock %}
+
 {% block keywords %}organization details, {{ organization.name }}, team information, domains{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto px-4 py-8">
         <!-- Breadcrumbs -->
         <nav class="mb-4 flex items-center space-x-2 text-sm text-gray-500">
@@ -618,143 +625,149 @@
             </div>
         </div>
     </div>
+
 {% endblock %}
+
 {% block after_js %}
     <script>
-function syncGithubProjects() {
-    const button = event.target.closest('button');
-    const originalContent = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
+        function syncGithubProjects() {
+            const button = event.target.closest('button');
+            const originalContent = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
 
-    fetch('/stats/sync-github-projects/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
+            fetch('/stats/sync-github-projects/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to sync projects. Please try again.');
+                        button.disabled = false;
+                        button.innerHTML = originalContent;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while syncing projects.');
+                    button.disabled = false;
+                    button.innerHTML = originalContent;
+                });
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Failed to sync projects. Please try again.');
-            button.disabled = false;
-            button.innerHTML = originalContent;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while syncing projects.');
-        button.disabled = false;
-        button.innerHTML = originalContent;
-    });
-}
 
-function updateGithubRepos(slug) {
-    const button = document.getElementById('updateReposBtn');
-    const statusArea = document.getElementById('repoUpdateStatus');
-    const statusMessages = document.getElementById('statusMessages');
-    
-    // Disable button and show status area
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
-    statusArea.classList.remove('hidden');
-    statusMessages.innerHTML = '';
-    
-    // Style the status area to look like a terminal
-    statusMessages.className = 'text-sm font-mono bg-gray-900 text-green-400 p-3 rounded max-h-96 overflow-y-auto';
-    
-    // Connect to the server-sent events endpoint
-    let eventSource;
-    try {
-        eventSource = new EventSource(`/organization/${slug}/update-repos/`);
-        console.log('EventSource created:', eventSource);
-    } catch (err) {
-        console.error('Error creating EventSource:', err);
-        statusMessages.innerHTML = `<div class="text-red-500">Error: ${err.message}</div>`;
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
-        return;
-    }
-    
-    // Set a timeout to detect connection issues
-    const connectionTimeout = setTimeout(() => {
-        if (eventSource.readyState !== EventSource.OPEN) {
-            statusMessages.innerHTML += '<div class="text-red-500">Error: Connection timeout</div>';
-            eventSource.close();
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+        function updateGithubRepos(slug) {
+            const button = document.getElementById('updateReposBtn');
+            const statusArea = document.getElementById('repoUpdateStatus');
+            const statusMessages = document.getElementById('statusMessages');
+
+            // Disable button and show status area
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+            statusArea.classList.remove('hidden');
+            statusMessages.innerHTML = '';
+
+            // Style the status area to look like a terminal
+            statusMessages.className = 'text-sm font-mono bg-gray-900 text-green-400 p-3 rounded max-h-96 overflow-y-auto';
+
+            // Connect to the server-sent events endpoint
+            let eventSource;
+            try {
+                eventSource = new EventSource(`/organization/${slug}/update-repos/`);
+                console.log('EventSource created:', eventSource);
+            } catch (err) {
+                console.error('Error creating EventSource:', err);
+                statusMessages.innerHTML = `<div class="text-red-500">Error: ${err.message}</div>`;
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+                return;
+            }
+
+            // Set a timeout to detect connection issues
+            const connectionTimeout = setTimeout(() => {
+                if (eventSource.readyState !== EventSource.OPEN) {
+                    statusMessages.innerHTML += '<div class="text-red-500">Error: Connection timeout</div>';
+                    eventSource.close();
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+                }
+            }, 10000); // 10 second timeout
+
+            // Handle connection open
+            eventSource.onopen = function() {
+                clearTimeout(connectionTimeout);
+                console.log('EventSource connection opened');
+            };
+
+            // Handle incoming messages
+            eventSource.onmessage = function(event) {
+                console.log('EventSource message received:', event.data);
+                const message = event.data;
+
+                // Check if the update is complete
+                if (message.includes('DONE')) {
+                    clearTimeout(connectionTimeout);
+                    eventSource.close();
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+
+                    // Add a refresh button
+                    const refreshBtn = document.createElement('button');
+                    refreshBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
+                    refreshBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Refresh Page';
+                    refreshBtn.onclick = function() {
+                        location.reload();
+                    };
+                    statusArea.appendChild(refreshBtn);
+
+                    return;
+                }
+
+                // Add the message to the terminal
+                const line = document.createElement('div');
+
+                // Style based on message content
+                if (message.includes('Error:') || message.includes('[error]')) {
+                    line.className = 'text-red-500';
+                } else if (message.includes('[created]')) {
+                    line.className = 'text-blue-400';
+                } else if (message.includes('[updated]')) {
+                    line.className = 'text-yellow-400';
+                }
+
+                line.textContent = message;
+                statusMessages.appendChild(line);
+
+                // Auto-scroll to the bottom
+                statusMessages.scrollTop = statusMessages.scrollHeight;
+            };
+
+            // Handle errors
+            eventSource.onerror = function(error) {
+                clearTimeout(connectionTimeout);
+                console.error('EventSource error:', error);
+
+                eventSource.close();
+
+                statusMessages.innerHTML += '<div class="text-red-500">Error: Connection to the server was lost</div>';
+
+                // Add a retry button
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
+                retryBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Retry';
+                retryBtn.onclick = function() {
+                    updateGithubRepos(slug);
+                };
+                statusArea.appendChild(retryBtn);
+
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+            };
         }
-    }, 10000); // 10 second timeout
-    
-    // Handle connection open
-    eventSource.onopen = function() {
-        clearTimeout(connectionTimeout);
-        console.log('EventSource connection opened');
-    };
-    
-    // Handle incoming messages
-    eventSource.onmessage = function(event) {
-        console.log('EventSource message received:', event.data);
-        const message = event.data;
-        
-        // Check if the update is complete
-        if (message.includes('DONE')) {
-            clearTimeout(connectionTimeout);
-            eventSource.close();
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
-            
-            // Add a refresh button
-            const refreshBtn = document.createElement('button');
-            refreshBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
-            refreshBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Refresh Page';
-            refreshBtn.onclick = function() { location.reload(); };
-            statusArea.appendChild(refreshBtn);
-            
-            return;
-        }
-        
-        // Add the message to the terminal
-        const line = document.createElement('div');
-        
-        // Style based on message content
-        if (message.includes('Error:') || message.includes('[error]')) {
-            line.className = 'text-red-500';
-        } else if (message.includes('[created]')) {
-            line.className = 'text-blue-400';
-        } else if (message.includes('[updated]')) {
-            line.className = 'text-yellow-400';
-        }
-        
-        line.textContent = message;
-        statusMessages.appendChild(line);
-        
-        // Auto-scroll to the bottom
-        statusMessages.scrollTop = statusMessages.scrollHeight;
-    };
-    
-    // Handle errors
-    eventSource.onerror = function(error) {
-        clearTimeout(connectionTimeout);
-        console.error('EventSource error:', error);
-        
-        eventSource.close();
-        
-        statusMessages.innerHTML += '<div class="text-red-500">Error: Connection to the server was lost</div>';
-        
-        // Add a retry button
-        const retryBtn = document.createElement('button');
-        retryBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
-        retryBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Retry';
-        retryBtn.onclick = function() { updateGithubRepos(slug); };
-        statusArea.appendChild(retryBtn);
-        
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
-    };
-}
     </script>
     <!-- Add Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -763,21 +776,38 @@ function updateGithubRepos(slug) {
     {% if organization.latitude and organization.longitude %}
         <script>
             // Initialize the map
-            const map = L.map('org-map').setView([{{ organization.latitude }}, {{ organization.longitude }}], 13);
-            
+            const map = L.map('org-map').setView([{
+                {
+                    organization.latitude
+                }
+            }, {
+                {
+                    organization.longitude
+                }
+            }], 13);
+
             // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
-            
+
             // Add a marker for the organization's location
-            const marker = L.marker([{{ organization.latitude }}, {{ organization.longitude }}])
+            const marker = L.marker([{
+                    {
+                        organization.latitude
+                    }
+                }, {
+                    {
+                        organization.longitude
+                    }
+                }])
                 .addTo(map)
                 .bindPopup("{{ organization.name }}");
-            
+
             // Open the popup by default
             marker.openPopup();
         </script>
     {% endif %}
+
 {% endblock %}

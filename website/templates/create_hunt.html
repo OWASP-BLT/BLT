@@ -1,25 +1,38 @@
 {% extends "base_dashboard.html" %}
+
 {% load static %}
 {% load custom_tags %}
 {% load tz_detect %}
+
 {% block title %}
     Start a Bug Bounty - OWASP {% env 'PROJECT_NAME' %}
+
 {% endblock %}
+
 {% block description %}
     Create a new bugbounty by entering the URL, app name, or GPS location of the issue. Define start and end dates, domain, and prizes for the winners.
+
 {% endblock %}
+
 {% block keywords %}
     bugbounty, OWASP, start a bugbounty, security, rewards, prizes, bug tracking, competition
+
 {% endblock %}
+
 {% block og_title %}
     Start a Bug Bounty - OWASP {% env 'PROJECT_NAME' %}
+
 {% endblock %}
+
 {% block og_description %}
     Start a new bugbounty on OWASP {% env 'PROJECT_NAME' %}. Set the issue details, start/end dates, and prize information for participants.
+
 {% endblock %}
+
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
+
     </section>
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
@@ -118,41 +131,44 @@
     <script type="text/javascript" src="{% static "js/mtr-datepicker.js" %}"></script>
     <script type="text/javascript" src="{% static "js/dt.js" %}"></script>
     <script type="text/javascript">
-  var dateNow = new Date();
-  var Datepicker1 = MtrDatepickerDemo.init({
-    target: 'datepicker-1',
-    timestamp: dateNow.getTime(),
-    future: true,
-  }, {
-    exportFormats: 'datepicker-1-res',
-  });
-  var Datepicker2 = MtrDatepickerDemo.init({
-    target: 'datepicker-2',
-    timestamp: dateNow.getTime(),
-    future: true,
-  }, {
-    exportFormats: 'datepicker-2-res',
-  });
+        var dateNow = new Date();
+        var Datepicker1 = MtrDatepickerDemo.init({
+            target: 'datepicker-1',
+            timestamp: dateNow.getTime(),
+            future: true,
+        }, {
+            exportFormats: 'datepicker-1-res',
+        });
+        var Datepicker2 = MtrDatepickerDemo.init({
+            target: 'datepicker-2',
+            timestamp: dateNow.getTime(),
+            future: true,
+        }, {
+            exportFormats: 'datepicker-2-res',
+        });
     </script>
+
 {% endblock content %}
+
 {% block after_js %}
     <script src="{% static "js/bootstrap-slider.js" %}"></script>
     <script>
-  $('.btn').on('click', function () {
-    $(".hunt-form").valid();
-  });
+        $('.btn').on('click', function() {
+            $(".hunt-form").valid();
+        });
 
-  function numberWithCommas(x) {
-    var parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-  }
+        function numberWithCommas(x) {
+            var parts = x.toString().split(".");
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return parts.join(".");
+        }
 
-  $(".slider").slider({
-    tooltip: 'always',
-    formatter: function (value) {
-      return '$' + numberWithCommas(value);
-    }
-  });
+        $(".slider").slider({
+            tooltip: 'always',
+            formatter: function(value) {
+                return '$' + numberWithCommas(value);
+            }
+        });
     </script>
+
 {% endblock after_js %}

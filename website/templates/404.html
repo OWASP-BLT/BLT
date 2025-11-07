@@ -1,10 +1,15 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}404 - Page Not Found{% endblock %}
+
 {% block description %}The page you are looking for could not be found.{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <!-- 404 Error Section -->
         <div class="text-center mb-12">
@@ -294,39 +299,39 @@
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById("baconForm").addEventListener("submit", function(event) {
                 event.preventDefault();
-            
+
                 const formData = {
                     github_url: document.getElementById("github_url").value,
                     contribution_type: document.getElementById("contribution_type").value,
                     description: document.getElementById("description").value
                 };
-    
+
                 fetch("/api/bacon/submit/", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    },
-                    body: JSON.stringify(formData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        alert("BACON Request Submitted Successfully!");
-                        document.getElementById("baconForm").reset();
-                        // Redirect to BACON page after successful submission
-                        window.location.href = "{% url 'bacon' %}";
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("An unexpected error occurred. Please try again later.");
-                });
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            alert("BACON Request Submitted Successfully!");
+                            document.getElementById("baconForm").reset();
+                            // Redirect to BACON page after successful submission
+                            window.location.href = "{% url 'bacon' %}";
+                        } else {
+                            alert("Error: " + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        alert("An unexpected error occurred. Please try again later.");
+                    });
             });
         });
-    
+
         function toggleDescription(id) {
             let desc = document.getElementById("description-" + id);
             if (desc) {
@@ -334,4 +339,5 @@
             }
         }
     </script>
+
 {% endblock content %}

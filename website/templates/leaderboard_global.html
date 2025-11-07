@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Global Leaderboard
+
 {% endblock title %}
+
 {% block description %}
     Check out the top performers on the global leaderboard. View scores, usernames, and their achievements from around the world.
+
 {% endblock description %}
+
 {% block keywords %}
     Global Leaderboard, Top Performers, Scores, Usernames, Achievements, Worldwide Rankings
+
 {% endblock keywords %}
+
 {% block og_title %}
     Global Leaderboard - Top Performers and Achievements Worldwide
+
 {% endblock og_title %}
+
 {% block og_description %}
     Explore the global leaderboard to see the top performers from around the world. View scores, usernames, and their achievements.
+
 {% endblock og_description %}
 {% load gravatar %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="row container-min-height flex justify-center pb-4">
         <div class="col-lg-12 flex justify-center items-center">
             <h1 class="page-header">Global Leaderboard</h1>
@@ -25,7 +38,7 @@
     </div>
     <div class="flex flex-col md:gap-10 px-4  gap-2 md:px-0">
         <div class="flex justify-center gap-6 flex-wrap">
-            <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+            <div class="flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
                 <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Points Leaderboard</div>
                 <div class=" list-group w-full p-4">
                     {% if not leaderboard %}
@@ -37,19 +50,19 @@
                                     <div class="flex  gap-2 items-center truncate">
                                         {% if leader.userprofile.avatar %}
                                             <img src="{{ leader.userprofile.avatar }}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full"
                                                  alt="{{ leader.username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% elif leader.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.email 50 %}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
@@ -61,7 +74,18 @@
                                             <span class="text-lg transition-all duration-200">{{ leader.username|default:"Unknown" }}</span>
                                         {% endif %}
                                         <span>
-                                            <kbd class="py-1 px-2 select-none rounded-md {% if leader.userprofile.get_title_display|lower == 'silver' %}bg-gray-400 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'gold' %}bg-yellow-600 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'bronze' %}bg-orange-700 text-white{% elif leader.userprofile.get_title_display|lower == 'platinum' %}bg-gray-200 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'unrated' %}bg-black text-white{% endif %}">
+                                            <kbd class="py-1 px-2 select-none rounded-md
+                                                        {% if leader.userprofile.get_title_display|lower == 'silver' %}
+                                                            bg-gray-400 text-gray-800
+                                                        {% elif leader.userprofile.get_title_display|lower == 'gold' %}
+                                                            bg-yellow-600 text-gray-800
+                                                        {% elif leader.userprofile.get_title_display|lower == 'bronze' %}
+                                                            bg-orange-700 text-white
+                                                        {% elif leader.userprofile.get_title_display|lower == 'platinum' %}
+                                                            bg-gray-200 text-gray-800
+                                                        {% elif leader.userprofile.get_title_display|lower == 'unrated' %}
+                                                            bg-black text-white
+                                                        {% endif %}">
                                                 {{ leader.userprofile.get_title_display }}
                                             </kbd>
                                         </span>
@@ -77,8 +101,8 @@
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class=" text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Pull Request Leaderboard</div>
+            <div class="flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Pull Request Leaderboard</div>
                 <div class=" list-group w-full p-4">
                     {% if pr_leaderboard %}
                         <div class="flex flex-col gap-2">
@@ -87,13 +111,13 @@
                                     <div class="flex  gap-2 items-center truncate">
                                         {% if leader.user_profile__github_url %}
                                             <img src="https://github.com/{{ leader.user_profile__user__username }}.png"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full"
                                                  alt="{{ leader.user_profile__user__username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.user_profile__user__email 50 %}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
@@ -120,7 +144,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+            <div class="flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
                 <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Code Review Leaderboard</div>
                 <div class="list-group p-4">
                     {% if code_review_leaderboard %}
@@ -130,13 +154,13 @@
                                     <div class="flex  gap-2 items-center truncate">
                                         {% if leader.reviews__reviewer__user__username %}
                                             <img src="https://github.com/{{ leader.reviews__reviewer__user__username }}.png"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full"
                                                  alt="{{ leader.reviews__reviewer__user__username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.reviews__reviewer__user__email 50 %}"
-                                                 class=" size-11 select-none border border-gray-200 rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
@@ -204,7 +228,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+            <div class="flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
                 <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Issue Bounties</div>
                 <div class=" list-group w-full p-4">
                     {% if not issue_bounties %}
@@ -213,7 +237,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+            <div class="flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
                 <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Bug Bounties</div>
                 <div class=" list-group w-full p-4">
                     {% if not bug_bounties %}
@@ -224,4 +248,5 @@
             </div>
         </div>
     </div>
+
 {% endblock content %}

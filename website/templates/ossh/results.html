@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block content %}
     <div class="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-900 to-black p-6 text-white relative">
         {% include "includes/sidenav.html" %}
+
         <div class="w-full max-w-6xl mx-auto space-y-8">
             <div id="github-loader" class="flex justify-center items-center h-64">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -36,132 +39,143 @@
         </div>
     </div>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
             // Loaders and Containers
             const githubLoader = document.getElementById("github-loader");
             const githubDataContainer = document.getElementById("github-data-container");
-    
+
             const reposLoader = document.getElementById("repos-loader");
             const reposContainer = document.getElementById("recommended-repos-container");
-    
+
             const communitiesLoader = document.getElementById("communities-loader");
             const communitiesContainer = document.getElementById("recommended-communities-container");
-    
+
             const channelsLoader = document.getElementById("channels-loader");
             const channelsContainer = document.getElementById("recommended-channels-container");
-    
+
             const articlesLoader = document.getElementById("articles-loader");
             const articlesContainer = document.getElementById("recommended-articles-container");
-    
+
             // Show loader for GitHub data
             githubLoader.classList.remove("hidden");
-    
+
             // Fetch GitHub data
             fetch("/get-github-data/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}",
-                },
-                body: JSON.stringify({ github_username: "{{ username }}" }),
-            })
-            .then(response => response.text())
-            .then(html => {
-                // Hide GitHub loader and display fetched data
-                githubLoader.classList.add("hidden");
-                githubDataContainer.innerHTML = html;
-                githubDataContainer.classList.remove("hidden");
-    
-                // Fetch recommended repos
-                reposLoader.classList.remove("hidden");
-                return fetch("/get-recommended-repos/", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRFToken": "{{ csrf_token }}",
                     },
-                    body: JSON.stringify({ github_username: "{{ username }}" }),
+                    body: JSON.stringify({
+                        github_username: "{{ username }}"
+                    }),
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Hide GitHub loader and display fetched data
+                    githubLoader.classList.add("hidden");
+                    githubDataContainer.innerHTML = html;
+                    githubDataContainer.classList.remove("hidden");
+
+                    // Fetch recommended repos
+                    reposLoader.classList.remove("hidden");
+                    return fetch("/get-recommended-repos/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({
+                            github_username: "{{ username }}"
+                        }),
+                    });
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Hide repos loader and display fetched repos
+                    reposLoader.classList.add("hidden");
+                    reposContainer.innerHTML = html;
+                    reposContainer.classList.remove("hidden");
+
+                    // Fetch recommended communities
+                    communitiesLoader.classList.remove("hidden");
+                    return fetch("/get-recommended-communities/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({
+                            github_username: "{{ username }}"
+                        }),
+                    });
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Hide communities loader and display fetched communities
+                    communitiesLoader.classList.add("hidden");
+                    communitiesContainer.innerHTML = html;
+                    communitiesContainer.classList.remove("hidden");
+
+                    // Fetch recommended channels
+                    channelsLoader.classList.remove("hidden");
+                    return fetch("/get-recommended-discussion-channels/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({
+                            github_username: "{{ username }}"
+                        }),
+                    });
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Hide channels loader and display fetched channels
+                    channelsLoader.classList.add("hidden");
+                    channelsContainer.innerHTML = html;
+                    channelsContainer.classList.remove("hidden");
+
+                    // Fetch recommended articles
+                    articlesLoader.classList.remove("hidden");
+                    return fetch("/get-recommended-articles/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({
+                            github_username: "{{ username }}"
+                        }),
+                    });
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Hide articles loader and display fetched articles
+                    articlesLoader.classList.add("hidden");
+                    articlesContainer.innerHTML = html;
+                    articlesContainer.classList.remove("hidden");
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+
+                    // Handle errors for GitHub data
+                    githubLoader.innerHTML = "<p class='text-red-500'>Failed to fetch GitHub data. Please try again.</p>";
+
+                    // Handle errors for recommended repos
+                    reposLoader.innerHTML = "<p class='text-red-500'>Failed to fetch recommended repos. Please try again.</p>";
+
+                    // Handle errors for recommended communities
+                    communitiesLoader.innerHTML = "<p class='text-red-500'>Failed to fetch recommended communities. Please try again.</p>";
+
+                    // Handle errors for recommended channels
+                    channelsLoader.innerHTML = "<p class='text-red-500'>Failed to fetch recommended channels. Please try again.</p>";
+
+                    // Handle errors for recommended articles
+                    articlesLoader.innerHTML = "<p class='text-red-500'>Failed to fetch recommended articles. Please try again.</p>";
                 });
-            })
-            .then(response => response.text())
-            .then(html => {
-                // Hide repos loader and display fetched repos
-                reposLoader.classList.add("hidden");
-                reposContainer.innerHTML = html;
-                reposContainer.classList.remove("hidden");
-    
-                // Fetch recommended communities
-                communitiesLoader.classList.remove("hidden");
-                return fetch("/get-recommended-communities/", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                    body: JSON.stringify({ github_username: "{{ username }}" }),
-                });
-            })
-            .then(response => response.text())
-            .then(html => {
-                // Hide communities loader and display fetched communities
-                communitiesLoader.classList.add("hidden");
-                communitiesContainer.innerHTML = html;
-                communitiesContainer.classList.remove("hidden");
-    
-                // Fetch recommended channels
-                channelsLoader.classList.remove("hidden");
-                return fetch("/get-recommended-discussion-channels/", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                    body: JSON.stringify({ github_username: "{{ username }}" }),
-                });
-            })
-            .then(response => response.text())
-            .then(html => {
-                // Hide channels loader and display fetched channels
-                channelsLoader.classList.add("hidden");
-                channelsContainer.innerHTML = html;
-                channelsContainer.classList.remove("hidden");
-    
-                // Fetch recommended articles
-                articlesLoader.classList.remove("hidden");
-                return fetch("/get-recommended-articles/", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                    body: JSON.stringify({ github_username: "{{ username }}" }),
-                });
-            })
-            .then(response => response.text())
-            .then(html => {
-                // Hide articles loader and display fetched articles
-                articlesLoader.classList.add("hidden");
-                articlesContainer.innerHTML = html;
-                articlesContainer.classList.remove("hidden");
-            })
-            .catch(error => {
-                console.error("Error:", error);
-    
-                // Handle errors for GitHub data
-                githubLoader.innerHTML = "<p class='text-red-500'>Failed to fetch GitHub data. Please try again.</p>";
-    
-                // Handle errors for recommended repos
-                reposLoader.innerHTML = "<p class='text-red-500'>Failed to fetch recommended repos. Please try again.</p>";
-    
-                // Handle errors for recommended communities
-                communitiesLoader.innerHTML = "<p class='text-red-500'>Failed to fetch recommended communities. Please try again.</p>";
-    
-                // Handle errors for recommended channels
-                channelsLoader.innerHTML = "<p class='text-red-500'>Failed to fetch recommended channels. Please try again.</p>";
-    
-                // Handle errors for recommended articles
-                articlesLoader.innerHTML = "<p class='text-red-500'>Failed to fetch recommended articles. Please try again.</p>";
-            });
         });
     </script>
+
 {% endblock content %}

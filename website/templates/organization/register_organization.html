@@ -1,23 +1,36 @@
 {% extends 'base.html' %}
+
 {% load i18n %}
 {% load static %}
+
 {% block title %}
     {% trans "Register Organization" %}
+
 {% endblock title %}
+
 {% block description %}
     {% trans 'blt make organization bug tracking easy' %}
+
 {% endblock description %}
+
 {% block keywords %}
     {% trans 'blt, bug, tracking, organization, easy, register' %}
+
 {% endblock keywords %}
+
 {% block og_title %}
     {% trans "Register Organization" %}
+
 {% endblock og_title %}
+
 {% block og_description %}
     {% trans 'blt make organization bug tracking easy' %}
+
 {% endblock og_description %}
+
 {% block content %}
     {% include 'includes/sidenav.html' %}
+
     <div class="flex flex-col min-h-screen">
         <div class="flex-1  flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
             <div class="w-full lg:max-w-[90%]">
@@ -267,39 +280,41 @@
             </div>
         {% endif %}
     </div>
+
 {% endblock %}
+
 {% block scripts %}
     <script>
-    function removeErrors() {
-        const errors = document.getElementsByClassName('popup-errors');
-        const errorsArray = Array.from(errors);
+        function removeErrors() {
+            const errors = document.getElementsByClassName('popup-errors');
+            const errorsArray = Array.from(errors);
 
-        // Remove each element from the DOM
-        errorsArray.forEach(function(error) {
-            error.remove();
-        });
-    }
-    
-    function removeError(id) {
-        const error = document.getElementById(id);
-        if (error) {
-            error.remove();
+            // Remove each element from the DOM
+            errorsArray.forEach(function(error) {
+                error.remove();
+            });
         }
-    }
 
-    function remove_email_container() {
-        const email_container = document.getElementById("email-container");
-        const lastChild = email_container.lastElementChild;
-        if (lastChild && lastChild.tagName !== 'LABEL') {
-            email_container.removeChild(lastChild);
+        function removeError(id) {
+            const error = document.getElementById(id);
+            if (error) {
+                error.remove();
+            }
         }
-    }
 
-    function add_email_container() {
-        const email_container = document.getElementById("email-container");
-        const emailInputGroup = document.createElement('div');
-        emailInputGroup.className = 'flex items-center space-x-2';
-        emailInputGroup.innerHTML = `
+        function remove_email_container() {
+            const email_container = document.getElementById("email-container");
+            const lastChild = email_container.lastElementChild;
+            if (lastChild && lastChild.tagName !== 'LABEL') {
+                email_container.removeChild(lastChild);
+            }
+        }
+
+        function add_email_container() {
+            const email_container = document.getElementById("email-container");
+            const emailInputGroup = document.createElement('div');
+            emailInputGroup.className = 'flex items-center space-x-2';
+            emailInputGroup.innerHTML = `
             <div class="relative border border-gray-200 rounded-md shadow-sm lg:w-96 w-full">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <i class="fas fa-envelope"></i>
@@ -311,48 +326,49 @@
             </button>
         `;
 
-        email_container.appendChild(emailInputGroup);
-    }
-
-    function cancelForm() {
-        const confirmDelete = confirm("{% trans 'Are you sure you want to cancel? Your progress will be lost.' %}");
-        if (confirmDelete) {
-            window.location.href = "{% url 'organizations' %}";
+            email_container.appendChild(emailInputGroup);
         }
-    }
 
-    function displayLogoPreview() {
-        const fileInput = document.getElementById("logo");
-        const previewDiv = document.getElementById("previewLogoDiv");
+        function cancelForm() {
+            const confirmDelete = confirm("{% trans 'Are you sure you want to cancel? Your progress will be lost.' %}");
+            if (confirmDelete) {
+                window.location.href = "{% url 'organizations' %}";
+            }
+        }
 
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const reader = new FileReader();
+        function displayLogoPreview() {
+            const fileInput = document.getElementById("logo");
+            const previewDiv = document.getElementById("previewLogoDiv");
 
-            reader.onload = function(event) {
-                previewDiv.innerHTML = "";
-                previewDiv.className = "h-24 w-24 rounded-lg overflow-hidden border-2 border-[#e74c3c]";
-                
-                const preview = document.createElement("img");
-                preview.src = event.target.result;
-                preview.className = "h-full w-full object-cover";
-                previewDiv.appendChild(preview);
-            };
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
 
-            reader.readAsDataURL(file);
-        } else {
-            previewDiv.innerHTML = `
+                reader.onload = function(event) {
+                    previewDiv.innerHTML = "";
+                    previewDiv.className = "h-24 w-24 rounded-lg overflow-hidden border-2 border-[#e74c3c]";
+
+                    const preview = document.createElement("img");
+                    preview.src = event.target.result;
+                    preview.className = "h-full w-full object-cover";
+                    previewDiv.appendChild(preview);
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                previewDiv.innerHTML = `
                 <svg class="h-12 w-12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
                 </svg>
             `;
-            previewDiv.className = "h-24 w-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-[#e74c3c]";
+                previewDiv.className = "h-24 w-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-[#e74c3c]";
+            }
         }
-    }
 
-    // Add the first email container by default
-    document.addEventListener('DOMContentLoaded', function() {
-        add_email_container();
-    });
+        // Add the first email container by default
+        document.addEventListener('DOMContentLoaded', function() {
+            add_email_container();
+        });
     </script>
+
 {% endblock scripts %}

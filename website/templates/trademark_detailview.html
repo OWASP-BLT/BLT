@@ -1,22 +1,35 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}
     Trademark Search Results
+
 {% endblock title %}
+
 {% block description %}
     View the results of your trademark search, including registration numbers, serial numbers, filing dates, owner details, and status labels from the USPTO.
+
 {% endblock description %}
+
 {% block keywords %}
     Trademark Search Results, USPTO, Patent and Trademark, Search Trademarks, Trademark Details, Owner Information
+
 {% endblock keywords %}
+
 {% block og_title %}
     Trademark Search Results - Detailed Trademark Information
+
 {% endblock og_title %}
+
 {% block og_description %}
     Access detailed trademark search results, including registration numbers, serial numbers, filing dates, owner information, and status labels from the USPTO.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         {% if available %}
             <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -116,9 +129,16 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full {% if item.status_label == 'Live/Pending' %} bg-yellow-100 text-yellow-800 {% elif item.status_label == 'Live/Registered' %} bg-green-100 text-green-800 {% elif item.status_label == 'Dead/Abandoned' %} bg-red-100 text-red-800 {% else %} bg-blue-100 text-blue-800{% endif %}">
-                                                {{ item.status_label }}
-                                            </span>
+                                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
+                                                         {% if item.status_label == 'Live/Pending' %}
+                                                             bg-yellow-100 text-yellow-800
+                                                         {% elif item.status_label == 'Live/Registered' %}
+                                                             bg-green-100 text-green-800
+                                                         {% elif item.status_label == 'Dead/Abandoned' %}
+                                                             bg-red-100 text-red-800
+                                                         {% else %}
+                                                             bg-blue-100 text-blue-800
+                                                         {% endif %}">{{ item.status_label }}</span>
                                             <div class="mt-2 text-sm text-violet-600 font-medium">{{ owner.legal_entity_type_label }}</div>
                                         </td>
                                     </tr>
@@ -130,4 +150,5 @@
             </div>
         {% endif %}
     </div>
+
 {% endblock content %}

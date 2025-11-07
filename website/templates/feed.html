@@ -1,18 +1,29 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}Global Activity Feed{% endblock %}
+
 {% block description %}
     Stay updated with the latest activities on the OWASP Bug Logging Tool. View new, updated, and approved actions, and interact with them directly.
+
 {% endblock %}
+
 {% block keywords %}
     activity feed, global activity, OWASP, Bug Logging Tool, updates, approval, user interactions
+
 {% endblock %}
+
 {% block og_title %}Global Activity Feed for OWASP Bug Logging Tool{% endblock %}
+
 {% block og_description %}
     Browse the global activity feed for the OWASP Bug Logging Tool, where you can see the latest activities, updates, and approved contributions.
+
 {% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <h1 class="text-center text-red-600 text-2xl mt-10 mb-5">Global Activity Feed</h1>
     <div class="bg-gray-50 rounded-lg shadow-md mx-auto p-5 max-w-4xl overflow-y-auto max-h-[calc(100vh-60px)] mb-5 relative">
         <ul class="space-y-5 p-5">
@@ -27,7 +38,14 @@
                         </div>
                         <!-- Activity Type -->
                         <div class="flex items-center">
-                            <span class="w-2 h-2 rounded-full mr-2 {% if activity.action_type == 'create' %}bg-red-500{% elif activity.action_type == 'update' %}bg-green-500{% else %}bg-white{% endif %}"></span>
+                            <span class="w-2 h-2 rounded-full mr-2
+                                         {% if activity.action_type == 'create' %}
+                                             bg-red-500
+                                         {% elif activity.action_type == 'update' %}
+                                             bg-green-500
+                                         {% else %}
+                                             bg-white
+                                         {% endif %}"></span>
                             <span class="text-sm text-gray-700 capitalize">{{ activity.get_action_type_display }}</span>
                         </div>
                     </div>
@@ -96,70 +114,76 @@
         </div>
     {% endif %}
     <script>
-      function getCookie(name) {
-          let cookieValue = null;
-          if (document.cookie && document.cookie !== '') {
-              const cookies = document.cookie.split(';');
-              for (let i = 0; i < cookies.length; i++) {
-                  const cookie = cookies[i].trim();
-                  if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                      break;
-                  }
-              }
-          }
-          return cookieValue;
-      }
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
 
-      function likeActivity(activityId) {
-          fetch(`/activity/like/${activityId}/`, {
-              method: "POST",
-              headers: { "X-CSRFToken": getCookie("csrftoken") },
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success) {
-                  document.getElementById(`like-count-${activityId}`).innerText = data.like_count;
-                  document.getElementById(`dislike-count-${activityId}`).innerText = data.dislike_count;
-              } else {
-                  console.error(data.error);
-              }
-          })
-          .catch(error => console.error("Error:", error));
-      }
-    
-      function dislikeActivity(activityId) {
-          fetch(`/activity/dislike/${activityId}/`, {
-              method: "POST",
-              headers: { "X-CSRFToken": getCookie("csrftoken") },
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success) {
-                  document.getElementById(`like-count-${activityId}`).innerText = data.like_count;
-                  document.getElementById(`dislike-count-${activityId}`).innerText = data.dislike_count;
-              } else {
-                  console.error(data.error);
-              }
-          })
-          .catch(error => console.error("Error:", error));
-      }
-    
-      function approveActivity(activityId) {
-          fetch(`/activity/approve/${activityId}/`, {
-              method: "POST",
-              headers: { "X-CSRFToken": getCookie("csrftoken") },
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success) {
-                  location.reload();
-              } else {
-                  console.error(data.error);
-              }
-          })
-          .catch(error => console.error("Error:", error));
-      }
+        function likeActivity(activityId) {
+            fetch(`/activity/like/${activityId}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById(`like-count-${activityId}`).innerText = data.like_count;
+                        document.getElementById(`dislike-count-${activityId}`).innerText = data.dislike_count;
+                    } else {
+                        console.error(data.error);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
 
+        function dislikeActivity(activityId) {
+            fetch(`/activity/dislike/${activityId}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById(`like-count-${activityId}`).innerText = data.like_count;
+                        document.getElementById(`dislike-count-${activityId}`).innerText = data.dislike_count;
+                    } else {
+                        console.error(data.error);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
+
+        function approveActivity(activityId) {
+            fetch(`/activity/approve/${activityId}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        console.error(data.error);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
     </script>
+
 {% endblock %}

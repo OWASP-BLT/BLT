@@ -1,10 +1,15 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
 {% load custom_tags %}
+
 {% block title %}
     Organization Analytics | {% env 'PROJECT_NAME' %}
+
 {% endblock title %}
+
 {% block body %}
+
     {% block edit_link %}
         <div class="bottom-right">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_analytics.html">
@@ -14,6 +19,7 @@
                 <i class="fab fa-figma"></i>
             </a>
         </div>
+
     {% endblock edit_link %}
     <div class="bg-[#F3F5F7] pb-10">
         <div class="w-full mt-5">
@@ -141,9 +147,11 @@
                             {{ bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency">Bugs</span>
                         </h1>
                         <p>
-                            <span class="{% if bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase{% else %}percentage-decrease{% endif %}">
-                                {{ bug_rate_increase_descrease_weekly.percent_increase }}%
-                            </span>
+                            <span class="{% if bug_rate_increase_descrease_weekly.is_increasing %}
+                                             percentage-increase
+                                         {% else %}
+                                             percentage-decrease
+                                         {% endif %}">{{ bug_rate_increase_descrease_weekly.percent_increase }}%</span>
                             {% if bug_rate_increase_descrease_weekly.is_increasing %}
                                 Increasing
                             {% else %}
@@ -183,7 +191,11 @@
                         Bugs</span>
                     </h1>
                     <p>
-                        <span class="{% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase{% else %}percentage-decrease{% endif %}">
+                        <span class="{% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
+                                         percentage-increase
+                                     {% else %}
+                                         percentage-decrease
+                                     {% endif %}">
                             {{ accepted_bug_rate_increase_descrease_weekly.percent_increase }}
                         </span>
                         {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
@@ -338,9 +350,14 @@
                     <div class="relative pt-1">
                         <div class="flex mb-2 items-center justify-between">
                             <div>
-                                <span class="text-3xl font-bold inline-block py-1 px-2 rounded-full {% if threat_intelligence.risk_score >= 75 %}text-red-600 {% elif threat_intelligence.risk_score >= 50 %}text-yellow-600 {% else %}text-green-600{% endif %}">
-                                    {{ threat_intelligence.risk_score }}/100
-                                </span>
+                                <span class="text-3xl font-bold inline-block py-1 px-2 rounded-full
+                                             {% if threat_intelligence.risk_score >= 75 %}
+                                                 text-red-600
+                                             {% elif threat_intelligence.risk_score >= 50 %}
+                                                 text-yellow-600
+                                             {% else %}
+                                                 text-green-600
+                                             {% endif %}">{{ threat_intelligence.risk_score }}/100</span>
                             </div>
                         </div>
                     </div>
@@ -363,7 +380,14 @@
                     <div class="space-y-3">
                         {% for alert in threat_intelligence.recent_alerts %}
                             <div class="flex items-center space-x-2">
-                                <span class="w-2 h-2 rounded-full {% if alert.cve_score >= 8 %}bg-red-500{% elif alert.cve_score >= 5 %}bg-yellow-500{% else %}bg-orange-500{% endif %}"></span>
+                                <span class="w-2 h-2 rounded-full
+                                             {% if alert.cve_score >= 8 %}
+                                                 bg-red-500
+                                             {% elif alert.cve_score >= 5 %}
+                                                 bg-yellow-500
+                                             {% else %}
+                                                 bg-orange-500
+                                             {% endif %}"></span>
                                 <span class="text-sm text-gray-600 truncate">{{ alert.description }}</span>
                             </div>
                         {% endfor %}
@@ -373,7 +397,9 @@
         </div>
     </div>
 </div>
+
 {% endblock body %}
+
 {% block js %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.min.js"
             integrity="sha384-+94tm/qgImqyuSRr1vU2PjQIoot8h3qdaFB/xTawzWLRkcCWPricrBj5Xr45hCP1"
@@ -381,172 +407,165 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'organization/js/index.js' %}"></script>
     <script>
-  // populate Chart (PIE): Bug Report  Type
-  function populateBugTypePie() {
-    var bugTypePie = document.getElementById("bugTypePie").getContext("2d");
+        // populate Chart (PIE): Bug Report  Type
+        function populateBugTypePie() {
+            var bugTypePie = document.getElementById("bugTypePie").getContext("2d");
 
-    // Create the pie chart
-    new Chart(bugTypePie, {
-      type: "pie",
-      data: {
-        labels: JSON.parse(
-          '{{ bug_report_type_piechart_data.bug_report_type_labels | safe }}'
-        ),
-        datasets: [
-          {
-            label: "Pie Chart",
-            data: JSON.parse(
-              '{{ bug_report_type_piechart_data.bug_report_type_data | safe }}'
-            ),
-            backgroundColor: [
-              "rgb(255, 99, 132)",
-              "rgb(54, 162, 235)",
-              "rgb(255, 205, 86)",
-            ],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-      },
-    });
-  }
+            // Create the pie chart
+            new Chart(bugTypePie, {
+                type: "pie",
+                data: {
+                    labels: JSON.parse(
+                        '{{ bug_report_type_piechart_data.bug_report_type_labels | safe }}'
+                    ),
+                    datasets: [{
+                        label: "Pie Chart",
+                        data: JSON.parse(
+                            '{{ bug_report_type_piechart_data.bug_report_type_data | safe }}'
+                        ),
+                        backgroundColor: [
+                            "rgb(255, 99, 132)",
+                            "rgb(54, 162, 235)",
+                            "rgb(255, 205, 86)",
+                        ],
+                    }, ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                },
+            });
+        }
 
-  function populateReportOnDomainsPie() {
-    var domainPie = document.getElementById("domainPie").getContext("2d");
+        function populateReportOnDomainsPie() {
+            var domainPie = document.getElementById("domainPie").getContext("2d");
 
-    // Create the pie chart
-    new Chart(domainPie, {
-      type: "pie",
-      data: {
-        labels: JSON.parse(
-          '{{ reports_on_domain_piechart_data.bug_report_on_domains_labels | safe }}'
-        ),
-        datasets: [
-          {
-            label: "Pie Chart",
-            data: JSON.parse(
-              '{{ reports_on_domain_piechart_data.bug_report_on_domains_data | safe }}'
-            ),
-            backgroundColor: [
-              "rgb(255, 99, 132)",
-              "rgb(54, 162, 235)",
-              "rgb(255, 205, 86)",
-            ],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-      },
-    });
-  }
+            // Create the pie chart
+            new Chart(domainPie, {
+                type: "pie",
+                data: {
+                    labels: JSON.parse(
+                        '{{ reports_on_domain_piechart_data.bug_report_on_domains_labels | safe }}'
+                    ),
+                    datasets: [{
+                        label: "Pie Chart",
+                        data: JSON.parse(
+                            '{{ reports_on_domain_piechart_data.bug_report_on_domains_data | safe }}'
+                        ),
+                        backgroundColor: [
+                            "rgb(255, 99, 132)",
+                            "rgb(54, 162, 235)",
+                            "rgb(255, 205, 86)",
+                        ],
+                    }, ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                },
+            });
+        }
 
-  function populateMonthlyReportBarChart() {
-    const ctx = document.getElementById("myChart");
+        function populateMonthlyReportBarChart() {
+            const ctx = document.getElementById("myChart");
 
-    new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: JSON.parse(
-          '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_labels | safe }}'
-        ),
-        datasets: [
-          {
-            label: "Expense",
-            data: JSON.parse(
-              '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_data | safe }}'
-            ),
-            borderWidth: 1,
-            borderRadius: 30,
-            barThickness: 12,
-            backgroundColor: ["rgba(114, 92, 255, 1)"],
-            borderColor: ["rgba(114, 92, 255, 1)"],
-            hoverBackgroundColor: ["rgba(28, 30, 35, 1)"],
-            hoverBorderColor: ["rgba(28, 30, 35, 1)"],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              // Include a dollar sign in the ticks
-              callback: function (value, index, ticks) {
-                return value + " Bugs";
-              },
-              stepSize: JSON.parse(
-                '{{ get_current_year_monthly_reported_bar_data.max_count | safe }}'
-              ),
-            },
-          },
-          x: {
-            grid: {
-              display: false,
-            },
-          },
-        },
-        plugins: {
-          legend: {
-            display: false,
-            labels: {
-              font: {
-                size: 12,
-                family: "'Plus Jakarta Sans', sans-serif",
-                lineHeight: 18,
-                weight: 600,
-              },
-            },
-          },
-        },
-      },
-    });
-  }
+            new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: JSON.parse(
+                        '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_labels | safe }}'
+                    ),
+                    datasets: [{
+                        label: "Expense",
+                        data: JSON.parse(
+                            '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_data | safe }}'
+                        ),
+                        borderWidth: 1,
+                        borderRadius: 30,
+                        barThickness: 12,
+                        backgroundColor: ["rgba(114, 92, 255, 1)"],
+                        borderColor: ["rgba(114, 92, 255, 1)"],
+                        hoverBackgroundColor: ["rgba(28, 30, 35, 1)"],
+                        hoverBorderColor: ["rgba(28, 30, 35, 1)"],
+                    }, ],
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                // Include a dollar sign in the ticks
+                                callback: function(value, index, ticks) {
+                                    return value + " Bugs";
+                                },
+                                stepSize: JSON.parse(
+                                    '{{ get_current_year_monthly_reported_bar_data.max_count | safe }}'
+                                ),
+                            },
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                            },
+                        },
+                    },
+                    plugins: {
+                        legend: {
+                            display: false,
+                            labels: {
+                                font: {
+                                    size: 12,
+                                    family: "'Plus Jakarta Sans', sans-serif",
+                                    lineHeight: 18,
+                                    weight: 600,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        }
 
-  function populateSpentOnBugTypes() {
-    const ctx2 = document.getElementById("spentOnBugTypes");
+        function populateSpentOnBugTypes() {
+            const ctx2 = document.getElementById("spentOnBugTypes");
 
-    new Chart(ctx2, {
-      type: "doughnut",
-      data: {
-        labels: JSON.parse('{{ spent_on_bugtypes.labels | safe }}'),
-        datasets: [
-          {
-            data: JSON.parse('{{ spent_on_bugtypes.data | safe }}'),
-            borderRadius: 5,
-            cutout: 80,
-            backgroundColor: [
-              "rgb(235, 124, 166)",
-              "rgb(255, 172, 200)",
-              "rgb(204, 111, 248)",
-              "rgb(124, 92, 252)",
-              "rgb(92, 175, 252)",
-              "rgb(161, 169, 254)",
-              "rgb(161, 169, 254)",
-              "rgb(161, 169, 254)",
-            ],
-            hoverOffset: 4,
-            spacing: 8,
-          },
-        ],
-      },
-      options: {
-        plugins: {
-          legend: {
-            display: false,
-          },
-        },
-      },
-    });
-  }
+            new Chart(ctx2, {
+                type: "doughnut",
+                data: {
+                    labels: JSON.parse('{{ spent_on_bugtypes.labels | safe }}'),
+                    datasets: [{
+                        data: JSON.parse('{{ spent_on_bugtypes.data | safe }}'),
+                        borderRadius: 5,
+                        cutout: 80,
+                        backgroundColor: [
+                            "rgb(235, 124, 166)",
+                            "rgb(255, 172, 200)",
+                            "rgb(204, 111, 248)",
+                            "rgb(124, 92, 252)",
+                            "rgb(92, 175, 252)",
+                            "rgb(161, 169, 254)",
+                            "rgb(161, 169, 254)",
+                            "rgb(161, 169, 254)",
+                        ],
+                        hoverOffset: 4,
+                        spacing: 8,
+                    }, ],
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                    },
+                },
+            });
+        }
 
-  populateSpentOnBugTypes();
-  populateMonthlyReportBarChart();
-  populateReportOnDomainsPie();
-  populateBugTypePie();
+        populateSpentOnBugTypes();
+        populateMonthlyReportBarChart();
+        populateReportOnDomainsPie();
+        populateBugTypePie();
     </script>
+
 {% endblock js %}

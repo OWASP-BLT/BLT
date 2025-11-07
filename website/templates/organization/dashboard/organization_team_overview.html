@@ -1,20 +1,32 @@
 {% extends "organization/dashboard/organization_dashboard_base.html" %}
+
 {% load static %}
+
 {% block title %}
     Team Overview & Daily Status Reports
+
 {% endblock title %}
+
 {% block description %}
     Get a comprehensive view of your team members and their daily progress. Manage team members, view their details, and keep track of their daily status reports to ensure smooth collaboration and effective teamwork.
+
 {% endblock description %}
+
 {% block keywords %}
     Team Overview, Team Management, Manage Members, View Team, Team Roles, Team Status, Daily Status Reports, Status Reports, Daily Updates, Team Progress, Task Management, Goal Accomplishments
+
 {% endblock keywords %}
+
 {% block og_title %}
     Team Overview & Daily Status Reports - Comprehensive Team and Progress Management
+
 {% endblock og_title %}
+
 {% block og_description %}
     Get a detailed view of your team members and their daily progress. Easily manage roles, statuses, and daily status reports to maintain efficient operations and improve team performance.
+
 {% endblock og_description %}
+
 {% block body %}
     {% comment %} <div class="fixed bottom-6 right-6 z-50 flex gap-3">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html" class="bg-gray-800 hover:bg-gray-900 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
@@ -323,4 +335,5 @@
         </div>
     </div>
     <script src="{% static 'js/organization_team_overview.js' %}"></script>
+
 {% endblock body %}

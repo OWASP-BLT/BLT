@@ -1,25 +1,38 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load i18n %}
 {% load gravatar %}
 {% load email_obfuscator %}
 {% load socialaccount %}
+
 {% providers_media_js %}
+
 {% block head %}
     <link href="https://fonts.googleapis.com/css2?family=Poppins"
           rel="stylesheet">
+
 {% endblock head %}
+
 {% block title %}{{ domain.name }} - Domain Dashboard{% endblock %}
+
 {% block description %}
     View detailed stats, activities, and the latest information about {{ domain.name }}. Track issues, reports, and see top hunters for this domain.
+
 {% endblock %}
+
 {% block keywords %}domain, dashboard, stats, activities, issues, bugs, top hunters{% endblock %}
+
 {% block og_title %}{{ domain.name }} - Domain Dashboard{% endblock %}
+
 {% block og_description %}
     Explore the latest stats, activities, and issues for {{ domain.name }}. Discover top hunters and more.
+
 {% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="border lg:w-[1800px] w-full lg:mx-auto rounded-lg flex mt-[4vh] max-sm:mt-[5vh] max-sm:items-center justify-between max-sm:flex-col font-ubuntu">
         <!-- Left Section -->
         <div class="lg:w-[25%] w-full border-r border-gray-300/80 flex p-4 flex-col">
@@ -66,6 +79,7 @@
                     <div class="space-y-4">
                         {% for activity in opened %}
                             {% include "includes/_new_activity.html" %}
+
                         {% endfor %}
                         <div class="flex items-center justify-center gap-4 mt-6">
                             {% if opened.has_previous %}
@@ -85,6 +99,7 @@
                         {% if closed %}
                             {% for activity in closed %}
                                 {% include "includes/_new_activity.html" %}
+
                             {% endfor %}
                         {% else %}
                             <div class="text-center py-8 text-gray-500">{% trans "No Activity Yet!" %}</div>
@@ -183,7 +198,12 @@
                             <i class="fas fa-shield-alt text-[#e74c3c]"></i>
                             Security.txt Status
                         </h2>
-                        <span class="px-4 py-2 rounded-full text-sm font-semibold {% if domain.has_security_txt %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                        <span class="px-4 py-2 rounded-full text-sm font-semibold
+                                     {% if domain.has_security_txt %}
+                                         bg-green-100 text-green-800
+                                     {% else %}
+                                         bg-red-100 text-red-800
+                                     {% endif %}">
                             {% if domain.has_security_txt %}
                                 Available
                             {% else %}
@@ -226,9 +246,12 @@
                             <i class="fas fa-gavel text-[#e74c3c]"></i>
                             Trademark Results For {{ name }}
                         </h2>
-                        <span class="px-4 py-2 rounded-full text-sm font-semibold {% if trademarks|length > 0 %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                            {{ trademarks|length }} Matches Found
-                        </span>
+                        <span class="px-4 py-2 rounded-full text-sm font-semibold
+                                     {% if trademarks|length > 0 %}
+                                         bg-green-100 text-green-800
+                                     {% else %}
+                                         bg-red-100 text-red-800
+                                     {% endif %}">{{ trademarks|length }} Matches Found</span>
                     </div>
                     <div class="space-y-6 overflow-auto max-h-[600px] pr-2">
                         {% if trademarks|length > 0 %}
@@ -262,9 +285,12 @@
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-tag text-[#e74c3c]"></i>
                                             <span class="font-medium">Status:</span>
-                                            <span class="px-3 py-1 rounded-full text-sm {% if 'Live' in trademark.status_label %}bg-green-100 text-green-800{% elif 'Dead' in trademark.status_label %}bg-red-100 text-red-800{% endif %}">
-                                                {{ trademark.status_label }}
-                                            </span>
+                                            <span class="px-3 py-1 rounded-full text-sm
+                                                         {% if 'Live' in trademark.status_label %}
+                                                             bg-green-100 text-green-800
+                                                         {% elif 'Dead' in trademark.status_label %}
+                                                             bg-red-100 text-red-800
+                                                         {% endif %}">{{ trademark.status_label }}</span>
                                         </div>
                                     </div>
                                     <div class="bg-white rounded-lg p-4 mb-4">
@@ -371,10 +397,26 @@
     <script>
         var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
         var months = [],
-        data = [];
+            data = [];
         var all_data = new Array(12).fill(0);
-        var current_month = {{ current_month }};
-        {% for i in domain_graph %}all_data['{{i.month}}' - 1] = {{ i.c }};{% endfor %}
+        var current_month = {
+            {
+                current_month
+            }
+        };
+        {
+            %
+            for i in domain_graph %
+        }
+        all_data['{{i.month}}' - 1] = {
+            {
+                i.c
+            }
+        };
+        {
+            %
+            endfor %
+        }
 
         if (current_month - 6 < 0) {
             months = all_months.slice(current_month - 6);
@@ -387,27 +429,28 @@
         }
         var options = {
             series: [{
-            name: 'Monthly Activity',
-            data: data
-          }],
+                name: 'Monthly Activity',
+                data: data
+            }],
             chart: {
-            height: 350,
-            type: 'area'
-          },
-          dataLabels: {
-            enabled: false
-          },
-          stroke: {
-            curve: 'smooth'
-          },
-          xaxis: {
-            type: 'String',
-            categories: months
-          },
-          };
-  
-          var chart = new ApexCharts(document.querySelector("#chart"), options);
-          chart.render();
+                height: 350,
+                type: 'area'
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                curve: 'smooth'
+            },
+            xaxis: {
+                type: 'String',
+                categories: months
+            },
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chart"), options);
+        chart.render();
     </script>
     <script src="https://unpkg.com/@material-tailwind/html@latest/scripts/tabs.js"></script>
+
 {% endblock content %}

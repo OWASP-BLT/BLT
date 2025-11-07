@@ -1,20 +1,32 @@
 {% extends "base.html" %}
+
 {% load static %}
+
 {% block title %}GitHub Issues - {{ block.super }}{% endblock %}
+
 {% block description %}
     Browse through all GitHub issues and pull requests
+
 {% endblock description %}
+
 {% block keywords %}
     GitHub Issues, Pull Requests, Open Source, Contributions
+
 {% endblock keywords %}
+
 {% block og_title %}
     GitHub Issues - Track and Browse GitHub Issues
+
 {% endblock og_title %}
+
 {% block og_description %}
     Explore all GitHub issues and pull requests. Track progress and contribute to open source.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <style>
         /* Table Styling */
         #transaction-form {
@@ -25,22 +37,32 @@
             max-width: 800px;
             margin: 20px auto;
         }
+
         #transaction-form table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
-        #transaction-form th, #transaction-form td {
+
+        #transaction-form th,
+        #transaction-form td {
             border: 1px solid #ddd;
             padding: 10px;
             text-align: left;
         }
+
         #transaction-form th {
             background: red;
             color: white;
         }
-        #transaction-form tr:nth-child(even) { background: #f9f9f9; }
-        #transaction-form tr:hover { background: #ffe6e6; }
+
+        #transaction-form tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        #transaction-form tr:hover {
+            background: #ffe6e6;
+        }
 
         /* Toggle Details */
         .toggle-details {
@@ -48,7 +70,11 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .toggle-details:hover { text-decoration: underline; }
+
+        .toggle-details:hover {
+            text-decoration: underline;
+        }
+
         .user-details {
             background: #f2f2f2;
             color: black;
@@ -66,23 +92,37 @@
             border-radius: 4px;
             font-weight: bold;
         }
+
         #transaction-form button:hover {
             background: white;
             color: red;
             border: 1px solid red;
         }
-        #total-bacon { font-weight: bold; color: red; }
-        .serial-number { width: 50px; }
-        .select-all { width: 20px; }
+
+        #total-bacon {
+            font-weight: bold;
+            color: red;
+        }
+
+        .serial-number {
+            width: 50px;
+        }
+
+        .select-all {
+            width: 20px;
+        }
+
         .transaction-heading {
             text-align: center;
             font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 20px;
         }
+
         /* Modal Styling */
         #tx-modal {
-            display: none; /* Ensure modal is hidden on page load */
+            display: none;
+            /* Ensure modal is hidden on page load */
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -90,7 +130,8 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px); /* Soft blur effect */
+            backdrop-filter: blur(5px);
+            /* Soft blur effect */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -103,7 +144,8 @@
             width: 420px;
             text-align: center;
             box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
-            border: 2px solid #007bff; /* Blue border */
+            border: 2px solid #007bff;
+            /* Blue border */
             position: relative;
         }
 
@@ -143,7 +185,7 @@
             color: #555;
         }
 
-        #tx-modal input, 
+        #tx-modal input,
         #tx-modal select {
             padding: 8px;
             width: 80%;
@@ -155,7 +197,7 @@
             transition: border-color 0.3s ease-in-out;
         }
 
-        #tx-modal input:focus, 
+        #tx-modal input:focus,
         #tx-modal select:focus {
             border-color: #007bff;
         }
@@ -189,10 +231,12 @@
             border-radius: 5px;
             display: none;
         }
+
         #response-message.success {
             background-color: #d4edda;
             color: #155724;
         }
+
         #response-message.error {
             background-color: #f8d7da;
             color: #721c24;
@@ -200,7 +244,8 @@
 
         #wallet-balance {
             position: fixed;
-            top: 100px; /* Move the wallet balance section down */
+            top: 100px;
+            /* Move the wallet balance section down */
             right: 20px;
             background: white;
             padding: 10px;
@@ -208,16 +253,19 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 250px;
         }
+
         #wallet-balance h3 {
             margin-top: 0;
             font-size: 1.2rem;
             color: #333;
         }
+
         #wallet-balance p {
             margin: 5px 0;
             font-size: 0.9rem;
             color: #555;
         }
+
         #fetch-balance {
             background: #007bff;
             color: white;
@@ -228,13 +276,16 @@
             font-weight: bold;
             margin-top: 10px;
         }
+
         #fetch-balance:hover {
             background: #0056b3;
         }
+
         #password-field {
             display: none;
             margin-top: 10px;
         }
+
         .bch-address {
             word-wrap: break-word;
             word-break: break-all;
@@ -367,7 +418,8 @@
             const passwordField = document.getElementById("password-field");
 
             function updateTotal() {
-                let total = 0, count = 0;
+                let total = 0,
+                    count = 0;
                 checkboxes.forEach(cb => {
                     if (cb.checked) {
                         total += parseFloat(cb.dataset.amount);
@@ -440,32 +492,32 @@
                     payload.password = password;
                 }
 
-                fetch("/initiate-transaction/", {  // Added trailing slash
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    },
-                    body: JSON.stringify(payload)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const responseMessage = document.getElementById("response-message");
-                    if (data.success) {
-                        responseMessage.textContent = `Transaction Success: TXID: ${data.txid}`;
-                        responseMessage.className = "success";
-                    } else {
-                        responseMessage.textContent = `Error: ${data.error}`;
+                fetch("/initiate-transaction/", { // Added trailing slash
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const responseMessage = document.getElementById("response-message");
+                        if (data.success) {
+                            responseMessage.textContent = `Transaction Success: TXID: ${data.txid}`;
+                            responseMessage.className = "success";
+                        } else {
+                            responseMessage.textContent = `Error: ${data.error}`;
+                            responseMessage.className = "error";
+                        }
+                        responseMessage.style.display = "block";
+                    })
+                    .catch(error => {
+                        const responseMessage = document.getElementById("response-message");
+                        responseMessage.textContent = `Error: ${error}`;
                         responseMessage.className = "error";
-                    }
-                    responseMessage.style.display = "block";
-                })
-                .catch(error => {
-                    const responseMessage = document.getElementById("response-message");
-                    responseMessage.textContent = `Error: ${error}`;
-                    responseMessage.className = "error";
-                    responseMessage.style.display = "block";
-                });
+                        responseMessage.style.display = "block";
+                    });
 
                 modal.style.display = "none";
             });
@@ -501,4 +553,5 @@
             });
         });
     </script>
+
 {% endblock %}

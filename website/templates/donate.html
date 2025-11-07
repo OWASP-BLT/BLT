@@ -1,24 +1,37 @@
 {% extends "base.html" %}
+
 {% load custom_tags %}
 {% load i18n %}
 {% load static %}
+
 {% block title %}
     {% trans "Donation Options" %}
+
 {% endblock %}
+
 {% block description %}
     {% trans "Support the ongoing development of the OWASP Bug Logging Tool by choosing a sponsorship plan. Help us grow and improve with your contribution." %}
+
 {% endblock %}
+
 {% block keywords %}
     {% trans "donation, OWASP, sponsorship, Bug Logging Tool, support, development" %}
+
 {% endblock %}
+
 {% block og_title %}
     {% trans "Support OWASP with a Donation" %}
+
 {% endblock %}
+
 {% block og_description %}
     {% trans "Choose a sponsorship plan and support the OWASP Bug Logging Tool's development. Your contribution helps improve." %}
+
 {% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="container mx-auto w-[85%] py-12">
         <div class="space-y-8 text-gray-700">
             <header>
@@ -91,6 +104,7 @@
             </section>
         </div>
     </div>
+
     {% block edit_link %}
         <div class="fixed bottom-6 left-6">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/donate.html"
@@ -99,5 +113,7 @@
                 <i class="fab fa-github text-xl text-[#e74c3c]"></i>
             </a>
         </div>
+
     {% endblock edit_link %}
+
 {% endblock content %}

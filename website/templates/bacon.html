@@ -1,28 +1,43 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load gravatar %}
 {% load custom_tags %}
+
 {% block title %}
     Overview | BACON
+
 {% endblock title %}
+
 {% block description %}
     Learn about the BACON project, its key features, and how to get involved in BACON
+
 {% endblock description %}
+
 {% block keywords %}
     overview, BACON, blockchain, contribution, open-source, Bitcoin, Runes, features, updates
+
 {% endblock keywords %}
+
 {% block og_title %}
     BACON Project Overview - BACON
+
 {% endblock og_title %}
+
 {% block og_description %}
     Explore the BACON project, its key features, and how you can contribute to the development and success of the open-source ecosystem through BACON
+
 {% endblock og_description %}
+
 {% block content %}
     <div class="min-h-screen bg-white">
         <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex flex-col lg:flex-row gap-8">
                 <!-- Left Sidebar -->
-                <div class="lg:w-64 flex-shrink-0">{% include "includes/sidenav.html" %}</div>
+                <div class="lg:w-64 flex-shrink-0">
+                    {% include "includes/sidenav.html" %}
+
+                </div>
                 <!-- Main Content -->
                 <div class="flex-1 max-w-[1400px]">
                     <div class="flex flex-col xl:flex-row gap-8">
@@ -193,9 +208,7 @@
                                             <option value="">All Transactions</option>
                                             <option value="pending" {% if tx_status == "pending" %}selected{% endif %}>Pending</option>
                                             <option value="completed"
-                                                    {% if tx_status == "completed" %}selected{% endif %}>
-                                                Confirmed
-                                            </option>
+                                                    {% if tx_status == "completed" %}selected{% endif %}>Confirmed</option>
                                         </select>
                                     </div>
                                     <div class="space-y-2">
@@ -206,13 +219,9 @@
                                                 class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200">
                                             <option value="">All Statuses</option>
                                             <option value="accepted"
-                                                    {% if decision_status == "accepted" %}selected{% endif %}>
-                                                Accepted
-                                            </option>
+                                                    {% if decision_status == "accepted" %}selected{% endif %}>Accepted</option>
                                             <option value="declined"
-                                                    {% if decision_status == "declined" %}selected{% endif %}>
-                                                Rejected
-                                            </option>
+                                                    {% if decision_status == "declined" %}selected{% endif %}>Rejected</option>
                                         </select>
                                     </div>
                                     <button type="submit"
@@ -224,7 +233,15 @@
                                 <!-- Requests List -->
                                 <div class="space-y-6">
                                     {% for submission in submissions %}
-                                        <div class="rounded-lg border-2 {% if submission.status == 'accepted' %}border-green-500 bg-green-50{% elif submission.status == 'declined' %}border-red-500 bg-red-50{% else %}border-gray-200{% endif %} p-6 transition-all duration-200 hover:shadow-md">
+                                        <div class="rounded-lg border-2
+                                                    {% if submission.status == 'accepted' %}
+                                                        border-green-500 bg-green-50
+                                                    {% elif submission.status == 'declined' %}
+                                                        border-red-500 bg-red-50
+                                                    {% else %}
+                                                        border-gray-200
+                                                    {% endif %}
+                                                    p-6 transition-all duration-200 hover:shadow-md">
                                             <div class="flex items-start justify-between mb-4">
                                                 <div class="flex items-center gap-3">
                                                     {% if submission.user.userprofile.avatar %}
@@ -250,9 +267,14 @@
                                                         </a>
                                                     </div>
                                                 </div>
-                                                <span class="px-3 py-1 rounded-full text-sm font-medium {% if submission.status == 'accepted' %}bg-green-200 text-green-800{% elif submission.status == 'declined' %}bg-red-200 text-red-800{% else %}bg-gray-200 text-gray-800{% endif %}">
-                                                    {{ submission.get_status_display }}
-                                                </span>
+                                                <span class="px-3 py-1 rounded-full text-sm font-medium
+                                                             {% if submission.status == 'accepted' %}
+                                                                 bg-green-200 text-green-800
+                                                             {% elif submission.status == 'declined' %}
+                                                                 bg-red-200 text-red-800
+                                                             {% else %}
+                                                                 bg-gray-200 text-gray-800
+                                                             {% endif %}">{{ submission.get_status_display }}</span>
                                             </div>
                                             <div class="space-y-2 text-sm text-gray-600">
                                                 <p class="flex items-center gap-2">
@@ -344,7 +366,7 @@
     <script>
         document.getElementById("baconForm").addEventListener("submit", function(event) {
             event.preventDefault();
-        
+
             const formData = {
                 github_url: document.getElementById("github_url").value,
                 contribution_type: document.getElementById("contribution_type").value,
@@ -352,27 +374,27 @@
             };
 
             fetch("/api/bacon/submit/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}"
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    alert("Submission Successful!");
-                    document.getElementById("baconForm").reset();
-                    window.location.reload();
-                } else {
-                    alert("Error: " + data.error);
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("An unexpected error occurred.");
-            });
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        alert("Submission Successful!");
+                        document.getElementById("baconForm").reset();
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("An unexpected error occurred.");
+                });
         });
 
         function toggleDescription(id) {
@@ -389,27 +411,28 @@
             let baconAmount = document.getElementById("bacon-input-" + id).value;
 
             fetch(`/update-submission-status/${id}/`, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    status: status,
-                    bacon_amount: baconAmount
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        status: status,
+                        bacon_amount: baconAmount
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById("status-" + id).innerText = status.charAt(0).toUpperCase() + status.slice(1);
-                    document.getElementById("bacon-amount-" + id).innerText = baconAmount;
-                    window.location.reload();
-                } else {
-                    alert("Error updating submission.");
-                }
-            })
-            .catch(error => console.error("Error:", error));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("status-" + id).innerText = status.charAt(0).toUpperCase() + status.slice(1);
+                        document.getElementById("bacon-amount-" + id).innerText = baconAmount;
+                        window.location.reload();
+                    } else {
+                        alert("Error updating submission.");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
         }
     </script>
+
 {% endblock content %}

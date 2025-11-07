@@ -1,23 +1,36 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% load i18n %}
+
 {% block title %}
     bounties Dashboard - Bug Bounties & Issue Bounties
+
 {% endblock title %}
+
 {% block description %}
     Find bug bounty programs and GitHub issue bounties. Track your progress and view details of each opportunity.
+
 {% endblock description %}
+
 {% block keywords %}
     Hunt Dashboard, bug bounties, issue bounties, GitHub issues, bugbounty, hunt details, bounty programs
+
 {% endblock keywords %}
+
 {% block og_title %}
     Hunt Dashboard - Bug Bounties & Issue Bounties
+
 {% endblock og_title %}
+
 {% block og_description %}
     Find bug bounty programs and GitHub issue bounties. Track your progress and view details of each opportunity.
+
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
     <div class="w-full min-h-[100vh] flex flex-col items-center bg-gray-50 pb-12">
         <!-- Bounty Payouts Link Banner -->
         <div class="w-[97%] bg-white p-4 mt-6 rounded-lg shadow-md flex justify-between items-center">
@@ -137,9 +150,14 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 {% if forloop.counter <= 3 %}
-                                                    <span class="text-2xl font-bold {% if forloop.counter == 1 %}text-yellow-500{% elif forloop.counter == 2 %}text-gray-400{% else %}text-orange-600{% endif %}">
-                                                        #{{ forloop.counter }}
-                                                    </span>
+                                                    <span class="text-2xl font-bold
+                                                                 {% if forloop.counter == 1 %}
+                                                                     text-yellow-500
+                                                                 {% elif forloop.counter == 2 %}
+                                                                     text-gray-400
+                                                                 {% else %}
+                                                                     text-orange-600
+                                                                 {% endif %}">#{{ forloop.counter }}</span>
                                                 {% else %}
                                                     <span class="text-lg font-semibold text-gray-600">#{{ forloop.counter }}</span>
                                                 {% endif %}
@@ -266,13 +284,19 @@
                         <h2 class="text-3xl font-bold text-gray-800">Github Issue Bounties</h2>
                         <div class="flex space-x-2">
                             <a href="?{% if search %}search={{ search }}&{% endif %}{% if domain %}domain={{ domain }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if hunt_type %}hunt_type={{ hunt_type }}&{% endif %}issue_state=open"
-                               class="px-4 py-2 rounded-md text-sm font-medium transition duration-300 {% if selected_issue_state == 'open' or not selected_issue_state %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-800 hover:bg-gray-300{% endif %}">
-                                Open Issues
-                            </a>
+                               class="px-4 py-2 rounded-md text-sm font-medium transition duration-300
+                                      {% if selected_issue_state == 'open' or not selected_issue_state %}
+                                          bg-blue-600 text-white
+                                      {% else %}
+                                          bg-gray-200 text-gray-800 hover:bg-gray-300
+                                      {% endif %}">Open Issues</a>
                             <a href="?{% if search %}search={{ search }}&{% endif %}{% if domain %}domain={{ domain }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if hunt_type %}hunt_type={{ hunt_type }}&{% endif %}issue_state=closed"
-                               class="px-4 py-2 rounded-md text-sm font-medium transition duration-300 {% if selected_issue_state == 'closed' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-800 hover:bg-gray-300{% endif %}">
-                                Closed Issues
-                            </a>
+                               class="px-4 py-2 rounded-md text-sm font-medium transition duration-300
+                                      {% if selected_issue_state == 'closed' %}
+                                          bg-blue-600 text-white
+                                      {% else %}
+                                          bg-gray-200 text-gray-800 hover:bg-gray-300
+                                      {% endif %}">Closed Issues</a>
                         </div>
                     </div>
                     <div id="github-issues-container">
@@ -282,9 +306,13 @@
                                     <div class="github-issue bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition duration-300">
                                         <div class="flex justify-between items-start mb-3">
                                             <h3 class="font-medium text-xl text-gray-800">{{ issue.title }}</h3>
-                                            <span class="px-3 py-1 text-xs rounded-full {% if issue.state == 'closed' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %} font-medium">
-                                                {{ issue.state|title }}
-                                            </span>
+                                            <span class="px-3 py-1 text-xs rounded-full
+                                                         {% if issue.state == 'closed' %}
+                                                             bg-red-100 text-red-800
+                                                         {% else %}
+                                                             bg-green-100 text-green-800
+                                                         {% endif %}
+                                                         font-medium">{{ issue.state|title }}</span>
                                         </div>
                                         <div class="text-sm text-gray-600 mb-3">
                                             <span class="font-medium">Issue #{{ issue.number }}</span> •
@@ -439,128 +467,129 @@
         </div>
     </div>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Cache DOM elements
-        const searchForm = document.querySelector('form[action="#"]');
-        const searchInput = document.getElementById('search');
-        const loadMoreBtn = document.getElementById('load-more-issues');
-        const githubIssuesContainer = document.getElementById('github-issues-container');
-        const bugBountyContainer = document.querySelector('.space-y-6');
-        
-        // Store original data for filtering
-        let originalGithubIssues = [];
-        let originalBugBounties = [];
-        
-        // Initialize data capture
-        originalGithubIssues = captureGithubIssues();
-        originalBugBounties = captureBugBounties();
-        
-        // Setup event listeners
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.trim().toLowerCase();
-                
-                if (searchTerm.length >= 2) {
-                    filterItems(searchTerm);
-                } else if (searchTerm === '') {
-                    showAllItems();
-                }
-            });
-        }
-        
-        if (searchForm) {
-            searchForm.addEventListener('submit', function(e) {
-                if (searchInput.value.trim() !== '') {
-                    e.preventDefault();
-                    filterItems(searchInput.value.trim().toLowerCase());
-                }
-            });
-        }
-        
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', function() {
-                const nextPage = this.getAttribute('data-next-page');
-                const state = this.getAttribute('data-state') || 'open';
-                loadMoreIssues(nextPage, state);
-            });
-        }
-        
-                
-        // Helper functions
-        function captureGithubIssues() {
-            if (githubIssuesContainer) {
-                const issueElements = githubIssuesContainer.querySelectorAll('.github-issue');
-                return Array.from(issueElements).map(element => {
-                    const stateElement = element.querySelector('.rounded-full.text-xs');
-                    const stateText = stateElement ? stateElement.textContent.trim().toLowerCase() : 'open';
-                    
-                    return {
-                        element: element,
-                        title: element.querySelector('h3').textContent.trim().toLowerCase(),
-                        number: element.querySelector('.text-sm span').textContent.trim().toLowerCase(),
-                        user: element.querySelector('.text-sm').textContent.trim().toLowerCase(),
-                        state: stateText,
-                        labels: Array.from(element.querySelectorAll('.flex.flex-wrap.gap-2 span')).map(label => 
-                            label.textContent.trim().toLowerCase())
-                    };
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cache DOM elements
+            const searchForm = document.querySelector('form[action="#"]');
+            const searchInput = document.getElementById('search');
+            const loadMoreBtn = document.getElementById('load-more-issues');
+            const githubIssuesContainer = document.getElementById('github-issues-container');
+            const bugBountyContainer = document.querySelector('.space-y-6');
+
+            // Store original data for filtering
+            let originalGithubIssues = [];
+            let originalBugBounties = [];
+
+            // Initialize data capture
+            originalGithubIssues = captureGithubIssues();
+            originalBugBounties = captureBugBounties();
+
+            // Setup event listeners
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.trim().toLowerCase();
+
+                    if (searchTerm.length >= 2) {
+                        filterItems(searchTerm);
+                    } else if (searchTerm === '') {
+                        showAllItems();
+                    }
                 });
             }
-            return [];
-        }
-        
-        function captureBugBounties() {
-            if (bugBountyContainer) {
-                const bountyElements = bugBountyContainer.querySelectorAll('.bg-white.rounded-lg.shadow-sm.border.border-gray-200');
-                return Array.from(bountyElements).map(element => {
-                    return {
-                        element: element,
-                        name: element.querySelector('h3').textContent.trim().toLowerCase(),
-                        date: element.querySelector('.text-gray-700').textContent.trim().toLowerCase(),
-                        url: element.querySelector('a.text-blue-600').textContent.trim().toLowerCase(),
-                        prize: element.querySelector('.text-gray-700.font-medium')?.textContent.trim().toLowerCase() || ''
-                    };
+
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    if (searchInput.value.trim() !== '') {
+                        e.preventDefault();
+                        filterItems(searchInput.value.trim().toLowerCase());
+                    }
                 });
             }
-            return [];
-        }
-        function loadMoreIssues(page, state = 'open') {
-            if (!loadMoreBtn) return;
-            
-            loadMoreBtn.textContent = 'Loading...';
-            loadMoreBtn.disabled = true;
-            
-            // Add state parameter to the API request
-            fetch(`/api/load-more-issues/?page=${page}&state=${state}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.issues && data.issues.length > 0) {
-                        const container = document.querySelector('#github-issues-container .space-y-4');
-                        
-                        data.issues.forEach(issue => {
-                            const issueElement = document.createElement('div');
-                            issueElement.className = 'github-issue bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition duration-300';
-                            
-                            // Build labels HTML
-                            let labelsHtml = '';
-                            issue.labels.forEach(label => {
-                                labelsHtml += `<span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">${label}</span>`;
-                            });
-                            
-                            //builde the related PR 
-                            let relatedPRsHtml = '';
-                            if (issue.related_prs && issue.related_prs.length > 0) {
+
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', function() {
+                    const nextPage = this.getAttribute('data-next-page');
+                    const state = this.getAttribute('data-state') || 'open';
+                    loadMoreIssues(nextPage, state);
+                });
+            }
+
+
+            // Helper functions
+            function captureGithubIssues() {
+                if (githubIssuesContainer) {
+                    const issueElements = githubIssuesContainer.querySelectorAll('.github-issue');
+                    return Array.from(issueElements).map(element => {
+                        const stateElement = element.querySelector('.rounded-full.text-xs');
+                        const stateText = stateElement ? stateElement.textContent.trim().toLowerCase() : 'open';
+
+                        return {
+                            element: element,
+                            title: element.querySelector('h3').textContent.trim().toLowerCase(),
+                            number: element.querySelector('.text-sm span').textContent.trim().toLowerCase(),
+                            user: element.querySelector('.text-sm').textContent.trim().toLowerCase(),
+                            state: stateText,
+                            labels: Array.from(element.querySelectorAll('.flex.flex-wrap.gap-2 span')).map(label =>
+                                label.textContent.trim().toLowerCase())
+                        };
+                    });
+                }
+                return [];
+            }
+
+            function captureBugBounties() {
+                if (bugBountyContainer) {
+                    const bountyElements = bugBountyContainer.querySelectorAll('.bg-white.rounded-lg.shadow-sm.border.border-gray-200');
+                    return Array.from(bountyElements).map(element => {
+                        return {
+                            element: element,
+                            name: element.querySelector('h3').textContent.trim().toLowerCase(),
+                            date: element.querySelector('.text-gray-700').textContent.trim().toLowerCase(),
+                            url: element.querySelector('a.text-blue-600').textContent.trim().toLowerCase(),
+                            prize: element.querySelector('.text-gray-700.font-medium')?.textContent.trim().toLowerCase() || ''
+                        };
+                    });
+                }
+                return [];
+            }
+
+            function loadMoreIssues(page, state = 'open') {
+                if (!loadMoreBtn) return;
+
+                loadMoreBtn.textContent = 'Loading...';
+                loadMoreBtn.disabled = true;
+
+                // Add state parameter to the API request
+                fetch(`/api/load-more-issues/?page=${page}&state=${state}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.issues && data.issues.length > 0) {
+                            const container = document.querySelector('#github-issues-container .space-y-4');
+
+                            data.issues.forEach(issue => {
+                                const issueElement = document.createElement('div');
+                                issueElement.className = 'github-issue bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition duration-300';
+
+                                // Build labels HTML
+                                let labelsHtml = '';
+                                issue.labels.forEach(label => {
+                                    labelsHtml += `<span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">${label}</span>`;
+                                });
+
+                                //builde the related PR 
+                                let relatedPRsHtml = '';
+                                if (issue.related_prs && issue.related_prs.length > 0) {
                                     relatedPRsHtml = `
                                         <div class="mt-4 mb-4">
                                             <p class="font-medium text-gray-700 mb-2">Related Pull Requests:</p>
                                             <div class="space-y-2 pl-4 border-l-2 border-gray-300">
                                     `;
-                                    
+
                                     issue.related_prs.forEach(pr => {
                                         // Escape special characters to prevent HTML injection
                                         const escapedTitle = escapeHtml(pr.title);
                                         const escapedUser = escapeHtml(pr.user);
                                         const escapedUrl = escapeHtml(pr.url);
-                                        
+
                                         relatedPRsHtml += `
                                             <div class="flex items-center">
                                                 <svg class="w-5 h-5 text-purple-600 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -572,7 +601,7 @@
                                             </div>
                                         `;
                                     });
-                                    
+
                                     relatedPRsHtml += `
                                             </div>
                                         </div>
@@ -583,26 +612,26 @@
                                 function escapeHtml(unsafe) {
                                     return unsafe
                                         .replace(/&/g, "&amp;")
-                                        .replace(/</g , "&lt;") .replace( />/g, "&gt;")
+                                        .replace(/</g, "&lt;").replace(/>/g, "&gt;")
                                         .replace(/"/g, "&quot;")
                                         .replace(/'/g, "&#039;");
                                 }
-                                                            
-                            const createdDate = new Date(issue.created_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                            });
-                            
-                            const closedDateHtml = issue.closed_at ? `• Closed ${new Date(issue.closed_at).toLocaleDateString('en-US', {
+
+                                const createdDate = new Date(issue.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                });
+
+                                const closedDateHtml = issue.closed_at ? `• Closed ${new Date(issue.closed_at).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 year: 'numeric'
                             })}` : '';
-                            
-                            const stateClass = issue.state === 'closed' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-                            
-                            issueElement.innerHTML = `
+
+                                const stateClass = issue.state === 'closed' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+
+                                issueElement.innerHTML = `
                                 <div class="flex justify-between items-start mb-3">
                                     <h3 class="font-medium text-xl text-gray-800">${issue.title}</h3>
                                     <span class="px-3 py-1 text-xs rounded-full ${stateClass} font-medium">
@@ -628,174 +657,176 @@
                                     </a>
                                 </div>
                             `;
-                            
-                            container.appendChild(issueElement);
-                        
-                            originalGithubIssues.push({
-                                element: issueElement,
-                                title: issue.title.toLowerCase(),
-                                number: `issue #${issue.number}`.toLowerCase(),
-                                user: `opened by ${issue.user}`.toLowerCase(),
-                                state: issue.state.toLowerCase(),
-                                labels: issue.labels.map(label => label.toLowerCase())
+
+                                container.appendChild(issueElement);
+
+                                originalGithubIssues.push({
+                                    element: issueElement,
+                                    title: issue.title.toLowerCase(),
+                                    number: `issue #${issue.number}`.toLowerCase(),
+                                    user: `opened by ${issue.user}`.toLowerCase(),
+                                    state: issue.state.toLowerCase(),
+                                    labels: issue.labels.map(label => label.toLowerCase())
+                                });
                             });
-                        });
-                        
-                        const searchTerm = searchInput.value.trim().toLowerCase();
-                        if (searchTerm !== '') {
-                            filterItems(searchTerm);
-                        }
-                        
-                        if (data.next_page) {
-                            loadMoreBtn.setAttribute('data-next-page', data.next_page);
-                            loadMoreBtn.setAttribute('data-state', state);
-                            loadMoreBtn.textContent = 'Load More Issues';
-                            loadMoreBtn.disabled = false;
+
+                            const searchTerm = searchInput.value.trim().toLowerCase();
+                            if (searchTerm !== '') {
+                                filterItems(searchTerm);
+                            }
+
+                            if (data.next_page) {
+                                loadMoreBtn.setAttribute('data-next-page', data.next_page);
+                                loadMoreBtn.setAttribute('data-state', state);
+                                loadMoreBtn.textContent = 'Load More Issues';
+                                loadMoreBtn.disabled = false;
+                            } else {
+                                loadMoreBtn.textContent = 'No More Issues';
+                                loadMoreBtn.disabled = true;
+                            }
                         } else {
                             loadMoreBtn.textContent = 'No More Issues';
                             loadMoreBtn.disabled = true;
                         }
+                    })
+                    .catch(error => {
+                        console.error('Error loading more issues:', error);
+                        loadMoreBtn.textContent = 'Error Loading Issues. Try Again.';
+                        loadMoreBtn.disabled = false;
+                    });
+            }
+
+            function filterItems(searchTerm) {
+                // Refresh data if needed
+                if (originalGithubIssues.length === 0 || document.querySelectorAll('.github-issue').length !== originalGithubIssues.length) {
+                    originalGithubIssues = captureGithubIssues();
+                }
+
+                if (originalBugBounties.length === 0 || document.querySelectorAll('.bg-white.rounded-lg.shadow-sm.border.border-gray-200').length !== originalBugBounties.length) {
+                    originalBugBounties = captureBugBounties();
+                }
+
+                // Filter GitHub Issues
+                let visibleGithubIssues = 0;
+                originalGithubIssues.forEach(issue => {
+                    const isMatch =
+                        issue.title.includes(searchTerm) ||
+                        issue.number.includes(searchTerm) ||
+                        issue.user.includes(searchTerm) ||
+                        issue.state.includes(searchTerm) ||
+                        issue.labels.some(label => label.includes(searchTerm));
+
+                    if (isMatch) {
+                        issue.element.style.display = '';
+                        visibleGithubIssues++;
                     } else {
-                        loadMoreBtn.textContent = 'No More Issues';
-                        loadMoreBtn.disabled = true;
+                        issue.element.style.display = 'none';
                     }
-                })
-                .catch(error => {
-                    console.error('Error loading more issues:', error);
-                    loadMoreBtn.textContent = 'Error Loading Issues. Try Again.';
-                    loadMoreBtn.disabled = false;
                 });
-        }
-        function filterItems(searchTerm) {
-            // Refresh data if needed
-            if (originalGithubIssues.length === 0 || document.querySelectorAll('.github-issue').length !== originalGithubIssues.length) {
-                originalGithubIssues = captureGithubIssues();
-            }
-            
-            if (originalBugBounties.length === 0 || document.querySelectorAll('.bg-white.rounded-lg.shadow-sm.border.border-gray-200').length !== originalBugBounties.length) {
-                originalBugBounties = captureBugBounties();
-            }
-            
-            // Filter GitHub Issues
-            let visibleGithubIssues = 0;
-            originalGithubIssues.forEach(issue => {
-                const isMatch = 
-                    issue.title.includes(searchTerm) || 
-                    issue.number.includes(searchTerm) ||
-                    issue.user.includes(searchTerm) ||
-                    issue.state.includes(searchTerm) ||
-                    issue.labels.some(label => label.includes(searchTerm));
-                
-                if (isMatch) {
-                    issue.element.style.display = '';
-                    visibleGithubIssues++;
-                } else {
-                    issue.element.style.display = 'none';
+
+                // Filter Bug Bounties
+                let visibleBugBounties = 0;
+                originalBugBounties.forEach(bounty => {
+                    const isMatch =
+                        bounty.name.includes(searchTerm) ||
+                        bounty.date.includes(searchTerm) ||
+                        bounty.url.includes(searchTerm) ||
+                        bounty.prize.includes(searchTerm);
+
+                    if (isMatch) {
+                        bounty.element.style.display = '';
+                        visibleBugBounties++;
+                    } else {
+                        bounty.element.style.display = 'none';
+                    }
+                });
+
+                handleEmptyState(
+                    githubIssuesContainer,
+                    visibleGithubIssues,
+                    'No GitHub issues found for "' + searchTerm + '"',
+                    'Try a different search term.'
+                );
+
+                handleEmptyState(
+                    bugBountyContainer,
+                    visibleBugBounties,
+                    'No Bug Bounty programs found for "' + searchTerm + '"',
+                    'Try a different search term.'
+                );
+
+                if (loadMoreBtn) {
+                    loadMoreBtn.style.display = visibleGithubIssues > 0 ? '' : 'none';
                 }
-            });
-            
-            // Filter Bug Bounties
-            let visibleBugBounties = 0;
-            originalBugBounties.forEach(bounty => {
-                const isMatch = 
-                    bounty.name.includes(searchTerm) || 
-                    bounty.date.includes(searchTerm) ||
-                    bounty.url.includes(searchTerm) ||
-                    bounty.prize.includes(searchTerm);
-                
-                if (isMatch) {
-                    bounty.element.style.display = '';
-                    visibleBugBounties++;
-                } else {
-                    bounty.element.style.display = 'none';
-                }
-            });
-            
-            handleEmptyState(
-                githubIssuesContainer, 
-                visibleGithubIssues,
-                'No GitHub issues found for "' + searchTerm + '"',
-                'Try a different search term.'
-            );
-            
-            handleEmptyState(
-                bugBountyContainer, 
-                visibleBugBounties,
-                'No Bug Bounty programs found for "' + searchTerm + '"',
-                'Try a different search term.'
-            );
-            
-            if (loadMoreBtn) {
-                loadMoreBtn.style.display = visibleGithubIssues > 0 ? '' : 'none';
             }
-        }
-        
-        function handleEmptyState(container, visibleCount, mainText, subText) {
-            if (!container) return;
-            
-            const existingEmptyState = container.querySelector('.search-empty-state');
-            const itemsWrapper = container.querySelector('.space-y-4, .space-y-6');
-            
-            if (visibleCount === 0) {
-                if (!existingEmptyState) {
-                    const emptyState = document.createElement('div');
-                    emptyState.className = 'text-center p-8 bg-gray-50 rounded-lg search-empty-state';
-                    emptyState.innerHTML = `
+
+            function handleEmptyState(container, visibleCount, mainText, subText) {
+                if (!container) return;
+
+                const existingEmptyState = container.querySelector('.search-empty-state');
+                const itemsWrapper = container.querySelector('.space-y-4, .space-y-6');
+
+                if (visibleCount === 0) {
+                    if (!existingEmptyState) {
+                        const emptyState = document.createElement('div');
+                        emptyState.className = 'text-center p-8 bg-gray-50 rounded-lg search-empty-state';
+                        emptyState.innerHTML = `
                         <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
                         </svg>
                         <p class="text-xl font-medium">${mainText}</p>
                         <p class="text-gray-500 text-sm mt-2">${subText}</p>
                     `;
-                    container.appendChild(emptyState);
+                        container.appendChild(emptyState);
+                    } else {
+                        const mainMessage = existingEmptyState.querySelector('.text-xl.font-medium');
+                        const subMessage = existingEmptyState.querySelector('.text-gray-500.text-sm.mt-2');
+                        if (mainMessage) mainMessage.textContent = mainText;
+                        if (subMessage) subMessage.textContent = subText;
+                    }
+
+                    if (itemsWrapper) itemsWrapper.style.display = 'none';
                 } else {
-                    const mainMessage = existingEmptyState.querySelector('.text-xl.font-medium');
-                    const subMessage = existingEmptyState.querySelector('.text-gray-500.text-sm.mt-2');
-                    if (mainMessage) mainMessage.textContent = mainText;
-                    if (subMessage) subMessage.textContent = subText;
+                    if (existingEmptyState) {
+                        existingEmptyState.remove();
+                    }
+
+                    if (itemsWrapper) itemsWrapper.style.display = '';
                 }
-                
-                if (itemsWrapper) itemsWrapper.style.display = 'none';
-            } else {
-                if (existingEmptyState) {
-                    existingEmptyState.remove();
+            }
+
+            function showAllItems() {
+                originalGithubIssues.forEach(issue => {
+                    issue.element.style.display = '';
+                });
+
+                originalBugBounties.forEach(bounty => {
+                    bounty.element.style.display = '';
+                });
+
+                document.querySelectorAll('.search-empty-state').forEach(element => {
+                    element.remove();
+                });
+
+                if (originalGithubIssues.length === 0) {
+                    const emptyGithub = githubIssuesContainer?.querySelector('.text-center.p-8.bg-gray-50.rounded-lg:not(.search-empty-state)');
+                    if (emptyGithub) emptyGithub.style.display = '';
                 }
-                
-                if (itemsWrapper) itemsWrapper.style.display = '';
+
+                if (originalBugBounties.length === 0) {
+                    const emptyBounties = bugBountyContainer?.querySelector('.text-center.p-8.bg-gray-50.rounded-lg:not(.search-empty-state)');
+                    if (emptyBounties) emptyBounties.style.display = '';
+                }
+
+                const githubWrapper = githubIssuesContainer?.querySelector('.space-y-4');
+                const bountyWrapper = bugBountyContainer?.querySelector('.space-y-6');
+                if (githubWrapper) githubWrapper.style.display = '';
+                if (bountyWrapper) bountyWrapper.style.display = '';
+
+                if (loadMoreBtn) loadMoreBtn.style.display = '';
             }
-        }
-        
-        function showAllItems() {
-            originalGithubIssues.forEach(issue => {
-                issue.element.style.display = '';
-            });
-            
-            originalBugBounties.forEach(bounty => {
-                bounty.element.style.display = '';
-            });
-            
-            document.querySelectorAll('.search-empty-state').forEach(element => {
-                element.remove();
-            });
-            
-            if (originalGithubIssues.length === 0) {
-                const emptyGithub = githubIssuesContainer?.querySelector('.text-center.p-8.bg-gray-50.rounded-lg:not(.search-empty-state)');
-                if (emptyGithub) emptyGithub.style.display = '';
-            }
-            
-            if (originalBugBounties.length === 0) {
-                const emptyBounties = bugBountyContainer?.querySelector('.text-center.p-8.bg-gray-50.rounded-lg:not(.search-empty-state)');
-                if (emptyBounties) emptyBounties.style.display = '';
-            }
-            
-            const githubWrapper = githubIssuesContainer?.querySelector('.space-y-4');
-            const bountyWrapper = bugBountyContainer?.querySelector('.space-y-6');
-            if (githubWrapper) githubWrapper.style.display = '';
-            if (bountyWrapper) bountyWrapper.style.display = '';
-            
-            if (loadMoreBtn) loadMoreBtn.style.display = '';
-        }
-        
-    });
+
+        });
     </script>
+
 {% endblock content %}
