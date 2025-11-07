@@ -101,6 +101,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "sizzle",
 )
 
 if DEBUG:
