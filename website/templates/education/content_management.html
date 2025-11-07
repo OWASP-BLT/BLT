@@ -566,9 +566,6 @@
                     const response = await fetch(`/education/instructor_dashboard/api/lectures/${lectureId}/`);
                     if (!response.ok) throw new Error('Failed to fetch lecture data');
 
-                    const lecture = await response.json();
-
-                    document.getElementById('editLectureForm').action = "{% url 'edit_lecture' 0 %}".replace('0', lectureId);
 
                     document.getElementById('editLectureTitle').value = lecture.title;
                     document.getElementById('editContentType').value = lecture.content_type;

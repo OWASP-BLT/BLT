@@ -89,9 +89,13 @@
             %
             for tag in course.tags.all %
         }
-        "{{ tag.id }}", {
+        "{{ tag.id }}" {
             %
-            endfor %
+            if not forloop.last %
+        }, {
+            % endif %
+        } {
+            % endfor %
         }
     ];
 

@@ -335,10 +335,6 @@
 
             function appendMessage(data) {
                 const messageList = document.getElementById("message-list");
-                if (!messageList) return;
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message';
-                messageDiv.innerHTML = `<strong>${data.username}:</strong> ${data.content}`;
                 messageList.appendChild(messageDiv);
                 messageList.scrollTop = messageList.scrollHeight;
             }

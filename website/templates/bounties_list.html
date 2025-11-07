@@ -468,6 +468,15 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Helper function to escape HTML special characters
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
             // Cache DOM elements
             const searchForm = document.querySelector('form[action="#"]');
             const searchInput = document.getElementById('search');
@@ -606,15 +615,6 @@
                                             </div>
                                         </div>
                                     `;
-                                }
-
-                                // Helper function to escape HTML special characters
-                                function escapeHtml(unsafe) {
-                                    return unsafe
-                                        .replace(/&/g, "&amp;")
-                                        .replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                                        .replace(/"/g, "&quot;")
-                                        .replace(/'/g, "&#039;");
                                 }
 
                                 const createdDate = new Date(issue.created_at).toLocaleDateString('en-US', {
@@ -770,19 +770,41 @@
                     if (!existingEmptyState) {
                         const emptyState = document.createElement('div');
                         emptyState.className = 'text-center p-8 bg-gray-50 rounded-lg search-empty-state';
-                        emptyState.innerHTML = `
-                        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                        </svg>
-                        <p class="text-xl font-medium">${mainText}</p>
-                        <p class="text-gray-500 text-sm mt-2">${subText}</p>
-                    `;
+
+                        // Create SVG element
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('class', 'w-16 h-16 mx-auto text-gray-400 mb-4');
+                        svg.setAttribute('fill', 'none');
+                        svg.setAttribute('stroke', 'currentColor');
+                        svg.setAttribute('viewBox', '0 0 24 24');
+
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('stroke-linecap', 'round');
+                        path.setAttribute('stroke-linejoin', 'round');
+                        path.setAttribute('stroke-width', '2');
+                        path.setAttribute('d', 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4');
+
+                        svg.appendChild(path);
+                        emptyState.appendChild(svg);
+
+                        // Create main text paragraph with escaped content
+                        const mainParagraph = document.createElement('p');
+                        mainParagraph.className = 'text-xl font-medium';
+                        mainParagraph.textContent = escapeHtml(mainText);
+                        emptyState.appendChild(mainParagraph);
+
+                        // Create sub text paragraph with escaped content
+                        const subParagraph = document.createElement('p');
+                        subParagraph.className = 'text-gray-500 text-sm mt-2';
+                        subParagraph.textContent = escapeHtml(subText);
+                        emptyState.appendChild(subParagraph);
+
                         container.appendChild(emptyState);
                     } else {
                         const mainMessage = existingEmptyState.querySelector('.text-xl.font-medium');
                         const subMessage = existingEmptyState.querySelector('.text-gray-500.text-sm.mt-2');
-                        if (mainMessage) mainMessage.textContent = mainText;
-                        if (subMessage) subMessage.textContent = subText;
+                        if (mainMessage) mainMessage.textContent = escapeHtml(mainText);
+                        if (subMessage) subMessage.textContent = escapeHtml(subText);
                     }
 
                     if (itemsWrapper) itemsWrapper.style.display = 'none';

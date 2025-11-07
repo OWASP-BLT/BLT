@@ -131,6 +131,27 @@
         </a>
     </div>
     <script>
+        // HTML escape function to prevent XSS attacks
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') {
+                return unsafe;
+            }
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Get CSRF token from cookie (fallback if template tag fails)
+        function getCsrfToken() {
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+            return cookieValue || "{{ csrf_token }}";
+        }
+
         function toggleDescription(id) {
             let desc = document.getElementById("description-" + id);
             desc.classList.toggle("hidden");
@@ -147,7 +168,7 @@
             fetch(`/update-submission-status/${id}/`, {
                     method: "POST",
                     headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
+                        "X-CSRFToken": getCsrfToken(),
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -165,7 +186,10 @@
                         alert("Error updating submission.");
                     }
                 })
-                .catch(error => console.error("Error:", error));
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Failed to update submission. Please try again.");
+                });
         }
     </script>
 

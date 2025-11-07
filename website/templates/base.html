@@ -318,10 +318,7 @@ socialaccount %}
                                                 $(this).parent().find("input[type=file]").click();
                                             });
                                             $('input[name="screenshot"]').on("change", function() {
-                                                var file = $(this)
-                                                    .val()
-                                                    .replace(/^C:\\fakepath\\/i, "");
-                                                $(this).parent().find("span").html(file);
+
                                             });
                                         });
                                         /* eslint-enable */
@@ -458,10 +455,15 @@ socialaccount %}
                                                         .then((data) => {
                                                             if (data.success) {
                                                                 hideModal(); // Hide the modal on successful submission
-                                                                localStorage.setItem(
-                                                                    "formSubmittedDateCard",
-                                                                    new Date().toISOString().split("T")[0]
-                                                                ); // Store submission date
+                                                                try {
+                                                                    localStorage.setItem(
+                                                                        "formSubmittedDateCard",
+                                                                        new Date().toISOString().split("T")[0]
+                                                                    ); // Store submission date
+                                                                } catch (e) {
+                                                                    // Silently handle localStorage errors (private/incognito mode, storage disabled)
+                                                                    console.warn("Could not save to localStorage:", e);
+                                                                }
                                                                 alert("Your report has been submitted successfully!");
                                                             } else {
                                                                 throw new Error(data.error || "Submission failed");
