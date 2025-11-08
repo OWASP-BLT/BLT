@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class TimeLog(models.Model):
     """Time tracking model for sizzle functionality"""
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_timelogs")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_time_logs")
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
@@ -42,7 +42,7 @@ class TimeLog(models.Model):
 class DailyStatusReport(models.Model):
     """Daily status report for team check-ins"""
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sizzle_daily_status_reports")
     date = models.DateField()
     previous_work = models.TextField()
     next_plan = models.TextField()
