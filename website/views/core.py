@@ -2961,10 +2961,16 @@ def invite_organization(request):
                 context["exists"] = False
                 return render(request, "invite.html", context)
             else:
-                # Create invite record for logged-in users
-                invite_record = InviteOrganization.objects.create(
-                    sender=request.user, email=email, organization_name=organization_name
+                # Create invite record for logged-in users (or get existing one)
+                invite_record, created = InviteOrganization.objects.get_or_create(
+                    sender=request.user,
+                    email=email,
+                    defaults={"organization_name": organization_name},
                 )
+                if not created:
+                    # Update organization name if it changed
+                    invite_record.organization_name = organization_name
+                    invite_record.save()
 
                 # Generate referral link
                 base_url = request.build_absolute_uri(reverse("register_organization"))
@@ -2974,6 +2980,11 @@ def invite_organization(request):
         elif email and organization_name:
             # For non-logged-in users, just show the email template without creating records
             context["show_login_prompt"] = True
+        elif email or organization_name:
+            # Handle partial submission for non-logged-in users
+            messages.error(request, "Please provide both email and organization name.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
 
     # Check if user is authenticated for referral tracking (GET request or after POST)
     if request.user.is_authenticated and "referral_link" not in context:
@@ -3008,14 +3019,19 @@ def invite_organization(request):
         default_referral_url = request.build_absolute_uri(reverse("register_organization"))
         referral_link = context.get("referral_link", default_referral_url)
 
-        email_body = render_to_string(
-            "email/organization_invite.html",
-            {
-                "org_name": org_name,
-                "referral_link": referral_link,
-                "sender_name": sender_name,
-            },
-        )
+        try:
+            email_body = render_to_string(
+                "email/organization_invite.html",
+                {
+                    "org_name": org_name,
+                    "referral_link": referral_link,
+                    "sender_name": sender_name,
+                },
+            )
+        except Exception as e:
+            messages.error(request, "Error generating invitation email. Please try again.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
 
         context.update(
             {
