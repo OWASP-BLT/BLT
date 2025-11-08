@@ -1173,24 +1173,28 @@
 
 <!-- Scroll to Top Button -->
 <button id="backToTop"
-        style="display:none; position:fixed; bottom:30px; right:30px; background-color:#e74c3c; color:white; border:none; padding:12px 18px; border-radius:50%; cursor:pointer; font-size:18px; box-shadow:0 2px 8px rgba(0,0,0,0.2); transition:opacity 0.3s;">
+        class="hidden fixed bottom-7 right-7 bg-[#e74c3c] text-white rounded-full w-12 h-12 flex items-center justify-center text-lg shadow-lg hover:opacity-90 transition-opacity"
+        aria-label="Back to top">
     ↑
 </button>
 
-<script>
-window.onscroll = function() {
-  const btn = document.getElementById("backToTop");
-  if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
-      btn.style.display = "block";
-  } else {
-      btn.style.display = "none";
-  }
-};
 
-document.getElementById("backToTop").onclick = function() {
+<script>
+window.addEventListener('scroll', function() {
+  const btn = document.getElementById("backToTop");
+  if (!btn) return;
+  if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+      btn.classList.remove("hidden");
+  } else {
+      btn.classList.add("hidden");
+  }
+});
+
+document.getElementById("backToTop")?.addEventListener('click', function() {
   window.scrollTo({top: 0, behavior: 'smooth'});
-};
+});
 </script>
+
 
 
 
