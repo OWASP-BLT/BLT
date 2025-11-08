@@ -415,7 +415,18 @@
                                 const decryptedContent = await decryptWithSharedKey(sharedKey, message.content);
                                 const messageDiv = document.createElement("div");
                                 messageDiv.classList.add("message");
-                                messageDiv.innerHTML = `<strong>${message.username}:</strong> ${decryptedContent}`;
+                                
+                                // Build DOM safely to prevent XSS
+                                const usernameEl = document.createElement("strong");
+                                usernameEl.textContent = message.username;
+                                messageDiv.appendChild(usernameEl);
+                                
+                                const separatorNode = document.createTextNode(": ");
+                                messageDiv.appendChild(separatorNode);
+                                
+                                const contentNode = document.createTextNode(decryptedContent);
+                                messageDiv.appendChild(contentNode);
+                                
                                 messageList.appendChild(messageDiv);
                             } catch (err) {
                                 console.error("Error decrypting message:", err);
