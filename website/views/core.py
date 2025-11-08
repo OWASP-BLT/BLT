@@ -2956,6 +2956,13 @@ def invite_organization(request):
                 return render(request, "invite.html", context)
 
         if request.user.is_authenticated:
+            # Rate limiting check
+            rate_limit_key = f"invite_org_{request.user.id}"
+            invite_count = cache.get(rate_limit_key, 0)
+            if invite_count >= 10:  # 10 invites per day
+                messages.error(request, "Daily invitation limit reached. Please try again tomorrow.")
+                context["exists"] = False
+                return render(request, "invite.html", context)
             if not (email and organization_name):
                 messages.error(request, "Please provide both email and organization name.")
                 context["exists"] = False
@@ -2977,6 +2984,9 @@ def invite_organization(request):
                 referral_link = f"{base_url}?ref={invite_record.referral_code}"
                 context["referral_link"] = referral_link
                 context["show_points_message"] = True
+
+                # Increment rate limit counter
+                cache.set(rate_limit_key, invite_count + 1, 86400)  # 24 hours
         elif email and organization_name:
             # For non-logged-in users, just show the email template without creating records
             context["show_login_prompt"] = True
@@ -3009,7 +3019,7 @@ def invite_organization(request):
         context["organization_name"] = organization_name
 
         # Generate email content
-        domain = email.split("@")[-1] if email else ""
+        domain = email.split("@")[-1] if email and "@" in email else ""
         email_subject = "Invitation to Join BLT (Bug Logging Tool) - Enhanced Security Testing Platform"
 
         org_name = organization_name if organization_name else "your organization"
