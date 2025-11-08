@@ -1,8 +1,19 @@
 from django.urls import path
-from sizzle.views import (sizzle, checkIN,add_sizzle_checkIN, checkIN_detail, sizzle_docs, TimeLogListAPIView,TimeLogListView,sizzle_daily_log, user_sizzle_report)
+
+from sizzle.views import (
+    TimeLogListAPIView,
+    TimeLogListView,
+    add_sizzle_checkIN,
+    checkIN,
+    checkIN_detail,
+    sizzle,
+    sizzle_daily_log,
+    sizzle_docs,
+    user_sizzle_report,
+)
 
 urlpatterns = [
-    path("sizzle/", sizzle, name="sizzle"),
+    path("", sizzle, name="sizzle"),
     path("check-in/", checkIN, name="checkIN"),
     path("add-sizzle-checkin/", add_sizzle_checkIN, name="add_sizzle_checkin"),
     path("check-in/<int:report_id>/", checkIN_detail, name="checkIN_detail"),
@@ -15,4 +26,4 @@ urlpatterns = [
         user_sizzle_report,
         name="user_sizzle_report",
     ),
-]   
+]

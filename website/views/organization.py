@@ -33,7 +33,6 @@ from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserPro
 from website.models import (
     IP,
     Activity,
-    DailyStatusReport,
     Domain,
     GitHubIssue,
     Hunt,
@@ -1718,102 +1717,6 @@ def approve_activity(request, id):
             return JsonResponse({"success": False})
     else:
         return JsonResponse({"success": False, "error": "Not authorized"})
-
-
-def truncate_text(text, length=15):
-    return text if len(text) <= length else text[:length] + "..."
-
-
-@login_required
-def add_sizzle_checkIN(request):
-    # Fetch yesterday's report
-    yesterday = now().date() - timedelta(days=1)
-    yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
-
-    # Fetch all check-ins for the user, ordered by date
-    all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
-
-    return render(
-        request,
-        "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
-    )
-
-
-def checkIN(request):
-    from datetime import date
-
-    # Find the most recent date that has data
-    last_report = DailyStatusReport.objects.order_by("-date").first()
-    if last_report:
-        default_start_date = last_report.date
-        default_end_date = last_report.date
-    else:
-        # If no data at all, fallback to today
-        default_start_date = date.today()
-        default_end_date = date.today()
-
-    start_date_str = request.GET.get("start_date")
-    end_date_str = request.GET.get("end_date")
-
-    if start_date_str and end_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-        except ValueError:
-            start_date = default_start_date
-            end_date = default_end_date
-    else:
-        # No date range provided, use the default (most recent date with data)
-        start_date = default_start_date
-        end_date = default_end_date
-
-    reports = (
-        DailyStatusReport.objects.filter(date__range=(start_date, end_date))
-        .select_related("user")
-        .order_by("date", "created")
-    )
-
-    data = []
-    for r in reports:
-        data.append(
-            {
-                "id": r.id,
-                "username": r.user.username,
-                "previous_work": truncate_text(r.previous_work),
-                "next_plan": truncate_text(r.next_plan),
-                "blockers": truncate_text(r.blockers),
-                "goal_accomplished": r.goal_accomplished,  # Add this line
-                "current_mood": r.current_mood,  # Add this line
-                "date": r.date.strftime("%d %B %Y"),
-            }
-        )
-
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return JsonResponse(data, safe=False)
-
-    # Render template with initial data if needed
-    return render(
-        request,
-        "sizzle/checkin.html",
-        {
-            "data": data,
-            "default_start_date": default_start_date.isoformat(),
-            "default_end_date": default_end_date.isoformat(),
-        },
-    )
-
-
-def checkIN_detail(request, report_id):
-    report = get_object_or_404(DailyStatusReport, pk=report_id)
-    context = {
-        "username": report.user.username,
-        "date": report.date.strftime("%d %B %Y"),
-        "previous_work": report.previous_work,
-        "next_plan": report.next_plan,
-        "blockers": report.blockers,
-    }
-    return render(request, "sizzle/checkin_detail.html", context)
 
 
 class RoomsListView(ListView):

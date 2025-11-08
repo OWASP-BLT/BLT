@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def sizzle_docs(request):
-    return render(request, "sizzle/sizzle_docs.html")
+    return render(request, "sizzle_docs.html")
 
 
 def sizzle(request):
@@ -73,7 +73,7 @@ def sizzle(request):
 
     return render(
         request,
-        "sizzle/sizzle.html",
+        "sizzle.html",
         {"sizzle_data": sizzle_data, "leaderboard": leaderboard},
     )
 
@@ -133,13 +133,17 @@ def checkIN(request):
     # Render template with initial data if needed
     return render(
         request,
-        "sizzle/checkin.html",
+        "checkin.html",
         {
             "data": data,
             "default_start_date": default_start_date.isoformat(),
             "default_end_date": default_end_date.isoformat(),
         },
     )
+
+
+def truncate_text(text, length=15):
+    return text if len(text) <= length else text[:length] + "..."
 
 
 @login_required
@@ -153,7 +157,7 @@ def add_sizzle_checkIN(request):
 
     return render(
         request,
-        "sizzle/add_sizzle_checkin.html",
+        "add_sizzle_checkin.html",
         {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
     )
 
@@ -167,7 +171,7 @@ def checkIN_detail(request, report_id):
         "next_plan": report.next_plan,
         "blockers": report.blockers,
     }
-    return render(request, "sizzle/checkin_detail.html", context)
+    return render(request, "checkin_detail.html", context)
 
 
 def TimeLogListAPIView(request):
@@ -236,7 +240,7 @@ def TimeLogListView(request):
         organization_url = active_time_log.organization.url
     return render(
         request,
-        "sizzle/time_logs.html",
+        "time_logs.html",
         {
             "time_logs": time_logs,
             "active_time_log": active_time_log,
@@ -323,6 +327,6 @@ def user_sizzle_report(request, username):
 
     return render(
         request,
-        "sizzle/user_sizzle_report.html",
+        "user_sizzle_report.html",
         {"response_data": response_data, "user": user},
     )
