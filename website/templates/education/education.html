@@ -152,7 +152,7 @@
             <h1 class="text-4xl font-bold">Featured videos</h1>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            {% comment %} <div class="bg-white shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/N_59irHRjzM"
@@ -161,8 +161,8 @@
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen></iframe>
                 </div>
-            </div>
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            </div> {% endcomment %}
+            {% comment %} <div class="bg-white shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/IYBRVRfPCK8"
@@ -171,8 +171,8 @@
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen></iframe>
                 </div>
-            </div>
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            </div> {% endcomment %}
+            {% comment %} <div class="bg-white shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/jNp3J6HLpqc"
@@ -181,8 +181,8 @@
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen></iframe>
                 </div>
-            </div>
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            </div> {% endcomment %}
+            {% comment %} <div class="bg-white shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/OmxGrjGA_ck"
@@ -191,8 +191,8 @@
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen></iframe>
                 </div>
-            </div>
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            </div> {% endcomment %}
+            {% comment %} <div class="bg-white shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/C_UIm1QR67o"
@@ -201,7 +201,90 @@
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen></iframe>
                 </div>
-            </div>
+            </div> {% endcomment %}
+            <div class="bg-white shadow-md rounded-md overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02] duration-200"
+        onclick="window.open('https://www.youtube.com/watch?v=N_59irHRjzM', '_blank')">
+        <img src="https://img.youtube.com/vi/N_59irHRjzM/maxresdefault.jpg"
+            alt="Streamline Bug Reporting with OWASP BLT"
+            class="w-full h-64 object-cover">
+        <div class="p-4 bg-gray-50">
+            <h3 class="font-semibold text-lg text-gray-800">Streamline Bug Reporting with OWASP BLT</h3>
+            <p class="text-sm text-blue-600 mt-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                </svg>
+                Watch on YouTube
+            </p>
+        </div>
+    </div>
+
+    <!-- Video 2 -->
+    <div class="bg-white shadow-md rounded-md overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02] duration-200"
+        onclick="window.open('https://www.youtube.com/watch?v=IYBRVRfPCK8', '_blank')">
+        <img src="https://img.youtube.com/vi/IYBRVRfPCK8/maxresdefault.jpg"
+            alt="How to Use OWASP BLT"
+            class="w-full h-64 object-cover">
+        <div class="p-4 bg-gray-50">
+            <h3 class="font-semibold text-lg text-gray-800">How to Use OWASP BLT</h3>
+            <p class="text-sm text-blue-600 mt-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                </svg>
+                Watch on YouTube
+            </p>
+        </div>
+    </div>
+
+    <!-- Video 3 -->
+    <div class="bg-white shadow-md rounded-md overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02] duration-200"
+        onclick="window.open('https://www.youtube.com/watch?v=jNp3J6HLpqc', '_blank')">
+        <img src="https://img.youtube.com/vi/jNp3J6HLpqc/maxresdefault.jpg"
+            alt="OWASP BLT GitHub Integration"
+            class="w-full h-64 object-cover">
+        <div class="p-4 bg-gray-50">
+            <h3 class="font-semibold text-lg text-gray-800">OWASP BLT GitHub Integration</h3>
+            <p class="text-sm text-blue-600 mt-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                </svg>
+                Watch on YouTube
+            </p>
+        </div>
+    </div>
+
+    <!-- Video 4 -->
+    <div class="bg-white shadow-md rounded-md overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02] duration-200"
+        onclick="window.open('https://www.youtube.com/watch?v=OmxGrjGA_ck', '_blank')">
+        <img src="https://img.youtube.com/vi/OmxGrjGA_ck/maxresdefault.jpg"
+            alt="How to Configure Slack Bot"
+            class="w-full h-64 object-cover">
+        <div class="p-4 bg-gray-50">
+            <h3 class="font-semibold text-lg text-gray-800">How to Configure Slack Bot</h3>
+            <p class="text-sm text-blue-600 mt-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                </svg>
+                Watch on YouTube
+            </p>
+        </div>
+    </div>
+
+    <!-- Video 5 -->
+    <div class="bg-white shadow-md rounded-md overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02] duration-200"
+        onclick="window.open('https://www.youtube.com/watch?v=C_UIm1QR67o', '_blank')">
+        <img src="https://img.youtube.com/vi/C_UIm1QR67o/maxresdefault.jpg"
+            alt="Host Slack Bot on PythonAnywhere"
+            class="w-full h-64 object-cover">
+        <div class="p-4 bg-gray-50">
+            <h3 class="font-semibold text-lg text-gray-800">Host Slack Bot on PythonAnywhere</h3>
+            <p class="text-sm text-blue-600 mt-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                </svg>
+                Watch on YouTube
+            </p>
+        </div>
+    </div>
         </div>
     </div>
 {% endblock content %}
