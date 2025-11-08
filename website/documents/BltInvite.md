@@ -4,7 +4,7 @@ The invite page on the BugLog tool application is designed to allow users to inv
 ### User Interaction
 Users interact with this component by entering organization details and email addresses, then receiving a professionally generated invitation email that they can copy or send directly. The enhanced workflow includes:
 
-1. The user navigates to the invite page (https://blt.owasp.org/invite/)
+1. The user navigates to the invite page (<https://blt.owasp.org/invite/>)
 2. The user optionally enters the organization name for personalized messaging
 3. The user enters the email address of the organization contact
 4. The user clicks "Generate Invitation Email" to create comprehensive email content
@@ -62,7 +62,7 @@ The generated invitation includes:
 
 ### Detailed Information for Chatbot
 To ensure the chatbot can assist users effectively, include details such as:
-- The URL of the invite page (https://blt.owasp.org/invite/)
+- The URL of the invite page (<https://blt.owasp.org/invite/>)
 - The enhanced workflow for generating professional invitation emails
 - Available copy functionality and email client integration options
 - Instructions for personalizing invitations with organization names

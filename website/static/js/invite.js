@@ -3,7 +3,7 @@
  * Handles copy to clipboard functionality for referral links and email content
  */
 
-function copyToClipboard(elementId) {
+function copyToClipboard(elementId, buttonElement) {
   const element = document.getElementById(elementId);
   if (!element) {
     console.warn("copyToClipboard: element not found", elementId);
@@ -21,8 +21,8 @@ function copyToClipboard(elementId) {
       .writeText(text)
       .then(function () {
         // Show success feedback
-        const button = document.querySelector(
-          `button[onclick="copyToClipboard('${elementId}')"]`
+        const button = buttonElement || document.querySelector(
+          `button[onclick*="copyToClipboard('${elementId}')"]`
         );
         if (button) {
           const originalText = button.textContent;

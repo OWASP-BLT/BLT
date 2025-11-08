@@ -3028,7 +3028,8 @@ def invite_organization(request):
                     "sender_name": sender_name,
                 },
             )
-        except Exception as e:
+        except Exception:
+            logging.exception("Failed to render organization invite email")
             messages.error(request, "Error generating invitation email. Please try again.")
             context["exists"] = False
             return render(request, "invite.html", context)
