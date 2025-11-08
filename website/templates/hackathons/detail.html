@@ -426,16 +426,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize the sparkline chart
             const ctx = document.getElementById('viewsSparkline').getContext('2d');
-            const dates = {
-                {
-                    view_dates | safe
-                }
-            };
-            const counts = {
-                {
-                    view_counts | safe
-                }
-            };
+            const dates = {{ view_dates|safe }};
+            const counts = {{ view_counts|safe }};
 
             new Chart(ctx, {
                 type: 'bar',
@@ -481,21 +473,9 @@
 
             // Initialize the PR activity chart
             const prCtx = document.getElementById('prActivityChart').getContext('2d');
-            const prDates = {
-                {
-                    pr_dates | safe
-                }
-            };
-            const prCounts = {
-                {
-                    pr_counts | safe
-                }
-            };
-            const mergedPrCounts = {
-                {
-                    merged_pr_counts | safe
-                }
-            };
+            const prDates = {{ pr_dates|safe }};
+            const prCounts = {{ pr_counts|safe }};
+            const mergedPrCounts = {{ merged_pr_counts|default:"[]"|safe }};
 
             new Chart(prCtx, {
                 type: 'bar',

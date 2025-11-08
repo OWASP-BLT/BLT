@@ -381,7 +381,13 @@ socialaccount %}
 
                                             // Function to check if form was submitted today
                                             function isFormSubmittedToday() {
-                                                const submittedDate = localStorage.getItem("formSubmittedDateCard");
+                                                let submittedDate = null;
+                                                try {
+                                                    submittedDate = localStorage.getItem("formSubmittedDateCard");
+                                                } catch (e) {
+                                                    // Storage access failed (e.g. Safari private mode); treat as not submitted
+                                                    submittedDate = null;
+                                                }
                                                 const today = new Date().toISOString().split("T")[0];
                                                 return submittedDate === today;
                                             }

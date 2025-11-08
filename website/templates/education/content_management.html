@@ -556,8 +556,8 @@
                     document.getElementById('editSectionDescription').value = section.description
 
                 } catch (error) {
-                    console.error('Error fetching lecture data:', error);
-                    alert('Failed to load lecture data. Please try again.');
+                    console.error('Error fetching section data:', error);
+                    alert('Failed to load section data. Please try again.');
                 }
             }
 
@@ -565,7 +565,8 @@
                 try {
                     const response = await fetch(`/education/instructor_dashboard/api/lectures/${lectureId}/`);
                     if (!response.ok) throw new Error('Failed to fetch lecture data');
-
+                    const lecture = await response.json();
+                    if (!lecture) throw new Error('Empty lecture payload');
 
                     document.getElementById('editLectureTitle').value = lecture.title;
                     document.getElementById('editContentType').value = lecture.content_type;
@@ -616,7 +617,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
+                            'X-CSRFToken': getCookie('csrftoken') || ''
                         },
                         body: JSON.stringify({
                             sections
@@ -634,6 +635,18 @@
                     });
             }
 
+            // Helper to read a cookie value by name (for CSRF token retrieval)
+            function getCookie(name) {
+                const cookies = document.cookie ? document.cookie.split(';') : [];
+                for (let c of cookies) {
+                    const cookie = c.trim();
+                    if (cookie.startsWith(name + '=')) {
+                        return decodeURIComponent(cookie.substring(name.length + 1));
+                    }
+                }
+                return null;
+            }
+
             function updateLecturesOrder(container) {
                 const sectionId = container.closest('.section-item').getAttribute('data-section-id');
                 const lectures = [];
@@ -649,7 +662,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
+                            'X-CSRFToken': getCookie('csrftoken') || ''
                         },
                         body: JSON.stringify({
                             lectures

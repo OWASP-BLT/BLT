@@ -27,7 +27,7 @@
             </button>
         </div>
     </div>
-    <div class="messaging-container flex h-[80vh] text-white font-sans">
+    <div id="messaging-container" class="messaging-container flex h-[80vh] text-white font-sans">
         <!-- Left Side: Conversation List -->
         <div id="conversation-list"
              class="w-[30%] bg-[#e74c3c] p-[10px] overflow-y-auto">
@@ -120,7 +120,7 @@
                         name: "ECDH",
                         namedCurve: "P-256"
                     },
-                    true, // extractable keys for exporting
+                    true, // keep extractable so we can encrypt & persist; we NEVER store raw, only encrypted
                     ["deriveKey", "deriveBits"]
                 );
             }
@@ -207,19 +207,30 @@
             // ===== Initialization =====
 
             async function initializeEncryptionKeys() {
+                let encryptedPrivateBlob = localStorage.getItem("encryptedPrivateKey");
                 let localPublicKey = localStorage.getItem("publicKey");
-                let localPrivateKey = localStorage.getItem("privateKey");
+                let privateKeyCrypto = null;
 
-                // If keys are missing or don't match, regenerate and update the server
-                if (!localPublicKey || !localPrivateKey || localPublicKey !== serverPublicKey) {
+                // Prompt user for a passphrase (simple approach; could be replaced with a modal)
+                const passphrase = prompt("Enter your messaging passphrase (create one if first time):") || "default-passphrase";
+
+                if (!localPublicKey || !encryptedPrivateBlob || localPublicKey !== serverPublicKey) {
+                    // Generate brand new key pair
                     const keyPair = await generateECDHKeyPair();
                     localPublicKey = await exportECDHPublicKey(keyPair.publicKey);
-                    const privateKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-                    localPrivateKey = arrayBufferToBase64(privateKeyBuffer);
+                    // Export private key (pkcs8) temporarily for encryption
+                    const pkcs8 = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+                    encryptedPrivateBlob = await encryptPrivateKeyBlob(pkcs8, passphrase);
                     localStorage.setItem("publicKey", localPublicKey);
-                    localStorage.setItem("privateKey", localPrivateKey);
+                    localStorage.setItem("encryptedPrivateKey", encryptedPrivateBlob);
                     await updatePublicKeyOnServer(localPublicKey);
+                    privateKeyCrypto = keyPair.privateKey; // we already have it in memory
+                } else {
+                    // Decrypt and import existing private key
+                    privateKeyCrypto = await decryptAndImportPrivateKey(encryptedPrivateBlob, passphrase);
                 }
+                // Cache in memory for this session
+                window.__privateKey = privateKeyCrypto;
                 unlockScreen();
             }
             // Send our ECDH public key to the server
@@ -310,13 +321,13 @@
                         // In a two-party conversation, the recipient's public key is the other party's key.
                         let recipientPublicKeyBase64 = cachedRecipientPublicKey;
                         if (!recipientPublicKeyBase64) {
-                            const resp = await fetch(`/api/messaging/${currentThreadId}/get-public-key/`);
+                            const resp = await fetch(`/api/messaging/${currentThreadId}/get-public-key`);
                             const respData = await resp.json();
                             recipientPublicKeyBase64 = respData.public_key;
                             cachedRecipientPublicKey = recipientPublicKeyBase64;
                         }
                         const recipientPublicKey = await importECDHPublicKey(recipientPublicKeyBase64);
-                        const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
+                        const myPrivateKey = window.__privateKey; // already decrypted/imported
                         const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
                         const decryptedMessage = await decryptWithSharedKey(sharedKey, data.encrypted_content);
                         appendMessage({
@@ -334,7 +345,47 @@
             }
 
             function appendMessage(data) {
+                // data: { username: string, content: string, timestamp?: string|number }
+                const { username, content, timestamp } = data || {};
                 const messageList = document.getElementById("message-list");
+                if (!messageList) return;
+
+                // Create the wrapper div for the message
+                const messageDiv = document.createElement("div");
+                messageDiv.classList.add("message");
+
+                // Username (strong)
+                if (username) {
+                    const userEl = document.createElement("strong");
+                    userEl.textContent = username + ":"; // textContent prevents XSS
+                    messageDiv.appendChild(userEl);
+                    const spaceEl = document.createElement("span");
+                    spaceEl.textContent = " ";
+                    messageDiv.appendChild(spaceEl);
+                }
+
+                // Message content
+                const contentEl = document.createElement("span");
+                contentEl.textContent = content || ""; // safe insertion
+                messageDiv.appendChild(contentEl);
+
+                // Optional timestamp
+                if (timestamp) {
+                    const timeEl = document.createElement("span");
+                    timeEl.classList.add("text-xs", "text-gray-500", "ml-2");
+                    try {
+                        const dateObj = new Date(timestamp);
+                        if (!isNaN(dateObj.getTime())) {
+                            timeEl.textContent = dateObj.toLocaleTimeString();
+                        } else {
+                            timeEl.textContent = ""; // invalid timestamp, omit
+                        }
+                    } catch (_) {
+                        // Silently ignore malformed timestamp
+                    }
+                    messageDiv.appendChild(timeEl);
+                }
+
                 messageList.appendChild(messageDiv);
                 messageList.scrollTop = messageList.scrollHeight;
             }
@@ -356,7 +407,7 @@
                         const respData = await resp.json();
                         cachedRecipientPublicKey = respData.public_key;
                         const recipientPublicKey = await importECDHPublicKey(cachedRecipientPublicKey);
-                        const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
+                        const myPrivateKey = window.__privateKey;
                         const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
                         for (const message of data) {
                             // Decrypt each message using the shared key
@@ -401,7 +452,7 @@
                         cachedRecipientPublicKey = recipientPublicKeyBase64;
                     }
                     const recipientPublicKey = await importECDHPublicKey(recipientPublicKeyBase64);
-                    const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
+                    const myPrivateKey = window.__privateKey;
                     const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
                     const encryptedMessage = await encryptWithSharedKey(sharedKey, rawMessage);
                     socket.send(JSON.stringify({

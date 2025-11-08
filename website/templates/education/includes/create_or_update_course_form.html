@@ -65,12 +65,10 @@
                 {% endfor %}
             </select>
         </div>
-        <input type="hidden"
-               name="id"
-               id="course-id"
-               value="{% if course %}
-                          {{ course.id }}
-                      {% endif %}">
+     <input type="hidden"
+         name="id"
+         id="course-id"
+         value="{% if course %}{{ course.id }}{% endif %}">
         <div>
             <button id="create-course-btn"
                     type="submit"
@@ -126,34 +124,66 @@
         event.preventDefault();
 
         const button = event.target;
+        const originalHtml = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
         const form = document.getElementById('course-form');
         const formData = new FormData(form);
 
-        await createOrUpdateCourse(formData);
+        try {
+            await createOrUpdateCourse(formData);
+        } finally {
+            // Always restore UI state
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+        }
     });
 
     const createOrUpdateCourse = async (formData) => {
+        const form = document.getElementById('course-form');
+        const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+        const url = "{% url 'education:instructor_dashboard:create_or_update_course' %}";
+
         try {
-            const response = await fetch('/education/instructor_dashboard/create-or-update-course/', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': csrfToken
                 },
                 body: formData,
             });
 
-            const result = await response.json();
-            if (!result.success) {
-                alert(result.message);
-            } else {
-                alert("Course {% if course %} edited {% else %} created {% endif %} successfully.");
-                window.location.reload();
+            // Handle non-2xx responses before attempting to parse
+            if (!response.ok) {
+                let message = 'The server returned an error while saving the course.';
+                try {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        const errJson = await response.json();
+                        if (errJson && (errJson.message || errJson.detail)) {
+                            message = errJson.message || errJson.detail;
+                        }
+                    } else {
+                        const errText = await response.text();
+                        if (errText) message = errText;
+                    }
+                } catch (_) { /* best-effort error extraction */ }
+                alert(message);
+                return;
             }
-        } catch (error) {
-            alert('An error occurred. Please try again later.');
+
+            const result = await response.json();
+            if (!result || result.success === false) {
+                alert(result?.message || 'The course could not be saved. Please review the form and try again.');
+                return;
+            }
+
+            alert("Course {% if course %}edited{% else %}created{% endif %} successfully.");
+            window.location.reload();
+        } catch (_) {
+            // Avoid exposing exception details in UI
+            alert('A network error occurred while saving the course. Please try again.');
         }
     };
 </script>
