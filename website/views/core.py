@@ -1917,11 +1917,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type is int:
+                                    if action.type == int:
                                         arg_value = int(arg_value)
-                                    elif action.type is float:
+                                    elif action.type == float:
                                         arg_value = float(arg_value)
-                                    elif action.type is bool:
+                                    elif action.type == bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (
@@ -2915,6 +2915,10 @@ def invite_organization(request):
         email = request.POST.get("email", "").strip()
         organization_name = request.POST.get("organization_name", "").strip()
 
+        # Add to context for later use
+        context["email"] = email
+        context["organization_name"] = organization_name
+
         # Basic email validation
         if email:
             try:
@@ -2924,20 +2928,22 @@ def invite_organization(request):
                 context["exists"] = False
                 return render(request, "invite.html", context)
 
-        if request.user.is_authenticated and not (email and organization_name):
-            messages.error(request, "Please provide both email and organization name.")
-            context["exists"] = False
-        if request.user.is_authenticated and email and organization_name:
-            # Create invite record for logged-in users
-            invite_record = InviteOrganization.objects.create(
-                sender=request.user, email=email, organization_name=organization_name
-            )
+        if request.user.is_authenticated:
+            if not (email and organization_name):
+                messages.error(request, "Please provide both email and organization name.")
+                context["exists"] = False
+                return render(request, "invite.html", context)
+            else:
+                # Create invite record for logged-in users
+                invite_record = InviteOrganization.objects.create(
+                    sender=request.user, email=email, organization_name=organization_name
+                )
 
-            # Generate referral link
-            base_url = request.build_absolute_uri(reverse("register_organization"))
-            referral_link = f"{base_url}?ref={invite_record.referral_code}"
-            context["referral_link"] = referral_link
-            context["show_points_message"] = True
+                # Generate referral link
+                base_url = request.build_absolute_uri(reverse("register_organization"))
+                referral_link = f"{base_url}?ref={invite_record.referral_code}"
+                context["referral_link"] = referral_link
+                context["show_points_message"] = True
         elif email and organization_name:
             # For non-logged-in users, just show the email template without creating records
             context["show_login_prompt"] = True
@@ -2955,11 +2961,9 @@ def invite_organization(request):
     elif not request.user.is_authenticated:
         context["show_login_prompt"] = True
 
-    # Add template context variables - check if we have the data in context or POST
-    email = context.get("email") or (request.POST.get("email", "").strip() if request.method == "POST" else "")
-    organization_name = context.get("organization_name") or (
-        request.POST.get("organization_name", "").strip() if request.method == "POST" else ""
-    )
+    # Add template context variables - check if we have the data in context
+    email = context.get("email", "")
+    organization_name = context.get("organization_name", "")
 
     if email and organization_name:
         context["exists"] = True
