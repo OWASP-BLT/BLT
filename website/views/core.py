@@ -6,6 +6,7 @@ import re
 import subprocess
 import tracemalloc
 import urllib
+import uuid
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -28,14 +29,17 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.validators import validate_email
 from django.db import connection, models
-from django.db.models import Case, Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value, When
+from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -55,6 +59,7 @@ from website.models import (
     ForumVote,
     Hunt,
     InviteFriend,
+    InviteOrganization,
     Issue,
     ManagementCommandLog,
     Organization,
@@ -1786,8 +1791,8 @@ def management_commands(request):
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                command_instance = command_class()
+                command_instance.add_arguments(parser)
 
                 # Extract argument information
                 for action in parser._actions:
@@ -1926,8 +1931,8 @@ def run_management_command(request):
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                command_instance = command_class()
+                command_instance.add_arguments(parser)
 
                 # Extract argument information and collect values from POST
                 for action in parser._actions:
@@ -2923,3 +2928,122 @@ class RoadmapView(TemplateView):
 
 class StyleGuideView(TemplateView):
     template_name = "style_guide.html"
+
+
+def invite_organization(request):
+    """
+    View for inviting organizations to join BLT.
+    Generates professional invitation emails with referral tracking.
+    """
+    context = {}
+
+    if request.method == "POST":
+        # Handle form submission
+        email = request.POST.get("email", "").strip()
+        organization_name = request.POST.get("organization_name", "").strip()
+
+        # Add to context for later use
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Basic email validation
+        if email:
+            try:
+                validate_email(email)
+            except DjangoValidationError:
+                messages.error(request, "Please enter a valid email address.")
+                context["exists"] = False
+                return render(request, "invite.html", context)
+
+        if request.user.is_authenticated:
+            if not (email and organization_name):
+                messages.error(request, "Please provide both email and organization name.")
+                context["exists"] = False
+                return render(request, "invite.html", context)
+            else:
+                # Create invite record for logged-in users (or get existing one)
+                invite_record, created = InviteOrganization.objects.get_or_create(
+                    sender=request.user,
+                    email=email,
+                    defaults={"organization_name": organization_name},
+                )
+                if not created:
+                    # Update organization name if it changed
+                    invite_record.organization_name = organization_name
+                    invite_record.save()
+
+                # Generate referral link
+                base_url = request.build_absolute_uri(reverse("register_organization"))
+                referral_link = f"{base_url}?ref={invite_record.referral_code}"
+                context["referral_link"] = referral_link
+                context["show_points_message"] = True
+        elif email and organization_name:
+            # For non-logged-in users, just show the email template without creating records
+            context["show_login_prompt"] = True
+        elif email or organization_name:
+            # Handle partial submission for non-logged-in users
+            messages.error(request, "Please provide both email and organization name.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+    # Check if user is authenticated for referral tracking (GET request or after POST)
+    if request.user.is_authenticated and "referral_link" not in context:
+        # For GET requests, generate a sample referral link without creating records
+
+        sample_ref_code = str(uuid.uuid4())
+        base_url = request.build_absolute_uri(reverse("register_organization"))
+        referral_link = f"{base_url}?ref={sample_ref_code}"
+        context["referral_link"] = referral_link
+        context["show_points_message"] = True
+        context["is_sample_link"] = True  # Flag to indicate this is just for display
+    elif not request.user.is_authenticated:
+        context["show_login_prompt"] = True
+
+    # Add template context variables - check if we have the data in context
+    email = context.get("email", "")
+    organization_name = context.get("organization_name", "")
+
+    if email and organization_name:
+        context["exists"] = True
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Generate email content
+        domain = email.split("@")[-1] if email else ""
+        email_subject = "Invitation to Join BLT (Bug Logging Tool) - Enhanced Security Testing Platform"
+
+        org_name = organization_name if organization_name else "your organization"
+        sender_name = (
+            request.user.get_full_name() or request.user.username if request.user.is_authenticated else "BLT Team"
+        )
+        default_referral_url = request.build_absolute_uri(reverse("register_organization"))
+        referral_link = context.get("referral_link", default_referral_url)
+
+        try:
+            email_body = render_to_string(
+                "email/organization_invite.html",
+                {
+                    "org_name": org_name,
+                    "referral_link": referral_link,
+                    "sender_name": sender_name,
+                },
+            )
+        except Exception as e:
+            messages.error(request, "Error generating invitation email. Please try again.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        context.update(
+            {
+                "domain": domain,
+                "email_subject": email_subject,
+                "email_body": email_body,
+            }
+        )
+    else:
+        context["exists"] = False
+
+    # Add user authentication context
+    context["user_logged_in"] = request.user.is_authenticated
+
+    return render(request, "invite.html", context)
