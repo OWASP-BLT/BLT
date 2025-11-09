@@ -119,10 +119,11 @@ class Command(LoggedBaseCommand):
                         f"Error monitoring {monitor.url}: unexpected error during check (parsing, database save, or internal processing). "
                         "Check container logs, verify network connectivity, HTML parsing results, and database configuration."
                     )
-                    monitor.status ="DOWN"
+                )
+                monitor.status ="DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
-                )
+
 
     def notify_user(self, username, website, email, status):
         subject = f"Website Status Update: {website} is {status}"
