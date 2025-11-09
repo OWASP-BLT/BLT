@@ -47,7 +47,7 @@ class Command(LabSeederCommand):
             "mcq_options": [
                 "A) Trick the server into making unauthorized requests",
                 "B) Steal client-side cookies",
-                "C) Modify HTML content of the user’s browser",
+                "C) Modify HTML content of the user's browser",
                 "D) Exploit SQL databases directly",
             ],
             "correct_answer": "A",
