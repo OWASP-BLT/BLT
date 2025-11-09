@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates Insecure Direct Object Reference (IDOR) lab tasks"
     lab_name = "Insecure Direct Object Reference (IDOR)"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to IDOR",
             "description": "Learn what Insecure Direct Object References (IDOR) are and how they occur.",

@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates Server-Side Request Forgery (SSRF) lab tasks with theory and simulation content"
     lab_name = "Server-Side Request Forgery (SSRF)"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to SSRF",
             "description": "Learn what SSRF attacks are, how they work, and their potential impact.",

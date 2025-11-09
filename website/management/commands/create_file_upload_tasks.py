@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates File Upload Vulnerabilities lab tasks"
     lab_name = "File Upload Vulnerabilities"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to File Upload Vulnerabilities",
             "description": "Learn why unrestricted file uploads are dangerous and common attack patterns.",

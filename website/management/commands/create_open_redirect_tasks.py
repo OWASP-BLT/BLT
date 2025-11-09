@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates Open Redirect lab tasks"
     lab_name = "Open Redirect"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to Open Redirect",
             "description": "Learn what open redirect vulnerabilities are, why they matter, and common attack scenarios.",
