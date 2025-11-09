@@ -19,6 +19,7 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView
 from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialAccountDisconnectView as BaseSocialAccountDisconnectView
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
@@ -545,24 +546,21 @@ def status_page(request):
 
 
 def github_callback(request):
-    ALLOWED_HOSTS = ["github.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
+    adapter = GitHubOAuth2Adapter(request)
+    view_class = OAuth2CallbackView.adapter_view(adapter)
+    return view_class.as_view()(request)
 
 
 def google_callback(request):
-    ALLOWED_HOSTS = ["accounts.google.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
+    adapter = GoogleOAuth2Adapter(request)
+    view_class = OAuth2CallbackView.adapter_view(adapter)
+    return view_class.as_view()(request)
 
 
 def facebook_callback(request):
-    ALLOWED_HOSTS = ["www.facebook.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
+    adapter = FacebookOAuth2Adapter(request)
+    view_class = OAuth2CallbackView.adapter_view(adapter)
+    return view_class.as_view()(request)
 
 
 def find_key(request, token):
