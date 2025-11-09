@@ -1,5 +1,6 @@
 from .base_lab_seeder import LabSeederCommand
 
+
 class Command(LabSeederCommand):
     help = "Creates Open Redirect lab tasks"
     lab_name = "Open Redirect"
