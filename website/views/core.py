@@ -19,6 +19,7 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView
 from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialAccountDisconnectView as BaseSocialAccountDisconnectView
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
@@ -69,13 +70,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import (
-    analyze_pr_content,
-    fetch_github_data,
-    rebuild_safe_url,
-    safe_redirect_allowed,
-    save_analysis_report,
-)
+from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -544,25 +539,24 @@ def status_page(request):
     return render(request, "status_page.html", {"status": status_data})
 
 
-def github_callback(request):
-    ALLOWED_HOSTS = ["github.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
+class GitHubCallbackView(OAuth2CallbackView):
+    adapter_class = GitHubOAuth2Adapter
+    client_class = OAuth2Client
 
 
-def google_callback(request):
-    ALLOWED_HOSTS = ["accounts.google.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
+class GoogleCallbackView(OAuth2CallbackView):
+    adapter_class = GoogleOAuth2Adapter
+    client_class = OAuth2Client
 
 
-def facebook_callback(request):
-    ALLOWED_HOSTS = ["www.facebook.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
+class FacebookCallbackView(OAuth2CallbackView):
+    adapter_class = FacebookOAuth2Adapter
+    client_class = OAuth2Client
+
+
+github_callback = GitHubCallbackView.as_view()
+google_callback = GoogleCallbackView.as_view()
+facebook_callback = FacebookCallbackView.as_view()
 
 
 def find_key(request, token):
