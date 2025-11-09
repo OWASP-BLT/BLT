@@ -1,6 +1,5 @@
-import re
-
 import requests
+import re
 from bs4 import BeautifulSoup
 from django.core.mail import send_mail
 from django.utils import timezone
@@ -18,7 +17,6 @@ class Command(LoggedBaseCommand):
             self.stdout.write(self.style.WARNING("No monitors found."))
             return
 
-        # Allow optional debug output via environment/flag later if needed
         EMAIL_REGEX = re.compile(r"(?:mailto:)?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.IGNORECASE)
 
         for monitor in monitors:
@@ -30,42 +28,48 @@ class Command(LoggedBaseCommand):
 
                 page_text = BeautifulSoup(response.text or "", "html.parser").get_text()
 
-                # Email detection (single pass, deduplicated)
                 found_emails = []
                 try:
                     # Search the RAW HTML (response.text)
                     found_emails = list(dict.fromkeys(m.group(1) for m in EMAIL_REGEX.finditer(response.text or "")))
-
-                except Exception:
+                except (AttributeError, TypeError) as e:
+                    self.stderr.write(f"    Email extraction error: {e}")
                     found_emails = []
 
                 if found_emails:
+                
                     self.stdout.write(self.style.SUCCESS(f"[PII Found] {monitor.url}: {len(found_emails)} email(s) detected"))
-                    email_note = f"Found email(s): {', '.join(found_emails)} "
-                    if getattr(monitor, "notes", None):
-                        monitor.notes = f"{monitor.notes}{email_note}"
-                    else:
-                        monitor.notes = email_note
-                    monitor.save()
+                    
+                 
+                    existing_notes = getattr(monitor, "notes", None) or ""
+                    existing_emails_raw = set(re.findall(r'Found email\(s\): ([^;]+)', existing_notes))
+                    
+                    existing_flat = set()
+                    for email_list in existing_emails_raw:
+                        existing_flat.update(e.strip() for e in email_list.split(','))
+                    
+                    new_emails = [e for e in found_emails if e not in existing_flat]
+                    if new_emails:
+                        email_note = f"Found email(s): {', '.join(new_emails)}; "
+                        monitor.notes = f"{existing_notes}{email_note}".strip()
+                        monitor.save()
                 else:
                     self.stdout.write(f"    No emails detected on {monitor.url}")
 
                 # Keyword presence check (case-insensitive / regex support).
-                reachable = response.status_code and response.status_code < 400
+                reachable = bool(response.status_code and response.status_code < 400) # Fix: Use bool()
                 if not monitor.keyword or not str(monitor.keyword).strip():
-                    # No keyword configured: consider service UP if site is reachable
                     new_status = "UP" if reachable else "DOWN"
                     self.stdout.write(f"    No keyword configured; reachable={reachable} -> status {new_status}")
                 else:
                     keyword = str(monitor.keyword).strip()
-                    # regex support: /pattern/ (case-insensitive)
                     if keyword.startswith("/") and keyword.endswith("/") and len(keyword) > 1:
                         pattern = keyword[1:-1]
                         try:
                             found = bool(re.search(pattern, page_text, re.IGNORECASE))
-                        except re.error:
+                        except re.error as e: # Fix: Narrow exception
+                            self.stderr.write(f"    Invalid regex pattern '{pattern}': {e}")
                             found = False
-                            self.stdout.write(f"    Invalid regex pattern: '{pattern}'")
                     else:
                         found = keyword.lower() in page_text.lower()
                     new_status = "UP" if found else "DOWN"
@@ -73,7 +77,7 @@ class Command(LoggedBaseCommand):
                         self.stdout.write(f"    Keyword not found: '{keyword}'")
                         try:
                             snippet = " ".join(page_text.strip().split())[:500]
-                        except Exception:
+                        except (AttributeError, TypeError): # Fix: Narrow exception
                             snippet = page_text[:200]
                         self.stdout.write(f"    Page snippet: {snippet!s}")
                         found_in_html = keyword.lower() in (response.text or "").lower()
@@ -102,9 +106,7 @@ class Command(LoggedBaseCommand):
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
             except requests.exceptions.HTTPError:
-                self.stderr.write(
-                    self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response")
-                )
+                self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response"))
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
@@ -113,17 +115,16 @@ class Command(LoggedBaseCommand):
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
-            except Exception:
+            except Exception as e: 
                 self.stderr.write(
                     self.style.ERROR(
-                        f"Error monitoring {monitor.url}: unexpected error during check (parsing, database save, or internal processing). "
-                        "Check container logs, verify network connectivity, HTML parsing results, and database configuration."
+                        f"Error monitoring {monitor.url}: unexpected error during check - {type(e).__name__}: {e}. "
+                        "This may indicate a parsing, database, or internal processing issue. Check container logs for details."
                     )
                 )
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
-
 
     def notify_user(self, username, website, email, status):
         subject = f"Website Status Update: {website} is {status}"
