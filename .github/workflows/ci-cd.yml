@@ -100,6 +100,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
       - run: pip install poetry
+      - run: poetry lock
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
@@ -128,6 +129,7 @@ jobs:
           docker run -d --name my-container my-app
 
       - run: docker exec my-container pip install poetry
+      - run: docker exec my-container poetry lock
       - run: docker exec my-container poetry install --without dev --no-interaction
 
       - name: Clean up
