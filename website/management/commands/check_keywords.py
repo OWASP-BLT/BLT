@@ -93,24 +93,24 @@ class Command(LoggedBaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"Monitoring {monitor.url}: status {monitor.status}"))
             except requests.exceptions.Timeout:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request timed out"))
-                monitor.status ="DOWN"
+                monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
             except requests.exceptions.ConnectionError:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network connection failed"))
-                monitor.status ="DOWN"
+                monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
             except requests.exceptions.HTTPError:
                 self.stderr.write(
                     self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response")
                 )
-                monitor.status ="DOWN"
+                monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
             except requests.exceptions.RequestException:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request failed"))
-                monitor.status ="DOWN"
+                monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
             except Exception:
@@ -120,7 +120,7 @@ class Command(LoggedBaseCommand):
                         "Check container logs, verify network connectivity, HTML parsing results, and database configuration."
                     )
                 )
-                monitor.status ="DOWN"
+                monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
 
