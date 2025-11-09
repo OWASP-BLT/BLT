@@ -28,21 +28,19 @@ class Command(LoggedBaseCommand):
                 self.stdout.write(f"    HTTP {response.status_code}; content length {len(response.content or b'')}")
                 response.raise_for_status()
 
-                
                 page_text = BeautifulSoup(response.text or "", "html.parser").get_text()
 
                 # Email detection (single pass, deduplicated)
                 found_emails = []
                 try:
-                    
                     # Search the RAW HTML (response.text)
                     found_emails = list(dict.fromkeys(m.group(1) for m in EMAIL_REGEX.finditer(response.text or "")))
-                    
+
                 except Exception:
                     found_emails = []
 
                 if found_emails:
-                    self.stdout.write(self.style.SUCCESS(f"[PII Found] {monitor.url}: {found_emails}"))
+                    self.stdout.write(self.style.SUCCESS(f"[PII Found] {monitor.url}: {len(found_emails)} email(s) detected"))
                     email_note = f"Found email(s): {', '.join(found_emails)} "
                     if getattr(monitor, "notes", None):
                         monitor.notes = f"{monitor.notes}{email_note}"
@@ -53,7 +51,7 @@ class Command(LoggedBaseCommand):
                     self.stdout.write(f"    No emails detected on {monitor.url}")
 
                 # Keyword presence check (case-insensitive / regex support).
-                reachable = (response.status_code and response.status_code < 400)
+                reachable = response.status_code and response.status_code < 400
                 if not monitor.keyword or not str(monitor.keyword).strip():
                     # No keyword configured: consider service UP if site is reachable
                     new_status = "UP" if reachable else "DOWN"
@@ -95,18 +93,36 @@ class Command(LoggedBaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"Monitoring {monitor.url}: status {monitor.status}"))
             except requests.exceptions.Timeout:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request timed out"))
+                monitor.status ="DOWN"
+                monitor.last_checked_time = timezone.now()
+                monitor.save(update_fields=["status", "last_checked_time"])
             except requests.exceptions.ConnectionError:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network connection failed"))
+                monitor.status ="DOWN"
+                monitor.last_checked_time = timezone.now()
+                monitor.save(update_fields=["status", "last_checked_time"])
             except requests.exceptions.HTTPError:
-                self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response"))
+                self.stderr.write(
+                    self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response")
+                )
+                monitor.status ="DOWN"
+                monitor.last_checked_time = timezone.now()
+                monitor.save(update_fields=["status", "last_checked_time"])
             except requests.exceptions.RequestException:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request failed"))
+                monitor.status ="DOWN"
+                monitor.last_checked_time = timezone.now()
+                monitor.save(update_fields=["status", "last_checked_time"])
             except Exception:
-                
-                self.stderr.write(self.style.ERROR(
-                    f"Error monitoring {monitor.url}: unexpected error during check (parsing, database save, or internal processing). "
-                    "Check container logs, verify network connectivity, HTML parsing results, and database configuration."
-                ))
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"Error monitoring {monitor.url}: unexpected error during check (parsing, database save, or internal processing). "
+                        "Check container logs, verify network connectivity, HTML parsing results, and database configuration."
+                    )
+                    monitor.status ="DOWN"
+                monitor.last_checked_time = timezone.now()
+                monitor.save(update_fields=["status", "last_checked_time"])
+                )
 
     def notify_user(self, username, website, email, status):
         subject = f"Website Status Update: {website} is {status}"
