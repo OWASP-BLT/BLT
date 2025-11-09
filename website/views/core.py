@@ -2937,6 +2937,13 @@ def invite_organization(request):
     context = {}
 
     if request.method == "POST":
+        # Require authentication for POST requests
+        if not request.user.is_authenticated:
+            messages.error(request, "Please log in to send organization invitations.")
+            context["exists"] = False
+            context["show_login_prompt"] = True
+            return render(request, "invite.html", context)
+
         # Handle form submission
         email = request.POST.get("email", "").strip()
         organization_name = request.POST.get("organization_name", "").strip()
@@ -2945,60 +2952,53 @@ def invite_organization(request):
         context["email"] = email
         context["organization_name"] = organization_name
 
-        if request.user.is_authenticated:
-            # Validate both fields are provided first
-            if not (email and organization_name):
-                messages.error(request, "Please provide both email and organization name.")
-                context["exists"] = False
-                return render(request, "invite.html", context)
-
-            # Validate email format
-            try:
-                validate_email(email)
-            except DjangoValidationError:
-                messages.error(request, "Please enter a valid email address.")
-                context["exists"] = False
-                return render(request, "invite.html", context)
-
-            # Validate organization_name length
-            if len(organization_name) > 255:
-                messages.error(request, "Organization name is too long (max 255 characters).")
-                context["exists"] = False
-                return render(request, "invite.html", context)
-
-            # Rate limiting check
-            rate_limit_key = f"invite_org_{request.user.id}"
-            invite_count = cache.get(rate_limit_key, 0)
-            if invite_count >= 10:  # 10 invites per day
-                messages.error(request, "Daily invitation limit reached. Please try again tomorrow.")
-                context["exists"] = False
-                return render(request, "invite.html", context)
-
-            # Create invite record for logged-in users (or get existing one)
-            invite_record, created = InviteOrganization.objects.get_or_create(
-                sender=request.user,
-                email=email,
-                defaults={"organization_name": organization_name},
-            )
-            if not created:
-                # Update organization name if it changed
-                invite_record.organization_name = organization_name
-                invite_record.save()
-
-            # Generate referral link
-            base_url = request.build_absolute_uri(reverse("register_organization"))
-            referral_link = f"{base_url}?ref={invite_record.referral_code}"
-            context["referral_link"] = referral_link
-            context["show_points_message"] = True
-
-            # Increment rate limit counter
-            cache.set(rate_limit_key, invite_count + 1, 86400)  # 24 hours
-        else:
-            # Non-authenticated users cannot send invites
-            messages.error(request, "Please log in to send organization invitations.")
+        # Validate both fields are provided first
+        if not (email and organization_name):
+            messages.error(request, "Please provide both email and organization name.")
             context["exists"] = False
-            context["show_login_prompt"] = True
             return render(request, "invite.html", context)
+
+        # Validate email format
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            messages.error(request, "Please enter a valid email address.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Validate organization_name length
+        if len(organization_name) > 255:
+            messages.error(request, "Organization name is too long (max 255 characters).")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Rate limiting check
+        rate_limit_key = f"invite_org_{request.user.id}"
+        invite_count = cache.get(rate_limit_key, 0)
+        if invite_count >= 10:  # 10 invites per day
+            messages.error(request, "Daily invitation limit reached. Please try again tomorrow.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Create invite record for logged-in users (or get existing one)
+        invite_record, created = InviteOrganization.objects.get_or_create(
+            sender=request.user,
+            email=email,
+            defaults={"organization_name": organization_name},
+        )
+        if not created:
+            # Update organization name if it changed
+            invite_record.organization_name = organization_name
+            invite_record.save()
+
+        # Generate referral link
+        base_url = request.build_absolute_uri(reverse("register_organization"))
+        referral_link = f"{base_url}?ref={invite_record.referral_code}"
+        context["referral_link"] = referral_link
+        context["show_points_message"] = True
+
+        # Increment rate limit counter
+        cache.set(rate_limit_key, invite_count + 1, 86400)  # 24 hours
 
     # Check if user is authenticated for referral tracking (GET request or after POST)
     if request.user.is_authenticated and "referral_link" not in context:
