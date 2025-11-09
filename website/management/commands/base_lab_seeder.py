@@ -1,17 +1,19 @@
+from typing import ClassVar
+
 from django.core.management.base import BaseCommand, CommandError
 
 from website.models import Labs, TaskContent, Tasks
 
 
 class LabSeederCommand(BaseCommand):
-    lab_name = None  # Override in subclass
-    tasks_data = []  # Override in subclass
+    lab_name: ClassVar[str | None] = None  # Override in subclass
+    tasks_data: ClassVar[list] = []  # Override in subclass
 
     def handle(self, *args, **kwargs):
         try:
             lab = Labs.objects.get(name=self.lab_name)
-        except Labs.DoesNotExist:
-            raise CommandError(f"{self.lab_name} lab not found. Please run create_initial_tasks first.")
+        except Labs.DoesNotExist as err:
+            raise CommandError(f"{self.lab_name} lab not found. Please run create_initial_tasks first.") from err
 
         for task_data in self.tasks_data:
             task, created = Tasks.objects.update_or_create(

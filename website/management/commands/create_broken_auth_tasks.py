@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates Broken Authentication / Authentication Bypass lab tasks"
     lab_name = "Broken Authentication"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to Broken Authentication",
             "description": "Overview of authentication failures, their causes, and impacts.",

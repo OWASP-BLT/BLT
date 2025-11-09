@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates Sensitive Data Exposure lab tasks"
     lab_name = "Sensitive Data Exposure"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to Sensitive Data Exposure",
             "description": "Understand what sensitive data exposure is, why it matters, and common sources of leaks.",
