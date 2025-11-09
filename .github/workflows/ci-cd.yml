@@ -22,13 +22,13 @@ jobs:
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
-    permissions: 
-      contents: read  # Minimal permission for checking out code
+    permissions:
+      contents: read # Minimal permission for checking out code
     outputs:
       python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Cache pre-commit hooks
         uses: actions/cache@v4
         with:
@@ -45,7 +45,7 @@ jobs:
       - name: Get Poetry cache directory
         id: poetry-cache
         run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
-      
+
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
@@ -65,7 +65,7 @@ jobs:
     name: Run pre-commit
     needs: setup
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       issues: write
       pull-requests: write
       contents: write
@@ -75,11 +75,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - run: poetry install --with dev
+
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
       - name: Print memory usage
         run: free -h
-
 
   test:
     name: Run Tests
