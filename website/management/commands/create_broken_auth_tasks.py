@@ -1,5 +1,6 @@
 from .base_lab_seeder import LabSeederCommand
 
+
 class Command(LabSeederCommand):
     help = "Creates Broken Authentication / Authentication Bypass lab tasks"
     lab_name = "Broken Authentication"
@@ -152,7 +153,7 @@ class Command(LabSeederCommand):
                 "scenario": "jwt_admin",
                 "target_url": "/admin",
                 "vulnerable_parameters": ["Authorization"],
-                "success_payload": "Bearer token with {\"role\":\"admin\"}",
+                "success_payload": 'Bearer token with {"role":"admin"}',
                 "success_criteria": "Access /admin using forged token.",
                 "hints": [
                     "Set alg:none",

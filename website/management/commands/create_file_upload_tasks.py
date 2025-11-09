@@ -1,5 +1,6 @@
 from .base_lab_seeder import LabSeederCommand
 
+
 class Command(LabSeederCommand):
     help = "Creates File Upload Vulnerabilities lab tasks"
     lab_name = "File Upload Vulnerabilities"

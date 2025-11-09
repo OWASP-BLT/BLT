@@ -1,5 +1,6 @@
 from .base_lab_seeder import LabSeederCommand
 
+
 class Command(LabSeederCommand):
     help = "Creates Insecure Direct Object Reference (IDOR) lab tasks"
     lab_name = "Insecure Direct Object Reference (IDOR)"

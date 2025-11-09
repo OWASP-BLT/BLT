@@ -1,5 +1,6 @@
 from .base_lab_seeder import LabSeederCommand
 
+
 class Command(LabSeederCommand):
     help = "Creates Sensitive Data Exposure lab tasks"
     lab_name = "Sensitive Data Exposure"
