@@ -3002,14 +3002,23 @@ def invite_organization(request):
 
     # Check if user is authenticated for referral tracking (GET request or after POST)
     if request.user.is_authenticated and "referral_link" not in context:
-        # For GET requests, create and persist a sample invite record for tracking
-        # Use atomic get_or_create to avoid duplicate sample invites under concurrent requests
-        sample_invite, created = InviteOrganization.objects.get_or_create(
-            sender=request.user, email="", organization_name=""
-        )
+        # Try to get cached referral link first to avoid DB query on every GET
+        cache_key = f"sample_referral_{request.user.id}"
+        referral_link = cache.get(cache_key)
 
-        base_url = request.build_absolute_uri(reverse("register_organization"))
-        referral_link = f"{base_url}?ref={sample_invite.referral_code}"
+        if not referral_link:
+            # Cache miss - create/retrieve sample invite record
+            # Use placeholder email since EmailField doesn't allow empty strings
+            sample_email = f"sample-{request.user.id}@invite.placeholder"
+            sample_invite, created = InviteOrganization.objects.get_or_create(
+                sender=request.user, email=sample_email, organization_name=""
+            )
+
+            base_url = request.build_absolute_uri(reverse("register_organization"))
+            referral_link = f"{base_url}?ref={sample_invite.referral_code}"
+            # Cache for 24 hours to avoid repeated DB queries
+            cache.set(cache_key, referral_link, 86400)
+
         context["referral_link"] = referral_link
         context["show_points_message"] = True
         context["is_sample_link"] = True  # Flag to indicate this is just for display
