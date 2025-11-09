@@ -93,7 +93,7 @@ def add_badge_icons(apps, schema_editor):
                 os.makedirs(os.path.dirname(media_icon_path), exist_ok=True)
 
                 # Need to copy this image in the media file so that it can be served by django
-                shutil.copy(static_icon_path, media_icon_path)
+                shutil.copyfile(static_icon_path, media_icon_path)
 
                 # Open the copied file and save it to the Badge model
                 with open(media_icon_path, "rb") as f:
