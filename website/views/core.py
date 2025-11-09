@@ -6,7 +6,6 @@ import re
 import subprocess
 import tracemalloc
 import urllib
-import uuid
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -2955,6 +2954,18 @@ def invite_organization(request):
                 context["exists"] = False
                 return render(request, "invite.html", context)
 
+        # Validate organization_name
+        if organization_name:
+            if len(organization_name) > 255:
+                messages.error(request, "Organization name is too long (max 255 characters).")
+                context["exists"] = False
+                return render(request, "invite.html", context)
+        elif not organization_name and email:
+            # Organization name is empty after strip (was whitespace-only)
+            messages.error(request, "Please provide a valid organization name.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
         if request.user.is_authenticated:
             # Rate limiting check
             rate_limit_key = f"invite_org_{request.user.id}"
@@ -2987,22 +2998,25 @@ def invite_organization(request):
 
                 # Increment rate limit counter
                 cache.set(rate_limit_key, invite_count + 1, 86400)  # 24 hours
-        elif email and organization_name:
-            # For non-logged-in users, just show the email template without creating records
-            context["show_login_prompt"] = True
-        elif email or organization_name:
-            # Handle partial submission for non-logged-in users
-            messages.error(request, "Please provide both email and organization name.")
+        else:
+            # Non-authenticated users cannot send invites
+            messages.error(request, "Please log in to send organization invitations.")
             context["exists"] = False
+            context["show_login_prompt"] = True
             return render(request, "invite.html", context)
 
     # Check if user is authenticated for referral tracking (GET request or after POST)
     if request.user.is_authenticated and "referral_link" not in context:
-        # For GET requests, generate a sample referral link without creating records
+        # For GET requests, create and persist a sample invite record for tracking
+        # Check if a sample invite already exists for this user
+        sample_invite = InviteOrganization.objects.filter(sender=request.user, email="", organization_name="").first()
 
-        sample_ref_code = str(uuid.uuid4())
+        if not sample_invite:
+            # Create a new sample invite record
+            sample_invite = InviteOrganization.objects.create(sender=request.user, email="", organization_name="")
+
         base_url = request.build_absolute_uri(reverse("register_organization"))
-        referral_link = f"{base_url}?ref={sample_ref_code}"
+        referral_link = f"{base_url}?ref={sample_invite.referral_code}"
         context["referral_link"] = referral_link
         context["show_points_message"] = True
         context["is_sample_link"] = True  # Flag to indicate this is just for display
@@ -3013,7 +3027,8 @@ def invite_organization(request):
     email = context.get("email", "")
     organization_name = context.get("organization_name", "")
 
-    if email and organization_name:
+    # Only generate email content for authenticated users with valid data
+    if email and organization_name and request.user.is_authenticated:
         context["exists"] = True
         context["email"] = email
         context["organization_name"] = organization_name
@@ -3023,11 +3038,8 @@ def invite_organization(request):
         email_subject = "Invitation to Join BLT (Bug Logging Tool) - Enhanced Security Testing Platform"
 
         org_name = organization_name if organization_name else "your organization"
-        sender_name = (
-            request.user.get_full_name() or request.user.username if request.user.is_authenticated else "BLT Team"
-        )
-        default_referral_url = request.build_absolute_uri(reverse("register_organization"))
-        referral_link = context.get("referral_link", default_referral_url)
+        sender_name = request.user.get_full_name() or request.user.username
+        referral_link = context.get("referral_link", "")
 
         try:
             email_body = render_to_string(
