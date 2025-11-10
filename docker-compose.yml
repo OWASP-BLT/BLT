@@ -1,6 +1,8 @@
 services:
   db:
-    image: postgres
+    image: postgres:17
+    env_file:
+      - .env
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -10,10 +12,15 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1",
+        ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 30
+      start_period: 60s
     container_name: postgres-db
     restart: always
 
