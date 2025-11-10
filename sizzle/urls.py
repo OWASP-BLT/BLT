@@ -12,8 +12,6 @@ from sizzle.views import (
     user_sizzle_report,
 )
 
-app_name = "sizzle"
-
 urlpatterns = [
     path("", sizzle, name="sizzle"),
     path("check-in/", checkIN, name="checkIN"),
