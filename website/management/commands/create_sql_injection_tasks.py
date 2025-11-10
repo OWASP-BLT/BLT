@@ -1,25 +1,17 @@
-from django.core.management.base import BaseCommand
-
-from website.models import Labs, TaskContent, Tasks
+from .base_lab_seeder import LabSeederCommand
 
 
-class Command(BaseCommand):
-    help = "Creates SQL injection lab tasks with theory and simulation content"
+class Command(LabSeederCommand):
+    help = "Creates SQL Injection lab tasks with theory and simulation content"
+    lab_name = "SQL Injection"
 
-    def handle(self, *args, **kwargs):
-        try:
-            sql_lab = Labs.objects.get(name="SQL Injection")
-        except Labs.DoesNotExist:
-            self.stdout.write(self.style.ERROR("SQL Injection lab not found. Please run create_initial_labs first."))
-            return
-
-        tasks_data = [
-            {
-                "name": "Introduction to SQL Injection",
-                "description": "Learn the basics of SQL injection vulnerabilities and how they occur.",
-                "task_type": "theory",
-                "order": 1,
-                "theory_content": """
+    tasks_data = [
+        {
+            "name": "Introduction to SQL Injection",
+            "description": "Learn the basics of SQL injection vulnerabilities and how they occur.",
+            "task_type": "theory",
+            "order": 1,
+            "theory_content": """
                 <h2>What is SQL Injection?</h2>
                 <p>SQL injection is a code injection technique that exploits a security vulnerability in an application's software. The vulnerability occurs when user input is either incorrectly filtered for string literal escape characters or user input is not strongly typed and unexpectedly executed.</p>
                 
@@ -36,22 +28,22 @@ class Command(BaseCommand):
                 <pre><code>
                 String query = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'";
                 </code></pre>
-                """,
-                "mcq_question": "What makes an application vulnerable to SQL injection?",
-                "mcq_options": [
-                    "A) Improper input validation and sanitization",
-                    "B) Using strong passwords",
-                    "C) Having too many database tables",
-                    "D) Using encrypted connections",
-                ],
-                "correct_answer": "A",
-            },
-            {
-                "name": "Identifying SQL Injection Points",
-                "description": "Learn how to identify potential SQL injection vulnerabilities in web applications.",
-                "task_type": "theory",
-                "order": 2,
-                "theory_content": """
+            """,
+            "mcq_question": "What makes an application vulnerable to SQL injection?",
+            "mcq_options": [
+                "A) Improper input validation and sanitization",
+                "B) Using strong passwords",
+                "C) Having too many database tables",
+                "D) Using encrypted connections",
+            ],
+            "correct_answer": "A",
+        },
+        {
+            "name": "Identifying SQL Injection Points",
+            "description": "Learn how to identify potential SQL injection vulnerabilities in web applications.",
+            "task_type": "theory",
+            "order": 2,
+            "theory_content": """
                 <h2>Finding SQL Injection Vulnerabilities</h2>
                 <p>SQL injection vulnerabilities can be found in various parts of web applications:</p>
                 
@@ -73,41 +65,41 @@ class Command(BaseCommand):
                     <li>SQL comments (-- or /*) - Comment out rest of query</li>
                     <li>Boolean conditions (1=1, 1=2) - Test logic manipulation</li>
                 </ul>
-                """,
-                "mcq_question": "Which of the following is NOT a common SQL injection testing payload?",
-                "mcq_options": [
-                    "A) Single quote (')",
-                    "B) Boolean condition (1=1)",
-                    "C) HTML tags (<script>)",
-                    "D) SQL comment (--)",
+            """,
+            "mcq_question": "Which of the following is NOT a common SQL injection testing payload?",
+            "mcq_options": [
+                "A) Single quote (')",
+                "B) Boolean condition (1=1)",
+                "C) HTML tags (<script>)",
+                "D) SQL comment (--)",
+            ],
+            "correct_answer": "C",
+        },
+        {
+            "name": "Basic SQL Injection - Login Bypass",
+            "description": "Practice bypassing login authentication using SQL injection.",
+            "task_type": "simulation",
+            "order": 3,
+            "simulation_config": {
+                "type": "login_bypass",
+                "scenario": "vulnerable_login",
+                "target_url": "/vulnerable-login",
+                "vulnerable_parameters": ["username", "password"],
+                "success_payload": "admin' --",
+                "hints": [
+                    "Try using SQL comments to bypass password check",
+                    "The application uses single quotes around the username",
+                    "Remember that -- comments out the rest of the SQL query",
                 ],
-                "correct_answer": "C",
+                "expected_result": "Successfully logged in as admin without knowing the password",
             },
-            {
-                "name": "Basic SQL Injection - Login Bypass",
-                "description": "Practice bypassing login authentication using SQL injection.",
-                "task_type": "simulation",
-                "order": 3,
-                "simulation_config": {
-                    "type": "login_bypass",
-                    "scenario": "vulnerable_login",
-                    "target_url": "/vulnerable-login",
-                    "vulnerable_parameters": ["username", "password"],
-                    "success_payload": "admin' --",
-                    "hints": [
-                        "Try using SQL comments to bypass password check",
-                        "The application uses single quotes around the username",
-                        "Remember that -- comments out the rest of the SQL query",
-                    ],
-                    "expected_result": "Successfully logged in as admin without knowing the password",
-                },
-            },
-            {
-                "name": "Union-Based SQL Injection",
-                "description": "Learn about Union-based SQL injection attacks to extract data.",
-                "task_type": "theory",
-                "order": 4,
-                "theory_content": """
+        },
+        {
+            "name": "Union-Based SQL Injection",
+            "description": "Learn about Union-based SQL injection attacks to extract data.",
+            "task_type": "theory",
+            "order": 4,
+            "theory_content": """
                 <h2>Union-Based SQL Injection</h2>
                 <p>Union-based SQL injection is a technique that leverages the UNION SQL operator to combine the results of two or more SELECT statements into a single result.</p>
                 
@@ -130,45 +122,45 @@ class Command(BaseCommand):
                 <pre><code>
                 ' UNION SELECT username, password FROM users--
                 </code></pre>
-                """,
-                "mcq_question": "What is required for a successful UNION-based SQL injection?",
-                "mcq_options": [
-                    "A) The application must be written in PHP",
-                    "B) Same number of columns and compatible data types",
-                    "C) The database must be MySQL",
-                    "D) The user must have admin privileges",
-                ],
-                "correct_answer": "B",
-            },
-            {
-                "name": "Union Attack - Data Extraction",
-                "description": "Practice extracting sensitive data using Union-based SQL injection.",
-                "task_type": "simulation",
-                "order": 5,
-                "simulation_config": {
-                    "type": "union_injection",
-                    "scenario": "data_extraction",
-                    "target_url": "/vulnerable-search",
-                    "vulnerable_parameters": ["search"],
-                    "table_structure": {
-                        "users": ["id", "username", "password", "email"],
-                        "products": ["id", "name", "price", "description"],
-                    },
-                    "success_payload": "' UNION SELECT id, username, password, email FROM users--",
-                    "success_criteria": "Extract all usernames and passwords from users table",
-                    "hints": [
-                        "First determine the number of columns using ORDER BY",
-                        "Use UNION SELECT to combine with your malicious query",
-                        "The original query selects 4 columns from products table",
-                    ],
+            """,
+            "mcq_question": "What is required for a successful UNION-based SQL injection?",
+            "mcq_options": [
+                "A) The application must be written in PHP",
+                "B) Same number of columns and compatible data types",
+                "C) The database must be MySQL",
+                "D) The user must have admin privileges",
+            ],
+            "correct_answer": "B",
+        },
+        {
+            "name": "Union Attack - Data Extraction",
+            "description": "Practice extracting sensitive data using Union-based SQL injection.",
+            "task_type": "simulation",
+            "order": 5,
+            "simulation_config": {
+                "type": "union_injection",
+                "scenario": "data_extraction",
+                "target_url": "/vulnerable-search",
+                "vulnerable_parameters": ["search"],
+                "table_structure": {
+                    "users": ["id", "username", "password", "email"],
+                    "products": ["id", "name", "price", "description"],
                 },
+                "success_payload": "' UNION SELECT id, username, password, email FROM users--",
+                "success_criteria": "Extract all usernames and passwords from users table",
+                "hints": [
+                    "First determine the number of columns using ORDER BY",
+                    "Use UNION SELECT to combine with your malicious query",
+                    "The original query selects 4 columns from products table",
+                ],
             },
-            {
-                "name": "Boolean-Based Blind SQL Injection",
-                "description": "Learn about blind SQL injection when no data is returned directly.",
-                "task_type": "theory",
-                "order": 6,
-                "theory_content": """
+        },
+        {
+            "name": "Boolean-Based Blind SQL Injection",
+            "description": "Learn about blind SQL injection when no data is returned directly.",
+            "task_type": "theory",
+            "order": 6,
+            "theory_content": """
                 <h2>Boolean-Based Blind SQL Injection</h2>
                 <p>Blind SQL injection occurs when an application is vulnerable to SQL injection but HTTP responses don't contain query results or database errors.</p>
                 
@@ -191,45 +183,45 @@ class Command(BaseCommand):
                 <pre><code>
                 ' AND (SELECT SUBSTRING(username,1,1) FROM users WHERE id=1)='a'--
                 </code></pre>
-                """,
-                "mcq_question": "In Boolean-based blind SQL injection, how do you extract data?",
-                "mcq_options": [
-                    "A) By reading error messages",
-                    "B) By analyzing response differences for true/false conditions",
-                    "C) By viewing database tables directly",
-                    "D) By measuring response timing only",
+            """,
+            "mcq_question": "In Boolean-based blind SQL injection, how do you extract data?",
+            "mcq_options": [
+                "A) By reading error messages",
+                "B) By analyzing response differences for true/false conditions",
+                "C) By viewing database tables directly",
+                "D) By measuring response timing only",
+            ],
+            "correct_answer": "B",
+        },
+        {
+            "name": "Blind SQL Injection - Character Extraction",
+            "description": "Practice extracting data character by character using blind techniques.",
+            "task_type": "simulation",
+            "order": 7,
+            "simulation_config": {
+                "type": "blind_injection",
+                "scenario": "character_extraction",
+                "target_url": "/vulnerable-profile",
+                "vulnerable_parameters": ["user_id"],
+                "blind_type": "boolean",
+                "target_data": "admin_password",
+                "success_payload": "' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username='admin')='p'--",
+                "success_criteria": "Extract the first 5 characters of admin password",
+                "hints": [
+                    "Use AND conditions to test character values",
+                    "Compare response content for true/false conditions",
+                    "Use SUBSTRING or SUBSTR to extract individual characters",
+                    "ASCII values can help with character comparison",
                 ],
-                "correct_answer": "B",
+                "expected_approach": "Boolean-based character-by-character extraction",
             },
-            {
-                "name": "Blind SQL Injection - Character Extraction",
-                "description": "Practice extracting data character by character using blind techniques.",
-                "task_type": "simulation",
-                "order": 7,
-                "simulation_config": {
-                    "type": "blind_injection",
-                    "scenario": "character_extraction",
-                    "target_url": "/vulnerable-profile",
-                    "vulnerable_parameters": ["user_id"],
-                    "blind_type": "boolean",
-                    "target_data": "admin_password",
-                    "success_payload": "' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username='admin')='p'--",
-                    "success_criteria": "Extract the first 5 characters of admin password",
-                    "hints": [
-                        "Use AND conditions to test character values",
-                        "Compare response content for true/false conditions",
-                        "Use SUBSTRING or SUBSTR to extract individual characters",
-                        "ASCII values can help with character comparison",
-                    ],
-                    "expected_approach": "Boolean-based character-by-character extraction",
-                },
-            },
-            {
-                "name": "Time-Based Blind SQL Injection",
-                "description": "Learn about time-based blind SQL injection techniques.",
-                "task_type": "theory",
-                "order": 8,
-                "theory_content": """
+        },
+        {
+            "name": "Time-Based Blind SQL Injection",
+            "description": "Learn about time-based blind SQL injection techniques.",
+            "task_type": "theory",
+            "order": 8,
+            "theory_content": """
                 <h2>Time-Based Blind SQL Injection</h2>
                 <p>Time-based blind SQL injection is used when Boolean-based techniques don't work. It relies on injecting SQL queries that cause the database to wait for a specified amount of time.</p>
                 
@@ -251,45 +243,45 @@ class Command(BaseCommand):
                 <pre><code>
                 ' AND IF((SELECT SUBSTRING(password,1,1) FROM users WHERE username='admin')='p', SLEEP(5), 0)--
                 </code></pre>
-                """,
-                "mcq_question": "What is the main indicator of successful time-based SQL injection?",
-                "mcq_options": [
-                    "A) Error messages in the response",
-                    "B) Changed content in the response",
-                    "C) Increased response time",
-                    "D) HTTP status code changes",
+            """,
+            "mcq_question": "What is the main indicator of successful time-based SQL injection?",
+            "mcq_options": [
+                "A) Error messages in the response",
+                "B) Changed content in the response",
+                "C) Increased response time",
+                "D) HTTP status code changes",
+            ],
+            "correct_answer": "C",
+        },
+        {
+            "name": "Time-Based Attack Simulation",
+            "description": "Practice time-based blind SQL injection to extract sensitive information.",
+            "task_type": "simulation",
+            "order": 9,
+            "simulation_config": {
+                "type": "time_based_injection",
+                "scenario": "password_extraction",
+                "target_url": "/vulnerable-news",
+                "vulnerable_parameters": ["article_id"],
+                "database_type": "mysql",
+                "time_function": "SLEEP",
+                "target_data": "admin_password_length",
+                "success_payload": "' AND IF((SELECT LENGTH(password) FROM users WHERE username='admin')=8, SLEEP(5), 0)--",
+                "success_criteria": "Determine the length of admin password using time delays",
+                "hints": [
+                    "Use SLEEP(5) to create time delays",
+                    "Test different password lengths using LENGTH() function",
+                    "Measure response times to detect successful conditions",
+                    "A 5-second delay indicates a true condition",
                 ],
-                "correct_answer": "C",
             },
-            {
-                "name": "Time-Based Attack Simulation",
-                "description": "Practice time-based blind SQL injection to extract sensitive information.",
-                "task_type": "simulation",
-                "order": 9,
-                "simulation_config": {
-                    "type": "time_based_injection",
-                    "scenario": "password_extraction",
-                    "target_url": "/vulnerable-news",
-                    "vulnerable_parameters": ["article_id"],
-                    "database_type": "mysql",
-                    "time_function": "SLEEP",
-                    "target_data": "admin_password_length",
-                    "success_payload": "' AND IF((SELECT LENGTH(password) FROM users WHERE username='admin')=8, SLEEP(5), 0)--",
-                    "success_criteria": "Determine the length of admin password using time delays",
-                    "hints": [
-                        "Use SLEEP(5) to create time delays",
-                        "Test different password lengths using LENGTH() function",
-                        "Measure response times to detect successful conditions",
-                        "A 5-second delay indicates a true condition",
-                    ],
-                },
-            },
-            {
-                "name": "Advanced SQL Injection Prevention",
-                "description": "Learn comprehensive strategies to prevent SQL injection attacks.",
-                "task_type": "theory",
-                "order": 10,
-                "theory_content": """
+        },
+        {
+            "name": "Advanced SQL Injection Prevention",
+            "description": "Learn comprehensive strategies to prevent SQL injection attacks.",
+            "task_type": "theory",
+            "order": 10,
+            "theory_content": """
                 <h2>SQL Injection Prevention</h2>
                 <p>Preventing SQL injection requires a multi-layered approach combining secure coding practices and proper application architecture.</p>
                 
@@ -319,59 +311,14 @@ class Command(BaseCommand):
                     <li>Regular security testing</li>
                     <li>Keep software updated</li>
                 </ul>
-                """,
-                "mcq_question": "What is the most effective primary defense against SQL injection?",
-                "mcq_options": [
-                    "A) Input validation and filtering",
-                    "B) Using a Web Application Firewall",
-                    "C) Prepared statements with parameterized queries",
-                    "D) Encrypting database connections",
-                ],
-                "correct_answer": "C",
-            },
-        ]
-
-        for task_data in tasks_data:
-            task, created = Tasks.objects.update_or_create(
-                lab=sql_lab,
-                order=task_data["order"],  # key on unique pair
-                defaults={
-                    "name": task_data["name"],
-                    "description": task_data["description"],
-                    "task_type": task_data["task_type"],
-                    "is_active": True,
-                },
-            )
-
-            content_data = {}
-
-            if task_data["task_type"] == "theory":
-                content_data.update(
-                    {
-                        "theory_content": task_data["theory_content"],
-                        "mcq_question": task_data["mcq_question"],
-                        "mcq_options": task_data["mcq_options"],
-                        "correct_answer": task_data["correct_answer"],
-                    }
-                )
-            else:
-                content_data.update(
-                    {
-                        "simulation_config": task_data["simulation_config"],
-                    }
-                )
-
-            task_content, content_created = TaskContent.objects.update_or_create(task=task, defaults=content_data)
-
-            if created:
-                self.stdout.write(self.style.SUCCESS(f'Created task: "{task.name}"'))
-            else:
-                self.stdout.write(self.style.WARNING(f'Task "{task.name}" already exists'))
-
-            if content_created:
-                self.stdout.write(self.style.SUCCESS(f'Created content for: "{task.name}"'))
-            else:
-                self.stdout.write(self.style.SUCCESS(f'Updated content for: "{task.name}"'))
-
-        sql_lab.update_total_tasks()
-        self.stdout.write(self.style.SUCCESS(f"Updated SQL Injection lab with {sql_lab.total_tasks} tasks"))
+            """,
+            "mcq_question": "What is the most effective primary defense against SQL injection?",
+            "mcq_options": [
+                "A) Input validation and filtering",
+                "B) Using a Web Application Firewall",
+                "C) Prepared statements with parameterized queries",
+                "D) Encrypting database connections",
+            ],
+            "correct_answer": "C",
+        },
+    ]
