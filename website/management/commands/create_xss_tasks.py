@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates Cross-Site Scripting (XSS) lab tasks with theory and simulation content"
     lab_name = "Cross-Site Scripting (XSS)"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to Cross-Site Scripting",
             "description": "Learn the basics of XSS vulnerabilities and how they occur in web applications.",

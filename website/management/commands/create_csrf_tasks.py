@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates Cross-Site Request Forgery (CSRF) lab tasks"
     lab_name = "Cross-Site Request Forgery"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to CSRF",
             "description": "Learn the fundamentals of Cross-Site Request Forgery attacks and their impact.",
@@ -19,7 +21,7 @@ class Command(LabSeederCommand):
                 <ol>
                     <li>User logs into a legitimate website</li>
                     <li>User visits a malicious website</li>
-                    <li>Malicious site sends unauthorized request using victim’s session</li>
+                    <li>Malicious site sends unauthorized request using victim's session</li>
                 </ol>
 
                 <h3>Common Attack Vectors</h3>

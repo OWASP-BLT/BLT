@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates Command Injection lab tasks"
     lab_name = "Command Injection"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "order": 1,
             "name": "Understanding Command Injection",
