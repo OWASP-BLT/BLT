@@ -54,6 +54,7 @@ class Command(LabSeederCommand):
             "description": "Practice basic command injection with simple payloads",
             "task_type": "simulation",
             "simulation_config": {
+                "type": "basic_command_injection",
                 "scenario": "ping_feature",
                 "vulnerable_parameters": ["ip_address"],
                 "success_criteria": "Execute a command that shows the current directory contents",
@@ -70,6 +71,7 @@ class Command(LabSeederCommand):
             "description": "Use pipe operators for command injection",
             "task_type": "simulation",
             "simulation_config": {
+                "type": "pipes_command_injection",
                 "scenario": "ping_filter_semicolon",
                 "vulnerable_parameters": ["ip_address"],
                 "success_criteria": "Execute a command that shows system information",
@@ -86,6 +88,7 @@ class Command(LabSeederCommand):
             "description": "Practice blind command injection techniques",
             "task_type": "simulation",
             "simulation_config": {
+                "type": "blind_command_injection",
                 "scenario": "blind_injection",
                 "vulnerable_parameters": ["ip_address"],
                 "success_criteria": "Cause a measurable time delay",
@@ -124,6 +127,7 @@ class Command(LabSeederCommand):
             "description": "Practice advanced command injection with encoding",
             "task_type": "simulation",
             "simulation_config": {
+                "type": "advanced_command_injection",
                 "scenario": "filter_bypass",
                 "vulnerable_parameters": ["ip_address"],
                 "success_criteria": "Execute a command that shows the current user",
