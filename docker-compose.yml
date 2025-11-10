@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres
+    image: postgres:17.6
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
