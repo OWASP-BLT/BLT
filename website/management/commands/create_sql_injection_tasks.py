@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from .base_lab_seeder import LabSeederCommand
 
 
@@ -5,7 +7,7 @@ class Command(LabSeederCommand):
     help = "Creates SQL Injection lab tasks with theory and simulation content"
     lab_name = "SQL Injection"
 
-    tasks_data = [
+    tasks_data: ClassVar[list[dict[str, Any]]] = [
         {
             "name": "Introduction to SQL Injection",
             "description": "Learn the basics of SQL injection vulnerabilities and how they occur.",
