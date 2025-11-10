@@ -203,5 +203,31 @@
                 </div>
             </div>
         </div>
+        <!-- Video Submission Form -->
+        <div class="mt-12 max-w-3xl mx-auto">
+            <h2 class="text-2xl font-semibold mb-6 text-center">Add a new educational video</h2>
+            <form id="add-video-form" method="post" action="{% url 'add_video' %}" class="bg-white shadow-md rounded-lg p-6">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="video_url" class="block text-sm font-medium text-gray-700 mb-2">Video URL</label>
+                    <input type="url"
+                           name="video_url"
+                           id="video_url"
+                           placeholder="Enter YouTube or Vimeo video URL"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                           required>
+                    <p class="mt-1 text-sm text-gray-500">Enter the full URL to the YouTube or Vimeo video.</p>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="submit"
+                            class="px-6 py-2 bg-[#e74c3c] text-white font-semibold rounded-md shadow-md hover:bg-[#c0392b] transition">Add Video</button>
+                </div>
+                <div id="error-message" class="mt-4 hidden"></div>
+                <div id="success-message" class="mt-4 hidden"></div>
+            </form>
+        </div>
     </div>
 {% endblock content %}
+{% block extra_js %}
+    <script src="{% static 'js/education-video-submission.js' %}"></script>
+{% endblock extra_js %}
