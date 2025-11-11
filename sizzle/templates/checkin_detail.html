@@ -1,8 +1,10 @@
-{% extends parent_base|default:"base.html" %}
+{% extends parent_base|default:"minimal_base.html" %}
 {% load static %}
 {% block content %}
     <div class="bg-gray-100 min-h-screen p-6">
-        {% include "includes/sidenav.html" %}
+        {% if sizzle_has_sidenav %}
+            {% include "includes/sidenav.html" %}
+        {% endif %}
         <div class="main-content w-full max-w-2xl mx-auto">
             <div class="flex justify-between items-center mb-8 mt-8">
                 <h1 class="text-4xl font-extrabold text-gray-800">Check-In Details</h1>

@@ -16,7 +16,9 @@
     Access the Sizzle report for {{ user.username }} to track daily activities, issue titles, durations, and start times. Get an overview of their work progress and time management.
 {% endblock og_description %}
 {% block content %}
-    {% include "includes/sidenav.html" %}
+        {% if sizzle_has_sidenav %}
+            {% include "includes/sidenav.html" %}
+        {% endif %}
     <div class="container">
         <h1>{{ user.username }}'s Sizzle Report</h1>
         <table class="table">

@@ -21,7 +21,9 @@
     <script src="https://cdn.tailwindcss.com" defer></script>
     <div class="container mx-auto mt-12 p-6 bg-white rounded-lg shadow-md">
         <!-- Left Navigation -->
-        {% include "includes/sidenav.html" %}
+        {% if sizzle_has_sidenav %}
+            {% include "includes/sidenav.html" %}
+        {% endif %}
         <!-- Message Container -->
         <div id="message-container" class="mb-4" aria-live="polite"></div>
         <!-- Start Time Log Form -->

@@ -18,7 +18,9 @@
 {% block content %}
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
-        {% include "includes/sidenav.html" %}
+        {% if sizzle_has_sidenav %}
+            {% include "includes/sidenav.html" %}
+        {% endif %}
         <!-- Main Content Section -->
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">

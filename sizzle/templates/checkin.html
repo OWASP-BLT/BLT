@@ -5,7 +5,9 @@
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <div class="container mx-auto p-6">
-        {% include "includes/sidenav.html" %}
+        {% if sizzle_has_sidenav %}
+            {% include "includes/sidenav.html" %}
+        {% endif %}
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
                 <h1 class="text-4xl font-semibold text-gray-800">Check-In Reports</h1>

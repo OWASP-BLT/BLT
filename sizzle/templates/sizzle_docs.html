@@ -18,7 +18,9 @@
 {% block content %}
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
-        {% include "includes/sidenav.html" %}
+        {% if sizzle_has_sidenav %}
+            {% include "includes/sidenav.html" %}
+        {% endif %}
         <!-- Main Content Section -->
         <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
             <h1 class="text-center text-3xl font-bold text-gray-800 mb-8">How to Use Sizzle</h1>
