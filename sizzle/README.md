@@ -1,4 +1,4 @@
-# Django Sizzle
+# Sizzle
 
 A pluggable Django app for daily check-ins, time tracking, and team activity monitoring. Track your team's progress, manage daily status reports, and visualize productivity with built-in leaderboards and streak tracking.
 
@@ -334,51 +334,121 @@ User preferences for reminders.
 
 ## Management Commands
 
-Sizzle includes several management commands:
+Sizzle includes several management commands for automated tasks:
 
-### send_daily_reminders
-Send email reminders to users who haven't checked in today.
+### Daily Check-in Reminders
+Send in-app notifications to remind users to submit their daily check-in.
 
-```
-python manage.py send_daily_reminders
-```
-
-**Cron setup**:
-```
-0 9 * * * cd /path/to/project && python manage.py send_daily_reminders
+```bash
+python manage.py daily_checkin_reminder
 ```
 
-### slack_daily_timelogs
-Post daily time log summaries to Slack (requires Slack integration).
+**What it does:**
+- Finds all users in organizations where `check_ins_enabled=True`
+- Creates Notification objects for each user
+- Links to `/add-sizzle-checkin/` URL
 
+**Dependencies:**
+- UserProfile model (has team field)
+- Notification model (website app)
+- Organization's `check_ins_enabled` flag
+
+**Cron setup:**
+```bash
+0 9 * * * cd /path/to/project && python manage.py daily_checkin_reminder
 ```
+
+### Email Reminder System
+Send email reminders to users based on their personal ReminderSettings.
+
+```bash
+python manage.py cron_send_reminders
+```
+
+**What it does:**
+- Checks each user's ReminderSettings for:
+  - `enabled=True`
+  - `reminder_time` matches current time
+  - `reminder_days` includes today
+- Checks if user hasn't checked in today (`UserProfile.last_check_in`)
+- Sends personalized email reminders
+- Logs all activity to `logs/reminder_emails.log`
+
+**Advanced features:**
+- Respects timezone settings
+- Configurable days of week
+- Tracks reminder history
+- Random delays to avoid email spam detection
+
+**Cron setup (runs every hour):**
+```bash
+0 * * * * cd /path/to/project && python manage.py cron_send_reminders
+```
+
+### Slack Daily Timelogs
+Post daily timelog summaries to Slack channels.
+
+```bash
 python manage.py slack_daily_timelogs
 ```
 
-### calculate_streaks
-Recalculate check-in streaks for all users.
+**What it does:**
+- Runs every hour (checks `current_hour_utc`)
+- For each SlackIntegration where:
+  - `daily_updates=True`
+  - `daily_update_time` matches current hour
+- Fetches all TimeLog entries from last 24 hours for that organization
+- Formats summary message with:
+  - Task names
+  - Start/end times
+  - GitHub issue URLs
+  - Total time worked
+- Posts to configured Slack channel
 
+**Dependencies:**
+- SlackIntegration model
+- Organization model
+- TimeLog model
+- slack-bolt Python package
+- Valid Slack bot tokens
+
+**Example output:**
 ```
-python manage.py calculate_streaks
+### Time Log Summary ###
+
+Task: Bug fix - Issue #123
+Start: 2024-11-08 09:00:00
+End: 2024-11-08 11:30:00
+Issue URL: https://github.com/org/repo/issues/123
+
+Task: Feature development - Issue #456
+Start: 2024-11-08 13:00:00
+End: 2024-11-08 16:00:00
+Issue URL: https://github.com/org/repo/issues/456
+
+Total Time: 5 hours, 30 minutes, 0 seconds
 ```
 
-## API Endpoints
-
-Sizzle provides REST API endpoints:
-
-### GET /sizzle/api/timelogsreport/
-Returns time log data in JSON format.
-
-**Response**:
+**Cron setup (runs every hour):**
+```bash
+0 * * * * cd /path/to/project && python manage.py slack_daily_timelogs
 ```
-[
-  {
-    "user": "john_doe",
-    "hours": 8.0,
-    "date": "2025-11-08",
-    "task": "Development"
-  }
-]
+
+### Run All Sizzle Daily Tasks
+Master command that runs all Sizzle-related daily tasks.
+
+```bash
+python manage.py run_sizzle_daily
+```
+
+**What it does:**
+- Calls `daily_checkin_reminder`
+- Calls `cron_send_reminders`
+- Provides centralized logging and error handling
+
+**Cron setup (once daily):**
+```bash
+0 9 * * * cd /path/to/project && python manage.py run_sizzle_daily
 ```
 
 ## URLs Reference

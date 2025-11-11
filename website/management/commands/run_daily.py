@@ -42,13 +42,10 @@ class Command(BaseCommand):
             except Exception as e:
                 logger.error("Error fetching GSoC PRs", exc_info=True)
             try:
-                call_command("daily_checkin_reminder")
+                # Run all sizzle-related daily tasks
+                call_command("run_sizzle_daily")
             except Exception as e:
-                logger.error("Error sending daily checkin reminders", exc_info=True)
-            try:
-                call_command("cron_send_reminders")
-            except Exception as e:
-                logger.error("Error sending user reminders", exc_info=True)
+                logger.error("Error running Sizzle daily tasks", exc_info=True)
         except Exception as e:
             logger.error("Error in daily tasks", exc_info=True)
             raise
