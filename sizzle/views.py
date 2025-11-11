@@ -256,7 +256,7 @@ def sizzle_daily_log(request):
     try:
         if request.method == "GET":
             reports = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
-            return render(request, "sizzle/sizzle_daily_status.html", {"reports": reports})
+            return render(request, "sizzle_daily_status.html", {"reports": reports})
 
         if request.method == "POST":
             previous_work = request.POST.get("previous_work")
