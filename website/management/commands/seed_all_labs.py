@@ -17,10 +17,12 @@ ALL_LABS = [BrokenAuth, DataExposure, FileUpload, IDOR, OpenRedirect, SSRF, XSS,
 class Command(BaseCommand):
     help = "Seeds ALL labs at once (theory + simulation)."
 
-    def handle(self, *args, **kwargs):
+    def handle(self, *_args, **_kwargs):
         for Seeder in ALL_LABS:
             self.stdout.write(self.style.WARNING(f"Seeding: {Seeder.lab_name}"))
             seeder = Seeder()
+            seeder.stdout = self.stdout
+            seeder.stderr = self.stderr
             seeder.handle()
 
         self.stdout.write(self.style.SUCCESS("All labs seeded successfully"))
