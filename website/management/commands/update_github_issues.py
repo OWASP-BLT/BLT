@@ -144,8 +144,10 @@ class Command(LoggedBaseCommand):
                                     if reviewer_login:
                                         # Try to find the reviewer's UserProfile
                                         try:
+                                            # Construct the expected URL for an exact match
+                                            expected_github_url = f"https://github.com/{reviewer_login}"
                                             reviewer_profile = UserProfile.objects.filter(
-                                                github_url__icontains=reviewer_login
+                                                github_url__iexact=expected_github_url
                                             ).first()
 
                                             if reviewer_profile:
@@ -157,14 +159,18 @@ class Command(LoggedBaseCommand):
                                                         "body": review.get("body", ""),
                                                         "state": review["state"],
                                                         "submitted_at": timezone.make_aware(
-                                                            datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ")
+                                                            datetime.strptime(
+                                                                review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ"
+                                                            )
                                                         ),
                                                         "url": review["html_url"],
                                                     },
                                                 )
                                         except Exception as e:
                                             self.stdout.write(
-                                                self.style.WARNING(f"Could not find UserProfile for reviewer {reviewer_login}: {str(e)}")
+                                                self.style.WARNING(
+                                                    f"Could not find UserProfile for reviewer {reviewer_login}: {str(e)}"
+                                                )
                                             )
                         except requests.exceptions.RequestException as e:
                             self.stdout.write(
