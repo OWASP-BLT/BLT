@@ -71,7 +71,44 @@ urlpatterns = [
 ]
 ```
 
-### 4. Run Migrations
+### 4. Add Context Processor (For Template Integration)
+
+Add the context processor to your `settings.py` to enable seamless template integration:
+
+```python
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],  # Your templates directory
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                
+                # Add Sizzle context processor for template integration
+                'sizzle.context_processors.sizzle_context',
+            ],
+        },
+    },
+]
+```
+
+### 5. Configure Template Integration (Optional)
+
+To integrate Sizzle with your project's existing layout:
+
+```python
+# In settings.py - Tell Sizzle which base template to extend from your project
+SIZZLE_PARENT_BASE = 'base.html'  # Your main project template
+
+# If your project has sidenav/navigation that Sizzle should include
+SIZZLE_SHOW_SIDENAV = True  # Default: True
+```
+
+### 6. Run Migrations
 
 ```
 python manage.py migrate sizzle
@@ -82,13 +119,13 @@ This creates three database tables:
 - `sizzle_timelog`: Stores time tracking entries
 - `sizzle_remindersettings`: Stores user reminder preferences
 
-### 5. Collect Static Files
+### 7. Collect Static Files
 
 ```
 python manage.py collectstatic
 ```
 
-### 6. Create Superuser (if needed)
+### 8. Create Superuser (if needed)
 
 ```
 python manage.py createsuperuser
