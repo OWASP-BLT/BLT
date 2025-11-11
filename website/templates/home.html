@@ -230,7 +230,7 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         {% for hackathon in recent_hackathons %}
-                            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+                            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200 flex flex-col">
                                 {% if hackathon.banner_image %}
                                     <div class="h-48 bg-cover bg-center"
                                          style="background-image: url('{{ hackathon.banner_image.url }}')"></div>
@@ -239,7 +239,7 @@
                                         <i class="fas fa-code text-white text-5xl"></i>
                                     </div>
                                 {% endif %}
-                                <div class="p-6">
+                                <div class="p-6 flex flex-col flex-grow">
                                     <div class="flex justify-between items-start mb-2">
                                         <h3 class="text-xl font-bold text-gray-900">{{ hackathon.name }}</h3>
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ hackathon.status_badge_class }}">
@@ -250,16 +250,18 @@
                                         Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
     class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                     </p>
-                                    <p class="text-gray-700 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
+                                    <p class="text-gray-700 mb-4 line-clamp-3 flex-grow">{{ hackathon.description|truncatechars:150 }}</p>
                                     <div class="flex items-center text-sm text-gray-500 mb-4">
                                         <i class="far fa-calendar mr-2"></i>
                                         <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
                                     </div>
-                                    <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
-                                       class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
-                                        View Details
-                                        <i class="fas fa-arrow-right ml-2"></i>
-                                    </a>
+                                    <div class="mt-auto">
+                                        <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
+                                           class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
+                                            View Details
+                                            <i class="fas fa-arrow-right ml-2"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
@@ -856,7 +858,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     {% if latest_blog_posts %}
                         {% for post in latest_blog_posts %}
-                            <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                            <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden flex flex-col h-full">
                                 {% if post.image %}
                                     <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ post.image.url }}"
@@ -866,7 +868,7 @@
                                              class="w-full h-full object-cover">
                                     </div>
                                 {% endif %}
-                                <div class="p-6">
+                                <div class="p-6 flex flex-col flex-grow">
                                     <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
                                     <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
                                         <span class="flex items-center gap-1">
@@ -878,9 +880,14 @@
                                             {{ post.created_at|timesince }} ago
                                         </span>
                                     </div>
-                                    <p class="text-gray-700 mb-4">{{ post.content|truncatewords:30 }}</p>
-                                    <a href="{% url 'post_detail' slug=post.slug %}"
-                                       class="text-[#e74c3c] hover:text-[#c0392b] font-medium">Read more</a>
+                                    <p class="text-gray-700 mb-4 flex-grow">{{ post.content|truncatewords:30 }}</p>
+                                    <div class="mt-auto">
+                                        <a href="{% url 'post_detail' slug=post.slug %}"
+                                           class="inline-flex items-center text-[#e74c3c] hover:text-[#c0392b] font-medium transition-colors duration-200">
+                                            Read more
+                                            <i class="fas fa-arrow-right ml-2"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}

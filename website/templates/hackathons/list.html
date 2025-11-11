@@ -109,7 +109,7 @@
             {% if hackathons %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hackathon in hackathons %}
-                        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
                             {% if hackathon.banner_image %}
                                 <div class="h-40 bg-cover bg-center"
                                      style="background-image: url('{{ hackathon.banner_image.url }}')"></div>
@@ -118,9 +118,9 @@
                                     <i class="fas fa-code text-white text-5xl"></i>
                                 </div>
                             {% endif %}
-                            <div class="p-6">
-                                <div class="flex justify-between items-start">
-                                    <h2 class="text-xl font-bold text-gray-900 mb-2">{{ hackathon.name }}</h2>
+                            <div class="p-6 flex flex-col flex-grow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h2 class="text-xl font-bold text-gray-900">{{ hackathon.name }}</h2>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if hackathon.is_ongoing %} bg-green-100 text-green-800 {% elif hackathon.has_ended %} bg-gray-100 text-gray-800 {% else %} bg-blue-100 text-blue-800 {% endif %} ">
                                         {% if hackathon.is_ongoing %}
                                             Ongoing
@@ -131,19 +131,22 @@
                                         {% endif %}
                                     </span>
                                 </div>
-                                <p class="text-gray-600 text-sm mb-4">
+                                <p class="text-gray-600 text-sm mb-3">
                                     Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
     class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                 </p>
-                                <p class="text-gray-700 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
+                                <p class="text-gray-700 mb-4 line-clamp-3 flex-grow">{{ hackathon.description|truncatechars:150 }}</p>
                                 <div class="flex items-center text-sm text-gray-500 mb-4">
                                     <i class="far fa-calendar mr-2"></i>
                                     <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
                                 </div>
-                                <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
-                                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] w-full justify-center">
-                                    View Details
-                                </a>
+                                <div class="mt-auto">
+                                    <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
+                                       class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] w-full transition-colors duration-200">
+                                        View Details
+                                        <i class="fas fa-arrow-right ml-2"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
