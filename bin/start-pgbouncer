@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# This script starts pgbouncer for connection pooling on Heroku
+# It's used in the Procfile to improve database connection management
+
+# Check if we're on Heroku and have pgbouncer buildpack installed
+if [ -f /app/vendor/stunnel/bin/stunnel ] && [ -f /app/vendor/pgbouncer/bin/pgbouncer ]; then
+    echo "Starting pgbouncer..."
+    eval "$(python3 -c "
+import os
+import sys
+
+# Parse DATABASE_URL
+database_url = os.environ.get('DATABASE_URL', '')
+if database_url.startswith('postgres://'):
+    # Heroku uses postgres:// but newer versions need postgresql://
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    os.environ['DATABASE_URL'] = database_url
+
+print('export DATABASE_URL=\"{}\"'.format(database_url))
+")"
+    
+    # Start pgbouncer if the buildpack is present
+    /app/vendor/pgbouncer/bin/start-pgbouncer "$@"
+else
+    # No pgbouncer, just run the command directly
+    exec "$@"
+fi

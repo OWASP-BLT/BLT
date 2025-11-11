@@ -1,0 +1,57 @@
+# Git files
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+docs/
+CONTRIBUTING.md
+README.md
+LICENSE.md
+SECURITY.md
+
+# Development files
+.devcontainer
+.cursorrules
+.pre-commit-config.yaml
+.lgtm.yml
+coderabbit.yaml
+
+# Docker files
+Dockerfile
+docker-compose.yml
+docker-build-test.yml
+Vagrantfile
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Development dependencies
+.python-version
+poetry.lock
+pyproject.toml
+lock_requirements.sh
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Media files that can be large (adjust as needed)
+# media/ - uncomment if you use external storage
+
+# Pre-commit hooks
+pre-commit-hooks/
+.pre-commit-config.yaml
