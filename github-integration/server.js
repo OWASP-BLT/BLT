@@ -1,15 +1,16 @@
 // github-integration/server.js
 
-
-
 import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
 import { createHmac, timingSafeEqual } from 'crypto';
 import fetch from 'node-fetch';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
+
+// ===== Middleware Setup =====
 
 // Use raw body for signature verification
 app.use(express.json({
@@ -29,7 +30,7 @@ const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || "mysecret";
 const SIZZLE_API_KEY = process.env.SIZZLE_API_KEY || "yoursizzlekey";
 const SIZZLE_API_URL = process.env.SIZZLE_API_URL || "https://your-sizzle-app.com/api/timers/start";
 
-// ===== Verify GitHub signature =====
+// ===== Verify GitHub Signature =====
 function verifySignature(req) {
   const signature = req.headers['x-hub-signature-256'];
   if (!signature) return false;
@@ -43,16 +44,25 @@ function verifySignature(req) {
   }
 }
 
-app.get('/', (req, res) => {
-  res.send('Server running ');
+// ===== Define Rate Limiter =====
+// This limits each IP to 60 requests per minute to prevent abuse.
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60,             // limit each IP to 60 requests per windowMs
+  message: 'Too many requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// ===== Handle incoming webhook =====
+// ===== Routes =====
+app.get('/', (req, res) => {
+  res.send('Server running');
+});
 
-app.post('/github/webhook', async (req, res) => {
-
+// Apply the rate limiter specifically to the webhook route
+app.post('/github/webhook', webhookLimiter, async (req, res) => {
   const event = req.headers['x-github-event'];
-  console.log(` Received event: ${event}`);
+  console.log(`Received event: ${event}`);
 
   if (!verifySignature(req)) {
     console.log('Invalid signature');
@@ -72,34 +82,32 @@ app.post('/github/webhook', async (req, res) => {
       console.log(`Issue #${issue.number} in ${repo} is now In Progress`);
 
       try {
-        // Call Sizzle API to start timer
-       console.log(" Sending POST to Sizzle API:", SIZZLE_API_URL);
-const resp = await fetch(SIZZLE_API_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${SIZZLE_API_KEY}`,
-  },
-  body: JSON.stringify({
-    issue_number: issue.number,
-    issue_title: issue.title,
-    repo: repo,
-    actor: user,
-  }),
-});
-console.log(" Sizzle API response:", resp.status);
-
+        console.log("Sending POST to Sizzle API:", SIZZLE_API_URL);
+        const resp = await fetch(SIZZLE_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SIZZLE_API_KEY}`,
+          },
+          body: JSON.stringify({
+            issue_number: issue.number,
+            issue_title: issue.title,
+            repo: repo,
+            actor: user,
+          }),
+        });
+        console.log("Sizzle API response:", resp.status);
 
         if (!resp.ok) {
           const text = await resp.text();
-          console.error(" Failed to start Sizzle timer:", text);
+          console.error("Failed to start Sizzle timer:", text);
           return res.status(500).send('Sizzle error');
         }
 
-        console.log(' Timer started successfully in Sizzle');
+        console.log('Timer started successfully in Sizzle');
         return res.status(200).send('OK');
       } catch (e) {
-        console.error(' Error calling Sizzle:', e);
+        console.error('Error calling Sizzle:', e);
         return res.status(500).send('Error calling Sizzle');
       }
     }
@@ -109,4 +117,6 @@ console.log(" Sizzle API response:", resp.status);
   return res.status(200).send('Ignored');
 });
 
-app.listen(PORT, () => console.log(` Webhook server running on port ${PORT}`));
+// ===== Start Server =====
+app.listen(PORT, () => console.log(`Webhook server running on port ${PORT}`));
+
