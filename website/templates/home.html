@@ -1152,6 +1152,11 @@
                 </div>
             </div>
         </section>
+
+...
+</section>
+
+
         <!-- Footer -->
         <footer class="py-8">
             <div class="max-w-7xl mx-auto text-center">
@@ -1164,6 +1169,35 @@
                 <p>Last commit: {{ last_commit }}</p>
             </div>
         </footer>
+
+
+<!-- Scroll to Top Button -->
+<button id="backToTop"
+        class="hidden fixed bottom-7 right-7 bg-[#e74c3c] text-white rounded-full w-12 h-12 flex items-center justify-center text-lg shadow-lg hover:opacity-90 transition-opacity"
+        aria-label="Back to top">
+    ↑
+</button>
+
+
+<script>
+window.addEventListener('scroll', function() {
+  const btn = document.getElementById("backToTop");
+  if (!btn) return;
+  if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+      btn.classList.remove("hidden");
+  } else {
+      btn.classList.add("hidden");
+  }
+});
+
+document.getElementById("backToTop")?.addEventListener('click', function() {
+  window.scrollTo({top: 0, behavior: 'smooth'});
+});
+</script>
+
+
+
+
     </div>
     <!-- Add GitHub Buttons Script at the end of the content block -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
