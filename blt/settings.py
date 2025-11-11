@@ -318,7 +318,6 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
         },
     }
-    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
     # Removed DEBUG override - DEBUG should be controlled by environment variable
 
     # use this to debug emails locally
