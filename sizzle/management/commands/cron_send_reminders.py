@@ -155,6 +155,20 @@ class Command(SizzleBaseCommand):
                             time.sleep(extra_delay)
 
                     user = reminder_settings.user
+                    domain = getattr(
+                        settings,
+                        "SIZZLE_REMINDER_DOMAIN",
+                        getattr(settings, "PRODUCTION_DOMAIN", None),
+                    )
+                    if not domain:
+                        logger.error(
+                            "Skipping reminder for %s: no domain configured (set SIZZLE_REMINDER_DOMAIN or PRODUCTION_DOMAIN).",
+                            user.username,
+                        )
+                        failed_count += 1
+                        continue
+                    checkin_url = f"https://{domain}/add-sizzle-checkin/"
+                    settings_url = f"https://{domain}/reminder-settings/"
 
                     # Get organization info
                     org_name = ""
@@ -178,9 +192,9 @@ This is your daily check-in reminder{f" for {org_name}" if org_name else ""}.
 
 Reminder Time: {reminder_time_str} ({timezone_str})
 
-Click here to check in: https://{settings.PRODUCTION_DOMAIN}/add-sizzle-checkin/
+Click here to check in: {checkin_url}
 
-You can manage your reminder settings at: https://{settings.PRODUCTION_DOMAIN}/reminder-settings/
+You can manage your reminder settings at: {settings_url}
 
 Regular check-ins help keep your team informed about your progress and any challenges you might be facing.
 
@@ -209,7 +223,7 @@ The BLT Team"""
                                 <p style="margin: 0; color: #666; font-size: 14px;"><strong>Your Reminder Time:</strong> {reminder_time_str} ({timezone_str})</p>
                             </div>
                             <div style="margin: 30px 0; text-align: center;">
-                                <a href="https://{settings.PRODUCTION_DOMAIN}/add-sizzle-checkin/" 
+                                <a href="{checkin_url}" 
                                    style="display: inline-block; background-color: #e74c3c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; text-align: center; min-width: 200px;">
                                    Check In Now
                                 </a>
@@ -217,7 +231,7 @@ The BLT Team"""
                             <p>Regular check-ins help keep your team informed about your progress and any challenges you might be facing.</p>
                             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
                                 <p style="font-size: 13px; color: #666;">
-                                    <a href="https://{settings.PRODUCTION_DOMAIN}/reminder-settings/" style="color: #e74c3c; text-decoration: none;">Manage your reminder settings</a>
+                                    <a href="{settings_url}" style="color: #e74c3c; text-decoration: none;">Manage your reminder settings</a>
                                 </p>
                             </div>
                             <p style="margin-top: 20px;">Thank you for keeping your team updated!</p>
