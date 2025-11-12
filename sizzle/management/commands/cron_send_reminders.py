@@ -6,6 +6,7 @@ from datetime import time as dt_time
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
 from django.utils import timezone
 
 from sizzle.conf import SIZZLE_EMAIL_REMINDERS_ENABLED
@@ -57,18 +58,27 @@ class Command(SizzleBaseCommand):
             current_minute = now.minute
             window_start_minute = (current_minute // 15) * 15
             window_end_minute = window_start_minute + 15
-
-            # Handle minute overflow
+            window_start_hour = current_hour
             window_end_hour = current_hour
             if window_end_minute >= 60:
-                window_end_minute = window_end_minute - 60
-                window_end_hour = current_hour + 1
-                if window_end_hour >= 24:
-                    window_end_hour = 0
+                window_end_minute -= 60
+                window_end_hour = (current_hour + 1) % 24
 
-            # Convert to time objects for database filtering
-            window_start_time = dt_time(hour=current_hour, minute=window_start_minute)
+            window_start_time = dt_time(hour=window_start_hour, minute=window_start_minute)
             window_end_time = dt_time(hour=window_end_hour, minute=window_end_minute)
+            wraps_midnight = (
+                window_end_hour < window_start_hour
+                or (window_end_hour == window_start_hour and window_end_minute < window_start_minute)
+            )
+            if wraps_midnight:
+                time_window_filter = Q(reminder_time_utc__gte=window_start_time) | Q(
+                    reminder_time_utc__lt=window_end_time
+                )
+            else:
+                time_window_filter = Q(
+                    reminder_time_utc__gte=window_start_time,
+                    reminder_time_utc__lt=window_end_time,
+                )
 
             logger.info(f"Current UTC time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
             logger.info(
@@ -78,9 +88,11 @@ class Command(SizzleBaseCommand):
 
             # Get active reminder settings within the current UTC time window
             # Exclude users who already received a reminder today
-            active_settings = ReminderSettings.objects.filter(
-                is_active=True, reminder_time_utc__gte=window_start_time, reminder_time_utc__lt=window_end_time
-            ).exclude(last_reminder_sent__date=now.date())
+            active_settings = (
+                ReminderSettings.objects.filter(is_active=True)
+                .filter(time_window_filter)
+                .exclude(last_reminder_sent__date=now.date())
+            )
 
             logger.info(f"Found {active_settings.count()} users with reminders in current UTC time window")
 
