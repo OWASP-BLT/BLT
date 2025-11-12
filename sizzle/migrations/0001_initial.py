@@ -22,6 +22,8 @@ def _dependencies():
     if not org_model:
         raise ImproperlyConfigured("SIZZLE_ORGANIZATION_MODEL must be configured before running sizzle migrations.")
     deps.append(migrations.swappable_dependency(org_model))
+    
+    return deps
 
 
 class Migration(migrations.Migration):
