@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
+from django.utils import timezone
 from sizzle.conf import SIZZLE_SLACK_ENABLED
 from sizzle.management.base import SizzleBaseCommand
 from sizzle.utils.model_loader import check_slack_dependencies, get_slack_integration_model, get_timelog_model
@@ -35,8 +36,9 @@ class Command(SizzleBaseCommand):
 
         # Import Slack dependencies after validation
 
-        # Get the current hour in UTC
-        current_hour_utc = datetime.utcnow().hour
+        # Get the current time and UTC hour
+        now = timezone.now()
+        current_hour_utc = now.astimezone(timezone.utc).hour
 
         # Fetch all Slack integrations with related integration data
         try:
@@ -58,7 +60,7 @@ class Command(SizzleBaseCommand):
                 ):
                     self.log_info(f"Processing updates for organization: {current_org.name}")
 
-                    last_24_hours = datetime.utcnow() - timedelta(hours=24)
+                    last_24_hours = now - timedelta(hours=24)
 
                     timelog_history = TimeLog.objects.filter(
                         organization=current_org,
