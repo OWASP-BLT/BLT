@@ -3,16 +3,27 @@
 import django.db.models.deletion
 import django.utils.timezone
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db import migrations, models
+
+from sizzle.conf import SIZZLE_ORGANIZATION_MODEL
+
+if not SIZZLE_ORGANIZATION_MODEL:
+    raise ImproperlyConfigured(
+        "SIZZLE_ORGANIZATION_MODEL must be configured before running sizzle migrations."
+    )
+
+
+def _dependencies():
+    deps = [migrations.swappable_dependency(settings.AUTH_USER_MODEL)]
+    deps.append(migrations.swappable_dependency(SIZZLE_ORGANIZATION_MODEL))
+    return deps
 
 
 class Migration(migrations.Migration):
     initial = True
 
-    dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("website", "0246_add_user_progress_models"),
-    ]
+    dependencies = _dependencies()
 
     operations = [
         migrations.CreateModel(
@@ -31,7 +42,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="sizzle_time_logs",
-                        to="website.organization",
+                        to=SIZZLE_ORGANIZATION_MODEL,
                     ),
                 ),
                 (
