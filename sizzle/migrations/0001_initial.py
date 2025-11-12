@@ -12,22 +12,13 @@ if not SIZZLE_ORGANIZATION_MODEL:
     raise ImproperlyConfigured("SIZZLE_ORGANIZATION_MODEL must be configured before running sizzle migrations.")
 
 
-def _dependencies():
-    from django.conf import settings
-
-    deps = [migrations.swappable_dependency(settings.AUTH_USER_MODEL)]
-    # Check if SIZZLE_ORGANIZATION_MODEL is configured
-    org_model = getattr(settings, "SIZZLE_ORGANIZATION_MODEL", None)
-    if not org_model:
-        raise ImproperlyConfigured("SIZZLE_ORGANIZATION_MODEL must be configured before running sizzle migrations.")
-    deps.append(migrations.swappable_dependency(org_model))
-    return deps
-
-
 class Migration(migrations.Migration):
     initial = True
 
-    dependencies = _dependencies()
+    dependencies = [
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ("website", "0246_add_user_progress_models"),
+    ]
 
     operations = [
         migrations.CreateModel(
