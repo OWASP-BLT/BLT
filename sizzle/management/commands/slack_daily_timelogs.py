@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.utils import timezone
+
 from sizzle.conf import SIZZLE_SLACK_ENABLED
 from sizzle.management.base import SizzleBaseCommand
 from sizzle.utils.model_loader import check_slack_dependencies, get_slack_integration_model, get_timelog_model

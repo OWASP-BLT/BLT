@@ -9,7 +9,7 @@ def sizzle_context(request):
 
     # Check if sidenav should be shown based on setting
     show_sidenav = getattr(settings, "SIZZLE_SHOW_SIDENAV", True)
-    
+
     # Only check if the template exists if the setting allows it
     if show_sidenav:
         try:

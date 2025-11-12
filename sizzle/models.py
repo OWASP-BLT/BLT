@@ -14,7 +14,7 @@ class TimeLog(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_time_logs")
     organization = models.ForeignKey(
-        getattr(settings, 'SIZZLE_ORGANIZATION_MODEL', 'website.Organization'),
+        getattr(settings, "SIZZLE_ORGANIZATION_MODEL", "website.Organization"),
         on_delete=models.CASCADE,
         related_name="sizzle_time_logs",
         null=True,
@@ -38,7 +38,9 @@ class TimeLog(models.Model):
 class DailyStatusReport(models.Model):
     """Daily status report for team check-ins"""
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_daily_status_reports")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_daily_status_reports"
+    )
     date = models.DateField()
     previous_work = models.TextField()
     next_plan = models.TextField()
@@ -61,7 +63,9 @@ class DailyStatusReport(models.Model):
 class ReminderSettings(models.Model):
     """User settings for daily reminder notifications"""
 
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_reminder_settings")
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_reminder_settings"
+    )
     reminder_time = models.TimeField(help_text="Time to send daily reminders (in user's timezone)")
     reminder_time_utc = models.TimeField(help_text="Time to send daily reminders (in UTC)", null=True, blank=True)
     timezone = models.CharField(max_length=50, default="UTC")

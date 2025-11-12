@@ -9,9 +9,7 @@ from django.db import migrations, models
 from sizzle.conf import SIZZLE_ORGANIZATION_MODEL
 
 if not SIZZLE_ORGANIZATION_MODEL:
-    raise ImproperlyConfigured(
-        "SIZZLE_ORGANIZATION_MODEL must be configured before running sizzle migrations."
-    )
+    raise ImproperlyConfigured("SIZZLE_ORGANIZATION_MODEL must be configured before running sizzle migrations.")
 
 
 def _dependencies():

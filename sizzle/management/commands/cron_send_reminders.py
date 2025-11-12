@@ -66,9 +66,8 @@ class Command(SizzleBaseCommand):
 
             window_start_time = dt_time(hour=window_start_hour, minute=window_start_minute)
             window_end_time = dt_time(hour=window_end_hour, minute=window_end_minute)
-            wraps_midnight = (
-                window_end_hour < window_start_hour
-                or (window_end_hour == window_start_hour and window_end_minute < window_start_minute)
+            wraps_midnight = window_end_hour < window_start_hour or (
+                window_end_hour == window_start_hour and window_end_minute < window_start_minute
             )
             if wraps_midnight:
                 time_window_filter = Q(reminder_time_utc__gte=window_start_time) | Q(

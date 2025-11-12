@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.db.models import Sum
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,8 +14,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from django.core.exceptions import ValidationError
-from django.db import IntegrityError
+
 from sizzle.utils import format_timedelta, get_github_issue_title
 from sizzle.utils.model_loader import get_daily_status_report_model, get_organization_model, get_timelog_model
 
@@ -27,7 +28,7 @@ def sizzle_docs(request):
 def sizzle(request):
     # Get models dynamically
     TimeLog = get_timelog_model()
-    
+
     # Aggregate leaderboard data: username and total_duration
     leaderboard_qs = (
         TimeLog.objects.values("user__username").annotate(total_duration=Sum("duration")).order_by("-total_duration")
@@ -157,7 +158,7 @@ def truncate_text(text, length=15):
 def add_sizzle_checkIN(request):
     # Get models dynamically
     DailyStatusReport = get_daily_status_report_model()
-    
+
     # Fetch yesterday's report
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
@@ -176,11 +177,11 @@ def add_sizzle_checkIN(request):
 def checkIN_detail(request, report_id):
     DailyStatusReport = get_daily_status_report_model()
     report = get_object_or_404(DailyStatusReport, pk=report_id)
-    
+
     # Restrict to own reports or authorized users
     if report.user != request.user and not request.user.is_staff:
         return HttpResponseForbidden("You don't have permission to view this report.")
-    
+
     context = {
         "username": report.user.username,
         "date": report.date.strftime("%d %B %Y"),
@@ -251,7 +252,7 @@ def TimeLogListView(request):
     # Get models dynamically
     TimeLog = get_timelog_model()
     Organization = get_organization_model()
-    
+
     time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
     active_time_log = time_logs.filter(end_time__isnull=True).first()
 
@@ -281,7 +282,7 @@ def TimeLogListView(request):
 def sizzle_daily_log(request):
     # Get models dynamically
     DailyStatusReport = get_daily_status_report_model()
-    
+
     try:
         if request.method == "GET":
             reports = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
@@ -325,7 +326,7 @@ def sizzle_daily_log(request):
 def user_sizzle_report(request, username):
     # Get models dynamically
     TimeLog = get_timelog_model()
-    
+
     user = get_object_or_404(User, username=username)
     time_logs = TimeLog.objects.filter(user=user).order_by("-start_time")
 
