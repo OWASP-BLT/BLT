@@ -1,12 +1,8 @@
 from datetime import datetime, timedelta
 
-from sizzle.management.base import SizzleBaseCommand
-from sizzle.utils.model_loader import (
-    get_slack_integration_model,
-    get_timelog_model,
-    check_slack_dependencies
-)
 from sizzle.conf import SIZZLE_SLACK_ENABLED
+from sizzle.management.base import SizzleBaseCommand
+from sizzle.utils.model_loader import check_slack_dependencies, get_slack_integration_model, get_timelog_model
 
 
 class Command(SizzleBaseCommand):
@@ -15,31 +11,29 @@ class Command(SizzleBaseCommand):
     def handle(self, *args, **kwargs):
         # Check if Slack is enabled in settings
         if not SIZZLE_SLACK_ENABLED:
-            self.log_warning('Slack integration is disabled in settings')
+            self.log_warning("Slack integration is disabled in settings")
             return
 
         # Check if slack-bolt is available
         slack_available, slack_error = check_slack_dependencies()
         if not slack_available:
-            self.log_error(f'Slack dependencies not available: {slack_error}')
+            self.log_error(f"Slack dependencies not available: {slack_error}")
             return
 
         # Get models dynamically
         SlackIntegration = get_slack_integration_model()
         if SlackIntegration is None:
             self.log_error(
-                'SlackIntegration model not configured or available. '
-                'Check SIZZLE_SLACK_INTEGRATION_MODEL setting.'
+                "SlackIntegration model not configured or available. " "Check SIZZLE_SLACK_INTEGRATION_MODEL setting."
             )
             return
 
         TimeLog = get_timelog_model()
         if TimeLog is None:
-            self.log_error('TimeLog model not available. Ensure sizzle migrations are run.')
+            self.log_error("TimeLog model not available. Ensure sizzle migrations are run.")
             return
 
         # Import Slack dependencies after validation
-        from slack_bolt import App
 
         # Get the current hour in UTC
         current_hour_utc = datetime.utcnow().hour
@@ -48,7 +42,7 @@ class Command(SizzleBaseCommand):
         try:
             slack_integrations = SlackIntegration.objects.select_related("integration__organization").all()
         except Exception as e:
-            self.log_error(f'Error fetching Slack integrations: {e}')
+            self.log_error(f"Error fetching Slack integrations: {e}")
             return
 
         processed_count = 0
@@ -97,12 +91,12 @@ class Command(SizzleBaseCommand):
                         processed_count += 1
                     else:
                         self.log_info(f"No timelogs found for organization: {current_org.name}")
-            
+
             except Exception as e:
-                self.log_error(f'Error processing integration for organization: {e}')
+                self.log_error(f"Error processing integration for organization: {e}")
                 continue
 
-        self.log_info(f'Processed {processed_count} Slack integrations successfully')
+        self.log_info(f"Processed {processed_count} Slack integrations successfully")
 
     def format_timedelta(self, td):
         """Convert a timedelta object into a human-readable string."""
@@ -116,7 +110,7 @@ class Command(SizzleBaseCommand):
         try:
             # Import here after dependency validation
             from slack_bolt import App
-            
+
             app = App(token=bot_token)
             app.client.conversations_join(channel=channel_id)
             response = app.client.chat_postMessage(channel=channel_id, text=message)

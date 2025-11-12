@@ -3,12 +3,8 @@ import logging
 from django.core.management import call_command
 from django.utils import timezone
 
+from sizzle.conf import SIZZLE_DAILY_CHECKINS_ENABLED, SIZZLE_EMAIL_REMINDERS_ENABLED, SIZZLE_SLACK_ENABLED
 from sizzle.management.base import SizzleBaseCommand
-from sizzle.conf import (
-    SIZZLE_EMAIL_REMINDERS_ENABLED,
-    SIZZLE_DAILY_CHECKINS_ENABLED,
-    SIZZLE_SLACK_ENABLED
-)
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +15,7 @@ class Command(SizzleBaseCommand):
     def handle(self, *args, **options):
         try:
             self.log_info(f"Starting daily Sizzle tasks at {timezone.now()}")
-            
+
             # Run daily check-in reminders if enabled
             if SIZZLE_DAILY_CHECKINS_ENABLED:
                 try:
@@ -30,7 +26,7 @@ class Command(SizzleBaseCommand):
                     self.log_error(f"Error sending daily checkin reminders: {str(e)}")
             else:
                 self.log_info("Daily check-in reminders are disabled in settings")
-            
+
             # Run email reminders based on user settings if enabled
             if SIZZLE_EMAIL_REMINDERS_ENABLED:
                 try:
@@ -52,9 +48,9 @@ class Command(SizzleBaseCommand):
                     self.log_error(f"Error sending Slack timelogs: {str(e)}")
             else:
                 self.log_info("Slack integration is disabled in settings")
-                
+
             self.log_info("All daily Sizzle tasks completed")
-            
+
         except Exception as e:
             self.log_error(f"Critical error in daily Sizzle tasks: {str(e)}")
             raise

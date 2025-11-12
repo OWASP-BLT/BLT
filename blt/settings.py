@@ -635,14 +635,14 @@ THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
 
 # Sizzle Configuration - Integrate with BLT's layout and navigation
-SIZZLE_PARENT_BASE = 'base.html'  # Use BLT's main template
-SIZZLE_SHOW_SIDENAV = True        # Show BLT's sidenav in sizzle pages
+SIZZLE_PARENT_BASE = "base.html"  # Use BLT's main template
+SIZZLE_SHOW_SIDENAV = True  # Show BLT's sidenav in sizzle pages
 
 # Sizzle Model Configuration (Swappable Models)
-SIZZLE_SLACK_INTEGRATION_MODEL = 'website.SlackIntegration'
-SIZZLE_ORGANIZATION_MODEL = 'website.Organization'
-SIZZLE_USERPROFILE_MODEL = 'website.UserProfile'
-SIZZLE_NOTIFICATION_MODEL = 'website.Notification'
+SIZZLE_SLACK_INTEGRATION_MODEL = "website.SlackIntegration"
+SIZZLE_ORGANIZATION_MODEL = "website.Organization"
+SIZZLE_USERPROFILE_MODEL = "website.UserProfile"
+SIZZLE_NOTIFICATION_MODEL = "website.Notification"
 
 # Sizzle Feature Flags
 SIZZLE_SLACK_ENABLED = True
