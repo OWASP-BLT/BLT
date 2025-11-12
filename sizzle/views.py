@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Sum
@@ -327,7 +327,8 @@ def user_sizzle_report(request, username):
     # Get models dynamically
     TimeLog = get_timelog_model()
 
-    user = get_object_or_404(User, username=username)
+    user_model = get_user_model()
+    user = get_object_or_404(user_model, username=username)
     time_logs = TimeLog.objects.filter(user=user).order_by("-start_time")
 
     grouped_logs = defaultdict(list)
