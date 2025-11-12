@@ -5,12 +5,46 @@ A pluggable Django app for daily check-ins, time tracking, and team activity mon
 ## Features
 
 - **Daily Check-ins**: Team members submit daily status reports
-- **Time Logging**: Track time spent on tasks and projects
+- **Time Logging**: Track time spent on tasks and projects  
 - **Leaderboards**: Gamified rankings based on activity
 - **Streak Tracking**: Monitor consecutive check-in streaks
 - **Reminders**: Automated daily reminder system (email/Slack)
 - **Analytics**: View individual and team reports
 - **Slack Integration**: Post check-ins directly to Slack (optional)
+
+## Architecture & Design
+
+Sizzle follows Django's best practices for reusable apps:
+
+### **🔌 Pluggable Design**
+- **Works standalone**: No external dependencies for core features
+- **Integrates seamlessly**: Optional integration with existing models
+- **Graceful degradation**: Features disable cleanly when dependencies unavailable
+
+### **⚙️ Configurable Models**
+Uses Django's swappable model pattern (like `AUTH_USER_MODEL`):
+```python
+# Default (works out of the box)
+SIZZLE_ORGANIZATION_MODEL = None
+
+# Integrate with your project
+SIZZLE_ORGANIZATION_MODEL = 'your_app.Organization'
+```
+
+### **🎛️ Feature Flags**
+Enable only what you need:
+```python
+SIZZLE_SLACK_ENABLED = False          # Disable Slack
+SIZZLE_EMAIL_REMINDERS_ENABLED = True # Keep email reminders
+SIZZLE_DAILY_CHECKINS_ENABLED = True  # Keep check-ins
+```
+
+### **🧩 Template Integration**
+Automatically integrates with your project's layout:
+```python
+SIZZLE_PARENT_BASE = 'base.html'  # Use your base template
+SIZZLE_SHOW_SIDENAV = True        # Include your navigation
+```
 
 ## Requirements
 
@@ -154,6 +188,185 @@ Visit these URLs:
 4. Submit to track your streak!
 
 ## Configuration
+
+### Basic Configuration
+
+Sizzle follows Django's best practices for swappable models, similar to `AUTH_USER_MODEL`. This makes it work with different project structures while providing sensible defaults.
+
+#### Required Settings
+
+```python
+# settings.py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Your apps
+    'myapp',
+    
+    # Add Sizzle
+    'sizzle',
+]
+
+# Template Context Processor (for template integration)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                
+                # Add Sizzle context processor
+                'sizzle.context_processors.sizzle_context',
+            ],
+        },
+    },
+]
+```
+
+### Model Integration (Optional)
+
+If your project has existing models that Sizzle should integrate with, configure them:
+
+```python
+# settings.py
+
+# Model Configuration (all optional)
+SIZZLE_SLACK_INTEGRATION_MODEL = 'your_app.SlackIntegration'  # For Slack notifications
+SIZZLE_ORGANIZATION_MODEL = 'your_app.Organization'           # For organization features
+SIZZLE_USERPROFILE_MODEL = 'your_app.UserProfile'            # For user profiles
+SIZZLE_NOTIFICATION_MODEL = 'your_app.Notification'          # For in-app notifications
+
+# Feature Flags
+SIZZLE_SLACK_ENABLED = True              # Enable Slack integration
+SIZZLE_EMAIL_REMINDERS_ENABLED = True    # Enable email reminders
+SIZZLE_DAILY_CHECKINS_ENABLED = True     # Enable check-in reminders
+
+# Template Integration
+SIZZLE_PARENT_BASE = 'base.html'         # Your project's base template
+SIZZLE_SHOW_SIDENAV = True               # Show your project's navigation
+```
+
+### Slack Integration (Optional)
+
+To enable Slack notifications:
+
+1. **Install Slack dependencies:**
+```bash
+pip install slack-bolt
+```
+
+2. **Create SlackIntegration model in your project:**
+```python
+# your_app/models.py
+class SlackIntegration(models.Model):
+    integration = models.ForeignKey('Integration', on_delete=models.CASCADE)
+    bot_access_token = models.CharField(max_length=255)
+    default_channel_id = models.CharField(max_length=255)
+    daily_updates = models.BooleanField(default=False)
+    daily_update_time = models.IntegerField()  # Hour in UTC (0-23)
+```
+
+3. **Configure in settings:**
+```python
+SIZZLE_SLACK_ENABLED = True
+SIZZLE_SLACK_INTEGRATION_MODEL = 'your_app.SlackIntegration'
+```
+
+4. **Run the command:**
+```bash
+python manage.py slack_daily_timelogs
+```
+
+### Model Requirements
+
+Sizzle works standalone, but integrates better with these optional models:
+
+**SlackIntegration Model:**
+- `bot_access_token` (CharField): Slack bot token
+- `default_channel_id` (CharField): Default Slack channel
+- `daily_updates` (BooleanField): Enable daily updates
+- `daily_update_time` (IntegerField): Hour for updates (UTC)
+- `integration.organization` (ForeignKey): Related organization
+
+**UserProfile Model:**
+- `user` (OneToOneField to User): Related user
+- `team` (ForeignKey): User's team/organization
+- `team.check_ins_enabled` (BooleanField): Enable check-ins
+- `last_check_in` (DateField): Last check-in date
+
+**Notification Model:**
+- `user` (ForeignKey to User): Target user
+- `message` (TextField): Notification message
+- `notification_type` (CharField): Type of notification
+- `link` (URLField): Link to action
+
+**Organization Model:**
+- Any model that represents teams/organizations
+- Referenced by TimeLog for organization-specific time tracking
+
+## Configuration Examples
+
+### Standalone Project (Minimal)
+
+```python
+# settings.py
+INSTALLED_APPS = ['sizzle']
+
+# All features disabled except core functionality
+SIZZLE_SLACK_ENABLED = False
+SIZZLE_EMAIL_REMINDERS_ENABLED = True
+SIZZLE_DAILY_CHECKINS_ENABLED = False
+```
+
+### BLT Integration (Full Features)
+
+```python
+# settings.py
+INSTALLED_APPS = ['website', 'sizzle']
+
+# Model Configuration
+SIZZLE_SLACK_INTEGRATION_MODEL = 'website.SlackIntegration'
+SIZZLE_ORGANIZATION_MODEL = 'website.Organization'
+SIZZLE_USERPROFILE_MODEL = 'website.UserProfile'
+SIZZLE_NOTIFICATION_MODEL = 'website.Notification'
+
+# All features enabled
+SIZZLE_SLACK_ENABLED = True
+SIZZLE_EMAIL_REMINDERS_ENABLED = True
+SIZZLE_DAILY_CHECKINS_ENABLED = True
+
+# Template Integration
+SIZZLE_PARENT_BASE = 'base.html'
+SIZZLE_SHOW_SIDENAV = True
+```
+
+### Custom Project
+
+```python
+# settings.py
+# Use your own models
+SIZZLE_ORGANIZATION_MODEL = 'companies.Company'
+SIZZLE_USERPROFILE_MODEL = 'accounts.Profile'
+
+# Disable unused features
+SIZZLE_SLACK_ENABLED = False
+SIZZLE_DAILY_CHECKINS_ENABLED = False
+
+# Keep email reminders
+SIZZLE_EMAIL_REMINDERS_ENABLED = True
+```
+
+## Quick Start
 
 ### Basic Settings
 
@@ -501,24 +714,135 @@ Sizzle relies on these Django built-in models (you must have them):
 
 ## Troubleshooting
 
-### "No module named 'sizzle'"
+### Configuration Issues
+
+#### "No module named 'sizzle'"
 Make sure you added `'sizzle'` to `INSTALLED_APPS` in `settings.py`.
 
-### "TemplateDoesNotExist: sizzle/base.html"
+#### Model Configuration Validation
+Check which models are properly configured:
+
+```python
+# In Django shell or management command
+from sizzle.utils.model_loader import validate_model_configuration
+import json
+
+status = validate_model_configuration()
+print(json.dumps(status, indent=2))
+```
+
+This will show you which models are available:
+```json
+{
+  "slack_integration": true,
+  "organization": true,
+  "userprofile": true,
+  "notification": true,
+  "reminder_settings": true,
+  "timelog": true,
+  "slack_deps": true
+}
+```
+
+#### "SlackIntegration model not configured"
+If you see this warning in management commands:
+1. Set `SIZZLE_SLACK_ENABLED = False` to disable Slack features
+2. Or create a SlackIntegration model and configure `SIZZLE_SLACK_INTEGRATION_MODEL`
+
+#### "slack-bolt not installed"
+Install Slack dependencies:
+```bash
+pip install slack-bolt
+```
+
+#### Management Commands Not Working
+Test individual commands:
+```bash
+# Test model loading
+python manage.py daily_checkin_reminder
+
+# Test email system
+python manage.py cron_send_reminders
+
+# Test Slack integration
+python manage.py slack_daily_timelogs
+
+# Run all daily tasks
+python manage.py run_sizzle_daily
+```
+
+### Template Issues
+
+#### "TemplateDoesNotExist: sizzle/base.html"
 Run `python manage.py collectstatic` and ensure `APP_DIRS: True` in `TEMPLATES` settings.
 
-### Templates look unstyled
+#### Templates look unstyled
 1. Run `python manage.py collectstatic`
 2. Make sure `STATIC_URL` is configured in `settings.py`
 3. Check browser console for 404 errors on CSS files
 
-### Migrations not applying
-```
+### Database Issues
+
+#### Migrations not applying
+```bash
 # Check pending migrations
 python manage.py showmigrations sizzle
 
 # Apply them
 python manage.py migrate sizzle
+```
+
+#### Foreign key errors
+If you see foreign key constraint errors, ensure the referenced models exist:
+```python
+# Check if Organization model exists
+SIZZLE_ORGANIZATION_MODEL = 'your_app.Organization'  # Make sure this model exists
+
+# Or set to None if not using organizations
+SIZZLE_ORGANIZATION_MODEL = None
+```
+
+### Feature-Specific Issues
+
+#### Email Reminders Not Sending
+1. Check email settings in Django configuration
+2. Verify `SIZZLE_EMAIL_REMINDERS_ENABLED = True`
+3. Ensure users have ReminderSettings configured
+4. Check logs for SMTP errors
+
+#### Daily Check-ins Not Working
+1. Verify `SIZZLE_DAILY_CHECKINS_ENABLED = True`
+2. Check that UserProfile model has `team` field with `check_ins_enabled`
+3. Ensure Notification model is properly configured
+
+#### Slack Integration Issues
+1. Verify bot token and channel permissions
+2. Check `SIZZLE_SLACK_ENABLED = True`
+3. Test Slack connectivity outside Django
+4. Review SlackIntegration model configuration
+
+### Configuration Debugging
+
+Enable detailed logging for debugging:
+
+```python
+# settings.py
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'sizzle': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 ```
 
 ## Development

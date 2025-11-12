@@ -9,8 +9,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
 from sizzle.management.base import SizzleBaseCommand
-# Import from website app since models haven't been migrated yet
-from website.models import ReminderSettings, UserProfile
+from sizzle.utils.model_loader import get_reminder_settings_model, get_userprofile_model
+from sizzle.conf import SIZZLE_EMAIL_REMINDERS_ENABLED
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,24 @@ class Command(SizzleBaseCommand):
         return handler
 
     def handle(self, *args, **options):
+        # Check if email reminders are enabled
+        if not SIZZLE_EMAIL_REMINDERS_ENABLED:
+            self.log_warning('Email reminders are disabled in settings')
+            return
+
+        # Get models dynamically
+        ReminderSettings = get_reminder_settings_model()
+        if ReminderSettings is None:
+            self.log_error('ReminderSettings model not available. Ensure sizzle migrations are run.')
+            return
+
+        UserProfile = get_userprofile_model()
+        if UserProfile is None:
+            self.log_warning(
+                'UserProfile model not configured. Check-in status verification will be skipped. '
+                'Check SIZZLE_USERPROFILE_MODEL setting.'
+            )
+
         handler = self.setup_logging()
         try:
             now = timezone.now()
@@ -66,20 +84,26 @@ class Command(SizzleBaseCommand):
 
             logger.info(f"Found {active_settings.count()} users with reminders in current UTC time window")
 
-            # Prefetch all user profiles in a single query
+            # Prefetch user profiles if UserProfile model is available
             user_ids = [rs.user_id for rs in active_settings]
-            profile_map = {profile.user_id: profile for profile in UserProfile.objects.filter(user_id__in=user_ids)}
+            profile_map = {}
+            if UserProfile:
+                try:
+                    profile_map = {profile.user_id: profile for profile in UserProfile.objects.filter(user_id__in=user_ids)}
+                except Exception as e:
+                    logger.warning(f"Could not fetch user profiles: {e}")
 
             reminders_to_send = []
 
             for reminder_settings in active_settings:
                 try:
-                    # Check if user has checked in today using prefetched profiles
-                    profile = profile_map.get(reminder_settings.user_id)
-                    if profile and profile.last_check_in and profile.last_check_in == now.date():
-                        continue
+                    # Check if user has checked in today using prefetched profiles (if available)
+                    if UserProfile and profile_map:
+                        profile = profile_map.get(reminder_settings.user_id)
+                        if profile and hasattr(profile, 'last_check_in') and profile.last_check_in and profile.last_check_in == now.date():
+                            continue
 
-                    reminders_to_send.append((reminder_settings, profile))
+                    reminders_to_send.append((reminder_settings, profile_map.get(reminder_settings.user_id) if profile_map else None))
                     logger.info(
                         f"User {reminder_settings.user.username} added to reminder list for time {reminder_settings.reminder_time} ({reminder_settings.timezone})"
                     )
@@ -115,7 +139,7 @@ class Command(SizzleBaseCommand):
                     # Get organization info
                     org_name = ""
                     org_info_html = ""
-                    if profile and profile.team:
+                    if profile and hasattr(profile, 'team') and profile.team:
                         org_name = profile.team.name
                         org_info_html = f"""
                             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #e74c3c;">

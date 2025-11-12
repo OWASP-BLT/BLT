@@ -7,9 +7,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
-# Import dependencies from website app
-from website.models import Organization
-
 logger = logging.getLogger(__name__)
 
 
@@ -18,7 +15,7 @@ class TimeLog(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_time_logs")
     organization = models.ForeignKey(
-        Organization,
+        "website.Organization",  # String reference to avoid circular imports
         on_delete=models.CASCADE,
         related_name="sizzle_time_logs",
         null=True,
