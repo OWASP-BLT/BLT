@@ -13,9 +13,18 @@ if not SIZZLE_ORGANIZATION_MODEL:
 
 
 def _dependencies():
+    from django.conf import settings
+    
     deps = [migrations.swappable_dependency(settings.AUTH_USER_MODEL)]
-    deps.append(migrations.swappable_dependency(SIZZLE_ORGANIZATION_MODEL))
-    return deps
+    
+    # Check if SIZZLE_ORGANIZATION_MODEL is configured
+    org_model = getattr(settings, 'SIZZLE_ORGANIZATION_MODEL', None)
+    if not org_model:
+        raise ImproperlyConfigured(
+            "SIZZLE_ORGANIZATION_MODEL must be configured before running sizzle migrations."
+        )
+    deps.append(migrations.swappable_dependency(org_model))
+
 
 
 class Migration(migrations.Migration):
@@ -40,7 +49,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="sizzle_time_logs",
-                        to=SIZZLE_ORGANIZATION_MODEL,
+                        to=settings.SIZZLE_ORGANIZATION_MODEL,
                     ),
                 ),
                 (
