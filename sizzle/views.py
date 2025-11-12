@@ -3,8 +3,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Sum
