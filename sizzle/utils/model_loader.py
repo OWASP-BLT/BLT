@@ -125,6 +125,20 @@ def get_timelog_model():
         )
 
 
+def get_daily_status_report_model():
+    """
+    Get the DailyStatusReport model from sizzle app.
+    This is internal to sizzle and should always be available.
+    """
+    try:
+        return apps.get_model("sizzle", "DailyStatusReport")
+    except LookupError as e:
+        raise ImproperlyConfigured(
+            f"Could not load DailyStatusReport model from sizzle app. "
+            f"Make sure sizzle migrations have been run. Error: {e}"
+        )
+
+
 def check_slack_dependencies():
     """
     Check if Slack dependencies are available.

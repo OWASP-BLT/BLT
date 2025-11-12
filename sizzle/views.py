@@ -13,8 +13,8 @@ from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
-from website.models import DailyStatusReport, Organization, TimeLog
-from website.utils import format_timedelta, get_github_issue_title
+from sizzle.utils import format_timedelta, get_github_issue_title
+from sizzle.utils.model_loader import get_daily_status_report_model, get_organization_model, get_timelog_model
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,9 @@ def sizzle_docs(request):
 
 
 def sizzle(request):
+    # Get models dynamically
+    TimeLog = get_timelog_model()
+    
     # Aggregate leaderboard data: username and total_duration
     leaderboard_qs = (
         TimeLog.objects.values("user__username").annotate(total_duration=Sum("duration")).order_by("-total_duration")
@@ -80,6 +83,9 @@ def sizzle(request):
 
 def checkIN(request):
     from datetime import date
+
+    # Get models dynamically
+    DailyStatusReport = get_daily_status_report_model()
 
     # Find the most recent date that has data
     last_report = DailyStatusReport.objects.order_by("-date").first()
@@ -148,6 +154,9 @@ def truncate_text(text, length=15):
 
 @login_required
 def add_sizzle_checkIN(request):
+    # Get models dynamically
+    DailyStatusReport = get_daily_status_report_model()
+    
     # Fetch yesterday's report
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
@@ -163,6 +172,7 @@ def add_sizzle_checkIN(request):
 
 
 def checkIN_detail(request, report_id):
+    DailyStatusReport = get_daily_status_report_model()
     report = get_object_or_404(DailyStatusReport, pk=report_id)
     context = {
         "username": report.user.username,
@@ -177,6 +187,9 @@ def checkIN_detail(request, report_id):
 def TimeLogListAPIView(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    # Get models dynamically
+    TimeLog = get_timelog_model()
 
     start_date_str = request.GET.get("start_date")
     end_date_str = request.GET.get("end_date")
@@ -228,13 +241,19 @@ def TimeLogListAPIView(request):
 
 @login_required
 def TimeLogListView(request):
+    # Get models dynamically
+    TimeLog = get_timelog_model()
+    Organization = get_organization_model()
+    
     time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
     active_time_log = time_logs.filter(end_time__isnull=True).first()
 
     # print the all details of the active time log
     token, created = Token.objects.get_or_create(user=request.user)
-    organizations_list_queryset = Organization.objects.all().values("url", "name")
-    organizations_list = list(organizations_list_queryset)
+    organizations_list = []
+    if Organization:
+        organizations_list_queryset = Organization.objects.all().values("url", "name")
+        organizations_list = list(organizations_list_queryset)
     organization_url = None
     if active_time_log and active_time_log.organization:
         organization_url = active_time_log.organization.url
@@ -253,6 +272,9 @@ def TimeLogListView(request):
 
 @login_required
 def sizzle_daily_log(request):
+    # Get models dynamically
+    DailyStatusReport = get_daily_status_report_model()
+    
     try:
         if request.method == "GET":
             reports = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
@@ -293,6 +315,9 @@ def sizzle_daily_log(request):
 
 @login_required
 def user_sizzle_report(request, username):
+    # Get models dynamically
+    TimeLog = get_timelog_model()
+    
     user = get_object_or_404(User, username=username)
     time_logs = TimeLog.objects.filter(user=user).order_by("-start_time")
 
