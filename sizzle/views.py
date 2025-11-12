@@ -12,7 +12,8 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from sizzle.utils import format_timedelta, get_github_issue_title
 from sizzle.utils.model_loader import get_daily_status_report_model, get_organization_model, get_timelog_model
 
@@ -312,8 +313,9 @@ def sizzle_daily_log(request):
                 }
             )
 
-    except Exception as e:
-        messages.error(request, f"An error occurred: {e}")
+    except (ValidationError, IntegrityError) as e:
+        logger.exception("Error creating daily status report")
+        messages.error(request, "An error occurred while submitting your report. Please try again.")
         return redirect("sizzle")
 
     return HttpResponseBadRequest("Invalid request method.")
