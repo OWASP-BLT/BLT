@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Sum
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
@@ -171,9 +171,15 @@ def add_sizzle_checkIN(request):
     )
 
 
+@login_required
 def checkIN_detail(request, report_id):
     DailyStatusReport = get_daily_status_report_model()
     report = get_object_or_404(DailyStatusReport, pk=report_id)
+    
+    # Restrict to own reports or authorized users
+    if report.user != request.user and not request.user.is_staff:
+        return HttpResponseForbidden("You don't have permission to view this report.")
+    
     context = {
         "username": report.user.username,
         "date": report.date.strftime("%d %B %Y"),
