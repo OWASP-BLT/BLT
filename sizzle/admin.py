@@ -9,7 +9,7 @@ class TimelogAdmin(admin.ModelAdmin):
 
 
 @admin.register(DailyStatusReport)
-class ReminderSettingsAdmin(admin.ModelAdmin):
+class DailyStatusReportAdmin(admin.ModelAdmin):
     pass
 
 
