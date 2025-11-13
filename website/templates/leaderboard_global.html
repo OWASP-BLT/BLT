@@ -239,5 +239,43 @@
                 </div>
             </div>
         </div>
+        <!-- GitHub Comments Leaderboard -->
+        <div class="flex justify-center gap-6 flex-wrap">
+            <div class=" flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">GitHub Comments Leaderboard</div>
+                <div class="list-group p-4">
+                    {% if github_comments_leaderboard %}
+                        <div class="flex flex-col gap-2">
+                            {% for item in github_comments_leaderboard %}
+                                <div class="flex justify-between items-center">
+                                    <div class="flex gap-2 items-center truncate flex-1">
+                                        <!-- Avatar and User Info -->
+                                        <img src="{{ item.avatar_url }}" class="size-9 select-none border border-gray-200 rounded-full flex-shrink-0" alt="{{ item.username }}" width="50px" height="50px">
+                                        <div class="truncate flex-1">
+                                            {% if item.github_url %}
+                                                <a href="{{ item.github_url }}" target="_blank" class="text-base font-medium text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                                                    {{ item.username }}
+                                                    <i class="fab fa-github ml-1 text-gray-500 text-xs"></i>
+                                                </a>
+                                            {% else %}
+                                                <span class="text-base font-medium text-gray-900 truncate">{{ item.username }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <!-- Comments Count -->
+                                    <div class="flex-shrink-0 text-right ml-2">
+                                        <div class="text-lg font-bold text-[#e74c3c]">{{ item.total_comments }}</div>
+                                        <div class="text-xs text-gray-500">Comments</div>
+                                    </div>
+                                </div>
+                                <div class="border-t border-gray-200 my-1"></div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-[#e74c3c] text-center font-medium">No GitHub comment data available!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock content %}
