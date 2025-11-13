@@ -7,7 +7,13 @@ app.use(express.json());
 // ✅ Mock endpoint for starting a timer
 app.post("/api/timers/start", (req, res) => {
   console.log("🕒 Mock Sizzle API received request:");
-  console.log(req.body);
+  // For security, do not log the entire request body. Log only non-sensitive fields or a summary.
+  if (req.body && typeof req.body === "object") {
+    // Log only the keys of the request body, not the values
+    console.log("Request body keys:", Object.keys(req.body));
+  } else {
+    console.log("Request body is empty or not an object.");
+  }
 
   // Simulate a success response
   res.status(200).json({
