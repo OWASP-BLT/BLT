@@ -1044,6 +1044,9 @@ def handle_issue_comment_event(payload):
             updated_at=datetime.fromisoformat(comment_data.get("updated_at", "").replace("Z", "+00:00")),
         )
 
+        # Atomically increment the issue's comment count
+        GitHubIssue.objects.filter(pk=github_issue.pk).update(comments_count=F("comments_count") + 1)
+
         logger.info(f"Tracked comment {comment_id} by {commenter_login} on issue {issue_number}")
         return JsonResponse({"status": "success", "message": "Comment tracked"}, status=200)
 

@@ -6,6 +6,7 @@ import requests
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
+from django.db.models import F
 
 from website.management.base import LoggedBaseCommand
 from website.models import Contributor, GitHubComment, GitHubIssue, Repo, UserProfile
@@ -228,6 +229,9 @@ class Command(LoggedBaseCommand):
                     created_at=datetime.fromisoformat(comment_data.get("created_at", "").replace("Z", "+00:00")),
                     updated_at=datetime.fromisoformat(comment_data.get("updated_at", "").replace("Z", "+00:00")),
                 )
+
+                # Atomically increment the issue's comment count
+                GitHubIssue.objects.filter(pk=issue.pk).update(comments_count=F("comments_count") + 1)
 
         except Exception as e:
             logger.error(f"Error saving comment {comment_data.get('id', 'unknown')}: {str(e)}")
