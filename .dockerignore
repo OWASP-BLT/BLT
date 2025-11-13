@@ -1,0 +1,12 @@
+# DOCKERIGNORE RETAINED - DOCKER DISABLED
+# Docker is disabled in this project per user preference. This file is retained to avoid accidental inclusion of build artifacts.
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.env
+venv
+.envrc
+node_modules

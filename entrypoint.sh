@@ -1,43 +1,30 @@
-#!/bin/sh
-set -x
-echo "Entrypoint script is running"
+#!/usr/bin/env bash
+set -e  # Exit immediately if a command exits with a non-zero status
 
-# Wait for the database to be ready
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h "db" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q'; do
-  >&2 echo "Postgres is unavailable - sleeping"
-  sleep 1
-done
+echo "Starting OWASP-BLT Docker container..."
 
->&2 echo "Postgres is up - executing command"
-
-# Function to check if migrations are applied
-check_migrations() {
-    python manage.py showmigrations --plan | grep -q "\[ \]"
-    return $?
-}
-
-# Check if migrations need to be applied
-if check_migrations; then
-    echo "Migrations need to be applied. Running initialization tasks."
-
-    # Run migrations
-    echo "Migration script is running"
-    python manage.py migrate
-
-    # Load initial data
-    python manage.py loaddata website/fixtures/initial_data.json
-
-    # Create superuser
-    echo "Creating the superuser, if it does not exist!"
-    python manage.py initsuperuser
-
-    # Collect static files
-    echo "Collecting the static files!"
-    python manage.py collectstatic --noinput
+# Load .env if it exists
+if [ -f /blt/.env ]; then
+  echo "Loading environment variables from .env..."
+  export $(grep -v '^#' /blt/.env | xargs)
 else
-    echo "All migrations have already been applied. Skipping initialization."
+  echo "No .env file found, using default settings."
 fi
 
-# Start the main application
-echo "Starting the main application http://localhost:8000/"
+# Ensure Poetry is available (optional, just for dev convenience)
+if ! command -v poetry >/dev/null 2>&1; then
+  echo "Poetry not found in PATH, installing..."
+  pip install --upgrade pip poetry
+fi
+
+# Apply Django migrations (ignore errors if already applied)
+echo "Applying Django migrations..."
+python manage.py migrate --noinput || true
+
+# Collect static files
+echo "Collecting static files..."
+python manage.py collectstatic --noinput || true
+
+# Start Django development server
+echo "Starting Django development server..."
 exec python manage.py runserver 0.0.0.0:8000

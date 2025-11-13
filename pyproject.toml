@@ -82,6 +82,7 @@ chromedriver-autoinstaller = "^0.6.4"
 django-debug-toolbar = "^4.4.6"
 django-livereload-server = "^0.5.1"
 watchfiles = "^1.0.4"
+djlint = "^1.36.4"
 
 [tool.isort]
 known_first_party = ["blt"]
