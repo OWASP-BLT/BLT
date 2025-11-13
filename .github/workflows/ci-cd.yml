@@ -80,7 +80,7 @@ jobs:
         uses: pre-commit/action@v3.0.1
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: failure() && github.event_name == 'pull_request' && steps.pre-commit.outcome == 'failure'
+        if: github.event_name == 'pull_request' && steps.pre-commit.outcome == 'failure'
         uses: actions/github-script@v7
         with:
           script: |
