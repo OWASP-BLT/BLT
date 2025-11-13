@@ -601,7 +601,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             # Handle case where table doesn't exist (migration not run yet)
             logger.warning(f"Could not fetch GitHub comments leaderboard: {str(e)}")
             github_comments_data = []
-        
+
         context["github_comments_leaderboard"] = github_comments_data
 
         return context
@@ -995,9 +995,7 @@ def handle_issue_comment_event(payload):
             return JsonResponse({"status": "success", "message": "Repository not tracked"}, status=200)
 
         # Get or create the GitHubIssue
-        github_issue = GitHubIssue.objects.filter(
-            issue_id=issue_number, repo=repo
-        ).first()
+        github_issue = GitHubIssue.objects.filter(issue_id=issue_number, repo=repo).first()
 
         if not github_issue:
             logger.warning(f"GitHub issue {issue_number} not found in repo {repo.name}")
