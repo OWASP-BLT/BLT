@@ -1,0 +1,4 @@
+issue_id,title,description_length,has_link,flag_count,is_spam
+1,Login not working,4,False,0,False
+2,Free money now!!!,2,True,8,True
+3,UI suggestion,4,False,1,False
