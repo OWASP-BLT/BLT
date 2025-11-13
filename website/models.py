@@ -1697,6 +1697,7 @@ class GitHubIssue(models.Model):
         related_name="github_issue_p2p_payments",
     )
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
+    comments_count = models.PositiveIntegerField(default=0)  # Number of comments on this issue
     # Related pull requests
     linked_pull_requests = models.ManyToManyField(
         "self",
@@ -1869,6 +1870,55 @@ class GitHubReview(models.Model):
 
     def __str__(self):
         return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
+
+
+class GitHubComment(models.Model):
+    """
+    Model to track comments made by users on GitHub issues and pull requests.
+    Used for the GitHub Comments Leaderboard.
+    """
+
+    comment_id = models.BigIntegerField(unique=True)
+    github_issue = models.ForeignKey(
+        GitHubIssue,
+        on_delete=models.CASCADE,
+        related_name="github_comments",
+    )
+    repo = models.ForeignKey(
+        Repo,
+        on_delete=models.CASCADE,
+        related_name="github_comments",
+    )
+    commenter_login = models.CharField(max_length=255)  # GitHub username
+    commenter = models.ForeignKey(
+        Contributor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="github_comments",
+    )
+    # Link to UserProfile if the commenter has registered on BLT
+    commenter_profile = models.ForeignKey(
+        UserProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="github_comments",
+    )
+    body = models.TextField(null=True, blank=True)
+    comment_url = models.URLField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["repo", "commenter_login"]),
+            models.Index(fields=["commenter_login"]),
+        ]
+
+    def __str__(self):
+        return f"Comment on {self.github_issue.title} by {self.commenter_login}"
 
 
 class Kudos(models.Model):
