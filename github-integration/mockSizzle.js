@@ -21,5 +21,5 @@ app.get("/", (req, res) => {
   res.send("Mock Sizzle API is running 🚀");
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🟢 Mock Sizzle API running on port ${PORT}`));
