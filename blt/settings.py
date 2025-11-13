@@ -101,6 +101,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "sizzle",
 )
 
 if DEBUG:
@@ -176,6 +177,8 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
+                # Add sizzle context processor for seamless BLT integration
+                "sizzle.context_processors.sizzle_context",
             ],
             "loaders": (
                 [
@@ -630,3 +633,18 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+# Sizzle Configuration - Integrate with BLT's layout and navigation
+SIZZLE_PARENT_BASE = "base.html"  # Use BLT's main template
+SIZZLE_SHOW_SIDENAV = True  # Show BLT's sidenav in sizzle pages
+
+# Sizzle Model Configuration (Swappable Models)
+SIZZLE_SLACK_INTEGRATION_MODEL = "website.SlackIntegration"
+SIZZLE_ORGANIZATION_MODEL = "website.Organization"
+SIZZLE_USERPROFILE_MODEL = "website.UserProfile"
+SIZZLE_NOTIFICATION_MODEL = "website.Notification"
+
+# Sizzle Feature Flags
+SIZZLE_SLACK_ENABLED = True
+SIZZLE_EMAIL_REMINDERS_ENABLED = True
+SIZZLE_DAILY_CHECKINS_ENABLED = True

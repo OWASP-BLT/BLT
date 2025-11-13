@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="{% block description %}Sizzle - Daily check-ins, time tracking, and team activity monitoring for Django projects{% endblock %}">
+        <meta name="keywords"
+              content="{% block keywords %}django, time tracking, daily checkins, team monitoring, productivity, sizzle{% endblock %}">
+        <title>
+            {% block title %}Sizzle{% endblock %}
+        </title>
+        {# Allow project to inject their own CSS #}
+        {% block extra_head %}{% endblock %}
+        {# Minimal default styling or use Tailwind CDN #}
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body>
+        {# Optional navigation - can be overridden #}
+        {% block navigation %}
+            <nav class="bg-gray-800 text-white p-4">
+                <a href="{% url 'sizzle:sizzle' %}">Sizzle Home</a>
+            </nav>
+        {% endblock %}
+        {# Main content area #}
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+        {# Optional footer #}
+        {% block footer %}{% endblock %}
+        {# Allow project to inject scripts #}
+        {% block extra_scripts %}{% endblock %}
+    </body>
+</html>

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends parent_base|default:"base.html" %}
 {% load static %}
 {% block title %}
     {{ user.username }}'s Sizzle Report
@@ -16,7 +16,9 @@
     Access the Sizzle report for {{ user.username }} to track daily activities, issue titles, durations, and start times. Get an overview of their work progress and time management.
 {% endblock og_description %}
 {% block content %}
-    {% include "includes/sidenav.html" %}
+    {% if sizzle_has_sidenav %}
+        {% include "includes/sidenav.html" %}
+    {% endif %}
     <div class="container">
         <h1>{{ user.username }}'s Sizzle Report</h1>
         <table class="table">
@@ -44,11 +46,15 @@
         <canvas id="timeLogChart"></canvas>
     </div>
     <script>
-        {% comment %} 
-        // this seems to have a syntax issue
+        // Chart.js functionality - uncomment when Chart.js is included
+        /*
         const ctx = document.getElementById('timeLogChart').getContext('2d');
-        const labels = {{ response_data|json_script:"labels" }};
-        const data = {{ response_data|json_script:"data" }};
+        const responseData = {{ response_data|safe }};
+        
+        // Extract labels and data from response_data
+        const labels = responseData.map(item => item.date);
+        const data = responseData.map(item => parseInt(item.duration) || 0);
+        
         const timeLogChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -68,6 +74,7 @@
                     }
                 }
             }
-}); {% endcomment %}
+        });
+        */
     </script>
 {% endblock content %}

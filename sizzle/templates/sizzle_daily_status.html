@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends parent_base|default:"base.html" %}
 {% load static %}
 {% block title %}
     Sizzle Daily Status Report
@@ -18,7 +18,9 @@
 {% block content %}
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
-        {% include "includes/sidenav.html" %}
+        {% if sizzle_has_sidenav %}
+            {% include "includes/sidenav.html" %}
+        {% endif %}
         <!-- Main Content Section -->
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
@@ -29,7 +31,7 @@
                    class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
                     Back to Sizzle
                 </a>
-                <a href="{% url 'sizzle-docs' %}"
+                <a href="{% url 'sizzle_docs' %}"
                    class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
                     Sizzle Docs
                 </a>

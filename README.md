@@ -70,12 +70,29 @@
 - 🎮 **Gamification** - Leaderboards, challenges, and competitions to make security research engaging
 - 💰 **Staking System** - Innovative blockchain-based reward system for contributors
 - 📊 **Comprehensive Dashboard** - Track your progress, statistics, and impact
+- 🔥 **Sizzle Plugin** - Daily check-ins, time tracking, and team productivity tools ([Learn more](sizzle/README.md))
 - 🌐 **Open Source** - Built with transparency and collaboration at its core
 - 🛡️ **OWASP Project** - Part of the Open Worldwide Application Security Project family
 
 ---
 
-## 🚀 Quick Start
+## � Featured Plugins
+
+BLT includes powerful plugins to enhance team productivity and collaboration:
+
+### Sizzle - Daily Check-ins & Time Tracking
+A comprehensive productivity plugin featuring:
+- 📝 **Daily Status Reports** - Structured team check-ins and progress tracking
+- ⏰ **Time Tracking** - Log work sessions with GitHub issue integration  
+- 🔔 **Smart Reminders** - Configurable daily reminder notifications
+- 📊 **Team Analytics** - Monitor productivity and engagement metrics
+- 🎯 **Streak Tracking** - Maintain daily check-in streaks for motivation
+
+**📖 [View Sizzle Documentation](sizzle/README.md)** | **🌐 Access at**: `/sizzle/`
+
+---
+
+## �🚀 Quick Start
 
 ### Prerequisites
 - Python 3.11.2+
@@ -99,6 +116,8 @@ docker-compose up
 ```
 
 Access the application at **http://localhost:8000**
+
+**🔥 Sizzle Plugin**: Access the productivity tools at **http://localhost:8000/sizzle/**
 
 #### Using Poetry
 ```bash
