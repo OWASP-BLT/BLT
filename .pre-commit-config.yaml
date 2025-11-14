@@ -57,7 +57,7 @@ repos:
         verbose: true
       - id: django-test
         name: Django Tests
-        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast --noinput; fi'
+        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
         language: system
         types: [python]
         pass_filenames: false
