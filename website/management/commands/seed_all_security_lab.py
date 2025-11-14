@@ -1188,50 +1188,52 @@ class Command(BaseCommand):
                     },
                 )
 
-            if created:
-                self.stdout.write(self.style.SUCCESS(f'Created lab: "{lab.name}"'))
-            else:
-                self.stdout.write(self.style.WARNING(f'Lab "{lab.name}" already exists, updating...'))
-
-            # Create tasks for this lab
-            task_count = 0
-            for task_data in lab_data["tasks"]:
-                task, task_created = Tasks.objects.update_or_create(
-                    lab=lab,
-                    order=task_data["order"],
-                    defaults={
-                        "name": task_data["name"],
-                        "description": task_data["description"],
-                        "task_type": task_data["task_type"],
-                        "is_active": True,
-                    },
-                )
-
-                # Create task content
-                content_data = {}
-                if task_data["task_type"] == "theory":
-                    content_data = {
-                        "theory_content": task_data.get("theory_content", ""),
-                        "mcq_question": task_data.get("mcq_question", ""),
-                        "mcq_options": task_data.get("mcq_options", []),
-                        "correct_answer": task_data.get("correct_answer", ""),
-                    }
-                else:  # simulation
-                    content_data = {
-                        "simulation_config": task_data.get("simulation_config", {}),
-                    }
-
-                TaskContent.objects.update_or_create(task=task, defaults=content_data)
-
-                task_count += 1
-                total_tasks += 1
-                if task_created:
-                    self.stdout.write(self.style.SUCCESS(f'  Created task: "{task.name}"'))
+                if created:
+                    self.stdout.write(self.style.SUCCESS(f'Created lab: "{lab.name}"'))
                 else:
-                    self.stdout.write(self.style.WARNING(f'  Task "{task.name}" already exists, updated'))
+                    self.stdout.write(self.style.WARNING(f'Lab "{lab.name}" already exists, updating...'))
 
-            lab.update_total_tasks()
-            total_labs += 1
-            self.stdout.write(self.style.SUCCESS(f'  Lab "{lab.name}" has {task_count} tasks'))
+                # Create tasks for this lab
+                task_count = 0
+                for task_data in lab_data["tasks"]:
+                    task, task_created = Tasks.objects.update_or_create(
+                        lab=lab,
+                        order=task_data["order"],
+                        defaults={
+                            "name": task_data["name"],
+                            "description": task_data["description"],
+                            "task_type": task_data["task_type"],
+                            "is_active": True,
+                        },
+                    )
 
-        self.stdout.write(self.style.SUCCESS(f"Successfully seeded {total_labs} labs with {total_tasks} total tasks!"))
+                    # Create task content
+                    content_data = {}
+                    if task_data["task_type"] == "theory":
+                        content_data = {
+                            "theory_content": task_data.get("theory_content", ""),
+                            "mcq_question": task_data.get("mcq_question", ""),
+                            "mcq_options": task_data.get("mcq_options", []),
+                            "correct_answer": task_data.get("correct_answer", ""),
+                        }
+                    else:  # simulation
+                        content_data = {
+                            "simulation_config": task_data.get("simulation_config", {}),
+                        }
+
+                    TaskContent.objects.update_or_create(task=task, defaults=content_data)
+
+                    task_count += 1
+                    total_tasks += 1
+                    if task_created:
+                        self.stdout.write(self.style.SUCCESS(f'  Created task: "{task.name}"'))
+                    else:
+                        self.stdout.write(self.style.WARNING(f'  Task "{task.name}" already exists, updated'))
+
+                lab.update_total_tasks()
+                total_labs += 1
+                self.stdout.write(self.style.SUCCESS(f'  Lab "{lab.name}" has {task_count} tasks'))
+
+            self.stdout.write(
+                self.style.SUCCESS(f"Successfully seeded {total_labs} labs with {total_tasks} total tasks!")
+            )
