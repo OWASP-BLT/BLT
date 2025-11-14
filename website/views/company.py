@@ -9,7 +9,7 @@ import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
-from django.core.exceptions import FieldError, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
@@ -36,7 +36,7 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
-from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
+from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -206,87 +206,121 @@ class OrganizationDashboardAnalyticsView(View):
         6: "Design",
         7: "Server Down",
     }
-    months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
+    months_full = [
+        "January",
+        "February",
+        "March",
+        "April",
         "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
     ]
 
-    def get_security_incidents_summary(self, organization):
-        # Get all security-related issues (label=4)
-        security_issues = Issue.objects.filter(
+    def _get_security_issues_queryset(self, organization):
+        """Helper method to get security issues queryset (label=4)."""
+        return Issue.objects.filter(
             domain__organization__id=organization,
             label=4,  # Security label
         )
 
-        # Calculate severity distribution
-        # Note: Check if the severity field exists - currently not defined in the Issue model
-        try:
-            severity_counts = security_issues.values("severity").annotate(count=Count("id"))
-        except FieldError:
-            # Severity field doesn't exist, provide empty list
-            severity_counts = []
+    def get_security_incidents_summary(self, organization):
+        security_issues = self._get_security_issues_queryset(organization)
+
+        # Calculate severity distribution based on CVE score ranges
+        severity_distribution = []
+        for severity_level in [9, 7, 5, 3, 1]:
+            # For severity level 9, use upper bound of 11 to include CVSS 10 scores
+            upper_bound = (severity_level + 2) if severity_level < 9 else 11
+            count = security_issues.filter(cve_score__gte=severity_level, cve_score__lt=upper_bound).count()
+            if count > 0 or severity_level == 1:
+                severity_distribution.append({"severity": severity_level, "count": count})
+
+        severity_distribution = sorted(severity_distribution, key=lambda x: x["severity"], reverse=True)
 
         # Get recent security incidents (last 30 days)
-        recent_incidents = security_issues.filter(created__gte=timezone.now() - timedelta(days=30))
+        recent_incidents_count = security_issues.filter(created__gte=timezone.now() - timedelta(days=30)).count()
 
         # Calculate average resolution time
-        resolved_issues = security_issues.filter(status="resolved")
-        resolved_issues = resolved_issues.filter(closed_date__isnull=False)
-        avg_resolution_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+        avg_resolution_time_delta = security_issues.filter(status="resolved", closed_date__isnull=False).aggregate(
+            avg_time=Avg(F("closed_date") - F("created"))
+        )["avg_time"]
+
+        avg_resolution_time_formatted = (
+            format_timedelta(avg_resolution_time_delta) if avg_resolution_time_delta else None
+        )
 
         return {
             "total_security_issues": security_issues.count(),
-            "recent_incidents": recent_incidents.count(),
-            "severity_distribution": list(severity_counts),
-            "avg_resolution_time": avg_resolution_time,
-            "top_affected_domains": security_issues.values("domain__name")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5],
+            "recent_incidents": recent_incidents_count,
+            "severity_distribution": severity_distribution,
+            "avg_resolution_time": avg_resolution_time_formatted,
+            "top_affected_domains": list(
+                security_issues.values("domain__name").annotate(count=Count("id")).order_by("-count")[:5]
+            ),
         }
 
     def get_threat_intelligence(self, organization):
         """Gets threat intelligence data for the organization."""
-        security_issues = Issue.objects.filter(
-            domain__organization__id=organization,
-            label=4,  # Security label
-        )
+        security_issues = self._get_security_issues_queryset(organization)
 
-        # Get trending attack types based on issue labels/tags instead
-        attack_vectors = (
-            security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
-            .values("label")  # Use label instead of vulnerability_type
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5]
-        )
+        # Get trending attack types based on CVE score ranges (since all have label=4, use CVE scores)
+        # Group by CVE score ranges to show vulnerability types
+        attack_vectors = []
+        score_ranges = [
+            (9.0, 10.0, "Critical (9.0-10.0)"),
+            (7.0, 8.9, "High (7.0-8.9)"),
+            (5.0, 6.9, "Medium (5.0-6.9)"),
+            (3.0, 4.9, "Low (3.0-4.9)"),
+            (0.1, 2.9, "Very Low (0.1-2.9)"),
+        ]
 
-        # Calculate risk score (0-100)
+        recent_issues = security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
+        for min_score, max_score, label in score_ranges:
+            count = recent_issues.filter(cve_score__gte=min_score, cve_score__lte=max_score).count()
+            if count > 0:
+                attack_vectors.append({"vulnerability_type": label, "count": count})
+
+        # Sort by count descending
+        attack_vectors.sort(key=lambda x: x["count"], reverse=True)
+
+        # Calculate risk score (0-100) based on CVE scores with weighted formula
+        # Weight: Critical (9+) = 100%, High (7-8.9) = 70%, Medium (5-6.9) = 40%, Low (3-4.9) = 20%, Very Low (0-2.9) = 10%
         total_issues = security_issues.count()
-        critical_issues = security_issues.filter(cve_score__gte=8).count()  # Use cve_score instead of severity
-        risk_score = min(100, (critical_issues / total_issues * 100) if total_issues > 0 else 0)
+        if total_issues > 0:
+            # Use single queryset with annotations for efficiency
+            counts = {
+                "critical": security_issues.filter(cve_score__gte=9.0).count(),
+                "high": security_issues.filter(cve_score__gte=7.0, cve_score__lt=9.0).count(),
+                "medium": security_issues.filter(cve_score__gte=5.0, cve_score__lt=7.0).count(),
+                "low": security_issues.filter(cve_score__gte=3.0, cve_score__lt=5.0).count(),
+                "very_low": security_issues.filter(cve_score__gte=0.1, cve_score__lt=3.0).count(),
+            }
+
+            risk_score = (
+                (counts["critical"] / total_issues * 100)
+                + (counts["high"] / total_issues * 70)
+                + (counts["medium"] / total_issues * 40)
+                + (counts["low"] / total_issues * 20)
+                + (counts["very_low"] / total_issues * 10)
+            )
+            risk_score = min(100, int(risk_score))
+        else:
+            risk_score = 0
 
         return {
-            "attack_vectors": [
-                {
-                    "vulnerability_type": self.get_label_name(vector["label"]),  # Convert label to readable name
-                    "count": vector["count"],
-                }
-                for vector in attack_vectors
-            ],
-            "risk_score": int(risk_score),
-            "recent_alerts": security_issues.filter(
-                created__gte=timezone.now() - timedelta(days=7),
-                cve_score__gte=7,  # Use cve_score for severity
-            ).order_by("-created")[:5],
+            "attack_vectors": attack_vectors[:5],  # Top 5
+            "risk_score": risk_score,
+            "recent_alerts": list(
+                security_issues.filter(
+                    created__gte=timezone.now() - timedelta(days=7),
+                    cve_score__gte=7.0,  # Use cve_score for severity (7.0 and above)
+                ).order_by("-created")[:5]
+            ),
         }
 
     def get_label_name(self, label_id):
@@ -297,13 +331,15 @@ class OrganizationDashboardAnalyticsView(View):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
         total_domains = Domain.objects.filter(organization__id=organization).count()
-        # Step 1: Retrieve all hunt IDs associated with the specified organization
-        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list("id", flat=True)
 
-        # Step 2: Sum the rewarded values from issues that have a hunt_id in the hunt_ids list
-        total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(total_money=Sum("rewarded"))[
-            "total_money"
-        ]
+        # Calculate total money distributed
+        # Sum all rewards from issues in the organization's domains
+        # This ensures we capture all money distributed, whether through hunts or other means
+        total_money_distributed = Issue.objects.filter(domain__organization__id=organization).aggregate(
+            total_money=Sum("rewarded")
+        )["total_money"]
+
+        # Handle None case - if no rewards exist, default to 0
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         return {
@@ -365,104 +401,49 @@ class OrganizationDashboardAnalyticsView(View):
         for data_month in data_monthly:
             data[data_month["month"] - 1] = data_month["count"]
 
-        # Define month labels
-        months = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ]
-
         return {
-            "bug_monthly_report_labels": json.dumps(months),
+            "bug_monthly_report_labels": json.dumps(self.months_full),
             "bug_monthly_report_data": json.dumps(data),
             "max_count": max(data),
             "current_year": current_year,
         }
 
     def bug_rate_increase_descrease_weekly(self, organization, is_accepted_bugs=False):
-        # returns stats by comparing the count of past 8-15 days (1 week) activity to this (0 - 7) week.
-
+        """Returns stats comparing past 8-15 days (previous week) to 0-7 days (this week)."""
         current_date = timezone.now().date()
-        prev_week_start_date = current_date - timedelta(days=15)
-        prev_week_end_date = current_date - timedelta(days=8)
+        date_ranges = {
+            "prev": (current_date - timedelta(days=15), current_date - timedelta(days=8)),
+            "this": (current_date - timedelta(days=7), current_date),
+        }
 
-        this_week_start_date = current_date - timedelta(days=7)
-        this_week_end_date = current_date
-
+        base_query = Issue.objects.filter(domain__organization__id=organization)
         if is_accepted_bugs:
-            prev_week_issue_count = Issue.objects.filter(
-                domain__organization__id=organization,
-                created__date__range=[prev_week_start_date, prev_week_end_date],
-                verified=True,
-            ).count()
+            base_query = base_query.filter(verified=True)
 
-            this_week_issue_count = Issue.objects.filter(
-                domain__organization__id=organization,
-                created__date__range=[this_week_start_date, this_week_end_date],
-                verified=True,
-            ).count()
+        prev_week_issue_count = base_query.filter(created__date__range=date_ranges["prev"]).count()
 
-        else:
-            prev_week_issue_count = Issue.objects.filter(
-                domain__organization__id=organization,
-                created__date__range=[prev_week_start_date, prev_week_end_date],
-            ).count()
+        this_week_issue_count = base_query.filter(created__date__range=date_ranges["this"]).count()
 
-            this_week_issue_count = Issue.objects.filter(
-                domain__organization__id=organization,
-                created__date__range=[this_week_start_date, this_week_end_date],
-            ).count()
-
+        # Calculate percentage increase
         if prev_week_issue_count == 0:
-            percent_increase = this_week_issue_count * 100
+            percent_increase = 100.0 if this_week_issue_count > 0 else 0.0
         else:
             percent_increase = ((this_week_issue_count - prev_week_issue_count) / prev_week_issue_count) * 100
 
         return {
-            "percent_increase": percent_increase,
-            "is_increasing": (True if (this_week_issue_count - prev_week_issue_count) >= 0 else False),
+            "percent_increase": round(abs(percent_increase), 1),
+            "is_increasing": this_week_issue_count >= prev_week_issue_count,
             "this_week_issue_count": this_week_issue_count,
         }
 
-    def get_spent_on_bugtypes(self, organization):
-        spent_on_bugtypes = (
-            Issue.objects.values("label").filter(domain__organization__id=organization).annotate(spent=Sum("rewarded"))
-        )
-        labels = list(self.labels.values())
-        data = [0 for label in labels]  # make all labels spent 0 / init with 0
-
-        for bugtype in spent_on_bugtypes:
-            data[bugtype["label"]] = bugtype["spent"]
-
-        return {
-            "labels": json.dumps(labels),
-            "data": json.dumps(data),
-            "zipped_data": zip(labels, data),
-        }
+    def _get_user_organizations(self, user):
+        """Helper to get organizations accessible by user."""
+        if user.is_authenticated:
+            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
+        return []
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        # For authenticated users, show all organizations they have access to
-        if request.user.is_authenticated:
-            organizations = (
-                Organization.objects.values("name", "id")
-                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-                .distinct()
-            )
-        else:
-            # For unauthenticated users, don't show organization list
-            organizations = []
-
-        # Get the organization object
         organization_obj = Organization.objects.filter(id=id).first()
         if not organization_obj:
             messages.error(request, "Organization does not exist")
@@ -470,7 +451,7 @@ class OrganizationDashboardAnalyticsView(View):
 
         context = {
             "organization": id,
-            "organizations": organizations,
+            "organizations": self._get_user_organizations(request.user),
             "organization_obj": organization_obj,
             "total_info": self.get_general_info(id),
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
@@ -478,10 +459,9 @@ class OrganizationDashboardAnalyticsView(View):
             "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(id),
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
-            "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
             "security_incidents_summary": self.get_security_incidents_summary(id),
+            "threat_intelligence": self.get_threat_intelligence(id),
         }
-        context.update({"threat_intelligence": self.get_threat_intelligence(id)})
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
 
 
