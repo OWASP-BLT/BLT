@@ -133,7 +133,9 @@ def dashboard_view(request, *args, **kwargs):
 
 class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, "organization/register_organization.html")
+        recent_organizations = Organization.objects.all().order_by("-created")[:5]
+        context = {"recent_organizations": recent_organizations}
+        return render(request, "organization/register_organization.html", context)
 
     def post(self, request, *args, **kwargs):
         user = request.user
