@@ -20,7 +20,7 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="relative z-0">
+        <div class="relative z-0 mb-8">
             <div id="map-loading" class="map-loading hidden">
                 <div class="flex items-center space-x-2">
                     <i class="fas fa-spinner fa-spin text-[#e74c3c]"></i>
@@ -28,7 +28,10 @@
                 </div>
             </div>
             <div id="map"
-                 class="w-full h-[600px] rounded-lg shadow-lg mb-8 overflow-hidden relative z-0 border-2 border-black">
+                 class="w-full h-[600px] rounded-lg shadow-lg overflow-hidden relative z-0 border-2 border-black mb-2">
+            </div>
+            <div class="flex justify-end">
+                <p class="text-sm text-gray-500 italic">This map was inspired by the map on OWASP Nest</p>
             </div>
         </div>
         <div class="mt-8">
@@ -84,7 +87,6 @@
                         <p class="text-gray-400 mt-2">Try selecting a different location type</p>
                     </div>
                 {% endfor %}
-                this map was inspired by the map on OWASP Nest
             </div>
         </div>
     </div>
