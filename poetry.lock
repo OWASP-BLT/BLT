@@ -1038,14 +1038,14 @@ files = [
 
 [[package]]
 name = "django-import-export"
-version = "4.3.7"
+version = "4.3.14"
 description = "Django application and library for importing and exporting data with included admin integration."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "django_import_export-4.3.7-py3-none-any.whl", hash = "sha256:5514d09636e84e823a42cd5e79292f70f20d6d2feed117a145f5b64a5b44f168"},
-    {file = "django_import_export-4.3.7.tar.gz", hash = "sha256:bd3fe0aa15a2bce9de4be1a2f882e2c4539fdbfdfa16f2052c98dd7aec0f085c"},
+    {file = "django_import_export-4.3.14-py3-none-any.whl", hash = "sha256:ce6484fa082a1cdb2bf4e0b60276d3e2a7f39f74c20ae663b2f8eebb54141a58"},
+    {file = "django_import_export-4.3.14.tar.gz", hash = "sha256:224c7d909fec607378bc58271db38b9c6065982306aa644d26a529fcde64869e"},
 ]
 
 [package.dependencies]
@@ -1056,10 +1056,10 @@ tablib = ">=3.7.0"
 [package.extras]
 all = ["tablib[all]"]
 cli = ["tablib[cli]"]
-docs = ["openpyxl (==3.1.5)", "sphinx (==8.1.3)", "sphinx-rtd-theme (==3.0.1)"]
+docs = ["openpyxl (==3.1.5)", "psycopg[binary] (>=3.2.9)", "sphinx (==8.1.3)", "sphinx-rtd-theme (==3.0.1)"]
 ods = ["tablib[ods]"]
 pandas = ["tablib[pandas]"]
-tests = ["chardet (==5.2.0)", "coverage (==7.6.4)", "django-extensions (==3.2.3)", "memory-profiler (==0.61.0)", "mysqlclient (==2.2.5)", "psycopg2-binary (==2.9.10)", "pytz (==2024.2)", "setuptools-scm (==8.1.0)", "tablib[all] (>=3.7.0)"]
+tests = ["chardet (==5.2.0)", "coverage (==7.6.4)", "django-extensions (==3.2.3)", "memory-profiler (==0.61.0)", "mysqlclient (==2.2.5)", "psycopg[binary] (>=3.2.9)", "pytz (==2024.2)", "setuptools-scm (==8.1.0)", "tablib[all] (>=3.7.0)"]
 xls = ["tablib[xls]"]
 xlsx = ["tablib[xlsx]"]
 yaml = ["tablib[yaml]"]
@@ -4107,4 +4107,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "2bc53c130818435264bbb1a10ed84b9818a705853828f84d826668801613d359"
+content-hash = "ed5fb9e51e3650bf7c5818aad86d21314ce3c7181d98ad97f40398f266693f4b"
