@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from website.models import Labs, TaskContent, Tasks
 
@@ -1174,17 +1175,18 @@ class Command(BaseCommand):
         total_labs = 0
         total_tasks = 0
 
-        for lab_data in labs_data:
-            # Create or update lab
-            lab, created = Labs.objects.update_or_create(
-                name=lab_data["name"],
-                defaults={
-                    "description": lab_data["description"],
-                    "estimated_time": lab_data["estimated_time"],
-                    "order": lab_data["order"],
-                    "is_active": True,
-                },
-            )
+        with transaction.atomic():
+            for lab_data in labs_data:
+                # Create or update lab
+                lab, created = Labs.objects.update_or_create(
+                    name=lab_data["name"],
+                    defaults={
+                        "description": lab_data["description"],
+                        "estimated_time": lab_data["estimated_time"],
+                        "order": lab_data["order"],
+                        "is_active": True,
+                    },
+                )
 
             if created:
                 self.stdout.write(self.style.SUCCESS(f'Created lab: "{lab.name}"'))
