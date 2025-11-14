@@ -636,7 +636,7 @@ class Command(BaseCommand):
                             "scenario": "fixation_reuse",
                             "target_url": "/session-test",
                             "vulnerable_parameters": ["sessionid"],
-                            "success_payload": {"sessionid": "fixed-session-0001"},
+                            "success_payload": "sessionid=fixed-session-0001",
                             "success_criteria": "Reuse same sessionid after login to access protected page.",
                             "hints": [
                                 "Set sessionid first",
