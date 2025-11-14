@@ -593,7 +593,7 @@ class Command(BaseCommand):
                             "scenario": "default_login",
                             "target_url": "/login",
                             "vulnerable_parameters": ["username", "password"],
-                            "success_payload": {"username": "admin", "password": "admin"},
+                            "success_payload": "username=admin&password=admin",
                             "success_criteria": "Admin login without changing default credentials.",
                             "hints": [
                                 "Try admin/admin",
@@ -767,7 +767,7 @@ class Command(BaseCommand):
                             "scenario": "rate_limit_test",
                             "target_url": "/login",
                             "vulnerable_parameters": ["username", "password"],
-                            "success_payload": {"username": "victim", "password": "P@ssw0rd!"},
+                            "success_payload": "username=victim&password=P@ssw0rd!",
                             "success_criteria": "Find valid credential while respecting simulated rate limits.",
                             "hints": [
                                 "Small controlled attempts",
