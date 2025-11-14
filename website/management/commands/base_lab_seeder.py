@@ -3,7 +3,6 @@ from typing import ClassVar
 from django.core.management.base import BaseCommand, CommandError
 from website.models import Labs, TaskContent, Tasks
 
-
 class LabSeederCommand(BaseCommand):
     lab_name: ClassVar[str | None] = None  # Override in subclass
     tasks_data: ClassVar[list] = []  # Override in subclass
