@@ -94,7 +94,7 @@
         content: |
           DEBUG=False
           ALLOWED_HOSTS=.{{ domain }},{{ domain }},127.0.0.1,localhost
-          SECRET_KEY={{ lookup('password', '/dev/null', length=64, chars='ascii_letters,digits') }}
+          SECRET_KEY={{ lookup('password', '{{ app_dir }}/shared/secret_key', length=64, chars='ascii_letters,digits') }}
           DATABASE_URL=postgres://{{ postgres_db_user }}:{{ postgres_db_password }}@127.0.0.1:5432/{{ postgres_db_name }}
           PORT=8000
           # Add any extra environment variables below
@@ -143,16 +143,19 @@
         postgres_hba_file: "{{ pg_main_dir.stdout }}/pg_hba.conf"
 
     - name: Create PostgreSQL role if absent
+      community.postgresql.postgresql_user:
+        name: "{{ postgres_db_user }}"
+        password: "{{ postgres_db_password }}"
+        login: true
+        state: present
       become_user: postgres
-      shell: |
-        psql -tc "SELECT 1 FROM pg_roles WHERE rolname='{{ postgres_db_user }}'" | grep -q 1 || psql -c "CREATE ROLE {{ postgres_db_user }} LOGIN PASSWORD '{{ postgres_db_password }}';"
-      changed_when: false
 
     - name: Create PostgreSQL database if absent
+      community.postgresql.postgresql_db:
+        name: "{{ postgres_db_name }}"
+        owner: "{{ postgres_db_user }}"
+        state: present
       become_user: postgres
-      shell: |
-        psql -tc "SELECT 1 FROM pg_database WHERE datname='{{ postgres_db_name }}'" | grep -q 1 || psql -c "CREATE DATABASE {{ postgres_db_name }} OWNER {{ postgres_db_user }};"
-      changed_when: false
 
     - name: Allow PostgreSQL to listen on all addresses (listen_addresses)
       lineinfile:
@@ -237,11 +240,7 @@
       ufw:
         rule: allow
         port: "{{ item }}"
-      loop:
-        - '22'
-        - '80'
-        - '443'
-        - '5432'
+      loop: "{{ ['22', '80', '443'] + (enable_remote_postgres | bool | ternary(['5432'], [])) }}"
 
     - name: Enable UFW if not enabled
       command: ufw --force enable
