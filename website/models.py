@@ -2249,6 +2249,26 @@ class Hackathon(models.Model):
             hours = remaining.seconds // 3600
             return f"{days} days, {hours} hours remaining"
 
+    @property
+    def status_badge_class(self):
+        """Returns CSS classes for the status badge based on hackathon status."""
+        if self.is_ongoing:
+            return "bg-green-100 text-green-800"
+        elif self.has_ended:
+            return "bg-gray-100 text-gray-800"
+        else:
+            return "bg-blue-100 text-blue-800"
+
+    @property
+    def status_text(self):
+        """Returns the status text for display."""
+        if self.is_ongoing:
+            return "Ongoing"
+        elif self.has_ended:
+            return "Ended"
+        else:
+            return "Upcoming"
+
     def get_leaderboard(self):
         """
         Generate a leaderboard of contributors based on merged pull requests

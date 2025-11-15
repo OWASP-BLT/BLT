@@ -110,7 +110,7 @@ SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "blt.middleware.domain.DomainMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -126,7 +126,7 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
-)
+]
 
 if DEBUG:
     MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
@@ -318,7 +318,6 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
         },
     }
-    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
     # Removed DEBUG override - DEBUG should be controlled by environment variable
 
     # use this to debug emails locally

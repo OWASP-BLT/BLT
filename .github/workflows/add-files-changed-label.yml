@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Add Files Changed Label
         env:
-          GITHUB_TOKEN: ${{ secrets.CUSTOM_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
@@ -42,9 +42,10 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/files")
           
-          # Check if the API request was successful
-          if [[ "$FILES_API_RESPONSE" == *"message"*"Not Found"* ]] || [[ "$FILES_API_RESPONSE" == *"Resource not accessible by integration"* ]]; then
-            echo "Error: Could not fetch PR files. Response: $FILES_API_RESPONSE"
+          # Check if the API request was successful by verifying it's a valid array
+          if ! echo "$FILES_API_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            echo "Error: Could not fetch PR files. The API response was not a valid array."
+            echo "This could indicate an authentication issue or the PR may not exist."
             exit 1
           fi
           
@@ -84,7 +85,15 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/labels")
           
-          ALL_REPO_LABELS=$(echo "$ALL_LABELS_RESPONSE" | jq -r '.[].name')
+          # Check if the response is an array before parsing
+          if echo "$ALL_LABELS_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            ALL_REPO_LABELS=$(echo "$ALL_LABELS_RESPONSE" | jq -r '.[].name')
+          else
+            ERROR_MSG=$(echo "$ALL_LABELS_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+            ERROR_MSG="${ERROR_MSG:-Invalid response}"
+            echo "Error: Failed to fetch repository labels. Error: $ERROR_MSG"
+            exit 1
+          fi
           
           # Create the label if it doesn't exist
           if ! echo "$ALL_REPO_LABELS" | grep -q "$LABEL"; then
@@ -95,17 +104,20 @@ jobs:
               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/labels" \
               -d "{\"name\":\"$LABEL\",\"color\":\"$LABEL_COLOR\",\"description\":\"$DESCRIPTION\"}")
             
-            # Check if label creation was successful
-            if [[ "$CREATE_LABEL_RESPONSE" == *"message"* ]]; then
-              echo "Warning: There might be an issue creating the label. Response: $CREATE_LABEL_RESPONSE"
+            # Check if label creation was successful (successful response has "name" field)
+            if echo "$CREATE_LABEL_RESPONSE" | jq -e 'has("name")' > /dev/null 2>&1; then
+              echo "Label '$LABEL' created successfully."
+            else
+              ERROR_MSG=$(echo "$CREATE_LABEL_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+              ERROR_MSG="${ERROR_MSG:-Invalid response}"
+              echo "Warning: There might be an issue creating the label. Error: $ERROR_MSG"
               
               # Provide more detailed guidance for permission errors
-              if [[ "$CREATE_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+              if [[ "$ERROR_MSG" == *"Resource not accessible by integration"* ]]; then
                 echo "This appears to be a permissions issue with creating labels."
-                echo "Please check the .github/README.md file for instructions on setting up a CUSTOM_GITHUB_TOKEN with proper permissions."
+                echo "The workflow has been configured with appropriate permissions (pull-requests: write, issues: write)."
+                echo "If this error persists, please check the repository settings."
               fi
-            else
-              echo "Label '$LABEL' created successfully."
             fi
           else
             echo "Label '$LABEL' already exists in the repository."
@@ -118,7 +130,15 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels")
           
-          EXISTING_LABELS=$(echo "$PR_LABELS_RESPONSE" | jq -r '.[].name')
+          # Check if the response is an array before parsing
+          if echo "$PR_LABELS_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            EXISTING_LABELS=$(echo "$PR_LABELS_RESPONSE" | jq -r '.[].name')
+          else
+            ERROR_MSG=$(echo "$PR_LABELS_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+            ERROR_MSG="${ERROR_MSG:-Invalid response}"
+            echo "Error: Failed to fetch PR labels. Error: $ERROR_MSG"
+            exit 1
+          fi
           
           # Remove any existing files-changed labels
           echo "Checking for existing 'files-changed' labels to remove..."
@@ -137,7 +157,9 @@ jobs:
               if [[ "$REMOVE_RESPONSE" == "" ]]; then
                 echo "Successfully removed label: $EXISTING_LABEL"
               else
-                echo "Warning: There might be an issue removing the label. Response: $REMOVE_RESPONSE"
+                ERROR_MSG=$(echo "$REMOVE_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+                ERROR_MSG="${ERROR_MSG:-Invalid response}"
+                echo "Warning: There might be an issue removing the label. Error: $ERROR_MSG"
               fi
             fi
           done
@@ -154,21 +176,20 @@ jobs:
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels" \
             -d "{\"labels\":[\"$LABEL\"]}")
           
-          # Check if label was added successfully
-          if [[ "$ADD_LABEL_RESPONSE" == *"message"* ]]; then
-            echo "Error: Failed to add label. Response: $ADD_LABEL_RESPONSE"
+          # Check if label was added successfully (successful response is an array)
+          if echo "$ADD_LABEL_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            echo "Successfully applied label '$LABEL' to PR #$PR_NUMBER"
+          else
+            ERROR_MSG=$(echo "$ADD_LABEL_RESPONSE" | jq -r '.message // empty' 2>/dev/null || echo "Invalid response")
+            ERROR_MSG="${ERROR_MSG:-Invalid response}"
+            echo "Error: Failed to add label. Error: $ERROR_MSG"
             
-            # Check if it's a permissions issue and suggest using a custom token
-            if [[ "$ADD_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
-              echo "This appears to be a permissions issue. Please follow these steps:"
-              echo "1. Create a Personal Access Token (PAT) with 'repo' scope"
-              echo "2. Add the token to your repository secrets as CUSTOM_GITHUB_TOKEN"
-              echo "3. See the .github/README.md file for detailed instructions on setting up the token"
-              echo ""
-              echo "Note: The workflow is configured to use CUSTOM_GITHUB_TOKEN if available, falling back to GITHUB_TOKEN"
+            # Check if it's a permissions issue
+            if [[ "$ERROR_MSG" == *"Resource not accessible by integration"* ]]; then
+              echo "This appears to be a permissions issue."
+              echo "The workflow has been configured with appropriate permissions (pull-requests: write, issues: write)."
+              echo "If this error persists, please verify the repository settings allow workflow actions."
             fi
             
             exit 1
-          else
-            echo "Successfully applied label '$LABEL' to PR #$PR_NUMBER"
           fi
