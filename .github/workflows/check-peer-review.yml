@@ -19,6 +19,13 @@ permissions:
 jobs:
   check_peer_review:
     runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != 'DonnieBLT'
+      && github.actor != 'Copilot'
+      && github.actor != 'copilot-swe-agent[bot]'
     steps:
       - name: Check for Peer Review
         env:
