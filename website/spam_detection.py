@@ -2,7 +2,8 @@ import os
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
-
+import logging  
+logger = logging.getLogger(__name__) 
 
 class SpamDetection:
     """
@@ -13,7 +14,9 @@ class SpamDetection:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
         if not self.api_key:
-            print("GEMINI_API_KEY not set. Spam detection will be disabled.")
+            logger.warning("GEMINI_API_KEY not set. Spam detection will be disabled.")  
+            self.client = None
+            return
         self.client = genai.Client(api_key=self.api_key)
 
     def check_bug_report(self, title, description, url) -> dict:
@@ -31,15 +34,17 @@ class SpamDetection:
                  'reason': str
              }
         """
-        if not self.api_key:
+        if not self.client:
             return {"is_spam": False, "spam_score": 0, "reason": "Spam detection not available"}
+        
         try:
             prompt = self._get_system_prompt(title, description, url)
             response = self.get_gemini_response(prompt)
+        except Exception as e:  
+            logger.error("Error in spam detection: %s", e, exc_info=True)  
+            return {"is_spam": False, "spam_score": 0, "reason": "Error parsing spam detection response"}  
+        else:
             return response
-        except Exception as e:
-            print("Error parsing Gemini response:", e)
-            return {"is_spam": False, "spam_score": 0, "reason": "Error parsing spam detection response"}
 
     def _get_system_prompt(self, title, desc, url) -> str:
         return f"""
@@ -49,7 +54,7 @@ class SpamDetection:
             0 = Definitely legitimate bug report
             100 = Definitely spam
 
-            You have to be smart and understand that the bug report could be well-written with high detials but still be spammy (e.g., fake reports, irrelevant content, etc.).
+            You have to be smart and understand that the bug report could be well-written with high details but still be spammy (e.g., fake reports, irrelevant content, etc.).
             Use your judgment: the report may be very detailed but could still be fake, irrelevant, or promotional.  
 
             Bug Report Details:
