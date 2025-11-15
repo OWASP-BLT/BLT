@@ -241,7 +241,7 @@ def get_github_stats(user_profile):
         reviews__reviewer=user_profile,
     ).count()
 
-    print(f"Total PRs found: {user_prs.count()}")
+    logger.debug(f"Total PRs found: {user_prs.count()}")
 
     # Overall stats
     merged_count = user_prs.filter(is_merged=True).count()
@@ -336,7 +336,7 @@ class UserProfileDetailView(DetailView):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         # Add bacon earning data
         bacon_earning = BaconEarning.objects.filter(user=user).first()
-        print(f"Bacon earning for {user.username}: {bacon_earning}")
+        logger.debug(f"Bacon earning for {user.username}: {bacon_earning}")
         context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
 
         # Get bacon submission stats
@@ -976,7 +976,7 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    print("issue closed")
+    logger.debug("issue closed")
     if payload["action"] == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
@@ -1021,7 +1021,7 @@ def assign_github_badge(user, action_title):
             UserBadge.objects.create(user=user, badge=badge)
 
     except Badge.DoesNotExist:
-        print(f"Badge '{action_title}' does not exist.")
+        logger.warning(f"Badge '{action_title}' does not exist.")
 
 
 @method_decorator(login_required, name="dispatch")

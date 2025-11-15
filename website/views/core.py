@@ -87,21 +87,21 @@ def memory_usage_by_module(limit=1000):
     try:
         snapshot = tracemalloc.take_snapshot()
     except Exception as e:
-        print("Error taking memory snapshot: ", e)
+        logger.error(f"Error taking memory snapshot: {e}")
         return []
-    print("Memory snapshot taken. and it is: ", snapshot)
+    logger.debug(f"Memory snapshot taken: {snapshot}")
 
     stats = snapshot.statistics("traceback")
     for stat in stats[:10]:
-        print(stat.traceback.format())
-        print(f"Memory: {stat.size / 1024:.2f} KB")
+        logger.debug(stat.traceback.format())
+        logger.debug(f"Memory: {stat.size / 1024:.2f} KB")
 
     # Group memory usage by filename
     stats = snapshot.statistics("filename")
     module_usage = {}
 
     for stat in stats:
-        print("stat is: ", stat)
+        logger.debug(f"stat is: {stat}")
         if stat.traceback:
             filename = stat.traceback[0].filename
             # Accumulate memory usage
@@ -222,7 +222,7 @@ def status_page(request):
             bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
 
             try:
-                print("Checking Bitcoin RPC...")
+                logger.debug("Checking Bitcoin RPC...")
                 response = requests.post(
                     f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
                     json={
@@ -238,14 +238,14 @@ def status_page(request):
                     status_data["bitcoin"] = True
                     status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
             except requests.exceptions.RequestException as e:
-                print(f"Bitcoin RPC Error: {e}")
+                logger.error(f"Bitcoin RPC Error: {e}")
 
         # SendGrid API check
         if CHECK_SENDGRID:
             sendgrid_api_key = os.getenv("SENDGRID_PASSWORD")
             if sendgrid_api_key:
                 try:
-                    print("Checking SendGrid API...")
+                    logger.debug("Checking SendGrid API...")
                     response = requests.get(
                         "https://api.sendgrid.com/v3/user/account",
                         headers={"Authorization": f"Bearer {sendgrid_api_key}"},
@@ -253,14 +253,14 @@ def status_page(request):
                     )
                     status_data["sendgrid"] = response.status_code == 200
                 except requests.exceptions.RequestException as e:
-                    print(f"SendGrid API Error: {e}")
+                    logger.error(f"SendGrid API Error: {e}")
 
         # GitHub API check
         if CHECK_GITHUB:
             github_token = os.getenv("GITHUB_TOKEN")
             if github_token:
                 try:
-                    print("Checking GitHub API...")
+                    logger.debug("Checking GitHub API...")
                     # Check basic API access
                     response = requests.get(
                         "https://api.github.com/user/repos",
@@ -317,7 +317,7 @@ def status_page(request):
                     else:
                         status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
-                    print(f"GitHub API Error: {e}")
+                    logger.error(f"GitHub API Error: {e}")
                     status_data["github_rate_limit"] = None
 
         # OpenAI API check
@@ -325,7 +325,7 @@ def status_page(request):
             openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
             if openai_api_key:
                 try:
-                    print("Checking OpenAI API...")
+                    logger.debug("Checking OpenAI API...")
                     response = requests.get(
                         "https://api.openai.com/v1/models",
                         headers={"Authorization": f"Bearer {openai_api_key}"},
@@ -333,11 +333,11 @@ def status_page(request):
                     )
                     status_data["openai"] = response.status_code == 200
                 except requests.exceptions.RequestException as e:
-                    print(f"OpenAI API Error: {e}")
+                    logger.error(f"OpenAI API Error: {e}")
 
         # Memory usage checks
         if CHECK_MEMORY:
-            print("Getting memory usage information...")
+            logger.debug("Getting memory usage information...")
             tracemalloc.start()
 
             # Get top memory consumers
@@ -367,7 +367,7 @@ def status_page(request):
 
         # Database connection check
         if CHECK_DATABASE:
-            print("Getting database connection count...")
+            logger.debug("Getting database connection count...")
             if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
@@ -375,7 +375,7 @@ def status_page(request):
 
         # Redis stats
         if CHECK_REDIS:
-            print("Getting Redis stats...")
+            logger.debug("Getting Redis stats...")
             redis_url = os.environ.get("REDISCLOUD_URL")
 
             if redis_url:
@@ -1159,13 +1159,13 @@ def sponsor_view(request):
             balance_bch = balance_satoshis / 100000000  # Convert from satoshis to BCH
             return balance_bch
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(f"An error occurred: {e}")
             return None
 
     bch_address = "bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
     balance = get_bch_balance(bch_address)
     if balance is not None:
-        print(f"Balance of {bch_address}: {balance} BCH")
+        logger.info(f"Balance of {bch_address}: {balance} BCH")
 
     return render(request, "sponsor.html", context={"balance": balance})
 
@@ -1264,7 +1264,7 @@ def home(request):
     try:
         last_commit = get_last_commit_date()
     except Exception as e:
-        print(f"Error getting last commit date: {e}")
+        logger.error(f"Error getting last commit date: {e}")
         last_commit = ""
 
     # Get latest repositories and total count
@@ -1371,7 +1371,7 @@ def home(request):
             if repo:
                 repo_stars.append({"key": key, "stars": repo.stars})
         except Exception as e:
-            print(f"Error getting star count for {repo_name}: {e}")
+            logger.error(f"Error getting star count for {repo_name}: {e}")
 
     # Get system stats for developer mode
     system_stats = None

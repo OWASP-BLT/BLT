@@ -1182,7 +1182,9 @@ def sizzle_daily_log(request):
             blockers = request.POST.get("blockers")
             goal_accomplished = request.POST.get("goal_accomplished") == "on"
             current_mood = request.POST.get("feeling")
-            print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
+            logger.debug(
+                f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
+            )
 
             DailyStatusReport.objects.create(
                 user=request.user,
@@ -1762,7 +1764,7 @@ class ReportIpView(FormView):
         if form.is_valid():
             ip_address = form.cleaned_data.get("ip_address")
             ip_type = form.cleaned_data.get("ip_type")
-            print(ip_address + " " + ip_type)
+            logger.debug(f"{ip_address} {ip_type}")
 
             if not self.is_valid_ip(ip_address, ip_type):
                 messages.error(request, f"Invalid {ip_type} address format.")
