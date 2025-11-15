@@ -27,6 +27,9 @@
                     <p class="mt-3 text-gray-600 max-w-2xl mx-auto">
                         {% trans "Join our platform and manage your organization's bug tracking efficiently." %}
                     </p>
+                    <p class="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
+                        {% trans "Only organization name, URL, and logo are required. All other information is optional." %}
+                    </p>
                     <div class="mt-4 inline-flex items-center px-4 py-2 bg-red-50 text-[#e74c3c] rounded-full text-sm">
                         <i class="fas fa-gift mr-2"></i>
                         Earn <a href="/bacon" class="font-bold hover:text-red-700 underline mx-1">10 BACON</a> tokens on registration!
@@ -85,57 +88,6 @@
                                            class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
                                 </div>
                             </div>
-                            <!-- Support Email -->
-                            <div class="sm:col-span-2">
-                                <label for="support_email" class="block text-lg font-medium text-gray-700">
-                                    {% trans "Support Email" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
-                                </label>
-                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                        <i class="fas fa-envelope"></i>
-                                    </div>
-                                    <input type="email"
-                                           name="support_email"
-                                           id="support_email"
-                                           autocomplete="email"
-                                           placeholder="{% trans 'support@organization.com' %}"
-                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
-                                </div>
-                            </div>
-                            <!-- Twitter URL -->
-                            <div class="sm:col-span-2">
-                                <label for="twitter_url" class="block text-lg font-medium text-gray-700">
-                                    {% trans "Twitter URL" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
-                                </label>
-                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                        <i class="fab fa-twitter"></i>
-                                    </div>
-                                    <input type="text"
-                                           name="twitter_url"
-                                           id="twitter_url"
-                                           autocomplete="twitter"
-                                           placeholder="{% trans 'https://twitter.com/handle' %}"
-                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
-                                </div>
-                            </div>
-                            <!-- Facebook URL -->
-                            <div class="sm:col-span-2">
-                                <label for="facebook_url" class="block text-lg font-medium text-gray-700">
-                                    {% trans "Facebook URL" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
-                                </label>
-                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                        <i class="fab fa-facebook"></i>
-                                    </div>
-                                    <input type="text"
-                                           name="facebook_url"
-                                           id="facebook_url"
-                                           autocomplete="facebook"
-                                           placeholder="{% trans 'https://facebook.com/handle' %}"
-                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
-                                </div>
-                            </div>
                         </div>
                     </div>
                     <!-- Organization Logo Section -->
@@ -144,7 +96,7 @@
                             <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
                                 <i class="fas fa-image fa-lg"></i>
                             </div>
-                            <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Organization Logo" %}</h2>
+                            <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Organization Logo" %} <span class="text-[#e74c3c]">*</span></h2>
                         </div>
                         <div class="flex items-center space-x-6">
                             <div id="previewLogoDiv"
@@ -171,20 +123,82 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Organization Managers Section -->
-                    <div class="p-6 sm:p-8">
+                    <!-- Optional Information Section -->
+                    <div class="p-6 sm:p-8 border-b border-gray-200">
                         <div class="flex items-center mb-6">
-                            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
+                            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-gray-400 bg-opacity-10 text-gray-600">
+                                <i class="fas fa-info-circle fa-lg"></i>
+                            </div>
+                            <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Additional Information" %} <span class="text-gray-500 text-sm">({% trans "Optional" %})</span></h2>
+                        </div>
+                        <div class="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-6">
+                            <!-- Support Email -->
+                            <div class="sm:col-span-2">
+                                <label for="support_email" class="block text-lg font-medium text-gray-700">
+                                    {% trans "Support Email" %}
+                                </label>
+                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fas fa-envelope"></i>
+                                    </div>
+                                    <input type="email"
+                                           name="support_email"
+                                           id="support_email"
+                                           autocomplete="email"
+                                           placeholder="{% trans 'support@organization.com' %}"
+                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+                                </div>
+                            </div>
+                            <!-- Twitter URL -->
+                            <div class="sm:col-span-2">
+                                <label for="twitter_url" class="block text-lg font-medium text-gray-700">
+                                    {% trans "Twitter URL" %}
+                                </label>
+                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fab fa-twitter"></i>
+                                    </div>
+                                    <input type="text"
+                                           name="twitter_url"
+                                           id="twitter_url"
+                                           autocomplete="twitter"
+                                           placeholder="{% trans 'https://twitter.com/handle' %}"
+                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+                                </div>
+                            </div>
+                            <!-- Facebook URL -->
+                            <div class="sm:col-span-2">
+                                <label for="facebook_url" class="block text-lg font-medium text-gray-700">
+                                    {% trans "Facebook URL" %}
+                                </label>
+                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fab fa-facebook"></i>
+                                    </div>
+                                    <input type="text"
+                                           name="facebook_url"
+                                           id="facebook_url"
+                                           autocomplete="facebook"
+                                           placeholder="{% trans 'https://facebook.com/handle' %}"
+                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Organization Managers Section -->
+                    <div class="p-6 sm:p-8 border-t border-gray-200">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-gray-400 bg-opacity-10 text-gray-600">
                                 <i class="fas fa-users fa-lg"></i>
                             </div>
-                            <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Organization Managers" %}</h2>
+                            <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Organization Managers" %} <span class="text-gray-500 text-sm">({% trans "Optional" %})</span></h2>
                         </div>
                         <p class="mb-4 text-sm text-gray-600">
                             {% trans "Add emails of users who will be allowed to manage domains. Email addresses must belong to registered BLT users." %}
                         </p>
                         <div id="email-container" class="space-y-3 mb-6">
                             <label for="email" class="block text-lg font-medium text-gray-700">
-                                {% trans "Email addresses" %} <span class="text-[#e74c3c]">*</span>
+                                {% trans "Email addresses" %}
                             </label>
                             <!-- Email inputs will be added here dynamically -->
                         </div>

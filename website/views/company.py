@@ -147,51 +147,83 @@ class RegisterOrganizationView(View):
             messages.error(request, "Login to create organization")
             return redirect("/accounts/login/")
 
-        organization_name = data.get("organization_name", "")
-        organization_url = data.get("organization_url", "")
+        organization_name = data.get("organization_name", "").strip()
+        organization_url = data.get("organization_url", "").strip()
 
-        if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
-            messages.error(request, "organization name is invalid or already exists.")
+        # Validate organization name
+        if not organization_name:
+            messages.error(request, "Organization name is required.")
             return redirect("register_organization")
 
-        if organization_url == "" or Organization.objects.filter(url=organization_url).exists():
-            messages.error(request, "organization URL is invalid or already exists.")
+        if Organization.objects.filter(name=organization_name).exists():
+            messages.error(request, "An organization with this name already exists.")
             return redirect("register_organization")
 
+        # Validate organization URL
+        if not organization_url:
+            messages.error(request, "Organization URL is required.")
+            return redirect("register_organization")
+
+        if Organization.objects.filter(url=organization_url).exists():
+            messages.error(request, "An organization with this URL already exists.")
+            return redirect("register_organization")
+
+        # Validate URL format and existence
+        try:
+            if is_valid_https_url(organization_url):
+                safe_url = rebuild_safe_url(organization_url)
+                try:
+                    response = requests.get(safe_url, timeout=5)
+                    if response.status_code != 200:
+                        messages.error(request, "The provided URL could not be accessed. Please verify the URL is correct.")
+                        return redirect("register_organization")
+                except requests.exceptions.RequestException:
+                    messages.error(request, "Unable to verify the organization URL. Please check that the URL is accessible.")
+                    return redirect("register_organization")
+        except ValueError:
+            messages.error(request, "The provided URL format is invalid. Please enter a valid URL.")
+            return redirect("register_organization")
+
+        # Validate logo (required)
         organization_logo = request.FILES.get("logo")
-        if organization_logo:
-            organization_logo_file = organization_logo.name.split(".")[0]
-            extension = organization_logo.name.split(".")[-1]
-            organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
-            logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
-        else:
-            logo_path = None
+        if not organization_logo:
+            messages.error(request, "Organization logo is required.")
+            return redirect("register_organization")
+
+        # Process logo
+        organization_logo_file = organization_logo.name.split(".")[0]
+        extension = organization_logo.name.split(".")[-1]
+        organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
+        logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
 
         try:
             with transaction.atomic():
                 organization = Organization.objects.create(
                     admin=user,
                     name=organization_name,
-                    url=data["organization_url"],
-                    email=data["support_email"],
+                    url=organization_url,
+                    email=data.get("support_email", ""),
                     twitter=data.get("twitter_url", ""),
                     facebook=data.get("facebook_url", ""),
                     logo=logo_path,
                     is_active=True,
                 )
 
-                manager_emails = data.get("email", "").split(",")
-                managers = User.objects.filter(email__in=manager_emails)
-                organization.managers.set(managers)
+                # Process manager emails if provided
+                manager_emails_str = data.get("email", "").strip()
+                if manager_emails_str:
+                    manager_emails = [email.strip() for email in manager_emails_str.split(",") if email.strip()]
+                    managers = User.objects.filter(email__in=manager_emails)
+                    organization.managers.set(managers)
                 organization.save()
 
-        except ValidationError as e:
-            messages.error(request, f"Error saving organization: {e}")
+        except ValidationError:
+            messages.error(request, "There was an error saving the organization. Please check all fields and try again.")
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
 
-        messages.success(request, "organization registered successfully.")
+        messages.success(request, "Organization registered successfully.")
         return redirect("organization_detail", slug=organization.slug)
 
 
