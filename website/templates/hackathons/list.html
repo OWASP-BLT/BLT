@@ -140,10 +140,21 @@
                                     <i class="far fa-calendar mr-2"></i>
                                     <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
                                 </div>
-                                <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
-                                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] w-full justify-center">
-                                    View Details
-                                </a>
+                                <div class="flex flex-col gap-2">
+                                    <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
+                                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] w-full justify-center">
+                                        View Details
+                                    </a>
+                                    {% if request.user.is_authenticated %}
+                                        {% if request.user.is_superuser or hackathon.organization.admin == request.user or request.user in hackathon.organization.managers.all %}
+                                            <a href="{% url 'add_org_repos_to_hackathon' slug=hackathon.slug %}"
+                                               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] w-full justify-center">
+                                                <i class="fas fa-plus mr-2"></i>
+                                                Add Org Repos
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
