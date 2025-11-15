@@ -1,3 +1,5 @@
+name: Enforce Issue Number in PR Description
+
 on:
   pull_request:
     types:
@@ -18,9 +20,11 @@ jobs:
       github.actor != 'dependabot[bot]'
       && github.actor != 'dependabot-preview[bot]'
       && github.actor != 'dependabot'
-      && github.actor != github.repository_owner
       && github.actor != 'sentry-autofix'
       && github.actor != 'DonnieBLT'
+      && github.actor != 'Copilot'
+      && github.actor != 'copilot-swe-agent[bot]'
+      && github.actor != 'copilot-swe-agent'
     steps:
       - name: Validate PR closing issues with GraphQL
         env:
