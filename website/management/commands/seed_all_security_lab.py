@@ -1215,10 +1215,15 @@ class Command(BaseCommand):
                             "mcq_question": task_data.get("mcq_question", ""),
                             "mcq_options": task_data.get("mcq_options", []),
                             "correct_answer": task_data.get("correct_answer", ""),
+                            "simulation_config": {},
                         }
                     else:  # simulation
                         content_data = {
                             "simulation_config": task_data.get("simulation_config", {}),
+                            "theory_content": "",
+                            "mcq_question": "",
+                            "mcq_options": [],
+                            "correct_answer": "",
                         }
 
                     TaskContent.objects.update_or_create(task=task, defaults=content_data)
