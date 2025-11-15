@@ -32,11 +32,14 @@ from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
+    BaconEarning,
+    BaconSubmission,
     Badge,
     Challenge,
     Contributor,
     Domain,
     GitHubIssue,
+    GitHubReview,
     Hunt,
     InviteFriend,
     Issue,
@@ -53,6 +56,40 @@ from website.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def extract_github_username(github_url):
+    """
+    Extract GitHub username from a GitHub URL for avatar display.
+
+    Args:
+        github_url (str): GitHub URL like 'https://github.com/username' or 'https://github.com/apps/dependabot'
+
+    Returns:
+        str or None: The username part of the URL, or None if invalid/empty
+    """
+    if not github_url or not isinstance(github_url, str):
+        return None
+
+    # Strip trailing slashes and whitespace
+    github_url = github_url.strip().rstrip("/")  # Clean URL format
+
+    # Remove query parameters and fragments if present
+    github_url = github_url.split("?")[0].split("#")[0]
+
+    # Ensure URL contains at least one slash
+    if "/" not in github_url:
+        return None
+
+    # Split on "/" and get the last segment
+    segments = github_url.split("/")
+    username = segments[-1] if segments else None
+
+    # Return username only if it's non-empty and not domain parts or protocol prefixes
+    if username and username not in ["github.com", "www.github.com", "www", "http:", "https:"]:
+        return username
+
+    return None
 
 
 @receiver(user_signed_up)
@@ -297,6 +334,17 @@ class UserProfileDetailView(DetailView):
 
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        # Add bacon earning data
+        bacon_earning = BaconEarning.objects.filter(user=user).first()
+        print(f"Bacon earning for {user.username}: {bacon_earning}")
+        context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
+
+        # Get bacon submission stats
+        context["bacon_submissions"] = {
+            "pending": BaconSubmission.objects.filter(user=user, transaction_status="pending").count(),
+            "completed": BaconSubmission.objects.filter(user=user, transaction_status="completed").count(),
+        }
+
         milestones = [7, 15, 30, 100, 180, 365]
         base_milestone = 0
         next_milestone = 0
@@ -404,11 +452,12 @@ class LeaderboardBase:
             .order_by("-total_score")
             .filter(
                 total_score__gt=0,
+                username__isnull=False,
             )
+            .exclude(username="")
         )
         if api:
             return data.values("id", "username", "total_score")
-
         return data
 
     def current_month_leaderboard(self, api=False):
@@ -442,6 +491,20 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_global.html"
 
     def get_context_data(self, *args, **kwargs):
+        """
+        Assembles template context for the global leaderboard page, adding leaderboards and related data.
+
+        The context includes:
+        - `user_related_tags`: tags associated with user profiles.
+        - `wallet`: the requesting user's Wallet if authenticated.
+        - `leaderboard`: top users by total score (limited to 10).
+        - `pr_leaderboard`: top repositories/users by merged pull request count (top 10).
+        - `code_review_leaderboard`: top reviewers by review count (top 10).
+        - `top_visitors`: user profiles ordered by daily visit count (top 10).
+
+        Returns:
+            dict: Context mapping names (as listed above) to their querysets or values.
+        """
         context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
 
         user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
@@ -452,9 +515,15 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard
+        # Pull Request Leaderboard - Only show PRs from tracked repositories
         pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            GitHubIssue.objects.filter(
+                type="pull_request",
+                is_merged=True,
+                repo__isnull=False,  # Only include PRs from tracked repositories
+            )
+            .exclude(user_profile__isnull=True)  # Exclude PRs without user profiles
+            .select_related("user_profile__user", "repo")  # Optimize database queries
             .values(
                 "user_profile__user__username",
                 "user_profile__user__email",
@@ -463,19 +532,29 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
+        # Extract GitHub username from URL for avatar
+        for leader in pr_leaderboard:
+            github_username = extract_github_username(leader.get("user_profile__github_url"))
+            if github_username:
+                leader["github_username"] = github_username
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Reviewed PR Leaderboard
+        # Reviewed PR Leaderboard - Fixed query to properly count reviews
         reviewed_pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request")
+            GitHubReview.objects.filter(reviewer__user__isnull=False)
             .values(
-                "reviews__reviewer__user__username",
-                "reviews__reviewer__user__email",
-                "user_profile__github_url",
+                "reviewer__user__username",
+                "reviewer__user__email",
+                "reviewer__github_url",
             )
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
         )
+        # Extract GitHub username from URL for avatar
+        for leader in reviewed_pr_leaderboard:
+            github_username = extract_github_username(leader.get("reviewer__github_url"))
+            if github_username:
+                leader["github_username"] = github_username
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         # Top visitors leaderboard
@@ -961,11 +1040,116 @@ class UserChallengeListView(View):
                 # If the user is not participating, set progress to 0
                 challenge.progress = 0
 
+            # Calculate the progress circle offset (same as team challenges)
+            circumference = 125.6
+            challenge.stroke_dasharray = circumference
+            challenge.stroke_dashoffset = circumference - (circumference * challenge.progress / 100)
+
         return render(
             request,
             "user_challenges.html",
             {"challenges": challenges, "user_challenges": user_challenges},
         )
+
+    def post(self, request):
+        """Handle manual challenge progress updates"""
+        import json
+
+        from django.http import JsonResponse
+
+        try:
+            data = json.loads(request.body)
+            challenge_id = data.get("challenge_id")
+            action = data.get("action")  # 'join', 'update_progress', 'complete'
+            progress_value = data.get("progress", 0)
+
+            challenge = get_object_or_404(Challenge, id=challenge_id, challenge_type="single")
+
+            if action == "join":
+                # Add user to challenge participants
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+                return JsonResponse({"success": True, "message": "Joined challenge successfully!"})
+
+            elif action == "update_progress":
+                # Update progress manually
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+
+                # Ensure progress is between 0 and 100
+                progress_value = max(0, min(100, int(progress_value)))
+                challenge.progress = progress_value
+                challenge.save()
+
+                # Check if challenge is now completed
+                if progress_value == 100 and not challenge.completed:
+                    challenge.completed = True
+                    challenge.completed_at = timezone.now()
+                    challenge.save()
+
+                    # Award points and BACON
+                    Points.objects.create(
+                        user=request.user, score=challenge.points, reason=f"Completed '{challenge.title}' challenge"
+                    )
+
+                    from website.feed_signals import giveBacon
+
+                    giveBacon(request.user, amt=challenge.bacon_reward)
+
+                    # Handle staking pool completion
+                    from website.challenge_signals import handle_staking_pool_completion
+
+                    handle_staking_pool_completion(request.user, challenge)
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": f"Challenge completed! Earned {challenge.points} points and {challenge.bacon_reward} BACON tokens!",
+                            "completed": True,
+                        }
+                    )
+
+                return JsonResponse({"success": True, "message": "Progress updated successfully!"})
+
+            elif action == "complete":
+                # Mark challenge as 100% complete
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+
+                if not challenge.completed:
+                    challenge.progress = 100
+                    challenge.completed = True
+                    challenge.completed_at = timezone.now()
+                    challenge.save()
+
+                    # Award points and BACON
+                    Points.objects.create(
+                        user=request.user, score=challenge.points, reason=f"Completed '{challenge.title}' challenge"
+                    )
+
+                    from website.feed_signals import giveBacon
+
+                    giveBacon(request.user, amt=challenge.bacon_reward)
+
+                    # Handle staking pool completion
+                    from website.challenge_signals import handle_staking_pool_completion
+
+                    handle_staking_pool_completion(request.user, challenge)
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": f"Challenge completed! Earned {challenge.points} points and {challenge.bacon_reward} BACON tokens!",
+                            "completed": True,
+                        }
+                    )
+                else:
+                    return JsonResponse({"success": False, "message": "Challenge already completed!"})
+
+            return JsonResponse({"success": False, "message": "Invalid action"})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": "An error occurred while updating the challenge"})
 
 
 @login_required

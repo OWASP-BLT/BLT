@@ -1,142 +1,130 @@
 name: Add Files Changed Label
 
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - synchronize
       - reopened
+      - ready_for_review
+      - edited
 
 permissions:
+  contents: write
   pull-requests: write
-  contents: read
+  issues: write
 
 jobs:
   add_files_changed_label:
     runs-on: ubuntu-latest
     steps:
       - name: Add Files Changed Label
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO_OWNER: ${{ github.repository_owner }}
-          REPO_NAME: ${{ github.event.repository.name }}
-        run: |
-          echo "Starting Files Changed Label workflow for PR #$PR_NUMBER in $REPO_OWNER/$REPO_NAME"
-          
-          # Get the number of files changed in the PR
-          echo "Fetching files changed information..."
-          FILES_API_RESPONSE=$(curl -s -X GET \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/files")
-          
-          # Check if the API request was successful
-          if [[ "$FILES_API_RESPONSE" == *"message"*"Not Found"* ]]; then
-            echo "Error: Could not fetch PR files. API response indicates resource not found."
-            exit 1
-          fi
-          
-          FILES_CHANGED=$(echo "$FILES_API_RESPONSE" | jq '. | length')
-          
-          echo "Files changed in PR #$PR_NUMBER: $FILES_CHANGED"
-          
-          # Determine the label based on the number of files changed
-          if [ "$FILES_CHANGED" -eq 1 ]; then
-            LABEL="files-changed: 1"
-            LABEL_COLOR="0e8a16" # Green
-            DESCRIPTION="PR changes 1 file"
-          elif [ "$FILES_CHANGED" -ge 2 ] && [ "$FILES_CHANGED" -le 5 ]; then
-            LABEL="files-changed: 2-5"
-            LABEL_COLOR="fbca04" # Yellow
-            DESCRIPTION="PR changes 2-5 files"
-          elif [ "$FILES_CHANGED" -ge 6 ] && [ "$FILES_CHANGED" -le 10 ]; then
-            LABEL="files-changed: 6-10"
-            LABEL_COLOR="ff9800" # Orange
-            DESCRIPTION="PR changes 6-10 files"
-          else
-            LABEL="files-changed: 11+"
-            LABEL_COLOR="e74c3c" # Red (using the project's preferred red color)
-            DESCRIPTION="PR changes 11+ files"
-          fi
-          
-          echo "Determined label: $LABEL with color: $LABEL_COLOR"
-          
-          # Get all labels in the repository to check if our label exists
-          echo "Checking if label exists in repository..."
-          ALL_LABELS_RESPONSE=$(curl -s -X GET \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/labels")
-          
-          ALL_REPO_LABELS=$(echo "$ALL_LABELS_RESPONSE" | jq -r '.[].name')
-          
-          # Create the label if it doesn't exist
-          if ! echo "$ALL_REPO_LABELS" | grep -q "$LABEL"; then
-            echo "Label '$LABEL' does not exist. Creating it now..."
-            CREATE_LABEL_RESPONSE=$(curl -s -X POST \
-              -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/labels" \
-              -d "{\"name\":\"$LABEL\",\"color\":\"$LABEL_COLOR\",\"description\":\"$DESCRIPTION\"}")
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request in context. Skipping.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = pr.number;
+
+            // Get all files (with pagination) and count them
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+            const count = files.length;
             
-            # Check if label creation was successful
-            if [[ "$CREATE_LABEL_RESPONSE" == *"message"* ]]; then
-              echo "Warning: There might be an issue creating the label. Response: $CREATE_LABEL_RESPONSE"
-            else
-              echo "Label '$LABEL' created successfully."
-            fi
-          else
-            echo "Label '$LABEL' already exists in the repository."
-          fi
-          
-          # First, get all existing labels on the PR
-          echo "Getting existing labels on PR #$PR_NUMBER..."
-          PR_LABELS_RESPONSE=$(curl -s -X GET \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels")
-          
-          EXISTING_LABELS=$(echo "$PR_LABELS_RESPONSE" | jq -r '.[].name')
-          
-          # Remove any existing files-changed labels
-          echo "Checking for existing 'files-changed' labels to remove..."
-          FOUND_EXISTING_LABEL=false
-          for EXISTING_LABEL in $EXISTING_LABELS; do
-            if [[ "$EXISTING_LABEL" == "files-changed:"* ]]; then
-              FOUND_EXISTING_LABEL=true
-              ENCODED_LABEL=$(echo "$EXISTING_LABEL" | sed 's/ /%20/g')
-              echo "Removing existing label: $EXISTING_LABEL (encoded as: $ENCODED_LABEL)"
-              
-              REMOVE_RESPONSE=$(curl -s -X DELETE \
-                -H "Authorization: token $GITHUB_TOKEN" \
-                -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels/$ENCODED_LABEL")
-                
-              if [[ "$REMOVE_RESPONSE" == "" ]]; then
-                echo "Successfully removed label: $EXISTING_LABEL"
-              else
-                echo "Warning: There might be an issue removing the label. Response: $REMOVE_RESPONSE"
-              fi
-            fi
-          done
-          
-          if [ "$FOUND_EXISTING_LABEL" = false ]; then
-            echo "No existing 'files-changed' labels found on PR #$PR_NUMBER."
-          fi
-          
-          # Add the new label
-          echo "Adding label '$LABEL' to PR #$PR_NUMBER..."
-          ADD_LABEL_RESPONSE=$(curl -s -X POST \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels" \
-            -d "{\"labels\":[\"$LABEL\"]}")
-          
-          # Check if label was added successfully
-          if [[ "$ADD_LABEL_RESPONSE" == *"message"* ]]; then
-            echo "Error: Failed to add label. Response: $ADD_LABEL_RESPONSE"
-            exit 1
-          else
-            echo "Successfully applied label '$LABEL' to PR #$PR_NUMBER"
-          fi
+            // Determine the label based on the number of files changed
+            const newLabel = `files-changed: ${count}`;
+            
+            // Set color based on the number of files changed
+            let labelColor;
+            if (count === 0) {
+              labelColor = 'cccccc'; // Gray
+            } else if (count === 1) {
+              labelColor = '0e8a16'; // Green
+            } else if (count >= 2 && count <= 5) {
+              labelColor = 'fbca04'; // Yellow
+            } else if (count >= 6 && count <= 10) {
+              labelColor = 'ff9800'; // Orange
+            } else {
+              labelColor = 'e74c3c'; // Red (project's preferred red color)
+            }
+            
+            // Set grammatically correct description
+            const description = count === 1 ? 'PR changes 1 file' : `PR changes ${count} files`;
+
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+
+            // Remove any existing files-changed labels
+            const filesChangedRegex = /^files-changed:/i;
+            for (const name of currentNames) {
+              if (filesChangedRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+
+            // Ensure the new label exists (create if missing)
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+            await ensureLabelExists(newLabel);
+
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
+              await github.rest.issues.addLabels({ 
+                owner, 
+                repo, 
+                issue_number: pull_number, 
+                labels: [newLabel] 
+              });
+              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+            }
+
+            // Log the count for transparency
+            core.info(`PR #${pull_number} has ${count} changed file(s).`);

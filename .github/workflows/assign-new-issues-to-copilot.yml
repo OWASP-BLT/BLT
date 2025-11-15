@@ -1,6 +1,8 @@
 ---
 name: Auto-Assign New Issues to Copilot
 
+# This workflow automatically assigns newly opened issues to the GitHub Copilot account
+# It runs whenever a new issue is opened in the repository
 on:
   issues:
     types: [opened]
@@ -21,19 +23,19 @@ jobs:
             const owner = context.repo.owner;
 
             try {
-              // Assign the issue to copilot
+              // Assign the issue to Copilot (note: case sensitive)
               await github.rest.issues.addAssignees({
                 owner,
                 repo,
                 issue_number: issueNumber,
-                assignees: ['copilot']
+                assignees: ['Copilot']
               });
 
               console.log(
-                `Successfully assigned issue #${issueNumber} to copilot`
+                `Successfully assigned issue #${issueNumber} to Copilot`
               );
             } catch (error) {
               console.error(
-                `Error assigning issue to copilot: ${error.message}`
+                `Error assigning issue to Copilot: ${error.message}`
               );
             }
