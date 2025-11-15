@@ -242,59 +242,34 @@
 
         function showResults(apps) {
             const grid = document.getElementById('appsGrid');
-            // clear previous
-            while (grid.firstChild) grid.removeChild(grid.firstChild);
-
+            grid.innerHTML = '';
+            
             apps.forEach(app => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow';
-
-                const title = document.createElement('h3');
-                title.className = 'text-xl font-semibold mb-2 text-red-600';
-                title.textContent = app.app_name || '';
-
-                const type = document.createElement('p');
-                type.className = 'text-sm text-gray-600 mb-2';
-                type.textContent = app.app_type || '';
-
-                const reason = document.createElement('p');
-                reason.className = 'text-gray-800 mb-4';
-                reason.textContent = app.ban_reason || '';
-
-                const footer = document.createElement('div');
-                footer.className = 'text-sm text-gray-600';
-
-                const date = document.createElement('p');
-                
-                try {
-                    date.textContent = `Ban Date: ${new Date(app.ban_date).toLocaleDateString()}`;
-                } catch (e) {
-                    date.textContent = `Ban Date: ${app.ban_date || 'N/A'}`;
-                }
-                footer.appendChild(date);
-                
-                if (app.source_url) {
-                    const link = document.createElement('a');
-                    link.href = app.source_url;
-                    link.target = '_blank';
-                    link.rel = 'noopener noreferrer';
-                    link.className = 'text-red-600 hover:underline';
-                    link.textContent = 'Source →';
-                    footer.appendChild(link);
-                }
-
-                card.appendChild(title);
-                card.appendChild(type);
-                card.appendChild(reason);
-                card.appendChild(footer);
-
+                const card = createAppCard(app);
                 grid.appendChild(card);
             });
-
+            
             document.getElementById('resultsSection').classList.remove('hidden');
             document.getElementById('noResults').classList.add('hidden');
         }
-
+        
+        function createAppCard(app) {
+            const div = document.createElement('div');
+            div.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow';
+            
+            div.innerHTML = `
+                <h3 class="text-xl font-semibold mb-2 text-red-600">${app.app_name}</h3>
+                <p class="text-sm text-gray-600 mb-2">${app.app_type}</p>
+                <p class="text-gray-800 mb-4">${app.ban_reason}</p>
+                <div class="text-sm text-gray-600">
+                    <p>Ban Date: ${new Date(app.ban_date).toLocaleDateString()}</p>
+                    ${app.source_url ? `<a href="${app.source_url}" target="_blank" class="text-red-600 hover:underline">Source →</a>` : ''}
+                </div>
+            `;
+            
+            return div;
+        }
+                
         function showCountryInfo(country, apps) {
             const countryInfoDiv = document.getElementById('countryInfo');
 
