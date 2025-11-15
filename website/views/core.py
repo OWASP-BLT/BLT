@@ -829,13 +829,28 @@ def add_forum_post(request):
             title = data.get("title")
             category = data.get("category")
             description = data.get("description")
+            repo_id = data.get("repo")
+            project_id = data.get("project")
+            organization_id = data.get("organization")
 
             if not all([title, category, description]):
                 return JsonResponse({"status": "error", "message": "Missing required fields"})
 
-            post = ForumPost.objects.create(
-                user=request.user, title=title, category_id=category, description=description
-            )
+            post_data = {
+                "user": request.user,
+                "title": title,
+                "category_id": category,
+                "description": description,
+            }
+
+            if repo_id:
+                post_data["repo_id"] = repo_id
+            if project_id:
+                post_data["project_id"] = project_id
+            if organization_id:
+                post_data["organization_id"] = organization_id
+
+            post = ForumPost.objects.create(**post_data)
 
             return JsonResponse({"status": "success", "post_id": post.id})
         except json.JSONDecodeError:
@@ -875,13 +890,24 @@ def view_forum(request):
     categories = ForumCategory.objects.all()
     selected_category = request.GET.get("category")
 
-    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+    posts = ForumPost.objects.select_related("user", "category", "repo", "project", "organization").prefetch_related("comments").all()
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
+    organizations = Organization.objects.all().order_by("name")
+    projects = Project.objects.all().order_by("name")
+    repos = Repo.objects.all().order_by("name")
+
     return render(
-        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+        request, "forum.html", {
+            "categories": categories,
+            "posts": posts,
+            "selected_category": selected_category,
+            "organizations": organizations,
+            "projects": projects,
+            "repos": repos,
+        }
     )
 
 
