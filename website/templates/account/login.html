@@ -1,11 +1,9 @@
-{% extends "base.html" %}
+{% extends "account/base_account.html" %}
 {% load static %}
 {% load custom_tags %}
 {% load i18n %}
 {% load account socialaccount %}
-{% block title %}
-    Account Login | {% env 'PROJECT_NAME' %}
-{% endblock title %}
+{% block account_title %}Account Login | {% env 'PROJECT_NAME' %}{% endblock account_title %}
 {% block description %}
     Log in to your account to access the bug logging tool. Enter your username and password or log in with Google or GitHub.
 {% endblock description %}
@@ -18,8 +16,7 @@
 {% block og_description %}
     Log in to your account to access the bug logging tool. Enter your username and password or log in with Google or GitHub for a seamless experience.
 {% endblock og_description %}
-{% block natural_content %}
-    {% include "includes/sidenav.html" %}
+{% block account_content %}
     {% get_providers as socialaccount_providers %}
     <div class="flex items-center min-h-screen p-4 bg-gray-100 lg:justify-center">
         <div class="flex flex-col overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
@@ -152,4 +149,4 @@
             </div>
         </div>
     </div>
-{% endblock natural_content %}
+{% endblock account_content %}
