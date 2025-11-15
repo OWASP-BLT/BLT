@@ -33,6 +33,17 @@
                 </div>
             {% endif %}
         </nav>
+        {% if organization.check_ins_enabled %}
+            {% if user.is_authenticated %}
+                <div class="mb-4">
+                    <a href="{% url 'organization_checkins' organization.slug %}"
+                       class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white rounded-md hover:bg-red-700 transition-colors">
+                        <i class="fas fa-clipboard-check mr-2"></i>
+                        View Team Check-ins
+                    </a>
+                </div>
+            {% endif %}
+        {% endif %}
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <!-- Header Section -->
             <div class="relative h-48 bg-gradient-to-r from-[#e74c3c] to-red-700">

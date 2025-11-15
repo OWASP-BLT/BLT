@@ -21,14 +21,13 @@
                     {% csrf_token %}
                     {% if organizations_list %}
                         <div class="form-group mb-10">
-                            <label for="organization_select" class="block text-gray-700 font-medium mb-2">Organization (Optional)</label>
+                            <label for="organization_select"
+                                   class="block text-gray-700 font-medium mb-2">Organization (Optional)</label>
                             <select id="organization_select"
                                     name="organization_url"
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400">
                                 <option value="">-- Select Organization --</option>
-                                {% for org in organizations_list %}
-                                    <option value="{{ org.url }}">{{ org.name }}</option>
-                                {% endfor %}
+                                {% for org in organizations_list %}<option value="{{ org.url }}">{{ org.name }}</option>{% endfor %}
                             </select>
                         </div>
                     {% endif %}
