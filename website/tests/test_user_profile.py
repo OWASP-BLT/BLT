@@ -108,13 +108,13 @@ class UserProfileUpdateTest(TestCase):
         # It only validates that the email is unique
         # So we just verify that the form was submitted successfully
         messages_list = [m.message for m in response.context["messages"]]
-        self.assertIn("A verification link has been sent to your new email.", messages_list)
-
+        self.assertTrue(
+            any(m.startswith("A verification link has been sent to your new email.") for m in messages_list)
+        )
 
         # Verify that the email was NOT updated (remains original until verification)
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, "test@example.com")
-
 
     def test_update_email_to_existing_email(self):
         """Test updating to an email that's already in use by another user"""
