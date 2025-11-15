@@ -390,7 +390,20 @@ class OrganizationTests(TestCase):
         self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
         self.client.login(username="testuser", password="testpass123")
 
-    def test_create_and_list_organization(self):
+    @patch("website.views.company.requests.get")
+    def test_create_and_list_organization(self, mock_requests_get):
+        # Mock the URL validation request
+        mock_response = patch("requests.Response")
+        mock_response.status_code = 200
+        mock_requests_get.return_value = mock_response
+
+        # Create a test logo file
+        test_logo = SimpleUploadedFile(
+            name="test_logo.png",
+            content=b"fake image content",
+            content_type="image/png",
+        )
+
         # Test organization creation
         org_name = "Test Organization"
         org_url = "https://test-org.com"
@@ -401,6 +414,7 @@ class OrganizationTests(TestCase):
             "twitter_url": "https://twitter.com/testorg",
             "facebook_url": "https://facebook.com/testorg",
             "email": "manager@test-org.com",
+            "logo": test_logo,
         }
 
         response = self.client.post(reverse("register_organization"), org_data)
@@ -416,6 +430,7 @@ class OrganizationTests(TestCase):
         self.assertEqual(org.facebook, "https://facebook.com/testorg")
         self.assertEqual(org.admin, self.user)
         self.assertTrue(org.is_active)
+        self.assertIsNotNone(org.logo)  # Verify logo was saved
 
         # Test organizations list page
         response = self.client.get(reverse("organizations"))
