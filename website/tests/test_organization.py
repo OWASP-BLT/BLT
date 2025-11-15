@@ -1,8 +1,10 @@
+from datetime import date
+
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from website.models import Domain, Issue, Organization
+from website.models import DailyStatusReport, Domain, Issue, Organization
 
 
 class DomainViewTests(TestCase):
@@ -55,3 +57,137 @@ class DomainViewTests(TestCase):
         # Check issues are displayed
         self.assertContains(response, self.open_issue.description)
         self.assertContains(response, self.closed_issue.description)
+
+
+class OrganizationCheckInTests(TestCase):
+    def setUp(self):
+        # Create test client
+        self.client = Client()
+
+        # Create test users
+        self.admin_user = User.objects.create_user(username="admin", password="admin123", email="admin@example.com")
+        self.manager_user = User.objects.create_user(
+            username="manager", password="manager123", email="manager@example.com"
+        )
+        self.regular_user = User.objects.create_user(username="user", password="user123", email="user@example.com")
+
+        # Create test organization with check-ins enabled
+        self.organization = Organization.objects.create(
+            name="Test Org",
+            description="Test Description",
+            slug="test-org",
+            url="https://testorg.com",
+            check_ins_enabled=True,
+            admin=self.admin_user,
+        )
+        self.organization.managers.add(self.manager_user)
+
+        # Create some test check-ins
+        self.checkin1 = DailyStatusReport.objects.create(
+            user=self.regular_user,
+            organization=self.organization,
+            date=date.today(),
+            previous_work="Worked on feature X",
+            next_plan="Will work on feature Y",
+            blockers="No blockers",
+            goal_accomplished=True,
+            current_mood="Happy 😊",
+        )
+
+        self.checkin2 = DailyStatusReport.objects.create(
+            user=self.manager_user,
+            organization=self.organization,
+            date=date.today(),
+            previous_work="Reviewed PRs",
+            next_plan="Will plan sprint",
+            blockers="Waiting for approval",
+            goal_accomplished=False,
+            current_mood="Neutral 😐",
+        )
+
+    def test_organization_checkins_access_admin(self):
+        """Test that admin can access organization check-ins"""
+        self.client.login(username="admin", password="admin123")
+        url = reverse("organization_checkins", kwargs={"slug": self.organization.slug})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Check-In Reports")
+        self.assertContains(response, self.checkin1.previous_work[:15])
+        self.assertContains(response, self.checkin2.previous_work[:15])
+
+    def test_organization_checkins_access_manager(self):
+        """Test that manager can access organization check-ins"""
+        self.client.login(username="manager", password="manager123")
+        url = reverse("organization_checkins", kwargs={"slug": self.organization.slug})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Check-In Reports")
+
+    def test_organization_checkins_access_denied_regular_user(self):
+        """Test that regular user cannot access organization check-ins"""
+        self.client.login(username="user", password="user123")
+        url = reverse("organization_checkins", kwargs={"slug": self.organization.slug})
+        response = self.client.get(url)
+
+        # Should redirect with permission error
+        self.assertEqual(response.status_code, 302)
+
+    def test_organization_checkins_disabled(self):
+        """Test that check-ins page redirects when check-ins are disabled"""
+        # Disable check-ins
+        self.organization.check_ins_enabled = False
+        self.organization.save()
+
+        self.client.login(username="admin", password="admin123")
+        url = reverse("organization_checkins", kwargs={"slug": self.organization.slug})
+        response = self.client.get(url)
+
+        # Should redirect with warning
+        self.assertEqual(response.status_code, 302)
+
+    def test_add_checkin_with_organization(self):
+        """Test adding a check-in with organization"""
+        self.client.login(username="user", password="user123")
+
+        response = self.client.post(
+            reverse("sizzle_daily_log"),
+            {
+                "previous_work": "Completed testing",
+                "next_plan": "Start new feature",
+                "blockers": "None",
+                "goal_accomplished": "on",
+                "feeling": "Great 🎉",
+                "organization_url": self.organization.url,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Verify check-in was created with organization
+        latest_checkin = DailyStatusReport.objects.filter(user=self.regular_user).latest("created")
+        self.assertEqual(latest_checkin.organization, self.organization)
+        self.assertEqual(latest_checkin.previous_work, "Completed testing")
+
+    def test_add_checkin_without_organization(self):
+        """Test adding a check-in without organization (optional field)"""
+        self.client.login(username="user", password="user123")
+
+        response = self.client.post(
+            reverse("sizzle_daily_log"),
+            {
+                "previous_work": "Personal work",
+                "next_plan": "Continue learning",
+                "blockers": "None",
+                "goal_accomplished": "on",
+                "feeling": "Good 👍",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Verify check-in was created without organization
+        latest_checkin = DailyStatusReport.objects.filter(user=self.regular_user).latest("created")
+        self.assertIsNone(latest_checkin.organization)
+        self.assertEqual(latest_checkin.previous_work, "Personal work")
