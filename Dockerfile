@@ -52,7 +52,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Install runtime system dependencies
 RUN apt-get update && \
     apt-get install -y postgresql-client libpq-dev \
-    libmemcached11 libmemcachedutil2 dos2unix && \
+    libmemcached11 libmemcachedutil2 dos2unix cron && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy application code

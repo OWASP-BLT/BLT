@@ -35,6 +35,30 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     command: ./entrypoint.sh
 
+  cron:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    container_name: blt-cron
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - .:/blt
+      - cron_logs:/var/log
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-blt}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-blt}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # Set timezone for cron (adjust as needed)
+      - TZ=UTC
+    command: >
+      sh -c "crontab /blt/crontab && 
+             cron && 
+             touch /var/log/cron.log &&
+             chmod 666 /var/log/cron.log &&
+             tail -f /var/log/cron.log"
+
   init:
     profiles:
       - init

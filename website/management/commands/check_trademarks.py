@@ -12,27 +12,53 @@ from website.models import Organization
 
 def search_uspto_database(term):
     """
-    Search the USPTO trademark database using RapidAPI.
+    Search the USPTO trademark database using RapidAPI and return the count of trademarks.
+    This function handles pagination to get an accurate count.
     """
     if not term or not term.strip():
         print(f"Error: Empty or invalid term {term} provided for USPTO search.")
         return None
 
     url = "https://uspto-trademark.p.rapidapi.com/v1/batchTrademarkSearch/"
-    payload = {"keywords": f'["{term}"]', "start_index": "0"}
-    print(payload)
     headers = {
         "x-rapidapi-key": f"{settings.USPTO_API}",
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
         "Content-Type": "application/x-www-form-urlencoded",
     }
-    response = requests.post(url, data=payload, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error: Received status code {response.status_code} - {response.reason}")
-        print(response.json())
-    return None
+
+    try:
+        initial_payload = {"keywords": f'["{term}"]', "start_index": "0"}
+        response = requests.post(url, data=initial_payload, headers=headers)
+        response.raise_for_status()
+        response_json = response.json()
+
+        scroll_id = response_json.get("scroll_id")
+
+        # If there is no scroll_id, it's possible there are no results or they are in the first response
+        if not scroll_id:
+            results = response_json.get("results")
+            return {"count": len(results) if results else 0}
+
+        pagination_payload = {
+            "keywords": f'["{term}"]',
+            "start_index": "0",
+            "scroll_id": scroll_id,
+        }
+        response = requests.post(url, data=pagination_payload, headers=headers)
+        response.raise_for_status()
+        results = response.json().get("results")
+
+        return {"count": len(results) if results else 0}
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error during USPTO search: {e}")
+        # also print the response content
+        if "response" in locals() and response:
+            try:
+                print(response.json())
+            except:
+                print(response.text)
+        return None
 
 
 def send_email_alert(organization, results_count):

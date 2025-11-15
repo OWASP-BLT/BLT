@@ -1,0 +1,6 @@
+wai# Run daily tasks every day at 2 AM UTC
+0 2 * * * cd /blt && python manage.py run_daily >> /var/log/cron.log 2>&1
+
+# Fetch fresh trademark data from USPTO API every 6 hours, at 30 minutes past the hour
+30 */6 * * * cd /blt && python manage.py fetch_trademarks >> /var/log/cron.log 2>&1
+
