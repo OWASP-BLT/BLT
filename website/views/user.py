@@ -165,7 +165,6 @@ def profile_edit(request):
                     form.add_error("email", "You already have this email verified. Please set it as primary instead.")
                     return render(request, "profile_edit.html", {"form": form})
 
-
             if EmailAddress.objects.exclude(user=request.user).filter(email=new_email).exists():
                 form.add_error("email", "This email is already registered or pending verification")
                 return render(request, "profile_edit.html", {"form": form})
@@ -181,7 +180,7 @@ def profile_edit(request):
                 EmailAddress.objects.filter(user=request.user, verified=False).delete()
 
                 # Create new unverified email entry
-            # Create or update email entry as unverified
+                # Create or update email entry as unverified
                 EmailAddress.objects.update_or_create(
                     user=request.user,
                     email=new_email,
