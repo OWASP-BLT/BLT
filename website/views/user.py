@@ -175,14 +175,25 @@ def profile_edit(request):
                 EmailAddress.objects.filter(user=request.user, verified=False).delete()
 
                 # Create new unverified email entry
-                EmailAddress.objects.get_or_create(
+                EmailAddress.objects.create(
                     user=request.user,
                     email=new_email,
-                    defaults={"verified": False, "primary": False},
+                    verified=False,
+                    primary=False,
                 )
 
+
                 # Send verification email
-                send_email_confirmation(request, request.user, email=new_email)
+                try:
+                    send_email_confirmation(request, request.user, email=new_email)
+                except Exception as e:
+                    logger.error(f"Failed to send email confirmation to {new_email}: {e}")
+                    messages.error(
+                        request,
+                        "Failed to send verification email. Please try again later."
+                    )
+                    return redirect("profile", slug=request.user.username)
+
 
                 messages.info(
                     request,
