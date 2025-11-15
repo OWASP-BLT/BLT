@@ -58,7 +58,7 @@
         // Initialize variables
         let map;
         let countriesLayer;
-        let markerLayer;
+        let markersLayer;
         let allCountriesData = {};
         let geoJSONLoaded = false;
         
@@ -95,7 +95,7 @@
             }).addTo(map);
 
             // Create layer for markers
-            markerLayer = L.layerGroup().addTo(map);
+            markersLayer = L.layerGroup().addTo(map);
 
             // Load countries GeoJSON
             fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
@@ -199,8 +199,8 @@
         
         // Place marker
         function placeCountryMarker(country, apps) {
-            if (!markerLayer) return;
-            markerLayer.clearLayers();
+            if (!markersLayer) return;
+            markersLayer.clearLayers();
             
             const lower = country.toLowerCase();
             const countryData = allCountriesData[lower];
@@ -237,7 +237,7 @@
                 showCountryInfo(country, apps);
             });
 
-            markerLayer.addLayer(marker);
+            markersLayer.addLayer(marker);
         }
 
         function showResults(apps) {
