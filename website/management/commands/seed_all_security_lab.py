@@ -5,7 +5,7 @@ from website.models import Labs, TaskContent, Tasks
 
 
 class Command(BaseCommand):
-    help = "Seeds 6 security labs with all their tasks in one command"
+    help = "Seeds security labs (IDOR, File Upload, Sensitive Data Exposure, Broken Authentication, Open Redirect, SSRF) with all their tasks"
 
     def handle(self, *args, **kwargs):
         labs_data = [
@@ -157,8 +157,8 @@ class Command(BaseCommand):
                         "task_type": "theory",
                         "order": 1,
                         "theory_content": """
-                            <h2>What is File Upload Vulnerabilities?</h2>
-                            <p>File Upload Vulnerabilities occurs when an application accepts files from users without proper validation, allowing attackers to upload malicious files (web shells), bypass access controls, or overwrite sensitive files.</p>
+                            <h2>What are File Upload Vulnerabilities?</h2>
+                            <p>File Upload Vulnerabilities occur when an application accepts files from users without proper validation, allowing attackers to upload malicious files (web shells), bypass access controls, or overwrite sensitive files.</p>
 
                             <h3>Common risks</h3>
                             <ul>

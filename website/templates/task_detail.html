@@ -136,7 +136,7 @@
                                                           name="payload"
                                                           rows="4"
                                                           class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
-                                                          placeholder="Enter your XSS payload here... (e.g., <script>alert('XSS')</script>)"></textarea>
+                                                          placeholder="Enter your XSS payload here... (e.g., &lt;script&gt;alert('XSS')&lt;/script&gt;)"></textarea>
                                             {% elif lab.name == "Cross-Site Request Forgery" %}
                                                 <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your CSRF attack code:</label>
                                                 <textarea id="payload"
