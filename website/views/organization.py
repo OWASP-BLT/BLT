@@ -1182,10 +1182,17 @@ def sizzle_daily_log(request):
             blockers = request.POST.get("blockers")
             goal_accomplished = request.POST.get("goal_accomplished") == "on"
             current_mood = request.POST.get("feeling")
+            organization_url = request.POST.get("organization_url")
             print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
+
+            # Get organization if provided
+            organization = None
+            if organization_url:
+                organization = Organization.objects.filter(url=organization_url).first()
 
             DailyStatusReport.objects.create(
                 user=request.user,
+                organization=organization,
                 date=now().date(),
                 previous_work=previous_work,
                 next_plan=next_plan,
@@ -1971,10 +1978,18 @@ def add_sizzle_checkIN(request):
     # Fetch all check-ins for the user, ordered by date
     all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
 
+    # Get list of organizations where check-ins are enabled
+    organizations_list_queryset = Organization.objects.filter(check_ins_enabled=True).values("url", "name")
+    organizations_list = list(organizations_list_queryset)
+
     return render(
         request,
         "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
+        {
+            "yesterday_report": yesterday_report,
+            "all_checkins": all_checkins,
+            "organizations_list": organizations_list,
+        },
     )
 
 
@@ -2052,6 +2067,85 @@ def checkIN_detail(request, report_id):
         "blockers": report.blockers,
     }
     return render(request, "sizzle/checkin_detail.html", context)
+
+
+@login_required
+def organization_checkins(request, slug):
+    """View daily check-ins for a specific organization (admin/manager only)"""
+    organization = get_object_or_404(Organization, slug=slug)
+
+    # Check if user is admin or manager
+    if not (organization.is_admin(request.user) or organization.is_manager(request.user)):
+        messages.error(request, "You do not have permission to view this organization's check-ins.")
+        return redirect("organization_detail", slug=slug)
+
+    # Check if check-ins are enabled for this organization
+    if not organization.check_ins_enabled:
+        messages.warning(request, "Check-ins are not enabled for this organization.")
+        return redirect("organization_detail", slug=slug)
+
+    from datetime import date
+
+    # Find the most recent date that has data for this organization
+    last_report = DailyStatusReport.objects.filter(organization=organization).order_by("-date").first()
+    if last_report:
+        default_start_date = last_report.date
+        default_end_date = last_report.date
+    else:
+        # If no data at all, fallback to today
+        default_start_date = date.today()
+        default_end_date = date.today()
+
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            start_date = default_start_date
+            end_date = default_end_date
+    else:
+        # No date range provided, use the default (most recent date with data)
+        start_date = default_start_date
+        end_date = default_end_date
+
+    reports = (
+        DailyStatusReport.objects.filter(organization=organization, date__range=(start_date, end_date))
+        .select_related("user")
+        .order_by("date", "created")
+    )
+
+    data = []
+    for r in reports:
+        data.append(
+            {
+                "id": r.id,
+                "username": r.user.username,
+                "previous_work": truncate_text(r.previous_work),
+                "next_plan": truncate_text(r.next_plan),
+                "blockers": truncate_text(r.blockers),
+                "goal_accomplished": r.goal_accomplished,
+                "current_mood": r.current_mood,
+                "date": r.date.strftime("%d %B %Y"),
+            }
+        )
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(data, safe=False)
+
+    # Render template with initial data
+    return render(
+        request,
+        "organization/organization_checkins.html",
+        {
+            "organization": organization,
+            "data": data,
+            "default_start_date": default_start_date.isoformat(),
+            "default_end_date": default_end_date.isoformat(),
+        },
+    )
 
 
 class RoomsListView(ListView):

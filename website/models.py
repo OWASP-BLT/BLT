@@ -1281,6 +1281,13 @@ class ActivityLog(models.Model):
 
 class DailyStatusReport(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="daily_status_reports",
+        null=True,
+        blank=True,
+    )
     date = models.DateField()
     previous_work = models.TextField()
     next_plan = models.TextField()
