@@ -155,12 +155,16 @@ def profile_edit(request):
         if form.is_valid():
             new_email = form.cleaned_data["email"]
 
-            # Check email uniqueneess
+            # Check email uniqueness
             if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
                 form.add_error("email", "This email is already in use")
                 return render(request, "profile_edit.html", {"form": form})
 
-            # Detect emaile change before saving profile fields
+            if EmailAddress.objects.exclude(user=request.user).filter(email=new_email).exists():
+                form.add_error("email", "This email is already registered or pending verification")
+                return render(request, "profile_edit.html", {"form": form})
+
+            # Detect email change before saving profile fields
             email_changed = new_email != original_email
 
             # Save profile form (does "not" touch email in user model)
