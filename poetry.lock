@@ -3364,14 +3364,14 @@ slack_sdk = ">=3.35.0,<4"
 
 [[package]]
 name = "slack-sdk"
-version = "3.35.0"
+version = "3.38.0"
 description = "The Slack API Platform SDK for Python"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "slack_sdk-3.35.0-py2.py3-none-any.whl", hash = "sha256:00933d171fbd8a068b321ebb5f89612cc781d3183d8e3447c85499eca9d865be"},
-    {file = "slack_sdk-3.35.0.tar.gz", hash = "sha256:8183b6cbf26a0c1e2441478cd9c0dc4eef08d60c1394cfdc9a769e309a9b6459"},
+    {file = "slack_sdk-3.38.0-py2.py3-none-any.whl", hash = "sha256:6c5e908abd68e97373a88437ef2fa3ff7a4c356807bbc41fcd7d6cbbfa2034d6"},
+    {file = "slack_sdk-3.38.0.tar.gz", hash = "sha256:73f43ef535929c6034982434aba4d5fd04db3b40f4e0cd14c3abfd56419d181d"},
 ]
 
 [package.extras]
@@ -4107,4 +4107,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "ed5fb9e51e3650bf7c5818aad86d21314ce3c7181d98ad97f40398f266693f4b"
+content-hash = "247fca46221c03c95901b8ad2b2f7d0b74ad568de52465f0c62f94e6614a0c39"
