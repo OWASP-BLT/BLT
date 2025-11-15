@@ -1198,9 +1198,9 @@ class Command(BaseCommand):
                 for task_data in lab_data["tasks"]:
                     task, task_created = Tasks.objects.update_or_create(
                         lab=lab,
-                        order=task_data["order"],
+                        name=task_data["name"],
                         defaults={
-                            "name": task_data["name"],
+                            "order": task_data["order"],
                             "description": task_data["description"],
                             "task_type": task_data["task_type"],
                             "is_active": True,
