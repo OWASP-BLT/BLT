@@ -1,0 +1,86 @@
+name: Flag Large PRs
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+
+jobs:
+  check_files_changed:
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != 'sentry-autofix'
+      && github.actor != 'DonnieBLT'
+      && github.actor != 'Copilot'
+      && github.actor != 'copilot-swe-agent[bot]'
+      && github.actor != 'copilot-swe-agent'
+    steps:
+      - name: Check files changed count
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          echo "Checking files changed for PR #$PR_NUMBER by $PR_AUTHOR"
+          
+          # Fetch the number of files changed in the PR
+          echo "Fetching files changed information..."
+          FILES_API_RESPONSE=$(curl -s -X GET \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/files?per_page=100")
+          
+          # Check if the API request was successful
+          if ! echo "$FILES_API_RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            echo "Error: Could not fetch PR files information"
+            exit 1
+          fi
+          
+          FILES_CHANGED=$(echo "$FILES_API_RESPONSE" | jq '. | length')
+          
+          echo "Files changed in PR #$PR_NUMBER: $FILES_CHANGED"
+          
+          # Check if the PR exceeds the limit
+          if [ "$FILES_CHANGED" -gt 20 ]; then
+            echo "⚠️ PR exceeds the file change limit (20 files)"
+            echo "This PR changes $FILES_CHANGED files, which exceeds the limit of 20 files."
+            
+            # Create comment body using jq to properly escape
+            COMMENT_BODY=$(jq -n \
+              --arg files "$FILES_CHANGED" \
+              '{
+                body: "## ⚠️ Large PR Detected\n\nThis pull request modifies **\($files) files**, which exceeds the recommended limit of **20 files** for contributions.\n\n### Why is this important?\n- **Easier Review**: Smaller PRs are easier and faster to review\n- **Reduced Risk**: Smaller changes reduce the chance of introducing bugs\n- **Better Focus**: Each PR should ideally focus on a single feature or fix\n- **Faster Iteration**: Smaller PRs get merged faster\n\n### What should you do?\nPlease consider breaking this PR into smaller, focused pull requests. Each PR should address a specific feature or fix.\n\nIf you believe this PR cannot be reasonably split, please add a comment explaining why this needs to be a large PR and request a review from a maintainer.\n\nThank you for contributing to OWASP BLT! 🙏"
+              }')
+            
+            # Post the comment
+            COMMENT_RESPONSE=$(curl -s -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments" \
+              -d "$COMMENT_BODY")
+            
+            if echo "$COMMENT_RESPONSE" | jq -e 'has("id")' > /dev/null 2>&1; then
+              echo "Comment posted successfully to PR #$PR_NUMBER"
+            else
+              echo "Warning: Failed to post comment"
+            fi
+            
+            # Fail the action
+            echo "Failing the action due to excessive file changes"
+            exit 1
+          else
+            echo "✅ PR is within the file change limit ($FILES_CHANGED/20 files)"
+          fi
