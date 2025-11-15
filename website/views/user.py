@@ -55,8 +55,6 @@ from website.models import (
     Wallet,
 )
 
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -182,23 +180,17 @@ def profile_edit(request):
                     primary=False,
                 )
 
-
                 # Send verification email
                 try:
                     send_email_confirmation(request, request.user, email=new_email)
                 except Exception as e:
                     logger.error(f"Failed to send email confirmation to {new_email}: {e}")
-                    messages.error(
-                        request,
-                        "Failed to send verification email. Please try again later."
-                    )
+                    messages.error(request, "Failed to send verification email. Please try again later.")
                     return redirect("profile", slug=request.user.username)
-
 
                 messages.info(
                     request,
-                    "A verification link has been sent to your new email. "
-                    "Please verify to complete the update."
+                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
                 )
                 return redirect("profile", slug=request.user.username)
 
