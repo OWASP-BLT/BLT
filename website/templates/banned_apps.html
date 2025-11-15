@@ -61,7 +61,7 @@
         let markerLayer;
         let allCountriesData = {};
         let geoJSONLoaded = false;
-    
+        
         // Initialize tabs
         document.getElementById('listViewBtn').addEventListener('click', function () {
             document.getElementById('listView').classList.remove('hidden');
@@ -71,7 +71,7 @@
             document.getElementById('mapViewBtn').classList.remove('text-red-600', 'border-b-2', 'border-red-600');
             document.getElementById('mapViewBtn').classList.add('text-gray-500');
         });
-    
+        
         document.getElementById('mapViewBtn').addEventListener('click', function () {
             document.getElementById('mapView').classList.remove('hidden');
             document.getElementById('listView').classList.add('hidden');
@@ -79,24 +79,23 @@
             this.classList.remove('text-gray-500');
             document.getElementById('listViewBtn').classList.remove('text-red-600', 'border-b-2', 'border-red-600');
             document.getElementById('listViewBtn').classList.add('text-gray-500');
-    
+            
             // Initialize map if it hasn't been initialized yet
             if (!map) {
                 initMap();
-                markerLayer = L.layerGroup().addTo(map);
             }
         });
-    
+        
         // Initialize map
         function initMap() {
             map = L.map('map').setView([20, 0], 2);
-    
+            
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-    
+            
             markerLayer = L.layerGroup().addTo(map);
-    
+            
             fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
                 .then(response => response.json())
                 .then(data => {
@@ -111,12 +110,14 @@
                         onEachFeature: function (feature, layer) {
                             const countryName = (feature.properties.name || feature.properties.ADMIN || "").toLowerCase();
                             if (!countryName) return;
-    
-                            allCountriesData[countryName] = {
+                            
+                            // store lowercase key for consistent lookup
+                            allCountriesData[countryName.toLowerCase()] = {
                                 layer: layer,
-                                center: layer.getBounds().getCenter()
+                                center: layer.getBounds().getCenter(),
+                                feature: feature
                             };
-    
+                            
                             layer.on({
                                 mouseover: function () {
                                     layer.setStyle({ weight: 2, color: "#9ca3af" });
@@ -129,9 +130,11 @@
                     }).addTo(map);
                     geoJSONLoaded = true;
                 })
-                .catch(err => console.error("Error loading GeoJSON:", err));
+                .catch(err => { console.error("Error loading GeoJSON:", err);
+                    geoJSONLoaded = true;
+                });
         }
-    
+        
         // Debounce function
         function debounce(func, wait) {
             let timeout;
@@ -140,13 +143,13 @@
                 timeout = setTimeout(() => func(...args), wait);
             };
         }
-    
+        
         // Search function
         document.getElementById('countrySearch').addEventListener('input', debounce(function (e) {
             const country = e.target.value.trim();
             searchApps(country);
         }, 300));
-    
+        
         function searchApps(country) {
             if (!geoJSONLoaded) {
                 setTimeout(() => searchApps(country), 500);
@@ -157,7 +160,7 @@
                 resetMap();
                 return;
             }
-    
+            
             fetch(`/api/banned_apps/search/?country=${encodeURIComponent(country)}`)
                 .then(response => response.json())
                 .then(data => {
@@ -172,40 +175,38 @@
                 })
                 .catch(err => console.error('Error:', err));
         }
-    
+        
         // Highlight country 
         function highlightCountry(country, hasApps) {
             if (!map || !countriesLayer) return;
             resetMap();
-    
+            
             const lower = country.toLowerCase();
             const countryData = allCountriesData[lower];
             if (!countryData) return;
-    
+            
             countryData.layer.setStyle({
                 fillColor: hasApps ? '#ef4444' : '#a1a1aa',
                 weight: 2,
                 color: hasApps ? '#b91c1c' : '#71717a',
                 fillOpacity: 0.8
             });
-    
+            
             map.flyToBounds(countryData.layer.getBounds(), { duration: 1.2 });
         }
-    
+        
         // Place marker
         function placeCountryMarker(country, apps) {
             if (!markerLayer) return;
             markerLayer.clearLayers();
-    
+            
             const lower = country.toLowerCase();
             const countryData = allCountriesData[lower];
             if (!countryData) return;
-    
+            
             const center = countryData.center;
             const count = apps.length;
-    
             const displayCount = count;
-    
             const markerHTML = `
                 <div style="position: relative; width: 42px; height: 42px;">
                     <div style="width: 42px; height: 42px; border-radius: 50% 50% 50% 0; background: #dc2626; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: 700; box-shadow: 0 0 10px rgba(0,0,0,0.25); animation: popIn 0.35s ease-out;">
@@ -214,7 +215,7 @@
                         </div>
                     </div>
                 </div>`;
-    
+            
             const marker = L.marker(center, {
                 icon: L.divIcon({
                     className: "map-pin-marker",
@@ -223,80 +224,141 @@
                     iconAnchor: [21, 42]
                 })
             });
-    
+
             marker.bindTooltip(
                 `${count} banned ${count === 1 ? "app" : "apps"}`,
                 { permanent: false, direction: "top", offset: [0, -5] }
             );
-    
+
             // Banned apps in map
             marker.on("click", () => {
                 showCountryInfo(country, apps);
             });
-    
+
             markerLayer.addLayer(marker);
         }
-    
+
         function showResults(apps) {
             const grid = document.getElementById('appsGrid');
-            grid.innerHTML = '';
+            // clear previous
+            while (grid.firstChild) grid.removeChild(grid.firstChild);
 
             apps.forEach(app => {
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow';
-                card.innerHTML = `
-                    <h3 class="text-xl font-semibold mb-2 text-red-600">${app.app_name}</h3>
-                    <p class="text-sm text-gray-600 mb-2">${app.app_type}</p>
-                    <p class="text-gray-800 mb-4">${app.ban_reason}</p>
-                    <div class="text-sm text-gray-600">
-                        <p>Ban Date: ${new Date(app.ban_date).toLocaleDateString()}</p>
-                        ${app.source_url ? `<a href="${app.source_url}" target="_blank" class="text-red-600 hover:underline">Source →</a>` : ''}
-                    </div>`;
+
+                const title = document.createElement('h3');
+                title.className = 'text-xl font-semibold mb-2 text-red-600';
+                title.textContent = app.app_name || '';
+
+                const type = document.createElement('p');
+                type.className = 'text-sm text-gray-600 mb-2';
+                type.textContent = app.app_type || '';
+
+                const reason = document.createElement('p');
+                reason.className = 'text-gray-800 mb-4';
+                reason.textContent = app.ban_reason || '';
+
+                const footer = document.createElement('div');
+                footer.className = 'text-sm text-gray-600';
+
+                const date = document.createElement('p');
+                
+                try {
+                    date.textContent = `Ban Date: ${new Date(app.ban_date).toLocaleDateString()}`;
+                } catch (e) {
+                    date.textContent = `Ban Date: ${app.ban_date || 'N/A'}`;
+                }
+                footer.appendChild(date);
+                
+                if (app.source_url) {
+                    const link = document.createElement('a');
+                    link.href = app.source_url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.className = 'text-red-600 hover:underline';
+                    link.textContent = 'Source →';
+                    footer.appendChild(link);
+                }
+
+                card.appendChild(title);
+                card.appendChild(type);
+                card.appendChild(reason);
+                card.appendChild(footer);
+
                 grid.appendChild(card);
             });
 
             document.getElementById('resultsSection').classList.remove('hidden');
             document.getElementById('noResults').classList.add('hidden');
         }
-    
+
         function showCountryInfo(country, apps) {
             const countryInfoDiv = document.getElementById('countryInfo');
-            
-            // Update country name
-            document.getElementById('countryName').textContent = country.charAt(0).toUpperCase() + country.slice(1);
-           
+
+            const countryData = allCountriesData[country.toLowerCase()];
+            const properName = countryData?.feature?.properties?.name || country;
+            document.getElementById('countryName').textContent = properName;
+
             // Update banned apps count
             document.getElementById('bannedAppsCount').textContent = `${apps.length} Banned Apps`;
+
+            // Update banned apps list 
+            const appsList = document.getElementById('bannedAppsList');
             
-            // Update banned apps list
-            document.getElementById('bannedAppsList').innerHTML = apps.map(app => `
-                <div class="py-2 border-b border-gray-200">
-                    <h4 class="font-semibold text-red-600">${app.app_name}</h4>
-                    <p class="text-sm text-gray-600">${app.app_type}</p>
-                    <p class="text-sm mt-1">${app.ban_reason}</p>
-                    <p class="text-xs mt-1">Ban Date: ${new Date(app.ban_date).toLocaleDateString()}</p>
-                </div>
-            `).join('');
+            while (appsList.firstChild) appsList.removeChild(appsList.firstChild);
+
+            apps.forEach(app => {
+                const appDiv = document.createElement('div');
+                appDiv.className = 'py-2 border-b border-gray-200';
+
+                const name = document.createElement('h4');
+                name.className = 'font-semibold text-red-600';
+                name.textContent = app.app_name || '';
+
+                const type = document.createElement('p');
+                type.className = 'text-sm text-gray-600';
+                type.textContent = app.app_type || '';
+
+                const reason = document.createElement('p');
+                reason.className = 'text-sm mt-1';
+                reason.textContent = app.ban_reason || '';
+
+                const date = document.createElement('p');
+                date.className = 'text-xs mt-1';
+                try {
+                    date.textContent = `Ban Date: ${new Date(app.ban_date).toLocaleDateString()}`;
+                } catch (e) {
+                    date.textContent = `Ban Date: ${app.ban_date || 'N/A'}`;
+                }
+
+                appDiv.appendChild(name);
+                appDiv.appendChild(type);
+                appDiv.appendChild(reason);
+                appDiv.appendChild(date);
+
+                appsList.appendChild(appDiv);
+            });
 
             // Show the country info section
             countryInfoDiv.classList.remove('hidden');
         }
-    
+
         function showNoResults() {
             document.getElementById('resultsSection').classList.add('hidden');
             document.getElementById('noResults').classList.remove('hidden');
             document.getElementById('countryInfo').classList.add('hidden');
         }
-    
+
         function hideResults() {
             document.getElementById('resultsSection').classList.add('hidden');
             document.getElementById('noResults').classList.add('hidden');
             document.getElementById('countryInfo').classList.add('hidden');
         }
-    
+
         function resetMap() {
             if (!map || !countriesLayer) return;
-            
+
             // Reset country styles
             countriesLayer.eachLayer(layer => {
                 countriesLayer.resetStyle(layer);
@@ -305,7 +367,7 @@
             // Hide country info
             document.getElementById('countryInfo').classList.add('hidden');
         }
-    
+
         // Initialization
         document.addEventListener('DOMContentLoaded', function() {
             // Set default view to List View
