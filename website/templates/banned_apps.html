@@ -63,7 +63,7 @@
         let geoJSONLoaded = false;
         
         // Initialize tabs
-        document.getElementById('listViewBtn').addEventListener('click', function () {
+        document.getElementById('listViewBtn').addEventListener('click', function() {
             document.getElementById('listView').classList.remove('hidden');
             document.getElementById('mapView').classList.add('hidden');
             this.classList.add('text-red-600', 'border-b-2', 'border-red-600');
@@ -72,7 +72,7 @@
             document.getElementById('mapViewBtn').classList.add('text-gray-500');
         });
         
-        document.getElementById('mapViewBtn').addEventListener('click', function () {
+        document.getElementById('mapViewBtn').addEventListener('click', function() {
             document.getElementById('mapView').classList.remove('hidden');
             document.getElementById('listView').classList.add('hidden');
             this.classList.add('text-red-600', 'border-b-2', 'border-red-600');
@@ -93,9 +93,11 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-            
+
+            // Create layer for markers
             markerLayer = L.layerGroup().addTo(map);
-            
+
+            // Load countries GeoJSON
             fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
                 .then(response => response.json())
                 .then(data => {
@@ -111,7 +113,7 @@
                             const countryName = (feature.properties.name || feature.properties.ADMIN || "").toLowerCase();
                             if (!countryName) return;
                             
-                            // store lowercase key for consistent lookup
+                            // Store country data for later use
                             allCountriesData[countryName.toLowerCase()] = {
                                 layer: layer,
                                 center: layer.getBounds().getCenter(),
@@ -145,7 +147,7 @@
         }
         
         // Search function
-        document.getElementById('countrySearch').addEventListener('input', debounce(function (e) {
+        document.getElementById('countrySearch').addEventListener('input', debounce(function(e) {
             const country = e.target.value.trim();
             searchApps(country);
         }, 300));
@@ -373,5 +375,6 @@
             // Set default view to List View
             document.getElementById('listViewBtn').click();
         });
+        
     </script>
 {% endblock %}
