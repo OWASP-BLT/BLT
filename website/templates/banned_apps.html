@@ -269,54 +269,29 @@
             
             return div;
         }
-                
+
         function showCountryInfo(country, apps) {
             const countryInfoDiv = document.getElementById('countryInfo');
-
-            const countryData = allCountriesData[country.toLowerCase()];
-            const properName = countryData?.feature?.properties?.name || country;
-            document.getElementById('countryName').textContent = properName;
-
-            // Update banned apps count
-            document.getElementById('bannedAppsCount').textContent = `${apps.length} Banned Apps`;
-
-            // Update banned apps list 
-            const appsList = document.getElementById('bannedAppsList');
+            const countryNameDiv = document.getElementById('countryName');
+            const bannedAppsCountDiv = document.getElementById('bannedAppsCount');
+            const bannedAppsListDiv = document.getElementById('bannedAppsList');
             
-            while (appsList.firstChild) appsList.removeChild(appsList.firstChild);
-
-            apps.forEach(app => {
-                const appDiv = document.createElement('div');
-                appDiv.className = 'py-2 border-b border-gray-200';
-
-                const name = document.createElement('h4');
-                name.className = 'font-semibold text-red-600';
-                name.textContent = app.app_name || '';
-
-                const type = document.createElement('p');
-                type.className = 'text-sm text-gray-600';
-                type.textContent = app.app_type || '';
-
-                const reason = document.createElement('p');
-                reason.className = 'text-sm mt-1';
-                reason.textContent = app.ban_reason || '';
-
-                const date = document.createElement('p');
-                date.className = 'text-xs mt-1';
-                try {
-                    date.textContent = `Ban Date: ${new Date(app.ban_date).toLocaleDateString()}`;
-                } catch (e) {
-                    date.textContent = `Ban Date: ${app.ban_date || 'N/A'}`;
-                }
-
-                appDiv.appendChild(name);
-                appDiv.appendChild(type);
-                appDiv.appendChild(reason);
-                appDiv.appendChild(date);
-
-                appsList.appendChild(appDiv);
-            });
-
+            // Update country name
+            countryNameDiv.textContent = country.charAt(0).toUpperCase() + country.slice(1);
+            
+            // Update banned apps count
+            bannedAppsCountDiv.textContent = `${apps.length} Banned Apps`;
+            
+            // Update banned apps list
+            bannedAppsListDiv.innerHTML = apps.map(app => `
+                <div class="py-2 border-b border-gray-200">
+                    <h4 class="font-semibold text-red-600">${app.app_name}</h4>
+                    <p class="text-sm text-gray-600">${app.app_type}</p>
+                    <p class="text-sm mt-1">${app.ban_reason}</p>
+                    <p class="text-xs mt-1">Ban Date: ${new Date(app.ban_date).toLocaleDateString()}</p>
+                </div>
+            `).join('');
+            
             // Show the country info section
             countryInfoDiv.classList.remove('hidden');
         }
