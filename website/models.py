@@ -1049,7 +1049,9 @@ class ForumPost(models.Model):
     is_pinned = models.BooleanField(default=False)
     repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
     project = models.ForeignKey("Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
-    organization = models.ForeignKey("Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts"
+    )
 
     def __str__(self):
         return f"{self.title} by {self.user}"

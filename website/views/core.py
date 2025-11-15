@@ -890,7 +890,11 @@ def view_forum(request):
     categories = ForumCategory.objects.all()
     selected_category = request.GET.get("category")
 
-    posts = ForumPost.objects.select_related("user", "category", "repo", "project", "organization").prefetch_related("comments").all()
+    posts = (
+        ForumPost.objects.select_related("user", "category", "repo", "project", "organization")
+        .prefetch_related("comments")
+        .all()
+    )
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
@@ -900,14 +904,16 @@ def view_forum(request):
     repos = Repo.objects.all().order_by("name")
 
     return render(
-        request, "forum.html", {
+        request,
+        "forum.html",
+        {
             "categories": categories,
             "posts": posts,
             "selected_category": selected_category,
             "organizations": organizations,
             "projects": projects,
             "repos": repos,
-        }
+        },
     )
 
 
