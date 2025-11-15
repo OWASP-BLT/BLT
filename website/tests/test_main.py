@@ -17,7 +17,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from .models import (
+from ..models import (
     Activity,
     ContentType,
     Domain,
@@ -138,7 +138,9 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
-        self.assertIn("bugbug (0 Pts)", body.text)
+        # Check for current header format: @username and separate Points display
+        self.assertIn("@bugbug", body.text)
+        self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True)
     def test_post_bug_full_url(self):
