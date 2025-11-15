@@ -328,3 +328,152 @@ class HackathonLeaderboardTestCase(TestCase):
         # User 1 should be third with 1 PR
         self.assertEqual(leaderboard[2]["user"].id, self.user1.id)
         self.assertEqual(leaderboard[2]["count"], 1)
+
+    def test_hackathon_leaderboard_excludes_bots(self):
+        """Test that the hackathon leaderboard correctly excludes bot accounts."""
+        from website.models import Contributor
+
+        # Create a new hackathon for bot filtering test
+        now = timezone.now()
+        bot_hackathon = Hackathon.objects.create(
+            name="Bot Test Hackathon",
+            slug="bot-test-hackathon",
+            description="A hackathon for testing bot filtering",
+            organization=self.organization,
+            start_time=now - datetime.timedelta(days=5),
+            end_time=now + datetime.timedelta(days=5),
+            is_active=True,
+        )
+
+        # Create a new repository for this test
+        bot_repo = Repo.objects.create(
+            name="Bot Repo",
+            slug="bot-repo",
+            repo_url="https://github.com/test/botrepo",
+            organization=self.organization,
+        )
+
+        bot_hackathon.repositories.add(bot_repo)
+
+        # Create bot contributors
+        bot1 = Contributor.objects.create(
+            name="dependabot[bot]",
+            github_id=9000001,
+            github_url="https://github.com/apps/dependabot",
+            avatar_url="https://avatars.githubusercontent.com/in/29110",
+            contributor_type="Bot",
+            contributions=1,
+        )
+
+        bot2 = Contributor.objects.create(
+            name="github-actions[bot]",
+            github_id=9000002,
+            github_url="https://github.com/apps/github-actions",
+            avatar_url="https://avatars.githubusercontent.com/in/15368",
+            contributor_type="Bot",
+            contributions=1,
+        )
+
+        # Create a bot with User type but bot-like name (edge case)
+        bot3 = Contributor.objects.create(
+            name="renovate-bot",
+            github_id=9000003,
+            github_url="https://github.com/renovate-bot",
+            avatar_url="https://avatars.githubusercontent.com/u/9000003",
+            contributor_type="User",
+            contributions=1,
+        )
+
+        # Create a regular contributor
+        human_contributor = Contributor.objects.create(
+            name="human-contributor",
+            github_id=9000004,
+            github_url="https://github.com/human-contributor",
+            avatar_url="https://avatars.githubusercontent.com/u/9000004",
+            contributor_type="User",
+            contributions=1,
+        )
+
+        # Create PRs from bot contributors (should be excluded)
+        for i, bot in enumerate([bot1, bot2, bot3], start=1):
+            GitHubIssue.objects.create(
+                issue_id=9000 + i,
+                title=f"Bot PR {i}",
+                body="PR created by a bot",
+                state="closed",
+                type="pull_request",
+                created_at=now - datetime.timedelta(days=3),
+                updated_at=now - datetime.timedelta(days=2),
+                merged_at=now - datetime.timedelta(days=1),
+                is_merged=True,
+                url=f"https://github.com/test/botrepo/pull/{9000 + i}",
+                repo=bot_repo,
+                contributor=bot,
+            )
+
+        # Create PR from human contributor (should be included)
+        GitHubIssue.objects.create(
+            issue_id=9100,
+            title="Human PR",
+            body="PR created by a human",
+            state="closed",
+            type="pull_request",
+            created_at=now - datetime.timedelta(days=3),
+            updated_at=now - datetime.timedelta(days=2),
+            merged_at=now - datetime.timedelta(days=1),
+            is_merged=True,
+            url="https://github.com/test/botrepo/pull/9100",
+            repo=bot_repo,
+            contributor=human_contributor,
+        )
+
+        # Create PR from registered user (should be included)
+        GitHubIssue.objects.create(
+            issue_id=9200,
+            title="User PR",
+            body="PR created by a registered user",
+            state="closed",
+            type="pull_request",
+            created_at=now - datetime.timedelta(days=3),
+            updated_at=now - datetime.timedelta(days=2),
+            merged_at=now - datetime.timedelta(days=1),
+            is_merged=True,
+            url="https://github.com/test/botrepo/pull/9200",
+            repo=bot_repo,
+            user_profile=self.user1.userprofile,
+        )
+
+        # Get the leaderboard
+        leaderboard = bot_hackathon.get_leaderboard()
+
+        # Check that only non-bot contributors are in the leaderboard
+        self.assertEqual(len(leaderboard), 2, "Leaderboard should only have 2 non-bot contributors")
+
+        # Verify that bot PRs are excluded
+        all_usernames = []
+        for entry in leaderboard:
+            if hasattr(entry["user"], "username"):
+                all_usernames.append(entry["user"].username)
+            elif isinstance(entry["user"], dict):
+                all_usernames.append(entry["user"]["username"])
+
+        self.assertIn("testuser1", all_usernames, "Registered user should be in leaderboard")
+        self.assertIn("human-contributor", all_usernames, "Human contributor should be in leaderboard")
+        self.assertNotIn("dependabot[bot]", all_usernames, "Bot should be excluded from leaderboard")
+        self.assertNotIn("github-actions[bot]", all_usernames, "Bot should be excluded from leaderboard")
+        self.assertNotIn("renovate-bot", all_usernames, "Bot-like name should be excluded from leaderboard")
+
+        # Test participant count directly (without rendering the view)
+        from website.views.hackathon import HackathonDetailView
+
+        view = HackathonDetailView()
+        repo_ids = bot_hackathon.repositories.values_list("id", flat=True)
+        merged_prs = view._get_base_pr_query(bot_hackathon, repo_ids, is_merged=True)
+        participant_count = view._get_participant_count(merged_prs)
+
+        # Check that participant count excludes bots
+        self.assertEqual(participant_count, 2, "Participant count should exclude bots")
+
+        # Check that PR counts exclude bots
+        merged_pr_count = merged_prs.count()
+        self.assertEqual(merged_pr_count, 2, "Merged PR count should exclude bots")
