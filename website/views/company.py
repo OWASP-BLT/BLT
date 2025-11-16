@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
@@ -32,8 +32,8 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Organization,
+    OrganizationAdmin,
     SlackIntegration,
-    UserProfile,
     Winner,
 )
 from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
@@ -618,9 +618,6 @@ class OrganizationDashboardIntegrations(View):
 class OrganizationDashboardTeamOverviewView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        sort_field = request.GET.get("sort", "date")
-        sort_direction = request.GET.get("direction", "desc")
-
         # For authenticated users, show organizations they have access to
         if request.user.is_authenticated:
             organizations = (
@@ -634,54 +631,119 @@ class OrganizationDashboardTeamOverviewView(View):
 
         organization_obj = Organization.objects.filter(id=id).first()
 
-        team_members = UserProfile.objects.filter(team=organization_obj)
-        team_member_users = [member.user for member in team_members]
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
 
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            filter_type = request.GET.get("filter_type")
-            filter_value = request.GET.get("filter_value")
+        # Get team members from organization's admin and managers
+        team_member_users = []
+        if organization_obj.admin:
+            team_member_users.append(organization_obj.admin)
 
-            reports = DailyStatusReport.objects.filter(user__in=team_member_users)
+        # Add all managers
+        managers = organization_obj.managers.all()
+        team_member_users.extend(managers)
 
-            if filter_type == "user":
-                reports = reports.filter(user_id=filter_value)
-            elif filter_type == "date":
-                reports = reports.filter(date=filter_value)
-            elif filter_type == "goal":
-                reports = reports.filter(goal_accomplished=filter_value == "true")
-            elif filter_type == "task":
-                reports = reports.filter(previous_work__icontains=filter_value)
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_team_members = []
+        for user in team_member_users:
+            if user.id not in seen:
+                seen.add(user.id)
+                unique_team_members.append(user)
 
-            data = []
-            for report in reports:
-                data.append(
+        team_member_users = unique_team_members
+
+        # Get UserProfile objects for template rendering
+        team_members = []
+        for user in team_member_users:
+            try:
+                profile = user.userprofile
+                # Create a wrapper object with expected attributes
+                member_data = type(
+                    "obj",
+                    (object,),
                     {
-                        "username": report.user.username,
-                        "avatar_url": (
-                            report.user.userprofile.user_avatar.url if report.user.userprofile.user_avatar else None
-                        ),
-                        "date": report.date.strftime("%B %d, %Y"),
-                        "previous_work": report.previous_work,
-                        "next_plan": report.next_plan,
-                        "blockers": report.blockers,
-                        "goal_accomplished": report.goal_accomplished,
-                        "current_mood": report.current_mood,
-                    }
+                        "user": user,
+                        "user_avatar": profile.user_avatar if hasattr(profile, "user_avatar") else None,
+                        "role": "Admin" if user == organization_obj.admin else "Manager",
+                    },
+                )()
+                team_members.append(member_data)
+            except Exception:
+                # If userprofile doesn't exist, create basic member data
+                member_data = type(
+                    "obj",
+                    (object,),
+                    {
+                        "user": user,
+                        "user_avatar": None,
+                        "role": "Admin" if user == organization_obj.admin else "Manager",
+                    },
+                )()
+                team_members.append(member_data)
+
+        # Handle AJAX requests for filtered status reports
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            try:
+                filter_type = request.GET.get("filter_type")
+                filter_value = request.GET.get("filter_value")
+
+                logger.info(
+                    f"AJAX request for team overview: filter_type={filter_type}, filter_value={filter_value}, team_size={len(team_member_users)}"
                 )
-            return JsonResponse({"data": data})
 
-        daily_status_reports = DailyStatusReport.objects.filter(user__in=team_member_users)
+                reports = DailyStatusReport.objects.filter(user__in=team_member_users).order_by("-date")
 
-        sort_prefix = "-" if sort_direction == "desc" else ""
-        sort_mapping = {
-            "date": "date",
-            "username": "user__username",
-            "mood": "current_mood",
-            "goal": "goal_accomplished",
-        }
+                logger.info(f"Total reports before filter: {reports.count()}")
 
-        if sort_field in sort_mapping:
-            daily_status_reports = daily_status_reports.order_by(f"{sort_prefix}{sort_mapping[sort_field]}")
+                if filter_type == "user" and filter_value:
+                    reports = reports.filter(user_id=filter_value)
+                elif filter_type == "date" and filter_value:
+                    reports = reports.filter(date=filter_value)
+                elif filter_type == "goal" and filter_value:
+                    reports = reports.filter(goal_accomplished=filter_value == "true")
+                elif filter_type == "task" and filter_value:
+                    reports = reports.filter(previous_work__icontains=filter_value)
+
+                logger.info(f"Reports after filter: {reports.count()}")
+
+                data = []
+                for report in reports:
+                    try:
+                        avatar_url = (
+                            report.user.userprofile.user_avatar.url if report.user.userprofile.user_avatar else None
+                        )
+                    except Exception as e:
+                        logger.warning(f"Error getting avatar for user {report.user.username}: {e}")
+                        avatar_url = None
+
+                    data.append(
+                        {
+                            "username": report.user.username,
+                            "avatar_url": avatar_url,
+                            "date": report.date.strftime("%B %d, %Y"),
+                            "previous_work": report.previous_work,
+                            "next_plan": report.next_plan,
+                            "blockers": report.blockers,
+                            "goal_accomplished": report.goal_accomplished,
+                            "current_mood": report.current_mood,
+                        }
+                    )
+
+                logger.info(f"Returning {len(data)} reports")
+                return JsonResponse({"data": data})
+
+            except Exception as e:
+                logger.error(f"Error in team overview AJAX: {e}", exc_info=True)
+                return JsonResponse({"error": "An error occurred while fetching reports", "data": []}, status=500)
+
+        # Get daily status reports ordered by date (most recent first)
+        daily_status_reports = DailyStatusReport.objects.filter(user__in=team_member_users).order_by("-date")
+
+        logger.info(
+            f"Team overview page load: org_id={id}, members={len(team_members)}, reports={daily_status_reports.count()}"
+        )
 
         context = {
             "organization": id,
@@ -689,8 +751,6 @@ class OrganizationDashboardTeamOverviewView(View):
             "organization_obj": organization_obj,
             "team_members": team_members,
             "daily_status_reports": daily_status_reports,
-            "current_sort": sort_field,
-            "current_direction": sort_direction,
         }
 
         return render(request, "organization/dashboard/organization_team_overview.html", context=context)
@@ -751,7 +811,7 @@ class OrganizationDashboardManageDomainsView(View):
 
         # Get all domains for this organization
         domains = domains_query.values(
-            "id", "name", "url", "logo", "has_security_txt", "security_txt_checked_at"
+            "id", "name", "url", "logo", "is_active", "has_security_txt", "security_txt_checked_at"
         ).order_by("name")
 
         # If user has access to organizations
@@ -846,9 +906,14 @@ class AddDomainView(View):
             messages.error(request, "Invalid domain url format")
             return redirect("add_domain", id=id)
 
-        # Extract domain hostname and normalize to lowercase
-        domain = parsed_url.hostname.replace("www.", "").lower()
-        domain_data["name"] = domain_data["name"].lower()
+        # Extract domain hostname and normalize to lowercase for consistency
+        normalized_domain = parsed_url.hostname.replace("www.", "").lower()
+        # Ensure the domain name is consistent with the URL processing
+        # If user didn't provide a custom name, use the normalized domain
+        if domain_data["name"].lower().replace("www.", "") == normalized_domain:
+            domain_data["name"] = normalized_domain
+        else:
+            domain_data["name"] = domain_data["name"].strip()
 
         managers_list = request.POST.getlist("user")
         organization_obj = Organization.objects.get(id=id)
@@ -1383,91 +1448,277 @@ class DomainView(View):
 class OrganizationDashboardManageRolesView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        # For authenticated users, show organizations they have access to
-        if request.user.is_authenticated:
-            organizations = (
-                Organization.objects.values("name", "id")
-                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-                .distinct()
-            )
-        else:
-            # For unauthenticated users, don't show organization list
-            organizations = []
-
         # Get the organization object
         organization_obj = Organization.objects.filter(id=id).first()
         if not organization_obj:
             messages.error(request, "Organization does not exist")
             return redirect("home")
 
-        # Get organization domain and users only if authenticated
-        if request.user.is_authenticated:
-            organization_url = organization_obj.url
-            parsed_url = urlparse(organization_url).netloc
-            organization_domain = parsed_url.replace("www.", "")
-            organization_users = User.objects.filter(email__endswith=f"@{organization_domain}").values(
-                "id", "username", "email"
+        # Check if user is admin or manager of this organization
+        is_org_admin = organization_obj.admin == request.user
+        is_org_manager = organization_obj.managers.filter(id=request.user.id).exists()
+
+        if not (is_org_admin or is_org_manager):
+            messages.error(request, "You don't have permission to manage roles for this organization")
+            return redirect("organization_dashboard_overview", id=id)
+
+        # Get user's own role to determine permissions
+        try:
+            current_user_role = OrganizationAdmin.objects.get(
+                user=request.user, organization=organization_obj, is_active=True
             )
-            organization_users_list = list(organization_users)
+            user_role_level = current_user_role.role  # 0=Admin, 1=Moderator
+        except OrganizationAdmin.DoesNotExist:
+            # Organization owner has full access
+            if is_org_admin:
+                user_role_level = 0
+            else:
+                messages.error(request, "You don't have an active role in this organization")
+                return redirect("organization_dashboard_overview", id=id)
 
-            domains = Domain.objects.filter(
-                Q(organization__id=id)
-                & (Q(organization__managers__in=[request.user]) | Q(organization__admin=request.user))
-                | Q(managers=request.user)
-            ).distinct()
+        # Only admins (role=0) or org owner can manage roles
+        if user_role_level != 0 and not is_org_admin:
+            messages.error(request, "Only administrators can manage roles")
+            return redirect("organization_dashboard_overview", id=id)
 
-            domains_data = []
-            for domain in domains:
-                _id = domain.id
-                name = domain.name
-                organization_admin = domain.organization.admin
-                managers = list(domain.managers.values("id", "username", "userprofile__user_avatar"))
-                domains_data.append(
-                    {
-                        "id": _id,
-                        "name": name,
-                        "managers": managers,
-                        "organization_admin": organization_admin,
-                    }
+        # Get all active roles in the organization
+        org_roles = (
+            OrganizationAdmin.objects.filter(organization=organization_obj, is_active=True)
+            .select_related("user", "user__userprofile", "domain")
+            .order_by("role", "created")
+        )
+
+        # Get organization domains for assignment
+        domains = Domain.objects.filter(organization=organization_obj).order_by("name")
+
+        # Get users from organization email domain for quick add
+        organization_url = organization_obj.url
+        # Handle both with and without scheme
+        if "://" not in organization_url:
+            organization_url = f"https://{organization_url}"
+        parsed_url = urlparse(organization_url)
+        organization_domain = parsed_url.netloc.replace("www.", "").strip()
+
+        # Try to get users matching organization email domain
+        if organization_domain:
+            available_users = (
+                User.objects.filter(email__endswith=f"@{organization_domain}", is_active=True)
+                .exclude(id__in=org_roles.values_list("user_id", flat=True))
+                .values("id", "username", "email", "first_name", "last_name")[:100]
+            )
+
+            # If no users found with matching email domain, show all active users
+            if not available_users.exists():
+                available_users = (
+                    User.objects.filter(is_active=True)
+                    .exclude(id__in=org_roles.values_list("user_id", flat=True))
+                    .values("id", "username", "email", "first_name", "last_name")[:100]
                 )
         else:
-            # For unauthenticated users, show empty lists
-            organization_users_list = []
-            domains_data = []
+            # If no valid domain, show all active users
+            available_users = (
+                User.objects.filter(is_active=True)
+                .exclude(id__in=org_roles.values_list("user_id", flat=True))
+                .values("id", "username", "email", "first_name", "last_name")[:100]
+            )
+
+        # Format roles data for template
+        roles_data = []
+        admin_count = 0
+        moderator_count = 0
+
+        for org_role in org_roles:
+            role_info = {
+                "id": org_role.id,
+                "user": org_role.user,
+                "user_id": org_role.user.id if org_role.user else None,
+                "username": org_role.user.username if org_role.user else "Unknown",
+                "email": org_role.user.email if org_role.user else "",
+                "avatar": org_role.user.userprofile.user_avatar
+                if org_role.user and hasattr(org_role.user, "userprofile")
+                else None,
+                "role": org_role.role,
+                "role_display": "Administrator" if org_role.role == 0 else "Moderator",
+                "domain": org_role.domain,
+                "domain_name": org_role.domain.name if org_role.domain else None,
+                "created": org_role.created,
+                "is_active": org_role.is_active,
+                "is_owner": organization_obj.admin == org_role.user,
+            }
+            roles_data.append(role_info)
+
+            if org_role.role == 0:
+                admin_count += 1
+            else:
+                moderator_count += 1
 
         context = {
             "organization": id,
             "organization_obj": organization_obj,
-            "organizations": list(organizations),
-            "domains": domains_data,
-            "organization_users": organization_users_list,
+            "roles": roles_data,
+            "domains": list(domains.values("id", "name")),
+            "available_users": list(available_users),
+            "is_org_admin": is_org_admin,
+            "user_role_level": user_role_level,
+            "admin_count": admin_count,
+            "moderator_count": moderator_count,
+            "role_choices": [{"value": 0, "label": "Administrator"}, {"value": 1, "label": "Moderator"}],
         }
 
         return render(request, "organization/dashboard/organization_manage_roles.html", context)
 
     def post(self, request, id, *args, **kwargs):
-        domain = Domain.objects.filter(
-            Q(organization__id=id)
-            & Q(id=request.POST.get("domain_id"))
-            & (Q(organization__admin=request.user) | Q(managers__in=[request.user]))
-        ).first()
+        # Get the organization
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
 
-        if domain is None:
-            messages.error("you are not manager of this domain.")
-            return redirect("organization_manage_roles", id)
+        # Check permissions
+        is_org_admin = organization_obj.admin == request.user
+        try:
+            current_user_role = OrganizationAdmin.objects.get(
+                user=request.user, organization=organization_obj, is_active=True
+            )
+            user_role_level = current_user_role.role
+        except OrganizationAdmin.DoesNotExist:
+            if not is_org_admin:
+                messages.error(request, "You don't have permission to manage roles")
+                return redirect("organization_manage_roles", id=id)
+            user_role_level = 0
 
-        if not request.POST.getlist("user[]"):
-            messages.error(request, "No user selected.")
-            return redirect("organization_manage_roles", id)
+        # Only admins can manage roles
+        if user_role_level != 0 and not is_org_admin:
+            messages.error(request, "Only administrators can manage roles")
+            return redirect("organization_manage_roles", id=id)
 
-        managers_list = request.POST.getlist("user[]")
-        domain_managers = User.objects.filter(username__in=managers_list, is_active=True)
+        action = request.POST.get("action")
 
-        for manager in domain_managers:
-            domain.managers.add(manager.id)
+        if action == "add_role":
+            user_id = request.POST.get("user_id")
+            email = request.POST.get("email")
+            role = request.POST.get("role", 1)  # Default to Moderator
+            domain_id = request.POST.get("domain_id")
 
-        messages.success(request, "successfully added the managers")
-        return redirect("organization_manage_roles", id)
+            try:
+                # Find user by ID or email
+                if user_id:
+                    user = User.objects.get(id=user_id, is_active=True)
+                elif email:
+                    user = User.objects.get(email=email, is_active=True)
+                else:
+                    messages.error(request, "Please provide a user ID or email")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Check if user already has an active role
+                existing_role = OrganizationAdmin.objects.filter(
+                    user=user, organization=organization_obj, is_active=True
+                ).first()
+
+                if existing_role:
+                    messages.error(request, f"{user.username} already has an active role in this organization")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Check if user is trying to assign themselves
+                if user == request.user:
+                    messages.error(request, "You cannot modify your own role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Get domain if specified
+                domain = None
+                if domain_id:
+                    domain = Domain.objects.filter(id=domain_id, organization=organization_obj).first()
+
+                # Create the role
+                OrganizationAdmin.objects.create(
+                    user=user, organization=organization_obj, domain=domain, role=int(role), is_active=True
+                )
+
+                role_name = "Administrator" if int(role) == 0 else "Moderator"
+                messages.success(request, f"Successfully assigned {role_name} role to {user.username}")
+
+            except User.DoesNotExist:
+                messages.error(request, "User not found or inactive")
+            except (ValidationError, IntegrityError) as e:
+                logger.exception(f"Error adding role: {e!s}")
+                messages.error(request, "An error occurred while adding the role. Please try again.")
+
+        elif action == "update_role":
+            role_id = request.POST.get("role_id")
+            new_role = request.POST.get("role")
+            domain_id = request.POST.get("domain_id")
+
+            try:
+                org_role = OrganizationAdmin.objects.get(id=role_id, organization=organization_obj, is_active=True)
+
+                # Prevent modifying own role
+                if org_role.user == request.user:
+                    messages.error(request, "You cannot modify your own role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Prevent modifying organization owner's role
+                if org_role.user == organization_obj.admin:
+                    messages.error(request, "Cannot modify the organization owner's role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Update role
+                if new_role is not None:
+                    org_role.role = int(new_role)
+
+                # Update domain assignment
+                if domain_id:
+                    domain = Domain.objects.filter(id=domain_id, organization=organization_obj).first()
+                    org_role.domain = domain
+                elif domain_id == "":
+                    org_role.domain = None
+
+                org_role.save()
+                messages.success(request, f"Successfully updated role for {org_role.user.username}")
+
+            except OrganizationAdmin.DoesNotExist:
+                messages.error(request, "Role not found")
+            except ValueError as e:
+                logger.error(f"Invalid value provided when updating role: {str(e)}")
+                messages.error(request, str(e))
+            except ValidationError as e:
+                logger.error(f"Validation error when updating role: {str(e)}")
+                messages.error(request, str(e))
+            except IntegrityError as e:
+                logger.error(f"Database integrity error when updating role: {str(e)}")
+                messages.error(request, "Database integrity error: Unable to update role due to conflicting data")
+            except Exception as e:
+                logger.exception("Error updating role")
+                messages.error(request, "An error occurred while updating the role. " + str(e))
+
+        elif action == "remove_role":
+            role_id = request.POST.get("role_id")
+
+            try:
+                org_role = OrganizationAdmin.objects.get(id=role_id, organization=organization_obj)
+
+                # Prevent removing own role
+                if org_role.user == request.user:
+                    messages.error(request, "You cannot remove your own role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Prevent removing organization owner's role
+                if org_role.user == organization_obj.admin:
+                    messages.error(request, "Cannot remove the organization owner's role")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Deactivate the role instead of deleting
+                org_role.is_active = False
+                org_role.save()
+
+                messages.success(request, f"Successfully removed role from {org_role.user.username}")
+
+            except OrganizationAdmin.DoesNotExist:
+                messages.error(request, "Role not found")
+            except (ValidationError, ValueError) as e:
+                logger.exception(f"Error removing role: {e!s}")
+                messages.error(request, "An error occurred while removing the role. Please try again.")
+
+        return redirect("organization_manage_roles", id=id)
 
 
 class ShowBughuntView(View):
@@ -1675,14 +1926,16 @@ class AddHuntView(View):
             messages.error(request, "Domain Does not exists")
             return redirect("add_bughunt", id)
 
+        # Expect dates in MM/DD/YYYY format from the form
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
 
         try:
+            # Parse MM/DD/YYYY format and convert to database format
             start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
         except ValueError:
-            messages.error(request, "Invalid Date Format")
+            messages.error(request, "Please enter dates in MM/DD/YYYY format (e.g., 12/25/2024)")
             return redirect("add_bughunt", id)
 
         # apply validation for date not valid
@@ -1774,19 +2027,25 @@ class OrganizationDashboardManageBughuntView(View):
             messages.error(request, "Organization does not exist")
             return redirect("home")
 
-        query = Hunt.objects.values(
-            "id",
-            "name",
-            "prize",
-            "is_published",
-            "result_published",
-            "starts_on__day",
-            "starts_on__month",
-            "starts_on__year",
-            "end_on__day",
-            "end_on__month",
-            "end_on__year",
-        ).filter(domain__organization__id=id)
+        query = (
+            Hunt.objects.values(
+                "id",
+                "name",
+                "prize",
+                "is_published",
+                "result_published",
+                "starts_on__day",
+                "starts_on__month",
+                "starts_on__year",
+                "end_on__day",
+                "end_on__month",
+                "end_on__year",
+                "url",
+                "logo",
+            )
+            .annotate(total_prize=Sum("huntprize__value"))
+            .filter(domain__organization__id=id)
+        )
         filtered_bughunts = {
             "all": query,
             "ongoing": query.filter(result_published=False, is_published=True),
