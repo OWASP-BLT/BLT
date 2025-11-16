@@ -2895,3 +2895,30 @@ class RoadmapView(TemplateView):
 
 class StyleGuideView(TemplateView):
     template_name = "style_guide.html"
+
+
+@csrf_exempt
+def set_theme(request):
+    """View to save user's theme preference"""
+    if request.method == "POST":
+        try:
+            import json
+
+            data = json.loads(request.body)
+            theme = data.get("theme", "light")
+
+            # Save theme in session
+            request.session["theme"] = theme
+
+            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
+            # if request.user.is_authenticated:
+            #     profile = request.user.userprofile
+            #     profile.theme_preference = theme
+            #     profile.save()
+
+            return JsonResponse({"status": "success", "theme": theme})
+        except Exception as e:
+            logging.exception("Error occurred while setting theme")
+            return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
