@@ -150,19 +150,19 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <!-- Feature 1 -->
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-shield-virus fa-2xl text-[#e74c3c]"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-1">Protect Applications</h3>
-                        <p class="text-sm text-gray-600">Safeguard your applications from security vulnerabilities.</p>
+                        <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Protect Applications</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Safeguard your applications from security vulnerabilities.</p>
                     </div>
                     <!-- Feature 2 -->
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-hand-holding-usd fa-2xl text-[#e74c3c]"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-1">Earn Rewards</h3>
-                        <p class="text-sm text-gray-600">Get rewarded for your security findings.</p>
+                        <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Earn Rewards</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Get rewarded for your security findings.</p>
                         <a href="{% url 'hunts' %}"
                            class="inline-block mt-3 text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm">
                             <span class="flex items-center gap-1">
@@ -173,22 +173,22 @@
                     </div>
                     <!-- Feature 3 -->
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-robot fa-2xl text-[#e74c3c]"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-1">Automate Security</h3>
-                        <p class="text-sm text-gray-600">Streamline your security workflows.</p>
+                        <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Automate Security</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Streamline your security workflows.</p>
                     </div>
                     <!-- New Education Feature -->
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-graduation-cap fa-2xl text-[#e74c3c]"></i>
                         </div>
                         <div class="relative">
                             <span class="absolute -top-1 right-0 inline-flex items-center px-2 py-0.5 text-xs font-medium bg-[#e74c3c] text-white rounded-full animate-pulse">NEW</span>
-                            <h3 class="text-lg font-semibold mb-1">Learn & Grow</h3>
+                            <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Learn & Grow</h3>
                         </div>
-                        <p class="text-sm text-gray-600">Access expert-led security courses.</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Access expert-led security courses.</p>
                         <a href="{% url 'education' %}"
                            class="inline-block mt-3 text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm">
                             <span class="flex items-center gap-1">
@@ -203,20 +203,20 @@
         <!-- Decorative Divider -->
         <div class="max-w-7xl mx-auto px-4 py-8">
             <div class="flex items-center justify-center">
-                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent"></div>
                 <div class="mx-2">
                     <a href="{% url 'register_organization' %}"
-                       class=" flex items-center justify-center gap-3 px-4 py-3 text-xl rounded-md border border-gray-300  hover:text-black hover:shadow-md transition-all duration-300">
+                       class=" flex items-center justify-center gap-3 px-4 py-3 text-xl rounded-md border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:text-black dark:hover:text-white hover:shadow-md transition-all duration-300">
                         <i class="fas fa-building text-[#e74c3c]"></i>
                         <span class="font-medium text-center">Register Organization</span>
                     </a>
                 </div>
-                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent"></div>
             </div>
         </div>
         <!-- Recent Hackathons Section -->
         {% if recent_hackathons %}
-            <section class="py-12 bg-white">
+            <section class="py-12 bg-white dark:bg-gray-900 transition-colors">
                 <div class="max-w-7xl mx-auto px-4">
                     <div class="mb-8">
                         <div class="flex items-center gap-4 mb-3">
@@ -265,11 +265,18 @@
                         {% endfor %}
                     </div>
                     <div class="text-center">
-                        <a href="{% url 'hackathons' %}"
-                           class="inline-flex items-center px-6 py-3 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-colors duration-200">
-                            View All Hackathons
-                            <i class="fas fa-arrow-right ml-2"></i>
-                        </a>
+                        <div class="flex flex-wrap items-center justify-center gap-4">
+                            <a href="{% url 'hackathons' %}"
+                               class="inline-flex items-center px-6 py-3 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-colors duration-200">
+                                View All Hackathons
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </a>
+                            <a href="{% url 'hackathon_create' %}"
+                               class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] font-medium transition-colors duration-200 shadow-md">
+                                <i class="fas fa-plus mr-2"></i>
+                                Start Your Own Hackathon
+                            </a>
+                        </div>
                     </div>
                 </div>
             </section>

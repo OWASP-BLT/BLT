@@ -39,6 +39,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.feeds import ActivityFeed
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -100,6 +101,7 @@ from website.views.core import (
     robots_txt,
     run_management_command,
     search,
+    set_theme,
     set_vote_status,
     sitemap,
     sponsor_view,
@@ -222,6 +224,7 @@ from website.views.organization import (
     approve_activity,
     checkIN,
     checkIN_detail,
+    delete_activity,
     delete_room,
     delete_time_entry,
     dislike_activity,
@@ -377,6 +380,7 @@ urlpatterns = [
     path("referral/", referral_signup, name="referral_signup"),
     path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
+    path("set-theme/", set_theme, name="set_theme"),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
         "rest-auth/password/reset/confirm/<str:uidb64>/<str:token>",
@@ -753,6 +757,7 @@ urlpatterns = [
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
+    re_path(r"^feed/rss/$", ActivityFeed(), name="activity_feed_rss"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -808,6 +813,7 @@ urlpatterns = [
     path("activity/like/<int:id>/", like_activity, name="like_activity"),
     path("activity/dislike/<int:id>/", dislike_activity, name="dislike_activity"),
     path("activity/approve/<int:id>/", approve_activity, name="approve_activity"),
+    path("activity/delete/<int:id>/", delete_activity, name="delete_activity"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     re_path(r"^robots\.txt$", robots_txt),
