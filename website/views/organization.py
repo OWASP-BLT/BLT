@@ -608,9 +608,13 @@ class Listbounties(TemplateView):
             }
             
             # Try both token names since the code is using inconsistent environment variable names
-            github_token = getattr(settings, "GITHUB_TOKEN", None) or getattr(settings, "GITHUB_API_TOKEN", None)
+            github_token = getattr(settings, "GITHUB_TOKEN", None)
+            if not github_token:
+                github_token = getattr(settings, "GITHUB_API_TOKEN", None)
             if github_token:
                 headers["Authorization"] = f"token {github_token}"
+            if getattr(settings, "GITHUB_TOKEN", None) and getattr(settings, "GITHUB_API_TOKEN", None):
+                logger.warning("Both GITHUB_TOKEN and GITHUB_API_TOKEN are set in settings. Please consolidate to a single token name to avoid confusion.")
 
             logger.info(f"Fetching GitHub issues with {label} label, state={issue_state}, page={page}, per_page={per_page}")
             response = requests.get(url, headers=headers, timeout=10)
