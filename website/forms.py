@@ -348,7 +348,9 @@ class HackathonForm(forms.ModelForm):
             # Check if URL has the correct format
             parts = url.replace("https://github.com/", "").split("/")
             if len(parts) < 2:
-                raise forms.ValidationError(f"Invalid GitHub URL format: {url}. Expected format: https://github.com/owner/repo")
+                raise forms.ValidationError(
+                    f"Invalid GitHub URL format: {url}. Expected format: https://github.com/owner/repo"
+                )
 
             validated_urls.append(url)
 
