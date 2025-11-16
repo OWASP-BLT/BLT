@@ -3816,11 +3816,15 @@ def process_bounty_payout(request):
     - X-BLT-API-TOKEN: API token for authentication (optional but recommended)
     """
     try:
-        # Optional: Validate API token if provided
+        # Validate API token (required for security)
         api_token = request.headers.get("X-BLT-API-TOKEN")
         expected_token = getattr(settings, "BLT_API_TOKEN", None)
 
-        if expected_token and api_token != expected_token:
+        if not expected_token:
+            logger.critical("BLT_API_TOKEN not configured; refusing to process payouts")
+            return JsonResponse({"success": False, "error": "Payout service not configured"}, status=503)
+
+        if api_token != expected_token:
             logger.warning("Invalid API token provided for bounty payout")
             return JsonResponse({"success": False, "error": "Invalid API token"}, status=401)
 
@@ -3898,6 +3902,13 @@ def process_bounty_payout(request):
                 pr_number = pr_parts[6]
 
                 if pr_number.isdigit():
+                    # Ensure PR and Issue are from the same repository
+                    if pr_owner != owner or pr_repo_name != repo_name:
+                        return JsonResponse(
+                            {"success": False, "error": "PR repository does not match issue repository"},
+                            status=400,
+                        )
+
                     # Fetch PR from GitHub API
                     pr_api_url = f"https://api.github.com/repos/{pr_owner}/{pr_repo_name}/pulls/{pr_number}"
                     pr_response = requests.get(pr_api_url, headers=headers, timeout=10)
@@ -3908,6 +3919,25 @@ def process_bounty_payout(request):
                             return JsonResponse(
                                 {"success": False, "error": "PR must be merged before bounty payout"}, status=400
                             )
+
+                        # Verify the PR is linked to the issue via timeline events
+                        timeline_url = (
+                            f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}/timeline"
+                        )
+                        tl_headers = {**headers, "Accept": "application/vnd.github.mockingbird-preview+json"}
+                        tl_resp = requests.get(timeline_url, headers=tl_headers, timeout=10)
+                        if tl_resp.status_code == 200:
+                            events = tl_resp.json()
+                            pr_linked = any(
+                                e.get("event") in ("connected", "cross-referenced")
+                                and e.get("source", {}).get("type") == "issue"
+                                and str(e.get("source", {}).get("issue", {}).get("number")) == pr_number
+                                for e in events
+                            )
+                            if not pr_linked:
+                                return JsonResponse(
+                                    {"success": False, "error": "PR is not linked to the issue"}, status=400
+                                )
                     else:
                         logger.warning(f"Failed to fetch PR data: {pr_response.status_code}")
                 else:
@@ -3995,6 +4025,14 @@ def process_bounty_payout(request):
                     },
                     status=400,
                 )
+            if getattr(existing_issue, "sponsors_cancellation_failed", False):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Previous payout attempt requires manual cancellation; retry blocked",
+                    },
+                    status=409,
+                )
         except GitHubIssue.DoesNotExist:
             pass  # Issue doesn't exist yet, proceed with payment
 
@@ -4008,8 +4046,11 @@ def process_bounty_payout(request):
 
         # Call GitHub Sponsors GraphQL API
         graphql_url = "https://api.github.com/graphql"
+        github_token = getattr(settings, "GITHUB_TOKEN", None)
+        if not github_token:
+            return JsonResponse({"success": False, "error": "GitHub token not configured"}, status=503)
         graphql_headers = {
-            "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
+            "Authorization": f"Bearer {github_token}",
             "Content-Type": "application/json",
         }
 

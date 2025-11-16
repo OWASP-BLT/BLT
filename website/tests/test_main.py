@@ -1,5 +1,6 @@
 import os
 import time
+from typing import ClassVar
 from unittest.mock import patch
 
 import chromedriver_autoinstaller
@@ -39,7 +40,7 @@ os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
     # Ensure database operations are serialized for Selenium tests
-    serialized_rollback = True
+    serialized_rollback: ClassVar[bool] = True
 
     @classmethod
     def setUpClass(cls):
