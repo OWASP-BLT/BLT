@@ -94,17 +94,20 @@ def notify_on_payment_processed(sender, instance, created, update_fields, **kwar
     if instance.p2p_payment_created_at and (instance.sponsors_tx_id or instance.bch_tx_id):
         payment_type = "GitHub Sponsors" if instance.sponsors_tx_id else "Bitcoin Cash"
         tx_id = instance.sponsors_tx_id or instance.bch_tx_id
-        
+
         # Only send notifications if the payment was just added/updated
-        if (created or 
-            (update_fields and 
-             ('sponsors_tx_id' in update_fields or 'bch_tx_id' in update_fields or 'p2p_payment_created_at' in update_fields))):
-            
-            logger.info(
-                f"Payment notification processing: Issue #{instance.issue_id}, "
-                f"Type: {payment_type}, TX: {tx_id}"
+        if created or (
+            update_fields
+            and (
+                "sponsors_tx_id" in update_fields
+                or "bch_tx_id" in update_fields
+                or "p2p_payment_created_at" in update_fields
             )
-            
+        ):
+            logger.info(
+                f"Payment notification processing: Issue #{instance.issue_id}, " f"Type: {payment_type}, TX: {tx_id}"
+            )
+
             # Create notification for the issue reporter
             if instance.user:
                 message = (
@@ -112,35 +115,24 @@ def notify_on_payment_processed(sender, instance, created, update_fields, **kwar
                     f"Transaction ID: {tx_id}"
                 )
                 link = instance.html_url
-                
-                Notification.objects.create(
-                    user=instance.user,
-                    message=message,
-                    notification_type="reward",
-                    link=link
-                )
+
+                Notification.objects.create(user=instance.user, message=message, notification_type="reward", link=link)
                 logger.info(f"Created payment notification for issue reporter: {instance.user.username}")
-            
+
             # Notify superusers (admin team) about the payment
             superusers = User.objects.filter(is_superuser=True)
             for admin in superusers:
                 # Don't notify the admin who made the payment
                 if instance.sent_by_user and admin.id == instance.sent_by_user.id:
                     continue
-                    
+
                 message = (
-                    f"Payment processed for issue #{instance.issue_id} via {payment_type}. "
-                    f"Transaction ID: {tx_id}"
+                    f"Payment processed for issue #{instance.issue_id} via {payment_type}. " f"Transaction ID: {tx_id}"
                 )
                 if instance.sent_by_user:
                     message += f" (by {instance.sent_by_user.username})"
-                    
+
                 link = instance.html_url
-                
-                Notification.objects.create(
-                    user=admin,
-                    message=message,
-                    notification_type="alert",
-                    link=link
-                )
+
+                Notification.objects.create(user=admin, message=message, notification_type="alert", link=link)
                 logger.info(f"Created payment notification for admin: {admin.username}")
