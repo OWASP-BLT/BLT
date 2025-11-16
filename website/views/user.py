@@ -1401,21 +1401,6 @@ def delete_notification(request, notification_id):
             )
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
-        try:
-            notification = get_object_or_404(Notification, id=notification_id, user=request.user)
-
-            notification.is_deleted = True
-            notification.save()
-
-            return JsonResponse({"status": "success", "message": "Notification deleted successfully"})
-        except Exception as e:
-            logger.error(f"Error deleting notification: {e}")
-            return JsonResponse(
-                {"status": "error", "message": "An error occured while deleting notification, please try again."},
-                status=400,
-            )
-    else:
-        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 
 def newsletter_home(request):
