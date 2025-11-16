@@ -327,6 +327,4 @@ class DarkModeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         # Check for dark mode related content (script tag with darkMode reference)
         content = response.content.decode()
-        self.assertTrue(
-            "darkMode.js" in content or "darkMode" in content, "Dark mode script not found in response"
-        )
+        self.assertTrue("darkMode.js" in content or "darkMode" in content, "Dark mode script not found in response")
