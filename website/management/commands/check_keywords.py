@@ -8,6 +8,9 @@ from django.utils import timezone
 from website.management.base import LoggedBaseCommand
 from website.models import Monitor
 
+# Compile email regex once at module level for efficiency
+EMAIL_REGEX = re.compile(r"(?:mailto:)?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.IGNORECASE)
+
 
 class Command(LoggedBaseCommand):
     help = "Checks for keywords in monitored URLs"
@@ -17,8 +20,6 @@ class Command(LoggedBaseCommand):
         if not monitors:
             self.stdout.write(self.style.WARNING("No monitors found."))
             return
-
-        EMAIL_REGEX = re.compile(r"(?:mailto:)?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.IGNORECASE)
 
         for monitor in monitors:
             try:
@@ -52,7 +53,8 @@ class Command(LoggedBaseCommand):
                     new_emails = [e for e in found_emails if e not in existing_flat]
                     if new_emails:
                         email_note = f"Found email(s): {', '.join(new_emails)}; "
-                        monitor.notes = f"{existing_notes}{email_note}".strip()
+                        separator = " | " if existing_notes and not existing_notes.endswith((" ", ";")) else ""
+                        monitor.notes = f"{existing_notes}{separator}{email_note}".strip()
                         monitor.save()
                 else:
                     self.stdout.write(f"    No emails detected on {monitor.url}")
@@ -64,24 +66,29 @@ class Command(LoggedBaseCommand):
                     self.stdout.write(f"    No keyword configured; reachable={reachable} -> status {new_status}")
                 else:
                     keyword = str(monitor.keyword).strip()
-                    if keyword.startswith("/") and keyword.endswith("/") and len(keyword) > 1:
+                    is_regex = keyword.startswith("/") and keyword.endswith("/") and len(keyword) > 1
+                    if is_regex:
                         pattern = keyword[1:-1]
                         try:
                             found = bool(re.search(pattern, page_text, re.IGNORECASE))
-                        except re.error as e:  # Fix: Narrow exception
+                        except re.error as e:
                             self.stderr.write(f"    Invalid regex pattern '{pattern}': {e}")
                             found = False
                     else:
+                        pattern = None
                         found = keyword.lower() in page_text.lower()
                     new_status = "UP" if found else "DOWN"
                     if not found:
                         self.stdout.write(f"    Keyword not found: '{keyword}'")
                         try:
                             snippet = " ".join(page_text.strip().split())[:500]
-                        except (AttributeError, TypeError):  # Fix: Narrow exception
+                        except (AttributeError, TypeError):
                             snippet = page_text[:200]
                         self.stdout.write(f"    Page snippet: {snippet!s}")
-                        found_in_html = keyword.lower() in (response.text or "").lower()
+                        if is_regex and pattern:
+                            found_in_html = bool(re.search(pattern, response.text or "", re.IGNORECASE))
+                        else:
+                            found_in_html = keyword.lower() in (response.text or "").lower()
                         self.stdout.write(f"    Found in raw HTML: {found_in_html}")
 
                 if monitor.status != new_status:
@@ -118,7 +125,7 @@ class Command(LoggedBaseCommand):
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - broad catch required to prevent one bad monitor from aborting the entire command run
                 self.stderr.write(
                     self.style.ERROR(
                         f"Error monitoring {monitor.url}: unexpected error during check - {type(e).__name__}: {e}. "

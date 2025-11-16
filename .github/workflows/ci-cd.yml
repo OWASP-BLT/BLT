@@ -123,17 +123,16 @@ jobs:
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
           poetry --version
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver build-essential libgmp-dev
+
       - name: Install dependencies (with dev)
         run: |
           poetry config virtualenvs.create false --local || true
           poetry install --no-interaction --no-ansi --with dev
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver build-essential libgmp-dev
-      - run: poetry lock
-      - run: poetry install --no-interaction --no-ansi --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
