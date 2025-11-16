@@ -56,7 +56,7 @@ ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
 SECRET_KEY = "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s"
 
-DEBUG = False
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
 
 SITE_ID = 1
@@ -111,7 +111,7 @@ SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "blt.middleware.domain.DomainMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -127,10 +127,10 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
-)
+]
 
 if DEBUG:
-    MIDDLEWARE += ["livereload.middleware.LiveReloadScript"]
+    MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
@@ -319,9 +319,7 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
         },
     }
-    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-    if not TESTING:
-        DEBUG = True
+    # Removed DEBUG override - DEBUG should be controlled by environment variable
 
     # use this to debug emails locally
     # python -m smtpd -n -c DebuggingServer localhost:1025
@@ -600,6 +598,9 @@ BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
 BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
+
+# OpenAI API Configuration
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 ASGI_APPLICATION = "blt.asgi.application"
 

@@ -39,6 +39,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.feeds import ActivityFeed
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -93,11 +94,8 @@ from website.views.core import (
     badge_list,
     check_owasp_compliance,
     donate_view,
-    facebook_callback,
     features_view,
     find_key,
-    github_callback,
-    google_callback,
     home,
     management_commands,
     robots_txt,
@@ -225,6 +223,7 @@ from website.views.organization import (
     approve_activity,
     checkIN,
     checkIN_detail,
+    delete_activity,
     delete_room,
     delete_time_entry,
     dislike_activity,
@@ -276,9 +275,17 @@ from website.views.project import (
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
-from website.views.Simulation import dashboard
+from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
+from website.views.staking_competitive import (
+    create_staking_pool,
+    my_staking,
+    pool_detail,
+    stake_in_pool,
+    staking_home,
+    staking_leaderboard,
+)
 from website.views.teams import (
     GiveKudosView,
     TeamChallenges,
@@ -366,7 +373,10 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('', include('website.urls')),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    path("simulation/", dashboard, name="dashboard"),
+    path("simulation/", dashboard, name="simulation_dashboard"),
+    path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
+    path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
+    path("simulation/lab/<int:lab_id>/task/<int:task_id>/submit/", submit_answer, name="submit_answer"),
     path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
     path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
@@ -386,12 +396,12 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="user_deletion"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    path("accounts/github/login/callback/", github_views.oauth2_callback, name="github_callback"),
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     path("auth/github/url/", github_views.oauth2_login),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
-    path("accounts/google/login/callback/", google_callback, name="google_callback"),
-    path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
+    path("accounts/google/login/callback/", google_views.oauth2_callback, name="google_callback"),
+    path("accounts/facebook/login/callback/", facebook_views.oauth2_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
@@ -751,6 +761,7 @@ urlpatterns = [
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
+    re_path(r"^feed/rss/$", ActivityFeed(), name="activity_feed_rss"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -806,6 +817,7 @@ urlpatterns = [
     path("activity/like/<int:id>/", like_activity, name="like_activity"),
     path("activity/dislike/<int:id>/", dislike_activity, name="dislike_activity"),
     path("activity/approve/<int:id>/", approve_activity, name="approve_activity"),
+    path("activity/delete/<int:id>/", delete_activity, name="delete_activity"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     re_path(r"^robots\.txt$", robots_txt),
@@ -1006,6 +1018,13 @@ urlpatterns = [
     path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
     path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
     path("user_challenges/", UserChallengeListView.as_view(), name="user_challenges"),
+    # Competitive Staking URLs
+    path("staking/", staking_home, name="staking_home"),
+    path("staking/pool/<int:pool_id>/", pool_detail, name="pool_detail"),
+    path("staking/pool/<int:pool_id>/join/", stake_in_pool, name="stake_in_pool"),
+    path("staking/my-stakes/", my_staking, name="my_staking"),
+    path("staking/leaderboard/", staking_leaderboard, name="staking_leaderboard"),
+    path("staking/create/", create_staking_pool, name="create_staking_pool"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
