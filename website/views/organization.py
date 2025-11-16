@@ -1958,6 +1958,19 @@ def approve_activity(request, id):
         return JsonResponse({"success": False, "error": "Not authorized"})
 
 
+@login_required
+@require_POST
+def delete_activity(request, id):
+    """Allow superadmins to delete activities from the feed."""
+    if not request.user.is_superuser:
+        return JsonResponse({"success": False, "error": "Only superadmins can delete activities"}, status=403)
+
+    activity = get_object_or_404(Activity, id=id)
+    activity.delete()
+
+    return JsonResponse({"success": True, "message": "Activity deleted successfully"})
+
+
 def truncate_text(text, length=15):
     return text if len(text) <= length else text[:length] + "..."
 
