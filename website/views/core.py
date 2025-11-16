@@ -5,7 +5,6 @@ import os
 import re
 import subprocess
 import tracemalloc
-import urllib
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -32,7 +31,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.db import connection, models
-from django.db.models import Case, Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value, When
+from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -69,13 +68,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import (
-    analyze_pr_content,
-    fetch_github_data,
-    rebuild_safe_url,
-    safe_redirect_allowed,
-    save_analysis_report,
-)
+from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -542,27 +535,6 @@ def status_page(request):
             request, "status_page.html", {"status": status_data, "chart_data": status_data["template_chart_data"]}
         )
     return render(request, "status_page.html", {"status": status_data})
-
-
-def github_callback(request):
-    ALLOWED_HOSTS = ["github.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
-
-
-def google_callback(request):
-    ALLOWED_HOSTS = ["accounts.google.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
-
-
-def facebook_callback(request):
-    ALLOWED_HOSTS = ["www.facebook.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
 
 
 def find_key(request, token):
