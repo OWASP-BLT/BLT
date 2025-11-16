@@ -2910,7 +2910,7 @@ def set_theme(request):
             # Save theme in session
             request.session["theme"] = theme
 
-            # If user is authenticated, could also save to user profile
+            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
             # if request.user.is_authenticated:
             #     profile = request.user.userprofile
             #     profile.theme_preference = theme
