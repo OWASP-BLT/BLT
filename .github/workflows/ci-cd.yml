@@ -149,11 +149,11 @@ jobs:
             const repo = context.repo.repo;
             const pull_number = context.issue.number;
             
-            // Determine label based on pre-commit outcome
-            const preCommitOutcome = '${{ steps.pre-commit.outcome }}';
-            const newLabel = preCommitOutcome === 'success' ? 'pre-commit: passed' : 'pre-commit: failed';
-            const labelColor = preCommitOutcome === 'success' ? '0e8a16' : 'e74c3c';  // Green or Red
-            const description = preCommitOutcome === 'success' ? 'Pre-commit checks passed' : 'Pre-commit checks failed';
+            // Determine label based on pre-commit exit code
+            const preCommitExitCode = '${{ steps.pre-commit.outputs.exit_code }}';
+            const newLabel = preCommitExitCode === '0' ? 'pre-commit: passed' : 'pre-commit: failed';
+            const labelColor = preCommitExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
+            const description = preCommitExitCode === '0' ? 'Pre-commit checks passed' : 'Pre-commit checks failed';
             
             // Get current labels on the PR
             const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
@@ -217,7 +217,7 @@ jobs:
               core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }
             
-            core.info(`Pre-commit outcome: ${preCommitOutcome}`);
+            core.info(`Pre-commit exit code: ${preCommitExitCode}`);
       - name: Fail the job if pre-commit failed
         if: steps.pre-commit.outputs.exit_code != '0'
         run: exit 1
