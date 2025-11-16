@@ -12,7 +12,7 @@
                         </div>
                         {% if task.description %}<p class="text-gray-600">{{ task.description }}</p>{% endif %}
                         <div class="mt-2 flex items-center space-x-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if task.task_type == 'theory' %}bg-blue-100 text-blue-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if task.task_type == 'theory' %} bg-blue-100 text-blue-800 {% else %} bg-red-100 text-red-800 {% endif %}">
                                 {{ task.get_task_type_display }}
                             </span>
                             <span class="text-sm text-gray-500">Task {{ task.order }} of {{ lab.total_tasks }}</span>
@@ -24,7 +24,7 @@
                              fill="none"
                              stroke="currentColor"
                              viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
                         Back to {{ lab.name }}
                     </a>
@@ -124,24 +124,12 @@
                                         {% csrf_token %}
                                         <div class="mb-4">
                                             {% if lab.name == "SQL Injection" %}
-                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">
-                                                    {% if lab.name == "SQL Injection" %}
-                                                        Enter your SQL injection payload:
-                                                    {% elif lab.name == "Cross-Site Scripting (XSS)" %}
-                                                        Enter your XSS payload:
-                                                    {% elif lab.name == "Cross-Site Request Forgery" %}
-                                                        Enter your CSRF attack code:
-                                                    {% elif lab.name == "Command Injection" %}
-                                                        Enter your command injection payload:
-                                                    {% else %}
-                                                        Enter your payload:
-                                                    {% endif %}
-                                                </label>
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your SQL injection payload:</label>
                                                 <textarea id="payload"
                                                           name="payload"
                                                           rows="4"
                                                           class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
-                                                          placeholder="{% if lab.name == 'SQL Injection' %}Enter your SQL injection payload here...{% elif lab.name == 'Cross-Site Scripting (XSS)' %}Enter your XSS payload here...{% elif lab.name == 'Cross-Site Request Forgery' %}Enter your CSRF attack code here...{% else %}Enter your payload here...{% endif %}"></textarea>
+                                                          placeholder="Enter your SQL injection payload here... (e.g., ' OR 1=1--)"></textarea>
                                             {% elif lab.name == "Cross-Site Scripting (XSS)" %}
                                                 <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your XSS payload:</label>
                                                 <textarea id="payload"
@@ -149,13 +137,66 @@
                                                           rows="4"
                                                           class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
                                                           placeholder="Enter your XSS payload here... (e.g., &lt;script&gt;alert('XSS')&lt;/script&gt;)"></textarea>
+                                            {% elif lab.name == "Cross-Site Request Forgery" %}
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your CSRF attack code:</label>
+                                                <textarea id="payload"
+                                                          name="payload"
+                                                          rows="4"
+                                                          class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                          placeholder="Enter forged request payload (e.g., fake POST form)"></textarea>
                                             {% elif lab.name == "Command Injection" %}
                                                 <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your command injection payload:</label>
                                                 <textarea id="payload"
                                                           name="payload"
                                                           rows="4"
                                                           class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
-                                                          placeholder="Enter your command injection payload here... (e.g., 127.0.0.1; ls)"></textarea>
+                                                          placeholder="Enter your command injection payload (e.g., 127.0.0.1; ls)"></textarea>
+                                            {% elif lab.name == "Broken Authentication" %}
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter credentials or attack payload:</label>
+                                                <textarea id="payload"
+                                                          name="payload"
+                                                          rows="3"
+                                                          class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                          placeholder="Try weak passwords, tokens, or session IDs..."></textarea>
+                                            {% elif lab.name == "Insecure Direct Object Reference (IDOR)" %}
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">
+                                                    Enter object ID or resource to access:
+                                                </label>
+                                                <input id="payload"
+                                                       name="payload"
+                                                       type="text"
+                                                       class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                       placeholder="Try /user/2, /invoice/45, etc.">
+                                            {% elif lab.name == "File Upload Vulnerabilities" %}
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Simulate file upload payload:</label>
+                                                <textarea id="payload"
+                                                          name="payload"
+                                                          rows="3"
+                                                          class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                          placeholder="Enter simulated upload input (e.g., shell.php disguised as image.jpg)"></textarea>
+                                            {% elif lab.name == "Sensitive Data Exposure" %}
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">
+                                                    Enter path or query to test for data exposure:
+                                                </label>
+                                                <textarea id="payload"
+                                                          name="payload"
+                                                          rows="3"
+                                                          class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                          placeholder="Try /backup.zip, /debug, /logs, etc."></textarea>
+                                            {% elif lab.name == "Open Redirect" %}
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter redirect target URL:</label>
+                                                <input id="payload"
+                                                       name="payload"
+                                                       type="text"
+                                                       class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                       placeholder="https://attacker.example.com/path">
+                                            {% elif lab.name == "Server-Side Request Forgery (SSRF)" %}
+                                                <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter a URL for the server to fetch:</label>
+                                                <input id="payload"
+                                                       name="payload"
+                                                       type="text"
+                                                       class="shadow-sm focus:ring-[#e74c3c] focus:border-[#e74c3c] mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                                                       placeholder="http://169.254.169.254/latest/meta-data/">
                                             {% else %}
                                                 <label for="payload" class="block text-sm font-medium text-gray-700 mb-2">Enter your payload:</label>
                                                 <textarea id="payload"
@@ -190,80 +231,71 @@
         </main>
     </div>
     <script>
-        document.getElementById('submit-mcq')?.addEventListener('click', function() {
-            const form = document.getElementById('mcq-form');
-            const formData = new FormData(form);
-            const selectedAnswer = formData.get('answer');
-            
-            if (!selectedAnswer) {
-                alert('Please select an answer');
-                return;
-            }
-            
-            fetch("{% url 'submit_answer' lab.id task.id %}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'answer=' + encodeURIComponent(selectedAnswer)
-            })
-            .then(response => response.json())
-            .then(data => {
-                const resultDiv = document.getElementById('mcq-result');
-                const messageDiv = document.getElementById('result-message');
-                
-                resultDiv.classList.remove('hidden');
-                messageDiv.textContent = data.message;
-                
-                if (data.correct) {
-                    messageDiv.className = 'text-sm font-medium text-green-600';
-                } else {
-                    messageDiv.className = 'text-sm font-medium text-red-600';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
-        });
+document.getElementById('submit-mcq')?.addEventListener('click', function() {
+    const form = document.getElementById('mcq-form');
+    const formData = new FormData(form);
+    const selectedAnswer = formData.get('answer');
 
-        document.getElementById('simulation-form')?.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const payload = document.getElementById('payload').value.trim();
-            
-            if (!payload) {
-                alert('Please enter a payload');
-                return;
-            }
-            
-            fetch("{% url 'submit_answer' lab.id task.id %}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'payload=' + encodeURIComponent(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                const resultDiv = document.getElementById('simulation-result');
-                const messageDiv = document.getElementById('simulation-message');
-                
-                resultDiv.classList.remove('hidden');
-                messageDiv.textContent = data.message;
-                
-                if (data.correct) {
-                    messageDiv.className = 'p-3 rounded-md bg-green-100 text-green-800';
-                } else {
-                    messageDiv.className = 'p-3 rounded-md bg-red-100 text-red-800';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
-        });
+    if (!selectedAnswer) {
+        alert('Please select an answer');
+        return;
+    }
+
+    fetch("{% url 'submit_answer' lab.id task.id %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'answer=' + encodeURIComponent(selectedAnswer)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('mcq-result');
+        const messageDiv = document.getElementById('result-message');
+        resultDiv.classList.remove('hidden');
+        messageDiv.textContent = data.message;
+        messageDiv.className = data.correct
+            ? 'text-sm font-medium text-green-600'
+            : 'text-sm font-medium text-red-600';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+});
+
+document.getElementById('simulation-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const payload = document.getElementById('payload').value.trim();
+
+    if (!payload) {
+        alert('Please enter a payload');
+        return;
+    }
+
+    fetch("{% url 'submit_answer' lab.id task.id %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'payload=' + encodeURIComponent(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('simulation-result');
+        const messageDiv = document.getElementById('simulation-message');
+        resultDiv.classList.remove('hidden');
+        messageDiv.textContent = data.message;
+        messageDiv.className = data.correct
+            ? 'p-3 rounded-md bg-green-100 text-green-800'
+            : 'p-3 rounded-md bg-red-100 text-red-800';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+});
     </script>
 {% endblock %}
