@@ -3090,6 +3090,10 @@ class BountyPayoutsView(ListView):
                         if comment_success:
                             success_message += ". Comment added on GitHub"
 
+                        # Note: Notifications to the admin team and users are automatically
+                        # created by the post_save signal on GitHubIssue model
+                        success_message += ". Notifications sent to admin team and issue reporter"
+
                         messages.success(request, success_message)
 
                         # If we couldn't update GitHub, log it but don't error to the user
