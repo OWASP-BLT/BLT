@@ -75,6 +75,9 @@ class HackathonFormTestCase(TestCase):
         """Test that form creates new repositories when saved."""
         self.form_data["new_repo_urls"] = "https://github.com/owner/newrepo1\nhttps://github.com/owner/newrepo2"
         form = HackathonForm(data=self.form_data, user=self.user)
+        if not form.is_valid():
+            print(f"DEBUG: Form errors: {form.errors}")
+            print(f"DEBUG: Form data: {self.form_data}")
         self.assertTrue(form.is_valid())
 
         # Save the form
