@@ -1,6 +1,8 @@
 ### Required Before Each Commit
 - Run `pre-commit` before committing any changes to ensure proper code formatting
 - This will run gofmt on all Go files to maintain consistent style
+- If pre-commit fails due to linting errors, run it again as it often auto-fixes issues
+- Always run `pre-commit run --all-files` to fix any linting errors across the entire codebase
 
 use tailwind only
 for anything with color, make it the red color we use which is #e74c3c
