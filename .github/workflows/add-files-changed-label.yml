@@ -2,6 +2,11 @@ name: Add Files Changed Label
 
 # Uses pull_request_target so it runs with base repo permissions for forked PRs.
 # SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+
+concurrency:
+  group: files-changed-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 on:
   pull_request_target:
     types:

@@ -5,6 +5,11 @@ name: auto-merge
 # 1. When a PR is opened/updated (pull_request_target)
 # 2. When a PR review is submitted (pull_request_review)
 # 3. After the "Approve dependabot" workflow completes (workflow_run)
+
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number || github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
