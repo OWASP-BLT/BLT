@@ -630,8 +630,7 @@ class Listbounties(TemplateView):
                 minutes_to_reset = max(1, int((reset_time - current_time) / 60))
                 
                 logger.warning(f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
-                # Return empty result with a short cache time
-                cache.set(cache_key, ([], 0), timeout=60)  # Cache for 1 minute during rate limit
+                # Do not cache empty result for rate limit errors; allow fresh attempts
                 return [], 0
                 
             if response.status_code == 200:
