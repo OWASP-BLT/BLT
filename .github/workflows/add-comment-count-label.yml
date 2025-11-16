@@ -1,4 +1,4 @@
-name: Add Comment Count Label
+name: Add Unresolved Conversations Label
 
 # Uses pull_request_target so it runs with base repo permissions for forked PRs.
 # SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
@@ -32,10 +32,10 @@ permissions:
   issues: write
 
 jobs:
-  add_comment_count_label:
+  add_unresolved_conversations_label:
     runs-on: ubuntu-latest
     steps:
-      - name: Add Comment Count Label
+      - name: Add Unresolved Conversations Label
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -64,44 +64,68 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            // Get all issue comments (general PR comments)
-            const issueComments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number: pull_number,
-              per_page: 100,
-            });
+            // Get all review threads (conversations) using GraphQL
+            const query = `
+              query($owner: String!, $repo: String!, $pull_number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $pull_number) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        isResolved
+                        isOutdated
+                      }
+                      pageInfo {
+                        hasNextPage
+                        endCursor
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            let allThreads = [];
+            let hasNextPage = true;
+            let cursor = null;
+
+            // Paginate through all review threads
+            while (hasNextPage) {
+              const variables = {
+                owner,
+                repo,
+                pull_number,
+                ...(cursor && { after: cursor })
+              };
+              
+              const result = await github.graphql(query.replace('first: 100', cursor ? 'first: 100, after: $after' : 'first: 100'), variables);
+              const threads = result.repository.pullRequest.reviewThreads;
+              
+              allThreads = allThreads.concat(threads.nodes);
+              hasNextPage = threads.pageInfo.hasNextPage;
+              cursor = threads.pageInfo.endCursor;
+            }
+
+            // Count unresolved conversations (excluding outdated ones)
+            const unresolvedThreads = allThreads.filter(thread => !thread.isResolved && !thread.isOutdated);
+            const count = unresolvedThreads.length;
             
-            // Get all review comments (code-level comments)
-            const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, {
-              owner,
-              repo,
-              pull_number,
-              per_page: 100,
-            });
+            // Determine the label based on the number of unresolved conversations
+            const newLabel = `unresolved-conversations: ${count}`;
             
-            // Count total comments
-            const count = issueComments.length + reviewComments.length;
-            
-            // Determine the label based on the number of comments
-            const newLabel = `comments: ${count}`;
-            
-            // Set color based on the number of comments
+            // Set color based on the number of unresolved conversations
             let labelColor;
             if (count === 0) {
-              labelColor = 'cccccc'; // Gray
+              labelColor = '0e8a16'; // Green - no unresolved conversations
             } else if (count >= 1 && count <= 3) {
-              labelColor = '0e8a16'; // Green
-            } else if (count >= 4 && count <= 10) {
               labelColor = 'fbca04'; // Yellow
-            } else if (count >= 11 && count <= 20) {
+            } else if (count >= 4 && count <= 10) {
               labelColor = 'ff9800'; // Orange
             } else {
               labelColor = 'e74c3c'; // Red (project's preferred red color)
             }
             
             // Set grammatically correct description
-            const description = count === 1 ? 'PR has 1 comment' : `PR has ${count} comments`;
+            const description = count === 1 ? 'PR has 1 unresolved conversation' : `PR has ${count} unresolved conversations`;
 
             // Get current labels on the PR
             const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
@@ -112,8 +136,8 @@ jobs:
             });
             const currentNames = new Set(current.map(l => l.name));
 
-            // Remove any existing comment count labels
-            const commentsRegex = /^comments:/i;
+            // Remove any existing unresolved conversation labels
+            const commentsRegex = /^unresolved-conversations:/i;
             for (const name of currentNames) {
               if (commentsRegex.test(name) && name !== newLabel) {
                 try {
@@ -166,4 +190,4 @@ jobs:
             }
 
             // Log the count for transparency
-            core.info(`PR #${pull_number} has ${count} comment(s) (${issueComments.length} issue comments + ${reviewComments.length} review comments).`);
+            core.info(`PR #${pull_number} has ${count} unresolved conversation(s) (out of ${allThreads.length} total review threads).`);
