@@ -199,9 +199,7 @@ class Organization(models.Model):
     )
 
     # GitHub and GSOC fields
-    github_org = models.CharField(
-        max_length=255, blank=True, null=True, help_text="GitHub organization name"
-    )
+    github_org = models.CharField(max_length=255, blank=True, null=True, help_text="GitHub organization name")
     gsoc_years = models.CharField(
         max_length=255,
         blank=True,
