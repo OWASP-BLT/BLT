@@ -1,5 +1,5 @@
-import re
 import ipaddress
+import re
 from urllib.parse import urlparse
 
 import requests
@@ -27,6 +27,7 @@ class Command(LoggedBaseCommand):
 
             # Resolve hostname to IP
             import socket
+
             try:
                 ip = socket.gethostbyname(hostname)
             except socket.gaierror:
@@ -59,7 +60,7 @@ class Command(LoggedBaseCommand):
         for monitor in monitors:
             try:
                 self.stdout.write(f"Checking {monitor.url}")
-                
+
                 # Validate URL to prevent SSRF attacks
                 if not self.is_safe_url(monitor.url):
                     self.stderr.write(self.style.ERROR(f"Unsafe URL blocked: {monitor.url}"))
@@ -73,7 +74,7 @@ class Command(LoggedBaseCommand):
                         except Exception as e:
                             self.stderr.write(f"    Failed to notify user: {e}")
                     continue
-                
+
                 response = requests.get(monitor.url, timeout=15)
                 self.stdout.write(f"    HTTP {response.status_code}; content length {len(response.content or b'')}")
                 response.raise_for_status()
