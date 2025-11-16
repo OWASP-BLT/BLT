@@ -18,37 +18,72 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="absolute bottom-2.5 right-4 flex space-x-4">
+    {% comment %} <div class="absolute bottom-2.5 right-4 flex space-x-4">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/invite_friend.html">
-            <i class="fab fa-github text-2xl text-gray-700 hover:text-gray-900"></i>
+            <i class="fab fa-github text-2xl text-gray-700 hover:text-gray-900 transition-colors duration-300"></i>
         </a>
         <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=421%3A26&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma text-2xl text-gray-700 hover:text-gray-900"></i>
+            <i class="fab fa-figma text-2xl text-gray-700 hover:text-gray-900 transition-colors duration-300"></i>
         </a>
-    </div>
-    <div class="mx-auto my-12 p-6  rounded-lg shadow-xl max-w-3xl">
-        <div class="mb-4">
-            <label for="recipient" class="block text-gray-700 text-2xl font-bold mb-2">Share & Earn</label>
-            <input class="form-control"
-                   type="text"
-                   value="{{ referral_link }}"
-                   id="referralLink"
-                   readonly>
-            <button onclick="copyReferralLink()"
-                    class="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Copy
-            </button>
-            <span>or</span>
-            <a href="mailto:?subject=Join Me on BLT to Discover and Report Bugs!&body=Hi there!%0D%0A%0D%0AI've been using BLT, a platform where we can discover and report bugs across various applications and websites. It's been an exciting journey, and I believe you too can contribute significantly and benefit from it.%0D%0A%0D%0ABLT allows us to:%0D%0A- Explore and report bugs.%0D%0A- Earn rewards and recognition for our contributions.%0D%0A- Join a community of like-minded individuals passionate about improving software quality.%0D%0A%0D%0AI thought it would be something you're interested in exploring. You can sign up using the link below and start your journey with BLT today!%0D%0A%0D%0A{{ referral_link|urlencode }}%0D%0A%0D%0ALooking forward to seeing you on BLT and tackling challenges together.%0D%0A%0D%0ABest,%0D%0A{{ user.username|urlencode }}">
-                <button class="inline-block bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg focus:outline-none focus:shadow-outline transition duration-150 ease-in-out">
-                    <i class="fas fa-envelope mr-2"></i>Send Mail
-                </button>
-            </a>
-        </div>
-        <div class="flex items-center justify-between">
-            <p class="inline-block align-baseline font-bold text-base text-red-500 hover:text-red-800">
-                Invite a friend to join the site and earn 2 points!
-            </p>
+    </div> {% endcomment %}
+    <div class="container max-w-4xl mx-auto px-4 py-12">
+        <div class=" rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header Section -->
+            <div class="bg-red-600 px-8 py-6 text-white">
+                <h1 class="text-3xl font-bold">Invite Friends & Earn Rewards</h1>
+                <p class="mt-2 text-red-100">Invite a friend to join the site and earn 2 points!</p>
+            </div>
+            <!-- Main Content -->
+            <div class="p-8">
+                <!-- Referral Link Section -->
+                <div class="mb-10">
+                    <div class="mb-4">
+                        <label for="referralLink" class="block text-gray-700 font-semibold mb-2">Your Personal Referral Link</label>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input class="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-400 focus:outline-none transition-all duration-200"
+                                   type="text"
+                                   value="{{ referral_link }}"
+                                   id="referralLink"
+                                   readonly>
+                            <button onclick="copyReferralLink()"
+                                    class="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50">
+                                <i class="fas fa-copy mr-2"></i>Copy Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Divider -->
+                <div class="relative flex items-center py-4">
+                    <div class="flex-grow border-t border-gray-300"></div>
+                    <span class="flex-shrink mx-4 text-gray-600">or invite via email</span>
+                    <div class="flex-grow border-t border-gray-300"></div>
+                </div>
+                <!-- Email Invite Section -->
+                <div class="mt-6 text-center">
+                    <a href="mailto:?subject=Join Me on BLT to Discover and Report Bugs!&body=Hi there!%0D%0A%0D%0AI've been using BLT, a platform where we can discover and report bugs across various applications and websites. It's been an exciting journey, and I believe you too can contribute significantly and benefit from it.%0D%0A%0D%0ABLT allows us to:%0D%0A- Explore and report bugs.%0D%0A- Earn rewards and recognition for our contributions.%0D%0A- Join a community of like-minded individuals passionate about improving software quality.%0D%0A%0D%0AI thought it would be something you're interested in exploring. You can sign up using the link below and start your journey with BLT today!%0D%0A%0D%0A{{ referral_link|urlencode }}%0D%0A%0D%0ALooking forward to seeing you on BLT and tackling challenges together.%0D%0A%0D%0ABest,%0D%0A{{ user.username|urlencode }}">
+                        <button class="inline-flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-8 rounded-lg shadow-md hover:shadow-lg transform transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50">
+                            <i class="fas fa-envelope text-lg mr-3"></i>
+                            <span>Send Email Invitation</span>
+                        </button>
+                    </a>
+                </div>
+                <!-- Reward Info Card -->
+                <div class="mt-12 bg-red-50 border border-red-200 rounded-xl p-6">
+                    <div class="flex items-start">
+                        <div class="bg-red-500 rounded-full p-3 mr-4">
+                            <i class="fas fa-gift text-xl text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">How It Works</h3>
+                            <p class="text-gray-700">
+                                Share your unique referral link with friends. When they join using your link,
+                                you'll automatically receive <span class="font-bold text-red-500">2 points</span>
+                                as a reward for growing our community!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock content %}
@@ -59,7 +94,18 @@
         copyText.select();
         copyText.setSelectionRange(0, 99999);
         navigator.clipboard.writeText(copyText.value);
-        alert("Copied to clipboard: " + copyText.value);
+        
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-12 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out';
+        toast.innerHTML = '<div class="flex items-center"><i class="fas fa-check-circle text-green-400 mr-2"></i> Link copied to clipboard!</div>';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 500);
+        }, 3000);
     }
     </script>
 {% endblock after_js %}

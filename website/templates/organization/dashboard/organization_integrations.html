@@ -1,0 +1,86 @@
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
+{% load static %}
+{% block title %}
+    Manage Integrations
+{% endblock title %}
+{% block description %}
+    View and manage all your integrations in one place. Easily add, edit, or delete integrations such as Slack to streamline your workflows.
+{% endblock description %}
+{% block keywords %}
+    Manage Integrations, Add Integration, Edit Integration, Delete Integration, Slack Integration, Workflow Management
+{% endblock keywords %}
+{% block og_title %}
+    Manage Integrations - Streamline Your Workflows
+{% endblock og_title %}
+{% block og_description %}
+    Keep all your integrations organized. Add new ones, edit existing setups, or remove those you no longer need to maintain smooth and efficient workflows.
+{% endblock og_description %}
+{% block body %}
+    <div class="fixed bottom-2.5 right-3.75">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_domains.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
+            <i class="fab fa-figma"></i>
+        </a>
+    </div>
+    <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
+        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Integrations</p>
+            <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
+                <a href="{% url 'add_slack_integration' organization %}"
+                   class="flex items-center justify-center md:justify-center rounded-xl p-8 hover:opacity-80 transition-all">
+                    <img src="{% static 'images/slack_icon.png' %}"
+                         alt="BACON Project Image"
+                         class="rounded-lg shadow-lg max-w-full md:w-1/3 lg:w-1/4 mb-6"
+                         height="auto"
+                         width="50%">
+                </a>
+            </div>
+        </div>
+        <div class="w-[96%] max-h-[70vh] p-4 mt-10 bg-white border border-gray-200 rounded-lg shadow-md sm:p-8">
+            <div class="flex-col items-center justify-between mb-4">
+                <h5 class="text-xl font-bold leading-none text-gray-900">All Integrations</h5>
+                <ul class="flex-col list-decimal">
+                    {% if slack_integration %}
+                        <li class="font-bold text-xl list-item ml-8 mt-2">
+                            <div class="flex">
+                                Slack
+                                <img src="{% static 'images/slack_icon.png' %}"
+                                     class="h-8 ml-4"
+                                     height="30px"
+                                     width="30px"
+                                     alt="slack icon">
+                            </div>
+                            {% if slack_integration.daily_updates %}
+                                <p class="text-base font-normal">
+                                    <span class="font-bold">Service Name</span>:  Daily Sizzle Timelogs Status
+                                </p>
+                                <p class="text-base font-normal">
+                                    <span class="font-bold">Daily Update Time:</span> {{ slack_integration.daily_update_time }} (UTC)
+                                </p>
+                                <p class="text-base font-normal">
+                                    <span class="font-bold">Channel Name:</span> #{{ slack_integration.default_channel_name }}
+                                </p>
+                            {% endif %}
+                            <a href="{% url 'add_slack_integration' organization %}"
+                               class="font-normal text-base">Edit <i class="fa fa-pencil" aria-hidden="true"></i></a>
+                            <form method="post"
+                                  action="{% url 'add_slack_integration' organization %}"
+                                  class="mt-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="_method" value="delete">
+                                <button type="submit"
+                                        class="rounded-md bg-red-600 px-1 py-1 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                                    Delete
+                                </button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <span>No integrations found.</span>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock body %}

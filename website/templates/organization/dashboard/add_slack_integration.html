@@ -1,0 +1,148 @@
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
+{% load static %}
+{% block title %}
+    Add Slack Integration
+{% endblock title %}
+{% block description %}
+    Integrate Slack with your system. Configure the Slack bot, select channels, and set up necessary services for seamless communication.
+{% endblock description %}
+{% block keywords %}
+    Add Slack Integration, Configure Slack Bot, Select Channels, Set Up Services, Slack Integration, Communication Setup
+{% endblock keywords %}
+{% block og_title %}
+    Add Slack Integration - Configure Your Communication
+{% endblock og_title %}
+{% block og_description %}
+    Set up Slack integration by configuring the bot, selecting channels, and enabling necessary services. Ensure smooth communication within your team.
+{% endblock og_description %}
+{% block body %}
+    <div class="bg-[#F3F5F7] flex flex-col items-center">
+        <div class="w-full mt-5">
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Add Slack Integration</p>
+        </div>
+        <form method='post'
+              action="#"
+              class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
+            {% csrf_token %}
+            <div class="pb-12">
+                <h2 class="text-base font-semibold leading-7 text-gray-900">Configure Slack Bot:</h2>
+                <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-3">
+                        <label for="bot_token"
+                               class="block text-sm font-medium leading-6 text-gray-900">Bot Token</label>
+                        <div class="mt-2">
+                            <input type="text"
+                                   name="bot_token"
+                                   id="bot_token"
+                                   autocomplete="bot_token"
+                                   value="{{ slack_integration.bot_access_token }}"
+                                   disabled
+                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-3">
+                        <label class="block text-sm font-medium leading-6 text-gray-900"
+                               for="target_channel">Select Channel to send messages to</label>
+                        <div class="mt-2 space-y-4">
+                            <select id="target_channel"
+                                    name="target_channel"
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                {% for channel_name in channels %}
+                                    <option value="{{ channel_name }}"
+                                            {% if slack_integration.default_channel_name == channel_name %}selected="selected"{% endif %}>
+                                        {{ channel_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class=" grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <div class="sm:col-span-3">
+                    <label class="block text-sm font-medium leading-6 text-gray-900">Select Services</label>
+                    <div class="items-center flex">
+                        <input type="checkbox"
+                               id="daily_sizzle_timelogs_status"
+                               name="daily_sizzle_timelogs_status"
+                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                               {% if slack_integration.daily_updates == True %}checked{% endif %}>
+                        <label for="daily_sizzle_timelogs_status"
+                               class="ml-3 block text-sm font-medium text-gray-900">
+                            Daily Sizzle Timelogs Status
+                        </label>
+                    </div>
+                </div>
+                <div class="sm:col-span-3 flex">
+                    <select id="daily_sizzle_timelogs_hour"
+                            name="daily_sizzle_timelogs_hour"
+                            class="mt-2 block pl-3 pr-10 py-2 text-base focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="" disabled>Select Hour in UTC</option>
+                        <!-- Loop to generate options from 0 to 23 -->
+                        {% for hour in hours %}
+                            <option value="{{ hour }}"
+                                    {% if slack_integration.daily_update_time == hour %}selected="selected"{% endif %}>
+                                {{ hour }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <div class="sm:col-span-6">
+                    <label for="welcome_message"
+                           class="block text-sm font-medium leading-6 text-gray-900">Welcome Message</label>
+                    <div class="mt-2">
+                        <textarea id="welcome_message"
+                                  name="welcome_message"
+                                  rows="10"
+                                  class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
+                                  placeholder="Welcome to our workspace! 👋  Here's some helpful information about our workspace: • Channel #general for general discussions • Channel #help for getting assistance • Channel #announcements for important updates  Feel free to introduce yourself!">{{ welcome_message }}</textarea>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">
+                        You can use Slack's markdown formatting:
+                        *bold*, _italic_, ~strikethrough~, `code`, and >quote
+                    </p>
+                </div>
+            </div>
+            <div class="mt-6 flex items-center justify-end gap-x-6">
+                <button type="submit"
+                        class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                    Save
+                </button>
+            </div>
+        </div>
+    </form>
+{% endblock body %}
+{% block extra_head %}
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+{% endblock %}
+{% block extra_js %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var quill = new Quill('#welcome_message', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'strike'],
+                    ['code-block', 'blockquote'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link'],
+                    ['clean']
+                ]
+            },
+            placeholder: 'Write your welcome message here...'
+        });
+
+        // When form is submitted, update hidden input with Quill content
+        document.querySelector('form').onsubmit = function() {
+            var content = quill.root.innerHTML;
+            document.querySelector('#welcome_message').value = content;
+            return true;
+        };
+    });
+    </script>
+{% endblock %}

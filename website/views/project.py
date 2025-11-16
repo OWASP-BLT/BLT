@@ -120,6 +120,10 @@ def distribute_bacon(request, contribution_id):
 
 
 class ProjectBadgeView(APIView):
+    """
+    Generates a 30-day unique visits badge PNG for a Project, with zero-days shown as faint bars.
+    """
+
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -150,7 +154,6 @@ class ProjectBadgeView(APIView):
 
         # Check if we have a record for today
         visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).first()
-
         if visited_data:
             # If we have a record for today, only update project visit count if needed
             if visited_data.count == 1:
@@ -164,22 +167,30 @@ class ProjectBadgeView(APIView):
             project.project_visit_count = F("project_visit_count") + 1
             project.save()
 
-        # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        # Get unique visits, grouped by date (last 30 days)
+        thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address"))
+            .annotate(visit_count=Count("address", distinct=True))  # Count only unique IPs
             .order_by("date")
         )
 
         # Refresh project to get the latest visit count
         project.refresh_from_db()
 
-        # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
+        # Extract dates and counts for chart, including zero-visit days
+        all_dates = []
+        all_counts = []
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+        for i in range(30):
+            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
+            all_dates.append(check_date)
+            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
+
+        dates = all_dates
+        counts = all_counts
         total_views = project.project_visit_count
 
         # Create a new image with a white background
@@ -188,66 +199,69 @@ class ProjectBadgeView(APIView):
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
 
-        # Define colors
+        # Define colors for bars, grid, and text
         bar_color = "#e05d44"
-        text_color = "#333333"
         grid_color = "#eeeeee"
 
-        # Calculate chart dimensions
+        # Calculate chart dimensions and reserve space for the title
         margin = 40
+        text_height = 50  # reserve space for title at top
         chart_width = width - 2 * margin
-        chart_height = height - 2 * margin
+        chart_height = height - 2 * margin - text_height
 
-        if counts:
+        # Calculate max count and bar width for 30 bars
+        if counts and max(counts) > 0:
             max_count = max(counts)
-            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
         else:
             max_count = 1
-            bar_width = chart_width / 14  # Default for empty data
 
-        # Draw grid lines
+        # Fixed width for exactly 30 bars, plus extra margins
+        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
+        bar_spacing = chart_width / 30  # Even spacing for 30 positions
+
+        # Draw grid lines, offset for reserved space at top
         for i in range(5):
-            y = margin + (chart_height * i) // 4
+            y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars
+        # Draw bars with proportional heights; faint for zero days
         if dates and counts:
             for i, count in enumerate(counts):
-                bar_height = (count / max_count) * chart_height
-                x1 = margin + (i * 2 * bar_width)
-                y1 = height - margin - bar_height
+                x1 = margin + (i * bar_spacing)
                 x2 = x1 + bar_width
-                y2 = height - margin
+                if count > 0:
+                    bar_height = (count / max_count) * chart_height
+                    y1 = height - margin - bar_height
+                    y2 = height - margin
+                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+                else:
+                    # Draw a faint line or a short, very light bar for 0 days
+                    faint_color = "#fcbab3"  # slightly lighter bar color for zero days
+                    y1 = y2 = height - margin - 2  # minimal height
+                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
 
-                # Draw bar with a slight gradient effect
-                for h in range(int(y1), int(y2)):
-                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
-                    r, g, b = 224, 93, 68  # RGB values for #e05d44
-                    current_color = f"#{r:02x}{g:02x}{b:02x}"
-                    draw.line([(x1, h), (x2, h)], fill=current_color)
-
-        # Draw total views text
+        # Draw total views text centered at the top, uses bar_color
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+            font = ImageFont.truetype("DejaVuSans.ttf", 28)
         except OSError:
             font = ImageFont.load_default()
-
         text = f"Total Views: {total_views}"
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+        text_x = (width - text_width) // 2
+        text_y = 15  # Fixed position at top
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)
 
         # Save the image to a buffer
         buffer = BytesIO()
-        img.save(buffer, format="PNG", quality=95)
+        img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
 
-        # Return the image with appropriate headers
+        # Return the image with appropriate headers (no caching)
         response = HttpResponse(buffer, content_type="image/png")
         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response["Pragma"] = "no-cache"
         response["Expires"] = "0"
-
         return response
 
 
@@ -762,7 +776,6 @@ class RepoDetailView(DetailView):
                 return response.json()
             return []
         except Exception as e:
-            print(f"Error fetching GitHub contributors: {e}")
             return []
 
     def fetch_activity_data(self, owner, repo_name):
@@ -807,7 +820,6 @@ class RepoDetailView(DetailView):
                 try:
                     data[key] = future.result()
                 except Exception as e:
-                    print(f"Error fetching {key}: {e}")
                     data[key] = []
 
         # Processing data for charts
@@ -1263,6 +1275,74 @@ class RepoDetailView(DetailView):
             "next_page": milestone_page + 1 if milestone_page < total_pages else None,
             "page_range": range(1, total_pages + 1),
         }
+
+        # Fetch stargazers for this repo (with pagination and filter)
+        try:
+            filter_type = self.request.GET.get("filter", "all")
+            page = int(self.request.GET.get("page", 1))
+            per_page = 10
+            repo_path = repo.repo_url.split("github.com/")[-1]
+            owner, repo_name = repo_path.split("/")
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo_name}/stargazers"
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+            # Fetch all stargazers using pagination
+            all_stargazers = []
+            current_page = 1
+            api_per_page = 100
+            while True:
+                paginated_url = f"{api_url}?page={current_page}&per_page={api_per_page}"
+                response = requests.get(paginated_url, headers=headers)
+                if response.status_code == 200:
+                    page_stargazers = response.json()
+                    if not page_stargazers:
+                        break
+                    all_stargazers.extend(page_stargazers)
+                    current_page += 1
+                elif response.status_code == 404:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Repository not found. Please check the URL and try again."
+                    break
+                elif response.status_code == 403:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Rate limit exceeded. Please try again later."
+                    break
+                elif response.status_code == 401:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Authentication failed. Please contact the administrator."
+                    break
+                else:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = f"Error fetching stargazers (Status code: {response.status_code})"
+                    break
+            else:
+                context["stargazers"] = []
+                context["stargazers_error"] = "Unknown error fetching stargazers."
+
+            if "stargazers" not in context:
+                if filter_type == "recent":
+                    all_stargazers.reverse()
+                total_stargazers = len(all_stargazers)
+                total_pages = (total_stargazers + per_page - 1) // per_page
+                page = max(1, min(page, total_pages)) if total_pages > 0 else 1
+                start_idx = (page - 1) * per_page
+                end_idx = start_idx + per_page
+                context["stargazers"] = all_stargazers[start_idx:end_idx]
+                context["stargazers_error"] = None
+                context["total_stargazers"] = total_stargazers
+                context["total_pages"] = total_pages
+                context["current_page"] = page
+                context["filter_type"] = filter_type
+        except Exception as e:
+            context["stargazers"] = []
+            context["stargazers_error"] = "Error fetching stargazers"
+            context["total_stargazers"] = 0
+            context["total_pages"] = 0
+            context["current_page"] = 1
+            context["filter_type"] = "all"
 
         return context
 
@@ -1768,6 +1848,10 @@ class RepoDetailView(DetailView):
 
 
 class RepoBadgeView(APIView):
+    """
+    Generates a 30-day unique visits badge PNG for a Repo, with zero-days shown as faint bars.
+    """
+
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -1812,22 +1896,31 @@ class RepoBadgeView(APIView):
             repo.repo_visit_count = F("repo_visit_count") + 1
             repo.save()
 
-        # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        # Get unique visits, grouped by date (last 30 days)
+        thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address"))
+            .annotate(visit_count=Count("address", distinct=True))
             .order_by("date")
         )
 
         # Refresh repo to get the latest visit count
         repo.refresh_from_db()
 
-        # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
+        # Extract dates and counts for chart, including zero-visit days
+        all_dates = []
+        all_counts = []
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+
+        for i in range(30):
+            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
+            all_dates.append(check_date)
+            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
+
+        dates = all_dates
+        counts = all_counts
         total_views = repo.repo_visit_count
 
         # Create a new image with a white background
@@ -1838,51 +1931,62 @@ class RepoBadgeView(APIView):
 
         # Define colors
         bar_color = "#e05d44"
-        text_color = "#333333"
         grid_color = "#eeeeee"
 
         # Calculate chart dimensions
         margin = 40
+        text_height = 50  # reserve space for title
         chart_width = width - 2 * margin
-        chart_height = height - 2 * margin
+        chart_height = height - 2 * margin - text_height
+
+        # calculating the max count and bar width for 30 bars
+        if counts and max(counts) > 0:
+            max_count = max(counts)
+        else:
+            max_count = 1
+
+        # Fixed width for exactly 30 bars with proper spacing
+        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
+        bar_spacing = chart_width / 30  # Even spacing for 30 positions
 
         # Draw grid lines
         for i in range(5):
-            y = margin + (chart_height * i) // 4
+            y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars
+        # Draw bars (with zero-day case handled)
         if dates and counts:
-            max_count = max(counts)
-            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
             for i, count in enumerate(counts):
-                bar_height = (count / max_count) * chart_height
-                x1 = margin + (i * 2 * bar_width)
-                y1 = height - margin - bar_height
+                x1 = margin + (i * bar_spacing)
                 x2 = x1 + bar_width
-                y2 = height - margin
-
-                # Draw bar with a slight gradient effect
-                for h in range(int(y1), int(y2)):
-                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
-                    r, g, b = 224, 93, 68  # RGB values for #e05d44
-                    current_color = f"#{r:02x}{g:02x}{b:02x}"
-                    draw.line([(x1, h), (x2, h)], fill=current_color)
+                if count > 0:
+                    bar_height = (count / max_count) * chart_height
+                    y1 = height - margin - bar_height
+                    y2 = height - margin
+                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+                else:
+                    # Draw a faint line or a short, very light bar for 0 days
+                    faint_color = "#fcbab3"  # faint color used to show 0 days
+                    y1 = y2 = height - margin - 2  # minimal height
+                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
 
         # Draw total views text
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+            font = ImageFont.truetype("DejaVuSans.ttf", 28)  # Slightly smaller
         except OSError:
             font = ImageFont.load_default()
 
         text = f"Total Views: {total_views}"
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+        text_x = (width - text_width) // 2
+        text_y = 15  # Fixed position at top
+
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)  # avoiding overlapping
 
         # Save the image to a buffer
         buffer = BytesIO()
-        img.save(buffer, format="PNG", quality=95)
+        img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
 
         # Return the image with appropriate headers

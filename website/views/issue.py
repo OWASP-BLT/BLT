@@ -181,7 +181,13 @@ def create_github_issue(request, id):
     if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
-            screenshot_text += f"![{screenshot.image.name}]({settings.FQDN}{screenshot.image.url})\n"
+            # Get the image URL
+            image_url = screenshot.image.url
+            # Check if URL is already absolute (e.g., from Google Cloud Storage)
+            if not image_url.startswith(("http://", "https://")):
+                # Relative URL, prepend the domain with https protocol
+                image_url = f"https://{settings.FQDN}{image_url}"
+            screenshot_text += f"![{screenshot.image.name}]({image_url})\n"
 
         github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
         from giturlparse import parse as parse_github_url
@@ -223,7 +229,12 @@ def create_github_issue(request, id):
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": f"Failed: error is {e}"})
+            return JsonResponse(
+                {
+                    "status": "Failed",
+                    "status_reason": "Failed to create GitHub issue. Please check your GitHub settings.",
+                }
+            )
     else:
         return JsonResponse(
             {
@@ -866,16 +877,56 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             raise Exception
                     else:
                         raise Exception
-            except:
-                # TODO: it could be that the site is down so we can consider logging this differently
-                messages.error(request, "Domain does not exist")
+            except Exception as e:
+                # Add debugging to understand URL validation issues
+                import logging
 
-                captcha_form = CaptchaForm(request.POST)
-                return render(
-                    self.request,
-                    "report.html",
-                    {"form": self.get_form(), "captcha_form": captcha_form},
-                )
+                logger = logging.getLogger(__name__)
+                logger.warning(f"URL accessibility check failed for {url}: {str(e)}")
+
+                # Check if domain exists in our database before rejecting
+                try:
+                    parsed_url = urlparse("https://" + url)
+                    clean_domain = parsed_url.netloc.replace("www.", "").lower()
+
+                    # Try to find existing domain in database
+                    domain_exists = Domain.objects.filter(
+                        Q(name__iexact=clean_domain)
+                        | Q(url__iexact=clean_domain)
+                        | Q(name__iexact=parsed_url.netloc)
+                        | Q(url__iexact=parsed_url.netloc)
+                    ).exists()
+
+                    if domain_exists:
+                        logger.info(
+                            f"Domain {clean_domain} exists in database, allowing despite URL accessibility issue"
+                        )
+                        # Domain exists in our system, allow the bug report even if URL isn't accessible
+                        # This handles cases where site is temporarily down or has access restrictions
+                        pass  # Continue with normal flow
+                    else:
+                        logger.warning(f"Domain {clean_domain} not found in database and URL not accessible")
+                        messages.error(
+                            request,
+                            "Domain is not accessible and not found in our system. Please ensure the URL is correct or contact support to add the domain.",
+                        )
+
+                        captcha_form = CaptchaForm(request.POST)
+                        return render(
+                            self.request,
+                            "report.html",
+                            {"form": self.get_form(), "captcha_form": captcha_form},
+                        )
+                except Exception as parse_error:
+                    logger.error(f"Error parsing URL for domain check: {str(parse_error)}")
+                    messages.error(request, "Invalid URL format provided")
+
+                    captcha_form = CaptchaForm(request.POST)
+                    return render(
+                        self.request,
+                        "report.html",
+                        {"form": self.get_form(), "captcha_form": captcha_form},
+                    )
 
         screenshot = request.FILES.get("screenshots")
         if not screenshot and not request.POST.get("screenshot-hash"):
@@ -991,14 +1042,57 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             parsed_url = urlparse(obj.url)
             clean_domain = parsed_url.netloc
+            clean_domain_no_www = clean_domain.replace("www.", "")
+
+            # Debug logging to help identify the issue
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info(f"Bug creation - Looking for domain: netloc={clean_domain}, no_www={clean_domain_no_www}")
+
+            # Try multiple domain lookup strategies to match domain creation logic
+            domain = None
+
+            # Strategy 1: Exact URL match
             domain = Domain.objects.filter(url=clean_domain).first()
-            domain_exists = False if domain is None else True
+            if domain:
+                logger.info(f"Found domain by exact URL match: {domain.name}")
+
+            # Strategy 2: URL match without www
+            if not domain:
+                domain = Domain.objects.filter(url=clean_domain_no_www).first()
+                if domain:
+                    logger.info(f"Found domain by URL without www: {domain.name}")
+
+            # Strategy 3: Name match with netloc
+            if not domain:
+                domain = Domain.objects.filter(name=clean_domain).first()
+                if domain:
+                    logger.info(f"Found domain by name match with netloc: {domain.name}")
+
+            # Strategy 4: Name match without www
+            if not domain:
+                domain = Domain.objects.filter(name=clean_domain_no_www).first()
+                if domain:
+                    logger.info(f"Found domain by name match without www: {domain.name}")
+
+            # Strategy 5: Case-insensitive matches
+            if not domain:
+                domain = Domain.objects.filter(url__iexact=clean_domain).first()
+                if domain:
+                    logger.info(f"Found domain by case-insensitive URL: {domain.name}")
+
+            if not domain:
+                domain = Domain.objects.filter(name__iexact=clean_domain_no_www).first()
+                if domain:
+                    logger.info(f"Found domain by case-insensitive name: {domain.name}")
+
+            domain_exists = domain is not None
 
             if not domain_exists:
-                domain = Domain.objects.filter(name=clean_domain).first()
-                if domain is None:
-                    domain = Domain.objects.create(name=clean_domain, url=clean_domain)
-                    domain.save()
+                logger.warning(f"Domain not found, creating new: name={clean_domain_no_www}, url={clean_domain}")
+                domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
+                domain.save()
 
             # Don't save issue if security vulnerability
             if form.instance.label == "4" or form.instance.label == 4:
@@ -2021,7 +2115,7 @@ class GitHubIssuesView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = GitHubIssue.objects.all().order_by("-created_at")
+        queryset = GitHubIssue.objects.all().select_related("repo").order_by("-created_at")
 
         # Filter by type (issue/pr)
         issue_type = self.request.GET.get("type")
