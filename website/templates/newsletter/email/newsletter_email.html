@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="OWASP BLT Newsletter - Security Updates and Announcements">
+        <meta name="keywords"
+              content="OWASP, BLT, Newsletter, Security, Bug Logging Tool">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>{{ newsletter.title }} - OWASP BLT Newsletter</title>
+        <style>
+        @media only screen and (max-width: 620px) {
+            table.body h1 {
+                font-size: 28px !important;
+                margin-bottom: 10px !important;
+            }
+            
+            table.body p,
+            table.body ul,
+            table.body ol,
+            table.body td,
+            table.body span,
+            table.body a {
+                font-size: 16px !important;
+            }
+            
+            table.body .wrapper,
+            table.body .article {
+                padding: 10px !important;
+            }
+            
+            table.body .content {
+                padding: 0 !important;
+            }
+            
+            table.body .container {
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            
+            table.body .main {
+                border-left-width: 0 !important;
+                border-radius: 0 !important;
+                border-right-width: 0 !important;
+            }
+        }
+        </style>
+    </head>
+    <body style="background-color: #f6f6f6;
+                 font-family: sans-serif;
+                 -webkit-font-smoothing: antialiased;
+                 font-size: 14px;
+                 line-height: 1.4;
+                 margin: 0;
+                 padding: 0;
+                 -ms-text-size-adjust: 100%;
+                 -webkit-text-size-adjust: 100%">
+        <table role="presentation"
+               border="0"
+               cellpadding="0"
+               cellspacing="0"
+               class="body"
+               style="border-collapse: separate;
+                      mso-table-lspace: 0pt;
+                      mso-table-rspace: 0pt;
+                      background-color: #f6f6f6;
+                      width: 100%"
+               width="100%">
+            <tr>
+                <td style="font-family: sans-serif;
+                           font-size: 14px;
+                           vertical-align: top"
+                    valign="top">&nbsp;</td>
+                <td class="container"
+                    style="font-family: sans-serif;
+                           font-size: 14px;
+                           vertical-align: top;
+                           display: block;
+                           max-width: 580px;
+                           padding: 10px;
+                           width: 580px;
+                           margin: 0 auto"
+                    width="580"
+                    valign="top">
+                    <div class="content"
+                         style="box-sizing: border-box;
+                                display: block;
+                                margin: 0 auto;
+                                max-width: 580px;
+                                padding: 10px">
+                        <!-- START CENTERED WHITE CONTAINER -->
+                        <table role="presentation"
+                               class="main"
+                               style="border-collapse: separate;
+                                      mso-table-lspace: 0pt;
+                                      mso-table-rspace: 0pt;
+                                      background: #ffffff;
+                                      border-radius: 3px;
+                                      width: 100%"
+                               width="100%">
+                            <!-- START MAIN CONTENT AREA -->
+                            <tr>
+                                <td class="wrapper"
+                                    style="font-family: sans-serif;
+                                           font-size: 14px;
+                                           vertical-align: top;
+                                           box-sizing: border-box;
+                                           padding: 20px"
+                                    valign="top">
+                                    <table role="presentation"
+                                           border="0"
+                                           cellpadding="0"
+                                           cellspacing="0"
+                                           style="border-collapse: separate;
+                                                  mso-table-lspace: 0pt;
+                                                  mso-table-rspace: 0pt;
+                                                  width: 100%"
+                                           width="100%">
+                                        <tr>
+                                            <td style="font-family: sans-serif;
+                                                       font-size: 14px;
+                                                       vertical-align: top"
+                                                valign="top">
+                                                {% if newsletter.featured_image %}
+                                                    <div style="margin-bottom: 20px; text-align: center;">
+                                                        <img src="{{ newsletter.featured_image.url }}"
+                                                             alt="{{ newsletter.title }}"
+                                                             width="600"
+                                                             height="300"
+                                                             style="width: 100%;
+                                                                    max-width: 600px;
+                                                                    height: auto;
+                                                                    display: block;
+                                                                    border: 0">
+                                                    </div>
+                                                {% endif %}
+                                                <h1 style="color: #000000;
+                                                           font-family: sans-serif;
+                                                           font-weight: 400;
+                                                           line-height: 1.4;
+                                                           margin: 0;
+                                                           margin-bottom: 30px;
+                                                           font-size: 35px;
+                                                           text-align: center">{{ newsletter.title }}</h1>
+                                                <div style="margin-bottom: 30px;">{{ newsletter.content|safe }}</div>
+                                                {% if recent_bugs %}
+                                                    <div style="margin-bottom: 30px;">
+                                                        <h2 style="color: #000000;
+                                                                   font-family: sans-serif;
+                                                                   font-weight: 400;
+                                                                   line-height: 1.4;
+                                                                   margin: 0;
+                                                                   margin-bottom: 15px;
+                                                                   font-size: 24px">Recent Issues</h2>
+                                                        <ul>
+                                                            {% for bug in recent_bugs %}
+                                                                <li style="margin-bottom: 10px;">
+                                                                    <a href="https://{{ settings.DOMAIN_NAME }}/issue/{{ bug.id }}">{{ bug.description|truncatechars:100 }}</a>
+                                                                    <div style="color: #666; font-size: 12px;">Reported on {{ bug.created|date:"F j, Y" }}</div>
+                                                                </li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                {% endif %}
+                                                {% if leaderboard %}
+                                                    <div style="margin-bottom: 30px;">
+                                                        <h2 style="color: #000000;
+                                                                   font-family: sans-serif;
+                                                                   font-weight: 400;
+                                                                   line-height: 1.4;
+                                                                   margin: 0;
+                                                                   margin-bottom: 15px;
+                                                                   font-size: 24px">Leaderboard Updates</h2>
+                                                        <ol>
+                                                            {% for user in leaderboard %}
+                                                                <li style="margin-bottom: 5px;">{{ user.username }} - {{ user.score }} points</li>
+                                                            {% endfor %}
+                                                        </ol>
+                                                    </div>
+                                                {% endif %}
+                                                <p style="font-family: sans-serif;
+                                                          font-size: 14px;
+                                                          font-weight: normal;
+                                                          margin: 0;
+                                                          margin-bottom: 15px">
+                                                    <a href="{{ view_in_browser_url }}"
+                                                       style="color: #3498db;
+                                                              text-decoration: underline">View this newsletter in your browser</a>
+                                                </p>
+                                                <p style="font-family: sans-serif;
+                                                          font-size: 14px;
+                                                          font-weight: normal;
+                                                          margin: 0;
+                                                          margin-bottom: 15px">
+                                                    Thanks,
+                                                    <br>
+                                                    The {{ project_name }} Team
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <!-- END MAIN CONTENT AREA -->
+                        </table>
+                        <!-- END CENTERED WHITE CONTAINER -->
+                        <div class="footer"
+                             style="clear: both;
+                                    margin-top: 10px;
+                                    text-align: center;
+                                    width: 100%">
+                            <table role="presentation"
+                                   border="0"
+                                   cellpadding="0"
+                                   cellspacing="0"
+                                   style="border-collapse: separate;
+                                          mso-table-lspace: 0pt;
+                                          mso-table-rspace: 0pt;
+                                          width: 100%"
+                                   width="100%">
+                                <tr>
+                                    <td class="content-block"
+                                        style="font-family: sans-serif;
+                                               vertical-align: top;
+                                               padding-bottom: 10px;
+                                               padding-top: 10px;
+                                               color: #999999;
+                                               font-size: 12px;
+                                               text-align: center"
+                                        valign="top"
+                                        align="center">
+                                        <span class="apple-link"
+                                              style="color: #999999;
+                                                     font-size: 12px;
+                                                     text-align: center">{{ project_name }}</span>
+                                        <br>
+                                        <a href="{{ unsubscribe_url }}"
+                                           style="text-decoration: underline;
+                                                  color: #999999;
+                                                  font-size: 12px;
+                                                  text-align: center">Unsubscribe</a> |
+                                        <a href="{{ view_in_browser_url }}"
+                                           style="text-decoration: underline;
+                                                  color: #999999;
+                                                  font-size: 12px;
+                                                  text-align: center">View in Browser</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-family: sans-serif;
+                           font-size: 14px;
+                           vertical-align: top"
+                    valign="top">&nbsp;</td>
+            </tr>
+        </table>
+    </body>
+</html>

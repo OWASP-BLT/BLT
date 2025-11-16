@@ -1,6 +1,10 @@
 import json
 import logging
 import os
+import re
+import smtplib
+import time
+import uuid
 from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
@@ -10,9 +14,13 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.paginator import Paginator
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -23,7 +31,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -33,6 +41,7 @@ from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
+    Activity,
     BaconEarning,
     BaconSubmission,
     Badge,
@@ -46,6 +55,8 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Newsletter,
+    NewsletterSubscriber,
     Notification,
     Points,
     Tag,
@@ -55,6 +66,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
+from website.utils import get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -1389,3 +1401,451 @@ def delete_notification(request, notification_id):
             )
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+        try:
+            notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+
+            notification.is_deleted = True
+            notification.save()
+
+            return JsonResponse({"status": "success", "message": "Notification deleted successfully"})
+        except Exception as e:
+            logger.error(f"Error deleting notification: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                status=400,
+            )
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+def newsletter_home(request):
+    """View for displaying list of published newsletters"""
+    newsletters = Newsletter.objects.filter(status="published").order_by("-published_at")
+
+    paginator = Paginator(newsletters, 10)
+    page = request.GET.get("page")
+    newsletters = paginator.get_page(page)
+
+    featured_newsletter = Newsletter.objects.filter(status="published").order_by("-published_at").first()
+
+    if request.user.is_authenticated:
+        Activity.objects.create(
+            user=request.user,
+            action_type="view",
+            title="Viewed newsletters",
+            content_type=ContentType.objects.get_for_model(Newsletter),
+            object_id=featured_newsletter.id if featured_newsletter else None,
+        )
+
+    return render(
+        request,
+        "newsletter/home.html",
+        {
+            "newsletters": newsletters,
+            "featured_newsletter": featured_newsletter,
+        },
+    )
+
+
+def newsletter_detail(request, slug):
+    """View for displaying a specific newsletter"""
+    newsletter = get_object_or_404(Newsletter, slug=slug, status="published")
+
+    newsletter.increment_view_count()
+
+    recent_newsletters = (
+        Newsletter.objects.filter(status="published").exclude(id=newsletter.id).order_by("-published_at")[:5]
+    )
+
+    if request.user.is_authenticated:
+        Activity.objects.create(
+            user=request.user,
+            action_type="view",
+            title=f"Read newsletter: {newsletter.title}",
+            content_type=ContentType.objects.get_for_model(Newsletter),
+            object_id=newsletter.id,
+        )
+
+    context = {
+        "newsletter": newsletter,
+        "recent_newsletters": recent_newsletters,
+    }
+
+    if newsletter.recent_bugs_section:
+        context["recent_bugs"] = newsletter.get_recent_bugs()
+
+    if newsletter.leaderboard_section:
+        context["leaderboard"] = newsletter.get_leaderboard_updates()
+
+    # Add reported IPs only if the newsletter includes this section AND the user is authenticated
+    # This protects sensitive IP data from public view
+    if newsletter.reported_ips_section and request.user.is_authenticated:
+        if request.user.is_staff:
+            context["reported_ips"] = newsletter.get_reported_ips()
+        else:
+            limited_ips = []
+            for ip in newsletter.get_reported_ips():
+                ip_parts = ip.address.split(".")
+                if len(ip_parts) == 4:  # IPv4
+                    masked_ip = f"{ip_parts[0]}.{ip_parts[1]}.*.*"
+                else:
+                    masked_ip = "Redacted IP"
+
+                limited_ips.append({"address": masked_ip, "created": ip.created, "count": ip.count})
+            context["reported_ips"] = limited_ips
+
+    return render(request, "newsletter/detail.html", context)
+
+
+def newsletter_subscribe(request):
+    """View for newsletter subscription"""
+    if request.method == "POST":
+        client_ip = get_client_ip(request)
+
+        rate_key = f"newsletter_subscribe_rate_{client_ip}"
+        rate_attempts = cache.get(rate_key, 0)
+
+        # Limit to 5 subscription attempts per hour
+        if rate_attempts >= 5:
+            logger.warning(f"Rate limit exceeded for newsletter subscription from IP: {client_ip}")
+            messages.error(request, "Too many subscription attempts. Please try again later.")
+            return redirect("newsletter_subscribe")
+
+        email = request.POST.get("email", "").strip().lower()
+        name = request.POST.get("name", "").strip()
+
+        # Sanitize to prevent XSS
+        if name:
+            name = re.sub(r'[<>"\']', "", name)
+            name = name[:100]
+
+        if not email:
+            messages.error(request, "Email address is required.")
+            return redirect("newsletter_subscribe")
+
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            messages.error(request, "Please enter a valid email address.")
+            return redirect("newsletter_subscribe")
+
+        cache.set(rate_key, rate_attempts + 1, 3600)
+
+        try:
+            # Update any existing active subscriptions for this email to inactive
+            NewsletterSubscriber.objects.filter(email=email).exclude(is_active=False).update(is_active=False)
+
+            subscriber, created = NewsletterSubscriber.objects.get_or_create(
+                email=email,
+                defaults={
+                    "name": name,
+                    "user": request.user if request.user.is_authenticated else None,
+                    "is_active": True,
+                    "confirmed": False,
+                    "token_created_at": timezone.now(),
+                },
+            )
+
+            if not created:
+                subscriber.is_active = True
+                subscriber.name = name if name else subscriber.name
+                subscriber.confirmation_token = uuid.uuid4()
+                subscriber.token_created_at = timezone.now()
+                subscriber.save(update_fields=["is_active", "name", "confirmation_token", "token_created_at"])
+
+            last_sent_key = f"last_subscribe_email_{email}"
+            last_sent = cache.get(last_sent_key)
+
+            if last_sent and not created:
+                time_since_last = time.time() - last_sent
+                if time_since_last < 300:
+                    messages.warning(
+                        request,
+                        "You've recently requested a confirmation email. Please check your inbox or spam folder.",
+                    )
+                    return redirect("newsletter_home")
+
+            cache.set(last_sent_key, time.time(), 3600)
+
+            send_confirmation_email(subscriber)
+
+            if created:
+                logger.info(f"New subscription created for {email}")
+                messages.success(
+                    request, "Thanks for subscribing! Please check your email to confirm your subscription."
+                )
+            else:
+                logger.info(f"Subscription reactivated for {email}")
+                messages.success(request, "Your subscription has been reactivated. Please confirm your email.")
+
+        except ValidationError as e:
+            logger.error(f"Validation error in newsletter subscription: {str(e)}")
+            messages.error(request, f"There was an error processing your subscription: {str(e)}")
+        except ConnectionError as e:
+            logger.error(f"Connection error sending confirmation email: {str(e)}")
+            messages.error(request, "We couldn't send a confirmation email right now. Please try again later.")
+        except Exception as e:
+            error_id = uuid.uuid4()
+            logger.error(f"Error ID: {error_id} - Error in newsletter subscription: {str(e)}", exc_info=True)
+            messages.error(
+                request,
+                f"There was an error processing your subscription (Error ID: {error_id}). Please try again later.",
+            )
+
+        return redirect("newsletter_home")
+
+    return render(request, "newsletter/subscribe.html")
+
+
+def send_confirmation_email(subscriber):
+    """Send confirmation email to new subscribers"""
+    # Always use HTTPS in production
+    scheme = "https" if not settings.DEBUG else "http"
+
+    # Use site framework or ALLOWED_HOSTS for better domain management
+    try:
+        domain = Site.objects.get_current().domain
+    except:
+        domain = settings.DOMAIN_NAME
+
+    if settings.DEBUG:
+        domain = "localhost:8000"
+        logger.info(f"Using development domain: {domain}")
+
+    if not subscriber.token_created_at:
+        subscriber.token_created_at = timezone.now()
+        subscriber.save()
+
+    token_path = reverse("newsletter_confirm", args=[subscriber.confirmation_token])
+    confirm_url = f"{scheme}://{domain}{token_path}"
+
+    logger.info(f"Generated confirmation URL: {confirm_url}")
+
+    context = {"name": subscriber.name or "there", "confirm_url": confirm_url, "project_name": settings.PROJECT_NAME}
+
+    subject = f"Confirm your {settings.PROJECT_NAME} newsletter subscription"
+    html_message = render_to_string("newsletter/email/confirmation_email.html", context)
+
+    try:
+        send_mail(
+            subject=subject,
+            message=f"Please confirm your subscription: {confirm_url}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[subscriber.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        logger.info(f"Confirmation email sent to: {subscriber.email}")
+    except ConnectionRefusedError as e:
+        logger.error(f"Email server connection refused when sending to {subscriber.email}: {str(e)}")
+        raise RuntimeError("Could not connect to email server")
+    except smtplib.SMTPException as e:
+        logger.error(f"SMTP error when sending to {subscriber.email}: {str(e)}")
+        raise RuntimeError("Email server rejected the message")
+    except Exception as e:
+        logger.error(f"Failed to send confirmation email to {subscriber.email}: {str(e)}")
+        raise
+
+
+def newsletter_confirm(request, token):
+    """View to confirm newsletter subscription"""
+    try:
+        logger.info(f"Newsletter confirmation attempt with token: {token}")
+
+        subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
+        logger.info(f"Found subscriber with email: {subscriber.email}")
+
+        try:
+            if subscriber.is_token_expired():
+                subscriber.refresh_token()
+                send_confirmation_email(subscriber)
+                messages.warning(
+                    request, "Your confirmation link has expired. We've sent a new confirmation email to your address."
+                )
+                return redirect("newsletter_home")
+        except AttributeError as e:
+            # This would happen if is_token_expired method doesn't exist or implementation changed
+            logger.error(f"Token expiration check failed due to AttributeError: {str(e)}")
+            messages.error(request, "There was a system error processing your request. Our team has been notified.")
+            return redirect("newsletter_home")
+
+        if not subscriber.confirmed:
+            subscriber.confirmed = True
+            subscriber.save(update_fields=["confirmed"])
+            messages.success(request, "Thank you! Your newsletter subscription has been confirmed.")
+
+            logger.info(f"Successfully confirmed subscription for: {subscriber.email}")
+        else:
+            messages.info(request, "Your subscription is already confirmed.")
+
+        return redirect("newsletter_home")
+    except NewsletterSubscriber.DoesNotExist:
+        logger.warning(f"Invalid confirmation token used: {token}")
+        messages.error(request, "The confirmation link is invalid or has already been used.")
+        return redirect("newsletter_home")
+    except Exception as e:
+        error_id = uuid.uuid4()
+        logger.error(f"Error ID: {error_id} - Unexpected error in newsletter confirmation: {str(e)}", exc_info=True)
+        messages.error(
+            request,
+            f"There was an unexpected error confirming your subscription (Error ID: {error_id}). "
+            "Please try again or contact support with this Error ID.",
+        )
+        return redirect("newsletter_home")
+
+
+def newsletter_unsubscribe(request, token):
+    """View to unsubscribe from newsletter"""
+    try:
+        client_ip = get_client_ip(request)
+        cache_key = f"unsubscribe_attempts_{client_ip}"
+        attempts = cache.get(cache_key, 0)
+
+        # Limit to 10 unsubscribe attempts per hour from the same IP
+        if attempts >= 10:
+            logger.warning(f"Unsubscribe rate limit exceeded from IP: {client_ip}")
+            messages.error(request, "Too many unsubscribe attempts. Please try again later.")
+            return redirect("home")
+
+        cache.set(cache_key, attempts + 1, 3600)
+
+        subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
+
+        # Add token creation time validation for extra security
+        if subscriber.token_created_at:
+            max_token_age = timezone.now() - timezone.timedelta(days=90)
+            if subscriber.token_created_at < max_token_age:
+                # Token too old - refresh it and show warning
+                subscriber.refresh_token()
+                logger.warning(f"Unsubscribe attempted with expired token for: {subscriber.email}")
+                messages.warning(
+                    request,
+                    "This unsubscribe link has expired. We've sent a new confirmation email with an updated link.",
+                )
+                send_confirmation_email(subscriber)
+                return redirect("home")
+
+        if subscriber.is_active:
+            unsubscribe_time = timezone.now()
+
+            # Update subscriber status
+            subscriber.is_active = False
+            subscriber.save(update_fields=["is_active"])
+
+            messages.success(request, "You have been unsubscribed from the newsletter.")
+
+            logger.info(f"User unsubscribed from newsletter: {subscriber.email} at {unsubscribe_time}")
+
+            # Create activity record if user is authenticated
+            if subscriber.user and hasattr(subscriber.user, "id"):
+                Activity.objects.create(
+                    user=subscriber.user,
+                    action_type="update",
+                    title="Unsubscribed from newsletter",
+                    description=f"User unsubscribed from the newsletter at {unsubscribe_time}",
+                    content_type=ContentType.objects.get_for_model(NewsletterSubscriber),
+                    object_id=subscriber.id,
+                )
+        else:
+            messages.info(request, "You are already unsubscribed.")
+
+        return redirect("home")
+    except NewsletterSubscriber.DoesNotExist:
+        logger.warning(f"Invalid token used for unsubscribe: {token}")
+        messages.error(request, "Invalid unsubscribe link. Please contact support if you need assistance.")
+        return redirect("home")
+    except Exception as e:
+        error_id = uuid.uuid4()
+        logger.error(f"Error ID: {error_id} - Error in newsletter unsubscribe: {str(e)}", exc_info=True)
+        messages.error(
+            request, f"An error occurred while processing your request (Error ID: {error_id}). Please try again later."
+        )
+        return redirect("home")
+
+
+@login_required
+def newsletter_preferences(request):
+    """View to update newsletter preferences"""
+    try:
+        subscriber = NewsletterSubscriber.objects.get(user=request.user)
+    except NewsletterSubscriber.DoesNotExist:
+        # If no subscription exists but user wants to manage preferences,
+        # create one with their email from their user account
+        subscriber = NewsletterSubscriber(
+            user=request.user,
+            email=request.user.email,
+            name=request.user.get_full_name(),
+            confirmed=True,
+        )
+        subscriber.save()
+
+    if request.method == "POST":
+        subscriber.wants_bug_reports = "wants_bug_reports" in request.POST
+        subscriber.wants_leaderboard_updates = "wants_leaderboard_updates" in request.POST
+        subscriber.wants_security_news = "wants_security_news" in request.POST
+        subscriber.save()
+
+        messages.success(request, "Your newsletter preferences have been updated.")
+        return redirect("newsletter_preferences")
+
+    recent_newsletters = Newsletter.objects.filter(status="published").order_by("-published_at")[:3]
+
+    return render(
+        request, "newsletter/preferences.html", {"subscriber": subscriber, "recent_newsletters": recent_newsletters}
+    )
+
+
+@require_POST
+def newsletter_resend_confirmation(request):
+    """AJAX view to resend newsletter confirmation email"""
+    try:
+        # Rate limiting check
+        client_ip = get_client_ip(request)
+        cache_key = f"resend_confirm_rate_{client_ip}"
+        attempts = cache.get(cache_key, 0)
+
+        if attempts >= 3:
+            logger.warning(f"Rate limit exceeded for confirmation resend from IP: {client_ip}")
+            return JsonResponse({"success": False, "error": "Too many attempts. Please try again later."}, status=429)
+
+        data = json.loads(request.body)
+        email = data.get("email")
+
+        if not email or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            return JsonResponse({"success": False, "error": "Valid email address is required"})
+
+        # Use the same error message and timing regardless of whether the email exists
+        # to prevent email enumeration attacks
+        start_time = time.time()
+
+        try:
+            subscriber = NewsletterSubscriber.objects.get(email=email, is_active=True, confirmed=False)
+
+            last_sent_key = f"last_confirm_email_{email}"
+            last_sent = cache.get(last_sent_key)
+
+            if last_sent:
+                time_since_last = time.time() - last_sent
+                if time_since_last < 300:
+                    time.sleep(max(0, min(2, 2 - (time.time() - start_time))))
+                    return JsonResponse(
+                        {"success": False, "error": "Please wait at least 5 minutes before requesting another email."}
+                    )
+
+            # Record this attempt
+            cache.set(cache_key, attempts + 1, 1800)
+            cache.set(last_sent_key, time.time(), 3600)
+
+            send_confirmation_email(subscriber)
+
+        except NewsletterSubscriber.DoesNotExist:
+            # Sleep to maintain consistent timing even if email doesn't exist
+            # This prevents timing attacks
+            time.sleep(max(0, min(2, 2 - (time.time() - start_time))))
+            logger.info(f"Confirmation resend attempted for non-existent subscription: {email}")
+            return JsonResponse({"success": True})  # Return success even if email doesn't exist
+
+        return JsonResponse({"success": True})
+    except Exception as e:
+        logger.error(f"Error in newsletter_resend_confirmation: {str(e)}")
+        return JsonResponse(
+            {"success": False, "error": "An error occurred while processing your request. Please try again later."}
+        )
