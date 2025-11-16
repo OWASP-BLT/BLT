@@ -94,6 +94,11 @@ jobs:
             const fs = require('fs');
             const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
             
+            // Get last 100 lines of output
+            const lines = precommitOutput.split('\n');
+            const last100Lines = lines.slice(-100).join('\n');
+            const truncated = lines.length > 100;
+            
             const message = `## ❌ Pre-commit checks failed
             
             The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
@@ -118,10 +123,10 @@ jobs:
             \`\`\`
             
             <details>
-            <summary>Pre-commit output</summary>
+            <summary>Pre-commit output${truncated ? ' (last 100 lines)' : ''}</summary>
             
             \`\`\`
-            ${precommitOutput}
+            ${last100Lines}
             \`\`\`
             
             </details>
