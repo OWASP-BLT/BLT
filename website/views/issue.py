@@ -677,17 +677,27 @@ class IssueBaseCreate(object):
         )
         obj.domain = domain
         if self.request.POST.get("screenshot-hash"):
-            filename = self.request.POST.get("screenshot-hash")
-            extension = filename.split(".")[-1]
-            self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
+            from django.core.exceptions import ValidationError
 
-            reopen = default_storage.open("uploads/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
-            django_file = File(reopen)
-            obj.screenshot.save(
-                self.request.POST.get("screenshot-hash") + ".png",
-                django_file,
-                save=True,
-            )
+            try:
+                screenshot_hash = self.request.POST.get("screenshot-hash")
+                filename = screenshot_hash
+                extension = filename.split(".")[-1]
+                screenshot_hash = filename[:99] + str(uuid.uuid4()) + "." + extension
+                self.request.POST["screenshot-hash"] = screenshot_hash
+
+                validate_screenshot_hash(screenshot_hash.strip())
+                screenshot_path = os.path.join("uploads", f"{screenshot_hash}.png")
+                reopen = default_storage.open(screenshot_path, "rb")
+                django_file = File(reopen)
+                obj.screenshot.save(
+                    f"{screenshot_hash}.png",
+                    django_file,
+                    save=True,
+                )
+            except ValidationError:
+                # Skip setting screenshot if validation fails
+                pass
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
@@ -845,7 +855,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
             tokenauth = False
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
-            initial["screenshot"] = "uploads/" + self.request.POST.get("screenshot-hash") + ".png"
+            from django.core.exceptions import ValidationError
+
+            try:
+                screenshot_hash = self.request.POST.get("screenshot-hash")
+                validate_screenshot_hash(screenshot_hash.strip())
+                screenshot_path = os.path.join("uploads", f"{screenshot_hash}.png")
+                initial["screenshot"] = screenshot_path
+            except ValidationError:
+                # Skip setting initial screenshot if validation fails
+                pass
         return initial
 
     def post(self, request, *args, **kwargs):
