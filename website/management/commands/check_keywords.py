@@ -28,8 +28,6 @@ class Command(LoggedBaseCommand):
                 self.stdout.write(f"    HTTP {response.status_code}; content length {len(response.content or b'')}")
                 response.raise_for_status()
 
-                page_text = BeautifulSoup(response.text or "", "html.parser").get_text()
-
                 found_emails = []
                 try:
                     # Search the RAW HTML (response.text)
@@ -50,7 +48,9 @@ class Command(LoggedBaseCommand):
                     for email_list in existing_emails_raw:
                         existing_flat.update(e.strip() for e in email_list.split(","))
 
-                    new_emails = [e for e in found_emails if e not in existing_flat]
+                    # Case-insensitive deduplication
+                    existing_flat_lower = {e.lower() for e in existing_flat}
+                    new_emails = [e for e in found_emails if e.lower() not in existing_flat_lower]
                     if new_emails:
                         email_note = f"Found email(s): {', '.join(new_emails)}; "
                         separator = " | " if existing_notes and not existing_notes.endswith((" ", ";")) else ""
@@ -60,11 +60,13 @@ class Command(LoggedBaseCommand):
                     self.stdout.write(f"    No emails detected on {monitor.url}")
 
                 # Keyword presence check (case-insensitive / regex support).
-                reachable = bool(response.status_code and response.status_code < 400)  # Fix: Use bool()
+                reachable = bool(response.status_code and response.status_code < 400)
                 if not monitor.keyword or not str(monitor.keyword).strip():
                     new_status = "UP" if reachable else "DOWN"
                     self.stdout.write(f"    No keyword configured; reachable={reachable} -> status {new_status}")
                 else:
+                    # Parse page text only when keyword is configured
+                    page_text = BeautifulSoup(response.text or "", "html.parser").get_text()
                     keyword = str(monitor.keyword).strip()
                     is_regex = keyword.startswith("/") and keyword.endswith("/") and len(keyword) > 1
                     if is_regex:
@@ -84,6 +86,8 @@ class Command(LoggedBaseCommand):
                             snippet = " ".join(page_text.strip().split())[:500]
                         except (AttributeError, TypeError):
                             snippet = page_text[:200]
+                        # Redact email addresses from snippet to avoid logging PII
+                        snippet = EMAIL_REGEX.sub("<email redacted>", snippet)
                         self.stdout.write(f"    Page snippet: {snippet!s}")
                         if is_regex and pattern:
                             found_in_html = bool(re.search(pattern, response.text or "", re.IGNORECASE))
