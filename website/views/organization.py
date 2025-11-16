@@ -561,16 +561,24 @@ class Listbounties(TemplateView):
     def github_issues_with_bounties(self, label, issue_state="open", page=1, per_page=10):
         """
         Fetch GitHub issues with a specific bounty label directly from GitHub API
-        with enhanced pagination support
-        
+        with enhanced pagination support.
+
         Args:
             label (str): The label to search for (e.g. "$5")
             issue_state (str): Issue state to filter by ("open", "closed", or "all")
             page (int): Page number to fetch
             per_page (int): Number of issues per page (max 100)
-            
+
         Returns:
             tuple: (formatted_issues, total_count)
+
+        Caching:
+            Results are cached based on the input parameters (label, issue_state, page, per_page).
+            Cached results are returned if available to reduce API calls and improve performance.
+
+        Error Handling:
+            If an error occurs during the API request (such as rate limiting, network issues, or API failures),
+            the function returns an empty list and a count of zero. Errors are logged, and error results are not cached.
         """
         # Validate inputs
         if page < 1:
