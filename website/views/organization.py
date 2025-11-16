@@ -3678,7 +3678,7 @@ class BountyPayoutsView(ListView):
     def find_prs_mentioning_issue(self, issue, owner, repo_name, issue_number):
         """
         Find pull requests that mention this issue using closing keywords
-        like "Closes #123" or "Fixes #123" in their body.
+        like "Closes #123" or "Fixes #123" in their body text.
         """
         import logging
 
