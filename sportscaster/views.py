@@ -7,12 +7,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import GitHubEvent, Leaderboard, MonitoredEntity, UserChannel
-from .serializers import (
-    GitHubEventSerializer,
-    LeaderboardSerializer,
-    MonitoredEntitySerializer,
-    UserChannelSerializer,
-)
+from .serializers import GitHubEventSerializer, LeaderboardSerializer, MonitoredEntitySerializer, UserChannelSerializer
 from .services import EventProcessingService
 
 
@@ -51,9 +46,7 @@ def manage_channels(request):
         description = request.POST.get("description", "")
         is_public = request.POST.get("is_public") == "on"
 
-        channel = UserChannel.objects.create(
-            user=request.user, name=name, description=description, is_public=is_public
-        )
+        channel = UserChannel.objects.create(user=request.user, name=name, description=description, is_public=is_public)
 
         return JsonResponse({"success": True, "channel_id": channel.id})
 
@@ -67,9 +60,9 @@ def api_leaderboard(request):
     metric_type = request.query_params.get("metric", "stars")
     limit = int(request.query_params.get("limit", 10))
 
-    leaderboard = Leaderboard.objects.filter(metric_type=metric_type).select_related("monitored_entity").order_by(
-        "rank"
-    )[:limit]
+    leaderboard = (
+        Leaderboard.objects.filter(metric_type=metric_type).select_related("monitored_entity").order_by("rank")[:limit]
+    )
 
     serializer = LeaderboardSerializer(leaderboard, many=True)
     return Response(serializer.data)

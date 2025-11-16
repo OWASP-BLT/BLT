@@ -34,7 +34,9 @@ class Command(BaseCommand):
 
         if continuous:
             self.stdout.write(
-                self.style.SUCCESS(f"Running in continuous mode with {interval} second intervals. Press Ctrl+C to stop.")
+                self.style.SUCCESS(
+                    f"Running in continuous mode with {interval} second intervals. Press Ctrl+C to stop."
+                )
             )
             try:
                 while True:

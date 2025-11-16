@@ -39,7 +39,8 @@ class Command(BaseCommand):
 
         for template_data in templates:
             template, created = AICommentaryTemplate.objects.get_or_create(
-                event_type=template_data["event_type"], defaults={"template": template_data["template"], "is_active": True}
+                event_type=template_data["event_type"],
+                defaults={"template": template_data["template"], "is_active": True},
             )
             if created:
                 self.stdout.write(self.style.SUCCESS(f"Created template for {template.event_type}"))
