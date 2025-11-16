@@ -182,6 +182,7 @@
           .catch(error => console.error("Error:", error));
       }
 
+      {% if request.user.is_superuser %}
       function deleteActivity(activityId) {
           if (confirm("Are you sure you want to delete this activity? This action cannot be undone.")) {
               fetch(`/activity/delete/${activityId}/`, {
@@ -203,6 +204,7 @@
               });
           }
       }
+      {% endif %}
 
     </script>
 {% endblock %}
