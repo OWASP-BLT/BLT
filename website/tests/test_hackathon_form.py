@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from website.forms import HackathonForm
-from website.models import Hackathon, Organization, Repo
+from website.models import Organization, Repo
 
 
 class HackathonFormTestCase(TestCase):
