@@ -137,7 +137,7 @@
                 {% for message in messages %}
                     <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500{% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500{% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
                         <div class="flex-grow mr-3">{{ message }}</div>
-                        <button class="text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
+                        <button class="text-gray-500 dark:text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
                     </div>
                 {% endfor %}
             {% endif %}
