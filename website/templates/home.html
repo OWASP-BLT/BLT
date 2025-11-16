@@ -265,11 +265,18 @@
                         {% endfor %}
                     </div>
                     <div class="text-center">
-                        <a href="{% url 'hackathons' %}"
-                           class="inline-flex items-center px-6 py-3 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-colors duration-200">
-                            View All Hackathons
-                            <i class="fas fa-arrow-right ml-2"></i>
-                        </a>
+                        <div class="flex flex-wrap items-center justify-center gap-4">
+                            <a href="{% url 'hackathons' %}"
+                               class="inline-flex items-center px-6 py-3 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-colors duration-200">
+                                View All Hackathons
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </a>
+                            <a href="{% url 'hackathon_create' %}"
+                               class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] font-medium transition-colors duration-200 shadow-md">
+                                <i class="fas fa-plus mr-2"></i>
+                                Start Your Own Hackathon
+                            </a>
+                        </div>
                     </div>
                 </div>
             </section>
