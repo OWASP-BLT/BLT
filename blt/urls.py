@@ -1112,6 +1112,8 @@ urlpatterns = [
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
+    # Sportscaster URLs
+    path("sportscaster/", include("sportscaster.urls")),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}GitHub Sportscaster{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-white mb-4">
+                🏆 AI-Powered GitHub Sportscaster
+            </h1>
+            <p class="text-xl text-gray-300">
+                Watch GitHub activity unfold like a thrilling sports match!
+            </p>
+        </div>
+
+        <!-- Live Stream Button -->
+        <div class="text-center mb-12">
+            <a href="{% url 'sportscaster:live' %}" class="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition duration-300 transform hover:scale-105">
+                🔴 Watch Live Stream
+            </a>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid md:grid-cols-3 gap-8 mb-12">
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div class="text-4xl mb-4">⚡</div>
+                <h3 class="text-xl font-bold text-white mb-2">Real-Time Updates</h3>
+                <p class="text-gray-400">Get live notifications of stars, commits, PRs, and more as they happen</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div class="text-4xl mb-4">🤖</div>
+                <h3 class="text-xl font-bold text-white mb-2">AI Commentary</h3>
+                <p class="text-gray-400">Enjoy exciting sports-style commentary powered by advanced AI</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div class="text-4xl mb-4">📊</div>
+                <h3 class="text-xl font-bold text-white mb-2">Live Leaderboard</h3>
+                <p class="text-gray-400">Track repository rankings and see who's pulling ahead</p>
+            </div>
+        </div>
+
+        <!-- Channels Section -->
+        <div class="bg-gray-800 rounded-lg p-8 border border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-white">Available Channels</h2>
+                {% if user.is_authenticated %}
+                <a href="{% url 'sportscaster:manage_channels' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    Manage Channels
+                </a>
+                {% endif %}
+            </div>
+
+            {% if user.is_authenticated and channels %}
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-white mb-4">Your Channels</h3>
+                <div class="grid md:grid-cols-2 gap-4">
+                    {% for channel in channels %}
+                    <a href="{% url 'sportscaster:live_channel' channel.id %}" class="block bg-gray-700 hover:bg-gray-600 rounded-lg p-4 transition duration-300">
+                        <h4 class="text-lg font-bold text-white mb-2">{{ channel.name }}</h4>
+                        <p class="text-gray-400 text-sm">{{ channel.description|truncatewords:15 }}</p>
+                        <div class="mt-2 text-sm text-gray-500">
+                            {{ channel.monitored_entities.count }} repositories
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if public_channels %}
+            <div>
+                <h3 class="text-xl font-semibold text-white mb-4">Public Channels</h3>
+                <div class="grid md:grid-cols-2 gap-4">
+                    {% for channel in public_channels %}
+                    <a href="{% url 'sportscaster:live_channel' channel.id %}" class="block bg-gray-700 hover:bg-gray-600 rounded-lg p-4 transition duration-300">
+                        <h4 class="text-lg font-bold text-white mb-2">{{ channel.name }}</h4>
+                        <p class="text-gray-400 text-sm">{{ channel.description|truncatewords:15 }}</p>
+                        <div class="mt-2 text-sm text-gray-500">
+                            By {{ channel.user.username }} • {{ channel.monitored_entities.count }} repositories
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not user.is_authenticated %}
+            <div class="text-center py-8">
+                <p class="text-gray-400 mb-4">Sign in to create your own channels and customize your experience!</p>
+                <a href="{% url 'account_login' %}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded transition duration-300">
+                    Sign In
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- How It Works -->
+        <div class="mt-12 bg-gray-800 rounded-lg p-8 border border-gray-700">
+            <h2 class="text-3xl font-bold text-white mb-6">How It Works</h2>
+            <div class="space-y-4 text-gray-300">
+                <div class="flex items-start">
+                    <div class="bg-red-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-4">
+                        <span class="text-white font-bold">1</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white mb-1">Monitor GitHub Activity</h4>
+                        <p>We track real-time events from GitHub repositories, organizations, and tags</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="bg-red-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-4">
+                        <span class="text-white font-bold">2</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white mb-1">AI-Powered Commentary</h4>
+                        <p>Our AI generates exciting sports-style commentary for each event</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="bg-red-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-4">
+                        <span class="text-white font-bold">3</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white mb-1">Live Streaming</h4>
+                        <p>Watch the action unfold in real-time with dynamic visuals and leaderboards</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

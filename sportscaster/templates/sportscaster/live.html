@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Live Sportscaster{% endblock %}
+
+{% block extra_head %}
+<style>
+    .sportscaster-bot {
+        width: 200px;
+        height: 200px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        position: relative;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .sportscaster-bot::before {
+        content: '🤖';
+        font-size: 100px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .event-card {
+        animation: slideIn 0.5s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .leaderboard-entry {
+        transition: all 0.3s ease;
+    }
+    
+    .leaderboard-entry:hover {
+        transform: translateX(10px);
+    }
+    
+    .commentary-text {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-white">
+                    🔴 Live GitHub Sportscaster
+                </h1>
+                {% if channel %}
+                <p class="text-xl text-gray-300 mt-2">Channel: {{ channel.name }}</p>
+                {% endif %}
+            </div>
+            <a href="{% url 'sportscaster:home' %}" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                ← Back to Home
+            </a>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-6 text-center">
+            <span class="text-yellow-500">⚡ Connecting to live stream...</span>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Main Stream Area -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Sportscaster Bot -->
+                <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 text-center">
+                    <div class="sportscaster-bot mx-auto mb-4"></div>
+                    <div id="commentary" class="commentary-text text-white font-bold">
+                        Welcome to the GitHub Sportscaster! Waiting for action...
+                    </div>
+                </div>
+
+                <!-- Recent Events -->
+                <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-white mb-4">🎬 Live Activity Feed</h2>
+                    <div id="events-container" class="space-y-4 max-h-96 overflow-y-auto">
+                        <div class="text-gray-400 text-center py-8">
+                            Waiting for events...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Sidebar -->
+            <div class="space-y-6">
+                <!-- Leaderboard -->
+                <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 sticky top-8">
+                    <h2 class="text-2xl font-bold text-white mb-4">📊 Leaderboard</h2>
+                    <div id="leaderboard-container" class="space-y-2">
+                        <div class="text-gray-400 text-center py-4">
+                            Loading leaderboard...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let socket;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+
+function connectWebSocket() {
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const channelId = '{{ channel_id }}';
+    const wsUrl = `${wsScheme}://${window.location.host}/ws/sportscaster/${channelId}/`;
+    
+    socket = new WebSocket(wsUrl);
+    
+    socket.onopen = function(e) {
+        console.log('WebSocket connection established');
+        updateConnectionStatus('connected');
+        reconnectAttempts = 0;
+    };
+    
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        console.log('Received:', data);
+        
+        switch(data.type) {
+            case 'connection_status':
+                updateConnectionStatus(data.status);
+                break;
+            case 'live_update':
+                handleLiveUpdate(data.events);
+                break;
+            case 'new_event':
+                handleNewEvent(data.event);
+                break;
+            case 'leaderboard':
+                updateLeaderboard(data.data);
+                break;
+            case 'leaderboard_update':
+                updateLeaderboard(data.data);
+                break;
+            case 'pong':
+                console.log('Pong received');
+                break;
+        }
+    };
+    
+    socket.onerror = function(e) {
+        console.error('WebSocket error:', e);
+        updateConnectionStatus('error');
+    };
+    
+    socket.onclose = function(e) {
+        console.log('WebSocket connection closed');
+        updateConnectionStatus('disconnected');
+        
+        // Attempt to reconnect
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(() => {
+                console.log(`Reconnecting... Attempt ${reconnectAttempts}`);
+                connectWebSocket();
+            }, 3000 * reconnectAttempts);
+        }
+    };
+}
+
+function updateConnectionStatus(status) {
+    const statusElement = document.getElementById('connection-status');
+    const statusMessages = {
+        'connected': '<span class="text-green-500">✅ Connected to live stream</span>',
+        'disconnected': '<span class="text-red-500">❌ Disconnected from live stream</span>',
+        'error': '<span class="text-red-500">⚠️ Connection error</span>'
+    };
+    statusElement.innerHTML = statusMessages[status] || statusMessages['disconnected'];
+}
+
+function handleLiveUpdate(events) {
+    if (!events || events.length === 0) return;
+    
+    events.forEach(event => handleNewEvent(event));
+}
+
+function handleNewEvent(event) {
+    // Update commentary
+    updateCommentary(event.commentary);
+    
+    // Add event to feed
+    addEventToFeed(event);
+}
+
+function updateCommentary(text) {
+    const commentaryEl = document.getElementById('commentary');
+    commentaryEl.style.opacity = '0';
+    
+    setTimeout(() => {
+        commentaryEl.textContent = text;
+        commentaryEl.style.opacity = '1';
+    }, 300);
+}
+
+function addEventToFeed(event) {
+    const container = document.getElementById('events-container');
+    
+    // Remove "waiting" message if present
+    if (container.querySelector('.text-gray-400')) {
+        container.innerHTML = '';
+    }
+    
+    const eventCard = document.createElement('div');
+    eventCard.className = 'event-card bg-gray-700 rounded-lg p-4 border border-gray-600';
+    
+    const eventTypeEmoji = {
+        'star': '⭐',
+        'fork': '🍴',
+        'pull_request': '🔀',
+        'commit': '💾',
+        'release': '🚀',
+        'issue': '🐛'
+    };
+    
+    eventCard.innerHTML = `
+        <div class="flex items-start">
+            <div class="text-3xl mr-3">${eventTypeEmoji[event.type] || '📌'}</div>
+            <div class="flex-1">
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-white">${event.repository}</h3>
+                    <span class="text-xs text-gray-400">${formatTimestamp(event.timestamp)}</span>
+                </div>
+                <p class="text-sm text-gray-300 mt-1">${event.commentary}</p>
+                <div class="mt-2 text-xs text-gray-500">${event.type}</div>
+            </div>
+        </div>
+    `;
+    
+    container.insertBefore(eventCard, container.firstChild);
+    
+    // Limit to 20 events
+    while (container.children.length > 20) {
+        container.removeChild(container.lastChild);
+    }
+}
+
+function updateLeaderboard(entries) {
+    const container = document.getElementById('leaderboard-container');
+    
+    if (!entries || entries.length === 0) {
+        container.innerHTML = '<div class="text-gray-400 text-center py-4">No leaderboard data</div>';
+        return;
+    }
+    
+    container.innerHTML = entries.map((entry, index) => {
+        const changeColor = entry.change > 0 ? 'text-green-500' : entry.change < 0 ? 'text-red-500' : 'text-gray-400';
+        const changeIcon = entry.change > 0 ? '↑' : entry.change < 0 ? '↓' : '−';
+        
+        return `
+            <div class="leaderboard-entry bg-gray-700 rounded-lg p-3 border border-gray-600">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="text-2xl font-bold text-gray-400 mr-3">#${entry.rank}</span>
+                        <div>
+                            <div class="font-semibold text-white text-sm">${entry.name}</div>
+                            <div class="text-xs text-gray-400">${entry.metric}: ${entry.value}</div>
+                        </div>
+                    </div>
+                    <div class="${changeColor} font-bold">
+                        ${changeIcon} ${Math.abs(entry.change)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return date.toLocaleDateString();
+}
+
+// Initialize WebSocket on page load
+document.addEventListener('DOMContentLoaded', function() {
+    connectWebSocket();
+    
+    // Request initial leaderboard data
+    setTimeout(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'get_leaderboard' }));
+            socket.send(JSON.stringify({ type: 'get_recent_events' }));
+        }
+    }, 1000);
+    
+    // Ping every 30 seconds to keep connection alive
+    setInterval(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'ping' }));
+        }
+    }, 30000);
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (socket) {
+        socket.close();
+    }
+});
+</script>
+{% endblock %}

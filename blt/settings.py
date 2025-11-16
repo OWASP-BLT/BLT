@@ -78,6 +78,7 @@ INSTALLED_APPS = (
     "django.contrib.sites",
     "django.contrib.humanize",
     "website",
+    "sportscaster",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",

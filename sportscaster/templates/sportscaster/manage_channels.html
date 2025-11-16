@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Manage Channels{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">Manage Your Channels</h1>
+            <p class="text-gray-400">Create and customize your sportscaster channels</p>
+        </div>
+
+        <!-- Create New Channel -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-white mb-4">Create New Channel</h2>
+            <form id="create-channel-form" method="post" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-300 mb-2">Channel Name</label>
+                    <input type="text" id="name" name="name" required 
+                           class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                    <textarea id="description" name="description" rows="3"
+                              class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="is_public" name="is_public" 
+                           class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500">
+                    <label for="is_public" class="ml-2 text-sm text-gray-300">Make this channel public</label>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition duration-300">
+                    Create Channel
+                </button>
+            </form>
+        </div>
+
+        <!-- Your Channels -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <h2 class="text-2xl font-bold text-white mb-4">Your Channels</h2>
+            {% if channels %}
+            <div class="grid md:grid-cols-2 gap-4">
+                {% for channel in channels %}
+                <div class="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-bold text-white">{{ channel.name }}</h3>
+                        {% if channel.is_public %}
+                        <span class="bg-green-600 text-white text-xs px-2 py-1 rounded">Public</span>
+                        {% else %}
+                        <span class="bg-gray-600 text-white text-xs px-2 py-1 rounded">Private</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-gray-400 text-sm mb-3">{{ channel.description|truncatewords:20 }}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-500">{{ channel.monitored_entities.count }} repositories</span>
+                        <div class="space-x-2">
+                            <a href="{% url 'sportscaster:live_channel' channel.id %}" 
+                               class="text-blue-400 hover:text-blue-300 text-sm">
+                                Watch Live
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-gray-300 text-sm">
+                                Edit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-400">
+                <p>You haven't created any channels yet.</p>
+                <p class="text-sm mt-2">Create your first channel above to get started!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-8 text-center">
+            <a href="{% url 'sportscaster:home' %}" class="text-blue-400 hover:text-blue-300">
+                ← Back to Sportscaster Home
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('create-channel-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('{% url "sportscaster:manage_channels" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error creating channel: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating channel');
+    });
+});
+</script>
+{% endblock %}
