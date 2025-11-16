@@ -2735,10 +2735,10 @@ class BountyPayoutsView(ListView):
         Default to closed issues instead of open, and fetch 100 per page without date limitations
         """
         cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
-        cached_issues = cache.get(cache_key)
+        cached_data = cache.get(cache_key)
 
-        if cached_issues:
-            return cached_issues
+        if cached_data:
+            return cached_data
 
         # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
         encoded_label = label.replace("$", "%24")
@@ -2754,10 +2754,11 @@ class BountyPayoutsView(ListView):
                 data = response.json()
                 issues = data.get("items", [])
                 total_count = data.get("total_count", 0)
+                result = (issues, total_count)
                 # Cache the results for 30 minutes
-                cache.set(cache_key, issues, 60 * 30)
+                cache.set(cache_key, result, 60 * 30)
 
-                return issues, total_count
+                return result
             else:
                 # Log the error response from GitHub
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
