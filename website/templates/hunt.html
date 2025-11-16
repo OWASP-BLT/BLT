@@ -16,11 +16,11 @@
         {% csrf_token %}
         <div class="md:w-[800px] my-8 md:mx-auto mx-2 bg-white dark:bg-gray-800 md:p-8 p-4 border shadow-md border-gray-200 dark:border-gray-700 rounded-lg">
             <div class="flex flex-col justify-center items-center">
-                <div class="flex justify-center border-b-2 w-fit border-red-300 pb-2.5 gap-2.5 items-center text-4xl font-bold text-black/90 md:text-5xl">
+                <div class="flex justify-center border-b-2 w-fit border-red-300 pb-2.5 gap-2.5 items-center text-4xl font-bold text-black/90 dark:text-white/90 md:text-5xl">
                     <p class="whitespace-nowrap">{% trans "Start a" %}</p>
                     <p class="text-red-500">{% trans "Bug Bounty" %}</p>
                 </div>
-                <p class="font-medium text-black/60 mt-4">{% trans "Enter URL, APP name or GPS location of issue." %}</p>
+                <p class="font-medium text-black/60 dark:text-white/60 mt-4">{% trans "Enter URL, APP name or GPS location of issue." %}</p>
             </div>
             <div class="border-t border-gray-300 dark:border-gray-600 my-8"></div>
             {% csrf_token %}
@@ -80,7 +80,7 @@
                     </div>
                 </div>
                 <div>
-                    <h1 class="text-xl font-semibold text-black/85 mt-6">{% trans "Grand Prize" %}</h1>
+                    <h1 class="text-xl font-semibold text-black/85 dark:text-white/85 mt-6">{% trans "Grand Prize" %}</h1>
                     <p class="text-sm text-gray-500 dark:text-gray-500">{% trans "Max amount awarded to winner" %}</p>
                     <div class="relative py-6 px-4 my-6">
                         <input class="w-full appearance-none h-2 rounded-full bg-gray-200 dark:bg-gray-700 focus:outline-none"

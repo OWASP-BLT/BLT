@@ -22,7 +22,7 @@
     {% include "includes/sidenav.html" %}
     <div class="border lg:w-[1800px] w-full lg:mx-auto rounded-lg flex mt-[4vh] max-sm:mt-[5vh] max-sm:items-center justify-between max-sm:flex-col font-ubuntu">
         <!-- Left Section -->
-        <div class="lg:w-[25%] w-full border-r border-gray-300/80 flex p-4 flex-col">
+        <div class="lg:w-[25%] w-full border-r border-gray-300/80 dark:border-gray-600/80 flex p-4 flex-col">
             <!-- Logo or Gravatar -->
             <div class="inline-block relative h-[400px] w-full rounded-lg">
                 {% if domain.get_logo %}
@@ -149,7 +149,7 @@
                 </div>
                 <!-- Issue Stats -->
                 <div class="flex flex-col gap-3">
-                    <h1 class="text-xl font-semibold text-black/90">{% trans "Issue Stats" %}</h1>
+                    <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">{% trans "Issue Stats" %}</h1>
                     <div class="w-full flex flex-wrap gap-3">
                         {% for bug_type, count in bug_types.items %}
                             <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
@@ -160,7 +160,7 @@
                 </div>
                 <!-- Domain Stats -->
                 <div class="flex flex-col gap-3">
-                    <h1 class="text-xl font-semibold text-black/90">{% trans "Domain Stats" %}</h1>
+                    <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">{% trans "Domain Stats" %}</h1>
                     <div class="w-full flex flex-wrap gap-3">
                         <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
                             🏆 {% trans "Bugs Reported" %} {{ total_bugs }}
@@ -322,7 +322,7 @@
                 </div>
                 <!-- Top Hunters -->
                 <div class="flex flex-col gap-4">
-                    <h1 class="text-xl font-semibold text-black/90">{% trans "Top Hunters" %}</h1>
+                    <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">{% trans "Top Hunters" %}</h1>
                     <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh]">
                         <ul class="select-none w-full flex flex-col gap-4">
                             {% if leaderboard %}

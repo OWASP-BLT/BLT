@@ -48,7 +48,7 @@
                                      alt="{{ project.organization.name }}"
                                      class="w-20 h-20 rounded-lg ring-4 ring-white/10 shadow-xl">
                             {% else %}
-                                <div class="w-20 h-20 rounded-lg bg-white/10 flex items-center justify-center ring-4 ring-white/10">
+                                <div class="w-20 h-20 rounded-lg bg-white/10 dark:bg-gray-800/10 flex items-center justify-center ring-4 ring-white/10">
                                     <span class="text-3xl text-white font-bold">{{ project.organization.name|slice:":1"|upper }}</span>
                                 </div>
                             {% endif %}
@@ -82,7 +82,7 @@
                              alt="{{ project.name }}"
                              class="w-24 h-24 rounded-lg shadow-lg">
                     {% else %}
-                        <div class="w-24 h-24 rounded-lg bg-white/20 flex items-center justify-center">
+                        <div class="w-24 h-24 rounded-lg bg-white/20 dark:bg-gray-800/20 flex items-center justify-center">
                             <span class="text-3xl text-white font-bold">{{ project.name|slice:":1"|upper }}</span>
                         </div>
                     {% endif %}
@@ -95,7 +95,7 @@
                                 <a href="{{ project.url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">
+                                   class="inline-flex items-center px-4 py-2 bg-white/10 dark:bg-gray-800/10 hover:bg-white/20 rounded-lg text-white transition">
                                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
                                         <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
@@ -107,7 +107,7 @@
                                 <a href="{{ project.twitter }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">
+                                   class="inline-flex items-center px-4 py-2 bg-white/10 dark:bg-gray-800/10 hover:bg-white/20 rounded-lg text-white transition">
                                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
                                     </svg>
@@ -118,7 +118,7 @@
                                 <a href="{{ project.facebook }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">
+                                   class="inline-flex items-center px-4 py-2 bg-white/10 dark:bg-gray-800/10 hover:bg-white/20 rounded-lg text-white transition">
                                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 2C6.48 2 2 6.48 2 12c0 4.94 3.63 9.02 8.35 9.8V15.5H7.5v-3h2.85V10.7c0-2.82 1.68-4.38 4.25-4.38 1.23 0 2.55.22 2.55.22v2.82h-1.43c-1.41 0-1.85.87-1.85 1.77v2.13h3l-.3 3h-2.7v6.5C18.37 21.02 22 16.94 22 12c0-5.52-4.48-10-10-10z" />
                                     </svg>
