@@ -198,6 +198,17 @@ class Organization(models.Model):
         max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
     )
 
+    # GitHub and GSOC fields
+    github_org = models.CharField(
+        max_length=255, blank=True, null=True, help_text="GitHub organization name"
+    )
+    gsoc_years = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Comma-separated list of years participated in Google Summer of Code (e.g., '2024,2023,2022')",
+    )
+
     def is_admin(self, user):
         """Check if the user is an admin of the organization."""
         return self.admin == user

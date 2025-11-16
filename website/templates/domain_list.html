@@ -14,15 +14,15 @@
                 <h2 class="text-xl font-bold text-gray-900">All Domains</h2>
                 <div class="flex space-x-2">
                     <a href="{% url 'domains' %}"
-                       class="text-sm font-medium {% if not security_txt_filter %}bg-red-600 text-white px-3 py-1 rounded-full{% else %}text-red-600 hover:underline{% endif %}">
+                       class="text-sm font-medium {% if not security_txt_filter %}bg-red text-white px-3 py-1 rounded-full{% else %}text-red hover:underline{% endif %}">
                         All ({{ total_domain_count }})
                     </a>
                     <a href="{% url 'domains' %}?security_txt=yes"
-                       class="text-sm font-medium {% if security_txt_filter == 'yes' %}bg-red-600 text-white px-3 py-1 rounded-full{% else %}text-red-600 hover:underline{% endif %}">
+                       class="text-sm font-medium {% if security_txt_filter == 'yes' %}bg-red text-white px-3 py-1 rounded-full{% else %}text-red hover:underline{% endif %}">
                         With security.txt ({{ security_txt_yes_count }})
                     </a>
                     <a href="{% url 'domains' %}?security_txt=no"
-                       class="text-sm font-medium {% if security_txt_filter == 'no' %}bg-red-600 text-white px-3 py-1 rounded-full{% else %}text-red-600 hover:underline{% endif %}">
+                       class="text-sm font-medium {% if security_txt_filter == 'no' %}bg-red text-white px-3 py-1 rounded-full{% else %}text-red hover:underline{% endif %}">
                         Without security.txt ({{ security_txt_no_count }})
                     </a>
                 </div>
