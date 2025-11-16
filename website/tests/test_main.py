@@ -177,6 +177,8 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
+        # Wait for the form to load completely before interacting with it
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.NAME, "url")))
         self.selenium.find_element("name", "url").send_keys("https://google.com")
         self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
         self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
