@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
@@ -186,6 +187,17 @@ def profile_edit(request):
                     email=new_email,
                     defaults={"verified": False, "primary": False},
                 )
+
+                # Rate limit: atomic check-and-set to prevent race conditions
+                rate_key = f"email_verification_rate_{request.user.id}"
+
+                # add() only sets if key doesn't exist (atomic operation)
+                if not cache.add(rate_key, True, timeout=60):
+                    messages.warning(
+                        request,
+                        "Too many requests. Please wait a minute before trying again.",
+                    )
+                    return redirect("profile", slug=request.user.username)
 
                 # Send verification email
                 try:
