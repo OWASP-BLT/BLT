@@ -124,9 +124,11 @@ class Command(LoggedBaseCommand):
                         pattern = keyword[1:-1]
                         try:
                             found = bool(re.search(pattern, page_text, re.IGNORECASE))
-                        except re.error as e:
-                            self.stderr.write(f"    Invalid regex pattern '{pattern}': {e}")
+                        except re.error:
+                            # Invalid regex — report clearly but do NOT print exception text.
+                            self.stderr.write(f"    Invalid regex pattern '{pattern}'")
                             found = False
+                            pattern = None  # Skip reuse on raw HTML to avoid repeat re.error
                     else:
                         pattern = None
                         found = keyword.lower() in page_text.lower()
@@ -167,8 +169,8 @@ class Command(LoggedBaseCommand):
                 if old_status != "DOWN":
                     try:
                         self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception as e:
-                        self.stderr.write(f"    Failed to notify user: {e}")
+                    except Exception:
+                        self.stderr.write("    Failed to notify user of status change")
             except requests.exceptions.ConnectionError:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network connection failed"))
                 old_status = monitor.status
@@ -178,8 +180,8 @@ class Command(LoggedBaseCommand):
                 if old_status != "DOWN":
                     try:
                         self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception as e:
-                        self.stderr.write(f"    Failed to notify user: {e}")
+                    except Exception:
+                        self.stderr.write("    Failed to notify user of status change")
             except requests.exceptions.HTTPError:
                 self.stderr.write(
                     self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response")
@@ -191,8 +193,8 @@ class Command(LoggedBaseCommand):
                 if old_status != "DOWN":
                     try:
                         self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception as e:
-                        self.stderr.write(f"    Failed to notify user: {e}")
+                    except Exception:
+                        self.stderr.write("    Failed to notify user of status change")
             except requests.exceptions.RequestException:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request failed"))
                 old_status = monitor.status
@@ -202,13 +204,14 @@ class Command(LoggedBaseCommand):
                 if old_status != "DOWN":
                     try:
                         self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception as e:
-                        self.stderr.write(f"    Failed to notify user: {e}")
-            except Exception as e:  # noqa: BLE001 - broad catch required to prevent one bad monitor from aborting the entire command run
+                    except Exception:
+                        self.stderr.write("    Failed to notify user of status change")
+            except Exception:  # noqa: BLE001 - broad catch required to prevent one bad monitor from aborting the entire command run
                 self.stderr.write(
                     self.style.ERROR(
-                        f"Error monitoring {monitor.url}: unexpected error during check - {type(e).__name__}: {e}. "
-                        "This may indicate a parsing, database, or internal processing issue. Check container logs for details."
+                        f"Error monitoring {monitor.url}: unexpected error during check. "
+                        "This may indicate a parsing, database, or internal processing issue. "
+                        "Check container logs for details."
                     )
                 )
                 old_status = monitor.status
@@ -218,8 +221,8 @@ class Command(LoggedBaseCommand):
                 if old_status != "DOWN":
                     try:
                         self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception as notify_error:
-                        self.stderr.write(f"    Failed to notify user: {notify_error}")
+                    except Exception:
+                        self.stderr.write("    Failed to notify user of status change")
 
     def notify_user(self, username, website, email, status):
         subject = f"Website Status Update: {website} is {status}"
