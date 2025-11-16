@@ -986,6 +986,16 @@ class HuntCreate(CreateView):
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
 
+    def get_success_url(self):
+        try:
+            if self.object.domain and self.object.domain.organization and self.object.domain.organization.slug:
+                return reverse("organization_detail", kwargs={"slug": self.object.domain.organization.slug})
+        except AttributeError as e:
+            logger.error(
+                "AttributeError in HuntCreate.get_success_url: Unable to access organization details", exc_info=e
+            )
+        return reverse("organizations")
+
 
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
