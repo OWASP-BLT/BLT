@@ -9,7 +9,7 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
-        <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <h1 class="text-2xl font-bold mb-6">Management Commands</h1>
             {% if not request.user.is_superuser %}
                 <div class="mb-6 p-4 rounded-lg bg-yellow-100 text-yellow-700">
@@ -25,10 +25,10 @@
                 {% endfor %}
             {% endif %}
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 <a href="?sort={% if sort == 'name' and not reverse %}-name{% else %}name{% endif %}"
                                    class="flex items-center hover:text-[#e74c3c]">
                                     Command
@@ -51,8 +51,10 @@
                                     {% endif %}
                                 </a>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                Description
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 <a href="?sort={% if sort == 'last_run' and not reverse %}-last_run{% else %}last_run{% endif %}"
                                    class="flex items-center hover:text-[#e74c3c]">
                                     Last Run
@@ -75,7 +77,7 @@
                                     {% endif %}
                                 </a>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 <a href="?sort={% if sort == 'status' and not reverse %}-status{% else %}status{% endif %}"
                                    class="flex items-center hover:text-[#e74c3c]">
                                     Status
@@ -98,7 +100,7 @@
                                     {% endif %}
                                 </a>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 <a href="?sort={% if sort == 'run_count' and not reverse %}-run_count{% else %}run_count{% endif %}"
                                    class="flex items-center hover:text-[#e74c3c]">
                                     Run Count
@@ -121,7 +123,7 @@
                                     {% endif %}
                                 </a>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 <a href="?sort={% if sort == 'activity' and not reverse %}-activity{% else %}activity{% endif %}"
                                    class="flex items-center hover:text-[#e74c3c]">
                                     30 Day Activity
@@ -144,20 +146,20 @@
                                     {% endif %}
                                 </a>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Info</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Execution Time</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">File Info</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Execution Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {% for command in commands %}
                             <tr class="hover:bg-gray-50 cursor-pointer"
                                 data-command="{{ command.name }}">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                                     <div class="flex items-center">
                                         <span>{{ command.name }}</span>
                                         {% if command.arguments or command.output %}
-                                            <button class="ml-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                            <button class="ml-2 text-gray-400 dark:text-gray-600 hover:text-gray-600 focus:outline-none"
                                                     title="Show details">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                      class="h-4 w-4"
@@ -170,8 +172,8 @@
                                         {% endif %}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-500">{{ command.help_text }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-500">{{ command.help_text }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                     {% if command.last_run %}
                                         {{ command.last_run|timesince }} ago
                                     {% else %}
@@ -188,21 +190,23 @@
                                             {% endif %}
                                         </span>
                                     {% else %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
                                             Not Run
                                         </span>
                                     {% endif %}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ command.run_count|default:"0" }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                    {{ command.run_count|default:"0" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                     {% if command.stats_data %}
                                         <div class="relative">
                                             <!-- Grid background -->
                                             <div class="absolute inset-0 grid grid-rows-4 w-[120px] h-[30px] pointer-events-none">
-                                                <div class="border-t border-gray-200"></div>
-                                                <div class="border-t border-gray-200"></div>
-                                                <div class="border-t border-gray-200"></div>
-                                                <div class="border-t border-gray-200"></div>
+                                                <div class="border-t border-gray-200 dark:border-gray-700"></div>
+                                                <div class="border-t border-gray-200 dark:border-gray-700"></div>
+                                                <div class="border-t border-gray-200 dark:border-gray-700"></div>
+                                                <div class="border-t border-gray-200 dark:border-gray-700"></div>
                                             </div>
                                             <!-- Bars -->
                                             <div class="flex items-end h-[30px] w-[120px] gap-[1px] relative"
@@ -214,9 +218,11 @@
                                                 {% endfor %}
                                             </div>
                                         </div>
-                                        <div class="text-xs text-gray-500 mt-1">Max: {{ command.max_value }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-500 mt-1">Max: {{ command.max_value }}</div>
                                     {% else %}
-                                        <div class="flex items-center justify-center h-[30px] w-[120px] text-gray-400 text-[10px]">No data</div>
+                                        <div class="flex items-center justify-center h-[30px] w-[120px] text-gray-400 dark:text-gray-600 text-[10px]">
+                                            No data
+                                        </div>
                                     {% endif %}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500">
@@ -245,7 +251,7 @@
                                         <span class="text-gray-400 text-xs">N/A</span>
                                     {% endif %}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                     <div class="flex items-center space-x-2">
                                         {% if request.user.is_superuser %}
                                             {% if command.arguments %}
@@ -281,7 +287,7 @@
                                                 </form>
                                             {% endif %}
                                         {% else %}
-                                            <span class="text-gray-400 italic">Superuser only</span>
+                                            <span class="text-gray-400 dark:text-gray-600 italic">Superuser only</span>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -351,15 +357,16 @@
     </div>
     <!-- Command Modal -->
     <div id="commandModal"
-         class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+         class="fixed inset-0 bg-gray-600 dark:bg-gray-300 bg-opacity-50 hidden z-50">
         <div class="fixed inset-0 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-auto">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between p-4 border-b">
-                    <h3 class="text-xl font-bold text-gray-900" id="modalCommandName">Run Command</h3>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100"
+                        id="modalCommandName">Run Command</h3>
                     <button type="button"
                             onclick="closeCommandModal()"
-                            class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                            class="text-gray-400 dark:text-gray-600 hover:text-gray-500 focus:outline-none">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -378,7 +385,7 @@
                         <div class="mt-6 flex justify-end space-x-3">
                             <button type="button"
                                     onclick="closeCommandModal()"
-                                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                                 Cancel
                             </button>
                             <button type="submit"
@@ -390,9 +397,9 @@
                     </form>
                     <!-- Command Results Section (initially hidden) -->
                     <div id="commandResults" class="mt-6 hidden">
-                        <h4 class="text-lg font-medium text-gray-900 mb-2">Command Results</h4>
+                        <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Command Results</h4>
                         <div id="commandOutput"
-                             class="bg-gray-100 p-4 rounded-md text-sm font-mono text-gray-800 max-h-60 overflow-y-auto">
+                             class="bg-gray-100 dark:bg-gray-800 p-4 rounded-md text-sm font-mono text-gray-800 dark:text-gray-200 max-h-60 overflow-y-auto">
                             <!-- Command output will be displayed here -->
                         </div>
                     </div>
@@ -400,7 +407,7 @@
                     <div id="commandLoading" class="mt-6 hidden">
                         <div class="flex items-center justify-center space-x-3">
                             <div class="animate-spin rounded-full h-6 w-6 border-4 border-[#e74c3c] border-t-transparent"></div>
-                            <span class="text-gray-700">Running command...</span>
+                            <span class="text-gray-700 dark:text-gray-300">Running command...</span>
                         </div>
                     </div>
                 </div>

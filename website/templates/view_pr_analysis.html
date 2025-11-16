@@ -2,11 +2,11 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <title>PR Analysis Reports</title>
-    <div class="container mx-auto bg-gray-100 p-5 max-w-2xl rounded-lg shadow-md mt-20">
-        <h1 class="text-center text-3xl text-gray-800 mb-8">PR Analysis Reports</h1>
+    <div class="container mx-auto bg-gray-100 dark:bg-gray-800 p-5 max-w-2xl rounded-lg shadow-md mt-20">
+        <h1 class="text-center text-3xl text-gray-800 dark:text-gray-200 mb-8">PR Analysis Reports</h1>
         {% for report in reports %}
-            <div class="bg-white p-4 mb-5 border border-gray-300 rounded">
-                <h3 class="text-lg text-gray-700 mb-2">PR Analysis</h3>
+            <div class="bg-white dark:bg-gray-800 p-4 mb-5 border border-gray-300 dark:border-gray-600 rounded">
+                <h3 class="text-lg text-gray-700 dark:text-gray-300 mb-2">PR Analysis</h3>
                 <p>
                     <strong>PR Link:</strong> <a href="{{ report.pr_link }}" target="_blank" class="text-blue-500">{{ report.pr_link }}</a>
                 </p>
@@ -23,13 +23,13 @@
                     <strong>Recommendations:</strong>
                 </p>
                 <p>{{ report.recommendations }}</p>
-                <p class="text-gray-500">
+                <p class="text-gray-500 dark:text-gray-500">
                     <small><em>Created on: {{ report.created_at }}</em></small>
                 </p>
             </div>
-            <hr class="border-t border-gray-300 my-5">
+            <hr class="border-t border-gray-300 dark:border-gray-600 my-5">
         {% empty %}
-            <p class="text-center text-gray-500">No analysis reports available.</p>
+            <p class="text-center text-gray-500 dark:text-gray-500">No analysis reports available.</p>
         {% endfor %}
     </div>
 {% endblock content %}
