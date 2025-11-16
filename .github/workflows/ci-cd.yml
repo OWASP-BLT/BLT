@@ -79,13 +79,21 @@ jobs:
           python-version: 3.11.2
       - name: Run pre-commit
         id: pre-commit
-        uses: pre-commit/action@v3.0.1
+        run: |
+          pip install pre-commit
+          set +e
+          pre-commit run --all-files > pre-commit-output.txt 2>&1
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          set -e
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: github.event_name == 'pull_request' && steps.pre-commit.outcome == 'failure'
+        if: github.event_name == 'pull_request' && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
+            
             const message = `## ❌ Pre-commit checks failed
             
             The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
@@ -109,6 +117,15 @@ jobs:
             pre-commit install
             \`\`\`
             
+            <details>
+            <summary>Pre-commit output</summary>
+            
+            \`\`\`
+            ${precommitOutput}
+            \`\`\`
+            
+            </details>
+            
             For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
             
             await github.rest.issues.createComment({
@@ -118,7 +135,7 @@ jobs:
               body: message
             });
       - name: Fail the job if pre-commit failed
-        if: steps.pre-commit.outcome == 'failure'
+        if: steps.pre-commit.outputs.exit_code != '0'
         run: exit 1
       - name: Print memory usage
         run: free -h

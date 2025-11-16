@@ -156,7 +156,5 @@ class HackathonFormTestCase(TestCase):
 
         # Should only create 2 repos, ignoring blank lines
         hackathon = form.save()
-        new_repos = Repo.objects.filter(
-            repo_url__in=["https://github.com/owner/repo1", "https://github.com/owner/repo2"]
-        )
+        new_repos = Repo.objects.filter(repo_url__in=["https://github.com/owner/repo1", "https://github.com/owner/repo2"])
         self.assertEqual(new_repos.count(), 2)
