@@ -91,6 +91,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request in context. Skipping.');
+              return;
+            }
+            
             const fs = require('fs');
             const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
             
@@ -136,7 +142,7 @@ jobs:
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: pr.number,
               body: message
             });
       - name: Add pre-commit status label
@@ -145,9 +151,15 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request in context. Skipping.');
+              return;
+            }
+            
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const pull_number = context.issue.number;
+            const pull_number = pr.number;
             
             // Determine label based on pre-commit exit code
             const preCommitExitCode = '${{ steps.pre-commit.outputs.exit_code }}';
