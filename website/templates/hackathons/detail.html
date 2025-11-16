@@ -64,8 +64,9 @@
                 <p class="text-3xl font-bold text-[#e74c3c]">{{ merged_pr_count }}</p>
             </div>
             <div class="bg-white rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700">Page Views</h3>
-                <p class="text-3xl font-bold text-[#e74c3c]">{{ total_views }}</p>
+                <h3 class="text-lg font-semibold text-gray-700">Page Views (Hackathon)</h3>
+                <p class="text-3xl font-bold text-[#e74c3c]">{{ hackathon_views }}</p>
+                <p class="text-sm text-gray-500 mt-1">All-Time: {{ all_time_views }}</p>
                 <div class="mt-2 h-16">
                     <canvas id="viewsSparkline"></canvas>
                 </div>
