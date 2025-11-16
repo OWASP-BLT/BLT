@@ -193,9 +193,9 @@ def profile_edit(request):
 
                 # add() only sets if key doesn't exist (atomic operation)
                 if not cache.add(rate_key, True, timeout=60):
-                    messages.error(
+                    messages.warning(
                         request,
-                        "You are doing that too often. Please wait a minute before trying again.",
+                        "Too many requests. Please wait a minute before trying again.",
                     )
                     return redirect("profile", slug=request.user.username)
 
