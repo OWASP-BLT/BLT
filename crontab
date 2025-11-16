@@ -2,5 +2,5 @@
 0 2 * * * cd /blt && python manage.py run_daily >> /var/log/cron.log 2>&1
 
 # Fetch fresh trademark data from USPTO API every 6 hours, at 30 minutes past the hour
-30 2 1 * *  cd /blt && python manage.py fetch_trademarks >> /var/log/cron.log 2>&1
+30 2 1 * * cd /blt && python manage.py fetch_trademarks >> /var/log/cron.log 2>&1
 
