@@ -28,7 +28,7 @@ def search_uspto_database(term):
 
     try:
         initial_payload = {"keywords": f'["{term}"]', "start_index": "0"}
-        response = requests.post(url, data=initial_payload, headers=headers)
+        response = requests.post(url, data=initial_payload, headers=headers , timeout=15)
         response.raise_for_status()
         response_json = response.json()
 
@@ -44,7 +44,7 @@ def search_uspto_database(term):
             "start_index": "0",
             "scroll_id": scroll_id,
         }
-        response = requests.post(url, data=pagination_payload, headers=headers)
+        response = requests.post(url, data=pagination_payload, headers=headers, timeout=15)
         response.raise_for_status()
         results = response.json().get("results")
 
