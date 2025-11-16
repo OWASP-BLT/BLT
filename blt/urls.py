@@ -350,6 +350,13 @@ from website.views.user import (
     invite_friend,
     mark_as_read,
     messaging_home,
+    newsletter_confirm,
+    newsletter_detail,
+    newsletter_home,
+    newsletter_preferences,
+    newsletter_resend_confirmation,
+    newsletter_subscribe,
+    newsletter_unsubscribe,
     profile,
     profile_edit,
     referral_signup,
@@ -1221,6 +1228,14 @@ urlpatterns = [
     ),
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
+    # Newsletter URLs
+    path("newsletter/archive/", newsletter_home, name="newsletter_home"),
+    path("newsletter/subscribe/", newsletter_subscribe, name="newsletter_subscribe"),
+    path("newsletter/confirm/<uuid:token>/", newsletter_confirm, name="newsletter_confirm"),
+    path("newsletter/unsubscribe/<uuid:token>/", newsletter_unsubscribe, name="newsletter_unsubscribe"),
+    path("newsletter/preferences/", newsletter_preferences, name="newsletter_preferences"),
+    path("newsletter/resend-confirmation/", newsletter_resend_confirmation, name="newsletter_resend_confirmation"),
+    path("newsletter/<slug:slug>/", newsletter_detail, name="newsletter_detail"),
 ]
 
 if settings.DEBUG:

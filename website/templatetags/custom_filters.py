@@ -1,8 +1,10 @@
 # avoid using custom filters if possible
 import json
 
+import markdown
 from django import template
 from django.core.serializers.json import DjangoJSONEncoder
+from django.template.defaultfilters import stringfilter
 from django.utils.safestring import mark_safe
 
 register = template.Library()
@@ -23,3 +25,10 @@ def before_dot(value):
 def to_json(value):
     """Convert Python object to JSON string"""
     return mark_safe(json.dumps(value, cls=DjangoJSONEncoder))
+
+
+@register.filter
+@stringfilter
+def markdown_filter(value):
+    """Converts markdown text to HTML."""
+    return mark_safe(markdown.markdown(value, extensions=["extra", "nl2br", "sane_lists"]))
