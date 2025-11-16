@@ -15,7 +15,11 @@ class Command(BaseCommand):
                 "title": "Secure the Fortress",
                 "description": """Master web application security with OWASP ZAP and the Security Knowledge Framework.
 
-This adventure will teach you how to identify and document common vulnerabilities, and suggest effective mitigations using industry best practices.""",
+This adventure will teach you how to identify and document common vulnerabilities, and suggest effective mitigations using industry best practices.
+
+**OWASP Projects Used:**
+- OWASP ZAP: https://owasp.org/www-project-zap/
+- OWASP Security Knowledge Framework: https://owasp.org/www-project-security-knowledge-framework/""",
                 "category": "owasp_security",
                 "difficulty": "intermediate",
                 "badge_emoji": "🛡️",
@@ -24,7 +28,7 @@ This adventure will teach you how to identify and document common vulnerabilitie
                 "tasks": [
                     {
                         "title": "Scan a Vulnerable Application",
-                        "description": "Use OWASP ZAP to perform a comprehensive scan of a vulnerable web application. Set up ZAP, configure the scan parameters, and execute a full automated scan.",
+                        "description": "Use OWASP ZAP (https://owasp.org/www-project-zap/) to perform a comprehensive scan of a vulnerable web application. Download ZAP from https://www.zaproxy.org/download/\n\nSet up ZAP, configure the scan parameters, and execute a full automated scan. You can use OWASP WebGoat (https://owasp.org/www-project-webgoat/) or DVWA as test applications.",
                     },
                     {
                         "title": "Identify and Document 3 Vulnerabilities",
@@ -32,7 +36,7 @@ This adventure will teach you how to identify and document common vulnerabilitie
                     },
                     {
                         "title": "Reference OWASP Security Knowledge Framework for Mitigations",
-                        "description": "Using the OWASP Security Knowledge Framework (SKF), research and document appropriate mitigation strategies for each of the 3 vulnerabilities you identified.",
+                        "description": "Using the OWASP Security Knowledge Framework (https://owasp.org/www-project-security-knowledge-framework/), research and document appropriate mitigation strategies for each of the 3 vulnerabilities you identified.\n\nAccess SKF at: https://www.securityknowledgeframework.org/",
                     },
                     {
                         "title": "Submit a Comprehensive Report",
@@ -44,7 +48,11 @@ This adventure will teach you how to identify and document common vulnerabilitie
                 "title": "Break the Code",
                 "description": """Dive deep into web application security by solving challenges in OWASP Juice Shop.
 
-Learn about common vulnerabilities through hands-on exploitation and understand defensive strategies using OWASP Cheat Sheets.""",
+Learn about common vulnerabilities through hands-on exploitation and understand defensive strategies using OWASP Cheat Sheets.
+
+**OWASP Projects Used:**
+- OWASP Juice Shop: https://owasp.org/www-project-juice-shop/
+- OWASP Cheat Sheet Series: https://owasp.org/www-project-cheat-sheets/""",
                 "category": "owasp_security",
                 "difficulty": "beginner",
                 "badge_emoji": "🔓",
@@ -53,15 +61,15 @@ Learn about common vulnerabilities through hands-on exploitation and understand 
                 "tasks": [
                     {
                         "title": "Complete 5 Security Challenges in OWASP Juice Shop",
-                        "description": "Set up OWASP Juice Shop locally and complete at least 5 security challenges. Focus on different vulnerability types such as:\n- SQL Injection\n- XSS\n- Broken Authentication\n- Sensitive Data Exposure\n- Security Misconfiguration",
+                        "description": "Set up OWASP Juice Shop (https://owasp.org/www-project-juice-shop/) locally and complete at least 5 security challenges. Install from: https://github.com/juice-shop/juice-shop\n\nFocus on different vulnerability types such as:\n- SQL Injection\n- XSS\n- Broken Authentication\n- Sensitive Data Exposure\n- Security Misconfiguration",
                     },
                     {
                         "title": "Explain Vulnerabilities Using OWASP Cheat Sheets",
-                        "description": "For each of the 5 challenges you solved, reference the relevant OWASP Cheat Sheet to explain:\n- The vulnerability type\n- How it works\n- Why it's dangerous\n- How to prevent it\n\nCreate a write-up or blog post with your explanations.",
+                        "description": "For each of the 5 challenges you solved, reference the relevant OWASP Cheat Sheet (https://cheatsheetseries.owasp.org/) to explain:\n- The vulnerability type\n- How it works\n- Why it's dangerous\n- How to prevent it\n\nCreate a write-up or blog post with your explanations.",
                     },
                     {
                         "title": "Propose a New Challenge for Juice Shop",
-                        "description": "Create a pull request to the OWASP Juice Shop repository with:\n- A new challenge idea\n- Description of the vulnerability\n- Suggested difficulty level\n- Implementation approach\n\nEven if not merged, this demonstrates your understanding!",
+                        "description": "Create a pull request to the OWASP Juice Shop repository (https://github.com/juice-shop/juice-shop) with:\n- A new challenge idea\n- Description of the vulnerability\n- Suggested difficulty level\n- Implementation approach\n\nEven if not merged, this demonstrates your understanding!",
                     },
                 ],
             },
@@ -69,7 +77,11 @@ Learn about common vulnerabilities through hands-on exploitation and understand 
                 "title": "Cryptography Conundrum",
                 "description": """Master cryptographic security practices by auditing applications against OWASP ASVS standards.
 
-Learn to identify weak cryptographic implementations and apply industry-standard fixes.""",
+Learn to identify weak cryptographic implementations and apply industry-standard fixes.
+
+**OWASP Projects Used:**
+- OWASP ASVS: https://owasp.org/www-project-application-security-verification-standard/
+- OWASP Cryptographic Storage Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html""",
                 "category": "owasp_security",
                 "difficulty": "advanced",
                 "badge_emoji": "🔐",
@@ -78,11 +90,11 @@ Learn to identify weak cryptographic implementations and apply industry-standard
                 "tasks": [
                     {
                         "title": "Audit Application Against ASVS Cryptographic Requirements",
-                        "description": "Select a sample application (or create one) and audit it against the OWASP ASVS cryptographic requirements. Document:\n- Which ASVS requirements are met\n- Which requirements are not met\n- Specific gaps in cryptographic implementation",
+                        "description": "Select a sample application (or create one) and audit it against the OWASP ASVS (https://owasp.org/www-project-application-security-verification-standard/) cryptographic requirements from Section V6. Download ASVS from: https://github.com/OWASP/ASVS\n\nDocument:\n- Which ASVS requirements are met\n- Which requirements are not met\n- Specific gaps in cryptographic implementation",
                     },
                     {
                         "title": "Implement Cryptographic Improvements",
-                        "description": "Based on your audit and the OWASP Cryptographic Storage Cheat Sheet, implement improvements such as:\n- Strong encryption algorithms\n- Proper key management\n- Secure random number generation\n- Password hashing with bcrypt/Argon2\n\nSubmit your code changes as a pull request or GitHub repository.",
+                        "description": "Based on your audit and the OWASP Cryptographic Storage Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html), implement improvements such as:\n- Strong encryption algorithms\n- Proper key management\n- Secure random number generation\n- Password hashing with bcrypt/Argon2\n\nSubmit your code changes as a pull request or GitHub repository.",
                     },
                     {
                         "title": "Write a Summary or Blog Post",
@@ -94,7 +106,11 @@ Learn to identify weak cryptographic implementations and apply industry-standard
                 "title": "APIs Under Fire",
                 "description": """Secure modern APIs by testing against the OWASP API Security Top 10.
 
-Learn to identify API-specific vulnerabilities and implement robust security controls.""",
+Learn to identify API-specific vulnerabilities and implement robust security controls.
+
+**OWASP Projects Used:**
+- OWASP API Security Project: https://owasp.org/www-project-api-security/
+- OWASP ZAP: https://owasp.org/www-project-zap/""",
                 "category": "owasp_security",
                 "difficulty": "intermediate",
                 "badge_emoji": "📡",
@@ -103,11 +119,11 @@ Learn to identify API-specific vulnerabilities and implement robust security con
                 "tasks": [
                     {
                         "title": "Scan API Endpoints with OWASP ZAP",
-                        "description": "Use OWASP ZAP to scan and test API endpoints. Configure ZAP for API testing and perform:\n- Authentication testing\n- Authorization testing\n- Input validation testing\n- Rate limiting checks",
+                        "description": "Use OWASP ZAP (https://www.zaproxy.org/) to scan and test API endpoints. Configure ZAP for API testing and perform:\n- Authentication testing\n- Authorization testing\n- Input validation testing\n- Rate limiting checks",
                     },
                     {
                         "title": "Test for OWASP API Security Top 10 Vulnerabilities",
-                        "description": "Systematically test the API for vulnerabilities from the OWASP API Security Top 10, including:\n- Broken Object Level Authorization\n- Broken Authentication\n- Excessive Data Exposure\n- Lack of Resources & Rate Limiting\n- Broken Function Level Authorization\n\nDocument your findings with evidence.",
+                        "description": "Systematically test the API for vulnerabilities from the OWASP API Security Top 10 (https://owasp.org/API-Security/editions/2023/en/0x11-t10/), including:\n- Broken Object Level Authorization\n- Broken Authentication\n- Excessive Data Exposure\n- Lack of Resources & Rate Limiting\n- Broken Function Level Authorization\n\nDocument your findings with evidence.",
                     },
                     {
                         "title": "Document Remediation Strategies",
@@ -119,7 +135,11 @@ Learn to identify API-specific vulnerabilities and implement robust security con
                 "title": "Hunting Secrets",
                 "description": """Identify and fix vulnerable dependencies in open source projects.
 
-Master dependency analysis and vulnerability management using OWASP Dependency-Check.""",
+Master dependency analysis and vulnerability management using OWASP Dependency-Check.
+
+**OWASP Projects Used:**
+- OWASP Dependency-Check: https://owasp.org/www-project-dependency-check/
+- OWASP Top 10: https://owasp.org/www-project-top-ten/""",
                 "category": "owasp_security",
                 "difficulty": "intermediate",
                 "badge_emoji": "🔍",
@@ -128,11 +148,11 @@ Master dependency analysis and vulnerability management using OWASP Dependency-C
                 "tasks": [
                     {
                         "title": "Run OWASP Dependency-Check on a Project",
-                        "description": "Select an open source project and run OWASP Dependency-Check to identify vulnerable dependencies. Generate a comprehensive report showing:\n- All dependencies scanned\n- Vulnerabilities found\n- CVE details\n- Severity levels",
+                        "description": "Select an open source project and run OWASP Dependency-Check (https://owasp.org/www-project-dependency-check/) to identify vulnerable dependencies. Download from: https://github.com/jeremylong/DependencyCheck/releases\n\nGenerate a comprehensive report showing:\n- All dependencies scanned\n- Vulnerabilities found\n- CVE details\n- Severity levels",
                     },
                     {
                         "title": "Map Findings to OWASP Top 10",
-                        "description": "Analyze the vulnerabilities found and map them to relevant OWASP Top 10 categories. Create a document explaining:\n- Which vulnerabilities map to which OWASP Top 10 items\n- The risk they pose\n- Priority for remediation",
+                        "description": "Analyze the vulnerabilities found and map them to relevant OWASP Top 10 (https://owasp.org/Top10/) categories. Create a document explaining:\n- Which vulnerabilities map to which OWASP Top 10 items\n- The risk they pose\n- Priority for remediation",
                     },
                     {
                         "title": "Fix a Vulnerability via Pull Request",
@@ -144,7 +164,11 @@ Master dependency analysis and vulnerability management using OWASP Dependency-C
                 "title": "Threat Modeling Journey",
                 "description": """Learn systematic threat modeling using OWASP Threat Dragon.
 
-Identify security risks early in the development lifecycle and validate against ASVS standards.""",
+Identify security risks early in the development lifecycle and validate against ASVS standards.
+
+**OWASP Projects Used:**
+- OWASP Threat Dragon: https://owasp.org/www-project-threat-dragon/
+- OWASP ASVS: https://owasp.org/www-project-application-security-verification-standard/""",
                 "category": "owasp_security",
                 "difficulty": "advanced",
                 "badge_emoji": "🌐",
@@ -153,11 +177,11 @@ Identify security risks early in the development lifecycle and validate against 
                 "tasks": [
                     {
                         "title": "Create a Threat Model with OWASP Threat Dragon",
-                        "description": "Use OWASP Threat Dragon to create a comprehensive threat model for a sample application. Include:\n- System architecture diagram\n- Trust boundaries\n- Data flows\n- Identified threats using STRIDE\n- Mitigation strategies",
+                        "description": "Use OWASP Threat Dragon (https://owasp.org/www-project-threat-dragon/) to create a comprehensive threat model for a sample application. Access the tool at: https://www.threatdragon.com/ or download from GitHub: https://github.com/OWASP/threat-dragon\n\nInclude:\n- System architecture diagram\n- Trust boundaries\n- Data flows\n- Identified threats using STRIDE\n- Mitigation strategies",
                     },
                     {
                         "title": "Perform Gap Analysis Using OWASP ASVS",
-                        "description": "Evaluate your application against OWASP ASVS requirements. Document:\n- Current security controls\n- ASVS requirements not met\n- Risk assessment for each gap\n- Recommended improvements",
+                        "description": "Evaluate your application against OWASP ASVS requirements (https://github.com/OWASP/ASVS). Document:\n- Current security controls\n- ASVS requirements not met\n- Risk assessment for each gap\n- Recommended improvements",
                     },
                     {
                         "title": "Present to the Community",
@@ -169,7 +193,11 @@ Identify security risks early in the development lifecycle and validate against 
                 "title": "Secure the CI/CD Pipeline",
                 "description": """Integrate security into your development workflow.
 
-Build a secure CI/CD pipeline with automated security testing using OWASP tools.""",
+Build a secure CI/CD pipeline with automated security testing using OWASP tools.
+
+**OWASP Projects Used:**
+- OWASP ZAP: https://owasp.org/www-project-zap/
+- OWASP DevSecOps Guideline: https://owasp.org/www-project-devsecops-guideline/""",
                 "category": "owasp_security",
                 "difficulty": "advanced",
                 "badge_emoji": "🏗️",
@@ -178,7 +206,7 @@ Build a secure CI/CD pipeline with automated security testing using OWASP tools.
                 "tasks": [
                     {
                         "title": "Integrate OWASP ZAP into CI/CD Pipeline",
-                        "description": "Set up OWASP ZAP in a CI/CD pipeline (GitHub Actions, GitLab CI, Jenkins, etc.). Configure:\n- Automated baseline scans\n- Full scans on branches\n- Scan result reporting\n- Build failure on critical findings",
+                        "description": "Set up OWASP ZAP (https://www.zaproxy.org/) in a CI/CD pipeline (GitHub Actions, GitLab CI, Jenkins, etc.). Use the official ZAP Docker images: https://www.zaproxy.org/docs/docker/\n\nConfigure:\n- Automated baseline scans\n- Full scans on branches\n- Scan result reporting\n- Build failure on critical findings",
                     },
                     {
                         "title": "Run and Document Automated Scans",
@@ -186,7 +214,7 @@ Build a secure CI/CD pipeline with automated security testing using OWASP tools.
                     },
                     {
                         "title": "Apply OWASP DevSecOps Guidelines",
-                        "description": "Implement additional security controls based on OWASP DevSecOps guidelines:\n- Dependency scanning\n- Secret detection\n- SAST tools\n- Container security scanning\n- Security gates in deployment\n\nProvide configuration files and documentation.",
+                        "description": "Implement additional security controls based on OWASP DevSecOps guidelines (https://owasp.org/www-project-devsecops-guideline/):\n- Dependency scanning (OWASP Dependency-Check)\n- Secret detection\n- SAST tools\n- Container security scanning\n- Security gates in deployment\n\nProvide configuration files and documentation.",
                     },
                 ],
             },
@@ -194,7 +222,11 @@ Build a secure CI/CD pipeline with automated security testing using OWASP tools.
                 "title": "Web Crawler Challenge",
                 "description": """Master web application reconnaissance and testing.
 
-Use OWASP ZAP's spidering capabilities combined with systematic testing methodologies.""",
+Use OWASP ZAP's spidering capabilities combined with systematic testing methodologies.
+
+**OWASP Projects Used:**
+- OWASP ZAP: https://owasp.org/www-project-zap/
+- OWASP Web Security Testing Guide: https://owasp.org/www-project-web-security-testing-guide/""",
                 "category": "owasp_security",
                 "difficulty": "beginner",
                 "badge_emoji": "🕸️",
@@ -203,11 +235,11 @@ Use OWASP ZAP's spidering capabilities combined with systematic testing methodol
                 "tasks": [
                     {
                         "title": "Spider a Web Application with OWASP ZAP",
-                        "description": "Use OWASP ZAP's spidering feature to comprehensively map a web application. Configure and run:\n- Traditional spider\n- Ajax spider for modern applications\n- Authenticated spidering\n\nExport and document the site map.",
+                        "description": "Use OWASP ZAP's (https://www.zaproxy.org/) spidering feature to comprehensively map a web application. Configure and run:\n- Traditional spider\n- Ajax spider for modern applications\n- Authenticated spidering\n\nExport and document the site map.",
                     },
                     {
                         "title": "Apply OWASP Web Security Testing Guide Tests",
-                        "description": "Using the OWASP Web Security Testing Guide, perform manual tests on the discovered endpoints. Focus on:\n- Input validation\n- Authentication mechanisms\n- Session management\n- Access controls\n- Business logic\n\nDocument your testing methodology and findings.",
+                        "description": "Using the OWASP Web Security Testing Guide (https://owasp.org/www-project-web-security-testing-guide/), perform manual tests on the discovered endpoints. Download the guide: https://github.com/OWASP/wstg/releases\n\nFocus on:\n- Input validation\n- Authentication mechanisms\n- Session management\n- Access controls\n- Business logic\n\nDocument your testing methodology and findings.",
                     },
                     {
                         "title": "Report and Fix an Issue",
@@ -219,7 +251,11 @@ Use OWASP ZAP's spidering capabilities combined with systematic testing methodol
                 "title": "Privacy Shield",
                 "description": """Protect user privacy through comprehensive privacy risk assessment.
 
-Implement privacy controls and secure headers based on OWASP recommendations.""",
+Implement privacy controls and secure headers based on OWASP recommendations.
+
+**OWASP Projects Used:**
+- OWASP Top 10 Privacy Risks: https://owasp.org/www-project-top-10-privacy-risks/
+- OWASP Secure Headers Project: https://owasp.org/www-project-secure-headers/""",
                 "category": "owasp_security",
                 "difficulty": "intermediate",
                 "badge_emoji": "🔒",
@@ -228,11 +264,11 @@ Implement privacy controls and secure headers based on OWASP recommendations."""
                 "tasks": [
                     {
                         "title": "Audit Website for Privacy Risks",
-                        "description": "Use the OWASP Privacy Risks Project methodology to audit a website. Identify:\n- Personal data collection points\n- Data storage locations\n- Third-party data sharing\n- Privacy policy compliance\n- GDPR/CCPA considerations",
+                        "description": "Use the OWASP Top 10 Privacy Risks Project (https://owasp.org/www-project-top-10-privacy-risks/) methodology to audit a website. Identify:\n- Personal data collection points\n- Data storage locations\n- Third-party data sharing\n- Privacy policy compliance\n- GDPR/CCPA considerations",
                     },
                     {
                         "title": "Implement Secure Headers",
-                        "description": "Based on the OWASP Secure Headers Project, implement recommended security headers:\n- Content-Security-Policy\n- Strict-Transport-Security\n- X-Frame-Options\n- X-Content-Type-Options\n- Referrer-Policy\n- Permissions-Policy\n\nProvide configuration and code changes.",
+                        "description": "Based on the OWASP Secure Headers Project (https://owasp.org/www-project-secure-headers/), implement recommended security headers:\n- Content-Security-Policy\n- Strict-Transport-Security\n- X-Frame-Options\n- X-Content-Type-Options\n- Referrer-Policy\n- Permissions-Policy\n\nProvide configuration and code changes.",
                     },
                     {
                         "title": "Demonstrate Improvements with Before/After Scans",
@@ -244,7 +280,11 @@ Implement privacy controls and secure headers based on OWASP recommendations."""
                 "title": "Mobile Security Odyssey",
                 "description": """Secure mobile applications using OWASP mobile security resources.
 
-Test mobile apps against the Mobile Application Security Verification Standard.""",
+Test mobile apps against the Mobile Application Security Verification Standard.
+
+**OWASP Projects Used:**
+- OWASP Mobile Security Testing Guide: https://owasp.org/www-project-mobile-security-testing-guide/
+- OWASP MASVS: https://owasp.org/www-project-mobile-app-security/""",
                 "category": "owasp_security",
                 "difficulty": "advanced",
                 "badge_emoji": "📱",
@@ -253,11 +293,11 @@ Test mobile apps against the Mobile Application Security Verification Standard."
                 "tasks": [
                     {
                         "title": "Perform Mobile Security Tests",
-                        "description": "Using the OWASP Mobile Security Testing Guide (MSTG), perform security testing on a mobile application. Test for:\n- Insecure data storage\n- Weak cryptography\n- Insecure communication\n- Authentication/authorization issues\n- Code quality issues\n- Reverse engineering protections\n\nDocument your testing setup and methodology.",
+                        "description": "Using the OWASP Mobile Security Testing Guide (https://owasp.org/www-project-mobile-security-testing-guide/), perform security testing on a mobile application. Access the guide: https://mobile-security.gitbook.io/mobile-security-testing-guide/\n\nTest for:\n- Insecure data storage\n- Weak cryptography\n- Insecure communication\n- Authentication/authorization issues\n- Code quality issues\n- Reverse engineering protections\n\nDocument your testing setup and methodology.",
                     },
                     {
                         "title": "Cross-Reference with OWASP MASVS",
-                        "description": "Map your findings to the OWASP Mobile Application Security Verification Standard (MASVS). Create a compliance report showing:\n- MASVS requirements tested\n- Pass/fail status for each requirement\n- Evidence for findings\n- Risk assessment",
+                        "description": "Map your findings to the OWASP Mobile Application Security Verification Standard (https://github.com/OWASP/owasp-masvs). Create a compliance report showing:\n- MASVS requirements tested\n- Pass/fail status for each requirement\n- Evidence for findings\n- Risk assessment",
                     },
                     {
                         "title": "Propose Fixes for Vulnerabilities",
