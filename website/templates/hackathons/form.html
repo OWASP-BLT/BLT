@@ -12,7 +12,6 @@
                 <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ title }}</h1>
                 <p class="text-lg text-gray-600">Configure your hackathon details and settings</p>
             </div>
-            
             <div class="bg-white rounded-xl shadow-lg p-8">
                 <form method="post" enctype="multipart/form-data" class="space-y-10">
                     {% csrf_token %}
@@ -21,10 +20,7 @@
                     {% endif %}
                     <!-- Basic Information Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">
-                            Basic Information
-                        </h2>
-                        
+                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Basic Information</h2>
                         <!-- Name -->
                         <div>
                             <label for="{{ form.name.id_for_label }}"
@@ -34,7 +30,6 @@
                             {{ form.name }}
                             {% if form.name.errors %}<p class="mt-2 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
                         </div>
-                        
                         <!-- Organization -->
                         <div>
                             <label for="{{ form.organization.id_for_label }}"
@@ -45,7 +40,6 @@
                             {% if form.organization.errors %}<p class="mt-2 text-sm text-red-600">{{ form.organization.errors.0 }}</p>{% endif %}
                             <p class="mt-2 text-sm text-gray-600">Only organizations where you are an admin or manager are shown.</p>
                         </div>
-                        
                         <!-- Description -->
                         <div>
                             <label for="{{ form.description.id_for_label }}"
@@ -58,10 +52,7 @@
                     </div>
                     <!-- Schedule & Settings Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">
-                            Schedule & Settings
-                        </h2>
-                        
+                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Schedule & Settings</h2>
                         <!-- Time Section -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Start Time -->
@@ -83,7 +74,6 @@
                                 {% if form.end_time.errors %}<p class="mt-2 text-sm text-red-600">{{ form.end_time.errors.0 }}</p>{% endif %}
                             </div>
                         </div>
-                        
                         <!-- Registration Settings -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Registration Open -->
@@ -107,13 +97,9 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Visual Design Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">
-                            Visual Design
-                        </h2>
-                        
+                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Visual Design</h2>
                         <!-- Banner Image -->
                         <div>
                             <label for="{{ form.banner_image.id_for_label }}"
@@ -127,13 +113,9 @@
                             {% if form.banner_image.errors %}<p class="mt-2 text-sm text-red-600">{{ form.banner_image.errors.0 }}</p>{% endif %}
                         </div>
                     </div>
-
                     <!-- Rules & Guidelines Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">
-                            Rules & Guidelines
-                        </h2>
-                        
+                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Rules & Guidelines</h2>
                         <!-- Rules -->
                         <div>
                             <label for="{{ form.rules.id_for_label }}"
@@ -149,7 +131,6 @@
                         <p class="text-sm text-gray-600">
                             Configure which repositories will be part of this hackathon. Pull requests to these repositories during the hackathon period will be counted.
                         </p>
-                        
                         <!-- Existing Repositories -->
                         <div>
                             <label for="{{ form.repositories.id_for_label }}"
@@ -162,16 +143,11 @@
                                     <p class="text-sm text-gray-600">Loading repositories...</p>
                                 </div>
                                 <div id="no-repositories-message" class="mt-2 hidden">
-                                    <p class="text-sm text-gray-600">
-                                        No existing repositories found. You can add new ones below.
-                                    </p>
+                                    <p class="text-sm text-gray-600">No existing repositories found. You can add new ones below.</p>
                                 </div>
                             </div>
-                            {% if form.repositories.errors %}
-                                <p class="mt-2 text-sm text-red-600">{{ form.repositories.errors.0 }}</p>
-                            {% endif %}
+                            {% if form.repositories.errors %}<p class="mt-2 text-sm text-red-600">{{ form.repositories.errors.0 }}</p>{% endif %}
                         </div>
-
                         <!-- New Repositories -->
                         <div>
                             <label for="{{ form.new_repo_urls.id_for_label }}"
@@ -182,9 +158,7 @@
                             {% if form.new_repo_urls.errors %}
                                 <p class="mt-2 text-sm text-red-600">{{ form.new_repo_urls.errors.0 }}</p>
                             {% endif %}
-                            <p class="mt-2 text-sm text-gray-600">
-                                {{ form.new_repo_urls.help_text }}
-                            </p>
+                            <p class="mt-2 text-sm text-gray-600">{{ form.new_repo_urls.help_text }}</p>
                             <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p class="text-sm text-blue-800">
                                     <strong>Tip:</strong> Enter one GitHub repository URL per line. New repositories will be created and automatically added to this hackathon.
@@ -194,33 +168,23 @@
                     </div>
                     <!-- Sponsorship Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">
-                            Sponsorship Information
-                        </h2>
-                        <p class="text-sm text-gray-600">
-                            Provide sponsorship details to attract potential sponsors for your hackathon
-                        </p>
-                        
+                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Sponsorship Information</h2>
+                        <p class="text-sm text-gray-600">Provide sponsorship details to attract potential sponsors for your hackathon</p>
                         <!-- Sponsor Note -->
                         <div>
                             <label for="{{ form.sponsor_note.id_for_label }}"
                                    class="block text-lg font-semibold text-gray-900 mb-2">Sponsorship Note</label>
                             {{ form.sponsor_note }}
                             {% if form.sponsor_note.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_note.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600">
-                                Describe sponsorship opportunities and benefits for this hackathon
-                            </p>
+                            <p class="mt-2 text-sm text-gray-600">Describe sponsorship opportunities and benefits for this hackathon</p>
                         </div>
-                        
                         <!-- Sponsor Link -->
                         <div>
                             <label for="{{ form.sponsor_link.id_for_label }}"
                                    class="block text-lg font-semibold text-gray-900 mb-2">Sponsorship Link</label>
                             {{ form.sponsor_link }}
                             {% if form.sponsor_link.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_link.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600">
-                                URL to your sponsorship information page or application form
-                            </p>
+                            <p class="mt-2 text-sm text-gray-600">URL to your sponsorship information page or application form</p>
                         </div>
                     </div>
                     <!-- Submit Button -->
@@ -243,10 +207,10 @@
 {% endblock content %}
 {% block scripts %}
     {% if form.instance.pk %}
-    <script>
+        <script>
         // Store selected repositories for editing mode
         window.selectedRepositories = [{% for repo in form.instance.repositories.all %}{{ repo.id }}{% if not forloop.last %},{% endif %}{% endfor %}];
-    </script>
+        </script>
     {% endif %}
     <script src="{% static 'js/hackathon_form.js' %}"></script>
 {% endblock scripts %}
