@@ -1,7 +1,8 @@
+import logging
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
-import logging
 
 from website.models import GitHubIssue, JoinRequest, Kudos, Notification, Points, Post, User, UserBadge
 
