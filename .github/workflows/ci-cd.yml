@@ -42,6 +42,12 @@ jobs:
         with:
           python-version: 3.11.2
 
+      - name: Install Poetry (official installer)
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          poetry --version
+
       - name: Get Poetry cache directory
         id: poetry-cache
         run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
@@ -75,16 +81,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
-      - name: Install Poetry
-        run: pip install poetry
+      - name: Install Poetry (official installer)
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          poetry --version
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential libgmp-dev
 
-      - name: Install dependencies
-        run: poetry install --with dev
-
-      - run: poetry install --with dev
+      - name: Install dependencies (with dev)
+        run: |
+          poetry config virtualenvs.create false --local || true
+          poetry install --no-interaction --no-ansi --with dev
 
       - name: Run pre-commit
-        uses: pre-commit/action@v3.0.1
+        run: |
+          poetry run pre-commit run --all-files
       - name: Print memory usage
         run: free -h
 
@@ -102,13 +114,24 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+
+      - name: Install Poetry (official installer)
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          poetry --version
+
+      - name: Install dependencies (with dev)
+        run: |
+          poetry config virtualenvs.create false --local || true
+          poetry install --no-interaction --no-ansi --with dev
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
-      - run: pip install poetry
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver build-essential libgmp-dev
       - run: poetry lock
-      - run: poetry install --with dev
+      - run: poetry install --no-interaction --no-ansi --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast

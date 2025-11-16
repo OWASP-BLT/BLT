@@ -1,5 +1,6 @@
-import requests
 import re
+
+import requests
 from bs4 import BeautifulSoup
 from django.core.mail import send_mail
 from django.utils import timezone
@@ -37,17 +38,17 @@ class Command(LoggedBaseCommand):
                     found_emails = []
 
                 if found_emails:
-                
-                    self.stdout.write(self.style.SUCCESS(f"[PII Found] {monitor.url}: {len(found_emails)} email(s) detected"))
-                    
-                 
+                    self.stdout.write(
+                        self.style.SUCCESS(f"[PII Found] {monitor.url}: {len(found_emails)} email(s) detected")
+                    )
+
                     existing_notes = getattr(monitor, "notes", None) or ""
-                    existing_emails_raw = set(re.findall(r'Found email\(s\): ([^;]+)', existing_notes))
-                    
+                    existing_emails_raw = set(re.findall(r"Found email\(s\): ([^;]+)", existing_notes))
+
                     existing_flat = set()
                     for email_list in existing_emails_raw:
-                        existing_flat.update(e.strip() for e in email_list.split(','))
-                    
+                        existing_flat.update(e.strip() for e in email_list.split(","))
+
                     new_emails = [e for e in found_emails if e not in existing_flat]
                     if new_emails:
                         email_note = f"Found email(s): {', '.join(new_emails)}; "
@@ -57,7 +58,7 @@ class Command(LoggedBaseCommand):
                     self.stdout.write(f"    No emails detected on {monitor.url}")
 
                 # Keyword presence check (case-insensitive / regex support).
-                reachable = bool(response.status_code and response.status_code < 400) # Fix: Use bool()
+                reachable = bool(response.status_code and response.status_code < 400)  # Fix: Use bool()
                 if not monitor.keyword or not str(monitor.keyword).strip():
                     new_status = "UP" if reachable else "DOWN"
                     self.stdout.write(f"    No keyword configured; reachable={reachable} -> status {new_status}")
@@ -67,7 +68,7 @@ class Command(LoggedBaseCommand):
                         pattern = keyword[1:-1]
                         try:
                             found = bool(re.search(pattern, page_text, re.IGNORECASE))
-                        except re.error as e: # Fix: Narrow exception
+                        except re.error as e:  # Fix: Narrow exception
                             self.stderr.write(f"    Invalid regex pattern '{pattern}': {e}")
                             found = False
                     else:
@@ -77,7 +78,7 @@ class Command(LoggedBaseCommand):
                         self.stdout.write(f"    Keyword not found: '{keyword}'")
                         try:
                             snippet = " ".join(page_text.strip().split())[:500]
-                        except (AttributeError, TypeError): # Fix: Narrow exception
+                        except (AttributeError, TypeError):  # Fix: Narrow exception
                             snippet = page_text[:200]
                         self.stdout.write(f"    Page snippet: {snippet!s}")
                         found_in_html = keyword.lower() in (response.text or "").lower()
@@ -106,7 +107,9 @@ class Command(LoggedBaseCommand):
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
             except requests.exceptions.HTTPError:
-                self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response"))
+                self.stderr.write(
+                    self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response")
+                )
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
@@ -115,7 +118,7 @@ class Command(LoggedBaseCommand):
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
-            except Exception as e: 
+            except Exception as e:
                 self.stderr.write(
                     self.style.ERROR(
                         f"Error monitoring {monitor.url}: unexpected error during check - {type(e).__name__}: {e}. "
