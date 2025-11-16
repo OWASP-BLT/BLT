@@ -1115,6 +1115,9 @@ class Project(models.Model):
     url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
+    slack = models.URLField(null=True, blank=True)
+    slack_channel = models.CharField(max_length=255, blank=True, null=True)
+    slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
@@ -1554,7 +1557,7 @@ class ContributorStats(models.Model):
         unique_together = ("contributor", "repo", "date", "granularity")
 
     def __str__(self):
-        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        return f"{self.contributor.name} in {self.repo.name} on {self.date} [{self.granularity}]"
 
 
 class SlackBotActivity(models.Model):
@@ -2346,7 +2349,7 @@ class HackathonSponsor(models.Model):
         unique_together = ("hackathon", "organization")
 
     def __str__(self):
-        return f"{self.organization.name} - {self.get_sponsor_level_display()} " f"sponsor for {self.hackathon.name}"
+        return f"{self.organization.name} - {self.get_sponsor_level_display()} sponsor for {self.hackathon.name}"
 
 
 class HackathonPrize(models.Model):
