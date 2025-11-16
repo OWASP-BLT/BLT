@@ -424,6 +424,9 @@ class Hunt(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def get_absolute_url(self):
+        return reverse("organization_detail", kwargs={"slug": self.domain.organization.slug})
+
 
 class HuntPrize(models.Model):
     hunt = models.ForeignKey(Hunt, on_delete=models.CASCADE)
