@@ -985,9 +985,6 @@ class HuntCreate(CreateView):
 
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
-        
-    def get_success_url(self):
-        return reverse('organization_dashboard_hunt_detail', kwargs={'pk': self.object.pk})
 
     def get_success_url(self):
         try:
