@@ -79,13 +79,26 @@ jobs:
           python-version: 3.11.2
       - name: Run pre-commit
         id: pre-commit
-        uses: pre-commit/action@v3.0.1
+        run: |
+          pip install pre-commit
+          set +e
+          pre-commit run --all-files > pre-commit-output.txt 2>&1
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          set -e
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: github.event_name == 'pull_request' && steps.pre-commit.outcome == 'failure'
+        if: github.event_name == 'pull_request' && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
+            
+            // Get last 100 lines of output
+            const lines = precommitOutput.split('\n');
+            const last100Lines = lines.slice(-100).join('\n');
+            const truncated = lines.length > 100;
+            
             const message = `## ❌ Pre-commit checks failed
             
             The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
@@ -109,6 +122,15 @@ jobs:
             pre-commit install
             \`\`\`
             
+            <details>
+            <summary>Pre-commit output${truncated ? ' (last 100 lines)' : ''}</summary>
+            
+            \`\`\`
+            ${last100Lines}
+            \`\`\`
+            
+            </details>
+            
             For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
             
             await github.rest.issues.createComment({
@@ -117,8 +139,87 @@ jobs:
               issue_number: context.issue.number,
               body: message
             });
+      - name: Add pre-commit status label
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            // Determine label based on pre-commit outcome
+            const preCommitOutcome = '${{ steps.pre-commit.outcome }}';
+            const newLabel = preCommitOutcome === 'success' ? 'pre-commit: passed' : 'pre-commit: failed';
+            const labelColor = preCommitOutcome === 'success' ? '0e8a16' : 'e74c3c';  // Green or Red
+            const description = preCommitOutcome === 'success' ? 'Pre-commit checks passed' : 'Pre-commit checks failed';
+            
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+            
+            // Remove any existing pre-commit labels
+            const preCommitRegex = /^pre-commit:/i;
+            for (const name of currentNames) {
+              if (preCommitRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+            
+            // Ensure the new label exists (create if missing)
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            await ensureLabelExists(newLabel);
+            
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
+              await github.rest.issues.addLabels({ 
+                owner, 
+                repo, 
+                issue_number: pull_number, 
+                labels: [newLabel] 
+              });
+              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+            }
+            
+            core.info(`Pre-commit outcome: ${preCommitOutcome}`);
       - name: Fail the job if pre-commit failed
-        if: steps.pre-commit.outcome == 'failure'
+        if: steps.pre-commit.outputs.exit_code != '0'
         run: exit 1
       - name: Print memory usage
         run: free -h
