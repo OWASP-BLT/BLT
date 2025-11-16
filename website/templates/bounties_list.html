@@ -177,8 +177,8 @@
         </div>
         <div class="w-[97%] p-5 mt-4 rounded-lg bg-white shadow-md">
             <form action="#" method="get">
-                <div class="relative flex justify-between">
-                    <div class="relative w-[90%]">
+                <div class="relative flex items-center gap-3">
+                    <div class="relative w-full">
                         <div class="absolute flex items-center ml-2 h-full">
                             <svg class="w-10 h-4 fill-current text-primary-gray-dark"
                                  viewBox="0 0 16 16"
@@ -192,14 +192,14 @@
                                id="search"
                                type="text"
                                placeholder="Search for bounties or issues"
-                               class="px-14 py-5 w-full rounded-md bg-gray-100 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 text-xl">
+                               class="block w-full py-4 pl-12 pr-32 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none placeholder:text-lg focus:bg-white">
+                        <button type="submit"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white text-lg font-medium rounded-md">
+                            {% trans "Search" %}
+                        </button>
                     </div>
-                    <button type="submit"
-                            class="px-8 bg-red-500 hover:bg-red-600 text-white text-2xl font-medium rounded-md transition duration-300">
-                        {% trans "Search" %}
-                    </button>
                 </div>
-                <div class="flex items-center text-4xl justify-between mt-10">
+                <div class="flex items-center text-2xl justify-between mt-8">
                     <p class="font-medium">{% trans "Filter Results" %}</p>
                 </div>
                 <div>
@@ -221,10 +221,10 @@
                         <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.7.0/datepicker.min.js"
                                 integrity="sha384-sMp3hQy59Ay78X8c2o+5dDPZUFdUdYUKT8tbVKVfeyA735e1vIlRsH5vsjbHMDLX"
                                 crossorigin="anonymous"></script>
-                        <div date-rangepicker class="flex items-center">
+                        <div date-rangepicker class="flex items-center col-span-2">
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <svg class="w-7 h-7 text-gray-500"
+                                    <svg class="w-5 h-5 text-gray-500"
                                          aria-hidden="true"
                                          xmlns="http://www.w3.org/2000/svg"
                                          fill="currentColor"
@@ -235,13 +235,14 @@
                                 <input name="start_date"
                                        id="start_date"
                                        type="text"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-xl placeholder:text-xl rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-14 p-3"
+                                       autocomplete="off"
+                                       class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-base bg-gray-50 cursor-pointer placeholder:text-lg"
                                        placeholder="Select date start">
                             </div>
                             <span class="mx-4 text-gray-500">to</span>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <svg class="w-7 h-7 text-gray-500"
+                                    <svg class="w-5 h-5 text-gray-500"
                                          aria-hidden="true"
                                          xmlns="http://www.w3.org/2000/svg"
                                          fill="currentColor"
@@ -252,7 +253,8 @@
                                 <input name="end_date"
                                        id="end_date"
                                        type="text"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-xl placeholder:text-xl rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-14 p-3"
+                                       autocomplete="off"
+                                       class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-base bg-gray-50 cursor-pointer placeholder:text-lg"
                                        placeholder="Select date end">
                             </div>
                         </div>
