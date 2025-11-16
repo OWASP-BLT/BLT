@@ -181,7 +181,13 @@ def create_github_issue(request, id):
     if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
-            screenshot_text += f"![{screenshot.image.name}]({settings.FQDN}{screenshot.image.url})\n"
+            # Get the image URL
+            image_url = screenshot.image.url
+            # Check if URL is already absolute (e.g., from Google Cloud Storage)
+            if not image_url.startswith(("http://", "https://")):
+                # Relative URL, prepend the domain with https protocol
+                image_url = f"https://{settings.FQDN}{image_url}"
+            screenshot_text += f"![{screenshot.image.name}]({image_url})\n"
 
         github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
         from giturlparse import parse as parse_github_url
@@ -223,7 +229,12 @@ def create_github_issue(request, id):
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": f"Failed: error is {e}"})
+            return JsonResponse(
+                {
+                    "status": "Failed",
+                    "status_reason": "Failed to create GitHub issue. Please check your GitHub settings.",
+                }
+            )
     else:
         return JsonResponse(
             {

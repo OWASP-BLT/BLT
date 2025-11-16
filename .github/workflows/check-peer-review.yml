@@ -1,0 +1,137 @@
+name: Check Peer Review
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  pull_request_review:
+    types:
+      - submitted
+      - dismissed
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+
+jobs:
+  check_peer_review:
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != 'DonnieBLT'
+      && github.actor != 'Copilot'
+      && github.actor != 'copilot-swe-agent[bot]'
+    steps:
+      - name: Check for Peer Review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get PR number (available for both pull_request and pull_request_review events)
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          
+          # Parse repository owner and name
+          REPO_FULL="${{ github.repository }}"
+          REPO_OWNER="${REPO_FULL%/*}"
+          REPO_NAME="${REPO_FULL#*/}"
+          
+          echo "Checking peer review for PR #$PR_NUMBER in $REPO_OWNER/$REPO_NAME"
+          
+          # Get PR details to find the author
+          PR_RESPONSE=$(curl -s -X GET \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER")
+          
+          PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.user.login')
+          echo "PR Author: $PR_AUTHOR"
+          
+          # Get all reviews for the PR
+          REVIEWS_RESPONSE=$(curl -s -X GET \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/reviews")
+          
+          # Check if the API request was successful
+          if [[ "$REVIEWS_RESPONSE" == *"message"*"Not Found"* ]] || [[ "$REVIEWS_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+            echo "Error: Could not fetch PR reviews. Response: $REVIEWS_RESPONSE"
+            exit 1
+          fi
+          
+          # Define excluded users (users whose reviews don't count as valid peer reviews)
+          EXCLUDED_USERS=("$PR_AUTHOR" "DonnieBLT" "coderabbit[bot]")
+          
+          # Extract reviewer usernames from APPROVED reviews only
+          # Filter out the PR author, specific excluded users, and any user with "copilot" in their username
+          VALID_REVIEWERS=$(echo "$REVIEWS_RESPONSE" | jq -r --arg author "$PR_AUTHOR" \
+            '.[] | 
+            select(.state == "APPROVED") | 
+            select(.user.login != $author) | 
+            select(.user.login != "DonnieBLT") | 
+            select(.user.login != "coderabbit[bot]") | 
+            select(.user.login | contains("copilot") | not) | 
+            .user.login' | sort -u)
+          
+          echo "Reviews found: $(echo "$REVIEWS_RESPONSE" | jq length)"
+          echo "Valid approved reviewers (excluding author, DonnieBLT, coderabbit, and copilot): $VALID_REVIEWERS"
+          
+          # Check if there are any valid reviewers
+          if [ -z "$VALID_REVIEWERS" ]; then
+            echo "No peer review found from a valid reviewer."
+            
+            # Check if we already posted a comment
+            COMMENTS_RESPONSE=$(curl -s -X GET \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments")
+            
+            # Check if a comment about peer review already exists (using a unique marker)
+            EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("<!-- peer-review-check -->")) | .id' | head -n 1)
+            
+            if [ -z "$EXISTING_COMMENT" ]; then
+              echo "Posting comment to request peer review..."
+              
+              # Create JSON payload for the comment with a unique marker
+              jq -n \
+                --arg body "<!-- peer-review-check -->
+          👋 Hi @${PR_AUTHOR}!
+
+          This pull request needs a peer review before it can be merged. Please request a review from a team member who is not:
+          - The PR author
+          - DonnieBLT
+          - coderabbit
+          - copilot
+
+          Once a valid peer review is submitted, this check will pass automatically. Thank you!" \
+                '{body: $body}' > /tmp/comment.json
+              
+              POST_COMMENT_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments" \
+                -d @/tmp/comment.json)
+              
+              HTTP_CODE=$(echo "$POST_COMMENT_RESPONSE" | tail -n 1)
+              RESPONSE_BODY=$(echo "$POST_COMMENT_RESPONSE" | sed '$d')
+              
+              if [ "$HTTP_CODE" -eq 201 ]; then
+                echo "Comment posted successfully."
+              else
+                echo "Failed to post comment. HTTP Code: $HTTP_CODE, Response: $RESPONSE_BODY"
+              fi
+            else
+              echo "Comment about peer review already exists (ID: $EXISTING_COMMENT)."
+            fi
+            
+            echo "Peer review check failed: No valid peer review found."
+            exit 1
+          else
+            echo "Peer review check passed: Valid reviewers found: $VALID_REVIEWERS"
+            exit 0
+          fi
