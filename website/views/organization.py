@@ -547,7 +547,7 @@ class Listbounties(TemplateView):
             "domains": Domain.objects.values("id", "name").all(),
             "github_issues": github_issues,
             "current_page": 1,
-            "total_issues_count": total_count,
+            "total_github_issues": total_count,
             "has_more_pages": has_more_pages,
             "selected_issue_state": issue_state,
             "total_issues_count": total_issues_count,
