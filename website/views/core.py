@@ -1346,9 +1346,52 @@ def home(request):
     )
 
     # Get 2 most recent active hackathons ordered by start time (descending)
-    recent_hackathons = (
+    recent_hackathons_raw = (
         Hackathon.objects.filter(is_active=True).select_related("organization").order_by("-start_time")[:2]
     )
+
+    # Add statistics to each hackathon
+    recent_hackathons = []
+    for hackathon in recent_hackathons_raw:
+        repo_ids = hackathon.repositories.values_list("id", flat=True)
+
+        # Count merged pull requests during the hackathon
+        merged_prs = GitHubIssue.objects.filter(
+            repo__in=repo_ids,
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=hackathon.start_time,
+            merged_at__lte=hackathon.end_time,
+        )
+        merged_pr_count = merged_prs.count()
+
+        # Count total pull requests during the hackathon
+        total_prs = GitHubIssue.objects.filter(
+            repo__in=repo_ids,
+            type="pull_request",
+            created_at__gte=hackathon.start_time,
+            created_at__lte=hackathon.end_time,
+        ).count()
+
+        # Count unique participants (user profiles and contributors, excluding bots)
+        user_profile_count = merged_prs.exclude(user_profile=None).values("user_profile").distinct().count()
+        contributor_count = (
+            merged_prs.filter(user_profile=None)
+            .exclude(contributor=None)
+            .exclude(contributor__name__endswith="[bot]")
+            .values("contributor")
+            .distinct()
+            .count()
+        )
+        participant_count = user_profile_count + contributor_count
+
+        # Add stats to hackathon object
+        hackathon.stats = {
+            "participant_count": participant_count,
+            "total_prs": total_prs,
+            "merged_pr_count": merged_pr_count,
+        }
+        recent_hackathons.append(hackathon)
 
     # Get repository star counts for the specific repositories shown on the homepage
     repo_stars = []
