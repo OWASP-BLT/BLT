@@ -233,6 +233,7 @@ from website.views.organization import (
     join_room,
     like_activity,
     load_more_issues,
+    organization_checkins,
     organization_dashboard,
     organization_dashboard_domain_detail,
     organization_dashboard_hunt_detail,
@@ -1061,6 +1062,7 @@ urlpatterns = [
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    path("organization/<slug:slug>/checkins/", organization_checkins, name="organization_checkins"),
     path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
