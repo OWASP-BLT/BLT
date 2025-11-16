@@ -188,17 +188,16 @@ def profile_edit(request):
                     defaults={"verified": False, "primary": False},
                 )
 
-                # Rate limit:
+                # Rate limit: atomic check-and-set to prevent race conditions
                 rate_key = f"email_verification_rate_{request.user.id}"
-                if cache.get(rate_key):
+
+                # add() only sets if key doesn't exist (atomic operation)
+                if not cache.add(rate_key, True, timeout=60):
                     messages.error(
                         request,
                         "You are doing that too often. Please wait a minute before trying again.",
                     )
                     return redirect("profile", slug=request.user.username)
-
-                # Set limit for 60 seconds
-                cache.set(rate_key, True, timeout=60)
 
                 # Send verification email
                 try:
