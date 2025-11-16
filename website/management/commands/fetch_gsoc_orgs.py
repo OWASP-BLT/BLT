@@ -9,7 +9,7 @@ from django.utils.text import slugify
 
 from website.models import Organization, Tag
 
-# ANSI escape codes for colors
+# ANSI escape codes for colors here
 COLOR_RED = "\033[91m"
 COLOR_GREEN = "\033[92m"
 COLOR_YELLOW = "\033[93m"
