@@ -9,12 +9,6 @@ on:
       - synchronize
       - reopened
       - ready_for_review
-  # Also run when the base branch is updated
-  push:
-    branches:
-      - main
-      - master
-      - develop
 
 permissions:
   contents: write
@@ -33,179 +27,155 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             
-            // If triggered by push to base branch, check all open PRs
-            let pullRequests = [];
-            
-            if (context.eventName === 'push') {
-              const branch = context.ref.replace('refs/heads/', '');
-              core.info(`Push event detected on branch: ${branch}`);
-              
-              // Get all open PRs targeting this branch
-              const { data: prs } = await github.rest.pulls.list({
-                owner,
-                repo,
-                state: 'open',
-                base: branch,
-                per_page: 100,
-              });
-              
-              pullRequests = prs;
-              core.info(`Found ${pullRequests.length} open PR(s) targeting ${branch}`);
-            } else {
-              // For pull_request_target events, process the current PR
-              const pr = context.payload.pull_request;
-              if (!pr) {
-                core.info('No pull_request in context. Skipping.');
-                return;
-              }
-              pullRequests = [pr];
+            // Get the current PR from context
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request in context. Skipping.');
+              return;
             }
             
-            // Process each PR
-            for (const pr of pullRequests) {
-              const pull_number = pr.number;
-              core.info(`Processing PR #${pull_number}`);
-              
-              // Get the latest PR data to check mergeable state
-              const { data: prData } = await github.rest.pulls.get({
-                owner,
-                repo,
-                pull_number,
-              });
-              
-              const hasConflicts = prData.mergeable === false;
-              const isDraft = prData.draft;
-              const prAuthor = prData.user.login;
-              
-              core.info(`PR #${pull_number}: mergeable=${prData.mergeable}, draft=${isDraft}, conflicts=${hasConflicts}`);
-              
-              // Define the conflict label
-              const conflictLabel = 'has-conflicts';
-              const conflictLabelColor = 'e74c3c'; // Red (project's preferred red color)
-              const conflictLabelDescription = 'PR has merge conflicts that need to be resolved';
-              
-              // Get current labels on the PR
-              const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
-                owner,
-                repo,
-                issue_number: pull_number,
-                per_page: 100,
-              });
-              const currentLabelNames = new Set(currentLabels.map(l => l.name));
-              const hasConflictLabel = currentLabelNames.has(conflictLabel);
-              
-              // Ensure the conflict label exists in the repo
-              async function ensureLabelExists() {
-                try {
-                  await github.rest.issues.getLabel({ owner, repo, name: conflictLabel });
-                } catch (e) {
-                  if (e.status === 404) {
-                    await github.rest.issues.createLabel({
-                      owner,
-                      repo,
-                      name: conflictLabel,
-                      color: conflictLabelColor,
-                      description: conflictLabelDescription,
-                    });
-                    core.info(`Created label: ${conflictLabel}`);
-                  } else {
-                    throw e;
-                  }
+            const pull_number = pr.number;
+            core.info(`Processing PR #${pull_number}`);
+            
+            // Get the latest PR data to check mergeable state
+            const { data: prData } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number,
+            });
+            
+            const hasConflicts = prData.mergeable === false;
+            const isDraft = prData.draft;
+            const prAuthor = prData.user.login;
+            
+            core.info(`PR #${pull_number}: mergeable=${prData.mergeable}, draft=${isDraft}, conflicts=${hasConflicts}`);
+            
+            // Define the conflict label
+            const conflictLabel = 'has-conflicts';
+            const conflictLabelColor = 'e74c3c'; // Red (project's preferred red color)
+            const conflictLabelDescription = 'PR has merge conflicts that need to be resolved';
+            
+            // Get current labels on the PR
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            const currentLabelNames = new Set(currentLabels.map(l => l.name));
+            const hasConflictLabel = currentLabelNames.has(conflictLabel);
+            
+            // Ensure the conflict label exists in the repo
+            async function ensureLabelExists() {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: conflictLabel });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: conflictLabel,
+                    color: conflictLabelColor,
+                    description: conflictLabelDescription,
+                  });
+                  core.info(`Created label: ${conflictLabel}`);
+                } else {
+                  throw e;
                 }
               }
-              
-              await ensureLabelExists();
-              
-              // Get existing comments to check if we already commented
-              const { data: comments } = await github.rest.issues.listComments({
-                owner,
-                repo,
-                issue_number: pull_number,
-                per_page: 100,
-              });
-              
-              // Find our conflict comment (using a unique marker)
-              const conflictCommentMarker = '<!-- pr-conflict-check -->';
-              const existingConflictComment = comments.find(comment => 
-                comment.body && comment.body.includes(conflictCommentMarker)
-              );
-              
-              if (hasConflicts) {
-                // Add the conflict label if not present
-                if (!hasConflictLabel) {
-                  await github.rest.issues.addLabels({
-                    owner,
-                    repo,
-                    issue_number: pull_number,
-                    labels: [conflictLabel],
-                  });
-                  core.info(`Added label "${conflictLabel}" to PR #${pull_number}`);
-                } else {
-                  core.info(`Label "${conflictLabel}" already present on PR #${pull_number}`);
-                }
-                
-                // Add a comment if one doesn't exist
-                if (!existingConflictComment) {
-                  const commentBody = conflictCommentMarker + '\n' +
-                    '⚠️ **Merge Conflicts Detected**\n\n' +
-                    'Hi @' + prAuthor + '!\n\n' +
-                    'This pull request has merge conflicts with the base branch that need to be resolved before it can be merged.\n\n' +
-                    '**To resolve the conflicts:**\n\n' +
-                    '1. Sync your branch with the base branch:\n' +
-                    '   ```bash\n' +
-                    '   git fetch origin\n' +
-                    '   git merge origin/' + prData.base.ref + '\n' +
-                    '   ```\n\n' +
-                    '2. Resolve any conflicts in your editor\n\n' +
-                    '3. Commit the changes:\n' +
-                    '   ```bash\n' +
-                    '   git add .\n' +
-                    '   git commit -m "Resolve merge conflicts"\n' +
-                    '   git push\n' +
-                    '   ```\n\n' +
-                    'Once you push the resolved conflicts, this label and comment will be automatically updated.\n\n' +
-                    'Thank you! 🙏';
-
-                  await github.rest.issues.createComment({
-                    owner,
-                    repo,
-                    issue_number: pull_number,
-                    body: commentBody,
-                  });
-                  core.info(`Added conflict comment to PR #${pull_number}`);
-                } else {
-                  core.info(`Conflict comment already exists on PR #${pull_number}`);
-                }
+            }
+            
+            await ensureLabelExists();
+            
+            // Get existing comments to check if we already commented
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            
+            // Find our conflict comment (using a unique marker)
+            const conflictCommentMarker = '<!-- pr-conflict-check -->';
+            const existingConflictComment = comments.find(comment => 
+              comment.body && comment.body.includes(conflictCommentMarker)
+            );
+            
+            if (hasConflicts) {
+              // Add the conflict label if not present
+              if (!hasConflictLabel) {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  labels: [conflictLabel],
+                });
+                core.info(`Added label "${conflictLabel}" to PR #${pull_number}`);
               } else {
-                // No conflicts - remove label and comment if present
-                if (hasConflictLabel) {
-                  try {
-                    await github.rest.issues.removeLabel({
-                      owner,
-                      repo,
-                      issue_number: pull_number,
-                      name: conflictLabel,
-                    });
-                    core.info(`Removed label "${conflictLabel}" from PR #${pull_number}`);
-                  } catch (err) {
-                    core.warning(`Failed to remove label "${conflictLabel}": ${err.message}`);
-                  }
-                }
-                
-                // Remove the conflict comment if it exists
-                if (existingConflictComment) {
-                  try {
-                    await github.rest.issues.deleteComment({
-                      owner,
-                      repo,
-                      comment_id: existingConflictComment.id,
-                    });
-                    core.info(`Removed conflict comment from PR #${pull_number}`);
-                  } catch (err) {
-                    core.warning(`Failed to remove comment: ${err.message}`);
-                  }
-                }
-                
-                core.info(`PR #${pull_number} has no conflicts`);
+                core.info(`Label "${conflictLabel}" already present on PR #${pull_number}`);
               }
+              
+              // Add a comment if one doesn't exist
+              if (!existingConflictComment) {
+                const commentBody = conflictCommentMarker + '\n' +
+                  '⚠️ **Merge Conflicts Detected**\n\n' +
+                  'Hi @' + prAuthor + '!\n\n' +
+                  'This pull request has merge conflicts with the base branch that need to be resolved before it can be merged.\n\n' +
+                  '**To resolve the conflicts:**\n\n' +
+                  '1. Sync your branch with the base branch:\n' +
+                  '   ```bash\n' +
+                  '   git fetch origin\n' +
+                  '   git merge origin/' + prData.base.ref + '\n' +
+                  '   ```\n\n' +
+                  '2. Resolve any conflicts in your editor\n\n' +
+                  '3. Commit the changes:\n' +
+                  '   ```bash\n' +
+                  '   git add .\n' +
+                  '   git commit -m "Resolve merge conflicts"\n' +
+                  '   git push\n' +
+                  '   ```\n\n' +
+                  'Once you push the resolved conflicts, this label and comment will be automatically updated.\n\n' +
+                  'Thank you! 🙏';
+
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  body: commentBody,
+                });
+                core.info(`Added conflict comment to PR #${pull_number}`);
+              } else {
+                core.info(`Conflict comment already exists on PR #${pull_number}`);
+              }
+            } else {
+              // No conflicts - remove label and comment if present
+              if (hasConflictLabel) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: pull_number,
+                    name: conflictLabel,
+                  });
+                  core.info(`Removed label "${conflictLabel}" from PR #${pull_number}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label "${conflictLabel}": ${err.message}`);
+                }
+              }
+              
+              // Remove the conflict comment if it exists
+              if (existingConflictComment) {
+                try {
+                  await github.rest.issues.deleteComment({
+                    owner,
+                    repo,
+                    comment_id: existingConflictComment.id,
+                  });
+                  core.info(`Removed conflict comment from PR #${pull_number}`);
+                } catch (err) {
+                  core.warning(`Failed to remove comment: ${err.message}`);
+                }
+              }
+              
+              core.info(`PR #${pull_number} has no conflicts`);
             }
