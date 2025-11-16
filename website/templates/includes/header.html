@@ -7,7 +7,7 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<nav class="fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-1.5 py-2 px-1">
+<nav class="fixed top-0 z-[9999] w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-zinc-200 dark:border-gray-700 border-b md:px-4 md:py-1.5 py-2 px-1 transition-colors duration-300">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
@@ -535,10 +535,12 @@
             <!-- User Menu -->
             {% if request.user.is_authenticated %}
                 <div class="flex justify-center items-center gap-4">
+                    <!-- Dark Mode Toggle -->
+                    {% include "dark_mode_toggle.html" %}
                     <div class="relative">
                         <button id="notificationButton"
-                                class="relative py-2.5 px-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                            <i class="fa fa-bell fa-lg text-zinc-700"></i>
+                                class="relative py-2.5 px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200">
+                            <i class="fa fa-bell fa-lg text-zinc-700 dark:text-zinc-300"></i>
                             <!-- Badge is hidden by default -->
                             <span id="unreadCount"
                                   class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden">
@@ -662,7 +664,9 @@
                 </div>
             {% else %}
                 <!-- Sign up and Log in Buttons -->
-                <div class="flex items-center">
+                <div class="flex items-center gap-4">
+                    <!-- Dark Mode Toggle -->
+                    {% include "dark_mode_toggle.html" %}
                     <div class="hidden lg:flex justify-center items-center gap-4">
                         <a href="{% url 'account_signup' %}"
                            class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
