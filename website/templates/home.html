@@ -248,7 +248,7 @@
                                     </div>
                                     <p class="text-gray-600 text-sm mb-3">
                                         Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
-                                                        class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
+    class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                     </p>
                                     <p class="text-gray-700 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
                                     <div class="flex items-center text-sm text-gray-500 mb-4">
@@ -321,7 +321,7 @@
                                             <a href="{% url 'profile' profile.user.username %}"
                                                class="font-medium hover:text-[#e74c3c]">{{ profile.user.username }}</a>
                                         </div>
-                                        <span class="text-green-600 font-medium">${{ profile.winnings|floatformat:2 }}</span>
+                                        <span class="text-green-600 font-medium">${{ profile.total_earnings|floatformat:2 }}</span>
                                     </div>
                                 {% empty %}
                                     <div class="text-center text-gray-500">

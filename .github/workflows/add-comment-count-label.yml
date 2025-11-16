@@ -1,0 +1,193 @@
+name: Add Unresolved Conversations Label
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+  issue_comment:
+    types:
+      - created
+      - edited
+      - deleted
+  pull_request_review:
+    types:
+      - submitted
+      - edited
+      - dismissed
+  pull_request_review_comment:
+    types:
+      - created
+      - edited
+      - deleted
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  add_unresolved_conversations_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add Unresolved Conversations Label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let pr = context.payload.pull_request;
+            let pull_number;
+            
+            // Handle different event types
+            if (pr) {
+              pull_number = pr.number;
+            } else if (context.payload.issue && context.payload.issue.pull_request) {
+              // This is an issue_comment on a PR
+              pull_number = context.payload.issue.number;
+              // Fetch the PR details
+              const { data: prData } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pull_number,
+              });
+              pr = prData;
+            } else {
+              core.info('Not a pull request event. Skipping.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Get all review threads (conversations) using GraphQL
+            const query = `
+              query($owner: String!, $repo: String!, $pull_number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $pull_number) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        isResolved
+                        isOutdated
+                      }
+                      pageInfo {
+                        hasNextPage
+                        endCursor
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            let allThreads = [];
+            let hasNextPage = true;
+            let cursor = null;
+
+            // Paginate through all review threads
+            while (hasNextPage) {
+              const variables = {
+                owner,
+                repo,
+                pull_number,
+                ...(cursor && { after: cursor })
+              };
+              
+              const result = await github.graphql(query.replace('first: 100', cursor ? 'first: 100, after: $after' : 'first: 100'), variables);
+              const threads = result.repository.pullRequest.reviewThreads;
+              
+              allThreads = allThreads.concat(threads.nodes);
+              hasNextPage = threads.pageInfo.hasNextPage;
+              cursor = threads.pageInfo.endCursor;
+            }
+
+            // Count unresolved conversations (excluding outdated ones)
+            const unresolvedThreads = allThreads.filter(thread => !thread.isResolved && !thread.isOutdated);
+            const count = unresolvedThreads.length;
+            
+            // Determine the label based on the number of unresolved conversations
+            const newLabel = `unresolved-conversations: ${count}`;
+            
+            // Set color based on the number of unresolved conversations
+            let labelColor;
+            if (count === 0) {
+              labelColor = '0e8a16'; // Green - no unresolved conversations
+            } else if (count >= 1 && count <= 3) {
+              labelColor = 'fbca04'; // Yellow
+            } else if (count >= 4 && count <= 10) {
+              labelColor = 'ff9800'; // Orange
+            } else {
+              labelColor = 'e74c3c'; // Red (project's preferred red color)
+            }
+            
+            // Set grammatically correct description
+            const description = count === 1 ? 'PR has 1 unresolved conversation' : `PR has ${count} unresolved conversations`;
+
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+
+            // Remove any existing unresolved conversation labels
+            const commentsRegex = /^unresolved-conversations:/i;
+            for (const name of currentNames) {
+              if (commentsRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+
+            // Ensure the new label exists (create if missing)
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+            await ensureLabelExists(newLabel);
+
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
+              await github.rest.issues.addLabels({ 
+                owner, 
+                repo, 
+                issue_number: pull_number, 
+                labels: [newLabel] 
+              });
+              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+            }
+
+            // Log the count for transparency
+            core.info(`PR #${pull_number} has ${count} unresolved conversation(s) (out of ${allThreads.length} total review threads).`);
