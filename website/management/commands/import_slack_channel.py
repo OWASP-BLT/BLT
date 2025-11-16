@@ -105,9 +105,7 @@ class Command(BaseCommand):
                     project.slack_channel = channel["name"]
                     project.slack_id = channel["id"]
                     project.save()
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Updated project '{project.name}' with Slack channel")
-                    )
+                    self.stdout.write(self.style.SUCCESS(f"Updated project '{project.name}' with Slack channel"))
                     updated_count += 1
                 else:
                     # Optionally create new project (commented out by default to avoid creating unwanted projects)
@@ -127,9 +125,7 @@ class Command(BaseCommand):
                     )
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"\nProcessed Slack channels: {updated_count} updated, {created_count} created"
-            )
+            self.style.SUCCESS(f"\nProcessed Slack channels: {updated_count} updated, {created_count} created")
         )
 
     def handle(self, *args, **options):
