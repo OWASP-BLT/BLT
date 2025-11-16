@@ -1,0 +1,3 @@
+steps:
+  - run: pre-commit run --all-files
+    description: "Run pre-commit on all files before committing"
