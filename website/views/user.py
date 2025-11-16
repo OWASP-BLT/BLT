@@ -39,6 +39,7 @@ from website.models import (
     Challenge,
     Contributor,
     Domain,
+    GitHubComment,
     GitHubIssue,
     GitHubReview,
     Hunt,
@@ -626,6 +627,18 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
 
         context["top_visitors"] = top_visitors
+
+        # GitHub Comment Leaderboard
+        github_comment_leaderboard = (
+            GitHubComment.objects.values(
+                "user_profile__user__username",
+                "user_profile__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_comments=Count("id"))
+            .order_by("-total_comments")[:10]
+        )
+        context["github_comment_leaderboard"] = github_comment_leaderboard
 
         return context
 
