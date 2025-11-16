@@ -43,7 +43,7 @@
     <div class="font-sans p-5">
         <!-- Form Title -->
         <h1 id="form-title"
-            class="text-3xl font-bold text-gray-900 text-center mb-6">
+            class="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center mb-6">
             {% if form.instance.pk %}
                 Edit
             {% else %}
@@ -52,39 +52,39 @@
             Post
         </h1>
         <!-- Form Container -->
-        <div class="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 max-w-2xl mx-auto">
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 <!-- Title Field -->
                 <div class="mb-6">
                     <label for="{{ form.title.id_for_label }}"
-                           class="block font-bold text-gray-700 mb-2">{{ form.title.label }}</label>
+                           class="block font-bold text-gray-700 dark:text-gray-300 mb-2">{{ form.title.label }}</label>
                     <input type="text"
                            id="{{ form.title.id_for_label }}"
                            name="{{ form.title.name }}"
                            value="{{ form.title.value|default:'' }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-400"
+                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400"
                            placeholder="Enter title">
                     {% for error in form.title.errors %}<div class="text-red-500 text-sm mt-2">{{ error }}</div>{% endfor %}
                 </div>
                 <!-- Content Field -->
                 <div class="mb-6">
                     <label for="{{ form.content.id_for_label }}"
-                           class="block font-bold text-gray-700 mb-2">{{ form.content.label }}</label>
+                           class="block font-bold text-gray-700 dark:text-gray-300 mb-2">{{ form.content.label }}</label>
                     <textarea id="{{ form.content.id_for_label }}"
                               name="{{ form.content.name }}"
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-400"
+                              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400"
                               placeholder="Enter content">{{ form.content.value|default:'' }}</textarea>
                     {% for error in form.content.errors %}<div class="text-red-500 text-sm mt-2">{{ error }}</div>{% endfor %}
                 </div>
                 <!-- Image Field -->
                 <div class="mb-6">
                     <label for="{{ form.image.id_for_label }}"
-                           class="block font-bold text-gray-700 mb-2">{{ form.image.label }}</label>
+                           class="block font-bold text-gray-700 dark:text-gray-300 mb-2">{{ form.image.label }}</label>
                     <input type="file"
                            id="{{ form.image.id_for_label }}"
                            name="{{ form.image.name }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900">
+                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
                     {% for error in form.image.errors %}<div class="text-red-500 text-sm mt-2">{{ error }}</div>{% endfor %}
                 </div>
                 <!-- Save Button -->

@@ -2,11 +2,11 @@
 {% load static %}
 {% block title %}{{ title }} - Hackathon{% endblock %}
 {% block content %}
-    <div class="container mx-auto {% include "includes/sidenav.html" %} px-4 py-8">
+    <div class="container mx-auto {% include"includes/sidenav.html" %} px-4 py-8">
         <div class="max-w-2xl mx-auto">
-            <h1 class="text-3xl font-bold mb-2 text-gray-800">{{ title }}</h1>
-            <p class="text-gray-600 mb-6">Add a prize to reward hackathon participants</p>
-            <div class="bg-white rounded-lg shadow p-6">
+            <h1 class="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">{{ title }}</h1>
+            <p class="text-gray-600 dark:text-gray-400 mb-6">Add a prize to reward hackathon participants</p>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <form method="post">
                     {% csrf_token %}
                     {% if form.non_field_errors %}
@@ -16,7 +16,7 @@
                         <!-- Position -->
                         <div>
                             <label for="{{ form.position.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Position <span class="text-red-500">*</span>
                             </label>
                             {{ form.position }}
@@ -25,17 +25,17 @@
                         <!-- Title -->
                         <div>
                             <label for="{{ form.title.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Title <span class="text-red-500">*</span>
                             </label>
                             {{ form.title }}
                             {% if form.title.errors %}<p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>{% endif %}
-                            <p class="mt-1 text-xs text-gray-500">Example: "Best Overall Contribution", "Most Innovative Solution"</p>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">Example: "Best Overall Contribution", "Most Innovative Solution"</p>
                         </div>
                         <!-- Description -->
                         <div>
                             <label for="{{ form.description.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Description <span class="text-red-500">*</span>
                             </label>
                             {{ form.description }}
@@ -44,23 +44,23 @@
                         <!-- Value -->
                         <div>
                             <label for="{{ form.value.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">Value</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value</label>
                             {{ form.value }}
                             {% if form.value.errors %}<p class="mt-1 text-sm text-red-600">{{ form.value.errors.0 }}</p>{% endif %}
-                            <p class="mt-1 text-xs text-gray-500">Monetary value of the prize (optional)</p>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">Monetary value of the prize (optional)</p>
                         </div>
                         <!-- Sponsor -->
                         <div>
                             <label for="{{ form.sponsor.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">Sponsor</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sponsor</label>
                             {{ form.sponsor }}
                             {% if form.sponsor.errors %}<p class="mt-1 text-sm text-red-600">{{ form.sponsor.errors.0 }}</p>{% endif %}
-                            <p class="mt-1 text-xs text-gray-500">Select a sponsor for this prize (optional)</p>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">Select a sponsor for this prize (optional)</p>
                         </div>
                     </div>
                     <div class="flex justify-end space-x-4">
                         <a href="{% url 'hackathon_detail' hackathon.slug %}"
-                           class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                             Cancel
                         </a>
                         <button type="submit"

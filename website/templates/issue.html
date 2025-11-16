@@ -40,17 +40,17 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="flex flex-col gap-5 lg:w-[95%] lg:mx-auto mx-2">
-        <div class=" flex lg:flex-row flex-col gap-4 mt-10">
-            <div class="lg:w-[75%] flex flex-col gap-6 w-full border border-gray-300 shadow-md rounded-xl p-4">
-                <nav class="flex flex-col sm:flex-row items-center justify-between p-3 sm:p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex lg:flex-row flex-col gap-4 mt-10">
+            <div class="lg:w-[75%] flex flex-col gap-6 w-full border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4">
+                <nav class="flex flex-col sm:flex-row items-center justify-between p-3 sm:p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
                     <div class="flex items-center w-full sm:w-auto mb-3 sm:mb-0">
                         <div class="flex flex-wrap items-center space-x-2 sm:space-x-3 w-full min-w-0">
                             <a href="{% url 'issues' %}"
-                               class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 flex items-center shrink-0">
+                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors duration-200 flex items-center shrink-0">
                                 <i class="fas fa-bug mr-1.5"></i>
                                 <span class="font-medium text-sm">Issues</span>
                             </a>
-                            <i class="fas fa-chevron-right text-gray-400 text-xs shrink-0"></i>
+                            <i class="fas fa-chevron-right text-gray-400 dark:text-gray-600 text-xs shrink-0"></i>
                             <a href="{% url 'domain' object.domain.name %}"
                                class="flex items-center hover:text-[#e74c3c] transition-colors duration-200 min-w-0">
                                 <img src="{{ object.domain.get_logo }}"
@@ -60,8 +60,8 @@
                                      height="20">
                                 <span class="ml-1.5 font-medium text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">{{ object.domain.name }}</span>
                             </a>
-                            <span class="text-gray-400 shrink-0">/</span>
-                            <span class="font-mono text-gray-600 text-xs shrink-0">
+                            <span class="text-gray-400 dark:text-gray-600 shrink-0">/</span>
+                            <span class="font-mono text-gray-600 dark:text-gray-400 text-xs shrink-0">
                                 {% if object.id < 100 %}#{% endif %}
                             {{ object.id }}</span>
                             <div class="ml-2 sm:ml-3 shrink-0">
@@ -89,10 +89,10 @@
                 <div class="flex flex-col gap-5 px-2">
                     <div class="flex flex-col gap-5 px-2">
                         <div class="flex flex-col gap-2">
-                            <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight tracking-tight w-full break-words issue-description"
+                            <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight w-full break-words issue-description"
                                 title="{{ object.description|escapejs }}">{{ object.description|escapejs }}</h2>
                             {% if object.markdown_description %}
-                                <p class="text-base sm:text-lg text-gray-700 font-medium break-words"
+                                <p class="text-base sm:text-lg text-gray-700 dark:text-gray-300 font-medium break-words"
                                    id="bug_report"
                                    data-markdown="{{ object.markdown_description|escapejs }}">
                                     <!-- This content will be replaced by rendered markdown -->
@@ -119,14 +119,14 @@
                              width="32px"
                              height="32px">
                         <div class="ml-3">
-                            <div class="text-gray-700">
+                            <div class="text-gray-700 dark:text-gray-300">
                                 {% if object.user.username %}
                                     <a href="{% url 'profile' slug=object.user.username %}"
                                        class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">@{{ object.user.username }}</a>
                                 {% else %}
                                     Anonymous
                                 {% endif %}
-                                <span class="text-gray-900">found this issue on {{ object.created }}</span>
+                                <span class="text-gray-900 dark:text-gray-100">found this issue on {{ object.created }}</span>
                             </div>
                         </div>
                     </div>
@@ -134,17 +134,17 @@
                     {% include "./includes/issue_left_info.html" %}
                 </div>
             </div>
-            <div class="lg:w-[25%] flex flex-col gap-4 w-full ">
+            <div class="lg:w-[25%] flex flex-col gap-4 w-full">
                 {% if request.user.is_superuser or request.user == object.user %}
-                    <div class="border border-gray-300 shadow-md rounded-xl p-4 flex flex-wrap gap-x-3 gap-y-3 justify-center items-center">
+                    <div class="border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4 flex flex-wrap gap-x-3 gap-y-3 justify-center items-center">
                         {% if request.user.is_superuser or request.user == object.user %}
                             {% if object.user %}
                                 <form method="post"
                                       action="{% url 'remove_user_from_issue' id=object.id %}"
-                                      class=" flex flex-row gap-x-3 items-center">
+                                      class="flex flex-row gap-x-3 items-center">
                                     {% csrf_token %}
                                     <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
-                                    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200"
+                                    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 px-4 py-3 hover:bg-gray-100 transition duration-200"
                                             id="report-anonymously"
                                             type="submit"
                                             onclick="return confirm('Are you sure you want to report it anonymously?')">
@@ -155,7 +155,7 @@
                                     </button>
                                 </form>
                             {% endif %}
-                            <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200"
+                            <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 px-4 py-3 hover:bg-gray-100 transition duration-200"
                                     id="edit-issue">
                                 <div class="flex flex-row gap-2 items-center">
                                     <span class="max-sm:text-[12px]">Edit</span>
@@ -165,7 +165,7 @@
                         {% endif %}
                         {% if request.user.is_superuser or request.user == object.user %}
                             <button onclick="deleteIssue({{ object.id }})"
-                                    class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200">
+                                    class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 px-4 py-3 hover:bg-gray-100 transition duration-200">
                                 <div class="flex flex-row gap-2 items-center">
                                     <span class="max-sm:text-[12px]">Delete</span>
                                     <i class="fa-solid fa-trash"></i>
@@ -175,7 +175,7 @@
                         {% if request.user.is_superuser or request.user == object.user %}
                             <button type="button"
                                     onclick="resolveIssue()"
-                                    class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-red-500 hover:bg-red-600 transition-all duration-200 border-gray-300 px-4 py-3 ">
+                                    class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-red-500 hover:bg-red-600 transition-all duration-200 border-gray-300 dark:border-gray-600 px-4 py-3">
                                 {% if status == "open" %}
                                     Close Issue
                                 {% else %}
@@ -185,7 +185,7 @@
                         {% endif %}
                     </div>
                 {% endif %}
-                <div class="border border-gray-300 shadow-md rounded-xl p-4">{% include "./includes/issue_right_info.html" %}</div>
+                <div class="border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4">{% include "./includes/issue_right_info.html" %}</div>
             </div>
         </div>
         <div>{% include "comments2.html" %}</div>

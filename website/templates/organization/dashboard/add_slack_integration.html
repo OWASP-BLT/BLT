@@ -22,14 +22,14 @@
         </div>
         <form method='post'
               action="#"
-              class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
+              class="w-[96%] bg-white dark:bg-gray-800 rounded-2xl p-10 my-10 shadow-md">
             {% csrf_token %}
             <div class="pb-12">
-                <h2 class="text-base font-semibold leading-7 text-gray-900">Configure Slack Bot:</h2>
+                <h2 class="text-base font-semibold leading-7 text-gray-900 dark:text-gray-100">Configure Slack Bot:</h2>
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-3">
                         <label for="bot_token"
-                               class="block text-sm font-medium leading-6 text-gray-900">Bot Token</label>
+                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Bot Token</label>
                         <div class="mt-2">
                             <input type="text"
                                    name="bot_token"
@@ -37,18 +37,18 @@
                                    autocomplete="bot_token"
                                    value="{{ slack_integration.bot_access_token }}"
                                    disabled
-                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
                 </div>
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-3">
-                        <label class="block text-sm font-medium leading-6 text-gray-900"
+                        <label class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100"
                                for="target_channel">Select Channel to send messages to</label>
                         <div class="mt-2 space-y-4">
                             <select id="target_channel"
                                     name="target_channel"
-                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 {% for channel_name in channels %}
                                     <option value="{{ channel_name }}"
                                             {% if slack_integration.default_channel_name == channel_name %}selected="selected"{% endif %}>
@@ -60,17 +60,17 @@
                     </div>
                 </div>
             </div>
-            <div class=" grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+            <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                 <div class="sm:col-span-3">
-                    <label class="block text-sm font-medium leading-6 text-gray-900">Select Services</label>
+                    <label class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Select Services</label>
                     <div class="items-center flex">
                         <input type="checkbox"
                                id="daily_sizzle_timelogs_status"
                                name="daily_sizzle_timelogs_status"
-                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded"
                                {% if slack_integration.daily_updates == True %}checked{% endif %}>
                         <label for="daily_sizzle_timelogs_status"
-                               class="ml-3 block text-sm font-medium text-gray-900">
+                               class="ml-3 block text-sm font-medium text-gray-900 dark:text-gray-100">
                             Daily Sizzle Timelogs Status
                         </label>
                     </div>
@@ -93,15 +93,15 @@
             <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                 <div class="sm:col-span-6">
                     <label for="welcome_message"
-                           class="block text-sm font-medium leading-6 text-gray-900">Welcome Message</label>
+                           class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Welcome Message</label>
                     <div class="mt-2">
                         <textarea id="welcome_message"
                                   name="welcome_message"
                                   rows="10"
-                                  class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
+                                  class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
                                   placeholder="Welcome to our workspace! 👋  Here's some helpful information about our workspace: • Channel #general for general discussions • Channel #help for getting assistance • Channel #announcements for important updates  Feel free to introduce yourself!">{{ welcome_message }}</textarea>
                     </div>
-                    <p class="mt-2 text-sm text-gray-500">
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-500">
                         You can use Slack's markdown formatting:
                         *bold*, _italic_, ~strikethrough~, `code`, and >quote
                     </p>

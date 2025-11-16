@@ -9,10 +9,10 @@
         <div class="max-w-5xl mx-auto">
             <!-- Header -->
             <div class="mb-8">
-                <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ title }}</h1>
-                <p class="text-lg text-gray-600">Configure your hackathon details and settings</p>
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{{ title }}</h1>
+                <p class="text-lg text-gray-600 dark:text-gray-400">Configure your hackathon details and settings</p>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                 <form method="post" enctype="multipart/form-data" class="space-y-10">
                     {% csrf_token %}
                     {% if form.non_field_errors %}
@@ -20,11 +20,11 @@
                     {% endif %}
                     <!-- Basic Information Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Basic Information</h2>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">Basic Information</h2>
                         <!-- Name -->
                         <div>
                             <label for="{{ form.name.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 mb-2">
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                 Hackathon Name <span class="text-[#e74c3c]">*</span>
                             </label>
                             {{ form.name }}
@@ -33,17 +33,17 @@
                         <!-- Organization -->
                         <div>
                             <label for="{{ form.organization.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 mb-2">
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                 Organization <span class="text-[#e74c3c]">*</span>
                             </label>
                             {{ form.organization }}
                             {% if form.organization.errors %}<p class="mt-2 text-sm text-red-600">{{ form.organization.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600">Only organizations where you are an admin or manager are shown.</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Only organizations where you are an admin or manager are shown.</p>
                         </div>
                         <!-- Description -->
                         <div>
                             <label for="{{ form.description.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 mb-2">
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                 Description <span class="text-[#e74c3c]">*</span>
                             </label>
                             {{ form.description }}
@@ -52,13 +52,13 @@
                     </div>
                     <!-- Schedule & Settings Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Schedule & Settings</h2>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">Schedule & Settings</h2>
                         <!-- Time Section -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Start Time -->
                             <div>
                                 <label for="{{ form.start_time.id_for_label }}"
-                                       class="block text-lg font-semibold text-gray-900 mb-2">
+                                       class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                     Start Time <span class="text-[#e74c3c]">*</span>
                                 </label>
                                 {{ form.start_time }}
@@ -67,7 +67,7 @@
                             <!-- End Time -->
                             <div>
                                 <label for="{{ form.end_time.id_for_label }}"
-                                       class="block text-lg font-semibold text-gray-900 mb-2">
+                                       class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                     End Time <span class="text-[#e74c3c]">*</span>
                                 </label>
                                 {{ form.end_time }}
@@ -77,10 +77,10 @@
                         <!-- Registration Settings -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Registration Open -->
-                            <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                                 {{ form.registration_open }}
                                 <label for="{{ form.registration_open.id_for_label }}"
-                                       class="text-lg font-semibold text-gray-900">Registration Open</label>
+                                       class="text-lg font-semibold text-gray-900 dark:text-gray-100">Registration Open</label>
                                 {% if form.registration_open.errors %}
                                     <p class="mt-2 text-sm text-red-600">{{ form.registration_open.errors.0 }}</p>
                                 {% endif %}
@@ -88,26 +88,26 @@
                             <!-- Max Participants -->
                             <div>
                                 <label for="{{ form.max_participants.id_for_label }}"
-                                       class="block text-lg font-semibold text-gray-900 mb-2">Max Participants</label>
+                                       class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Max Participants</label>
                                 {{ form.max_participants }}
                                 {% if form.max_participants.errors %}
                                     <p class="mt-2 text-sm text-red-600">{{ form.max_participants.errors.0 }}</p>
                                 {% endif %}
-                                <p class="mt-2 text-sm text-gray-600">Leave blank for unlimited participants</p>
+                                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Leave blank for unlimited participants</p>
                             </div>
                         </div>
                     </div>
                     <!-- Visual Design Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Visual Design</h2>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">Visual Design</h2>
                         <!-- Banner Image -->
                         <div>
                             <label for="{{ form.banner_image.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 mb-2">Banner Image</label>
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#e74c3c] transition-colors">
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Banner Image</label>
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-[#e74c3c] transition-colors">
                                 <div class="space-y-1 text-center">
                                     {{ form.banner_image }}
-                                    <p class="text-sm text-gray-600">Recommended size: 1200x400 pixels</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Recommended size: 1200x400 pixels</p>
                                 </div>
                             </div>
                             {% if form.banner_image.errors %}<p class="mt-2 text-sm text-red-600">{{ form.banner_image.errors.0 }}</p>{% endif %}
@@ -115,35 +115,35 @@
                     </div>
                     <!-- Rules & Guidelines Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Rules & Guidelines</h2>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">Rules & Guidelines</h2>
                         <!-- Rules -->
                         <div>
                             <label for="{{ form.rules.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 mb-2">Hackathon Rules</label>
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Hackathon Rules</label>
                             {{ form.rules }}
                             {% if form.rules.errors %}<p class="mt-2 text-sm text-red-600">{{ form.rules.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600">Define the rules and guidelines for your hackathon participants</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Define the rules and guidelines for your hackathon participants</p>
                         </div>
                     </div>
                     <!-- Repositories Section -->
-                    <div class="space-y-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-                        <h3 class="text-xl font-semibold text-gray-900">Repositories</h3>
-                        <p class="text-sm text-gray-600">
+                    <div class="space-y-6 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Repositories</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
                             Configure which repositories will be part of this hackathon. Pull requests to these repositories during the hackathon period will be counted.
                         </p>
                         <!-- Existing Repositories -->
                         <div>
                             <label for="{{ form.repositories.id_for_label }}"
-                                   class="block text-base font-semibold text-gray-900 mb-2">
+                                   class="block text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                 Select Existing Repositories
                             </label>
                             <div class="relative">
                                 {{ form.repositories }}
                                 <div id="repositories-loading" class="mt-2 hidden">
-                                    <p class="text-sm text-gray-600">Loading repositories...</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Loading repositories...</p>
                                 </div>
                                 <div id="no-repositories-message" class="mt-2 hidden">
-                                    <p class="text-sm text-gray-600">No existing repositories found. You can add new ones below.</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">No existing repositories found. You can add new ones below.</p>
                                 </div>
                             </div>
                             {% if form.repositories.errors %}<p class="mt-2 text-sm text-red-600">{{ form.repositories.errors.0 }}</p>{% endif %}
@@ -151,14 +151,14 @@
                         <!-- New Repositories -->
                         <div>
                             <label for="{{ form.new_repo_urls.id_for_label }}"
-                                   class="block text-base font-semibold text-gray-900 mb-2">
+                                   class="block text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                 Add New Repositories
                             </label>
                             {{ form.new_repo_urls }}
                             {% if form.new_repo_urls.errors %}
                                 <p class="mt-2 text-sm text-red-600">{{ form.new_repo_urls.errors.0 }}</p>
                             {% endif %}
-                            <p class="mt-2 text-sm text-gray-600">{{ form.new_repo_urls.help_text }}</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ form.new_repo_urls.help_text }}</p>
                             <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p class="text-sm text-blue-800">
                                     <strong>Tip:</strong> Enter one GitHub repository URL per line. New repositories will be created and automatically added to this hackathon.
@@ -168,30 +168,30 @@
                     </div>
                     <!-- Sponsorship Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 pb-2 border-b-2 border-[#e74c3c]">Sponsorship Information</h2>
-                        <p class="text-sm text-gray-600">Provide sponsorship details to attract potential sponsors for your hackathon</p>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">Sponsorship Information</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Provide sponsorship details to attract potential sponsors for your hackathon</p>
                         <!-- Sponsor Note -->
                         <div>
                             <label for="{{ form.sponsor_note.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 mb-2">Sponsorship Note</label>
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Sponsorship Note</label>
                             {{ form.sponsor_note }}
                             {% if form.sponsor_note.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_note.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600">Describe sponsorship opportunities and benefits for this hackathon</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Describe sponsorship opportunities and benefits for this hackathon</p>
                         </div>
                         <!-- Sponsor Link -->
                         <div>
                             <label for="{{ form.sponsor_link.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 mb-2">Sponsorship Link</label>
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Sponsorship Link</label>
                             {{ form.sponsor_link }}
                             {% if form.sponsor_link.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_link.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600">URL to your sponsorship information page or application form</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">URL to your sponsorship information page or application form</p>
                         </div>
                     </div>
                     <!-- Submit Button -->
-                    <div class="pt-8 border-t border-gray-200">
+                    <div class="pt-8 border-t border-gray-200 dark:border-gray-700">
                         <div class="flex flex-col sm:flex-row gap-4 justify-end">
                             <a href="{% url 'hackathons' %}"
-                               class="px-8 py-3 text-lg font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors text-center">
+                               class="px-8 py-3 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors text-center">
                                 Cancel
                             </a>
                             <button type="submit"

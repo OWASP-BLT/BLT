@@ -22,7 +22,7 @@
         <!-- Hero Section -->
         <div class="flex flex-col text-center gap-6 mb-12 px-4 py-8 max-w-7xl mx-auto">
             <div class="w-full flex flex-col items-center space-y-6">
-                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">Explore Our Community Members</h1>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-gray-100 leading-tight">Explore Our Community Members</h1>
                 <p class="text-lg md:text-xl lg:text-2xl bg-[#e74c3c] text-white px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform duration-200">
                     A warm and welcoming collection of open sourcers
                 </p>
@@ -31,7 +31,7 @@
         <!-- Filter Tags Section -->
         <div class="flex flex-wrap items-center justify-center gap-4 my-12 px-4 max-w-5xl mx-auto">
             <a href="?contributors=true"
-               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if show_contributors %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
+               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if show_contributors %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 border border-gray-200{% endif %}">
                 <i class="fas fa-users mr-2"></i>
                 <span>OWASP Contributors</span>
                 <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if show_contributors %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
@@ -39,7 +39,7 @@
                 </span>
             </a>
             <a href="?githubbers=true"
-               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if githubbers %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
+               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if githubbers %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 border border-gray-200{% endif %}">
                 <i class="fab fa-github mr-2"></i>
                 <span>Githubbers</span>
                 <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if githubbers %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
@@ -48,7 +48,7 @@
             </a>
             {% for tag_obj in tags_with_counts %}
                 <a href="?tag={{ tag_obj.name }}"
-                   class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if tag_obj.name == tag %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
+                   class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if tag_obj.name == tag %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 border border-gray-200{% endif %}">
                     <span>{{ tag_obj.name }}</span>
                     <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if tag_obj.name == tag %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
                         {{ tag_obj.user_count }}
@@ -60,21 +60,21 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 pb-12">
             {% if show_contributors %}
                 {% for contributor in contributors %}
-                    <div class="group bg-white p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-[#e74c3c]/20 h-[420px]">
+                    <div class="group bg-white dark:bg-gray-800 p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-800 hover:border-[#e74c3c]/20 h-[420px]">
                         <img src="{{ contributor.avatar_url }}"
                              class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                              width="100px"
                              height="100px"
                              alt="{{ contributor.name }}'s avatar"
                              onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                        <div class="text-2xl font-bold text-gray-900">{{ contributor.name }}</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ contributor.name }}</div>
                         <div class="text-purple-600 text-lg">{{ contributor.contributor_type }}</div>
-                        <p class="text-gray-600 text-center px-4">Contributions: {{ contributor.contributions }}</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-center px-4">Contributions: {{ contributor.contributions }}</p>
                         <div class="flex items-center justify-center gap-3 mt-2">
                             <a href="{{ contributor.github_url }}"
                                target="_blank"
                                rel="noopener noreferrer"
-                               class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200">
+                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors duration-200">
                                 <i class="fab fa-github fa-lg"></i>
                             </a>
                         </div>
@@ -88,7 +88,7 @@
                 {% endfor %}
             {% else %}
                 {% for user in users %}
-                    <div class="group bg-white p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-[#e74c3c]/20 h-[420px]">
+                    <div class="group bg-white dark:bg-gray-800 p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-800 hover:border-[#e74c3c]/20 h-[420px]">
                         {% if user.user_avatar %}
                             <img src="{{ user.user_avatar.url }}"
                                  class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
@@ -112,14 +112,14 @@
                                  height="100px"
                                  alt="user image" />
                         {% endif %}
-                        <div class="transition duration-200 group-hover:text-[#e74c3c] text-gray-900 text-4xl font-bold">
+                        <div class="transition duration-200 group-hover:text-[#e74c3c] text-gray-900 dark:text-gray-100 text-4xl font-bold">
                             <a href="{% url 'profile' slug=user.user.username %}"
                                class="transition duration-200 hover:text-[#e74c3c]">{{ user.user.username }}</a>
                         </div>
                         <div class="text-purple-600 text-2xl">{{ user.role }}</div>
                         {% if user.discounted_hourly_rate %}
-                            <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
-                                <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
+                            <p class="transition duration-200 text-gray-600 dark:text-gray-400 text-center px-10 py-4 bg-gray-100 dark:bg-gray-800 rounded-md shadow-md">
+                                <span class="font-semibold text-lg text-gray-600 dark:text-gray-400">Discounted Hourly Rate:</span>
                                 <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
                             </p>
                         {% endif %}
@@ -128,7 +128,7 @@
                                 <a href="{{ user.x_username }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
+                                   class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
                                     <i class="fa-brands fa-x-twitter"></i>
                                 </a>
                             {% endif %}
@@ -136,7 +136,7 @@
                                 <a href="{{ user.linkedin_url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
+                                   class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
                                     <i class="fa-brands fa-linkedin"></i>
                                 </a>
                             {% endif %}
@@ -144,7 +144,7 @@
                                 <a href="{{ user.github_url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
+                                   class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
                                     <i class="fa-brands fa-github"></i>
                                 </a>
                             {% endif %}
@@ -152,13 +152,13 @@
                                 <a href="{{ user.website_url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
+                                   class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
                                     <i class="fa-solid fa-globe"></i>
                                 </a>
                             {% endif %}
                         </div>
                         <a href="{% url 'profile' slug=user.user.username %}"
-                           class="mt-4 px-6 py-2.5 bg-white text-[#e74c3c] border border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all duration-200 font-medium text-sm">
+                           class="mt-4 px-6 py-2.5 bg-white dark:bg-gray-800 text-[#e74c3c] border border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all duration-200 font-medium text-sm">
                             View Profile
                         </a>
                     </div>

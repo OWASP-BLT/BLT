@@ -18,25 +18,25 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-white dark:bg-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Bidding Form Section -->
-            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8">
                 <h1 class="text-3xl font-bold mb-4 flex items-center gap-3">
                     <i class="fas fa-gavel text-[#e74c3c]"></i>
                     Bid on Issues
                 </h1>
                 <!-- New Explainer Section -->
-                <div class="mb-8 p-6 bg-gray-50 rounded-xl">
-                    <h2 class="text-xl font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                <div class="mb-8 p-6 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                    <h2 class="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         <i class="fas fa-lightbulb text-[#e74c3c]"></i>
                         How It Works
                     </h2>
-                    <p class="text-gray-700 leading-relaxed">
+                    <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
                         OWASP BLT is proud to be the first platform to offer a revolutionary bidding system for open source contributions. Instead of relying on code maintainers to assign bounties on issues, you can take initiative by bidding on issues that interest you. This groundbreaking approach creates a dynamic marketplace where developers can choose their work and set their own prices, making open source contribution more accessible and rewarding than ever before.
                     </p>
                     <div class="mt-4 p-3 bg-[#e74c3c] bg-opacity-10 rounded-lg border border-[#e74c3c] border-opacity-20">
-                        <p class="text-gray-800 flex items-start">
+                        <p class="text-gray-800 dark:text-gray-200 flex items-start">
                             <i class="fas fa-info-circle text-[#e74c3c] mt-1 mr-2"></i>
                             <span><strong>No account required!</strong> You can place bids with just a valid GitHub username and issue URL. Simply enter your GitHub username and the issue you want to bid on.</span>
                         </p>
@@ -47,17 +47,17 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- GitHub Issue Link Input -->
                         <div class="lg:col-span-2">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fab fa-github mr-2"></i>GitHub Issue Link
                             </label>
                             <div class="relative">
                                 <input type="text"
                                        id="issueLinkInput"
                                        name="issue_url"
-                                       class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
+                                       class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
                                        placeholder="https://github.com/owner/repo/issues/123">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i class="fas fa-link text-gray-400"></i>
+                                    <i class="fas fa-link text-gray-400 dark:text-gray-600"></i>
                                 </div>
                             </div>
                             <p id="invalidUrlMessage" class="mt-2 text-sm text-red-600 hidden">Please enter a valid GitHub issue link</p>
@@ -74,21 +74,21 @@
                     </div>
                     <!-- GitHub Username Input -->
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             <i class="fab fa-github mr-2"></i>GitHub Username
                         </label>
                         <div class="relative">
                             <input type="text"
                                    id="githubUsername"
                                    name="user"
-                                   class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
+                                   class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
                                    placeholder="Enter GitHub username"
                                    value="{% if request.user.is_authenticated %}{{ request.user.username }}{% endif %}">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fab fa-github text-gray-400"></i>
+                                <i class="fab fa-github text-gray-400 dark:text-gray-600"></i>
                             </div>
                         </div>
-                        <p class="mt-2 text-sm text-gray-500">
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-500">
                             {% if request.user.is_authenticated %}
                                 {% if request.user.userprofile.github_url %}
                                     We'll use your GitHub username from your profile if this field is left empty
@@ -102,10 +102,10 @@
                         </p>
                     </div>
                     <!-- Current Bid Display -->
-                    <div id="BidDisplay" class="text-lg font-medium text-gray-900"></div>
+                    <div id="BidDisplay" class="text-lg font-medium text-gray-900 dark:text-gray-100"></div>
                     <!-- Quick Bid Buttons -->
                     <div class="space-y-4">
-                        <label class="block text-sm font-semibold text-gray-700">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                             <i class="fas fa-dollar-sign mr-2"></i>Select Bid Amount
                         </label>
                         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -206,7 +206,7 @@
                 </form>
             </div>
             <!-- Current Bids Section -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                 <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
                     <i class="fas fa-list text-[#e74c3c]"></i>
                     Current Bids
@@ -214,16 +214,16 @@
                 {% if bids %}
                     <div class="space-y-4">
                         {% for bid in bids %}
-                            <div class="flex items-center justify-between p-4 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-all duration-200">
+                            <div class="flex items-center justify-between p-4 rounded-lg border-2 border-gray-100 dark:border-gray-800 hover:border-[#e74c3c] transition-all duration-200">
                                 <div class="flex items-center gap-4">
                                     <span class="text-lg font-bold text-[#e74c3c]">${{ bid.amount_bch }}</span>
                                     <div>
                                         <a href="{{ bid.issue_url }}"
                                            target="_blank"
-                                           class="text-gray-900 hover:text-[#e74c3c] font-medium">
+                                           class="text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] font-medium">
                                             {{ bid.issue_url|truncatechars:50 }}
                                         </a>
-                                        <p class="text-sm text-gray-500">
+                                        <p class="text-sm text-gray-500 dark:text-gray-500">
                                             by
                                             {% if bid.user %}
                                                 <a href="{{ bid.user.get_absolute_url }}"
@@ -239,11 +239,11 @@
                     </div>
                 {% else %}
                     <div class="text-center py-12">
-                        <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                            <i class="fas fa-gavel text-4xl text-gray-400"></i>
+                        <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                            <i class="fas fa-gavel text-4xl text-gray-400 dark:text-gray-600"></i>
                         </div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Bids Yet</h3>
-                        <p class="text-gray-500">Be the first to place a bid!</p>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Bids Yet</h3>
+                        <p class="text-gray-500 dark:text-gray-500">Be the first to place a bid!</p>
                     </div>
                 {% endif %}
             </div>
@@ -275,7 +275,7 @@
                 if ('current_bid' in data) {
                     const currentBid = data.current_bid;
                 document.getElementById('BidDisplay').innerHTML = `
-                    <div class="flex items-center gap-2 text-gray-900">
+                    <div class="flex items-center gap-2 text-gray-900 dark:text-gray-100">
                         <i class="fas fa-info-circle text-[#e74c3c]"></i>
                         Current Bid: <span class="font-bold">$${currentBid}</span>
                     </div>
@@ -284,7 +284,7 @@
                     bidAmountInput.setAttribute('max', currentBid - 1);
                 } else {
                 document.getElementById('BidDisplay').innerHTML = `
-                    <div class="flex items-center gap-2 text-gray-900">
+                    <div class="flex items-center gap-2 text-gray-900 dark:text-gray-100">
                         <i class="fas fa-info-circle text-[#e74c3c]"></i>
                         No current bid for this issue
                     </div>

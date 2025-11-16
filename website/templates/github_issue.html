@@ -73,11 +73,11 @@
               method='post'
               action="{% url 'create_github_issue' %}"
               enctype="multipart/form-data"
-              class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md"
+              class="w-[96%] bg-white dark:bg-gray-800 rounded-2xl p-10 my-10 shadow-md"
               onsubmit="return validateGithubIssue()">
             {% csrf_token %}
             <div class="w-full pb-12">
-                <p class="text-5xl font-semibold leading-7 text-gray-900">CREATE GITHUB ISSUE</p>
+                <p class="text-5xl font-semibold leading-7 text-gray-900 dark:text-gray-100">CREATE GITHUB ISSUE</p>
                 <!-- Display success message if exists -->
                 {% if message %}
                     <div id="success-message"
@@ -90,7 +90,7 @@
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5">
                         <label for="issue_title"
-                               class="block text-2xl font-semibold leading-6 text-gray-900">Issue Title</label>
+                               class="block text-2xl font-semibold leading-6 text-gray-900 dark:text-gray-100">Issue Title</label>
                         <div class="mt-2">
                             <input id="issue_title"
                                    type="text"
@@ -98,7 +98,7 @@
                                    maxlength="100"
                                    required
                                    placeholder="Short Title"
-                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
                                    value="{{ issue_title }}" />
                         </div>
                     </div>
@@ -107,7 +107,7 @@
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5 relative">
                         <label for="description"
-                               class="block text-2xl font-semibold leading-6 text-gray-900">
+                               class="block text-2xl font-semibold leading-6 text-gray-900 dark:text-gray-100">
                             Detailed Description
                         </label>
                         <div class="mt-2 relative">
@@ -116,7 +116,7 @@
                                       required
                                       rows="15"
                                       placeholder="Describe the issue in detail"
-                                      class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"> {{description}}</textarea>
+                                      class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"> {{description}}</textarea>
                         </div>
                     </div>
                 </div>
@@ -124,13 +124,13 @@
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5">
                         <label for="labels"
-                               class="block text-2xl font-semibold leading-6 text-gray-900">Labels</label>
+                               class="block text-2xl font-semibold leading-6 text-gray-900 dark:text-gray-100">Labels</label>
                         <div class="mt-2">
                             <input id="labels"
                                    type="text"
                                    name="labels"
                                    placeholder="Comma-separated labels"
-                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
                                    value="{{ labels }}" />
                         </div>
                     </div>
@@ -140,7 +140,7 @@
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5">
                         <label for="repository"
-                               class="block text-2xl font-semibold leading-6 text-gray-900">
+                               class="block text-2xl font-semibold leading-6 text-gray-900 dark:text-gray-100">
                             Choose Repository or Enter URL
                         </label>
                         <div class="mt-2">
@@ -148,20 +148,20 @@
                                    type="text"
                                    name="repository_url"
                                    placeholder="Or enter repository URL"
-                                   class="block w-full mt-4 placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   class="block w-full mt-4 placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
                                    value="{{ repository_url }}" />
                         </div>
                     </div>
                 </div>
                 <!-- Captcha -->
-                <div class="w-full mt-6 flex flex-col md:flex-row items-center justify-between gap-x-6 ">
+                <div class="w-full mt-6 flex flex-col md:flex-row items-center justify-between gap-x-6">
                     <div class="flex h-full justify-between items-center flex-col my-16 md:flex-row md:mt-0">
                         <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
                     </div>
                     <div class="w-full flex justify-evenly md:justify-end">
                         <button type="button"
                                 onclick="cancelForm()"
-                                class="text-md font-semibold leading-6 mr-10 text-gray-900">Cancel</button>
+                                class="text-md font-semibold leading-6 mr-10 text-gray-900 dark:text-gray-100">Cancel</button>
                         <button type="submit"
                                 class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
                             Create Issue

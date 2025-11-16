@@ -37,7 +37,7 @@
         <!-- Cards Container -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for submission in submissions %}
-                <div class="bg-white shadow-md rounded-lg p-4 relative border-2 {% if submission.status == 'accepted' %} border-green-500 {% elif submission.status == 'declined' %} border-red-500 {% else %} border-gray-300 {% endif %}">
+                <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 relative border-2 {% if submission.status == 'accepted' %} border-green-500 {% elif submission.status == 'declined' %} border-red-500 {% else %} border-gray-300 dark:border-gray-600 {% endif %}">
                     <!-- User Info -->
                     <div class="flex justify-between">
                         <div>
@@ -48,7 +48,7 @@
                         </div>
                     </div>
                     <!-- Contribution Type & Status -->
-                    <p class="mt-2 text-sm text-gray-600">
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         Type: <strong>{{ submission.get_contribution_type_display }}</strong>
                         <br>
                         Status: <span id="status-{{ submission.id }}" class="font-semibold">{{ submission.get_status_display }}</span>
@@ -61,13 +61,13 @@
                     <button onclick="toggleDescription('{{ submission.id }}')"
                             class="text-blue-600 mt-2 underline">View Description</button>
                     <p id="description-{{ submission.id }}"
-                       class="hidden mt-2 text-gray-700">{{ submission.description }}</p>
+                       class="hidden mt-2 text-gray-700 dark:text-gray-300">{{ submission.description }}</p>
                     <!-- Mentor Only: Inspect Button -->
                     {% if is_mentor %}
                         <button onclick="toggleInspect('{{ submission.id }}')"
-                                class="mt-4 bg-gray-200 text-black px-4 py-2 rounded-md">Inspect</button>
+                                class="mt-4 bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-4 py-2 rounded-md">Inspect</button>
                         <div id="inspect-{{ submission.id }}"
-                             class="hidden mt-2 p-2 border border-gray-300 rounded-md bg-gray-100">
+                             class="hidden mt-2 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800">
                             <p>
                                 <strong>GitHub Username:</strong> {{ submission.user.username }}
                             </p>
@@ -96,7 +96,7 @@
                     {% endif %}
                 </div>
             {% empty %}
-                <p class="text-center text-gray-500">No submissions found.</p>
+                <p class="text-center text-gray-500 dark:text-gray-500">No submissions found.</p>
             {% endfor %}
         </div>
         {% if is_mentor %}

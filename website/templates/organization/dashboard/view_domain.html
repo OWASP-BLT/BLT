@@ -19,8 +19,8 @@
                 <i class="fab fa-figma"></i>
             </a>
         </div>
-        <div class="h-full bg-gray-200 p-8">
-            <div class="bg-white rounded-lg shadow-xl pb-8">
+        <div class="h-full bg-gray-200 dark:bg-gray-700 p-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl pb-8">
                 <div class="w-full h-[250px]">
                     <img src="{% if webshot %} {{ MEDIA_URL }}{{ webshot }} {% else %} https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png {% endif %} "
                          class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover"
@@ -30,7 +30,7 @@
                 </div>
                 <div class="flex flex-col items-center -mt-20">
                     <img src="{% if logo %} {{ MEDIA_URL }}{{ logo }} {% else %} https://via.placeholder.com/160?text=No+Logo {% endif %}"
-                         class="w-40 h-40 border-4  rounded-full"
+                         class="w-40 h-40 border-4 rounded-full"
                          width="160px"
                          height="160px"
                          alt="domain logo">
@@ -45,12 +45,12 @@
                     <div class="flex items-center space-x-4 mt-2">
                         <a href="#"
                            onclick="history.back(); return false;"
-                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 dark:text-gray-900 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                             <i class="fa-sharp fa-solid fa-cog fa-lg text-white"></i>
                             <span>Back</span>
                         </a>
                         <a href="{% url 'report' %}"
-                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 dark:text-gray-900 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                             <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>
                             <span>Submit Bug</span>
                         </a>
@@ -59,39 +59,39 @@
             </div>
             <div class="my-4 flex flex-col 2xl:flex-row space-y-4 2xl:space-y-0 2xl:space-x-4">
                 <div class="w-full flex flex-col 2xl:w-1/3">
-                    <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                        <h4 class="text-xl text-gray-900 font-bold">Domain Info</h4>
-                        <ul class="mt-2 text-gray-700">
+                    <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold">Domain Info</h4>
+                        <ul class="mt-2 text-gray-700 dark:text-gray-300">
                             <li class="flex border-y py-2 my-2">
                                 <span class="font-bold w-24">Domain:</span>
-                                <span class="text-gray-700">{{ name }}</span>
+                                <span class="text-gray-700 dark:text-gray-300">{{ name }}</span>
                             </li>
                             <li class="flex border-b py-2 my-2">
                                 <span class="font-bold w-24">Url</span>
-                                <span class="text-gray-700">{{ url }}</span>
+                                <span class="text-gray-700 dark:text-gray-300">{{ url }}</span>
                             </li>
                             <li class="flex border-b py-2 my-2">
                                 <span class="font-bold w-24">Organization</span>
-                                <span class="text-gray-700">{{ organization.name }}</span>
+                                <span class="text-gray-700 dark:text-gray-300">{{ organization.name }}</span>
                             </li>
                             <li class="flex border-b py-2 my-2">
                                 <span class="font-bold w-24">Email:</span>
-                                <span class="text-gray-700">{{ email }}</span>
+                                <span class="text-gray-700 dark:text-gray-300">{{ email }}</span>
                             </li>
                             <li class="flex border-b py-2 my-2">
                                 <span class="font-bold w-24">Joined:</span>
-                                <span class="text-gray-700">{{ created|date:"d/m/Y" }}</span>
+                                <span class="text-gray-700 dark:text-gray-300">{{ created|date:"d/m/Y" }}</span>
                             </li>
                             <li class="flex border-b py-2 my-2">
                                 <span class="font-bold w-24">Security.txt:</span>
-                                <span class="text-gray-700">
+                                <span class="text-gray-700 dark:text-gray-300">
                                     {% if has_security_txt %}
                                         <span class="text-green-600 font-bold">Found</span>
                                     {% else %}
                                         <span class="text-red-600">Not found</span>
                                     {% endif %}
                                     {% if security_txt_checked_at %}
-                                        <span class="block text-xs text-gray-500 mt-1">Last checked: {{ security_txt_checked_at|date:"d/m/Y H:i" }}</span>
+                                        <span class="block text-xs text-gray-500 dark:text-gray-500 mt-1">Last checked: {{ security_txt_checked_at|date:"d/m/Y H:i" }}</span>
                                     {% endif %}
                                 </span>
                             </li>
@@ -149,8 +149,8 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="flex-1 bg-white rounded-lg shadow-xl mt-4 p-8">
-                        <h4 class="text-xl text-gray-900 font-bold">Activity log</h4>
+                    <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl mt-4 p-8">
+                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold">Activity log</h4>
                         <div class="relative px-4">
                             <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
                             <!-- Domain Created At -->
@@ -160,7 +160,7 @@
                                 </div>
                                 <div class="w-11/12">
                                     <p class="text-sm">Domain created at: {{ created|date:"d/m/Y" }}</p>
-                                    <p class="text-xs text-gray-500">{{ created|timesince }} ago</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500">{{ created|timesince }} ago</p>
                                 </div>
                             </div>
                             <!-- Last Modification in Domain -->
@@ -170,7 +170,7 @@
                                 </div>
                                 <div class="w-11/12">
                                     <p class="text-sm">Last modification in domain: {{ modified|date:"d/m/Y" }}</p>
-                                    <p class="text-xs text-gray-500">{{ modified|timesince }} ago</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500">{{ modified|timesince }} ago</p>
                                 </div>
                             </div>
                             {% if first_bug %}
@@ -181,7 +181,7 @@
                                     </div>
                                     <div class="w-11/12">
                                         <p class="text-sm">First bug in this domain: {{ first_bug.created|date:"d/m/Y" }}</p>
-                                        <p class="text-xs text-gray-500">{{ first_bug.created|timesince }} ago</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500">{{ first_bug.created|timesince }} ago</p>
                                     </div>
                                 </div>
                             {% endif %}
@@ -193,7 +193,7 @@
                                     </div>
                                     <div class="w-11/12">
                                         <p class="text-sm">Last bug created in this domain: {{ last_bug.created|date:"d/m/Y" }}</p>
-                                        <p class="text-xs text-gray-500">{{ last_bug.created|timesince }} ago</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500">{{ last_bug.created|timesince }} ago</p>
                                     </div>
                                 </div>
                             {% endif %}
@@ -201,10 +201,10 @@
                     </div>
                 </div>
                 <div class="flex flex-col w-full 2xl:w-2/3">
-                    <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                        <h4 class="text-xl text-gray-900 font-bold">Statistics</h4>
+                    <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold">Statistics</h4>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-4">
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                            <div class="px-6 py-6 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-sm text-indigo-600">Total Rewarded</span>
                                 </div>
@@ -226,7 +226,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                            <div class="px-6 py-6 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-sm text-green-600">Total Bugs</span>
                                 </div>
@@ -248,7 +248,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                            <div class="px-6 py-6 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-sm text-red-600">Accepted Bugs</span>
                                 </div>
@@ -280,21 +280,21 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-white w-full p-10 my-5">
+            <div class="bg-white dark:bg-gray-800 w-full p-10 my-5">
                 <div class="w-full flex justify-between">
-                    <h4 class="text-xl text-gray-900 font-bold mb-5">Ongoing Bug Bounties</h4>
+                    <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">Ongoing Bug Bounties</h4>
                     <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
                 </div>
                 <div class="flex justify-between w-full flex-wrap">
                     {% if ongoing_bughunts %}
                         {% for hunt in ongoing_bughunts %}
-                            <div class="flex w-full md:w-[48%] lg:w-[30%] h-[180px] border-2 border-gray-300 p-2 cursor-pointer shadow-sm hover:scale-105 hover:shadow-lg transition-all m-2 sm:mt-5 rounded-lg">
+                            <div class="flex w-full md:w-[48%] lg:w-[30%] h-[180px] border-2 border-gray-300 dark:border-gray-600 p-2 cursor-pointer shadow-sm hover:scale-105 hover:shadow-lg transition-all m-2 sm:mt-5 rounded-lg">
                                 <div class="flex justify-center items-center w-[40%]">
                                     <img class="w-32 h-32 rounded-lg" {{ hunt.logo }} src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}" alt="bugbounty logo" width="128px" height="128px">
                                 </div>
                                 <div class="flex flex-col ml-5 w-[60%]">
                                     <p class="text-lg font-extrabold mt-6">{{ hunt.name }}</p>
-                                    <p class="tw-font-extralight text-gray-500 text-sm mt-1">{{ hunt.url }}</p>
+                                    <p class="tw-font-extralight text-gray-500 dark:text-gray-500 text-sm mt-1">{{ hunt.url }}</p>
                                     <div class="flex mt-5 justify-between items-center w-full">
                                         <p class="font-bold">
                                             $
@@ -318,14 +318,14 @@
                 </div>
             </div>
             <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
-                <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
+                <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white dark:bg-gray-800 rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
                     <div class="w-full flex justify-between">
-                        <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported ({{ latest_issues|length }})</h4>
+                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">Latest Bugs Reported ({{ latest_issues|length }})</h4>
                         <a href="{% url 'issues' %}" class="text-md text-blue-600">View all</a>
                     </div>
                     {% if latest_issues|length > 0 %}
                         {% for issue in latest_issues %}
-                            <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
+                            <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all">
                                 <div class="w-[10%] mr-5 h-full flex items-center">
                                     <img src="{% if issue.first_screenshot %} {{ MEDIA_URL }}{{ issue.first_screenshot }} {% else %} https://via.placeholder.com/100?text=No+Screenshot {% endif %}"
                                          alt="bug"
@@ -334,7 +334,7 @@
                                 </div>
                                 <div class="w-full h-full">
                                     <div class="flex justify-between items-center">
-                                        <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created|date:"d/m/Y" }}</span>
+                                        <span class="font-light text-gray-600 dark:text-gray-400">Reported to {{ issue.domain__name }} on {{ issue.created|date:"d/m/Y" }}</span>
                                         <div>
                                             <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.label }}</a>
                                             <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.status }}</a>
@@ -345,7 +345,7 @@
                                         </div>
                                     </div>
                                     <div class="mt-2">
-                                        <a class="text-xl text-black font-bold hover:text-gray-700"
+                                        <a class="text-xl text-black dark:text-white font-bold hover:text-gray-700"
                                            href="{% url 'issue_view' issue.id %}">{{ issue.description }}</a>
                                     </div>
                                     <div class="flex justify-between items-center mt-4">
@@ -357,7 +357,7 @@
                                                      alt="avatar"
                                                      width="40px"
                                                      height="40px">
-                                                <h1 class="text-gray-700 font-bold">{{ issue.user__username }}</h1>
+                                                <h1 class="text-gray-700 dark:text-gray-300 font-bold">{{ issue.user__username }}</h1>
                                             </a>
                                         </div>
                                         <a class="text-blue-600 hover:underline"
@@ -372,14 +372,14 @@
                         </div>
                     {% endif %}
                 </div>
-                <div class="bg-white rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
                     <div class="flex items-center justify-between">
-                        <h4 class="text-xl text-gray-900 font-bold">Top Testers ({{ top_testers | length }})</h4>
+                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold">Top Testers ({{ top_testers | length }})</h4>
                     </div>
                     <div class="flex flex-wrap justify-between mt-10">
                         {% for tester in top_testers %}
                             <a href="{% url 'profile' tester.user__username %}"
-                               class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600"
+                               class="flex flex-col items-center m-5 justify-center text-gray-800 dark:text-gray-200 hover:text-red-600"
                                title="View Profile">
                                 <img src="{% if tester.user__userprofile__user_avatar %} {{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }} {% else %} https://via.placeholder.com/100?text=No+Avatar {% endif %}"
                                      class="w-[100px] rounded-full"
@@ -387,7 +387,7 @@
                                      width="100px"
                                      height="100px">
                                 <p class="text-center font-bold text-sm mt-1">{{ tester.user__username }}</p>
-                                <p class="text-xs text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
                             </a>
                         {% endfor %}
                     </div>

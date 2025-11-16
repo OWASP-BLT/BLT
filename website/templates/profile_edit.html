@@ -21,13 +21,13 @@
         <div class="lg:max-w-[1700px] mx-auto">
             <!-- Header -->
             <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-gray-900">Edit Profile</h2>
-                <p class="mt-2 text-gray-600">Update your personal information and preferences</p>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Edit Profile</h2>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">Update your personal information and preferences</p>
             </div>
             <!-- Main Form -->
             <form method="post"
                   enctype="multipart/form-data"
-                  class=" bg-white rounded-xl w-full border border-gray-200 shadow-md py-10 px-8">
+                  class="bg-white dark:bg-gray-800 rounded-xl w-full border border-gray-200 dark:border-gray-700 shadow-md py-10 px-8">
                 {% csrf_token %}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <!-- Left Column -->
@@ -42,8 +42,8 @@
                                          width="128"
                                          height="128">
                                 {% else %}
-                                    <div class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-[#e74c3c]">
-                                        <i class="fas fa-user text-4xl text-gray-400"></i>
+                                    <div class="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-4 border-[#e74c3c]">
+                                        <i class="fas fa-user text-4xl text-gray-400 dark:text-gray-600"></i>
                                     </div>
                                 {% endif %}
                                 <label for="id_user_avatar"
@@ -56,169 +56,169 @@
                                        class="hidden"
                                        accept="image/*">
                             </div>
-                            <p class="text-sm text-gray-500">Click the camera icon to update your profile picture</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-500">Click the camera icon to update your profile picture</p>
                         </div>
                         <!-- Role & Description -->
                         <div class="space-y-6">
                             <div>
-                                <label for="id_role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                                <label for="id_role" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
                                 <input type="text"
                                        name="role"
                                        id="id_role"
                                        value="{{ form.role.value }}"
-                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="e.g., Security Researcher">
                             </div>
                             <div>
                                 <label for="id_description"
-                                       class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
                                 <textarea name="description"
                                           id="id_description"
                                           rows="4"
-                                          class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                          class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                           placeholder="Tell us about yourself...">{{ form.description.value }}</textarea>
                             </div>
                         </div>
                         <!-- Hourly Rate -->
                         <div>
                             <label for="id_discounted_hourly_rate"
-                                   class="block text-sm font-medium text-gray-700 mb-2">
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Discounted Hourly Rate ($/hr)
                             </label>
                             <div class="relative">
-                                <span class="absolute left-3 top-2 text-gray-500">$</span>
+                                <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500">$</span>
                                 <input type="number"
                                        name="discounted_hourly_rate"
                                        id="id_discounted_hourly_rate"
                                        value="{{ form.discounted_hourly_rate.value }}"
-                                       class="w-full placeholder:text-base pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="0.00">
                             </div>
                         </div>
                         <!-- Social Links -->
                         <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Social Links</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Social Links</h3>
                             <div class="space-y-4">
                                 <div>
                                     <label for="id_linkedin_url"
-                                           class="block text-sm font-medium text-gray-700 mb-2">LinkedIn</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">LinkedIn</label>
                                     <div class="relative">
-                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-linkedin text-[#e74c3c]"></i></span>
+                                        <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500"><i class="fab fa-linkedin text-[#e74c3c]"></i></span>
                                         <input type="url"
                                                name="linkedin_url"
                                                id="id_linkedin_url"
                                                value="{{ form.linkedin_url.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="https://linkedin.com/in/username">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="id_github_url"
-                                           class="block text-sm font-medium text-gray-700 mb-2">GitHub</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">GitHub</label>
                                     <div class="relative">
-                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-github text-[#e74c3c]"></i></span>
+                                        <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500"><i class="fab fa-github text-[#e74c3c]"></i></span>
                                         <input type="url"
                                                name="github_url"
                                                id="id_github_url"
                                                value="{{ form.github_url.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="https://github.com/username">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="id_x_username"
-                                           class="block text-sm font-medium text-gray-700 mb-2">X (Twitter)</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">X (Twitter)</label>
                                     <div class="relative">
-                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-x-twitter text-[#e74c3c]"></i></span>
+                                        <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500"><i class="fab fa-x-twitter text-[#e74c3c]"></i></span>
                                         <input type="text"
                                                name="x_username"
                                                id="id_x_username"
                                                value="{{ form.x_username.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="@username">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="id_website_url"
-                                           class="block text-sm font-medium text-gray-700 mb-2">Website</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Website</label>
                                     <div class="relative">
-                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fas fa-globe text-[#e74c3c]"></i></span>
+                                        <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500"><i class="fas fa-globe text-[#e74c3c]"></i></span>
                                         <input type="url"
                                                name="website_url"
                                                id="id_website_url"
                                                value="{{ form.website_url.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="https://yourwebsite.com">
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <!-- Issues Hidden -->
-                        <div class="flex items-center ">
+                        <div class="flex items-center">
                             <input type="checkbox"
                                    name="issues_hidden"
                                    id="id_issues_hidden"
-                                   class="h-5 w-5 text-[#e74c3c] border-gray-300 rounded focus:ring-[#e74c3c]"
+                                   class="h-5 w-5 text-[#e74c3c] border-gray-300 dark:border-gray-600 rounded focus:ring-[#e74c3c]"
                                    {% if form.issues_hidden.value %}checked{% endif %}>
-                            <p for="id_issues_hidden" class="ml-3 text-sm font-medium text-gray-700">Hide Issues</p>
+                            <p for="id_issues_hidden" class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">Hide Issues</p>
                         </div>
                     </div>
                     <!-- Right Column -->
                     <div class="space-y-8">
                         <!-- Email -->
                         <div>
-                            <label for="id_email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <label for="id_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
                             <div class="relative">
-                                <span class="absolute left-3 top-2 text-gray-500"><i class="fas fa-envelope text-[#e74c3c]"></i></span>
+                                <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500"><i class="fas fa-envelope text-[#e74c3c]"></i></span>
                                 <input type="email"
                                        name="email"
                                        id="id_email"
                                        value="{{ form.email.value|default_if_none:'' }}"
-                                       class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        required>
                             </div>
                             {% if form.email.errors %}<div class="mt-2 text-sm text-red-600">{{ form.email.errors }}</div>{% endif %}
                         </div>
                         <!-- Crypto Addresses -->
                         <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Crypto Addresses</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Crypto Addresses</h3>
                             <div class="space-y-4">
                                 <div>
                                     <label for="id_btc_address"
-                                           class="block text-sm font-medium text-gray-700 mb-2">Bitcoin</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bitcoin</label>
                                     <div class="relative">
-                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-bitcoin text-[#e74c3c]"></i></span>
+                                        <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500"><i class="fab fa-bitcoin text-[#e74c3c]"></i></span>
                                         <input type="text"
                                                name="btc_address"
                                                id="id_btc_address"
                                                value="{{ form.btc_address.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="BTC Address">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="id_bch_address"
-                                           class="block text-sm font-medium text-gray-700 mb-2">Bitcoin Cash</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bitcoin Cash</label>
                                     <div class="relative">
-                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-bitcoin text-[#e74c3c]"></i></span>
+                                        <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500"><i class="fab fa-bitcoin text-[#e74c3c]"></i></span>
                                         <input type="text"
                                                name="bch_address"
                                                id="id_bch_address"
                                                value="{{ form.bch_address.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="BCH Address">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="id_eth_address"
-                                           class="block text-sm font-medium text-gray-700 mb-2">Ethereum</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ethereum</label>
                                     <div class="relative">
-                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-ethereum text-[#e74c3c]"></i></span>
+                                        <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-500"><i class="fab fa-ethereum text-[#e74c3c]"></i></span>
                                         <input type="text"
                                                name="eth_address"
                                                id="id_eth_address"
                                                value="{{ form.eth_address.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="ETH Address">
                                     </div>
                                 </div>
@@ -226,15 +226,15 @@
                         </div>
                         <!-- Tags -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
                             <div class="relative">
                                 <input type="text"
                                        id="tagSearch"
-                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="Search tags...">
                             </div>
                             <div id="tagContainer"
-                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-4">
+                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-4">
                                 <div class="flex flex-wrap gap-2">
                                     {% for tag in form.tags.field.queryset %}
                                         <div class="tag-item">
@@ -245,7 +245,7 @@
                                                    class="hidden"
                                                    {% if tag.id in form.tags.value %}checked{% endif %}>
                                             <label for="tag_{{ tag.id }}"
-                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if tag.id in form.tags.value %} bg-[#e74c3c] text-white {% else %} bg-gray-100 text-gray-700 hover:bg-gray-200 {% endif %}">
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if tag.id in form.tags.value %} bg-[#e74c3c] text-white {% else %} bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 {% endif %}">
                                                 {{ tag.name }}
                                             </label>
                                         </div>
@@ -255,15 +255,15 @@
                         </div>
                         <!-- Subscribed Domains -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Subscribed Domains</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subscribed Domains</label>
                             <div class="relative">
                                 <input type="text"
                                        id="domainSearch"
-                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="Search domains...">
                             </div>
                             <div id="domainContainer"
-                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-4">
+                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-4">
                                 <div class="flex flex-wrap gap-2">
                                     {% for domain in form.subscribed_domains.field.queryset %}
                                         <div class="domain-item">
@@ -274,7 +274,7 @@
                                                    class="hidden"
                                                    {% if domain.id in form.subscribed_domains.value %}checked{% endif %}>
                                             <label for="domain_{{ domain.id }}"
-                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if domain.id in form.subscribed_domains.value %}bg-[#e74c3c] text-white hover:bg-red-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if domain.id in form.subscribed_domains.value %}bg-[#e74c3c] text-white hover:bg-red-700{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
                                                 {{ domain.name }}
                                             </label>
                                         </div>
@@ -284,15 +284,15 @@
                         </div>
                         <!-- Subscribed Users -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Subscribed Users</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subscribed Users</label>
                             <div class="relative">
                                 <input type="text"
                                        id="userSearch"
-                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="Search users...">
                             </div>
                             <div id="userContainer"
-                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-4">
+                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-4">
                                 <div class="flex flex-wrap gap-2">
                                     {% for user in form.subscribed_users.field.queryset %}
                                         <div class="user-item">
@@ -303,7 +303,7 @@
                                                    class="hidden"
                                                    {% if user.id in form.subscribed_users.value %}checked{% endif %}>
                                             <label for="user_{{ user.id }}"
-                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if user.id in form.subscribed_users.value %}bg-[#e74c3c] text-white hover:bg-red-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if user.id in form.subscribed_users.value %}bg-[#e74c3c] text-white hover:bg-red-700{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
                                                 {{ user.username }}
                                             </label>
                                         </div>

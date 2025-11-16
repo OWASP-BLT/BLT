@@ -25,7 +25,7 @@
         <!-- Main Content Section -->
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
-                <h1 class="text-4xl font-semibold text-gray-800 mb-8">Your Sizzle Report</h1>
+                <h1 class="text-4xl font-semibold text-gray-800 dark:text-gray-200 mb-8">Your Sizzle Report</h1>
                 {% if user.is_authenticated %}
                     <div class="flex space-x-2">
                         <input type="text"
@@ -57,48 +57,48 @@
                 <!-- Report Table -->
                 {% if user.is_authenticated %}
                     <div id="report-table" class="lg:w-1/2">
-                        <div class="bg-white shadow-lg rounded-lg overflow-hidden"
+                        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
                              id="report-item">
-                            <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
+                            <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400 dark:border-gray-500">
                                 {% if sizzle_data %}
                                     {{ sizzle_data.date }}
                                 {% else %}
                                     No Data
                                 {% endif %}
                             </div>
-                            <table class="min-w-full bg-white">
+                            <table class="min-w-full bg-white dark:bg-gray-800">
                                 <thead>
                                     <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                        <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
-                                        <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
-                                        <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
-                                        <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Issue Title</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Started</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Total</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td class="py-3 px-4 border-b border-gray-200">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             {% if sizzle_data %}
                                                 {{ sizzle_data.issue_title }}
                                             {% else %}
                                                 No Data
                                             {% endif %}
                                         </td>
-                                        <td class="py-3 px-4 border-b border-gray-200">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             {% if sizzle_data %}
                                                 {{ sizzle_data.start_time }}
                                             {% else %}
                                                 No Data
                                             {% endif %}
                                         </td>
-                                        <td class="py-3 px-4 border-b border-gray-200">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             {% if sizzle_data %}
                                                 {{ sizzle_data.duration }}
                                             {% else %}
                                                 No Data
                                             {% endif %}
                                         </td>
-                                        <td class="py-3 px-4 border-b border-gray-200">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             {% if user.is_authenticated %}
                                                 <button class="delete-entry bg-red-500 text-white py-1 px-3 rounded"
                                                         data-id="{{ sizzle_data.id }}">Delete</button>
@@ -112,23 +112,23 @@
                 {% endif %}
                 <!-- Leaderboard Section -->
                 <div class="mt-8 lg:mt-0 lg:w-1/2">
-                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">Leaderboard</div>
-                        <table class="min-w-full bg-white">
+                    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400 dark:border-gray-500">Leaderboard</div>
+                        <table class="min-w-full bg-white dark:bg-gray-800">
                             <thead>
                                 <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Username</th>
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Total Duration</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Username</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Total Duration</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for user in leaderboard %}
                                     <tr>
-                                        <td class="py-3 px-4 border-b border-gray-200">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             <a href="{% url 'user_sizzle_report' user.username %}"
                                                class="text-blue-500 hover:underline">{{ user.username }}</a>
                                         </td>
-                                        <td class="py-3 px-4 border-b border-gray-200">{{ user.formatted_duration }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ user.formatted_duration }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -166,25 +166,25 @@
                             $('#report-table').empty();
                             data.forEach(function(item) {
                                 $('#report-table').append(`
-                                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                                    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
                                         <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
                                             ${item.date}
                                         </div>
-                                        <table class="min-w-full bg-white">
+                                        <table class="min-w-full bg-white dark:bg-gray-800">
                                             <thead>
                                                 <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
-                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
-                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
-                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
+                                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Issue Title</th>
+                                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Started</th>
+                                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Total</th>
+                                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr>
-                                                    <td class="py-3 px-4 border-b border-gray-200">${item.issue_title}</td>
-                                                    <td class="py-3 px-4 border-b border-gray-200">${item.start_time}</td>
-                                                    <td class="py-3 px-4 border-b border-gray-200">${item.duration}</td>
-                                                    <td class="py-3 px-4 border-b border-gray-200">
+                                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.issue_title}</td>
+                                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.start_time}</td>
+                                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.duration}</td>
+                                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                                         <button class="delete-entry bg-red-500 text-white py-1 px-3 rounded" data-id="${item.id}">
                                                             Delete
                                                         </button>

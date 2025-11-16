@@ -7,7 +7,7 @@
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 py-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Back Button -->
             <div class="mb-6">
@@ -24,18 +24,18 @@
             </div>
             <!-- Header -->
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Stake in {{ pool.name }}</h1>
-                <p class="text-gray-600">Enter the amount of BACON you want to stake</p>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Stake in {{ pool.name }}</h1>
+                <p class="text-gray-600 dark:text-gray-400">Enter the amount of BACON you want to stake</p>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Staking Form -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Stake BACON Tokens</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Stake BACON Tokens</h2>
                     <form method="post" id="staking-form">
                         {% csrf_token %}
                         <!-- Amount Input -->
                         <div class="mb-6">
-                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Stake Amount (BACON)</label>
+                            <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stake Amount (BACON)</label>
                             <div class="relative">
                                 <input type="number"
                                        id="amount"
@@ -43,33 +43,33 @@
                                        min="{{ pool.entry_fee }}"
                                        max="{{ user_balance }}"
                                        step="1"
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] text-lg"
+                                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] text-lg"
                                        placeholder="Enter amount"
                                        required />
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                    <span class="text-gray-500 text-sm">BACON</span>
+                                    <span class="text-gray-500 dark:text-gray-500 text-sm">BACON</span>
                                 </div>
                             </div>
-                            <div class="mt-2 flex justify-between text-sm text-gray-600">
+                            <div class="mt-2 flex justify-between text-sm text-gray-600 dark:text-gray-400">
                                 <span>Minimum: {{ pool.entry_fee }} BACON</span>
                                 <span>Available: {{ user_balance }} BACON</span>
                             </div>
                         </div>
                         <!-- Quick Amount Buttons -->
                         <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Quick Select</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Select</label>
                             <div class="grid grid-cols-3 gap-2">
                                 <button type="button"
-                                        class="quick-amount bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                        class="quick-amount bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                                         data-amount="{{ pool.entry_fee }}">Minimum</button>
                                 {% if user_balance >= 100 %}
                                     <button type="button"
-                                            class="quick-amount bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                            class="quick-amount bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                                             data-amount="100">100 BACON</button>
                                 {% endif %}
                                 {% if user_balance >= 500 %}
                                     <button type="button"
-                                            class="quick-amount bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                            class="quick-amount bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                                             data-amount="500">500 BACON</button>
                                 {% endif %}
                             </div>
@@ -79,8 +79,8 @@
                             <label class="flex items-start">
                                 <input type="checkbox"
                                        required
-                                       class="mt-1 mr-3 h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded" />
-                                <span class="text-sm text-gray-700">
+                                       class="mt-1 mr-3 h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 dark:border-gray-600 rounded" />
+                                <span class="text-sm text-gray-700 dark:text-gray-300">
                                     I understand that staked BACON tokens will be locked until the
                                     pool ends or I choose to unstake
                                     {% if not pool.allow_unstaking
@@ -99,31 +99,31 @@
                     </form>
                 </div>
                 <!-- Pool Information -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Pool Information</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Pool Information</h2>
                     <div class="space-y-4">
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Pool Name:</span>
+                            <span class="text-gray-600 dark:text-gray-400">Pool Name:</span>
                             <span class="font-semibold">{{ pool.name }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Entry Fee:</span>
+                            <span class="text-gray-600 dark:text-gray-400">Entry Fee:</span>
                             <span class="font-semibold text-[#e74c3c]">{{ pool.entry_fee }} BACON</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Current Prize Pool:</span>
+                            <span class="text-gray-600 dark:text-gray-400">Current Prize Pool:</span>
                             <span class="font-semibold text-green-600">{{ pool.prize_pool }} BACON</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Participants:</span>
+                            <span class="text-gray-600 dark:text-gray-400">Participants:</span>
                             <span class="font-semibold">{{ pool.total_participants }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">End Date:</span>
+                            <span class="text-gray-600 dark:text-gray-400">End Date:</span>
                             <span class="font-semibold">{{ pool.end_date|date:"M d, Y H:i" }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Unstaking Allowed:</span>
+                            <span class="text-gray-600 dark:text-gray-400">Unstaking Allowed:</span>
                             <span class="font-semibold {% if pool.allow_unstaking %}text-green-600{% else %}text-red-600{% endif %}">
                                 {% if pool.allow_unstaking %}
                                     Yes
@@ -134,14 +134,14 @@
                         </div>
                     </div>
                     <!-- Description -->
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="text-sm font-medium text-gray-900 mb-2">Description</h3>
-                        <p class="text-sm text-gray-600">{{ pool.description }}</p>
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Description</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ pool.description }}</p>
                     </div>
                     <!-- Reward Distribution -->
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="text-sm font-medium text-gray-900 mb-2">Reward Distribution</h3>
-                        <div class="text-sm text-gray-600">
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Reward Distribution</h3>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
                             <p>🥇 1st Place: 50% of prize pool</p>
                             <p>🥈 2nd Place: 30% of prize pool</p>
                             <p>🥉 3rd Place: 20% of prize pool</p>

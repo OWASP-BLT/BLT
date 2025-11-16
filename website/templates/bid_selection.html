@@ -42,7 +42,7 @@
                         const bidElement = document.createElement("div");
                         bidElement.classList.add("bg-red-500", "text-black", "p-4", "rounded", "text-center", "mb-2");
                         bidElement.innerHTML = `
-                            <div class="p-4 border rounded-lg shadow-md bg-white">
+                            <div class="p-4 border rounded-lg shadow-md bg-white dark:bg-gray-800">
                                 <p class="font-bold">User: ${bid.user}</p>
                                 <p>Current Bid: ${bid.amount}</p>
                                 <p>Issue Url: <a href="${bid.issue_url}" class="text-blue-500 underline">${bid.issue_url}</a></p>
@@ -96,7 +96,7 @@
         }
     </script>
     <div class="flex flex-col items-center py-8">
-        <form id="bid" class="bg-white p-6 rounded-lg shadow-lg w-96" method="post">
+        <form id="bid" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96" method="post">
             {% csrf_token %}
             <label class="block font-bold mb-2">Paste URL to fetch bids</label>
             <input type="text"

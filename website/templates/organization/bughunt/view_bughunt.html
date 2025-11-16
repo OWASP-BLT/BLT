@@ -124,8 +124,8 @@
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="h-full bg-gray-200 p-8">
-        <div class="bg-white rounded-lg shadow-xl pb-8">
+    <div class="h-full bg-gray-200 dark:bg-gray-700 p-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl pb-8">
             <div class="w-full h-[250px]">
                 <img src="{% if banner_src %} {{ MEDIA_URL }}{{ banner_src }} {% else %}https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png {% endif %}"
                      class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover"
@@ -135,7 +135,7 @@
             </div>
             <div class="flex flex-col items-center -mt-20">
                 <img src="{% if hunt_obj.logo %} {{ MEDIA_URL }}{{ hunt_obj.logo }} {% else %} https://via.placeholder.com/160?text=No+Logo {% endif %}"
-                     class="w-40 h-40 border-4  rounded-full"
+                     class="w-40 h-40 border-4 rounded-full"
                      width="100"
                      height="100"
                      alt="logo">
@@ -150,19 +150,19 @@
                 <div class="flex items-center space-x-4 mt-2">
                     {% if is_hunt_manager and not hunt_obj.result_published %}
                         <a href="{% url 'end_bughunt' hunt_obj.id %}"
-                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 dark:text-gray-900 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                             <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>
                             <span>End Bug Bounty</span>
                         </a>
                     {% elif not is_hunt_manager and not hunt_obj.result_published %}
                         <a href="#"
                            onclick="history.back(); return false;"
-                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 dark:text-gray-900 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                             <i class="fa-sharp fa-solid fa-cog fa-lg text-white"></i>
                             <span>Back</span>
                         </a>
                         <a href="{% url 'report' %}?hunt={{ hunt_obj.id }}"
-                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 dark:text-gray-900 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                             <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>
                             <span>Submit Bug</span>
                         </a>
@@ -172,28 +172,28 @@
         </div>
         <div class="my-4 flex flex-col 2xl:flex-row space-y-4 2xl:space-y-0 2xl:space-x-4">
             <div class="w-full flex flex-col 2xl:w-1/3">
-                <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                    <h4 class="text-xl text-gray-900 font-bold">BugHunt Info</h4>
-                    <ul class="mt-2 text-gray-700">
+                <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+                    <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold">BugHunt Info</h4>
+                    <ul class="mt-2 text-gray-700 dark:text-gray-300">
                         <li class="flex border-y py-2 my-2">
                             <span class="font-bold w-24">Hunt:</span>
-                            <span class="text-gray-700">{{ hunt_obj.name }}</span>
+                            <span class="text-gray-700 dark:text-gray-300">{{ hunt_obj.name }}</span>
                         </li>
                         <li class="flex border-b py-2 my-2">
                             <span class="font-bold w-24">Url</span>
-                            <span class="text-gray-700">{{ hunt_obj.url }}</span>
+                            <span class="text-gray-700 dark:text-gray-300">{{ hunt_obj.url }}</span>
                         </li>
                         <li class="flex border-b py-2 my-2">
                             <span class="font-bold w-24">Domain</span>
-                            <span class="text-gray-700">{{ hunt_obj.domain.name }}</span>
+                            <span class="text-gray-700 dark:text-gray-300">{{ hunt_obj.domain.name }}</span>
                         </li>
                         <li class="flex border-b py-2 my-2">
                             <span class="font-bold w-24">Starts On:</span>
-                            <span class="text-gray-700">{{ hunt_obj.starts_on.day }} / {{ hunt_obj.starts_on.month }} / {{ hunt_obj.starts_on.year }}</span>
+                            <span class="text-gray-700 dark:text-gray-300">{{ hunt_obj.starts_on.day }} / {{ hunt_obj.starts_on.month }} / {{ hunt_obj.starts_on.year }}</span>
                         </li>
                         <li class="flex border-b py-2 my-2">
                             <span class="font-bold w-24">Ends On:</span>
-                            <span class="text-gray-700">{{ hunt_obj.end_on.day }} / {{ hunt_obj.end_on.month }} / {{ hunt_obj.end_on.year }}</span>
+                            <span class="text-gray-700 dark:text-gray-300">{{ hunt_obj.end_on.day }} / {{ hunt_obj.end_on.month }} / {{ hunt_obj.end_on.year }}</span>
                         </li>
                         <li class="flex border-b py-2 my-2">
                             <span class="font-bold w-24">Status:</span>
@@ -205,8 +205,8 @@
                         </li>
                     </ul>
                 </div>
-                <div class="flex-1 bg-white rounded-lg shadow-xl mt-4 p-8">
-                    <h4 class="text-xl text-gray-900 font-bold">Activity log</h4>
+                <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl mt-4 p-8">
+                    <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold">Activity log</h4>
                     <div class="relative px-4">
                         <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
                         <!-- start::Timeline item -->
@@ -216,7 +216,7 @@
                             </div>
                             <div class="w-11/12">
                                 <p class="text-sm">BugHunt created at: {{ hunt_obj.created|date:"d/m/Y" }}</p>
-                                <p class="text-xs text-gray-500">{{ hunt_obj.created|timesince }} ago</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-500">{{ hunt_obj.created|timesince }} ago</p>
                             </div>
                         </div>
                         <div class="flex items-center w-full my-6 -ml-1.5">
@@ -225,7 +225,7 @@
                             </div>
                             <div class="w-11/12">
                                 <p class="text-sm">Last modification in BugHunt: {{ hunt_obj.modified|date:"d/m/Y" }}</p>
-                                <p class="text-xs text-gray-500">{{ hunt_obj.modified|timesince }} ago</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-500">{{ hunt_obj.modified|timesince }} ago</p>
                             </div>
                         </div>
                         {% if first_bug %}
@@ -236,7 +236,7 @@
                                 </div>
                                 <div class="w-11/12">
                                     <p class="text-sm">First bug in this BugHunt: {{ first_bug.created|date:"d/m/Y" }}</p>
-                                    <p class="text-xs text-gray-500">{{ first_bug.created|timesince }} ago</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500">{{ first_bug.created|timesince }} ago</p>
                                 </div>
                             </div>
                         {% endif %}
@@ -248,7 +248,7 @@
                                 </div>
                                 <div class="w-11/12">
                                     <p class="text-sm">Last bug created in this BugHunt: {{ last_bug.created|date:"d/m/Y" }}</p>
-                                    <p class="text-xs text-gray-500">{{ last_bug.created|timesince }} ago</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500">{{ last_bug.created|timesince }} ago</p>
                                 </div>
                             </div>
                         {% endif %}
@@ -257,10 +257,10 @@
             </div>
             <div class="flex flex-col w-full 2xl:w-2/3">
                 <div class="flex flex-col w-full">
-                    <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                        <h4 class="text-xl text-gray-900 font-bold">Statistics</h4>
+                    <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold">Statistics</h4>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-4">
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                            <div class="px-6 py-6 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-sm text-indigo-600">Total Rewarded</span>
                                 </div>
@@ -282,7 +282,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                            <div class="px-6 py-6 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-sm text-green-600">Total Bugs</span>
                                 </div>
@@ -304,7 +304,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                            <div class="px-6 py-6 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-sm text-red-600">Accepted Bugs</span>
                                 </div>
@@ -329,13 +329,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-white w-full h-full my-5 p-5 rounded-lg">
+                <div class="bg-white dark:bg-gray-800 w-full h-full my-5 p-5 rounded-lg">
                     <div class="w-full flex justify-between">
-                        <h4 class="text-xl text-gray-900 font-bold mb-5">BUGHUNT WINNERS</h4>
+                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">BUGHUNT WINNERS</h4>
                     </div>
                     <div class="relative overflow-x-auto shadow-md sm:rounded-lg max-h-[550px] overflow-y-scroll">
-                        <table id="winnersTable" class="w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <table id="winnersTable" class="w-full text-sm text-left text-gray-500 dark:text-gray-500">
+                            <thead class="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-900">
                                 <tr>
                                     <th scope="col" class="px-6 py-3">Winner</th>
                                     <th scope="col" class="px-6 py-3">Prize</th>
@@ -345,9 +345,9 @@
                             </thead>
                             <tbody id="winnersBody">
                                 {% for winner in winners %}
-                                    <tr class="winner-row bg-white border-b">
+                                    <tr class="winner-row bg-white dark:bg-gray-800 border-b">
                                         <td scope="row"
-                                            class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap">
+                                            class="flex items-center px-6 py-4 text-gray-900 dark:text-gray-100 whitespace-nowrap">
                                             <img class="rounded-full"
                                                  src="{% if winner.winner.userprofile.user_avatar %} {{ MEDIA_URL }}{{ winner.winner.userprofile.user_avatar }} {% else %} https://via.placeholder.com/100?text=No+Avatar {% endif %}"
                                                  alt="avatar"
@@ -355,8 +355,8 @@
                                                  height="40">
                                             <div class="pl-3">
                                                 <a href="{% url 'profile' winner.winner.username %}"
-                                                   class="font-medium text-gray-900 hover:text-gray-600">{{ winner.winner.username }}</a>
-                                                <div class="font-normal text-gray-500">{{ winner.winner.email }}</div>
+                                                   class="font-medium text-gray-900 dark:text-gray-100 hover:text-gray-600">{{ winner.winner.username }}</a>
+                                                <div class="font-normal text-gray-500 dark:text-gray-500">{{ winner.winner.email }}</div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">{{ winner.prize.name }}</td>
@@ -409,7 +409,7 @@
                                 class="pagination-button px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300 ease-in-out">
                             Previous
                         </button>
-                        <span id="pageInfo" class="mx-4 text-gray-700 font-medium"></span>
+                        <span id="pageInfo" class="mx-4 text-gray-700 dark:text-gray-300 font-medium"></span>
                         <button id="nextPage"
                                 class="pagination-button px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300 ease-in-out">
                             Next
@@ -418,19 +418,19 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white w-full p-10 my-5 rounded-lg shadow-md">
+        <div class="bg-white dark:bg-gray-800 w-full p-10 my-5 rounded-lg shadow-md">
             <div class="w-full flex justify-between">
-                <h4 class="text-xl text-gray-900 font-bold mb-5">Description</h4>
+                <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">Description</h4>
             </div>
             <div class="w-full">
                 <div x-data="markdown()"
                      x-init=" convertHtmlToMarkdown(); codeMirrorEditor = CodeMirror.fromTextArea($refs.input, { mode: 'markdown', theme: 'default', lineWrapping: true });  codeMirrorEditor.setValue(content); codeMirrorEditor.setSize('100%', height); setTimeout(function() { codeMirrorEditor.refresh(); }, 1);  codeMirrorEditor.on('change', () => content = codeMirrorEditor.getValue()) "
                      class="relative"
                      x-cloak>
-                    <div class="bg-gray-50 border border-b-0 border-gray-300 top-0 left-0 right-0 block rounded-t-md">
+                    <div class="bg-gray-50 dark:bg-gray-900 border border-b-0 border-gray-300 dark:border-gray-600 top-0 left-0 right-0 block rounded-t-md">
                         <button type="button"
                                 id="mdPreview"
-                                class="py-2 px-4 inline-block text-gray-400 font-semibold"
+                                class="py-2 px-4 inline-block text-gray-400 dark:text-gray-600 font-semibold"
                                 :class="{ 'text-indigo-600': tab === 'preview' && showConvertedMarkdown === true }"
                                 x-on:click.prevent="tab = 'preview'; convertedMarkdown()">
                             Click for the Description
@@ -438,21 +438,21 @@
                     </div>
                     <div x-show="showConvertedMarkdown">
                         <div x-html="convertedContent"
-                             class="w-full prose max-w-none prose-indigo leading-6 rounded-b-md shadow-sm border border-gray-300 p-5 bg-white overflow-y-auto"
+                             class="w-full prose max-w-none prose-indigo leading-6 rounded-b-md shadow-sm border border-gray-300 dark:border-gray-600 p-5 bg-white dark:bg-gray-800 overflow-y-auto"
                              :style="`height: ${height}; max-width: 100%`"></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="bg-white w-full p-10 my-5 rounded-lg shadow-md">
+        <div class="bg-white dark:bg-gray-800 w-full p-10 my-5 rounded-lg shadow-md">
             <div class="w-full flex justify-between">
-                <h4 class="text-xl text-gray-900 font-bold mb-5">Rewards</h4>
+                <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">Rewards</h4>
             </div>
             <div class="flex justify-start w-full overflow-x-scroll">
                 {% for reward in rewards %}
-                    <div class="min-w-[400px] w-full max-w-sm p-4 m-5 bg-white border border-gray-200 rounded-lg shadow-md sm:p-8">
-                        <h5 class="mb-4 text-xl font-medium text-gray-700">{{ reward.name }}</h5>
-                        <div class="flex items-baseline text-gray-900">
+                    <div class="min-w-[400px] w-full max-w-sm p-4 m-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md sm:p-8">
+                        <h5 class="mb-4 text-xl font-medium text-gray-700 dark:text-gray-300">{{ reward.name }}</h5>
+                        <div class="flex items-baseline text-gray-900 dark:text-gray-100">
                             <span class="text-3xl font-semibold">$</span>
                             <span class="text-5xl font-extrabold tracking-tight">{{ reward.value }}</span>
                         </div>
@@ -466,9 +466,9 @@
                                     <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
                                 </svg>
                                 {% if reward.valid_submissions_eligible %}
-                                    <span class="text-base font-normal leading-tight text-gray-500">Each Accepted Bug will recieve ${{ reward.value }}</span>
+                                    <span class="text-base font-normal leading-tight text-gray-500 dark:text-gray-500">Each Accepted Bug will recieve ${{ reward.value }}</span>
                                 {% else %}
-                                    <span class="text-base font-normal leading-tight text-gray-500">Top {{ reward.no_of_eligible_projects }} Users</span>
+                                    <span class="text-base font-normal leading-tight text-gray-500 dark:text-gray-500">Top {{ reward.no_of_eligible_projects }} Users</span>
                                 {% endif %}
                             </li>
                             {% if reward.prize_in_crypto %}
@@ -480,7 +480,7 @@
                                          viewBox="0 0 20 20">
                                         <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
                                     </svg>
-                                    <span class="text-base font-normal leading-tight text-gray-500">Prize paid in cryptocurrency</span>
+                                    <span class="text-base font-normal leading-tight text-gray-500 dark:text-gray-500">Prize paid in cryptocurrency</span>
                                 </li>
                             {% endif %}
                         </ul>
@@ -489,14 +489,14 @@
             </div>
         </div>
         <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
-            <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
+            <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white dark:bg-gray-800 rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
                 <div class="w-full flex justify-between">
-                    <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported ({{ latest_issues|length }})</h4>
+                    <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">Latest Bugs Reported ({{ latest_issues|length }})</h4>
                     <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
                 </div>
                 {% if latest_issues|length > 0 %}
                     {% for issue in latest_issues %}
-                        <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
+                        <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all">
                             <div class="w-[10%] mr-5 h-full flex items-center">
                                 <img src="{% if issue.first_screenshot %} {{ MEDIA_URL }}{{ issue.first_screenshot }} {% else %} https://via.placeholder.com/100?text=No+Screenshot {% endif %}"
                                      alt=""
@@ -505,7 +505,7 @@
                             </div>
                             <div class="w-full h-full">
                                 <div class="flex justify-between items-center">
-                                    <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created|date:"d/m/Y" }}</span>
+                                    <span class="font-light text-gray-600 dark:text-gray-400">Reported to {{ issue.domain__name }} on {{ issue.created|date:"d/m/Y" }}</span>
                                     <div>
                                         <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.label }}</a>
                                         <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.status }}</a>
@@ -518,31 +518,31 @@
                                                     class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500"
                                                     onclick="toggleDropdown({{ issue.id }})">Accept Bug</button>
                                             <div id="dropdown-{{ issue.id }}"
-                                                 class="dropdown border hidden absolute bg-white shadow-lg rounded mt-2">
+                                                 class="dropdown border hidden absolute bg-white dark:bg-gray-800 shadow-lg rounded mt-2">
                                                 <a href="{% url 'accept_bug' issue.id 'no_reward' %}"
-                                                   class="block px-4 py-2 text-gray-800 hover:bg-red-500 hover:text-white">Accept without reward</a>
+                                                   class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-red-500 hover:text-white">Accept without reward</a>
                                                 {% if rewards|length > 0 %}
                                                     {% for reward in rewards %}
                                                         {% if reward.valid_submissions_eligible %}
                                                             <a href="{% url 'accept_bug' issue.id reward.id %}"
-                                                               class="block px-4 py-2 text-gray-800 hover:bg-red-500 hover:text-white">Reward: {{ reward.name }} - ${{ reward.value }}</a>
+                                                               class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-red-500 hover:text-white">Reward: {{ reward.name }} - ${{ reward.value }}</a>
                                                         {% else %}
                                                             {% if winners_count|get_item:reward.id < reward.no_of_eligible_projects %}
                                                                 <a href="{% url 'accept_bug' issue.id reward.id %}"
-                                                                   class="block px-4 py-2 text-gray-800 hover:bg-red-500 hover:text-white">Reward: {{ reward.name }} - ${{ reward.value }}</a>
+                                                                   class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-red-500 hover:text-white">Reward: {{ reward.name }} - ${{ reward.value }}</a>
                                                             {% endif %}
                                                         {% endif %}
                                                     {% endfor %}
                                                 {% else %}
                                                     <a href="#"
-                                                       class="block px-4 py-2 text-gray-800 hover:bg-red-500 hover:text-white">No rewards available</a>
+                                                       class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-red-500 hover:text-white">No rewards available</a>
                                                 {% endif %}
                                             </div>
                                         {% endif %}
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <a class="text-xl text-black font-bold hover:text-gray-700"
+                                    <a class="text-xl text-black dark:text-white font-bold hover:text-gray-700"
                                        href="{% url 'issue_view' issue.id %}">{{ issue.description }}</a>
                                 </div>
                                 <div class="flex justify-between items-center mt-4">
@@ -554,7 +554,7 @@
                                                  alt="avatar"
                                                  width="40px"
                                                  height="40px">
-                                            <h1 class="text-gray-700 font-bold">{{ issue.user__username }}</h1>
+                                            <h1 class="text-gray-700 dark:text-gray-300 font-bold">{{ issue.user__username }}</h1>
                                         </a>
                                     </div>
                                     <a class="text-blue-600 hover:underline"
@@ -569,16 +569,16 @@
                     </div>
                 {% endif %}
             </div>
-            <div class="bg-white rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
                 <div class="flex items-center justify-between">
-                    <h4 class="text-xl text-gray-900 font-bold">Top Testers ({{ top_testers | length }})</h4>
+                    <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold">Top Testers ({{ top_testers | length }})</h4>
                 </div>
                 <div class="flex flex-wrap justify-between mt-10">
                     {% for tester in top_testers %}
                         <a href="{% url 'profile' tester.user__username %}"
-                           class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600"
+                           class="flex flex-col items-center m-5 justify-center text-gray-800 dark:text-gray-200 hover:text-red-600"
                            title="View Profile">
-                            <div class="w-[100px] h-[100px] rounded-full border-[1px] border-gray-500 overflow-hidden flex items-center justify-center">
+                            <div class="w-[100px] h-[100px] rounded-full border-[1px] border-gray-500 dark:border-gray-400 overflow-hidden flex items-center justify-center">
                                 <img src="{% if tester.user__userprofile__user_avatar %} {{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }} {% else %} https://via.placeholder.com/100?text=No+Avatar {% endif %}"
                                      class="object-cover"
                                      width="100%"
@@ -586,7 +586,7 @@
                                      alt="Avatar">
                             </div>
                             <p class="text-center font-bold text-sm mt-1">{{ tester.user__username }}</p>
-                            <p class="text-xs text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
                         </a>
                     {% endfor %}
                 </div>

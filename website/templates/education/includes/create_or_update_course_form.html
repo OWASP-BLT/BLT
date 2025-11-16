@@ -10,28 +10,28 @@
         {% csrf_token %}
         <div id="error-message" class="hidden text-red-500 text-sm mt-2"></div>
         <div>
-            <label for="title" class="block text-sm font-medium text-gray-700">Course Title</label>
+            <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Title</label>
             <input type="text"
                    id="title"
                    name="title"
                    value="{{ course.title|default_if_none:'' }}"
                    placeholder="Enter course title"
-                   class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                   class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
         </div>
         <div>
-            <label for="description" class="block text-sm font-medium text-gray-700">Course Description</label>
+            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Description</label>
             <textarea id="description"
                       name="description"
                       rows="4"
                       placeholder="Enter course description"
-                      class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ course.description|default_if_none:'' }}</textarea>
+                      class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ course.description|default_if_none:'' }}</textarea>
         </div>
         <div>
-            <label for="thumbnail" class="block text-sm font-medium text-gray-700">Course Thumbnail</label>
+            <label for="thumbnail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Thumbnail</label>
             <input type="file"
                    id="thumbnail"
                    name="thumbnail"
-                   class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                   class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
             <div id="thumbnail-preview" class="mt-2">
                 {% if course.thumbnail %}
                     <img src="{{ course.thumbnail.url }}"
@@ -43,17 +43,17 @@
             </div>
         </div>
         <div>
-            <label for="level" class="block text-sm font-medium text-gray-700">Course Level</label>
+            <label for="level" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Level</label>
             <select id="level"
                     name="level"
-                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 <option value="BEG" {% if course.level == "BEG" %}selected{% endif %}>Beginner</option>
                 <option value="INT" {% if course.level == "INT" %}selected{% endif %}>Intermediate</option>
                 <option value="ADV" {% if course.level == "ADV" %}selected{% endif %}>Advanced</option>
             </select>
         </div>
         <div>
-            <label for="tags" class="block text-md font-medium text-gray-700">Tags</label>
+            <label for="tags" class="block text-md font-medium text-gray-700 dark:text-gray-300">Tags</label>
             <select id="tags"
                     name="tags"
                     multiple

@@ -8,7 +8,7 @@
         {% if user.is_authenticated %}
             {% if user.userprofile.team %}
                 <!-- Team Header Section -->
-                <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
                     <div class="flex items-center gap-6">
                         <div class="relative">
                             {% if user.userprofile.team.logo %}
@@ -18,8 +18,8 @@
                                      height="96"
                                      class="w-24 h-24 rounded-full border-4 border-[#e74c3c] object-cover shadow-lg">
                             {% else %}
-                                <div class="w-24 h-24 rounded-full border-4 border-[#e74c3c] bg-gray-100 flex items-center justify-center shadow-lg">
-                                    <i class="fas fa-users text-2xl text-gray-400"></i>
+                                <div class="w-24 h-24 rounded-full border-4 border-[#e74c3c] bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-users text-2xl text-gray-400 dark:text-gray-600"></i>
                                 </div>
                             {% endif %}
                             <div class="absolute -bottom-2 -right-2 bg-[#e74c3c] text-white p-2 rounded-full">
@@ -27,8 +27,8 @@
                             </div>
                         </div>
                         <div class="flex-1">
-                            <h1 class="text-4xl font-bold text-gray-800 mb-2">{{ user.userprofile.team.name }}</h1>
-                            <div class="flex items-center gap-3 text-gray-600">
+                            <h1 class="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-2">{{ user.userprofile.team.name }}</h1>
+                            <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
                                 <div class="flex items-center gap-2">
                                     <i class="fas fa-crown text-[#e74c3c]"></i>
                                     <span class="font-medium">Team Leader:</span>
@@ -44,9 +44,9 @@
                     </div>
                 </div>
                 <!-- Team Members Section -->
-                <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">Team Members</h2>
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Team Members</h2>
                         {% if user.userprofile.team.admin == user %}
                             <button onclick="openAddMemberModal()"
                                     class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
@@ -57,18 +57,18 @@
                     </div>
                     <!-- Members Slider -->
                     <div class="relative h-[280px]">
-                        <button class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
+                        <button class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
                                 onclick="prevMember()">
                             <i class="fas fa-chevron-left text-[#e74c3c]"></i>
                         </button>
                         <div class="overflow-hidden px-12 h-full">
                             <div class="flex gap-4 transition-transform duration-300 ease-in-out h-full items-center">
                                 {% for member in team_members %}
-                                    <div class="member-card flex-shrink-0 w-48 bg-gray-50 rounded-xl p-4 text-center transform transition-all duration-300 hover:shadow-lg {% if member.username == user.userprofile.team.admin.username %}border-2 border-[#e74c3c]{% endif %}"
+                                    <div class="member-card flex-shrink-0 w-48 bg-gray-50 dark:bg-gray-900 rounded-xl p-4 text-center transform transition-all duration-300 hover:shadow-lg {% if member.username == user.userprofile.team.admin.username %}border-2 border-[#e74c3c]{% endif %}"
                                          id="member-{{ member.username }}">
                                         <div class="relative inline-block">
-                                            <div class="w-16 h-16 mx-auto mb-3 bg-gray-200 rounded-full flex items-center justify-center">
-                                                <i class="fas fa-user text-xl text-gray-400"></i>
+                                            <div class="w-16 h-16 mx-auto mb-3 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-xl text-gray-400 dark:text-gray-600"></i>
                                             </div>
                                             {% if member.username == user.userprofile.team.admin.username %}
                                                 <div class="absolute -top-1 -right-1 bg-[#e74c3c] text-white p-1 rounded-full">
@@ -76,7 +76,7 @@
                                                 </div>
                                             {% endif %}
                                         </div>
-                                        <h3 class="text-base font-semibold text-gray-800 mb-2 truncate">{{ member.username }}</h3>
+                                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 truncate">{{ member.username }}</h3>
                                         <div class="flex flex-col gap-2">
                                             {% if member != user %}
                                                 <button onclick="openKudosModal('{{ member.username }}')"
@@ -95,15 +95,15 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        <button class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
+                        <button class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
                                 onclick="nextMember()">
                             <i class="fas fa-chevron-right text-[#e74c3c]"></i>
                         </button>
                     </div>
                 </div>
                 <!-- Team Actions Section -->
-                <div class="bg-white rounded-2xl shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Team Actions</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Team Actions</h2>
                     <div class="flex gap-4">
                         <a href="{% url 'join_requests' %}"
                            class="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300">
@@ -134,15 +134,15 @@
                 {% if join_requests %}
                     <!-- Join Requests Section -->
                     <div class="max-w-2xl mx-auto mb-8">
-                        <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
                             <div class="flex items-center justify-between mb-6">
                                 <div class="flex items-center gap-6">
                                     <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
                                         <i class="fas fa-bell text-2xl text-white"></i>
                                     </div>
                                     <div>
-                                        <h2 class="text-3xl font-bold text-gray-800">Team Invitations</h2>
-                                        <p class="text-gray-600 mt-2">You have pending team invitations</p>
+                                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Invitations</h2>
+                                        <p class="text-gray-600 dark:text-gray-400 mt-2">You have pending team invitations</p>
                                     </div>
                                 </div>
                                 <a href="{% url 'join_requests' %}"
@@ -153,7 +153,7 @@
                             </div>
                             <div class="space-y-4">
                                 {% for request in join_requests|slice:":2" %}
-                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-300">
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors duration-300">
                                         <div class="flex items-center gap-4">
                                             {% if request.team.logo %}
                                                 <img src="{{ request.team.logo.url }}"
@@ -162,13 +162,13 @@
                                                      height="48"
                                                      class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
                                             {% else %}
-                                                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center border-2 border-[#e74c3c]">
-                                                    <i class="fas fa-users text-gray-400"></i>
+                                                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center border-2 border-[#e74c3c]">
+                                                    <i class="fas fa-users text-gray-400 dark:text-gray-600"></i>
                                                 </div>
                                             {% endif %}
                                             <div>
-                                                <h3 class="font-semibold text-gray-800">{{ request.team.name }}</h3>
-                                                <p class="text-sm text-gray-600">Invited by {{ request.team.admin.username }}</p>
+                                                <h3 class="font-semibold text-gray-800 dark:text-gray-200">{{ request.team.name }}</h3>
+                                                <p class="text-sm text-gray-600 dark:text-gray-400">Invited by {{ request.team.admin.username }}</p>
                                             </div>
                                         </div>
                                         <form method="post" action="{% url 'join_requests' %}" class="flex gap-2">
@@ -194,15 +194,15 @@
                     </div>
                 {% else %}
                     <div class="max-w-2xl mx-auto mb-8">
-                        <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
                             <div class="flex items-center justify-between mb-6">
                                 <div class="flex items-center gap-6">
                                     <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
                                         <i class="fas fa-bell text-2xl text-white"></i>
                                     </div>
                                     <div>
-                                        <h2 class="text-3xl font-bold text-gray-800">Team Invitations</h2>
-                                        <p class="text-gray-600 mt-2">Check your pending team invitations</p>
+                                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Invitations</h2>
+                                        <p class="text-gray-600 dark:text-gray-400 mt-2">Check your pending team invitations</p>
                                     </div>
                                 </div>
                                 <a href="{% url 'join_requests' %}"
@@ -216,12 +216,12 @@
                 {% endif %}
                 <!-- Create Team Section -->
                 <div class="max-w-2xl mx-auto text-center">
-                    <div class="bg-white rounded-2xl shadow-lg p-12">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12">
                         <div class="w-20 h-20 mx-auto mb-6 bg-[#e74c3c] rounded-full flex items-center justify-center">
                             <i class="fas fa-users text-3xl text-white"></i>
                         </div>
-                        <h1 class="text-3xl font-bold text-gray-800 mb-4">Create Your Team</h1>
-                        <p class="text-gray-600 mb-8">
+                        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Create Your Team</h1>
+                        <p class="text-gray-600 dark:text-gray-400 mb-8">
                             Join forces with other security enthusiasts! Create a team to collaborate, share knowledge, and tackle security challenges together.
                         </p>
                         <button onclick="openModal()"
@@ -235,12 +235,12 @@
         {% else %}
             <!-- Login Required Section -->
             <div class="max-w-2xl mx-auto text-center">
-                <div class="bg-white rounded-2xl shadow-lg p-12">
-                    <div class="w-20 h-20 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
-                        <i class="fas fa-lock text-3xl text-gray-400"></i>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12">
+                    <div class="w-20 h-20 mx-auto mb-6 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                        <i class="fas fa-lock text-3xl text-gray-400 dark:text-gray-600"></i>
                     </div>
-                    <h1 class="text-3xl font-bold text-gray-800 mb-4">Login Required</h1>
-                    <p class="text-gray-600 mb-8">Please login to create or join a team. Join our community of security enthusiasts!</p>
+                    <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Login Required</h1>
+                    <p class="text-gray-600 dark:text-gray-400 mb-8">Please login to create or join a team. Join our community of security enthusiasts!</p>
                 </div>
             </div>
         {% endif %}
@@ -248,11 +248,11 @@
     <!-- Create Team Modal -->
     <div id="teamModal"
          class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Create New Team</h2>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Create New Team</h2>
                 <button onclick="closeModal()"
-                        class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                        class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
             <form id="createTeamForm"
                   method="post"
@@ -261,34 +261,34 @@
                 {% csrf_token %}
                 <div class="space-y-4">
                     <div>
-                        <label for="teamName" class="block text-sm font-medium text-gray-700">Team Name</label>
+                        <label for="teamName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team Name</label>
                         <input type="text"
                                id="teamName"
                                name="teamName"
                                required
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                               class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
                     </div>
                     <div>
-                        <label for="teamAvatar" class="block text-sm font-medium text-gray-700">Team Avatar</label>
+                        <label for="teamAvatar" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team Avatar</label>
                         <input type="file"
                                id="teamAvatar"
                                name="teamAvatar"
                                accept="image/*"
                                required
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#e74c3c] file:text-white hover:file:bg-[#c0392b]">
+                               class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#e74c3c] file:text-white hover:file:bg-[#c0392b]">
                     </div>
                     <div>
-                        <label for="teamMembers" class="block text-sm font-medium text-gray-700">Add Members (Optional)</label>
+                        <label for="teamMembers" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Add Members (Optional)</label>
                         <div class="relative">
                             <input type="text"
                                    id="teamMembers"
                                    name="teamMembers"
                                    placeholder="Search usernames..."
                                    onkeyup="searchUsers(this.value)"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
                             <input type="hidden" id="selectedMembers" name="selectedMembers">
                             <div id="userDropdown"
-                                 class="absolute left-0 right-0 bg-white mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
+                                 class="absolute left-0 right-0 bg-white dark:bg-gray-800 mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
                             </div>
                             <div id="selectedUsers" class="flex flex-wrap gap-2 mt-2"></div>
                         </div>
@@ -296,7 +296,7 @@
                     <div class="flex justify-end gap-4">
                         <button type="button"
                                 onclick="closeModal()"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                             Cancel
                         </button>
                         <button type="submit"
@@ -311,17 +311,17 @@
     <!-- Add Member Modal -->
     <div id="addMemberModal"
          class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Add New Member</h2>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Add New Member</h2>
                 <button onclick="closeAddMemberModal()"
-                        class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                        class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
             <form id="addMemberForm" method="post" action="{% url 'add_member' %}">
                 {% csrf_token %}
                 <div class="space-y-4">
                     <div>
-                        <label for="newMember" class="block text-sm font-medium text-gray-700">Username</label>
+                        <label for="newMember" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
                         <div class="relative">
                             <input type="text"
                                    id="newMember"
@@ -329,16 +329,16 @@
                                    placeholder="Enter username"
                                    onkeyup="searchNewMember(this.value)"
                                    required
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
                             <div id="newMemberDropdown"
-                                 class="absolute left-0 right-0 bg-white mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
+                                 class="absolute left-0 right-0 bg-white dark:bg-gray-800 mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
                             </div>
                         </div>
                     </div>
                     <div class="flex justify-end gap-4">
                         <button type="button"
                                 onclick="closeAddMemberModal()"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200">
                             Cancel
                         </button>
                         <button type="submit"
@@ -353,35 +353,35 @@
     <!-- Kudos Modal -->
     <div id="kudosModal"
          class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Send Kudos</h2>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Send Kudos</h2>
                 <button onclick="closeKudosModal()"
-                        class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                        class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
             <form method="post" onsubmit="sendKudos(event)" class="space-y-4">
                 {% csrf_token %}
                 <input type="hidden" id="kudosReceiver" name="kudosReceiver">
                 <div>
-                    <label for="kudosLink" class="block text-sm font-medium text-gray-700">Link (optional)</label>
+                    <label for="kudosLink" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Link (optional)</label>
                     <input type="url"
                            id="kudosLink"
                            name="kudosLink"
                            placeholder="Enter an optional link"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]" />
+                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]" />
                 </div>
                 <div>
-                    <label for="kudosComment" class="block text-sm font-medium text-gray-700">Comment (optional)</label>
+                    <label for="kudosComment" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comment (optional)</label>
                     <textarea id="kudosComment"
                               name="kudosComment"
                               rows="3"
                               placeholder="Add an optional note"
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"></textarea>
+                              class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"></textarea>
                 </div>
                 <div class="flex justify-end gap-4">
                     <button type="button"
                             onclick="closeKudosModal()"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200">
                         Cancel
                     </button>
                     <button type="submit"
@@ -549,7 +549,7 @@
                     let dropdownContent = "";
                     data.forEach(user => {
                         dropdownContent += `
-                            <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0" onclick="selectUser('${user.username}')">
+                            <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-b-0" onclick="selectUser('${user.username}')">
                                 ${user.username} ${user.team ? ' - ' + user.team : ''}
                             </div>`;
                     });
@@ -566,8 +566,8 @@
                 userDiv.className = 'inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-sm';
                 userDiv.dataset.username = username;
                 userDiv.innerHTML = `
-                    <span class="text-gray-700">${username}</span>
-                    <button type="button" onclick="removeUser(this)" class="text-gray-500 hover:text-gray-700">
+                    <span class="text-gray-700 dark:text-gray-300">${username}</span>
+                    <button type="button" onclick="removeUser(this)" class="text-gray-500 dark:text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times"></i>
                     </button>`;
                 selectedUsersContainer.appendChild(userDiv);
@@ -642,7 +642,7 @@
                     let dropdownContent = "";
                     data.forEach(user => {
                         dropdownContent += `
-                            <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0" onclick="selectNewMember('${user.username}')">
+                            <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-b-0" onclick="selectNewMember('${user.username}')">
                                 ${user.username} ${user.team ? ' - ' + user.team : ''}
                             </div>`;
                     });

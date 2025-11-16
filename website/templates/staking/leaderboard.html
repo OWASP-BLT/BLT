@@ -7,38 +7,38 @@
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 py-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header Section -->
             <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">🏆 Staking Leaderboard</h1>
-                <p class="text-xl text-gray-600">Top earners in competitive staking - who's won the most BACON?</p>
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">🏆 Staking Leaderboard</h1>
+                <p class="text-xl text-gray-600 dark:text-gray-400">Top earners in competitive staking - who's won the most BACON?</p>
             </div>
             <!-- Navigation -->
             <div class="flex space-x-4 mb-8">
                 <a href="{% url 'staking_home' %}"
-                   class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                   class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
                     Browse Pools
                 </a>
                 <a href="{% url 'my_staking' %}"
-                   class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                   class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
                     My Stakes
                 </a>
                 <button class="bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-semibold">Leaderboard</button>
             </div>
             <!-- Filter Tabs -->
-            <div class="bg-white rounded-lg shadow-md mb-8">
-                <div class="flex border-b border-gray-200">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md mb-8">
+                <div class="flex border-b border-gray-200 dark:border-gray-700">
                     <button class="px-6 py-4 text-sm font-medium text-[#e74c3c] border-b-2 border-[#e74c3c]">All Time</button>
-                    <button class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">This Month</button>
-                    <button class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">This Week</button>
+                    <button class="px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-500 hover:text-gray-700">This Month</button>
+                    <button class="px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-500 hover:text-gray-700">This Week</button>
                 </div>
             </div>
             <!-- Top 3 Podium -->
             {% if top_users %}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     {% for user in top_users|slice:":3" %}
-                        <div class="bg-white rounded-lg shadow-lg p-6 text-center {% if forloop.counter == 1 %}order-2 md:order-2 transform md:scale-110{% elif forloop.counter == 2 %}order-1 md:order-1{% else %}order-3 md:order-3{% endif %}">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center {% if forloop.counter == 1 %}order-2 md:order-2 transform md:scale-110{% elif forloop.counter == 2 %}order-1 md:order-1{% else %}order-3 md:order-3{% endif %}">
                             <div class="relative mb-4">
                                 {% if forloop.counter == 1 %}
                                     <div class="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -46,10 +46,10 @@
                                     </div>
                                     <h3 class="text-lg font-bold text-yellow-600">1st Place</h3>
                                 {% elif forloop.counter == 2 %}
-                                    <div class="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <div class="w-16 h-16 bg-gray-400 dark:bg-gray-500 rounded-full flex items-center justify-center mx-auto mb-2">
                                         <span class="text-xl">🥈</span>
                                     </div>
-                                    <h3 class="text-lg font-bold text-gray-600">2nd Place</h3>
+                                    <h3 class="text-lg font-bold text-gray-600 dark:text-gray-400">2nd Place</h3>
                                 {% else %}
                                     <div class="w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mx-auto mb-2">
                                         <span class="text-xl">🥉</span>
@@ -57,32 +57,32 @@
                                     <h3 class="text-lg font-bold text-amber-600">3rd Place</h3>
                                 {% endif %}
                             </div>
-                            <h4 class="text-xl font-semibold text-gray-900 mb-2">{{ user.username }}</h4>
+                            <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">{{ user.username }}</h4>
                             <p class="text-lg font-bold text-[#e74c3c] mb-1">{{ user.total_winnings }} BACON</p>
-                            <p class="text-sm text-gray-600">{{ user.pools_won }} pools won</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ user.pools_won }} pools won</p>
                         </div>
                     {% endfor %}
                 </div>
             {% endif %}
             <!-- Full Leaderboard Table -->
-            <div class="bg-white rounded-lg shadow-md">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-900">Top BACON Earners</h2>
-                    <p class="text-sm text-gray-600 mt-1">Ranked by total winnings from staking competitions</p>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Top BACON Earners</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Ranked by total winnings from staking competitions</p>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-900">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Winnings</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pools Won</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Competitions</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Rank</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Total Winnings</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Pools Won</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Total Competitions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Win Rate</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {% for user in leaderboard_users %}
                                 <tr class="{% if user.username == request.user.username %}bg-blue-50{% endif %}">
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -98,7 +98,7 @@
                                                     {% endif %}
                                                 </span>
                                             {% endif %}
-                                            <span class="text-sm font-medium text-gray-900">#{{ forloop.counter }}</span>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">#{{ forloop.counter }}</span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -109,7 +109,7 @@
                                                 </div>
                                             </div>
                                             <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                     {{ user.username }}
                                                     {% if user.username == request.user.username %}<span class="ml-2 text-xs text-blue-600">(You)</span>{% endif %}
                                                 </div>
@@ -120,21 +120,21 @@
                                         <div class="text-sm font-bold text-green-600">{{ user.total_winnings|default:0 }} BACON</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ user.total_wins|default:0 }}</div>
+                                        <div class="text-sm text-gray-900 dark:text-gray-100">{{ user.total_wins|default:0 }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ user.total_competitions|default:0 }}</div>
+                                        <div class="text-sm text-gray-900 dark:text-gray-100">{{ user.total_competitions|default:0 }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ user.win_rate|default:0|floatformat:1 }}%</div>
+                                        <div class="text-sm text-gray-900 dark:text-gray-100">{{ user.win_rate|default:0|floatformat:1 }}%</div>
                                     </td>
                                 </tr>
                             {% empty %}
                                 <tr>
                                     <td colspan="6" class="px-6 py-12 text-center">
                                         <div class="text-6xl mb-4">🥓</div>
-                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Data Yet</h3>
-                                        <p class="text-gray-600">Be the first to start staking and earning BACON!</p>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Data Yet</h3>
+                                        <p class="text-gray-600 dark:text-gray-400">Be the first to start staking and earning BACON!</p>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -144,21 +144,21 @@
             </div>
             <!-- Statistics Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-                <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
                     <div class="text-2xl font-bold text-[#e74c3c] mb-2">{{ total_pools_active }}</div>
-                    <div class="text-sm text-gray-600">Active Pools</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Active Pools</div>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
                     <div class="text-2xl font-bold text-blue-600 mb-2">{{ total_participants }}</div>
-                    <div class="text-sm text-gray-600">Total Participants</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Total Participants</div>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
                     <div class="text-2xl font-bold text-green-600 mb-2">{{ total_prize_pool }} BACON</div>
-                    <div class="text-sm text-gray-600">Total Prize Pool</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Total Prize Pool</div>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
                     <div class="text-2xl font-bold text-purple-600 mb-2">{{ total_distributed }} BACON</div>
-                    <div class="text-sm text-gray-600">Total Distributed</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Total Distributed</div>
                 </div>
             </div>
         </div>

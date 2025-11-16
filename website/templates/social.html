@@ -22,14 +22,14 @@
     <div class="min-h-screen">
         <div class="max-w-[50%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header Section -->
-            <div class="bg-white rounded-lg border border-gray-200 border-l-4 border-l-[#e74c3c] p-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 border-l-[#e74c3c] p-6 mb-8">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Social Feed</h1>
-                        <p class="text-sm text-gray-500">Latest updates and announcements</p>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Social Feed</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-500">Latest updates and announcements</p>
                     </div>
                     <nav>
-                        <ol class="flex items-center gap-2 text-sm text-gray-500">
+                        <ol class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-500">
                             <li>
                                 <a href="{% url 'home' %}" class="hover:text-[#e74c3c]">Home</a>
                             </li>
@@ -39,12 +39,12 @@
                     </nav>
                 </div>
             </div>
-            <div class="bg-white border border-gray-200 shadow-md rounded-lg p-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md rounded-lg p-6 mb-8">
                 <div class="flex flex-col items-center text-center">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                         Follow <span class="text-[#e74c3c]">OWASP_BLT</span> on X
                     </h2>
-                    <p class="text-gray-500 mb-4">Stay updated with our latest security insights and community updates</p>
+                    <p class="text-gray-500 dark:text-gray-500 mb-4">Stay updated with our latest security insights and community updates</p>
                     <a href="https://x.com/OWASP_BLT"
                        target="_blank"
                        class="inline-flex items-center gap-2 bg-black hover:text-white hover:bg-black/80 text-white px-6 py-3 rounded-full font-semibold transition-colors duration-200">
@@ -53,23 +53,23 @@
                     </a>
                 </div>
             </div>
-            <div class="w-full flex flex-col border-x border-gray-200 border-t">
+            <div class="w-full flex flex-col border-x border-gray-200 dark:border-gray-700 border-t">
                 {% for item in queue_items %}
                     <a href="{{ item.url|default:'#' }}"
                        target="_blank"
-                       class="w-full flex items-start gap-2 border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors duration-200 hover:text-black cursor-pointer">
+                       class="w-full flex items-start gap-2 border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 transition-colors duration-200 hover:text-black cursor-pointer">
                         <img src="{% static 'img/logo.png' %}"
                              alt="BLT Logo"
                              height="40"
                              width="40"
-                             class="rounded-full size-10 border border-gray-200 object-contain">
+                             class="rounded-full size-10 border border-gray-200 dark:border-gray-700 object-contain">
                         <div class="flex flex-col gap-0.5 w-full">
                             <div class="flex items-center justify-between w-full">
                                 <div class="flex items-center gap-2">
                                     <h1 class="font-bold hover:underline">OWASP_BLT</h1>
-                                    <p class="text-gray-500">@OWASP_BLT</p>
-                                    <span class="text-gray-500">·</span>
-                                    <p class="text-gray-500 hover:underline">{{ item.created|date:"M d" }}</p>
+                                    <p class="text-gray-500 dark:text-gray-500">@OWASP_BLT</p>
+                                    <span class="text-gray-500 dark:text-gray-500">·</span>
+                                    <p class="text-gray-500 dark:text-gray-500 hover:underline">{{ item.created|date:"M d" }}</p>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-3 w-full">
@@ -82,31 +82,31 @@
                                          class="w-full max-h-[400px] h-full rounded-xl object-cover">
                                 {% endif %}
                             </div>
-                            <div class="w-full flex items-center justify-between mt-2 text-gray-500">
+                            <div class="w-full flex items-center justify-between mt-2 text-gray-500 dark:text-gray-500">
                                 <div class="flex items-center gap-6">
-                                    <div class="group flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors duration-200">
+                                    <div class="group flex items-center gap-2 text-gray-500 dark:text-gray-500 hover:text-blue-500 transition-colors duration-200">
                                         <div class="p-2 rounded-full group-hover:bg-blue-50">
                                             <i class="far fa-comment text-lg"></i>
                                         </div>
                                     </div>
-                                    <div class="group flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors duration-200">
+                                    <div class="group flex items-center gap-2 text-gray-500 dark:text-gray-500 hover:text-green-500 transition-colors duration-200">
                                         <div class="p-2 rounded-full group-hover:bg-green-50">
                                             <i class="fas fa-retweet text-green-500 text-lg"></i>
                                         </div>
                                     </div>
-                                    <div class="group flex items-center gap-2 text-gray-500 hover:text-[#e74c3c] transition-colors duration-200">
+                                    <div class="group flex items-center gap-2 text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors duration-200">
                                         <div class="p-2 rounded-full group-hover:bg-red-50">
                                             <i class="fas fa-heart text-red-500 text-lg"></i>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <div class="group flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors duration-200">
+                                    <div class="group flex items-center gap-2 text-gray-500 dark:text-gray-500 hover:text-blue-500 transition-colors duration-200">
                                         <div class="p-2 rounded-full group-hover:bg-blue-50">
                                             <i class="far fa-bookmark text-lg"></i>
                                         </div>
                                     </div>
-                                    <div class="group flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors duration-200">
+                                    <div class="group flex items-center gap-2 text-gray-500 dark:text-gray-500 hover:text-blue-500 transition-colors duration-200">
                                         <div class="p-2 rounded-full group-hover:bg-blue-50">
                                             <i class="far fa-share-square text-lg"></i>
                                         </div>
@@ -123,7 +123,7 @@
                          aria-label="Pagination">
                         {% if page_obj.has_previous %}
                             <a href="?page={{ page_obj.previous_page_number }}"
-                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50">
                                 <i class="fas fa-chevron-left"></i>
                             </a>
                         {% endif %}
@@ -134,14 +134,14 @@
                                 </span>
                             {% else %}
                                 <a href="?page={{ num }}"
-                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50">
                                     {{ num }}
                                 </a>
                             {% endif %}
                         {% endfor %}
                         {% if page_obj.has_next %}
                             <a href="?page={{ page_obj.next_page_number }}"
-                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50">
                                 <i class="fas fa-chevron-right"></i>
                             </a>
                         {% endif %}

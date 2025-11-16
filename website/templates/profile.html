@@ -24,9 +24,9 @@
 {% endblock head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex md:flex-row flex-col w-full mt-10 lg:max-w-[1700px] lg:mx-auto mx-2 border rounded-lg  min-h-[500px]">
+    <div class="flex md:flex-row flex-col w-full mt-10 lg:max-w-[1700px] lg:mx-auto mx-2 border rounded-lg min-h-[500px]">
         <div class="flex flex-col gap-6 lg:w-[25%] w-full border-r border-gray-300/80 500 p-4">
-            <div class="w-full rounded-lg select-none ">
+            <div class="w-full rounded-lg select-none">
                 {% if user.userprofile.avatar %}
                     <img src="{{ user.userprofile.avatar }}"
                          class="object-cover w-full rounded-lg max-h-[400px] md:max-h-[500px] h-full"
@@ -41,10 +41,10 @@
                          height="200">
                 {% endif %}
             </div>
-            <div class="flex justify-between items-start ">
+            <div class="flex justify-between items-start">
                 <div class="flex flex-col">
                     <div class="text-2xl font-bold text-black/90">{{ user.username }}</div>
-                    <div class="font-medium text-gray-800">@{{ user.username }}</div>
+                    <div class="font-medium text-gray-800 dark:text-gray-200">@{{ user.username }}</div>
                     {% if user.userprofile.role %}
                         <div class="flex flex-row gap-2 mt-2">
                             <p class="font-medium">{% trans "Role" %}:</p>
@@ -57,25 +57,25 @@
                        class="select-none px-3 py-1 rounded-lg bg-red-500 text-white hover:bg-red-600 hover:text-white"> {% trans "Edit Profile" %}</a>
                 {% endif %}
             </div>
-            <div class="w-full border-b border-gray-300/80 "></div>
+            <div class="w-full border-b border-gray-300/80"></div>
             <div class="flex flex-col gap-4">
                 <div class="flex flex-row gap-4">
                     <button onclick="openFollowingModal();"
-                            class="font-medium font-lg text-black hover:text-red-600 group/f transition-all duration-200">
-                        {{ following|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800"> {% trans "Follwings" %} </span>
+                            class="font-medium font-lg text-black dark:text-white hover:text-red-600 group/f transition-all duration-200">
+                        {{ following|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800 dark:text-gray-200"> {% trans "Follwings" %} </span>
                     </button>
                     <button onclick="openFollowers();"
-                            class="font-medium font-lg text-black hover:text-red-600 group/f transition-all duration-200">
-                        {{ followers|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800"> {% trans "Followers" %} </span>
+                            class="font-medium font-lg text-black dark:text-white hover:text-red-600 group/f transition-all duration-200">
+                        {{ followers|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800 dark:text-gray-200"> {% trans "Followers" %} </span>
                     </button>
                 </div>
                 <div class="select-none flex flex-wrap gap-2">
-                    <button class="px-3 py-1 rounded-lg border-2 border-red-400 text-sm ">
+                    <button class="px-3 py-1 rounded-lg border-2 border-red-400 text-sm">
                         {{ user.userprofile.visit_count }} {% trans "Profile Views" %}
                     </button>
-                    <button class="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200"
+                    <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200"
                             onclick="openBookmarkModal();">{{ bookmarks|length }} {% trans "Bookmarks" %}</button>
-                    <button class="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200"
+                    <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200"
                             onclick="openKudosModal();">{{ user.kudos_received.count }} {% trans "Kudos" %}</button>
                 </div>
                 {% if request.user != user %}
@@ -107,7 +107,7 @@
                         {% if user.userprofile.github_url %}
                             <a href="{{ user.userprofile.github_url }}"
                                target="_blank"
-                               class="flex items-center gap-2 text-gray-700 hover:text-red-600 w-fit">
+                               class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-red-600 w-fit">
                                 <i class="fab fa-github text-xl"></i>
                                 <span>{% trans "GitHub" %}</span>
                             </a>
@@ -115,7 +115,7 @@
                         {% if user.userprofile.x_username %}
                             <a href="https://x.com/{{ user.userprofile.x_username }}"
                                target="_blank"
-                               class="flex items-center gap-2 text-gray-700 hover:text-red-600 w-fit">
+                               class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-red-600 w-fit">
                                 <i class="fab fa-x-twitter text-xl"></i>
                                 <span>{% trans "X (Twitter)" %}</span>
                             </a>
@@ -123,7 +123,7 @@
                         {% if user.userprofile.linkedin_url %}
                             <a href="{{ user.userprofile.linkedin_url }}"
                                target="_blank"
-                               class="flex items-center gap-2 text-gray-700 hover:text-red-600 w-fit">
+                               class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-red-600 w-fit">
                                 <i class="fab fa-linkedin text-xl"></i>
                                 <span>{% trans "LinkedIn" %}</span>
                             </a>
@@ -131,7 +131,7 @@
                         {% if user.userprofile.website_url %}
                             <a href="{{ user.userprofile.website_url }}"
                                target="_blank"
-                               class="flex items-center gap-2 text-gray-700 hover:text-red-600 w-fit">
+                               class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-red-600 w-fit">
                                 <i class="fas fa-globe text-xl"></i>
                                 <span>{% trans "Website" %}</span>
                             </a>
@@ -144,9 +144,9 @@
                 {% include "./includes/crypto_donation.html" %}
             </div>
             <!-- Points Section -->
-            <div class=" score-container select-none flex gap-2 items-center justify-center bg-gray-100 text-black/80 p-4 rounded-lg  w-full cursor-pointer hover:bg-gray-200/80 transition-all duration-200">
-                <span class=" text-2xl font-bold text-yellow-500">{{ my_score|default:0 }}</span>
-                <span class=" text-lg font-bold">{% trans "POINTS" %}</span>
+            <div class="score-container select-none flex gap-2 items-center justify-center bg-gray-100 dark:bg-gray-800 text-black/80 p-4 rounded-lg w-full cursor-pointer hover:bg-gray-200/80 transition-all duration-200">
+                <span class="text-2xl font-bold text-yellow-500">{{ my_score|default:0 }}</span>
+                <span class="text-lg font-bold">{% trans "POINTS" %}</span>
                 <i class="fa fa-chevron-down transition-transform duration-200"
                    id="accordion-toggle"></i>
             </div>
@@ -155,14 +155,14 @@
                 <table class="w-full rounded-lg overflow-hidden">
                     <thead class="select-none text-white bg-blue-400">
                         <tr class="text-center">
-                            <th class="py-3 px-6 ">{% trans "Score" %}</th>
-                            <th class="py-3 px-6 ">{% trans "Reason" %}</th>
-                            <th class="py-3 px-6 ">{% trans "Created" %}</th>
+                            <th class="py-3 px-6">{% trans "Score" %}</th>
+                            <th class="py-3 px-6">{% trans "Reason" %}</th>
+                            <th class="py-3 px-6">{% trans "Created" %}</th>
                         </tr>
                     </thead>
-                    <tbody class="text-black/95 bg-white">
+                    <tbody class="text-black/95 bg-white dark:bg-gray-800">
                         {% for point in user_points %}
-                            <tr class=" border-b border-[#edf2f7] hover:bg-gray-50">
+                            <tr class="border-b border-[#edf2f7] hover:bg-gray-50">
                                 <td class="py-3 px-6 text-yellow-500 font-bold text-center">+ {{ point.score }}</td>
                                 <td class="py-3 px-6">
                                     {% if point.issue %}
@@ -172,7 +172,7 @@
                                     {% elif point.reason %}
                                         <span>{{ point.reason }}</span>
                                     {% else %}
-                                        <p class="text-gray-500">{% trans "No reason provided" %}</p>
+                                        <p class="text-gray-500 dark:text-gray-500">{% trans "No reason provided" %}</p>
                                     {% endif %}
                                 </td>
                                 <td class="py-3 px-6">{{ point.created|date:"Y-m-d H:i" }}</td>
@@ -186,41 +186,41 @@
                 </table>
             </div>
             <!-- Streak Section -->
-            <div class="flex flex-col items-center lg:items-start bg-gray-100 text-gray-800 px-5 py-2 rounded-lg w-full">
+            <div class="flex flex-col items-center lg:items-start bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-5 py-2 rounded-lg w-full">
                 <h4 class="text-lg font-semibold uppercase tracking-wide flex gap-3 items-center py-2">
                     <i class="fa fa-fire text-red-500"></i> {% trans "Streak Details" %}
                 </h4>
-                <hr class="border-t-[1px] border-gray-300 opacity-70 w-full mb-3">
+                <hr class="border-t-[1px] border-gray-300 dark:border-gray-600 opacity-70 w-full mb-3">
                 <!-- Current Streak -->
                 <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2">
                     <span><i class="fa fa-bolt mr-2 text-red-500"></i> {% trans "Current Streak" %}:</span>
                     <span class="font-bold text-red-500">{{ user.userprofile.current_streak|default:"0" }}</span>
                 </div>
-                <hr class="border-t-[1px] border-gray-300 opacity-50 w-full mb-2">
+                <hr class="border-t-[1px] border-gray-300 dark:border-gray-600 opacity-50 w-full mb-2">
                 <!-- Longest Streak -->
                 <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2">
                     <span><i class="fa fa-trophy mr-2 text-red-500"></i> {% trans "Longest Streak" %}:</span>
                     <span class="font-bold text-red-500">{{ user.userprofile.longest_streak|default:"0" }}</span>
                 </div>
-                <hr class="border-t-[1px] border-gray-300 opacity-50 w-full mb-2">
+                <hr class="border-t-[1px] border-gray-300 dark:border-gray-600 opacity-50 w-full mb-2">
                 <!-- Days Visited -->
                 <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2">
                     <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> {% trans "Days Visited" %}:</span>
                     <span class="font-bold text-red-500">{{ user.userprofile.daily_visit_count|default:"0" }}</span>
                 </div>
-                <hr class="border-t-[1px] border-gray-300 opacity-50 w-full mb-2">
+                <hr class="border-t-[1px] border-gray-300 dark:border-gray-600 opacity-50 w-full mb-2">
                 <!-- Last Visit -->
                 <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2">
                     <span><i class="fa fa-clock mr-2 text-red-500"></i> {% trans "Last Visit" %}:</span>
                     <span class="font-bold text-red-500">{{ user.userprofile.last_visit_day|date:"M d, Y"|default:"Never" }}</span>
                 </div>
-                <hr class="border-t-[1px] border-gray-300 opacity-50 w-full mb-2">
+                <hr class="border-t-[1px] border-gray-300 dark:border-gray-600 opacity-50 w-full mb-2">
                 <!-- Last Sizzle Check-in -->
                 <div class="flex items-center justify-between w-full text-[14px] mb-2 font-medium">
                     <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> {% trans "Last Sizzle Check-in" %}:</span>
                     <span class="font-bold text-red-500">{{ user.userprofile.last_check_in|default:"N/A" }}</span>
                 </div>
-                <hr class="border-t-[1px] border-gray-300 opacity-50 w-full mb-2">
+                <hr class="border-t-[1px] border-gray-300 dark:border-gray-600 opacity-50 w-full mb-2">
                 <div class="my-8 rounded-lg w-full">
                     <div class="flex items-center justify-between mb-2 font-medium">
                         <span class="text-black/90">{% trans "Streak Progress" %}</span>
@@ -236,8 +236,8 @@
                         </div>
                     </div>
                     <div class="flex justify-between mt-1">
-                        <span class="text-md text-gray-600">{% trans "Current" %}</span>
-                        <span class="text-md text-gray-600">{% trans "Next Milestone" %}</span>
+                        <span class="text-md text-gray-600 dark:text-gray-400">{% trans "Current" %}</span>
+                        <span class="text-md text-gray-600 dark:text-gray-400">{% trans "Next Milestone" %}</span>
                     </div>
                 </div>
             </div>
@@ -247,16 +247,16 @@
                     {% if activities %}
                         {% load gravatar %}
                         {% load static %}
-                        <div class=" flex flex-col gap-3 items-center justify-center w-full">
+                        <div class="flex flex-col gap-3 items-center justify-center w-full">
                             {% for activity in activities %}
-                                <div class=" bg-gray-100 rounded-lg  flex flex-col gap-3 items-start justify-between p-5 w-full">
-                                    <div class="rounded-lg w-full border-2  hover:border-red-500 transition-all duration-200 ">
+                                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col gap-3 items-start justify-between p-5 w-full">
+                                    <div class="rounded-lg w-full border-2 hover:border-red-500 transition-all duration-200">
                                         {% for screenshot_activity,screenshot in activity_screenshots.items %}
                                             {% if activity == screenshot_activity and screenshot.image and screenshot.image.url %}
                                                 <a href="{{ activity.get_absolute_url }}">
                                                     <img src="{{ screenshot.image.url }}"
                                                          loading="lazy"
-                                                         class="rounded-lg w-full object-cover lg:max-h-[300px] h-full "
+                                                         class="rounded-lg w-full object-cover lg:max-h-[300px] h-full"
                                                          alt="screenshot"
                                                          width="50%"
                                                          height="50%">
@@ -275,7 +275,7 @@
                                         {% endif %}
                                     </div>
                                     <a href="{{ activity.get_absolute_url }}"
-                                       class="hover:text-red-600 w-full text-xl font-semibold px-2 text-black/85 ">
+                                       class="hover:text-red-600 w-full text-xl font-semibold px-2 text-black/85">
                                         {{ activity.description|truncatechars:35 }}
                                     </a>
                                     <div class="flex flex-row gap-2 items-start">
@@ -283,7 +283,7 @@
                                             <img src="https://www.{{ activity.domain_name }}/favicon.ico"
                                                  height="30"
                                                  width="30"
-                                                 class=" rounded-full size-[32px] "
+                                                 class="rounded-full size-[32px]"
                                                  alt="Organization logo"
                                                  onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                         </a>
@@ -293,7 +293,7 @@
     class="hover:text-red-600">{{ activity.domain_title }}</a>
                                         </div>
                                     </div>
-                                    <p class="text-gray-600 text-sm text-start w-full">{{ activity.created|timesince }} ago.</p>
+                                    <p class="text-gray-600 dark:text-gray-400 text-sm text-start w-full">{{ activity.created|timesince }} ago.</p>
                                     <div class="flex flex-row gap-2 items-center">
                                         URL:
                                         <a class="hover:text-red-600"
@@ -308,10 +308,10 @@
                                         </a>
                                     </div>
                                     <div class="flex flex-row gap-2 items-center justify-between w-full my-2">
-                                        <button class=" flex-1 bg-red-500 hover:bg-red-600 text-white  font-bold py-2 px-4 rounded-lg label label-default pull-right">
+                                        <button class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg label label-default pull-right">
                                             {{ activity.status }}
                                         </button>
-                                        <button class=" flex-1 bg-red-500 hover:bg-red-600 text-white  font-bold py-2 px-4 rounded-lg label label-default pull-right">
+                                        <button class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg label label-default pull-right">
                                             {{ activity.get_label_display }}
                                         </button>
                                     </div>
@@ -321,40 +321,40 @@
                         <a href="{% url 'all_activity' %}?user={{ user.username }}"
                            class="px-5 py-3 bg-blue-400 hover:bg-blue-500 text-white font-medium rounded-lg transition-all duration-200 w-full text-center hover:text-white">{% trans "View all activity by" %} @{{ user.username }}</a>
                     {% else %}
-                        <div class=" text-start w-full text-red-500">{% trans "No Activity Yet!" %}</div>
+                        <div class="text-start w-full text-red-500">{% trans "No Activity Yet!" %}</div>
                     {% endif %}
                 </div>
             </div>
         </div>
-        <div class="lg:w-[75%] flex flex-col gap-6 w-full  p-4">
+        <div class="lg:w-[75%] flex flex-col gap-6 w-full p-4">
             <div class="flex flex-col gap-3">
                 <h1 class="text-xl font-semibold text-black/90">{% trans "Issue Stats" %}</h1>
                 <div class="w-full flex flex-wrap gap-3">
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=General`">
                         ⚙️ {% trans "General" %} {{ bug_type_0 | length }}
                     </button>
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Number`">
                         ⚠️ {% trans "Number" %} {{ bug_type_1 | length }}
                     </button>
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Functional`">
                         🏆 {% trans "Functional" %} {{ bug_type_2 | length }}
                     </button>
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Performance`">
                         ⚡ {% trans "Performance" %} {{ bug_type_3 | length }}
                     </button>
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Security`">
                         ⚡ {% trans "Security" %} {{ bug_type_4 | length }}
                     </button>
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Typo`">
                         ✏️ {% trans "Typo" %} {{ bug_type_5 | length }}
                     </button>
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Design`">
                         🧑‍💻 {% trans "Design" %} {{ bug_type_6 | length }}
                     </button>
@@ -363,15 +363,15 @@
             <div class="flex flex-col gap-3">
                 <h1 class="text-xl font-semibold text-black/90">{% trans "User Stats" %}</h1>
                 <div class="w-full flex flex-wrap gap-3">
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}`">
                         🏆 {% trans "Bugs Reported" %} {{ total_bugs }}
                     </button>
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=open`">
                         🐞 {% trans "Open Issues" %} {{ bug_type_1 | length }}
                     </button>
-                    <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                    <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                             onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=close`">
                         ⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}
                     </button>
@@ -379,10 +379,10 @@
             </div>
             <div class="flex flex-col gap-3">
                 <h1 class="text-xl font-semibold text-black/90">{% trans "User Tags" %}</h1>
-                <div class=" w-full flex flex-wrap gap-3">
+                <div class="w-full flex flex-wrap gap-3">
                     {% if user_related_tags %}
                         {% for tag in user_related_tags %}
-                            <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
+                            <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg"
                                     onclick="window.location.href=`{% url 'users' %}?tag={{ tag.name }}`">
                                 {{ tag.name }}
                             </button>
@@ -392,7 +392,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="flex flex-col gap-4 p-4 bg-gray-50 rounded-lg shadow">
+            <div class="flex flex-col gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg shadow">
                 <h1 class="text-2xl font-semibold text-black/90">{% trans "Bacon Stats" %}</h1>
                 <!-- Show Bacon Earned -->
                 <div class="flex items-center gap-2 text-lg">
@@ -467,7 +467,7 @@
                 </h1>
                 <div class="badges flex flex-wrap gap-4">
                     {% for user_badge in user_badges %}
-                        <div class="badge-item flex flex-col items-center justify-center gap-1 text-center border select-none border-red-500 bg-red-100/20 px-5 py-3 rounded-lg ">
+                        <div class="badge-item flex flex-col items-center justify-center gap-1 text-center border select-none border-red-500 bg-red-100/20 px-5 py-3 rounded-lg">
                             {% if user_badge.badge.icon %}
                                 <img src="{{ user_badge.badge.icon.url }}"
                                      alt="{{ user_badge.badge.title }}"
@@ -476,9 +476,9 @@
                                      height="64">
                             {% endif %}
                             <h4 class="font-medium">{{ user_badge.badge.title }}</h4>
-                            <p class="text-xs text-gray-500 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
                             {% if user_badge.reason %}
-                                <p class="text-xs text-gray-400 italic mt-1">Reason: "{{ user_badge.reason }}"</p>
+                                <p class="text-xs text-gray-400 dark:text-gray-600 italic mt-1">Reason: "{{ user_badge.reason }}"</p>
                             {% endif %}
                         </div>
                     {% empty %}
@@ -489,8 +489,8 @@
             <!--  Pull Requests Section -->
             {% if repos_with_prs %}
                 <div class="flex flex-col gap-4">
-                    <div class="bg-white rounded-lg border border-gray-200 p-4">
-                        <div class="flex justify-between items-center mb-4 ">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                        <div class="flex justify-between items-center mb-4">
                             <h2 class="text-xl font-semibold text-black/90 flex items-center gap-2">
                                 {% trans "Overall Pull Requests" %} <i class="fas fa-code-branch text-blue-500"></i>
                             </h2>
@@ -518,13 +518,13 @@
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {% for repo_name, repo_data in repos_with_prs.items %}
-                            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                <div class="bg-gray-50 p-4 border-b border-gray-200">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <div class="bg-gray-50 dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-700">
                                     <div class="flex items-center justify-between">
-                                        <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                            <i class="fas fa-book text-gray-600"></i>
+                                        <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                            <i class="fas fa-book text-gray-600 dark:text-gray-400"></i>
                                             <a href="{{ repo_data.repo_url }}"
-                                               class=" hover:text-red-600 text-black/80 font-bold hover:underline transition-all duration-200">{{ repo_name }}</a>
+                                               class="hover:text-red-600 text-black/80 font-bold hover:underline transition-all duration-200">{{ repo_name }}</a>
                                         </h3>
                                         <div class="flex gap-3 text-md">
                                             <span class="flex items-center gap-1 text-purple-700 font-bold">
@@ -539,12 +539,12 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                <div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
                                     {% for pr in repo_data.pull_requests %}
                                         <div class="flex justify-between items-center p-4 hover:bg-gray-50 transition-all duration-200">
                                             <a href="{{ pr.url }}"
                                                class="text-blue-600 hover:text-red-600 font-medium hover:underline transition-all duration-200">{{ pr.title }}</a>
-                                            <span class="flex  items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {% if pr.is_merged %} = text-purple-700 {% elif pr.state == 'open' %}  text-yellow-700 {% else %}  text-red-700 {% endif %} text-lg">
+                                            <span class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {% if pr.is_merged %} = text-purple-700 {% elif pr.state == 'open' %} text-yellow-700 {% else %} text-red-700 {% endif %} text-lg">
                                                 {% if pr.is_merged %}
                                                     <i class="fas fa-check-circle rounded-full text-lg"></i>
                                                 {% elif pr.state == 'open' %}
@@ -584,7 +584,7 @@
                 </form>
             {% endif %}
         </div>
-        <div class="flex flex-col items-center lg:items-start text-center lg:text-left bg-[#f7fafc] text-[#2d3748] p-5 rounded-lg shadow-sm w-[22vw] max-sm:w-full  gap-4 cursor-pointer">
+        <div class="flex flex-col items-center lg:items-start text-center lg:text-left bg-[#f7fafc] text-[#2d3748] p-5 rounded-lg shadow-sm w-[22vw] max-sm:w-full gap-4 cursor-pointer">
             <!-- Points Section -->
             <div class="score-container flex items-center justify-center bg-[#f7fafc] text-[#1a202c] p-4 rounded-md shadow-sm w-full transition-transform transform hover:scale-105">
                 <i class="fa fa-star text-yellow-500 mr-2"></i>
@@ -614,7 +614,7 @@
                                     {% elif point.reason %}
                                         <span>{{ point.reason }}</span>
                                     {% else %}
-                                        <p class="mt-2 text-gray-500">No reason provided</p>
+                                        <p class="mt-2 text-gray-500 dark:text-gray-500">No reason provided</p>
                                     {% endif %}
                                 </td>
                                 <td class="py-2 px-4 text-md">{{ point.created|date:"Y-m-d H:i" }}</td>
@@ -664,8 +664,8 @@
                         </div>
                     </div>
                     <div class="flex justify-between mt-1">
-                        <span class="text-md text-gray-500">Current</span>
-                        <span class="text-md text-gray-500">Next Milestone</span>
+                        <span class="text-md text-gray-500 dark:text-gray-500">Current</span>
+                        <span class="text-md text-gray-500 dark:text-gray-500">Next Milestone</span>
                     </div>
                 </div>
             </div>
@@ -698,25 +698,25 @@
             <div class="font-bold mb-3">Social Links</div>
             <div class="flex flex-col gap-2">
                 {% if user.userprofile.github_url %}
-                    <a href="{{ user.userprofile.github_url }}" target="_blank" class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                    <a href="{{ user.userprofile.github_url }}" target="_blank" class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600">
                         <i class="fab fa-github text-xl"></i>
                         <span>GitHub</span>
                     </a>
                 {% endif %}
                 {% if user.userprofile.x_username %}
-                    <a href="https://x.com/{{ user.userprofile.x_username }}" target="_blank" class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                    <a href="https://x.com/{{ user.userprofile.x_username }}" target="_blank" class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600">
                         <i class="fab fa-x-twitter text-xl"></i>
                         <span>X (Twitter)</span>
                     </a>
                 {% endif %}
                 {% if user.userprofile.linkedin_url %}
-                    <a href="{{ user.userprofile.linkedin_url }}" target="_blank" class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                    <a href="{{ user.userprofile.linkedin_url }}" target="_blank" class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600">
                         <i class="fab fa-linkedin text-xl"></i>
                         <span>LinkedIn</span>
                     </a>
                 {% endif %}
                 {% if user.userprofile.website_url %}
-                    <a href="{{ user.userprofile.website_url }}" target="_blank" class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                    <a href="{{ user.userprofile.website_url }}" target="_blank" class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600">
                         <i class="fas fa-globe text-xl"></i>
                         <span>Website</span>
                     </a>
@@ -882,7 +882,7 @@
                 <hr>
             </div>
             <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh]">
-                <div class=" mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
+                <div class="mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
                     <ul>
                         {% if websites %}
                             {% for website in websites %}
@@ -916,26 +916,26 @@
             </div>
             <div class="badges grid grid-cols-2 gap-4 mt-4">
                 {% for user_badge in user_badges %}
-                    <div class="badge-item relative text-center bg-gray-100 p-4 rounded-lg shadow-md">
+                    <div class="badge-item relative text-center bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md">
                         {% if user_badge.badge.icon %}
                             <img src="{{ user_badge.badge.icon.url }}" alt="{{ user_badge.badge.title }}" class="w-16 h-16 mx-auto object-contain" width="64" height="64">
                         {% endif %}
                         <h4 class="font-bold text-sm mt-2">{{ user_badge.badge.title }}</h4>
-                        <p class="text-xs text-gray-500 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
                         {% if user_badge.reason %}
-                            <p class="text-xs text-gray-400 italic mt-1">Reason: "{{ user_badge.reason }}"</p>
+                            <p class="text-xs text-gray-400 dark:text-gray-600 italic mt-1">Reason: "{{ user_badge.reason }}"</p>
                         {% endif %}
                     </div>
                 {% empty %}
-                    <p class="col-span-full text-center text-gray-500">No badges awarded yet.</p>
+                    <p class="col-span-full text-center text-gray-500 dark:text-gray-500">No badges awarded yet.</p>
                 {% endfor %}
             </div>
             <!--  Pull Requests Section -->
             <div class="my-6 mr-5">
                 {% if repos_with_prs %}
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-4 mb-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                                 Overall Pull Requests <i class="fas fa-code-branch text-blue-500"></i>
                             </h2>
                         </div>
@@ -968,11 +968,11 @@
                     </div>
                     <div class="space-y-6">
                         {% for repo_name, repo_data in repos_with_prs.items %}
-                            <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                                <div class="bg-gray-50 p-4 border-b border-gray-200">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <div class="bg-gray-50 dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-700">
                                     <div class="flex items-center justify-between">
-                                        <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                            <i class="fas fa-book text-gray-600"></i>
+                                        <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                            <i class="fas fa-book text-gray-600 dark:text-gray-400"></i>
                                             <a href="{{ repo_data.repo_url }}" class="text-blue-600 font-bold text-2xl hover:underline">{{ repo_name }}</a>
                                         </h3>
                                         <div class="flex gap-3 text-md">
@@ -988,7 +988,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                <div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
                                     {% for pr in repo_data.pull_requests %}
                                         <div class="flex justify-between items-center p-4 hover:bg-gray-50">
                                             <a href="{{ pr.url }}" class="text-blue-600 font-medium hover:underline">{{ pr.title }}</a>
@@ -1017,12 +1017,12 @@
          aria-labelledby="modal-title"
          role="dialog"
          aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 transition-opacity"
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
+                    <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
                                 <div class="mt-2">
@@ -1032,7 +1032,7 @@
                                         <table class="table-auto w-full border-spacing-52">
                                             <tbody class="flex flex-col gap-2">
                                                 {% for user in followers %}
-                                                    <tr class="px-4 py-2 rounded-lg bg-gray-100 flex items-center gap-3">
+                                                    <tr class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-3">
                                                         {% if user.socialaccount_set.all.0.get_avatar_url %}
                                                             <td>
                                                                 <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
@@ -1063,7 +1063,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="border-t border-gray-200 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                         <button type="button"
                                 class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
                                 id="close-follow">Close</button>
@@ -1077,12 +1077,12 @@
          aria-labelledby="modal-title"
          role="dialog"
          aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 transition-opacity"
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
+                    <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
                                 <div class="mt-2">
@@ -1092,7 +1092,7 @@
                                         <table class="table-auto w-full border-spacing-52">
                                             <tbody class="flex flex-col gap-2">
                                                 {% for user in following %}
-                                                    <tr class="px-4 py-2 rounded-lg bg-gray-100 flex items-center gap-3">
+                                                    <tr class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-3">
                                                         {% if user.socialaccount_set.all.0.get_avatar_url %}
                                                             <td>
                                                                 <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
@@ -1123,7 +1123,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="border-t border-gray-200 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                         <button type="button"
                                 class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
                                 id="close-following">Close</button>
@@ -1137,12 +1137,12 @@
          aria-labelledby="modal-title"
          role="dialog"
          aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 transition-opacity"
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
+                    <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
                                 <div class="mt-2">
@@ -1152,19 +1152,19 @@
                                         <table class="table-auto w-full border-spacing-52">
                                             <tbody class="flex flex-col gap-2">
                                                 {% for i in bookmarks %}
-                                                    <tr class="px-4 py-2 rounded-lg bg-gray-100 flex items-center gap-3">
+                                                    <tr class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-3">
                                                         <div class="flex items-center justify-between w-full">
                                                             <div class="flex flex-col">
                                                                 <a href="{{ i.get_absolute_url }}"
                                                                    class="text-lg font-medium hover:text-red-500">
                                                                     <strong>{{ i.description|truncatechars:50 }}</strong>
                                                                 </a>
-                                                                <p class="text-sm text-gray-600">{{ i.user }}</p>
+                                                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ i.user }}</p>
                                                             </div>
                                                             <div class="flex items-center gap-2">
                                                                 <span class="px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{{ i.status }}</span>
                                                                 <button type="button"
-                                                                        class="text-gray-400 hover:text-red-500"
+                                                                        class="text-gray-400 dark:text-gray-600 hover:text-red-500"
                                                                         name="{{ i.pk }}"
                                                                         data-dismiss="alert"
                                                                         aria-label="Close">
@@ -1181,7 +1181,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="border-t border-gray-200 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                         <button type="button"
                                 class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
                                 id="close-Bookmark">Close</button>
@@ -1196,12 +1196,12 @@
          aria-labelledby="modal-title"
          role="dialog"
          aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 transition-opacity"
              aria-hidden="true"></div>
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
+                    <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start lg:w-full">
                             <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
                                 <div class="mt-2">
@@ -1211,7 +1211,7 @@
                                         <table class="table-auto w-full border-spacing-52">
                                             <tbody class="flex flex-col gap-2">
                                                 {% for k in user.kudos_received.all %}
-                                                    <tr class="px-4 py-2 rounded-lg bg-gray-100 flex items-center gap-3">
+                                                    <tr class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-3">
                                                         <td>
                                                             {% if k.sender.userprofile.avatar %}
                                                                 <img src="{{ k.sender.userprofile.avatar }}"
@@ -1247,7 +1247,7 @@
                                                                         onclick="this.nextElementSibling.classList.toggle('hidden')">
                                                                     <i class="fas fa-comment-dots"></i> View Comment
                                                                 </button>
-                                                                <div class="hidden mt-2 text-sm text-gray-600">{{ k.comment }}</div>
+                                                                <div class="hidden mt-2 text-sm text-gray-600 dark:text-gray-400">{{ k.comment }}</div>
                                                             </td>
                                                         {% endif %}
                                                     </tr>
@@ -1259,7 +1259,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="border-t border-gray-200 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                         <button type="button"
                                 class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
                                 id="close-kudos">Close</button>
@@ -1270,13 +1270,13 @@
     </div>
     <!-- Assign Badge Modal -->
     <div id="assign-badge-modal"
-         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden">
-        <div class="bg-white w-full max-w-lg p-6 rounded-lg shadow-lg">
+         class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-lg p-6 rounded-lg shadow-lg">
             <h3 class="text-lg font-semibold mb-4">Assign a Badge</h3>
             <form method="post" action="{% url 'assign_badge' user.username %}">
                 {% csrf_token %}
                 <div class="mb-4">
-                    <label for="badge" class="block text-sm font-medium text-gray-700">Select a Badge:</label>
+                    <label for="badge" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select a Badge:</label>
                     <select name="badge"
                             id="badge"
                             class="block w-full mt-1 p-2 border rounded-md"
@@ -1285,7 +1285,7 @@
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label for="reason" class="block text-sm font-medium text-gray-700">Reason (optional):</label>
+                    <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reason (optional):</label>
                     <textarea name="reason"
                               id="reason"
                               rows="3"
@@ -1293,7 +1293,7 @@
                 </div>
                 <div class="flex justify-end gap-4">
                     <button type="button"
-                            class="btn btn-secondary px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-black"
+                            class="btn btn-secondary px-4 py-2 rounded-md bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 text-black dark:text-white"
                             onclick="closeAssignBadgeModal()">Cancel</button>
                     <button type="submit"
                             class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">

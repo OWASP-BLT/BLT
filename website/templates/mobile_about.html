@@ -24,54 +24,54 @@
     <div class="flex-1 p-4 md:p-8">
         <div class="container mx-auto">
             <!-- Hero Section -->
-            <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
                 <h1 class="text-4xl font-bold mb-4">{% trans "About" %} {% env 'PROJECT_NAME' %}</h1>
-                <div class="text-xl text-gray-700 leading-relaxed">
+                <div class="text-xl text-gray-700 dark:text-gray-300 leading-relaxed">
                     {% env 'PROJECT_NAME' %} {% trans "is a 100% free to use, open-source, non-commercial and non-profit initiative dedicated to improving software security through community-driven bug reporting. Every reward goes directly to the security researchers(bug hunters) who find and report vulnerabilities." %}
                 </div>
             </div>
             <!-- Mission & Vision -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                     <h2 class="text-2xl font-bold mb-4">{% trans "Our Mission" %}</h2>
-                    <p class="text-gray-700 mb-4">
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">
                         {% trans "To create a secure digital environment where users can access online services seamlessly and safely. From e-commerce to streaming services, we believe every online interaction should be bug-free and secure." %}
                     </p>
                 </div>
-                <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                     <h2 class="text-2xl font-bold mb-4">{% trans "What We Do" %}</h2>
-                    <p class="text-gray-700">
+                    <p class="text-gray-700 dark:text-gray-300">
                         {% trans "BLT provides a comprehensive platform for identifying and reporting software and hardware vulnerabilities that affect user experience, system security, and overall reliability." %}
                     </p>
                 </div>
             </div>
             <!-- Benefits Section -->
-            <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
                 <h2 class="text-3xl font-bold mb-6">{% trans "What's in it for you?" %}</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="p-6 bg-gray-50 rounded-lg">
+                    <div class="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
                         <h3 class="text-xl font-semibold mb-3">{% trans "Points" %}</h3>
-                        <p class="text-gray-700">{% trans "Earn points for every verified bug report" %}</p>
+                        <p class="text-gray-700 dark:text-gray-300">{% trans "Earn points for every verified bug report" %}</p>
                     </div>
-                    <div class="p-6 bg-gray-50 rounded-lg">
+                    <div class="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
                         <h3 class="text-xl font-semibold mb-3">{% trans "Bug Bounty Rewards" %}</h3>
-                        <p class="text-gray-700">{% trans "Money if you join a BLT Sponsored Bug Bounty" %}</p>
+                        <p class="text-gray-700 dark:text-gray-300">{% trans "Money if you join a BLT Sponsored Bug Bounty" %}</p>
                     </div>
-                    <div class="p-6 bg-gray-50 rounded-lg">
+                    <div class="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
                         <h3 class="text-xl font-semibold mb-3">{% trans "Jackpot" %}</h3>
-                        <p class="text-gray-700">{% trans "Jackpot money listed on the Leaderboard" %}</p>
+                        <p class="text-gray-700 dark:text-gray-300">{% trans "Jackpot money listed on the Leaderboard" %}</p>
                     </div>
-                    <div class="p-6 bg-gray-50 rounded-lg">
+                    <div class="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
                         <h3 class="text-xl font-semibold mb-3">{% trans "Tips" %}</h3>
-                        <p class="text-gray-700">{% trans "Money if someone tips you for finding a bug" %}</p>
+                        <p class="text-gray-700 dark:text-gray-300">{% trans "Money if someone tips you for finding a bug" %}</p>
                     </div>
                 </div>
             </div>
             <!-- How it Works -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                     <h2 class="text-2xl font-bold mb-6">{% trans "For Security Researchers (Testers)" %}</h2>
-                    <ol class="list-decimal list-inside space-y-4 text-gray-700">
+                    <ol class="list-decimal list-inside space-y-4 text-gray-700 dark:text-gray-300">
                         <li>{% trans "Create a User Account to log into BLT" %}</li>
                         <li>{% trans "Describe the software or hardware bug you found" %}</li>
                         <li>{% trans "Attach a screenshot of the bug" %}</li>
@@ -82,9 +82,9 @@
                         </li>
                     </ol>
                 </div>
-                <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                     <h2 class="text-2xl font-bold mb-6">{% trans "For Organizations" %}</h2>
-                    <div class="text-gray-700 space-y-4">
+                    <div class="text-gray-700 dark:text-gray-300 space-y-4">
                         <p>{% trans "We want everyone to love your website." %}</p>
                         <p>
                             {% trans "You want to keep your customers happy by giving them a consistent bug-free user experience. BLT offers monthly Bug Bounties through 4 different subscription plans to help you achieve this." %}
@@ -93,15 +93,15 @@
                 </div>
             </div>
             <!-- Features Section -->
-            <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                 <h2 class="text-3xl font-bold mb-8">{% trans "Features of BLT" %}</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <!-- Bug Reporting System -->
                     <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Bug Reporting" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Users can report software or hardware bugs found on any website:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
+                        <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{% trans "Bug Reporting" %}</h3>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 space-y-3">
+                            <p class="text-gray-700 dark:text-gray-300">{% trans "Users can report software or hardware bugs found on any website:" %}</p>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
                                 <li>{% trans "Simple bug submission process" %}</li>
                                 <li>{% trans "Screenshot attachment capability" %}</li>
                                 <li>{% trans "Detailed bug description support" %}</li>
@@ -110,10 +110,10 @@
                     </div>
                     <!-- Verification Process -->
                     <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Verification Process" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Bugs are verified through a community-driven process:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
+                        <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{% trans "Verification Process" %}</h3>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 space-y-3">
+                            <p class="text-gray-700 dark:text-gray-300">{% trans "Bugs are verified through a community-driven process:" %}</p>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
                                 <li>{% trans "Community verification of reported issues" %}</li>
                                 <li>{% trans "Company confirmation of bug validity" %}</li>
                             </ul>
@@ -121,10 +121,10 @@
                     </div>
                     <!-- Rewards System -->
                     <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Rewards System" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Users earn rewards for reporting bugs:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
+                        <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{% trans "Rewards System" %}</h3>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 space-y-3">
+                            <p class="text-gray-700 dark:text-gray-300">{% trans "Users earn rewards for reporting bugs:" %}</p>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
                                 <li>{% trans "Points for verified bug reports" %}</li>
                                 <li>{% trans "Bug bounty rewards from sponsored hunts" %}</li>
                                 <li>{% trans "Tips from appreciative users" %}</li>
@@ -134,10 +134,10 @@
                     </div>
                     <!-- User Profiles -->
                     <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "User Profiles" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Manage bug reporting activities and personal information:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
+                        <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{% trans "User Profiles" %}</h3>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 space-y-3">
+                            <p class="text-gray-700 dark:text-gray-300">{% trans "Manage bug reporting activities and personal information:" %}</p>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
                                 <li>{% trans "Track your reported bugs" %}</li>
                                 <li>{% trans "Manage personal information" %}</li>
                                 <li>{% trans "View earned rewards" %}</li>
@@ -146,10 +146,10 @@
                     </div>
                     <!-- Community Engagement -->
                     <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Community Engagement" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Collaboration and knowledge sharing features:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
+                        <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{% trans "Community Engagement" %}</h3>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 space-y-3">
+                            <p class="text-gray-700 dark:text-gray-300">{% trans "Collaboration and knowledge sharing features:" %}</p>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
                                 <li>{% trans "Community-driven bug verification" %}</li>
                                 <li>{% trans "Knowledge sharing opportunities" %}</li>
                                 <li>{% trans "Collaborative environment" %}</li>
@@ -158,10 +158,10 @@
                     </div>
                     <!-- Leaderboard -->
                     <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800">{% trans "Leaderboard" %}</h3>
-                        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-                            <p class="text-gray-700">{% trans "Ranks users based on their contributions:" %}</p>
-                            <ul class="list-disc ml-6 space-y-2 text-gray-700">
+                        <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{% trans "Leaderboard" %}</h3>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 space-y-3">
+                            <p class="text-gray-700 dark:text-gray-300">{% trans "Ranks users based on their contributions:" %}</p>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
                                 <li>{% trans "Track top contributors" %}</li>
                                 <li>{% trans "View point rankings" %}</li>
                                 <li>{% trans "Jackpot eligibility tracking" %}</li>
@@ -175,11 +175,11 @@
     {% block edit_link %}
         <div class="fixed bottom-4 right-4 space-x-2">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/about.html"
-               class="inline-flex items-center justify-center w-10 h-10 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors">
+               class="inline-flex items-center justify-center w-10 h-10 bg-gray-800 dark:bg-gray-100 rounded-full hover:bg-gray-700 transition-colors">
                 <i class="fab fa-github text-white"></i>
             </a>
             <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=487%3A2791&t=OZnfXHD7sfzkaLm1-1"
-               class="inline-flex items-center justify-center w-10 h-10 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors">
+               class="inline-flex items-center justify-center w-10 h-10 bg-gray-800 dark:bg-gray-100 rounded-full hover:bg-gray-700 transition-colors">
                 <i class="fab fa-figma text-white"></i>
             </a>
         </div>

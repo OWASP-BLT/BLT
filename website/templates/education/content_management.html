@@ -9,11 +9,11 @@
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Dashboard
             </a>
-            <h2 class="text-3xl font-bold text-gray-800">{{ course.title }} - Content Management</h2>
-            <p class="text-gray-600 mt-2">Organize your course content by adding, editing, or reordering sections and lectures.</p>
-            <div class="bg-white shadow-lg rounded-lg mt-6">
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">{{ course.title }} - Content Management</h2>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">Organize your course content by adding, editing, or reordering sections and lectures.</p>
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg mt-6">
                 <div class="flex justify-between items-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
-                    <h5 class="text-xl font-semibold text-gray-800">Course Sections</h5>
+                    <h5 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Course Sections</h5>
                     <button type="button"
                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
                             onclick="toggleModal('addSectionModal')">Add Section</button>
@@ -22,15 +22,15 @@
                     <div id="sections-container">
                         {% for section in course.sections.all %}
                             <div class="section-item mb-6" data-section-id="{{ section.id }}">
-                                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                <div class="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                                     <div class="flex flex-col">
                                         <div class="flex items-center">
-                                            <span class="section-handle mr-3 cursor-move text-gray-400 hover:text-gray-600">
+                                            <span class="section-handle mr-3 cursor-move text-gray-400 dark:text-gray-600 hover:text-gray-600">
                                                 <i class="fas fa-grip-vertical"></i>
                                             </span>
-                                            <h5 class="text-lg font-medium text-gray-800">{{ section.order }}. {{ section.title }}</h5>
+                                            <h5 class="text-lg font-medium text-gray-800 dark:text-gray-200">{{ section.order }}. {{ section.title }}</h5>
                                         </div>
-                                        {% if section.description %}<p class="text-sm text-gray-600 mt-1">{{ section.description }}</p>{% endif %}
+                                        {% if section.description %}<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ section.description }}</p>{% endif %}
                                     </div>
                                     <div class="flex space-x-2">
                                         <button type="button"
@@ -38,7 +38,7 @@
                                                 onclick="toggleAddLectureModal('{{ section.id }}')"
                                                 data-section-id="{{ section.id }}">Add Lecture</button>
                                         <button type="button"
-                                                class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition duration-300 edit-section"
+                                                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition duration-300 edit-section"
                                                 onclick="toggleEditSectionModal('{{ section.id }}')"
                                                 data-section-id="{{ section.id }}"
                                                 data-section-title="{{ section.title }}">Edit</button>
@@ -53,13 +53,13 @@
                                         <div class="lecture-item flex justify-between items-center p-3 border-b hover:bg-gray-50 transition duration-300"
                                              data-lecture-id="{{ lecture.id }}">
                                             <div class="flex items-center">
-                                                <span class="lecture-handle mr-3 cursor-move text-gray-400 hover:text-gray-600">
+                                                <span class="lecture-handle mr-3 cursor-move text-gray-400 dark:text-gray-600 hover:text-gray-600">
                                                     <i class="fas fa-grip-lines"></i>
                                                 </span>
                                                 <div>
-                                                    <h6 class="text-base font-medium text-gray-800">{{ lecture.order }}. {{ lecture.title }}</h6>
-                                                    {% if lecture.description %}<p class="text-sm text-gray-900 mt-1">{{ lecture.description }}</p>{% endif %}
-                                                    <small class="text-gray-500">
+                                                    <h6 class="text-base font-medium text-gray-800 dark:text-gray-200">{{ lecture.order }}. {{ lecture.title }}</h6>
+                                                    {% if lecture.description %}<p class="text-sm text-gray-900 dark:text-gray-100 mt-1">{{ lecture.description }}</p>{% endif %}
+                                                    <small class="text-gray-500 dark:text-gray-500">
                                                         {{ lecture.get_content_type_display }}
                                                         {% if lecture.duration %}• {{ lecture.duration }} min{% endif %}
                                                     </small>
@@ -79,14 +79,14 @@
                                             </div>
                                         </div>
                                     {% empty %}
-                                        <div class="text-center p-4 text-gray-500">
+                                        <div class="text-center p-4 text-gray-500 dark:text-gray-500">
                                             <p>No lectures in this section yet.</p>
                                         </div>
                                     {% endfor %}
                                 </div>
                             </div>
                         {% empty %}
-                            <div class="text-center p-6 text-gray-500">
+                            <div class="text-center p-6 text-gray-500 dark:text-gray-500">
                                 <p>No sections available. Create your first section to get started.</p>
                             </div>
                         {% endfor %}
@@ -97,25 +97,25 @@
     </div>
     <div id="addSectionModal"
          class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-y-auto">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-y-auto">
             <form method="post" action="{% url 'add_section' course.id %}">
                 {% csrf_token %}
                 <div class="p-6 border-b">
-                    <h5 class="text-xl font-semibold text-gray-800">Add New Section</h5>
+                    <h5 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Add New Section</h5>
                 </div>
                 <div class="p-6">
                     <div class="mb-4">
-                        <label for="sectionTitle" class="block text-sm font-medium text-gray-700">Section Title</label>
+                        <label for="sectionTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Section Title</label>
                         <input type="text"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                id="sectionTitle"
                                name="title"
                                required>
                     </div>
                     <div class="mb-4">
-                        <label for="sectionOrder" class="block text-sm font-medium text-gray-700">Order</label>
+                        <label for="sectionOrder" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Order</label>
                         <input type="number"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                id="sectionOrder"
                                name="order"
                                min="1"
@@ -124,7 +124,7 @@
                 </div>
                 <div class="p-6 border-t flex justify-end space-x-3">
                     <button type="button"
-                            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-300"
+                            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition duration-300"
                             onclick="toggleModal('addSectionModal')">Cancel</button>
                     <button type="submit"
                             class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300">
@@ -135,35 +135,35 @@
         </div>
     </div>
     <div id="editSectionModal"
-         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50 ">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-y-auto">
+         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-y-auto">
             <form method="post"
                   action="{% url 'edit_section' 0 %}"
                   id="editSectionForm">
                 {% csrf_token %}
                 <div class="p-6 border-b">
-                    <h5 class="text-xl font-semibold text-gray-800">Edit Section</h5>
+                    <h5 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Edit Section</h5>
                 </div>
                 <div class="p-6">
                     <div class="mb-4">
                         <label for="editSectionTitle"
-                               class="block text-sm font-medium text-gray-700">Section Title</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Section Title</label>
                         <input type="text"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                id="editSectionTitle"
                                name="title"
                                required>
                         <label for="editSectionDescription"
-                               class="block text-sm font-medium text-gray-700 mt-5">Section Description</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-5">Section Description</label>
                         <textarea id="editSectionDescription"
                                   name="description"
                                   rows="3"
-                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
                 </div>
                 <div class="p-6 border-t flex justify-end space-x-3">
                     <button type="button"
-                            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-300"
+                            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition duration-300"
                             onclick="toggleModal('editSectionModal')">Cancel</button>
                     <button type="submit"
                             class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300">
@@ -175,27 +175,27 @@
     </div>
     <div id="addLectureModal"
          class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3 max-h-screen overflow-y-auto">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3 max-h-screen overflow-y-auto">
             <form method="post" action="{% url 'add_lecture' 0 %}" id="addLectureForm">
                 {% csrf_token %}
                 <input type="hidden" name="section_id" id="lectureSection">
                 <div class="p-6 border-b">
-                    <h5 class="text-xl font-semibold text-gray-800">Add New Lecture</h5>
+                    <h5 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Add New Lecture</h5>
                 </div>
                 <div class="p-6 space-y-6">
                     <div>
-                        <label for="lectureTitle" class="block text-sm font-medium text-gray-700">Lecture Title</label>
+                        <label for="lectureTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lecture Title</label>
                         <input type="text"
                                id="lectureTitle"
                                name="title"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                required>
                     </div>
                     <div>
-                        <label for="contentType" class="block text-sm font-medium text-gray-700">Content Type</label>
+                        <label for="contentType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content Type</label>
                         <select id="contentType"
                                 name="content_type"
-                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 onchange="toggleContentFields(this.value)">
                             <option value="VIDEO" selected>Video Lecture</option>
                             <option value="LIVE">Live Session</option>
@@ -203,65 +203,65 @@
                         </select>
                     </div>
                     <div>
-                        <label for="lectureDuration" class="block text-sm font-medium text-gray-700">Duration (in minutes)</label>
+                        <label for="lectureDuration" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Duration (in minutes)</label>
                         <input type="number"
                                id="lectureDuration"
                                name="duration"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <label for="lectureDescription"
-                               class="block text-sm font-medium text-gray-700">Description</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                         <textarea id="lectureDescription"
                                   name="description"
                                   rows="3"
-                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
                     <div id="videoFields" class="content-fields hidden space-y-4">
                         <div>
-                            <label for="videoUrl" class="block text-sm font-medium text-gray-700">Video URL</label>
+                            <label for="videoUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Video URL</label>
                             <input type="url"
                                    id="videoUrl"
                                    name="video_url"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
                     <div id="liveFields" class="content-fields hidden space-y-4">
                         <div>
-                            <label for="liveUrl" class="block text-sm font-medium text-gray-700">Live Session URL</label>
+                            <label for="liveUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Live Session URL</label>
                             <input type="url"
                                    id="liveUrl"
                                    name="live_url"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="scheduledTime" class="block text-sm font-medium text-gray-700">Scheduled Time</label>
+                            <label for="scheduledTime" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scheduled Time</label>
                             <input type="datetime-local"
                                    id="scheduledTime"
                                    name="scheduled_time"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="recordingUrl" class="block text-sm font-medium text-gray-700">Recording URL (optional)</label>
+                            <label for="recordingUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recording URL (optional)</label>
                             <input type="url"
                                    id="recordingUrl"
                                    name="recording_url"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
                     <div id="documentFields" class="content-fields hidden space-y-4">
                         <div>
-                            <label for="documentContent" class="block text-sm font-medium text-gray-700">Content</label>
+                            <label for="documentContent" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content</label>
                             <textarea id="documentContent"
                                       name="content"
                                       rows="4"
-                                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                      class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                     </div>
                 </div>
                 <div class="p-6 border-t flex justify-end space-x-3">
                     <button type="button"
-                            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-300"
+                            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition duration-300"
                             onclick="toggleModal('addLectureModal')">Cancel</button>
                     <button type="submit"
                             class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300">
@@ -273,29 +273,29 @@
     </div>
     <div id="editLectureModal"
          class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3 max-h-screen overflow-y-auto">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3 max-h-screen overflow-y-auto">
             <form method="post"
                   action="{% url 'edit_lecture' 0 %}"
                   id="editLectureForm">
                 {% csrf_token %}
                 <div class="p-6 border-b">
-                    <h5 class="text-xl font-semibold text-gray-800">Edit Lecture</h5>
+                    <h5 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Edit Lecture</h5>
                 </div>
                 <div class="p-6 space-y-6">
                     <div>
                         <label for="editLectureTitle"
-                               class="block text-sm font-medium text-gray-700">Lecture Title</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lecture Title</label>
                         <input type="text"
                                id="editLectureTitle"
                                name="title"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                required>
                     </div>
                     <div>
-                        <label for="editContentType" class="block text-sm font-medium text-gray-700">Content Type</label>
+                        <label for="editContentType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content Type</label>
                         <select id="editContentType"
                                 name="content_type"
-                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 onchange="toggleEditContentFields(this.value)">
                             <option value="VIDEO">Video Lecture</option>
                             <option value="LIVE">Live Session</option>
@@ -304,76 +304,76 @@
                     </div>
                     <div>
                         <label for="editLectureDuration"
-                               class="block text-sm font-medium text-gray-700">Duration (in minutes)</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Duration (in minutes)</label>
                         <input type="number"
                                id="editLectureDuration"
                                name="duration"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <label for="editLectureDescription"
-                               class="block text-sm font-medium text-gray-700">Description</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                         <textarea id="editLectureDescription"
                                   name="description"
                                   rows="3"
-                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
                     <div id="editVideoFields" class="edit-content-fields hidden space-y-4">
                         <div>
-                            <label for="editVideoUrl" class="block text-sm font-medium text-gray-700">Video URL</label>
+                            <label for="editVideoUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Video URL</label>
                             <input type="url"
                                    id="editVideoUrl"
                                    name="video_url"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label for="editDocumentContent"
-                                   class="block text-sm font-medium text-gray-700">Content</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content</label>
                             <textarea id="editDocumentContent"
                                       name="content"
                                       rows="4"
-                                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                      class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                     </div>
                     <div id="editLiveFields" class="edit-content-fields hidden space-y-4">
                         <div>
-                            <label for="editLiveUrl" class="block text-sm font-medium text-gray-700">Live Session URL</label>
+                            <label for="editLiveUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Live Session URL</label>
                             <input type="url"
                                    id="editLiveUrl"
                                    name="live_url"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label for="editScheduledTime"
-                                   class="block text-sm font-medium text-gray-700">Scheduled Time</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scheduled Time</label>
                             <input type="datetime-local"
                                    id="editScheduledTime"
                                    name="scheduled_time"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label for="editRecordingUrl"
-                                   class="block text-sm font-medium text-gray-700">Recording URL (optional)</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recording URL (optional)</label>
                             <input type="url"
                                    id="editRecordingUrl"
                                    name="recording_url"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
                     <div id="editDocumentFields" class="edit-content-fields hidden space-y-4">
                         <div>
                             <label for="editDocumentContent"
-                                   class="block text-sm font-medium text-gray-700">Document Content</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Document Content</label>
                             <textarea id="editDocumentContent"
                                       name="content"
                                       rows="4"
-                                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                      class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                     </div>
                 </div>
                 <div class="p-6 border-t flex justify-end space-x-3">
                     <button type="button"
-                            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-300"
+                            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition duration-300"
                             onclick="toggleModal('editLectureModal')">Cancel</button>
                     <button type="submit"
                             class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300">
@@ -385,19 +385,19 @@
     </div>
     <div id="confirmDeleteModal"
          class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3">
             <div class="p-6 border-b">
-                <h5 class="text-xl font-semibold text-gray-800">Confirm Deletion</h5>
+                <h5 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Confirm Deletion</h5>
             </div>
             <div class="p-6">
-                <p id="deleteConfirmationText" class="text-gray-700">Are you sure you want to delete this item?</p>
+                <p id="deleteConfirmationText" class="text-gray-700 dark:text-gray-300">Are you sure you want to delete this item?</p>
             </div>
             <form action="{% url 'delete_lecture' 0 %}"
                   id="confirmDeleteForm"
                   method="post">
                 {% csrf_token %}
                 <button type="button"
-                        class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-300"
+                        class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition duration-300"
                         onclick="toggleModal('confirmDeleteModal')">Cancel</button>
                 <button type="submit"
                         id="confirmDeleteButton"

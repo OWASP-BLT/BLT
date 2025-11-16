@@ -13,59 +13,59 @@
         <!-- Breadcrumbs -->
         {% include "includes/breadcrumbs.html" %}
         <div class="flex items-center justify-between mt-4">
-            <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ room.name }}</h1>
             <div class="flex items-center gap-2">
-                <div id="connection-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
-                <span id="connection-text" class="text-sm text-gray-600">Connecting...</span>
+                <div id="connection-status" class="w-3 h-3 rounded-full bg-gray-400 dark:bg-gray-500"></div>
+                <span id="connection-text" class="text-sm text-gray-600 dark:text-gray-400">Connecting...</span>
             </div>
         </div>
         <div id="log-history"
-             class="mt-4 p-3 bg-gray-100 rounded-lg h-96 overflow-y-auto scroll-smooth">
+             class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg h-96 overflow-y-auto scroll-smooth">
             <div id="messages-container" class="space-y-1.5">
                 {% for message in room_messages reversed %}
-                    <div class="py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item"
+                    <div class="py-1 px-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm relative group message-item"
                          data-message-id="{{ message.id }}"
                          data-reactions="{{ message.reactions|escapejs|default:'{}' }}">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <p class="text-sm font-medium">{{ message.username }}</p>
-                                <p class="text-sm text-gray-700">{{ message.content }}</p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">{{ message.content }}</p>
                                 <div class="flex items-center gap-2 mt-1">
-                                    <span class="text-xs text-gray-500">{{ message.timestamp|naturaltime }}</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-500">{{ message.timestamp|naturaltime }}</span>
                                     <div class="reactions-container flex items-center gap-1 min-h-[28px]">
                                         <!-- Directly render existing reactions -->
                                         {% if message.reactions %}
                                             {% for emoji, users in message.reactions.items %}
                                                 {% if users|length > 0 %}
-                                                    <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 reaction-btn"
+                                                    <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 transition-colors duration-200 reaction-btn"
                                                             data-emoji="{{ emoji }}"
                                                             data-message-id="{{ message.id }}">
                                                         <span class="mr-1">{{ emoji }}</span>
-                                                        <span class="text-xs text-gray-600">{{ users|length }}</span>
+                                                        <span class="text-xs text-gray-600 dark:text-gray-400">{{ users|length }}</span>
                                                     </button>
                                                 {% endif %}
                                             {% endfor %}
                                         {% endif %}
                                         <!-- Show some default reactions if none exist -->
                                         {% if not message.reactions or message.reactions|length == 0 %}
-                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 reaction-btn"
+                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 dark:border-gray-700 reaction-btn"
                                                     data-emoji="👍"
                                                     data-message-id="{{ message.id }}">
                                                 <span>👍</span>
                                             </button>
-                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 reaction-btn"
+                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 dark:border-gray-700 reaction-btn"
                                                     data-emoji="❤️"
                                                     data-message-id="{{ message.id }}">
                                                 <span>❤️</span>
                                             </button>
-                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 reaction-btn"
+                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 dark:border-gray-700 reaction-btn"
                                                     data-emoji="😊"
                                                     data-message-id="{{ message.id }}">
                                                 <span>😊</span>
                                             </button>
                                         {% endif %}
                                     </div>
-                                    <button class="add-reaction-btn text-gray-400 hover:text-gray-600 text-sm transition-colors duration-200">
+                                    <button class="add-reaction-btn text-gray-400 dark:text-gray-600 hover:text-gray-600 text-sm transition-colors duration-200">
                                         <span class="emoji-button">+</span>
                                     </button>
                                 </div>
@@ -89,9 +89,9 @@
         <!--New Emoji Picker Modal-->
         <div id="emoji-picker"
              class="hidden fixed z-50 transform transition-transform duration-200 ease-in-out">
-            <div class="bg-white rounded-lg shadow-xl border border-gray-200">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
                 <!-- Quick Emoji Section -->
-                <div class="p-2 border-b border-gray-200">
+                <div class="p-2 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex flex-wrap gap-2" id="quick-emojis">
                         <!-- Quick emojis will be inserted here -->
                     </div>
@@ -103,7 +103,7 @@
         <form id="chat-form" class="mt-4 flex gap-2" onsubmit="return false;">
             <input type="text"
                    id="message-input"
-                   class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                   class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-red-500 focus:ring-red-500"
                    placeholder="Type your message..."
                    required>
             <button type="submit"
@@ -440,7 +440,7 @@ function updateReactions(messageId, reactions) {
                 reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200';
                 reactionButton.innerHTML = `
                     <span class="mr-1">${emoji}</span>
-                    <span class="text-xs text-gray-600">${users.length}</span>
+                    <span class="text-xs text-gray-600 dark:text-gray-400">${users.length}</span>
                 `;
                 reactionButton.onclick = () => addReaction(messageId, emoji);
                 reactionsContainer.appendChild(reactionButton);
@@ -483,11 +483,11 @@ function appendMessage(data) {
         <div class="flex items-start justify-between">
             <div class="flex-1">
                 <p class="text-sm font-medium">${escapeHtml(data.username)}</p>
-                <p class="text-sm text-gray-700">${escapeHtml(data.message)}</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300">${escapeHtml(data.message)}</p>
                 <div class="flex items-center gap-2 mt-1">
-                    <span class="text-xs text-gray-500">just now</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-500">just now</span>
                     <div class="reactions-container flex items-center gap-1 min-h-[28px]"></div>
-                    <button class="add-reaction-btn text-gray-400 hover:text-gray-600 text-sm transition-colors duration-200">
+                    <button class="add-reaction-btn text-gray-400 dark:text-gray-600 hover:text-gray-600 text-sm transition-colors duration-200">
                         <span class="emoji-button">+</span>
                     </button>
                 </div>
