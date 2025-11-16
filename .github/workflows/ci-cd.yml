@@ -4,6 +4,8 @@ on:
   #merge_group:
   pull_request:
   push:
+    branches:
+      - main
   workflow_dispatch:
   workflow_run:
     workflows: ["Pre-commit fix"]
@@ -76,7 +78,48 @@ jobs:
         with:
           python-version: 3.11.2
       - name: Run pre-commit
+        id: pre-commit
         uses: pre-commit/action@v3.0.1
+        continue-on-error: true
+      - name: Comment on PR if pre-commit fails
+        if: github.event_name == 'pull_request' && steps.pre-commit.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `## ❌ Pre-commit checks failed
+            
+            The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
+            
+            \`\`\`bash
+            # Install pre-commit if you haven't already
+            pip install pre-commit
+            
+            # Run pre-commit on all files
+            pre-commit run --all-files
+            
+            # Or run pre-commit on staged files only
+            pre-commit run
+            \`\`\`
+            
+            After running these commands, the pre-commit hooks will automatically fix most issues. 
+            Please review the changes, commit them, and push to your branch.
+            
+            💡 **Tip**: You can set up pre-commit to run automatically on every commit by running:
+            \`\`\`bash
+            pre-commit install
+            \`\`\`
+            
+            For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+      - name: Fail the job if pre-commit failed
+        if: steps.pre-commit.outcome == 'failure'
+        run: exit 1
       - name: Print memory usage
         run: free -h
 

@@ -140,32 +140,81 @@ def update_bch_address(request):
 
 @login_required
 def profile_edit(request):
+    from allauth.account.models import EmailAddress
+    from allauth.account.utils import send_email_confirmation
+
     Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
+    # Get the user's current email BEFORE changes
+    original_email = request.user.email
+
     if request.method == "POST":
         form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+
         if form.is_valid():
-            # Check if email is unique
             new_email = form.cleaned_data["email"]
+
+            # Check email uniqueness
             if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
                 form.add_error("email", "This email is already in use")
                 return render(request, "profile_edit.html", {"form": form})
 
-            # Save the form
+            # Check if the user already has this email
+            existing_email = EmailAddress.objects.filter(user=request.user, email=new_email).first()
+            if existing_email:
+                if existing_email.verified:
+                    form.add_error("email", "You already have this email verified. Please set it as primary instead.")
+                    return render(request, "profile_edit.html", {"form": form})
+
+            if EmailAddress.objects.exclude(user=request.user).filter(email=new_email).exists():
+                form.add_error("email", "This email is already registered or pending verification")
+                return render(request, "profile_edit.html", {"form": form})
+
+            # Detect email change before saving profile fields
+            email_changed = new_email != original_email
+
+            # Save profile form (does "not" touch email in user model)
             form.save()
 
-            # Update the User model's email
-            request.user.email = new_email
-            request.user.save()
+            if email_changed:
+                # Remove any pending unverified emails
+                EmailAddress.objects.filter(user=request.user, verified=False).delete()
 
+                # Create new unverified email entry
+                # Create or update email entry as unverified
+                EmailAddress.objects.update_or_create(
+                    user=request.user,
+                    email=new_email,
+                    defaults={"verified": False, "primary": False},
+                )
+
+                # Send verification email
+                try:
+                    send_email_confirmation(request, request.user, email=new_email)
+                except Exception as e:
+                    logger.exception(f"Failed to send email confirmation to {new_email}: {e}")
+                    messages.error(request, "Failed to send verification email. Please try again later.")
+                    return redirect("profile", slug=request.user.username)
+
+                messages.info(
+                    request,
+                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
+                )
+                return redirect("profile", slug=request.user.username)
+
+            # No email change=normal success
             messages.success(request, "Profile updated successfully!")
             return redirect("profile", slug=request.user.username)
+
         else:
             messages.error(request, "Please correct the errors below.")
+
     else:
-        # Initialize the form with the user's current email
-        form = UserProfileForm(instance=user_profile, initial={"email": request.user.email})
+        form = UserProfileForm(
+            instance=user_profile,
+            initial={"email": request.user.email},
+        )
 
     return render(request, "profile_edit.html", {"form": form})
 
