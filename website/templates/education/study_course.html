@@ -26,9 +26,11 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
                     <div class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex justify-between items-center">
                         <div class="flex items-center space-x-2">
-                            <span id="current-section-title" class="text-sm font-medium text-gray-500 dark:text-gray-500"></span>
+                            <span id="current-section-title"
+                                  class="text-sm font-medium text-gray-500 dark:text-gray-500"></span>
                             <span class="text-gray-400 dark:text-gray-600">/</span>
-                            <span id="current-lecture-title" class="text-sm font-medium text-gray-700 dark:text-gray-300"></span>
+                            <span id="current-lecture-title"
+                                  class="text-sm font-medium text-gray-700 dark:text-gray-300"></span>
                         </div>
                         <div class="flex space-x-3">
                             <button id="prev-lecture"
@@ -50,7 +52,9 @@
                             <div id="section-content-{{ section.id }}" class="section-content hidden">
                                 <h2 class="text-xl font-bold mb-4">{{ section.title }}</h2>
                                 <div class="mb-4 text-sm text-gray-500 dark:text-gray-500">Section • {{ section.lectures.all|length }} lectures</div>
-                                {% if section.description %}<div class="mb-6 text-gray-700 dark:text-gray-300">{{ section.description|linebreaks }}</div>{% endif %}
+                                {% if section.description %}
+                                    <div class="mb-6 text-gray-700 dark:text-gray-300">{{ section.description|linebreaks }}</div>
+                                {% endif %}
                                 {% if not section.lectures.all %}
                                     <div class="text-center py-10 text-gray-500 dark:text-gray-500">No lectures in this section.</div>
                                 {% endif %}
@@ -62,7 +66,9 @@
                                         {{ lecture.get_content_type_display }} •
                                         {% if lecture.duration %}{{ lecture.duration }} min{% endif %}
                                     </div>
-                                    {% if lecture.description %}<div class="mb-6 text-gray-700 dark:text-gray-300">{{ lecture.description|linebreaks }}</div>{% endif %}
+                                    {% if lecture.description %}
+                                        <div class="mb-6 text-gray-700 dark:text-gray-300">{{ lecture.description|linebreaks }}</div>
+                                    {% endif %}
                                     {% if lecture.content_type == "VIDEO" and lecture.embed_url %}
                                         <div class="mb-6 w-full">
                                             <iframe src="{{ lecture.embed_url|escape }}"

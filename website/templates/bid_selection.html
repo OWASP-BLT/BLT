@@ -96,7 +96,9 @@
         }
     </script>
     <div class="flex flex-col items-center py-8">
-        <form id="bid" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96" method="post">
+        <form id="bid"
+              class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96"
+              method="post">
             {% csrf_token %}
             <label class="block font-bold mb-2">Paste URL to fetch bids</label>
             <input type="text"

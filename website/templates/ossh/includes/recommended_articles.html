@@ -20,9 +20,13 @@
                             <span class="text-sm text-gray-300 dark:text-gray-700">{{ item.article.author }}</span>
                         </div>
                         <!-- Publication Date -->
-                        <div class="text-sm text-gray-400 dark:text-gray-600">Published on {{ item.article.publication_date|date:"F j, Y" }}</div>
+                        <div class="text-sm text-gray-400 dark:text-gray-600">
+                            Published on {{ item.article.publication_date|date:"F j, Y" }}
+                        </div>
                         <!-- Description -->
-                        <p class="text-gray-300 dark:text-gray-700 line-clamp-3">{{ item.article.description|default:"No description available." }}</p>
+                        <p class="text-gray-300 dark:text-gray-700 line-clamp-3">
+                            {{ item.article.description|default:"No description available." }}
+                        </p>
                         <!-- Tags -->
                         {% if item.article.tags.exists %}
                             <div class="flex flex-wrap gap-2">

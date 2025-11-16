@@ -32,13 +32,15 @@
         {% csrf_token %}
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
             <div class="p-4 border-b">
-                <button type="button" class="float-right text-gray-600 dark:text-gray-400 hover:text-gray-900">×</button>
+                <button type="button"
+                        class="float-right text-gray-600 dark:text-gray-400 hover:text-gray-900">×</button>
                 <h4 class="text-xl font-bold">Edit Hunt</h4>
             </div>
             <div class="p-4">
                 <input type="hidden" name="id" value="{{ hunt.pk }}" />
                 <div class="mb-6">
-                    <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name:</label>
+                    <label for="name"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name:</label>
                     <input type="text"
                            name="name"
                            required
@@ -51,14 +53,16 @@
                 {{ hunt_form.as_p }}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
-                        <label for="datepicker-1" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label for="datepicker-1"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Start Date/Time :
                             <div id="datepicker-1-res" class="hidden"></div>
                         </label>
                         <div id="datepicker-1" class="mt-1"></div>
                     </div>
                     <div>
-                        <label for="datepicker-2" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label for="datepicker-2"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             End Date/Time :
                             <div id="datepicker-2-res" class="hidden"></div>
                         </label>
@@ -66,7 +70,8 @@
                     </div>
                 </div>
                 <div class="mb-6">
-                    <label for="domain" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Domain:</label>
+                    <label for="domain"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">Domain:</label>
                     <select name="domain"
                             class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             id="domain">
@@ -77,7 +82,8 @@
                     <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Prizes</span>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label for="prize_winner" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Winner:</label>
+                            <label for="prize_winner"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Winner:</label>
                             <div class="mt-1 flex rounded-md shadow-sm">
                                 <input name="prize_winner"
                                        type="number"
@@ -88,7 +94,10 @@
                             </div>
                         </div>
                         <div>
-                            <label for="prize_runner" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Runner's Up:</label>
+                            <label for="prize_runner"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Runner's Up:
+                            </label>
                             <div class="mt-1 flex rounded-md shadow-sm">
                                 <input placeholder="Runner's Up"
                                        name="prize_runner"
@@ -100,7 +109,9 @@
                         </div>
                         <div>
                             <label for="prize_second_runner"
-                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">2nd Runner's Up:</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                2nd Runner's Up:
+                            </label>
                             <div class="mt-1 flex rounded-md shadow-sm">
                                 <input placeholder="2nd Runner's Up"
                                        name="prize_second_runner"

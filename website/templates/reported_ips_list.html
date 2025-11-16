@@ -68,7 +68,9 @@
                              class="max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
                             <div class="p-5 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
                                 <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">{% trans "Description:" %}</h3>
-                                <p class="text-sm text-gray-700 dark:text-gray-300">{{ ip.description|default:_("No additional details provided.") }}</p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    {{ ip.description|default:_("No additional details provided.") }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -78,7 +80,9 @@
                             <i class="fas fa-shield-alt text-5xl"></i>
                         </div>
                         <h3 class="text-xl font-medium text-gray-900 dark:text-gray-100 mb-1">{% trans "No IPs Reported" %}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-500 mb-6">{% trans "It seems there are no reported IPs in the system yet." %}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-500 mb-6">
+                            {% trans "It seems there are no reported IPs in the system yet." %}
+                        </p>
                         <a href="{% url 'report_ip' %}"
                            class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white font-medium rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                             <i class="fas fa-plus mr-2"></i> {% trans "Report an IP" %}

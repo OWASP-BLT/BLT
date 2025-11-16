@@ -180,7 +180,10 @@
                             {% csrf_token %}
                             <input type="hidden" name="action" value="create">
                             <div>
-                                <label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message (280 characters max)</label>
+                                <label for="message"
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Message (280 characters max)
+                                </label>
                                 <div class="relative">
                                     <textarea id="createMessage"
                                               name="message"
@@ -194,7 +197,10 @@
                                 </div>
                             </div>
                             <div>
-                                <label for="image" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image (Optional)</label>
+                                <label for="image"
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Image (Optional)
+                                </label>
                                 <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-xl">
                                     <div class="space-y-1 text-center">
                                         <input type="file"
@@ -261,7 +267,10 @@
                             <input type="hidden" name="action" value="edit">
                             <input type="hidden" id="editQueueId" name="queue_id" value="">
                             <div>
-                                <label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message (280 characters max)</label>
+                                <label for="message"
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Message (280 characters max)
+                                </label>
                                 <div class="relative">
                                     <textarea id="editMessage"
                                               name="message"
@@ -275,7 +284,10 @@
                                 </div>
                             </div>
                             <div>
-                                <label for="image" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image (Optional)</label>
+                                <label for="image"
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Image (Optional)
+                                </label>
                                 <div id="currentImageContainer" class="mb-4 hidden">
                                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Current Image:</p>
                                     <img id="currentImage"
@@ -348,8 +360,11 @@
                             </button>
                         </div>
                         <div class="space-y-4">
-                            <p class="text-gray-600 dark:text-gray-400">Are you sure you want to delete this queue item? This action cannot be undone.</p>
-                            <div id="deleteItemDetails" class="p-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Are you sure you want to delete this queue item? This action cannot be undone.
+                            </p>
+                            <div id="deleteItemDetails"
+                                 class="p-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
                                 <p class="mb-2">
                                     <span class="font-medium text-gray-700 dark:text-gray-300">ID:</span> <span id="deleteItemId" class="text-gray-600 dark:text-gray-400"></span>
                                 </p>
@@ -381,7 +396,8 @@
                      class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold">Launch Control</h2>
-                        <button id="closeLaunchControlBtn" class="text-gray-500 dark:text-gray-500 hover:text-gray-700">
+                        <button id="closeLaunchControlBtn"
+                                class="text-gray-500 dark:text-gray-500 hover:text-gray-700">
                             <svg xmlns="http://www.w3.org/2000/svg"
                                  class="h-6 w-6"
                                  fill="none"
@@ -432,7 +448,9 @@
                                         {% for item in pending_items %}
                                             <tr>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ item.id }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ item.message|truncatechars:10 }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                                    {{ item.message|truncatechars:10 }}
+                                                </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                                     {% if item.image %}
                                                         <img src="{{ item.image.url }}"
@@ -444,7 +462,9 @@
                                                         No image
                                                     {% endif %}
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ item.created|date:"M d, Y H:i" }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                                    {{ item.created|date:"M d, Y H:i" }}
+                                                </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                                     {% if item.launched_at %}
                                                         {{ item.launched_at|date:"M d, Y H:i" }}
@@ -470,7 +490,10 @@
                                             </tr>
                                         {% empty %}
                                             <tr>
-                                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-500">No pending items found.</td>
+                                                <td colspan="5"
+                                                    class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-500">
+                                                    No pending items found.
+                                                </td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -521,7 +544,9 @@
                                         {% for item in launched_items %}
                                             <tr>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ item.id }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ item.message|truncatechars:10 }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                                    {{ item.message|truncatechars:10 }}
+                                                </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                                     {% if item.image %}
                                                         <img src="{{ item.image.url }}"
@@ -596,7 +621,10 @@
                                             </tr>
                                         {% empty %}
                                             <tr>
-                                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-500">No launched items found.</td>
+                                                <td colspan="5"
+                                                    class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-500">
+                                                    No launched items found.
+                                                </td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -656,7 +684,9 @@
                             {% for item in queue_items %}
                                 <tr class="hover:bg-gray-50 transition-colors duration-150">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-medium">{{ item.id }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ item.message|truncatechars:10 }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                        {{ item.message|truncatechars:10 }}
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                         {% if item.image %}
                                             <img src="{{ item.image.url }}"
@@ -675,7 +705,9 @@
                                             </div>
                                         {% endif %}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ item.created|date:"M d, Y H:i" }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                        {{ item.created|date:"M d, Y H:i" }}
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         {% if item.launched %}
                                             <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Launched</span>
@@ -805,7 +837,8 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="9" class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-500">
+                                    <td colspan="9"
+                                        class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-500">
                                         <div class="flex flex-col items-center justify-center space-y-2">
                                             <svg class="h-12 w-12 text-gray-400 dark:text-gray-600"
                                                  fill="none"

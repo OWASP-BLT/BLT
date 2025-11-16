@@ -65,7 +65,9 @@
                     <!-- Mentor Only: Inspect Button -->
                     {% if is_mentor %}
                         <button onclick="toggleInspect('{{ submission.id }}')"
-                                class="mt-4 bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-4 py-2 rounded-md">Inspect</button>
+                                class="mt-4 bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-4 py-2 rounded-md">
+                            Inspect
+                        </button>
                         <div id="inspect-{{ submission.id }}"
                              class="hidden mt-2 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800">
                             <p>

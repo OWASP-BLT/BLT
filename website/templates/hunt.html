@@ -20,7 +20,9 @@
                     <p class="whitespace-nowrap">{% trans "Start a" %}</p>
                     <p class="text-red-500">{% trans "Bug Bounty" %}</p>
                 </div>
-                <p class="font-medium text-black/60 dark:text-white/60 mt-4">{% trans "Enter URL, APP name or GPS location of issue." %}</p>
+                <p class="font-medium text-black/60 dark:text-white/60 mt-4">
+                    {% trans "Enter URL, APP name or GPS location of issue." %}
+                </p>
             </div>
             <div class="border-t border-gray-300 dark:border-gray-600 my-8"></div>
             {% csrf_token %}
@@ -65,7 +67,9 @@
                               class="w-full py-2 px-3 outline-none placeholder:text-base h-[180px]"
                               placeholder="Describe bug issue">{{ form.description.value|default:'' }}</textarea>
                 </div>
-                {% if form.description.errors %}<p class="text-red-500 text-sm mt-1">{{ form.descriptioon.errors }}</p>{% endif %}
+                {% if form.description.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.descriptioon.errors }}</p>
+                {% endif %}
                 <div>
                     <div class="flex items-center border rounded-lg overflow-hidden">
                         <i class="fa fa-tag bg-red-500 text-white p-4"></i>

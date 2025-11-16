@@ -291,17 +291,23 @@
                                                 <span class="font-medium">Updating repositories...</span>
                                             </div>
                                             <div id="statusMessages"
-                                                 class="text-sm text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto"></div>
+                                                 class="text-sm text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto">
+                                            </div>
                                         </div>
                                     </div>
                                 {% else %}
                                     <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-md">
-                                        <p class="text-gray-700 dark:text-gray-300 mb-3">No GitHub URL set for this organization. Add one to sync repositories.</p>
+                                        <p class="text-gray-700 dark:text-gray-300 mb-3">
+                                            No GitHub URL set for this organization. Add one to sync repositories.
+                                        </p>
                                         <form method="post"
                                               action="{% url 'update_organization_repos' organization.slug %}">
                                             {% csrf_token %}
                                             <div class="flex flex-col space-y-2">
-                                                <label for="github_url" class="text-sm font-medium text-gray-700 dark:text-gray-300">GitHub URL</label>
+                                                <label for="github_url"
+                                                       class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    GitHub URL
+                                                </label>
                                                 <input type="url"
                                                        id="github_url"
                                                        name="github_url"
@@ -439,7 +445,9 @@
                                                  class="w-8 h-8 rounded-full">
                                             <div>
                                                 <p class="font-medium">{{ manager.username }}</p>
-                                                {% if manager.profile.user_title %}<p class="text-xs text-gray-600 dark:text-gray-400">{{ manager.profile.user_title }}</p>{% endif %}
+                                                {% if manager.profile.user_title %}
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400">{{ manager.profile.user_title }}</p>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     {% endfor %}

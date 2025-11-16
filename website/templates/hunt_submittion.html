@@ -131,10 +131,14 @@
                     <tbody>
                         {% for issue in issue_list %}
                             <tr class="bg-white dark:bg-gray-800 even:bg-gray-50">
-                                <td class="p-3 border border-gray-300 dark:border-gray-600 text-center" data-label="ID">{{ forloop.counter }}</td>
-                                <td class="p-3 border border-gray-300 dark:border-gray-600" data-label="URL">{{ issue.url }}</td>
-                                <td class="p-3 border border-gray-300 dark:border-gray-600" data-label="Description">{{ issue.description }}</td>
-                                <td class="p-3 border border-gray-300 dark:border-gray-600" data-label="Type">{{ issue.get_label_display }}</td>
+                                <td class="p-3 border border-gray-300 dark:border-gray-600 text-center"
+                                    data-label="ID">{{ forloop.counter }}</td>
+                                <td class="p-3 border border-gray-300 dark:border-gray-600"
+                                    data-label="URL">{{ issue.url }}</td>
+                                <td class="p-3 border border-gray-300 dark:border-gray-600"
+                                    data-label="Description">{{ issue.description }}</td>
+                                <td class="p-3 border border-gray-300 dark:border-gray-600"
+                                    data-label="Type">{{ issue.get_label_display }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -140,7 +140,9 @@
                             <div class="flex flex-col gap-1 text-sm">
                                 <span class="text-[#e74c3c]">{{ domain.email|obfuscate_mailto }}</span>
                                 {% if domain.email_event %}
-                                    <div class="text-gray-600 dark:text-gray-400">Last email {{ domain.email_event|default:"" }} {{ domain.modified|timesince }} ago</div>
+                                    <div class="text-gray-600 dark:text-gray-400">
+                                        Last email {{ domain.email_event|default:"" }} {{ domain.modified|timesince }} ago
+                                    </div>
                                     <div class="text-gray-600 dark:text-gray-400">Clicks {{ domain.clicks|default:"0" }}</div>
                                 {% endif %}
                             </div>
@@ -201,7 +203,9 @@
                                 This domain implements the security.txt standard (RFC 9116), making it easier for security researchers to report security vulnerabilities.
                             </p>
                             {% if domain.security_txt_checked_at %}
-                                <div class="text-sm text-gray-500 dark:text-gray-500 mb-4">Last checked: {{ domain.security_txt_checked_at|date:"F j, Y, g:i a" }}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-500 mb-4">
+                                    Last checked: {{ domain.security_txt_checked_at|date:"F j, Y, g:i a" }}
+                                </div>
                             {% endif %}
                         </div>
                     {% else %}
@@ -214,7 +218,9 @@
                                 This domain does not implement the security.txt standard (RFC 9116), which makes it harder for security researchers to report security vulnerabilities.
                             </p>
                             {% if domain.security_txt_checked_at %}
-                                <div class="text-sm text-gray-500 dark:text-gray-500">Last checked: {{ domain.security_txt_checked_at|date:"F j, Y, g:i a" }}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-500">
+                                    Last checked: {{ domain.security_txt_checked_at|date:"F j, Y, g:i a" }}
+                                </div>
                             {% endif %}
                         </div>
                     {% endif %}

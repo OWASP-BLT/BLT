@@ -57,7 +57,9 @@
                         <h2 class="text-3xl font-['Playfair_Display'] font-bold text-center mb-4 text-gray-800 dark:text-gray-200 tracking-tight hover:text-indigo-700 transition-colors duration-300">
                             {{ badge.title }}
                         </h2>
-                        <p class="text-gray-600 dark:text-gray-400 text-center mb-6 font-['Inter'] leading-relaxed opacity-80">{{ badge.description }}</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-center mb-6 font-['Inter'] leading-relaxed opacity-80">
+                            {{ badge.description }}
+                        </p>
                         <div class="w-full text-center">
                             <span class="inline-block px-8 py-3 text-sm font-['Inter'] font-semibold rounded-full tracking-wider uppercase {% if badge.type == 'automatic' %} bg-gradient-to-r from-green-500 to-emerald-600 text-white {% else %} bg-gradient-to-r from-indigo-500 to-blue-600 text-white {% endif %} shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                                 {{ badge.get_type_display }}

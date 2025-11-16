@@ -122,7 +122,8 @@
                                 {{ post.comments.count }} Comments
                             </div>
                         </div>
-                        <div class="border-t border-gray-100 dark:border-gray-800 p-6" id="comments-{{ post.id }}">
+                        <div class="border-t border-gray-100 dark:border-gray-800 p-6"
+                             id="comments-{{ post.id }}">
                             <form class="mb-6" onsubmit="submitComment(event, {{ post.id }})">
                                 {% csrf_token %}
                                 <textarea class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
@@ -165,7 +166,8 @@
                 <form id="suggestionForm" class="space-y-6" onsubmit="submitPost(event)">
                     {% csrf_token %}
                     <div>
-                        <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                        <label for="title"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
                         <input type="text"
                                id="title"
                                name="title"
@@ -174,7 +176,8 @@
                                required>
                     </div>
                     <div>
-                        <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                        <label for="category"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
                         <select id="category"
                                 name="category"
                                 class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
@@ -185,7 +188,9 @@
                     </div>
                     <div>
                         <label for="description"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Description
+                        </label>
                         <textarea id="description"
                                   name="description"
                                   rows="4"

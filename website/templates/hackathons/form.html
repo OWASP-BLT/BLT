@@ -38,7 +38,9 @@
                             </label>
                             {{ form.organization }}
                             {% if form.organization.errors %}<p class="mt-2 text-sm text-red-600">{{ form.organization.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Only organizations where you are an admin or manager are shown.</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                Only organizations where you are an admin or manager are shown.
+                            </p>
                         </div>
                         <!-- Description -->
                         <div>
@@ -52,7 +54,9 @@
                     </div>
                     <!-- Schedule & Settings Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">Schedule & Settings</h2>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">
+                            Schedule & Settings
+                        </h2>
                         <!-- Time Section -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Start Time -->
@@ -80,7 +84,9 @@
                             <div class="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                                 {{ form.registration_open }}
                                 <label for="{{ form.registration_open.id_for_label }}"
-                                       class="text-lg font-semibold text-gray-900 dark:text-gray-100">Registration Open</label>
+                                       class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                    Registration Open
+                                </label>
                                 {% if form.registration_open.errors %}
                                     <p class="mt-2 text-sm text-red-600">{{ form.registration_open.errors.0 }}</p>
                                 {% endif %}
@@ -88,7 +94,9 @@
                             <!-- Max Participants -->
                             <div>
                                 <label for="{{ form.max_participants.id_for_label }}"
-                                       class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Max Participants</label>
+                                       class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    Max Participants
+                                </label>
                                 {{ form.max_participants }}
                                 {% if form.max_participants.errors %}
                                     <p class="mt-2 text-sm text-red-600">{{ form.max_participants.errors.0 }}</p>
@@ -103,7 +111,9 @@
                         <!-- Banner Image -->
                         <div>
                             <label for="{{ form.banner_image.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Banner Image</label>
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                Banner Image
+                            </label>
                             <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-[#e74c3c] transition-colors">
                                 <div class="space-y-1 text-center">
                                     {{ form.banner_image }}
@@ -115,14 +125,20 @@
                     </div>
                     <!-- Rules & Guidelines Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">Rules & Guidelines</h2>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">
+                            Rules & Guidelines
+                        </h2>
                         <!-- Rules -->
                         <div>
                             <label for="{{ form.rules.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Hackathon Rules</label>
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                Hackathon Rules
+                            </label>
                             {{ form.rules }}
                             {% if form.rules.errors %}<p class="mt-2 text-sm text-red-600">{{ form.rules.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Define the rules and guidelines for your hackathon participants</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                Define the rules and guidelines for your hackathon participants
+                            </p>
                         </div>
                     </div>
                     <!-- Repositories Section -->
@@ -168,23 +184,35 @@
                     </div>
                     <!-- Sponsorship Section -->
                     <div class="space-y-6">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">Sponsorship Information</h2>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Provide sponsorship details to attract potential sponsors for your hackathon</p>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 pb-2 border-b-2 border-[#e74c3c]">
+                            Sponsorship Information
+                        </h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Provide sponsorship details to attract potential sponsors for your hackathon
+                        </p>
                         <!-- Sponsor Note -->
                         <div>
                             <label for="{{ form.sponsor_note.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Sponsorship Note</label>
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                Sponsorship Note
+                            </label>
                             {{ form.sponsor_note }}
                             {% if form.sponsor_note.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_note.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Describe sponsorship opportunities and benefits for this hackathon</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                Describe sponsorship opportunities and benefits for this hackathon
+                            </p>
                         </div>
                         <!-- Sponsor Link -->
                         <div>
                             <label for="{{ form.sponsor_link.id_for_label }}"
-                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Sponsorship Link</label>
+                                   class="block text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                Sponsorship Link
+                            </label>
                             {{ form.sponsor_link }}
                             {% if form.sponsor_link.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_link.errors.0 }}</p>{% endif %}
-                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">URL to your sponsorship information page or application form</p>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                URL to your sponsorship information page or application form
+                            </p>
                         </div>
                     </div>
                     <!-- Submit Button -->

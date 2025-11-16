@@ -36,7 +36,10 @@
                 <form method="post" class="space-y-6">
                     {% csrf_token %}
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pool Name *</label>
+                        <label for="name"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Pool Name *
+                        </label>
                         <input type="text"
                                id="name"
                                name="name"
@@ -46,7 +49,9 @@
                     </div>
                     <div>
                         <label for="description"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description *</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Description *
+                        </label>
                         <textarea id="description"
                                   name="description"
                                   rows="3"
@@ -55,7 +60,10 @@
                                   placeholder="Describe the challenge and what players need to do to win..."></textarea>
                     </div>
                     <div>
-                        <label for="pool_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pool Type</label>
+                        <label for="pool_type"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Pool Type
+                        </label>
                         <select id="pool_type"
                                 name="pool_type"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
@@ -66,7 +74,9 @@
                     </div>
                     <div>
                         <label for="challenge_id"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Challenge *</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Challenge *
+                        </label>
                         <select id="challenge_id"
                                 name="challenge_id"
                                 required
@@ -80,7 +90,9 @@
                     </div>
                     <div>
                         <label for="stake_amount"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stake Amount (BACON) *</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Stake Amount (BACON) *
+                        </label>
                         <input type="number"
                                id="stake_amount"
                                name="stake_amount"
@@ -93,7 +105,9 @@
                     </div>
                     <div>
                         <label for="days_duration"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Duration (Days)</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Duration (Days)
+                        </label>
                         <input type="number"
                                id="days_duration"
                                name="days_duration"

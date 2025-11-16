@@ -91,10 +91,18 @@
                                     </a>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ domain.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">{{ domain.open_issues_count }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">{{ domain.closed_issues_count }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">{{ domain.email_event }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">{{ domain.modified|timesince }} ago</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">
+                                    {{ domain.open_issues_count }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">
+                                    {{ domain.closed_issues_count }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">
+                                    {{ domain.email_event }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">
+                                    {{ domain.modified|timesince }} ago
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
                                     <a href="{% url 'profile' slug=domain.top_tester %}"
                                        class="text-[#e74c3c] hover:text-[#c0392b]">

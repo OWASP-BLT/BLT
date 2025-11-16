@@ -259,11 +259,16 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.open_issues }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.closed_pull_requests }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.contributor_count }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.last_updated|date:"M d, Y" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                            {{ repo.last_updated|date:"M d, Y" }}
+                                        </td>
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-500">No repositories found.</td>
+                                        <td colspan="9"
+                                            class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-500">
+                                            No repositories found.
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

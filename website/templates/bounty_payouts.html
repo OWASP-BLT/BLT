@@ -229,7 +229,9 @@
                                                         </form>
                                                     {% endif %}
                                                 </div>
-                                                <div class="text-xs text-gray-500 dark:text-gray-500">{{ issue.repo.name }} • {{ issue.created_at|date:"M d, Y" }}</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-500">
+                                                    {{ issue.repo.name }} • {{ issue.created_at|date:"M d, Y" }}
+                                                </div>
                                                 <!-- Linked Pull Requests Section -->
                                                 {% if issue.linked_pull_requests.all %}
                                                     <div class="mt-2 text-xs">
@@ -349,7 +351,9 @@
                                             <div class="text-sm font-medium text-green-600">
                                                 {% if issue.sponsors_tx_id %}
                                                     Paid with Sponsors
-                                                    <div class="text-xs text-gray-500 dark:text-gray-500 font-mono break-all mt-1">TX: {{ issue.sponsors_tx_id|escape }}</div>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-500 font-mono break-all mt-1">
+                                                        TX: {{ issue.sponsors_tx_id|escape }}
+                                                    </div>
                                                 {% elif issue.bch_tx_id %}
                                                     Paid with BCH
                                                     <div class="text-xs text-gray-500 dark:text-gray-500 font-mono break-all mt-1">
@@ -394,7 +398,8 @@
                                                         </button>
                                                     </div>
                                                     <div class="flex items-center justify-between">
-                                                        <span class="text-xs text-gray-500 dark:text-gray-500 mt-1" id="tx_type_{{ issue.id }}">Enter ch_* for Sponsors or BCH hash</span>
+                                                        <span class="text-xs text-gray-500 dark:text-gray-500 mt-1"
+                                                              id="tx_type_{{ issue.id }}">Enter ch_* for Sponsors or BCH hash</span>
                                                         <a id="explorer_link_{{ issue.id }}"
                                                            href="#"
                                                            target="_blank"
@@ -453,7 +458,8 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="4" class="px-4 sm:px-6 py-10 text-center text-gray-500 dark:text-gray-500">
+                                    <td colspan="4"
+                                        class="px-4 sm:px-6 py-10 text-center text-gray-500 dark:text-gray-500">
                                         <div class="flex flex-col items-center">
                                             <svg class="w-12 h-12 text-gray-400 dark:text-gray-600 mb-4"
                                                  fill="none"
@@ -464,7 +470,9 @@
                                                 </path>
                                             </svg>
                                             <p class="text-gray-600 dark:text-gray-400 font-medium">No bounty issues found</p>
-                                            <p class="text-gray-500 dark:text-gray-500 text-sm mt-1">Try changing your filters or click "Fetch New GitHub Issues with $5 Bounty"</p>
+                                            <p class="text-gray-500 dark:text-gray-500 text-sm mt-1">
+                                                Try changing your filters or click "Fetch New GitHub Issues with $5 Bounty"
+                                            </p>
                                             <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
                                                 <p class="mb-1">
                                                     Recent issues like <a href="https://github.com/OWASP-BLT/BLT/issues/2912"

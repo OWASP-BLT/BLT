@@ -10,7 +10,8 @@
         {% csrf_token %}
         <div id="error-message" class="hidden text-red-500 text-sm mt-2"></div>
         <div>
-            <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Title</label>
+            <label for="title"
+                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Title</label>
             <input type="text"
                    id="title"
                    name="title"
@@ -19,7 +20,8 @@
                    class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
         </div>
         <div>
-            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Description</label>
+            <label for="description"
+                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Description</label>
             <textarea id="description"
                       name="description"
                       rows="4"
@@ -27,7 +29,8 @@
                       class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ course.description|default_if_none:'' }}</textarea>
         </div>
         <div>
-            <label for="thumbnail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Thumbnail</label>
+            <label for="thumbnail"
+                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Thumbnail</label>
             <input type="file"
                    id="thumbnail"
                    name="thumbnail"
@@ -43,7 +46,8 @@
             </div>
         </div>
         <div>
-            <label for="level" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Level</label>
+            <label for="level"
+                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Course Level</label>
             <select id="level"
                     name="level"
                     class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -53,7 +57,8 @@
             </select>
         </div>
         <div>
-            <label for="tags" class="block text-md font-medium text-gray-700 dark:text-gray-300">Tags</label>
+            <label for="tags"
+                   class="block text-md font-medium text-gray-700 dark:text-gray-300">Tags</label>
             <select id="tags"
                     name="tags"
                     multiple

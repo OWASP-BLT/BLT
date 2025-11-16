@@ -320,7 +320,9 @@
             <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
                 <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white dark:bg-gray-800 rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
                     <div class="w-full flex justify-between">
-                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">Latest Bugs Reported ({{ latest_issues|length }})</h4>
+                        <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">
+                            Latest Bugs Reported ({{ latest_issues|length }})
+                        </h4>
                         <a href="{% url 'issues' %}" class="text-md text-blue-600">View all</a>
                     </div>
                     {% if latest_issues|length > 0 %}

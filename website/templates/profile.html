@@ -1276,7 +1276,8 @@
             <form method="post" action="{% url 'assign_badge' user.username %}">
                 {% csrf_token %}
                 <div class="mb-4">
-                    <label for="badge" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select a Badge:</label>
+                    <label for="badge"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select a Badge:</label>
                     <select name="badge"
                             id="badge"
                             class="block w-full mt-1 p-2 border rounded-md"
@@ -1285,7 +1286,10 @@
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reason (optional):</label>
+                    <label for="reason"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Reason (optional):
+                    </label>
                     <textarea name="reason"
                               id="reason"
                               rows="3"

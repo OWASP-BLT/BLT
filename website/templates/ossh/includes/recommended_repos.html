@@ -9,7 +9,9 @@
                         Score: {{ repo.relevance_score }}
                     </span>
                 </div>
-                <p class="text-gray-300 dark:text-gray-700 italic mb-4">{{ repo.repo.description|default:"No description available." }}</p>
+                <p class="text-gray-300 dark:text-gray-700 italic mb-4">
+                    {{ repo.repo.description|default:"No description available." }}
+                </p>
                 <div class="mb-4">
                     <p class="text-sm text-gray-400 dark:text-gray-600">
                         <span class="font-semibold text-indigo-400">Why this repo?</span> {{ repo.reasoning }}

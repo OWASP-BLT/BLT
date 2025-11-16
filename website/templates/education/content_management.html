@@ -10,7 +10,9 @@
                 Back to Dashboard
             </a>
             <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">{{ course.title }} - Content Management</h2>
-            <p class="text-gray-600 dark:text-gray-400 mt-2">Organize your course content by adding, editing, or reordering sections and lectures.</p>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">
+                Organize your course content by adding, editing, or reordering sections and lectures.
+            </p>
             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg mt-6">
                 <div class="flex justify-between items-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
                     <h5 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Course Sections</h5>
@@ -30,7 +32,9 @@
                                             </span>
                                             <h5 class="text-lg font-medium text-gray-800 dark:text-gray-200">{{ section.order }}. {{ section.title }}</h5>
                                         </div>
-                                        {% if section.description %}<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ section.description }}</p>{% endif %}
+                                        {% if section.description %}
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ section.description }}</p>
+                                        {% endif %}
                                     </div>
                                     <div class="flex space-x-2">
                                         <button type="button"
@@ -58,7 +62,9 @@
                                                 </span>
                                                 <div>
                                                     <h6 class="text-base font-medium text-gray-800 dark:text-gray-200">{{ lecture.order }}. {{ lecture.title }}</h6>
-                                                    {% if lecture.description %}<p class="text-sm text-gray-900 dark:text-gray-100 mt-1">{{ lecture.description }}</p>{% endif %}
+                                                    {% if lecture.description %}
+                                                        <p class="text-sm text-gray-900 dark:text-gray-100 mt-1">{{ lecture.description }}</p>
+                                                    {% endif %}
                                                     <small class="text-gray-500 dark:text-gray-500">
                                                         {{ lecture.get_content_type_display }}
                                                         {% if lecture.duration %}• {{ lecture.duration }} min{% endif %}
@@ -105,7 +111,8 @@
                 </div>
                 <div class="p-6">
                     <div class="mb-4">
-                        <label for="sectionTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Section Title</label>
+                        <label for="sectionTitle"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Section Title</label>
                         <input type="text"
                                class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                id="sectionTitle"
@@ -113,7 +120,8 @@
                                required>
                     </div>
                     <div class="mb-4">
-                        <label for="sectionOrder" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Order</label>
+                        <label for="sectionOrder"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Order</label>
                         <input type="number"
                                class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                id="sectionOrder"
@@ -154,7 +162,9 @@
                                name="title"
                                required>
                         <label for="editSectionDescription"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-5">Section Description</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-5">
+                            Section Description
+                        </label>
                         <textarea id="editSectionDescription"
                                   name="description"
                                   rows="3"
@@ -184,7 +194,8 @@
                 </div>
                 <div class="p-6 space-y-6">
                     <div>
-                        <label for="lectureTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lecture Title</label>
+                        <label for="lectureTitle"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lecture Title</label>
                         <input type="text"
                                id="lectureTitle"
                                name="title"
@@ -192,7 +203,8 @@
                                required>
                     </div>
                     <div>
-                        <label for="contentType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content Type</label>
+                        <label for="contentType"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content Type</label>
                         <select id="contentType"
                                 name="content_type"
                                 class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -203,7 +215,10 @@
                         </select>
                     </div>
                     <div>
-                        <label for="lectureDuration" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Duration (in minutes)</label>
+                        <label for="lectureDuration"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Duration (in minutes)
+                        </label>
                         <input type="number"
                                id="lectureDuration"
                                name="duration"
@@ -219,7 +234,8 @@
                     </div>
                     <div id="videoFields" class="content-fields hidden space-y-4">
                         <div>
-                            <label for="videoUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Video URL</label>
+                            <label for="videoUrl"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Video URL</label>
                             <input type="url"
                                    id="videoUrl"
                                    name="video_url"
@@ -228,21 +244,30 @@
                     </div>
                     <div id="liveFields" class="content-fields hidden space-y-4">
                         <div>
-                            <label for="liveUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Live Session URL</label>
+                            <label for="liveUrl"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Live Session URL
+                            </label>
                             <input type="url"
                                    id="liveUrl"
                                    name="live_url"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="scheduledTime" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scheduled Time</label>
+                            <label for="scheduledTime"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Scheduled Time
+                            </label>
                             <input type="datetime-local"
                                    id="scheduledTime"
                                    name="scheduled_time"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="recordingUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recording URL (optional)</label>
+                            <label for="recordingUrl"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Recording URL (optional)
+                            </label>
                             <input type="url"
                                    id="recordingUrl"
                                    name="recording_url"
@@ -251,7 +276,8 @@
                     </div>
                     <div id="documentFields" class="content-fields hidden space-y-4">
                         <div>
-                            <label for="documentContent" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content</label>
+                            <label for="documentContent"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content</label>
                             <textarea id="documentContent"
                                       name="content"
                                       rows="4"
@@ -292,7 +318,8 @@
                                required>
                     </div>
                     <div>
-                        <label for="editContentType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content Type</label>
+                        <label for="editContentType"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content Type</label>
                         <select id="editContentType"
                                 name="content_type"
                                 class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -304,7 +331,9 @@
                     </div>
                     <div>
                         <label for="editLectureDuration"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Duration (in minutes)</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Duration (in minutes)
+                        </label>
                         <input type="number"
                                id="editLectureDuration"
                                name="duration"
@@ -320,7 +349,8 @@
                     </div>
                     <div id="editVideoFields" class="edit-content-fields hidden space-y-4">
                         <div>
-                            <label for="editVideoUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Video URL</label>
+                            <label for="editVideoUrl"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Video URL</label>
                             <input type="url"
                                    id="editVideoUrl"
                                    name="video_url"
@@ -337,7 +367,10 @@
                     </div>
                     <div id="editLiveFields" class="edit-content-fields hidden space-y-4">
                         <div>
-                            <label for="editLiveUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Live Session URL</label>
+                            <label for="editLiveUrl"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Live Session URL
+                            </label>
                             <input type="url"
                                    id="editLiveUrl"
                                    name="live_url"
@@ -345,7 +378,9 @@
                         </div>
                         <div>
                             <label for="editScheduledTime"
-                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scheduled Time</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Scheduled Time
+                            </label>
                             <input type="datetime-local"
                                    id="editScheduledTime"
                                    name="scheduled_time"
@@ -353,7 +388,9 @@
                         </div>
                         <div>
                             <label for="editRecordingUrl"
-                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recording URL (optional)</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Recording URL (optional)
+                            </label>
                             <input type="url"
                                    id="editRecordingUrl"
                                    name="recording_url"
@@ -363,7 +400,9 @@
                     <div id="editDocumentFields" class="edit-content-fields hidden space-y-4">
                         <div>
                             <label for="editDocumentContent"
-                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Document Content</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Document Content
+                            </label>
                             <textarea id="editDocumentContent"
                                       name="content"
                                       rows="4"

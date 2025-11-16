@@ -222,7 +222,9 @@
                         <div id="domainsCounter"
                              class="text-2xl font-bold text-gray-900 dark:text-gray-100"
                              data-value="{{ stats.domains.total|default:0 }}">{{ stats.domains.total|default:0 }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-500">Active: {{ stats.domains.active }} / Total: {{ stats.domains.total_all_time }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-500">
+                            Active: {{ stats.domains.active }} / Total: {{ stats.domains.total_all_time }}
+                        </div>
                     </div>
                 </div>
                 <!-- Bug Bounties Card -->
@@ -235,7 +237,9 @@
                         <div id="huntsCounter"
                              class="text-2xl font-bold text-gray-900 dark:text-gray-100"
                              data-value="{{ stats.hunts.total|default:0 }}">{{ stats.hunts.total|default:0 }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-500">Active: {{ stats.hunts.active }} / Total: {{ stats.hunts.total_all_time }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-500">
+                            Active: {{ stats.hunts.active }} / Total: {{ stats.hunts.total_all_time }}
+                        </div>
                     </div>
                 </div>
                 <!-- Projects Card -->

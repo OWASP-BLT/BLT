@@ -23,7 +23,9 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Manage Roles</h1>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">Control user access and permissions within your organization</p>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">
+                            Control user access and permissions within your organization
+                        </p>
                     </div>
                     {% if is_org_admin or user_role_level == 0 %}
                         <button type="button"

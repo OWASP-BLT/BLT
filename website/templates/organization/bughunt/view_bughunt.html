@@ -334,7 +334,8 @@
                         <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">BUGHUNT WINNERS</h4>
                     </div>
                     <div class="relative overflow-x-auto shadow-md sm:rounded-lg max-h-[550px] overflow-y-scroll">
-                        <table id="winnersTable" class="w-full text-sm text-left text-gray-500 dark:text-gray-500">
+                        <table id="winnersTable"
+                               class="w-full text-sm text-left text-gray-500 dark:text-gray-500">
                             <thead class="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-900">
                                 <tr>
                                     <th scope="col" class="px-6 py-3">Winner</th>
@@ -409,7 +410,8 @@
                                 class="pagination-button px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300 ease-in-out">
                             Previous
                         </button>
-                        <span id="pageInfo" class="mx-4 text-gray-700 dark:text-gray-300 font-medium"></span>
+                        <span id="pageInfo"
+                              class="mx-4 text-gray-700 dark:text-gray-300 font-medium"></span>
                         <button id="nextPage"
                                 class="pagination-button px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300 ease-in-out">
                             Next
@@ -491,7 +493,9 @@
         <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
             <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white dark:bg-gray-800 rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
                 <div class="w-full flex justify-between">
-                    <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">Latest Bugs Reported ({{ latest_issues|length }})</h4>
+                    <h4 class="text-xl text-gray-900 dark:text-gray-100 font-bold mb-5">
+                        Latest Bugs Reported ({{ latest_issues|length }})
+                    </h4>
                     <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
                 </div>
                 {% if latest_issues|length > 0 %}

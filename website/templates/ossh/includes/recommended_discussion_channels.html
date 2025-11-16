@@ -8,7 +8,9 @@
                         <!-- Channel Name -->
                         <h3 class="text-xl font-semibold text-white">{{ item.channel.name }}</h3>
                         <!-- Description -->
-                        <p class="text-gray-300 dark:text-gray-700 line-clamp-3">{{ item.channel.description|default:"No description available." }}</p>
+                        <p class="text-gray-300 dark:text-gray-700 line-clamp-3">
+                            {{ item.channel.description|default:"No description available." }}
+                        </p>
                         <!-- Source -->
                         <div class="flex items-center space-x-2">
                             <span class="text-sm font-medium text-gray-400 dark:text-gray-600">Source:</span>

@@ -93,7 +93,10 @@
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                             <div class="space-y-4">
                                 <div class="flex items-center justify-between">
-                                    <label for="url" class="text-xl font-semibold text-gray-900 dark:text-gray-100">{% trans "Domain URL" %}</label>
+                                    <label for="url"
+                                           class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                        {% trans "Domain URL" %}
+                                    </label>
                                     <button type="button"
                                             class="duplicates inline-flex items-center px-3 py-2 font-medium rounded-lg bg-[#e74c3c] text-white hover:bg-[#c0392b] transition-colors duration-200">
                                         <i class="fas fa-search mr-2"></i>
@@ -145,7 +148,10 @@
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 <div class="lg:col-span-2">
-                                    <label for="description" class="block text-xl font-semibold text-gray-900 dark:text-gray-100">{% trans "Bug Title" %}</label>
+                                    <label for="description"
+                                           class="block text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                        {% trans "Bug Title" %}
+                                    </label>
                                     <input type="text"
                                            name="description"
                                            id="description"
@@ -155,7 +161,10 @@
                                            class="w-full text-lg placeholder:text-gray-400 placeholder:text-base rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200" />
                                 </div>
                                 <div>
-                                    <label for="label" class="block text-xl font-semibold text-gray-900 dark:text-gray-100">{% trans "Bug Type" %}</label>
+                                    <label for="label"
+                                           class="block text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                        {% trans "Bug Type" %}
+                                    </label>
                                     <select name="label"
                                             id="labelSelect"
                                             required
@@ -217,20 +226,24 @@
                     </div>
                     <div class="space-y-6">
                         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-                            <label for="hunt" class="block text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{% trans "Bug Bounty" %}</label>
+                            <label for="hunt"
+                                   class="block text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                {% trans "Bug Bounty" %}
+                            </label>
                             <select name="hunt"
                                     required
                                     class="w-full text-lg rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 bg-gray-50 dark:bg-gray-900 focus:ring-2 transition-shadow duration-200">
                                 {% if not report_on_hunt %}
                                     <option value="None">{% trans "Report Independently" %}</option>
                                 {% endif %}
-                                {% for hunt in hunts %}
-                                    <option value="{{ hunt.id }}">{{ hunt.name }}</option>
-                                {% endfor %}
+                                {% for hunt in hunts %}<option value="{{ hunt.id }}">{{ hunt.name }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-                            <label for="cve_id" class="block text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{% trans "CVE ID" %}</label>
+                            <label for="cve_id"
+                                   class="block text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                {% trans "CVE ID" %}
+                            </label>
                             <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full">
                                 <input class="flex-1 placeholder:text-base text-lg sm:text-base md:text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 transition-shadow duration-200 min-w-0"
                                        type="text"

@@ -90,7 +90,9 @@
                                 </a>
                             {% endif %}
                         </nav>
-                        <p class="text-sm text-gray-700 dark:text-gray-300">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </p>
                     </div>
                 {% endif %}
             </div>

@@ -240,7 +240,9 @@
                         <i class="fas fa-lock text-3xl text-gray-400 dark:text-gray-600"></i>
                     </div>
                     <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Login Required</h1>
-                    <p class="text-gray-600 dark:text-gray-400 mb-8">Please login to create or join a team. Join our community of security enthusiasts!</p>
+                    <p class="text-gray-600 dark:text-gray-400 mb-8">
+                        Please login to create or join a team. Join our community of security enthusiasts!
+                    </p>
                 </div>
             </div>
         {% endif %}
@@ -261,7 +263,8 @@
                 {% csrf_token %}
                 <div class="space-y-4">
                     <div>
-                        <label for="teamName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team Name</label>
+                        <label for="teamName"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team Name</label>
                         <input type="text"
                                id="teamName"
                                name="teamName"
@@ -269,7 +272,8 @@
                                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
                     </div>
                     <div>
-                        <label for="teamAvatar" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team Avatar</label>
+                        <label for="teamAvatar"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team Avatar</label>
                         <input type="file"
                                id="teamAvatar"
                                name="teamAvatar"
@@ -278,7 +282,10 @@
                                class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#e74c3c] file:text-white hover:file:bg-[#c0392b]">
                     </div>
                     <div>
-                        <label for="teamMembers" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Add Members (Optional)</label>
+                        <label for="teamMembers"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Add Members (Optional)
+                        </label>
                         <div class="relative">
                             <input type="text"
                                    id="teamMembers"
@@ -321,7 +328,8 @@
                 {% csrf_token %}
                 <div class="space-y-4">
                     <div>
-                        <label for="newMember" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+                        <label for="newMember"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
                         <div class="relative">
                             <input type="text"
                                    id="newMember"
@@ -363,7 +371,8 @@
                 {% csrf_token %}
                 <input type="hidden" id="kudosReceiver" name="kudosReceiver">
                 <div>
-                    <label for="kudosLink" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Link (optional)</label>
+                    <label for="kudosLink"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">Link (optional)</label>
                     <input type="url"
                            id="kudosLink"
                            name="kudosLink"
@@ -371,7 +380,10 @@
                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]" />
                 </div>
                 <div>
-                    <label for="kudosComment" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comment (optional)</label>
+                    <label for="kudosComment"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Comment (optional)
+                    </label>
                     <textarea id="kudosComment"
                               name="kudosComment"
                               rows="3"

@@ -20,7 +20,10 @@
                       {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
                     {% csrf_token %}
                     <div class="form-group mb-10">
-                        <label for="previous_work_card" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">What did you work on previously?</label>
+                        <label for="previous_work_card"
+                               class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                            What did you work on previously?
+                        </label>
                         <textarea id="previous_work_card"
                                   name="previous_work"
                                   rows="5"
@@ -28,7 +31,10 @@
                                   required></textarea>
                     </div>
                     <div class="form-group mb-10">
-                        <label for="next_plan_card" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">What do you plan to do next?</label>
+                        <label for="next_plan_card"
+                               class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                            What do you plan to do next?
+                        </label>
                         <textarea id="next_plan_card"
                                   name="next_plan"
                                   rows="5"
@@ -36,7 +42,10 @@
                                   required></textarea>
                     </div>
                     <div class="form-group mb-10">
-                        <label for="blockers_card" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Do you have any blockers?</label>
+                        <label for="blockers_card"
+                               class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                            Do you have any blockers?
+                        </label>
                         <textarea id="blockers_card"
                                   name="blockers"
                                   rows="5"
@@ -67,7 +76,10 @@
                                class="w-15 h-15 border border-gray-300 dark:border-gray-600 rounded scale-150 focus:outline-none focus:ring-2 focus:ring-red-400">
                     </div>
                     <div class="form-group mb-10">
-                        <label for="feeling_card" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">How are you feeling today?</label>
+                        <label for="feeling_card"
+                               class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                            How are you feeling today?
+                        </label>
                         <div class="emoji-picker-container relative">
                             <textarea id="feeling_card"
                                       name="feeling"
@@ -120,7 +132,10 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="5" class="py-3 px-4 text-center text-gray-500 dark:text-gray-500">No check-ins found.</td>
+                                    <td colspan="5"
+                                        class="py-3 px-4 text-center text-gray-500 dark:text-gray-500">
+                                        No check-ins found.
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>

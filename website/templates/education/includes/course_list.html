@@ -20,7 +20,9 @@
                         <a href="{% url 'view_course' course.id %}">
                             <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">{{ course.title }}</h3>
                         </a>
-                        <div class="text-gray-600 dark:text-gray-400 text-sm mb-4 h-28 overflow-hidden">{{ course.description|truncatewords:25 }}</div>
+                        <div class="text-gray-600 dark:text-gray-400 text-sm mb-4 h-28 overflow-hidden">
+                            {{ course.description|truncatewords:25 }}
+                        </div>
                         <div class="flex items-center text-gray-700 dark:text-gray-300 font-bold mb-4">
                             <i class="fas fa-chart-line text-blue-500 mr-2"></i>
                             <span>

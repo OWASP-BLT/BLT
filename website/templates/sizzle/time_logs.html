@@ -41,13 +41,17 @@
                            required
                            pattern="https?://.+"
                            placeholder="https://github.com/user/repo/issues/1">
-                    <p class="text-xs text-gray-500 dark:text-gray-500">Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1)</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">
+                        Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1)
+                    </p>
                     <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                 </div>
                 <!-- Organization Search -->
                 <div class="space-y-2 relative">
                     <label for="organization_search_input"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">Organization (optional)</label>
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Organization (optional)
+                    </label>
                     <input type="url"
                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                            id="organization_search_input"
@@ -100,7 +104,8 @@
                              stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span class="text-lg font-semibold text-gray-700 dark:text-gray-300" id="elapsed-time">00:00:00</span>
+                        <span class="text-lg font-semibold text-gray-700 dark:text-gray-300"
+                              id="elapsed-time">00:00:00</span>
                     </div>
                     <button id="stop-button"
                             class="mt-4 w-full flex justify-center py-3 px-6 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">
@@ -139,12 +144,17 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="time-logs-table-body">
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                           id="time-logs-table-body">
                         {% for log in time_logs %}
                             {% if log.end_time %}
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ log.start_time|date:"DATETIME_FORMAT" }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ log.end_time|date:"DATETIME_FORMAT" }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                        {{ log.start_time|date:"DATETIME_FORMAT" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                        {{ log.end_time|date:"DATETIME_FORMAT" }}
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ log.duration|before_dot }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                                         <a href="{{ log.github_issue_url }}"

@@ -25,7 +25,8 @@
             <div class="flex items-center gap-4">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Discussion Rooms</h1>
                 <div class="flex items-center gap-2">
-                    <div id="connection-status" class="w-3 h-3 rounded-full bg-gray-400 dark:bg-gray-500"></div>
+                    <div id="connection-status"
+                         class="w-3 h-3 rounded-full bg-gray-400 dark:bg-gray-500"></div>
                     <span id="connection-text" class="text-sm text-gray-600 dark:text-gray-400">Connecting...</span>
                 </div>
             </div>
@@ -220,7 +221,9 @@
                 {% if form.captcha.field.required %}
                     <div>
                         <label for="{{ form.captcha.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Verification</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Verification
+                        </label>
                         <div class="flex items-center space-x-2">{{ form.captcha }}</div>
                         {% if form.captcha.errors %}<p class="mt-1 text-sm text-red-600">{{ form.captcha.errors.0 }}</p>{% endif %}
                     </div>

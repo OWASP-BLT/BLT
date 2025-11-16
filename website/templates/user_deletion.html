@@ -57,7 +57,10 @@
                                 <div class="relative flex items-start">
                                     <div class="flex items-center h-5">{{ field }}</div>
                                     <div class="ml-3 text-sm">
-                                        <label for="{{ field.id_for_label }}" class="font-medium text-gray-700 dark:text-gray-300">Yes, please delete my account</label>
+                                        <label for="{{ field.id_for_label }}"
+                                               class="font-medium text-gray-700 dark:text-gray-300">
+                                            Yes, please delete my account
+                                        </label>
                                         {% if field.help_text %}<p class="text-gray-500 dark:text-gray-500">{{ field.help_text }}</p>{% endif %}
                                     </div>
                                 </div>

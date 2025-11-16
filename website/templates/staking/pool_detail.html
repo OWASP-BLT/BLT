@@ -294,7 +294,9 @@
                         <div class="text-center py-8">
                             <div class="text-gray-400 dark:text-gray-600 text-4xl mb-4">👥</div>
                             <p class="text-gray-600 dark:text-gray-400">No participants yet. Be the first!</p>
-                            {% if pool.challenge %}<p class="text-sm text-gray-500 dark:text-gray-500 mt-2">Challenge: {{ pool.challenge.title }}</p>{% endif %}
+                            {% if pool.challenge %}
+                                <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">Challenge: {{ pool.challenge.title }}</p>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>

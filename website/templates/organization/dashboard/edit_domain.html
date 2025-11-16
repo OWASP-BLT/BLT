@@ -36,7 +36,9 @@
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-2">
                         <label for="domain_name"
-                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Domain Name</label>
+                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                            Domain Name
+                        </label>
                         <div class="mt-2">
                             <input type="text"
                                    name="domain_name"
@@ -50,7 +52,9 @@
                     </div>
                     <div class="sm:col-span-2">
                         <label for="domain_url"
-                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Domain URL</label>
+                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                            Domain URL
+                        </label>
                         <div class="mt-2">
                             <input type="text"
                                    name="domain_url"
@@ -99,7 +103,9 @@
                     </div>
                     <div class="sm:col-span-2">
                         <label for="twitter_url"
-                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Twitter URL (Optional)</label>
+                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                            Twitter URL (Optional)
+                        </label>
                         <div class="mt-2">
                             <input type="text"
                                    name="twitter_url"
@@ -130,7 +136,10 @@
             <div class="space-y-12">
                 <div class="border-b border-gray-900/10 pb-12">
                     <div class="col-span-full mb-5">
-                        <label for="logo" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Domain Logo</label>
+                        <label for="logo"
+                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                            Domain Logo
+                        </label>
                         <div class="mt-2 flex flex-col gap-4">
                             <div class="flex items-center gap-x-3">
                                 <label for="logo" class="relative cursor-pointer">
@@ -187,12 +196,16 @@
                                         <div id="logoError" class="hidden text-xs text-[#e74c3c] mt-1"></div>
                                     </div>
                                 </div>
-                                <p class="text-sm text-gray-500 dark:text-gray-500">Recommended: Square image, JPG/PNG/GIF, max 5MB, at least 128x128px</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-500">
+                                    Recommended: Square image, JPG/PNG/GIF, max 5MB, at least 128x128px
+                                </p>
                             </div>
                         </div>
                         <div class="col-span-full">
                             <label for="webshot"
-                                   class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Webshot</label>
+                                   class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                Webshot
+                            </label>
                             <label for="webshot" class="cursor-pointer block">
                                 <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-[#e74c3c] hover:border-[#e74c3c] transition-colors duration-200">
                                     <div class="text-center">
@@ -239,7 +252,10 @@
                         Add User
                     </button>
                     <div class="sm:col-span-4 mt-5" id="user-selection-container">
-                        <label for="user" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">Select Domain Manager</label>
+                        <label for="user"
+                               class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                            Select Domain Manager
+                        </label>
                         {% for manager in domain.managers.all %}
                             <div class="mt-2 flex flex-row items-center w-[50%] user-selection">
                                 <select name="user"

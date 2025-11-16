@@ -115,7 +115,9 @@
                                         {% endfor %}
                                     </div>
                                 </div>
-                                {% if milestone.description %}<p class="text-gray-700 dark:text-gray-300 mb-4">{{ milestone.description }}</p>{% endif %}
+                                {% if milestone.description %}
+                                    <p class="text-gray-700 dark:text-gray-300 mb-4">{{ milestone.description }}</p>
+                                {% endif %}
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                                         <i class="{{ milestone.progress_icon }} text-[#e74c3c]"></i>

@@ -30,7 +30,9 @@
                             </label>
                             {{ form.title }}
                             {% if form.title.errors %}<p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>{% endif %}
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">Example: "Best Overall Contribution", "Most Innovative Solution"</p>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">
+                                Example: "Best Overall Contribution", "Most Innovative Solution"
+                            </p>
                         </div>
                         <!-- Description -->
                         <div>
@@ -44,7 +46,9 @@
                         <!-- Value -->
                         <div>
                             <label for="{{ form.value.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Value
+                            </label>
                             {{ form.value }}
                             {% if form.value.errors %}<p class="mt-1 text-sm text-red-600">{{ form.value.errors.0 }}</p>{% endif %}
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">Monetary value of the prize (optional)</p>
@@ -52,7 +56,9 @@
                         <!-- Sponsor -->
                         <div>
                             <label for="{{ form.sponsor.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sponsor</label>
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Sponsor
+                            </label>
                             {{ form.sponsor }}
                             {% if form.sponsor.errors %}<p class="mt-1 text-sm text-red-600">{{ form.sponsor.errors.0 }}</p>{% endif %}
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">Select a sponsor for this prize (optional)</p>

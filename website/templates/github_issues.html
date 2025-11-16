@@ -87,9 +87,13 @@
                 {% csrf_token %}
                 <div>
                     <label for="{{ form.github_url.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ form.github_url.label }}</label>
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ form.github_url.label }}
+                    </label>
                     {{ form.github_url }}
-                    {% if form.github_url.help_text %}<p class="mt-1 text-sm text-gray-500 dark:text-gray-500">{{ form.github_url.help_text }}</p>{% endif %}
+                    {% if form.github_url.help_text %}
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">{{ form.github_url.help_text }}</p>
+                    {% endif %}
                     {% if form.github_url.errors %}
                         <div class="mt-1 text-sm text-red-600">
                             {% for error in form.github_url.errors %}<p>{{ error }}</p>{% endfor %}
