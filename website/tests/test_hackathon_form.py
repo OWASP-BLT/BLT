@@ -23,8 +23,8 @@ class HackathonFormTestCase(TestCase):
             name="Test Organization",
             slug="test-organization",
             url="https://example.com",
+            admin=self.user,
         )
-        self.organization.admin.add(self.user)
 
         # Create existing repository
         self.existing_repo = Repo.objects.create(
