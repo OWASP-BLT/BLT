@@ -18,7 +18,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
@@ -299,16 +298,13 @@ class Domain(models.Model):
     def get_logo(self):
         if self.logo:
             return self.logo.url
-        image_request = requests.get("https://logo.clearbit.com/" + self.name)
-        try:
-            if image_request.status_code == 200:
-                image_content = ContentFile(image_request.content)
-                self.logo.save(self.name + ".jpg", image_content)
-                return self.logo.url
-
-        except:
-            favicon_url = self.url + "/favicon.ico"
-            return favicon_url
+        # Use Google's favicon service as a free alternative to Clearbit
+        # Extract domain from URL for better compatibility
+        parsed_url = urlparse(self.url if "://" in self.url else f"http://{self.url}")
+        domain = parsed_url.netloc or self.name
+        # Google favicon service with 128px size for better quality
+        favicon_url = f"https://www.google.com/s2/favicons?domain={domain}&sz=128"
+        return favicon_url
 
     @property
     def hostname_domain(self):
@@ -427,6 +423,9 @@ class Hunt(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def get_absolute_url(self):
+        return reverse("organization_detail", kwargs={"slug": self.domain.organization.slug})
 
 
 class HuntPrize(models.Model):
@@ -2311,6 +2310,26 @@ class Hackathon(models.Model):
             days = remaining.days
             hours = remaining.seconds // 3600
             return f"{days} days, {hours} hours remaining"
+
+    @property
+    def status_badge_class(self):
+        """Returns CSS classes for the status badge based on hackathon status."""
+        if self.is_ongoing:
+            return "bg-green-100 text-green-800"
+        elif self.has_ended:
+            return "bg-gray-100 text-gray-800"
+        else:
+            return "bg-blue-100 text-blue-800"
+
+    @property
+    def status_text(self):
+        """Returns the status text for display."""
+        if self.is_ongoing:
+            return "Ongoing"
+        elif self.has_ended:
+            return "Ended"
+        else:
+            return "Upcoming"
 
     def get_leaderboard(self):
         """
