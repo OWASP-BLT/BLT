@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0246_add_user_progress_models"),
+        ("website", "0247_organization_github_org_gsoc_years"),
     ]
 
     operations = [
