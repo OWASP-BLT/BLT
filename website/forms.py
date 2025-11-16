@@ -207,6 +207,22 @@ class GitHubIssueForm(forms.Form):
 
 
 class HackathonForm(forms.ModelForm):
+    new_repo_urls = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "class": (
+                    "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#e74c3c] "
+                    "focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50"
+                ),
+                "placeholder": "https://github.com/owner/repo1\nhttps://github.com/owner/repo2",
+            }
+        ),
+        label="New Repository URLs",
+        help_text="Enter GitHub repository URLs (one per line) to add new repositories to this hackathon",
+    )
+
     class Meta:
         model = Hackathon
         fields = [
@@ -315,6 +331,31 @@ class HackathonForm(forms.ModelForm):
                 # When creating new, start with empty queryset
                 self.fields["repositories"].queryset = Repo.objects.none()
 
+    def clean_new_repo_urls(self):
+        """Validate and parse new repository URLs."""
+        new_repo_urls = self.cleaned_data.get("new_repo_urls", "")
+        if not new_repo_urls:
+            return []
+
+        urls = [url.strip() for url in new_repo_urls.strip().split("\n") if url.strip()]
+        validated_urls = []
+
+        for url in urls:
+            # Basic validation for GitHub URLs
+            if not url.startswith("https://github.com/"):
+                raise forms.ValidationError(f"Invalid GitHub URL: {url}. URLs must start with https://github.com/")
+
+            # Check if URL has the correct format
+            parts = url.replace("https://github.com/", "").split("/")
+            if len(parts) < 2:
+                raise forms.ValidationError(
+                    f"Invalid GitHub URL format: {url}. Expected format: https://github.com/owner/repo"
+                )
+
+            validated_urls.append(url)
+
+        return validated_urls
+
     def clean_repositories(self):
         repositories = self.cleaned_data.get("repositories")
         organization = self.cleaned_data.get("organization")
@@ -324,6 +365,39 @@ class HackathonForm(forms.ModelForm):
             valid_repos = Repo.objects.filter(id__in=[r.id for r in repositories], organization=organization)
             return valid_repos
         return repositories
+
+    def save(self, commit=True):
+        """Save the hackathon and create new repositories if provided."""
+        instance = super().save(commit=False)
+
+        if commit:
+            instance.save()
+            # Save many-to-many relationships
+            self.save_m2m()
+
+            # Create and add new repositories
+            new_repo_urls = self.cleaned_data.get("new_repo_urls", [])
+            if new_repo_urls:
+                organization = instance.organization
+                for repo_url in new_repo_urls:
+                    # Extract repo name from URL
+                    repo_name = repo_url.rstrip("/").split("/")[-1]
+
+                    # Check if repo already exists
+                    existing_repo = Repo.objects.filter(repo_url=repo_url).first()
+                    if existing_repo:
+                        # Add existing repo to hackathon
+                        instance.repositories.add(existing_repo)
+                    else:
+                        # Create new repo
+                        new_repo = Repo.objects.create(
+                            name=repo_name,
+                            repo_url=repo_url,
+                            organization=organization,
+                        )
+                        instance.repositories.add(new_repo)
+
+        return instance
 
 
 class HackathonSponsorForm(forms.ModelForm):
