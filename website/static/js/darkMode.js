@@ -1,11 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
   const htmlElement = document.documentElement;
-  
-  // Initialize theme from localStorage on page load
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme === "dark") {
-    htmlElement.classList.add("dark");
-  }
 
   // Use event delegation to handle clicks on the theme toggle button
   document.addEventListener("click", (event) => {
