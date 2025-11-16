@@ -222,6 +222,7 @@ from website.views.organization import (
     approve_activity,
     checkIN,
     checkIN_detail,
+    delete_activity,
     delete_room,
     delete_time_entry,
     dislike_activity,
@@ -333,6 +334,7 @@ from website.views.user import (
     view_thread,
 )
 from website.views.video_call import video_call
+from website.feeds import ActivityFeed
 
 admin.autodiscover()
 
@@ -753,6 +755,7 @@ urlpatterns = [
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
+    re_path(r"^feed/rss/$", ActivityFeed(), name="activity_feed_rss"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -808,6 +811,7 @@ urlpatterns = [
     path("activity/like/<int:id>/", like_activity, name="like_activity"),
     path("activity/dislike/<int:id>/", dislike_activity, name="dislike_activity"),
     path("activity/approve/<int:id>/", approve_activity, name="approve_activity"),
+    path("activity/delete/<int:id>/", delete_activity, name="delete_activity"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     re_path(r"^robots\.txt$", robots_txt),
