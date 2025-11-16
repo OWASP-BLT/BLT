@@ -7,7 +7,7 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<nav class="fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-1.5 py-2 px-1">
+<nav class="fixed top-0 z-[9999] w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-zinc-200 dark:border-gray-700 border-b md:px-4 md:py-1.5 py-2 px-1 transition-colors duration-300">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
@@ -41,40 +41,40 @@
                 </a>
                 <!-- Mega Menu Content -->
                 <div id="mega-menu"
-                     class="mega-menu hidden fixed top-[80px] left-0 right-0 bg-white shadow-lg border-b max-h-[80vh] overflow-y-auto z-50">
+                     class="mega-menu hidden fixed top-[80px] left-0 right-0 bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 max-h-[80vh] overflow-y-auto z-50 transition-colors duration-300">
                     <div class="container mx-auto px-4 py-6">
                         <div class="grid grid-cols-5 gap-8">
                             <!-- Column 1: Organizations Part 1 -->
                             <div>
-                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mb-4">Organizations</h3>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] dark:text-[#e74c3c] uppercase mb-4">Organizations</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'organizations' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-building w-5 mr-2"></i>Organizations</a>
+                                           class="flex items-center text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors"><i class="fas fa-building w-5 mr-2"></i>Organizations</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'register_organization' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-plus w-5 mr-2"></i> Register Organization</a>
+                                           class="flex items-center text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors"><i class="fas fa-plus w-5 mr-2"></i> Register Organization</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'domains' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-globe w-5 mr-2"></i>Domains</a>
+                                           class="flex items-center text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors"><i class="fas fa-globe w-5 mr-2"></i>Domains</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'map' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-map-marker-alt w-5 mr-2"></i>Map</a>
+                                           class="flex items-center text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors"><i class="fas fa-map-marker-alt w-5 mr-2"></i>Map</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'feed' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-rss w-5 mr-2"></i>Feed</a>
+                                           class="flex items-center text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors"><i class="fas fa-rss w-5 mr-2"></i>Feed</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'hackathons' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trophy w-5 mr-2"></i>Hackathons</a>
+                                           class="flex items-center text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors"><i class="fas fa-trophy w-5 mr-2"></i>Hackathons</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'issues' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Bugs</a>
+                                           class="flex items-center text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors"><i class="fas fa-bug w-5 mr-2"></i>Bugs</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'github_issues' %}"
@@ -444,7 +444,7 @@
             </div>
             <!-- Search Bar -->
             <div class="flex-1 max-w-xl mx-4 hidden sm:block">
-                <div class="relative flex items-center rounded-lg overflow-hidden bg-white border-2 border-red-500 hover:bg-red-50 transition-colors duration-200">
+                <div class="relative flex items-center rounded-lg overflow-hidden bg-white dark:bg-gray-800 border-2 border-[#e74c3c] dark:border-[#e74c3c] hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <form class="w-full flex items-center"
                           action="{% url 'search' %}"
                           method="get">
@@ -453,7 +453,7 @@
                                name="query"
                                id="query-input"
                                placeholder="Search here..."
-                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base bg-transparent outline-none">
+                               class="w-full pl-12 pr-4 py-2 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 placeholder:select-none placeholder:text-base bg-transparent outline-none">
                         {% with request.resolver_match.url_name as url_name %}
                             {% if url_name != 'home' %}
                                 <div class="relative border-l-2 border-red-500 flex">
@@ -535,20 +535,22 @@
             <!-- User Menu -->
             {% if request.user.is_authenticated %}
                 <div class="flex justify-center items-center gap-4">
+                    <!-- Dark Mode Toggle -->
+                    {% include "dark_mode_toggle.html" %}
                     <div class="relative">
                         <button id="notificationButton"
-                                class="relative py-2.5 px-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                            <i class="fa fa-bell fa-lg text-zinc-700"></i>
+                                class="relative py-2.5 px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200">
+                            <i class="fa fa-bell fa-lg text-zinc-700 dark:text-zinc-300"></i>
                             <!-- Badge is hidden by default -->
                             <span id="unreadCount"
                                   class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden">
                             </span>
                         </button>
                         <div id="notificationDropdown"
-                             class="hidden absolute right-0 mt-[20px] w-80 bg-white border border-gray-200 shadow-sm rounded-xl z-50">
+                             class="hidden absolute right-0 mt-[20px] w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl z-50 transition-colors">
                             <div class="p-4">
                                 <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
                                 </div>
                                 <div id="notificationList"
                                      class="space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
@@ -559,7 +561,7 @@
                     </div>
                     <!-- Dropdown Button -->
                     <button id="dropdownButton"
-                            class="relative flex items-center gap-2 md:gap-3 px-1.5 md:px-2 py-1 md:py-1.5 bg-white border border-gray-200 rounded-lg md:rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 group"
+                            class="relative flex items-center gap-2 md:gap-3 px-1.5 md:px-2 py-1 md:py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 group"
                             type="button">
                         <div class="relative">
                             {% if request.user.userprofile.avatar %}
@@ -580,8 +582,8 @@
                             <div class="absolute -bottom-1 -right-1 size-3 md:size-4 bg-green-500 rounded-md border-2 border-white"></div>
                         </div>
                         <div class="hidden sm:flex flex-col items-start">
-                            <span class="text-xs md:text-sm font-medium text-gray-700 group-hover:text-gray-900">@{{ request.user.username }}</span>
-                            <span class="text-[10px] md:text-xs font-medium text-[#e74c3c]">{{ request.user|score|default:"0" }} Points</span>
+                            <span class="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-gray-100">@{{ request.user.username }}</span>
+                            <span class="text-[10px] md:text-xs font-medium text-[#e74c3c] dark:text-[#e74c3c]">{{ request.user|score|default:"0" }} Points</span>
                         </div>
                         <svg class="w-3 h-3 md:w-4 md:h-4 text-gray-500 group-hover:text-gray-700 ml-1 md:ml-2"
                              xmlns="http://www.w3.org/2000/svg"
@@ -592,25 +594,25 @@
                     </button>
                     <!-- Dropdown Menu -->
                     <div id="dropdownMenu"
-                         class="z-50 hidden absolute bg-white md:w-[300px] top-[80px] right-5 border shadow-sm rounded-md">
+                         class="z-50 hidden absolute bg-white dark:bg-gray-800 md:w-[300px] top-[80px] right-5 border border-gray-200 dark:border-gray-700 shadow-sm rounded-md transition-colors">
                         <ul class="flex flex-col gap-1 p-2.5">
                             <li>
                                 <a href="{% url 'account_profile' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                                 </a>
                             </li>
                             {% if user.is_superuser %}
                                 <li>
                                     <a href="{% url 'admin:index' %}"
-                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
+                                       class="flex items-center gap-1.5 py-2 px-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                         <i class="fa fa-cogs fa-fw"></i> {% trans "Admin Dashboard" %}
                                     </a>
                                 </li>
                             {% endif %}
                             <li>
                                 <a href="{% url 'start_hunt' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
+                                   class="flex items-center gap-1.5 py-2 px-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors duration-200 font-medium">
                                     <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Bounty" %}
                                 </a>
                             </li>
@@ -662,7 +664,9 @@
                 </div>
             {% else %}
                 <!-- Sign up and Log in Buttons -->
-                <div class="flex items-center">
+                <div class="flex items-center gap-4">
+                    <!-- Dark Mode Toggle -->
+                    {% include "dark_mode_toggle.html" %}
                     <div class="hidden lg:flex justify-center items-center gap-4">
                         <a href="{% url 'account_signup' %}"
                            class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -685,18 +689,18 @@
     </div>
     <!-- Mobile Search Bar -->
     <div id="mobile-search"
-         class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
+         class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 transition-colors">
         <form action="{% url 'search' %}" method="get" class="flex items-center">
             <div class="relative flex-1">
-                <i class="fa fa-search absolute text-xl left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
+                <i class="fa fa-search absolute text-xl left-3 top-1/2 -translate-y-1/2 text-[#e74c3c]"></i>
                 <input type="text"
                        name="query"
                        placeholder="Search here..."
-                       class="w-full pl-10 pr-4 py-3 px-2 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base">
+                       class="w-full pl-10 pr-4 py-3 px-2 border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 placeholder-gray-400 dark:placeholder-gray-500 placeholder:select-none placeholder:text-base">
                 <input type="hidden" name="type" id="mobile-filter-type" value="all">
             </div>
             <button type="submit"
-                    class="ml-2 py-3 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                    class="ml-2 py-3 px-4 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600 dark:hover:bg-red-600 transition-colors">
                 <i class="fa fa-search text-xl"></i>
             </button>
         </form>
@@ -725,19 +729,19 @@
     });
 </script>
 <!-- Chatbot -->
-<div class="bg-gray-100 chat-Zindex z-[9999]">
+<div class="bg-gray-100 dark:bg-gray-900 chat-Zindex z-[9999] transition-colors">
     <div id="chatbot"
-         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white rounded-lg shadow-lg h-[520px] overflow-hidden hidden">
-        <div class="bg-red-600 text-white p-3 rounded-t-lg flex justify-between items-center">
+         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[520px] overflow-hidden hidden transition-colors">
+        <div class="bg-[#e74c3c] dark:bg-[#e74c3c] text-white p-3 rounded-t-lg flex justify-between items-center">
             <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
             <button id="closeChatbot" class="text-white text-2xl">×</button>
         </div>
         <div class="p-4">
-            <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700">
+            <div class="bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-2 text-red-700 dark:text-red-300">
                 <p class="text-base">We respond instantly!</p>
             </div>
             <div id="chat-log"
-                 class="bg-gray-100 p-3 rounded-lg max-h-[295px] h-[295px] overflow-y-auto relative">
+                 class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg max-h-[295px] h-[295px] overflow-y-auto relative transition-colors">
                 <div id="loading"
                      class="hidden absolute bottom-1 left-1 flex items-center justify-center bg-white/90 p-2 rounded-lg">
                     <svg class="animate-spin h-5 w-5 text-red-600"

@@ -87,12 +87,19 @@
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
         <link href="{% static 'css/checkInModal.css' %}" rel="stylesheet">
+        <link href="{% static 'css/custom-scrollbar.css' %}" rel="stylesheet">
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"
                 integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
                 crossorigin="anonymous"></script>
         <script src="{% static 'js/notify.js' %}"></script>
         <script src="{% static 'js/text-slider.js' %}"></script>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+            }
+        </script>
+        <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
         <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
@@ -108,7 +115,7 @@
         {% block style %}
         {% endblock style %}
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
+    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
