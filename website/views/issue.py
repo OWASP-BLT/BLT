@@ -184,7 +184,7 @@ def create_github_issue(request, id):
             # Get the image URL
             image_url = screenshot.image.url
             # Check if URL is already absolute (e.g., from Google Cloud Storage)
-            if not image_url.startswith(('http://', 'https://')):
+            if not image_url.startswith(("http://", "https://")):
                 # Relative URL, prepend the domain with https protocol
                 image_url = f"https://{settings.FQDN}{image_url}"
             screenshot_text += f"![{screenshot.image.name}]({image_url})\n"
@@ -229,7 +229,12 @@ def create_github_issue(request, id):
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": "Failed to create GitHub issue. Please check your GitHub settings."})
+            return JsonResponse(
+                {
+                    "status": "Failed",
+                    "status_reason": "Failed to create GitHub issue. Please check your GitHub settings.",
+                }
+            )
     else:
         return JsonResponse(
             {

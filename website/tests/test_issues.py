@@ -56,42 +56,42 @@ class IssueCommentTests(TestCase):
 @override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
 class GitHubIssueImageURLTests(TestCase):
     """Test that image URLs are properly formatted for GitHub issues"""
-    
+
     def test_relative_url_formatting(self):
         """Test that relative URLs get properly formatted with https protocol"""
         relative_url = "/media/screenshots/test.png"
-        
+
         # Simulate the logic from create_github_issue function
-        if not relative_url.startswith(('http://', 'https://')):
+        if not relative_url.startswith(("http://", "https://")):
             formatted_url = f"https://{settings.FQDN}{relative_url}"
         else:
             formatted_url = relative_url
-            
-        self.assertTrue(formatted_url.startswith('https://'))
+
+        self.assertTrue(formatted_url.startswith("https://"))
         self.assertIn(settings.FQDN, formatted_url)
-        self.assertIn('/media/screenshots/test.png', formatted_url)
-    
+        self.assertIn("/media/screenshots/test.png", formatted_url)
+
     def test_absolute_url_unchanged(self):
         """Test that absolute URLs (e.g., from GCS) are used as-is"""
         absolute_url = "https://bhfiles.storage.googleapis.com/screenshots/test.png"
-        
+
         # Simulate the logic from create_github_issue function
-        if not absolute_url.startswith(('http://', 'https://')):
+        if not absolute_url.startswith(("http://", "https://")):
             formatted_url = f"https://{settings.FQDN}{absolute_url}"
         else:
             formatted_url = absolute_url
-            
+
         self.assertEqual(formatted_url, absolute_url)
-        self.assertTrue(formatted_url.startswith('https://'))
-    
+        self.assertTrue(formatted_url.startswith("https://"))
+
     def test_http_url_unchanged(self):
         """Test that http URLs are also preserved"""
         http_url = "http://example.com/image.png"
-        
+
         # Simulate the logic from create_github_issue function
-        if not http_url.startswith(('http://', 'https://')):
+        if not http_url.startswith(("http://", "https://")):
             formatted_url = f"https://{settings.FQDN}{http_url}"
         else:
             formatted_url = http_url
-            
+
         self.assertEqual(formatted_url, http_url)
