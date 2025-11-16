@@ -1,4 +1,6 @@
 import re
+import ipaddress
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -15,6 +17,39 @@ EMAIL_REGEX = re.compile(r"(?:mailto:)?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-
 class Command(LoggedBaseCommand):
     help = "Checks for keywords in monitored URLs"
 
+    def is_safe_url(self, url):
+        """Validate URL to prevent SSRF attacks by blocking private IPs and cloud metadata endpoints."""
+        try:
+            parsed = urlparse(url)
+            hostname = parsed.hostname
+            if not hostname:
+                return False
+
+            # Resolve hostname to IP
+            import socket
+            try:
+                ip = socket.gethostbyname(hostname)
+            except socket.gaierror:
+                self.stderr.write(f"    Cannot resolve hostname: {hostname}")
+                return False
+
+            ip_obj = ipaddress.ip_address(ip)
+
+            # Block private IP ranges (RFC 1918, link-local, localhost, reserved)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
+                self.stderr.write(f"    Blocked private/reserved IP: {ip} for {hostname}")
+                return False
+
+            # Block cloud metadata endpoints
+            if ip == "169.254.169.254":
+                self.stderr.write(f"    Blocked cloud metadata endpoint: {ip}")
+                return False
+
+            return True
+        except Exception as e:
+            self.stderr.write(f"    URL validation error: {e}")
+            return False
+
     def handle(self, *args, **options):
         monitors = Monitor.objects.all()
         if not monitors:
@@ -24,6 +59,21 @@ class Command(LoggedBaseCommand):
         for monitor in monitors:
             try:
                 self.stdout.write(f"Checking {monitor.url}")
+                
+                # Validate URL to prevent SSRF attacks
+                if not self.is_safe_url(monitor.url):
+                    self.stderr.write(self.style.ERROR(f"Unsafe URL blocked: {monitor.url}"))
+                    old_status = monitor.status
+                    monitor.status = "DOWN"
+                    monitor.last_checked_time = timezone.now()
+                    monitor.save(update_fields=["status", "last_checked_time"])
+                    if old_status != "DOWN":
+                        try:
+                            self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
+                        except Exception as e:
+                            self.stderr.write(f"    Failed to notify user: {e}")
+                    continue
+                
                 response = requests.get(monitor.url, timeout=15)
                 self.stdout.write(f"    HTTP {response.status_code}; content length {len(response.content or b'')}")
                 response.raise_for_status()
@@ -109,26 +159,50 @@ class Command(LoggedBaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"Monitoring {monitor.url}: status {monitor.status}"))
             except requests.exceptions.Timeout:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request timed out"))
+                old_status = monitor.status
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
+                if old_status != "DOWN":
+                    try:
+                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
+                    except Exception as e:
+                        self.stderr.write(f"    Failed to notify user: {e}")
             except requests.exceptions.ConnectionError:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network connection failed"))
+                old_status = monitor.status
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
+                if old_status != "DOWN":
+                    try:
+                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
+                    except Exception as e:
+                        self.stderr.write(f"    Failed to notify user: {e}")
             except requests.exceptions.HTTPError:
                 self.stderr.write(
                     self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response")
                 )
+                old_status = monitor.status
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
+                if old_status != "DOWN":
+                    try:
+                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
+                    except Exception as e:
+                        self.stderr.write(f"    Failed to notify user: {e}")
             except requests.exceptions.RequestException:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request failed"))
+                old_status = monitor.status
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
+                if old_status != "DOWN":
+                    try:
+                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
+                    except Exception as e:
+                        self.stderr.write(f"    Failed to notify user: {e}")
             except Exception as e:  # noqa: BLE001 - broad catch required to prevent one bad monitor from aborting the entire command run
                 self.stderr.write(
                     self.style.ERROR(
@@ -136,9 +210,15 @@ class Command(LoggedBaseCommand):
                         "This may indicate a parsing, database, or internal processing issue. Check container logs for details."
                     )
                 )
+                old_status = monitor.status
                 monitor.status = "DOWN"
                 monitor.last_checked_time = timezone.now()
                 monitor.save(update_fields=["status", "last_checked_time"])
+                if old_status != "DOWN":
+                    try:
+                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
+                    except Exception as notify_error:
+                        self.stderr.write(f"    Failed to notify user: {notify_error}")
 
     def notify_user(self, username, website, email, status):
         subject = f"Website Status Update: {website} is {status}"
