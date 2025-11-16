@@ -273,26 +273,39 @@ class HackathonDetailView(DetailView):
         # Get the path for this hackathon
         hackathon_path = f"/hackathons/{hackathon.slug}/"
 
-        # Get the last 14 days of view data
+        # Calculate views during the hackathon timeframe
+        hackathon_start_date = hackathon.start_time.date()
+        hackathon_end_date = hackathon.end_time.date()
         today = timezone.now().date()
-        fourteen_days_ago = today - timedelta(days=14)
 
-        # Query IP table for view counts by date
-        view_data = (
-            IP.objects.filter(path=hackathon_path, created__date__gte=fourteen_days_ago)
+        # Use the end date or today, whichever is earlier for the chart
+        chart_end_date = min(hackathon_end_date, today)
+
+        # Query IP table for view counts during hackathon period
+        # Use path__contains to match the widget's behavior
+        hackathon_view_data = (
+            IP.objects.filter(
+                path__contains=hackathon_path,
+                created__date__gte=hackathon_start_date,
+                created__date__lte=chart_end_date,
+            )
             .annotate(date=TruncDate("created"))
             .values("date")
             .annotate(count=Sum("count"))
             .order_by("date")
         )
 
-        # Prepare data for the sparkline chart
-        date_counts = {item["date"]: item["count"] for item in view_data}
-        dates, counts = self._get_date_range_data(fourteen_days_ago, today, date_counts)
+        # Prepare data for the sparkline chart (hackathon timeframe)
+        date_counts = {item["date"]: item["count"] for item in hackathon_view_data}
+        dates, counts = self._get_date_range_data(hackathon_start_date, chart_end_date, date_counts)
 
         context["view_dates"] = json.dumps(dates)
         context["view_counts"] = json.dumps(counts)
-        context["total_views"] = sum(counts)
+        context["hackathon_views"] = sum(counts)
+
+        # Calculate all-time views (from the beginning)
+        all_time_views = IP.objects.filter(path__contains=hackathon_path).aggregate(total=Sum("count"))["total"] or 0
+        context["all_time_views"] = all_time_views
 
         return context
 
