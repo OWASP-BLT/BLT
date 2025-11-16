@@ -681,7 +681,7 @@ class IssueBaseCreate(object):
             extension = filename.split(".")[-1]
             self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
 
-            reopen = default_storage.open("uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
+            reopen = default_storage.open("uploads/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
             django_file = File(reopen)
             obj.screenshot.save(
                 self.request.POST.get("screenshot-hash") + ".png",
@@ -845,7 +845,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             tokenauth = False
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
-            initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
+            initial["screenshot"] = "uploads/" + self.request.POST.get("screenshot-hash") + ".png"
         return initial
 
     def post(self, request, *args, **kwargs):

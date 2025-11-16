@@ -1,17 +1,59 @@
 import ipaddress
 import re
+import socket
 from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
 from django.core.mail import send_mail
 from django.utils import timezone
+from requests.adapters import HTTPAdapter
 
 from website.management.base import LoggedBaseCommand
 from website.models import Monitor
 
 # Compile email regex once at module level for efficiency
 EMAIL_REGEX = re.compile(r"(?:mailto:)?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.IGNORECASE)
+
+
+class SSRFProtectionAdapter(HTTPAdapter):
+    """Custom HTTPAdapter that validates the resolved IP after connection to prevent DNS rebinding."""
+
+    def send(self, request, **kwargs):
+        # Get the hostname from the request URL
+        parsed = urlparse(request.url)
+        hostname = parsed.hostname
+
+        # Perform the connection
+        response = super().send(request, **kwargs)
+
+        # After connection, validate the actual IP that was connected to
+        try:
+            # Get the socket from the response connection
+            if hasattr(response.raw, "_connection") and hasattr(response.raw._connection, "sock"):
+                sock = response.raw._connection.sock
+                if sock:
+                    peer_ip = sock.getpeername()[0]
+                    ip_obj = ipaddress.ip_address(peer_ip)
+
+                    # Block private IP ranges
+                    if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
+                        response.close()
+                        raise requests.exceptions.ConnectionError(
+                            f"DNS rebinding detected: connected to private/reserved IP {peer_ip}"
+                        )
+
+                    # Block cloud metadata endpoints
+                    if peer_ip in ("169.254.169.254", "fd00:ec2::254"):
+                        response.close()
+                        raise requests.exceptions.ConnectionError(
+                            f"DNS rebinding detected: connected to cloud metadata endpoint {peer_ip}"
+                        )
+        except (AttributeError, OSError):
+            # If we can't get the peer IP, allow the request but log a warning
+            pass
+
+        return response
 
 
 class Command(LoggedBaseCommand):
@@ -25,26 +67,29 @@ class Command(LoggedBaseCommand):
             if not hostname:
                 return False
 
-            # Resolve hostname to IP
-            import socket
-
+            # Resolve hostname to all IPs (IPv4 and IPv6)
             try:
-                ip = socket.gethostbyname(hostname)
+                addr_info = socket.getaddrinfo(hostname, None)
             except socket.gaierror:
                 self.stderr.write(f"    Cannot resolve hostname: {hostname}")
                 return False
 
-            ip_obj = ipaddress.ip_address(ip)
-
-            # Block private IP ranges (RFC 1918, link-local, localhost, reserved)
-            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
-                self.stderr.write(f"    Blocked private/reserved IP: {ip} for {hostname}")
-                return False
-
-            # Block cloud metadata endpoints
-            if ip == "169.254.169.254":
-                self.stderr.write(f"    Blocked cloud metadata endpoint: {ip}")
-                return False
+            # Check ALL resolved IPs (both IPv4 and IPv6)
+            for family, _, _, _, sockaddr in addr_info:
+                ip = sockaddr[0]
+                try:
+                    ip_obj = ipaddress.ip_address(ip)
+                    # Block private IP ranges (RFC 1918, link-local, localhost, reserved)
+                    if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
+                        self.stderr.write(f"    Blocked private/reserved IP: {ip} for {hostname}")
+                        return False
+                    # Block cloud metadata endpoints (IPv4 and IPv6)
+                    if ip in ("169.254.169.254", "fd00:ec2::254"):
+                        self.stderr.write(f"    Blocked cloud metadata endpoint: {ip}")
+                        return False
+                except ValueError:
+                    # Invalid IP format
+                    return False
 
             return True
         except Exception as e:
@@ -75,7 +120,11 @@ class Command(LoggedBaseCommand):
                             self.stderr.write(f"    Failed to notify user: {e}")
                     continue
 
-                response = requests.get(monitor.url, timeout=15)
+                # Use custom session with SSRF protection to prevent DNS rebinding
+                session = requests.Session()
+                session.mount("http://", SSRFProtectionAdapter())
+                session.mount("https://", SSRFProtectionAdapter())
+                response = session.get(monitor.url, timeout=15)
                 self.stdout.write(f"    HTTP {response.status_code}; content length {len(response.content or b'')}")
                 response.raise_for_status()
 
