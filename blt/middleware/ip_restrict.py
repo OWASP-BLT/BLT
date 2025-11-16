@@ -10,6 +10,12 @@ from website.models import IP, Blocked
 
 MAX_COUNT = 2147483647
 
+# Cache settings
+BLOCKED_IPS_CACHE_KEY = "blocked_ips"
+BLOCKED_IP_NETWORK_CACHE_KEY = "blocked_ip_network"
+BLOCKED_AGENTS_CACHE_KEY = "blocked_agents"
+CACHE_TIMEOUT = 86400  # 24 hours
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,36 +27,36 @@ class IPRestrictMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
-    def get_cached_data(self, cache_key, queryset, timeout=86400):
-        """
-        Retrieve data from cache or database.
-        """
-        cached_data = cache.get(cache_key)
-        if cached_data is None:
-            cached_data = list(filter(None, queryset))  # Filter out None values
-            cache.set(cache_key, cached_data, timeout=timeout)
-        return cached_data
-
     def blocked_ips(self):
         """
         Retrieve blocked IP addresses from cache or database.
         """
-        blocked_addresses = Blocked.objects.values_list("address", flat=True)
-        return set(self.get_cached_data("blocked_ips", blocked_addresses))
+        cached_ips = cache.get(BLOCKED_IPS_CACHE_KEY)
+        if cached_ips is None:
+            # Only query the database if cache is empty
+            blocked_addresses = Blocked.objects.values_list("address", flat=True)
+            cached_ips = [ip for ip in blocked_addresses if ip is not None]
+            cache.set(BLOCKED_IPS_CACHE_KEY, cached_ips, timeout=CACHE_TIMEOUT)
+        return set(cached_ips)
 
     def blocked_ip_network(self):
         """
         Retrieve blocked IP networks from cache or database.
         """
-        blocked_network = Blocked.objects.values_list("ip_network", flat=True)
-        blocked_ip_network = []
+        cached_networks = cache.get(BLOCKED_IP_NETWORK_CACHE_KEY)
+        if cached_networks is None:
+            # Only query the database if cache is empty
+            blocked_network = Blocked.objects.values_list("ip_network", flat=True)
+            cached_networks = [network for network in blocked_network if network is not None]
+            cache.set(BLOCKED_IP_NETWORK_CACHE_KEY, cached_networks, timeout=CACHE_TIMEOUT)
 
-        for range_str in self.get_cached_data("blocked_ip_network", blocked_network):
+        blocked_ip_network = []
+        for range_str in cached_networks:
             try:
                 network = ipaddress.ip_network(range_str, strict=False)
                 blocked_ip_network.append(network)
             except ValueError as e:
-                logger.error(f"Invalid IP network {range_str}: {str(e)}")
+                logger.error(f"Invalid IP network {range_str}: {e}")
                 continue
 
         return blocked_ip_network
@@ -59,10 +65,14 @@ class IPRestrictMiddleware:
         """
         Retrieve blocked user agents from cache or database.
         """
-        blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
-        # Filter out None values
-        blocked_user_agents = [agent for agent in blocked_user_agents if agent is not None]
-        return set(self.get_cached_data("blocked_agents", blocked_user_agents))
+        cached_agents = cache.get(BLOCKED_AGENTS_CACHE_KEY)
+        if cached_agents is None:
+            # Only query the database if cache is empty
+            blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+            # Filter out None values
+            cached_agents = [agent for agent in blocked_user_agents if agent is not None]
+            cache.set(BLOCKED_AGENTS_CACHE_KEY, cached_agents, timeout=CACHE_TIMEOUT)
+        return set(cached_agents)
 
     def ip_in_ips(self, ip, blocked_ips):
         """
@@ -174,76 +184,102 @@ class IPRestrictMiddleware:
         """
         Asynchronous version of the middleware call method
         """
-        # Get client information
-        ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
-        agent = request.META.get("HTTP_USER_AGENT", "").strip()
+        try:
+            # Get client information
+            ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
+                "REMOTE_ADDR", ""
+            )
+            agent = request.META.get("HTTP_USER_AGENT", "").strip()
 
-        # Check cache for blocked items
-        blocked_ips = await sync_to_async(self.blocked_ips)()
-        blocked_ip_network = await sync_to_async(self.blocked_ip_network)()
-        blocked_agents = await sync_to_async(self.blocked_agents)()
+            try:
+                # Check cache for blocked items
+                blocked_ips = await sync_to_async(self.blocked_ips)()
+                blocked_ip_network = await sync_to_async(self.blocked_ip_network)()
+                blocked_agents = await sync_to_async(self.blocked_agents)()
+            except Exception as e:
+                # Log the error but allow the request to proceed
+                logger.error(f"Error retrieving blocked data: {e}")
+                return await self.get_response(request)
 
-        # Check if IP is blocked directly
-        if await sync_to_async(self.ip_in_ips)(ip, blocked_ips):
-            await self.increment_block_count_async(ip=ip)
-            return HttpResponseForbidden()
+            # Check if IP is blocked directly
+            if await sync_to_async(self.ip_in_ips)(ip, blocked_ips):
+                await self.increment_block_count_async(ip=ip)
+                return HttpResponseForbidden()
 
-        # Check if IP is in a blocked network
-        if await sync_to_async(self.ip_in_range)(ip, blocked_ip_network):
-            # Find the specific network that caused the block and increment its count
-            for network in blocked_ip_network:
-                if ipaddress.ip_address(ip) in network:
-                    await self.increment_block_count_async(network=str(network))
-                    break
-            return HttpResponseForbidden()
+            # Check if IP is in a blocked network
+            if await sync_to_async(self.ip_in_range)(ip, blocked_ip_network):
+                # Find the specific network that caused the block and increment its count
+                for network in blocked_ip_network:
+                    if ipaddress.ip_address(ip) in network:
+                        await self.increment_block_count_async(network=str(network))
+                        break
+                return HttpResponseForbidden()
 
-        # Check if user agent is blocked
-        if await sync_to_async(self.is_user_agent_blocked)(agent, blocked_agents):
-            await self.increment_block_count_async(user_agent=agent)
-            return HttpResponseForbidden()
+            # Check if user agent is blocked
+            if await sync_to_async(self.is_user_agent_blocked)(agent, blocked_agents):
+                await self.increment_block_count_async(user_agent=agent)
+                return HttpResponseForbidden()
 
-        # Record IP information
-        await self.record_ip_async(ip, agent, request.path)
+            # Record IP information
+            await self.record_ip_async(ip, agent, request.path)
 
-        # Continue with the request
-        response = await self.get_response(request)
-        return response
+            # Continue with the request
+            response = await self.get_response(request)
+            return response
+
+        except Exception as e:
+            # Catch any other unexpected errors in the middleware
+            logger.error(f"Unexpected error in IPRestrictMiddleware: {e}")
+            return await self.get_response(request)
 
     def process_request_sync(self, request):
         """
         Synchronous version of the middleware logic
         """
-        # Get client information
-        ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
-        agent = request.META.get("HTTP_USER_AGENT", "").strip()
+        try:
+            # Get client information
+            ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
+                "REMOTE_ADDR", ""
+            )
+            agent = request.META.get("HTTP_USER_AGENT", "").strip()
 
-        # Check cache for blocked items
-        blocked_ips = self.blocked_ips()
-        blocked_ip_network = self.blocked_ip_network()
-        blocked_agents = self.blocked_agents()
+            try:
+                # Check cache for blocked items
+                blocked_ips = self.blocked_ips()
+                blocked_ip_network = self.blocked_ip_network()
+                blocked_agents = self.blocked_agents()
+            except Exception as e:
+                # Log the error but allow the request to proceed
+                logger.error(f"Error retrieving blocked data: {e}")
+                return self.get_response(request)
 
-        # Check if IP is blocked directly
-        if self.ip_in_ips(ip, blocked_ips):
-            self.increment_block_count(ip=ip)
-            return HttpResponseForbidden()
+            # Check if IP is blocked directly
+            if self.ip_in_ips(ip, blocked_ips):
+                self.increment_block_count(ip=ip)
+                return HttpResponseForbidden()
 
-        # Check if IP is in a blocked network
-        if self.ip_in_range(ip, blocked_ip_network):
-            # Find the specific network that caused the block and increment its count
-            for network in blocked_ip_network:
-                if ipaddress.ip_address(ip) in network:
-                    self.increment_block_count(network=str(network))
-                    break
-            return HttpResponseForbidden()
+            # Check if IP is in a blocked network
+            if self.ip_in_range(ip, blocked_ip_network):
+                # Find the specific network that caused the block and increment its count
+                for network in blocked_ip_network:
+                    if ipaddress.ip_address(ip) in network:
+                        self.increment_block_count(network=str(network))
+                        break
+                return HttpResponseForbidden()
 
-        # Check if user agent is blocked
-        if self.is_user_agent_blocked(agent, blocked_agents):
-            self.increment_block_count(user_agent=agent)
-            return HttpResponseForbidden()
+            # Check if user agent is blocked
+            if self.is_user_agent_blocked(agent, blocked_agents):
+                self.increment_block_count(user_agent=agent)
+                return HttpResponseForbidden()
 
-        # Record IP information
-        if ip:
-            self._record_ip(ip, agent, request.path)
+            # Record IP information
+            if ip:
+                self._record_ip(ip, agent, request.path)
 
-        # Continue with the request
-        return self.get_response(request)
+            # Continue with the request
+            return self.get_response(request)
+
+        except Exception as e:
+            # Catch any other unexpected errors in the middleware
+            logger.error(f"Unexpected error in IPRestrictMiddleware: {e}")
+            return self.get_response(request)
