@@ -1963,6 +1963,11 @@ class ManagementCommandLog(models.Model):
     success = models.BooleanField(default=True)
     error_message = models.TextField(blank=True, null=True)
     run_count = models.IntegerField(default=0)
+    file_path = models.CharField(max_length=512, blank=True, null=True)
+    file_modified = models.DateTimeField(blank=True, null=True)
+    github_url = models.URLField(max_length=512, blank=True, null=True)
+    execution_time = models.FloatField(blank=True, null=True, help_text="Execution time in seconds")
+    output = models.TextField(blank=True, null=True, help_text="Command execution output")
 
     class Meta:
         get_latest_by = "last_run"
