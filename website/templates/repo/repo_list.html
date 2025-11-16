@@ -6,31 +6,31 @@
     <div class="w-full px-4 py-8">
         <div class="max-w-[1920px] mx-auto">
             <div class="flex justify-between items-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
                     Repositories
                     {% if current_language %}
-                        <span class="text-lg font-normal text-gray-600">(Filtered by {{ current_language }})</span>
+                        <span class="text-lg font-normal text-gray-600 dark:text-gray-400">(Filtered by {{ current_language }})</span>
                     {% endif %}
                     {% if current_organization_name %}
-                        <span class="text-lg font-normal text-gray-600">(Organization: {{ current_organization_name }})</span>
+                        <span class="text-lg font-normal text-gray-600 dark:text-gray-400">(Organization: {{ current_organization_name }})</span>
                     {% endif %}
-                    <span class="text-lg font-normal text-gray-600">
+                    <span class="text-lg font-normal text-gray-600 dark:text-gray-400">
                         (Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_repos }})
                     </span>
                 </h1>
             </div>
             <!-- Organizations Filter -->
             <div class="overflow-x-auto mb-8">
-                <div class="inline-flex items-center pb-2 mb-2 border-b border-gray-200 w-full">
-                    <span class="text-gray-700 font-semibold mr-4">Organizations:</span>
+                <div class="inline-flex items-center pb-2 mb-2 border-b border-gray-200 dark:border-gray-700 w-full">
+                    <span class="text-gray-700 dark:text-gray-300 font-semibold mr-4">Organizations:</span>
                     <div class="flex flex-wrap gap-2">
                         <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if current_language %}language={{ current_language }}{% endif %}"
-                           class="px-3 py-1 rounded-full {% if not current_organization %}bg-red-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                           class="px-3 py-1 rounded-full {% if not current_organization %}bg-red-600 text-white{% else %}bg-gray-200 text-gray-700 dark:text-gray-300 hover:bg-gray-300{% endif %}">
                             All
                         </a>
                         {% for org in organizations %}
                             <a href="?organization={{ org.id }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}"
-                               class="px-3 py-1 rounded-full whitespace-nowrap {% if current_organization == org.id|stringformat:'s' %}bg-red-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                               class="px-3 py-1 rounded-full whitespace-nowrap {% if current_organization == org.id|stringformat:'s' %}bg-red-600 text-white{% else %}bg-gray-200 text-gray-700 dark:text-gray-300 hover:bg-gray-300{% endif %}">
                                 {{ org.name }}
                             </a>
                         {% endfor %}
@@ -40,8 +40,8 @@
             <div class="flex gap-6">
                 <!-- Language Sidebar -->
                 <div class="w-64 flex-shrink-0">
-                    <div class="bg-white rounded-lg shadow p-4">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Languages</h2>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Languages</h2>
                         <div class="space-y-2">
                             <a href="{% url 'repo_list' %}{% if request.GET.q %}?q={{ request.GET.q }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                class="block px-3 py-2 rounded-md {% if not current_language %}bg-red-50 text-red-700{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
@@ -51,7 +51,7 @@
                                 <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if current_organization %}organization={{ current_organization }}&{% endif %}language={{ lang.primary_language }}"
                                    class="flex justify-between items-center px-3 py-2 rounded-md {% if current_language == lang.primary_language %}bg-red-50 text-red-700{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
                                     <span>{{ lang.primary_language }}</span>
-                                    <span class="text-sm text-gray-500">{{ lang.count }}</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-500">{{ lang.count }}</span>
                                 </a>
                             {% endfor %}
                         </div>
@@ -68,7 +68,7 @@
                             <div class="flex gap-2">
                                 <input type="text"
                                        name="q"
-                                       class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                                       class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-red-500 focus:ring-red-500"
                                        placeholder="Search repositories..."
                                        value="{{ request.GET.q }}">
                                 <button type="submit"
@@ -83,7 +83,7 @@
                             <div class="flex gap-2">
                                 <input type="text"
                                        name="repo_url"
-                                       class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                                       class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-red-500 focus:ring-red-500"
                                        placeholder="Enter GitHub repository URL..."
                                        required>
                                 <button type="submit"
@@ -97,12 +97,12 @@
                         </form>
                     </div>
                     <!-- Repository Table -->
-                    <div class="overflow-x-auto bg-white shadow-md rounded-lg">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                    <div class="overflow-x-auto bg-white dark:bg-gray-800 shadow-md rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-1/5">
                                         <a href="?sort={% if current_sort == 'name' %}-{% endif %}name{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                            class="group inline-flex items-center">
                                             Name
@@ -116,11 +116,11 @@
                                         </a>
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-2/5">
                                         Description
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-1/12">
                                         <a href="?sort={% if current_sort == 'primary_language' %}-{% endif %}primary_language{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                            class="group inline-flex items-center">
                                             Language
@@ -134,7 +134,7 @@
                                         </a>
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-1/12">
                                         <a href="?sort={% if current_sort == 'stars' %}-{% endif %}stars{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                            class="group inline-flex items-center">
                                             Stars
@@ -148,7 +148,7 @@
                                         </a>
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-1/12">
                                         <a href="?sort={% if current_sort == 'forks' %}-{% endif %}forks{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                            class="group inline-flex items-center">
                                             Forks
@@ -162,7 +162,7 @@
                                         </a>
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-1/12">
                                         <a href="?sort={% if current_sort == 'open_issues' %}-{% endif %}open_issues{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                            class="group inline-flex items-center">
                                             Issues
@@ -176,7 +176,7 @@
                                         </a>
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-1/12">
                                         <a href="?sort={% if current_sort == 'closed_pull_requests' %}-{% endif %}closed_pull_requests{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                            class="group inline-flex items-center">
                                             Closed PRs
@@ -190,7 +190,7 @@
                                         </a>
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-1/12">
                                         <a href="?sort={% if current_sort == 'contributor_count' %}-{% endif %}contributor_count{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                            class="group inline-flex items-center">
                                             Contributors
@@ -204,7 +204,7 @@
                                         </a>
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider w-1/12">
                                         <a href="?sort={% if current_sort == 'last_updated' %}-{% endif %}last_updated{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
                                            class="group inline-flex items-center">
                                             Updated
@@ -219,7 +219,7 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {% for repo in repos %}
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -229,7 +229,7 @@
                                                 <div class="flex items-center gap-2">
                                                     <a href="{{ repo.repo_url }}"
                                                        target="_blank"
-                                                       class="text-gray-400 hover:text-gray-600"
+                                                       class="text-gray-400 dark:text-gray-600 hover:text-gray-600"
                                                        title="View on GitHub">
                                                         <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                                                             <path d="M10 6v2H5v11h11v-5h2v6a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1h6zm11-3v8h-2V6.413l-7.293 7.293-1.414-1.414L17.586 5H13V3h8z" />
@@ -247,23 +247,28 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-900 line-clamp-2">{{ repo.description|default:"-" }}</div>
+                                            <div class="text-sm text-gray-900 dark:text-gray-100 line-clamp-2">{{ repo.description|default:"-" }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 {{ repo.primary_language|default:"-" }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.stars }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.forks }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.open_issues }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.closed_pull_requests }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.contributor_count }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.last_updated|date:"M d, Y" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.stars }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.forks }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.open_issues }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.closed_pull_requests }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ repo.contributor_count }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                            {{ repo.last_updated|date:"M d, Y" }}
+                                        </td>
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">No repositories found.</td>
+                                        <td colspan="9"
+                                            class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-500">
+                                            No repositories found.
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -271,7 +276,7 @@
                     </div>
                     <!-- Pagination -->
                     {% if is_paginated %}
-                        <nav class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6 mt-4"
+                        <nav class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 mt-4"
                              aria-label="Pagination">
                             <div class="flex justify-center flex-1">
                                 <div>
@@ -279,25 +284,25 @@
                                          aria-label="Pagination">
                                         {% if page_obj.has_previous %}
                                             <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
-                                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50">
                                                 Previous
                                             </a>
                                         {% endif %}
                                         {% for num in page_obj.paginator.page_range %}
                                             {% if page_obj.number == num %}
-                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-indigo-50 text-sm font-medium text-indigo-600">
+                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-indigo-50 text-sm font-medium text-indigo-600">
                                                     {{ num }}
                                                 </span>
                                             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                                                 <a href="?page={{ num }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
-                                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50">
                                                     {{ num }}
                                                 </a>
                                             {% endif %}
                                         {% endfor %}
                                         {% if page_obj.has_next %}
                                             <a href="?page={{ page_obj.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_language %}&language={{ current_language }}{% endif %}{% if current_organization %}&organization={{ current_organization }}{% endif %}"
-                                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50">
                                                 Next
                                             </a>
                                         {% endif %}
