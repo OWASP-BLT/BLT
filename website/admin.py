@@ -14,15 +14,22 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
+    ActivityLog,
+    BaconEarning,
+    BaconSubmission,
+    BaconToken,
+    Badge,
     BannedApp,
     Bid,
     Blocked,
+    Challenge,
     ChatBotLog,
     Contribution,
     Contributor,
     ContributorStats,
     Course,
     DailyStats,
+    DailyStatusReport,
     Domain,
     Enrollment,
     ForumCategory,
@@ -31,22 +38,30 @@ from website.models import (
     ForumVote,
     GitHubIssue,
     GitHubReview,
+    Hackathon,
+    HackathonPrize,
+    HackathonSponsor,
     Hunt,
     HuntPrize,
     Integration,
     InviteFriend,
+    IpReport,
     Issue,
     IssueScreenshot,
     JoinRequest,
+    Kudos,
     Labs,
     Lecture,
     LectureStatus,
+    ManagementCommandLog,
     Message,
     Monitor,
     Notification,
     Organization,
     OrganizationAdmin,
+    OsshArticle,
     OsshCommunity,
+    OsshDiscussionChannel,
     Payment,
     Points,
     Post,
@@ -54,20 +69,28 @@ from website.models import (
     Project,
     Queue,
     Rating,
+    ReminderSettings,
     Repo,
     Room,
     Section,
     SlackBotActivity,
     SlackIntegration,
+    StakingEntry,
+    StakingPool,
+    StakingTransaction,
     Subscription,
     Tag,
     TaskContent,
     Tasks,
+    Thread,
     TimeLog,
     Trademark,
     TrademarkOwner,
     Transaction,
+    UserBadge,
+    UserLabProgress,
     UserProfile,
+    UserTaskProgress,
     Wallet,
     Winner,
 )
@@ -767,6 +790,31 @@ admin.site.register(TaskContent, TaskContentAdmin)
 admin.site.register(Tasks, TaskAdmin)
 admin.site.register(Labs, LabsAdmin)
 
+
+class UserTaskProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "task", "completed", "attempts", "completed_at", "last_attempt_at")
+    list_filter = ("completed", "task__lab", "task__task_type", "completed_at")
+    search_fields = ("user__username", "task__name", "task__lab__name")
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("user", "task")
+
+
+class UserLabProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "lab", "get_progress", "started_at", "completed_at", "last_accessed")
+    list_filter = ("lab", "completed_at", "started_at")
+    search_fields = ("user__username", "lab__name")
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("user", "lab")
+
+    def get_progress(self, obj):
+        return f"{obj.calculate_progress_percentage()}%"
+
+    get_progress.short_description = "Progress"
+
+
+admin.site.register(UserTaskProgress, UserTaskProgressAdmin)
+admin.site.register(UserLabProgress, UserLabProgressAdmin)
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -822,6 +870,180 @@ admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(JoinRequest, JoinRequestAdmin)
 admin.site.register(Notification)
+
+
+class ActivityLogAdmin(admin.ModelAdmin):
+    list_display = ("user", "window_title", "url", "recorded_at", "created")
+    list_filter = ("recorded_at", "created")
+    search_fields = ("user__username", "window_title", "url")
+    date_hierarchy = "recorded_at"
+
+
+class BaconEarningAdmin(admin.ModelAdmin):
+    list_display = ("user", "tokens_earned", "timestamp")
+    list_filter = ("timestamp",)
+    search_fields = ("user__username",)
+    date_hierarchy = "timestamp"
+
+
+class BaconSubmissionAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "github_url",
+        "contribution_type",
+        "status",
+        "transaction_status",
+        "bacon_amount",
+        "created_at",
+    )
+    list_filter = ("status", "transaction_status", "contribution_type", "created_at")
+    search_fields = ("user__username", "github_url", "description")
+    date_hierarchy = "created_at"
+
+
+class BaconTokenAdmin(admin.ModelAdmin):
+    list_display = ("user", "amount", "contribution", "token_id", "created")
+    list_filter = ("created",)
+    search_fields = ("user__username", "token_id")
+    date_hierarchy = "created"
+
+
+class BadgeAdmin(admin.ModelAdmin):
+    list_display = ("title", "type", "created_at")
+    list_filter = ("type", "created_at")
+    search_fields = ("title", "description")
+
+
+class ChallengeAdmin(admin.ModelAdmin):
+    list_display = ("title", "challenge_type", "points", "bacon_reward", "progress", "completed", "created_at")
+    list_filter = ("challenge_type", "completed", "created_at")
+    search_fields = ("title", "description")
+
+
+class DailyStatusReportAdmin(admin.ModelAdmin):
+    list_display = ("user", "date", "goal_accomplished", "current_mood", "created")
+    list_filter = ("date", "goal_accomplished", "current_mood")
+    search_fields = ("user__username", "previous_work", "next_plan")
+    date_hierarchy = "date"
+
+
+class HackathonAdmin(admin.ModelAdmin):
+    list_display = ("name", "organization", "start_time", "end_time", "is_active", "registration_open", "created")
+    list_filter = ("is_active", "registration_open", "start_time", "organization")
+    search_fields = ("name", "description", "organization__name")
+    date_hierarchy = "start_time"
+    filter_horizontal = ("repositories",)
+
+
+class HackathonPrizeAdmin(admin.ModelAdmin):
+    list_display = ("hackathon", "position", "title", "value", "sponsor")
+    list_filter = ("position", "hackathon")
+    search_fields = ("title", "description", "hackathon__name")
+
+
+class HackathonSponsorAdmin(admin.ModelAdmin):
+    list_display = ("hackathon", "organization", "sponsor_level", "created")
+    list_filter = ("sponsor_level", "hackathon", "created")
+    search_fields = ("hackathon__name", "organization__name")
+
+
+class IpReportAdmin(admin.ModelAdmin):
+    list_display = ("ip_address", "ip_type", "activity_type", "activity_title", "user", "created")
+    list_filter = ("ip_type", "activity_type", "created")
+    search_fields = ("ip_address", "activity_title", "description", "user__username")
+    date_hierarchy = "created"
+
+
+class KudosAdmin(admin.ModelAdmin):
+    list_display = ("sender", "receiver", "timestamp", "link")
+    list_filter = ("timestamp",)
+    search_fields = ("sender__username", "receiver__username", "comment")
+    date_hierarchy = "timestamp"
+
+
+class ManagementCommandLogAdmin(admin.ModelAdmin):
+    list_display = ("command_name", "last_run", "success", "run_count")
+    list_filter = ("success", "last_run")
+    search_fields = ("command_name", "error_message")
+    date_hierarchy = "last_run"
+
+
+class OsshArticleAdmin(admin.ModelAdmin):
+    list_display = ("title", "author", "source", "publication_date", "created_at")
+    list_filter = ("source", "publication_date", "created_at")
+    search_fields = ("title", "author", "description")
+    date_hierarchy = "publication_date"
+    filter_horizontal = ("tags",)
+
+
+class OsshDiscussionChannelAdmin(admin.ModelAdmin):
+    list_display = ("name", "source", "member_count", "created_at")
+    list_filter = ("source", "created_at")
+    search_fields = ("name", "description", "external_id")
+    filter_horizontal = ("tags",)
+
+
+class ReminderSettingsAdmin(admin.ModelAdmin):
+    list_display = ("user", "reminder_time", "timezone", "is_active", "last_reminder_sent")
+    list_filter = ("is_active", "timezone")
+    search_fields = ("user__username",)
+
+
+class StakingEntryAdmin(admin.ModelAdmin):
+    list_display = ("user", "pool", "staked_amount", "actual_reward", "status", "challenge_completed", "created_at")
+    list_filter = ("status", "challenge_completed", "created_at")
+    search_fields = ("user__username", "pool__name")
+    date_hierarchy = "created_at"
+
+
+class StakingPoolAdmin(admin.ModelAdmin):
+    list_display = ("name", "pool_type", "stake_amount", "status", "start_date", "end_date", "winner", "created_by")
+    list_filter = ("pool_type", "status", "start_date")
+    search_fields = ("name", "description", "created_by__username")
+    date_hierarchy = "start_date"
+
+
+class StakingTransactionAdmin(admin.ModelAdmin):
+    list_display = ("user", "pool", "transaction_type", "amount", "created_at")
+    list_filter = ("transaction_type", "created_at")
+    search_fields = ("user__username", "pool__name", "description")
+    date_hierarchy = "created_at"
+
+
+class ThreadAdmin(admin.ModelAdmin):
+    list_display = ("id", "updated_at")
+    list_filter = ("updated_at",)
+    filter_horizontal = ("participants",)
+
+
+class UserBadgeAdmin(admin.ModelAdmin):
+    list_display = ("user", "badge", "awarded_by", "awarded_at")
+    list_filter = ("badge", "awarded_at")
+    search_fields = ("user__username", "badge__title", "reason")
+    date_hierarchy = "awarded_at"
+
+
+admin.site.register(ActivityLog, ActivityLogAdmin)
+admin.site.register(BaconEarning, BaconEarningAdmin)
+admin.site.register(BaconSubmission, BaconSubmissionAdmin)
+admin.site.register(BaconToken, BaconTokenAdmin)
+admin.site.register(Badge, BadgeAdmin)
+admin.site.register(Challenge, ChallengeAdmin)
+admin.site.register(DailyStatusReport, DailyStatusReportAdmin)
+admin.site.register(Hackathon, HackathonAdmin)
+admin.site.register(HackathonPrize, HackathonPrizeAdmin)
+admin.site.register(HackathonSponsor, HackathonSponsorAdmin)
+admin.site.register(IpReport, IpReportAdmin)
+admin.site.register(Kudos, KudosAdmin)
+admin.site.register(ManagementCommandLog, ManagementCommandLogAdmin)
+admin.site.register(OsshArticle, OsshArticleAdmin)
+admin.site.register(OsshDiscussionChannel, OsshDiscussionChannelAdmin)
+admin.site.register(ReminderSettings, ReminderSettingsAdmin)
+admin.site.register(StakingEntry, StakingEntryAdmin)
+admin.site.register(StakingPool, StakingPoolAdmin)
+admin.site.register(StakingTransaction, StakingTransactionAdmin)
+admin.site.register(Thread, ThreadAdmin)
+admin.site.register(UserBadge, UserBadgeAdmin)
 
 
 @admin.register(BannedApp)

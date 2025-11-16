@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
+    {% include "includes/sidenav.html" %}
     <div class="min-h-screen bg-gray-100">
         <header class="bg-white shadow">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -88,6 +89,17 @@
                                                         <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if task.task_type == 'theory' %}bg-blue-100 text-blue-800{% else %}bg-red-100 text-red-800{% endif %}">
                                                             {{ task.get_task_type_display }}
                                                         </span>
+                                                        {% if completed_task_ids and task.id in completed_task_ids %}
+                                                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <svg class="w-4 h-4 mr-1 text-green-600"
+                                                                     fill="none"
+                                                                     stroke="currentColor"
+                                                                     viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                </svg>
+                                                                Completed
+                                                            </span>
+                                                        {% endif %}
                                                     </div>
                                                     {% if task.description %}<p class="mt-1 text-sm text-gray-500">{{ task.description }}</p>{% endif %}
                                                 </div>
