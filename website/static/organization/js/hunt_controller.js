@@ -1,197 +1,345 @@
-
-
+// Hunt Controller - Fixed Version with Better Error Handling
+(function() {
+    'use strict';
+    
+    console.log('[Hunt Controller] Script loading...');
+    
+    // Add escapeHTML function to prevent XSS attacks
+    function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    
+    // Global variables
 let prize_array = [];
-let list_prize_container = document.getElementById("list-prize-container");
-
-function add_prize(){
-                
-    let prize_name = document.getElementById("prize_name");
-    let cash_value = document.getElementById("cash_value");
-    let number_of_winning_projects = document.getElementById("number_of_winning_projects");
-    let every_valid_submissions = document.getElementById("every_valid_submissions");
-    let prize_description = document.getElementById("prize_description");
-    let paid_in_cryptocurrency = document.getElementById("paid_in_cryptocurrency");
-
-    if (prize_name.value.trim() === "" || cash_value.value <= 0 || number_of_winning_projects.value <= 0){
-        alert("Please fill in all fields correctly");
+    let list_prize_container = null;
+    
+    // Main functions
+    function add_prize() {
+        console.log('[add_prize] Function called');
+        
+        try {
+            // Initialize list_prize_container if not already done
+            if (!list_prize_container) {
+                list_prize_container = document.getElementById("list-prize-container");
+                if (!list_prize_container) {
+                    console.error('[add_prize] Could not find list-prize-container element');
+                    alert('Error: Prize container not found. Please refresh the page.');
+                    return;
+                }
+            }
+            
+            // Get form elements
+            const elements = {
+                prize_name: document.getElementById("prize_name"),
+                cash_value: document.getElementById("cash_value"),
+                number_of_winning_projects: document.getElementById("number_of_winning_projects"),
+                every_valid_submissions: document.getElementById("every_valid_submissions"),
+                prize_description: document.getElementById("prize_description"),
+                paid_in_cryptocurrency: document.getElementById("paid_in_cryptocurrency")
+            };
+            
+            // Check if all elements exist
+            for (const [key, element] of Object.entries(elements)) {
+                if (!element) {
+                    console.error(`[add_prize] Could not find element: ${key}`);
+                    alert(`Error: Form element '${key}' not found. Please refresh the page.`);
+                    return;
+                }
+            }
+            
+            // Set default value for number_of_winning_projects if empty
+            if (!elements.number_of_winning_projects.value || elements.number_of_winning_projects.value === "") {
+                elements.number_of_winning_projects.value = 1;
+            }
+            
+            // Validate inputs
+            if (elements.prize_name.value.trim() === "") {
+                alert("Please enter a prize name");
+                elements.prize_name.focus();
+                return;
+            }
+            
+            if (elements.cash_value.value <= 0) {
+                alert("Please enter a valid cash value greater than 0");
+                elements.cash_value.focus();
+                return;
+            }
+            
+            if (elements.number_of_winning_projects.value <= 0) {
+                alert("Number of winning projects must be at least 1");
+                elements.number_of_winning_projects.focus();
         return;
     }
 
-    let prize_data = {
-        id: prize_array.length,
-        prize_name: prize_name.value,
-        cash_value: cash_value.value,
-        number_of_winning_projects: number_of_winning_projects.value,
-        every_valid_submissions: every_valid_submissions.checked,
-        prize_description: prize_description.value,
-        paid_in_cryptocurrency: paid_in_cryptocurrency.checked
+            // Create prize data object
+            const prize_data = {
+                id: `prize_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+                prize_name: elements.prize_name.value.trim(),
+                cash_value: Number(elements.cash_value.value),
+                number_of_winning_projects: Number(elements.number_of_winning_projects.value),
+                every_valid_submissions: elements.every_valid_submissions.checked,
+                prize_description: elements.prize_description.value.trim(),
+                paid_in_cryptocurrency: elements.paid_in_cryptocurrency.checked,
+                organization_id: window.organizationId || null
+            };
+            
+            console.log('[add_prize] Prize data:', prize_data);
+            
+            // Add to array
+            prize_array.push(prize_data);
+            
+            // Create prize display element
+            createPrizeElement(prize_data);
+            
+            // Clear form
+            elements.prize_name.value = "";
+            elements.cash_value.value = "";
+            elements.number_of_winning_projects.value = 1;
+            elements.every_valid_submissions.checked = false;
+            elements.prize_description.value = "";
+            elements.paid_in_cryptocurrency.checked = false;
+            
+            // Re-enable number_of_winning_projects if it was disabled
+            if (elements.number_of_winning_projects.disabled) {
+                elements.number_of_winning_projects.disabled = false;
+                elements.number_of_winning_projects.style.display = "block";
+            }
+            
+            alert("Prize added successfully!");
+            console.log('[add_prize] Prize added successfully. Total prizes:', prize_array.length);
+            
+        } catch (error) {
+            console.error('[add_prize] Error:', error);
+            alert('An error occurred while adding the prize. Please check the console for details.');
+        }
     }
     
-
-    prize_array.push(prize_data)
-    alert("Prize added successfully");
-    
-    prize_name.value = "";
-    cash_value.value = 0;
-    number_of_winning_projects.value = 1;
-    if(number_of_winning_projects.disabled){
-        number_of_winning_projects.disabled = false;
-        number_of_winning_projects.style.display = "block";
-    }
-    every_valid_submissions.checked = false;
-    prize_description.value = "";
-    paid_in_cryptocurrency.checked = false;
-
-    const prize_container_child_html = document.createElement('div');
-    const prize_name_sanitized = prize_data.prize_name.trim().substring(0, 8) + '...'; // Sanitize prize_name
-    let prize_description_sanitized = prize_data.prize_description.trim().substring(0, 55) + '...'; // Sanitize prize_description
-    let sanitizedNumberOfWinningProjects = Number(prize_data.number_of_winning_projects); // Sanitize number_of_winning_projects
-
-    // if every_valid_submissions is checked, the number_of_winning_projects will be "all valid submissions"
-    if (prize_data.every_valid_submissions){
+    function createPrizeElement(prize_data) {
+        const prize_name_sanitized = prize_data.prize_name.trim().length > 12 
+            ? prize_data.prize_name.trim().substring(0, 12) + '...' 
+            : prize_data.prize_name.trim();
+        let prize_description_sanitized = prize_data.prize_description.trim().length > 60 
+            ? prize_data.prize_description.trim().substring(0, 60) + '...' 
+            : prize_data.prize_description.trim();
+        let sanitizedNumberOfWinningProjects = Number(prize_data.number_of_winning_projects);
+        
+        if (prize_data.every_valid_submissions) {
         sanitizedNumberOfWinningProjects = "All Valid Submissions";
     }
-    // if the description is empty, the prize_description will be "No Description"
-    if (prize_description_sanitized === "..."){
-        prize_description_sanitized = "No Description";
-    }
-    // Create a container for the prize
+        
+        if (!prize_description_sanitized || prize_description_sanitized.trim() === "") {
+            prize_description_sanitized = "No description provided";
+        }
+        
+        // Create container
 const prizeContainer = document.createElement('div');
 prizeContainer.id = `prize-container-${prize_data.id}`;
-prizeContainer.classList.add("bg-white", "rounded-lg", "shadow-lg", "p-6", "w-72", "mr-5", "relative");
-
-// Create the remove button
+        prizeContainer.classList.add(
+            "bg-white", "border", "border-gray-200", "rounded-xl", "shadow-sm", 
+            "hover:shadow-md", "transition-all", "duration-200", "p-6", "w-80", 
+            "mr-4", "mb-4", "mt-6", "relative", "group"
+        );
+        
+        // Create header with remove and edit buttons
+        const headerDiv = document.createElement('div');
+        headerDiv.classList.add("flex", "justify-between", "items-start", "mb-4");
+        
+        const titleDiv = document.createElement('div');
+        titleDiv.classList.add("flex-1", "pr-2");
+        titleDiv.innerHTML = `
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">${escapeHTML(prize_name_sanitized)}</h3>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i class="fas fa-dollar-sign mr-1"></i>
+                    $${escapeHTML(prize_data.cash_value)}
+                </span>
+                ${prize_data.every_valid_submissions ? 
+                    '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-infinity mr-1"></i>All Valid</span>' :
+                    `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><i class="fas fa-trophy mr-1"></i>${sanitizedNumberOfWinningProjects} Winners</span>`
+                }
+            </div>
+        `;
+        
+        const actionDiv = document.createElement('div');
+        actionDiv.classList.add("flex", "gap-1", "opacity-0", "group-hover:opacity-100", "transition-opacity", "duration-200");
+        
+        // Edit button
+        const editBtn = document.createElement('button');
+        editBtn.classList.add(
+            "p-1.5", "text-gray-400", "hover:text-[#e74c3c]", "hover:bg-red-50", 
+            "rounded-md", "transition-all", "duration-150", "text-sm"
+        );
+        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.title = "Edit Prize";
+        editBtn.onclick = function(e) { 
+            editPrize(e, prize_data.id, prize_data.prize_name, prize_data.cash_value, 
+                     prize_data.number_of_winning_projects, prize_data.every_valid_submissions, 
+                     prize_data.prize_description, prize_data.organization_id); 
+        };
+        
+        // Remove button
 const removeBtn = document.createElement('button');
-removeBtn.classList.add("absolute", "top-2", "right-2", "text-red-500");
-removeBtn.textContent = "x";
-removeBtn.addEventListener('click', () => remove_prize(prize_data.id));
-prizeContainer.appendChild(removeBtn);
-
-// Create the prize name heading
-const heading = document.createElement('h2');
-heading.classList.add("text-2xl", "font-bold", "mb-4", "text-gray-800");
-heading.textContent = escapeHTML(prize_name_sanitized);
-prizeContainer.appendChild(heading);
-
-// Create Cash Value section
-const cashDiv = document.createElement('div');
-cashDiv.classList.add("mb-4");
-const cashLabel = document.createElement('p');
-cashLabel.classList.add("text-red-500", "font-bold");
-cashLabel.textContent = "Cash Value (USD)";
-cashDiv.appendChild(cashLabel);
-const cashValue = document.createElement('p');
-cashValue.classList.add("text-gray-800");
-cashValue.textContent = `$${prize_data.cash_value}`;
-cashDiv.appendChild(cashValue);
-prizeContainer.appendChild(cashDiv);
-
-// Create Number of Winning Projects section
-const projectsDiv = document.createElement('div');
-projectsDiv.classList.add("mb-4");
-const projectsLabel = document.createElement('p');
-projectsLabel.classList.add("text-gray-800", "font-bold");
-projectsLabel.textContent = "Number of Winning Projects";
-projectsDiv.appendChild(projectsLabel);
-const projectsValue = document.createElement('p');
-projectsValue.classList.add("text-gray-600");
-projectsValue.textContent = sanitizedNumberOfWinningProjects;
-projectsDiv.appendChild(projectsValue);
-prizeContainer.appendChild(projectsDiv);
-
-// Create Reward All Valid Submission section
-const validDiv = document.createElement('div');
-validDiv.classList.add("mb-4");
-const validLabel = document.createElement('p');
-validLabel.classList.add("text-gray-800", "font-bold");
-validLabel.textContent = "Reward All Valid Submission";
-validDiv.appendChild(validLabel);
-const validValue = document.createElement('p');
-validValue.classList.add("text-gray-600");
-validValue.textContent = prize_data.every_valid_submissions;
-validDiv.appendChild(validValue);
-prizeContainer.appendChild(validDiv);
-
-// Create Prize Description section
-const descDiv = document.createElement('div');
-descDiv.classList.add("mb-4");
-const descLabel = document.createElement('p');
-descLabel.classList.add("text-red-500", "font-bold");
-descLabel.textContent = "Prize Description";
-descDiv.appendChild(descLabel);
-const descValue = document.createElement('p');
-descValue.classList.add("text-gray-800");
-descValue.textContent = escapeHTML(prize_description_sanitized);
-descDiv.appendChild(descValue);
-prizeContainer.appendChild(descDiv);
-
-// Append the complete prize container to the list
+        removeBtn.classList.add(
+            "p-1.5", "text-gray-400", "hover:text-red-600", "hover:bg-red-50", 
+            "rounded-md", "transition-all", "duration-150", "text-sm"
+        );
+        removeBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        removeBtn.title = "Delete Prize";
+        removeBtn.onclick = function() { 
+            if(confirm('Are you sure you want to delete this prize?')) {
+                remove_prize(prize_data.id); 
+            }
+        };
+        
+        actionDiv.appendChild(editBtn);
+        actionDiv.appendChild(removeBtn);
+        headerDiv.appendChild(titleDiv);
+        headerDiv.appendChild(actionDiv);
+        prizeContainer.appendChild(headerDiv);
+        
+        // Create content body
+        const bodyDiv = document.createElement('div');
+        bodyDiv.classList.add("space-y-3");
+        
+        // Description section
+        const descDiv = document.createElement('div');
+        descDiv.classList.add("text-sm", "text-gray-600", "bg-gray-50", "p-3", "rounded-lg", "border-l-4", "border-[#e74c3c]");
+        descDiv.innerHTML = `
+            <p class="font-medium text-gray-700 mb-1"><i class="fas fa-align-left mr-1 text-[#e74c3c]"></i>Description</p>
+            <p class="leading-relaxed">${escapeHTML(prize_description_sanitized)}</p>
+        `;
+        
+        bodyDiv.appendChild(descDiv);
+        prizeContainer.appendChild(bodyDiv);
+        
+        // Add subtle border animation on hover
+        prizeContainer.addEventListener('mouseenter', function() {
+            this.style.borderColor = '#e74c3c';
+        });
+        
+        prizeContainer.addEventListener('mouseleave', function() {
+            this.style.borderColor = '#e5e7eb';
+        });
+        
 list_prize_container.appendChild(prizeContainer);
-
 }
 
 function remove_prize(prize_id) {
-    let confirmDelete = confirm("Are you sure you want to delete this prize?");
-    if (!confirmDelete) {
-        return;
-    }
-    prize_array = prize_array.filter(prize => prize.id !== prize_id);
-    let prize_container = document.getElementById(`prize-container-${prize_id}`);
-    if (prize_container && prize_container.parentNode) {
-        let grandParent = prize_container.parentNode;
-        if (grandParent.parentNode) {
-            grandParent.parentNode.removeChild(grandParent);
+        console.log('[remove_prize] Removing prize:', prize_id);
+        
+        // Remove from array (mutate in place to keep window.prize_array in sync)
+        
+        // Remove from array (mutate in place to keep window.prize_array in sync)
+       const idx = prize_array.findIndex(prize => prize.id === prize_id);
+        if (idx !== -1) {
+           prize_array.splice(idx, 1);
+       }
+        // Remove from DOM
+        const prize_container = document.getElementById(`prize-container-${prize_id}`);
+        if (prize_container) {
+            prize_container.remove();
         }
+        
+        console.log('[remove_prize] Prize removed. Remaining prizes:', prize_array.length);
     }
-}
-
-function cancelForm(){
-    let confirmDelete = confirm("Are you sure you want to cancel, your progress would be lost.");
-    if (confirmDelete === true){
-        window.history.back();
-    }
-}
-
-function PublishBughunt(is_published){
     
-    const bughuntForm = document.getElementById("add_bughunt_form");
-
-    if (bughuntForm.checkValidity()){
+    function PublishBughunt(is_published) {
+        console.log('[PublishBughunt] Function called with is_published:', is_published);
+        
+        try {
+            const bughuntForm = document.getElementById("add_bughunt_form");
+            if (!bughuntForm) {
+                console.error('[PublishBughunt] Form not found');
+                alert('Error: Form not found. Please refresh the page.');
+                return;
+            }
+            
+            // Check form validity
+            if (!bughuntForm.checkValidity()) {
+                bughuntForm.reportValidity();
+                return;
+            }
+            
+            // Validate that at least one prize is added
+            const existingPrizeCards = document.querySelectorAll('[id^="prize-container-"]').length;
+            if (prize_array.length === 0 && existingPrizeCards === 0) {
+                alert("Please add at least one prize before publishing!");
+                return;
+            }
+            
+            console.log('[PublishBughunt] Validation passed. Prizes to submit:', prize_array);
+            
+            // Check if CSRF token exists
+            const csrfToken = bughuntForm.querySelector('input[name="csrfmiddlewaretoken"]');
+            if (!csrfToken) {
+                console.error('[PublishBughunt] CSRF token not found in form');
+                alert('CSRF token missing. Please refresh the page and try again.');
+                return;
+            }
+            console.log('[PublishBughunt] CSRF token found:', csrfToken.value.substring(0, 10) + '...');
+            
+            // Create hidden inputs for form submission
         const prizeArrayInput = document.createElement('input');
-        prizeArrayInput.type = 'text';
+            prizeArrayInput.type = 'hidden';
         prizeArrayInput.name = 'prizes';
         prizeArrayInput.value = JSON.stringify(prize_array);
         
         const publishHunt = document.createElement('input');
-        publishHunt.type = "text";
-        publishHunt.name = "publish_bughunt";
-        publishHunt.value = is_published
-
+            publishHunt.type = 'hidden';
+            publishHunt.name = 'publish_bughunt';
+            publishHunt.value = is_published;
+            
+            // Remove any existing hidden inputs with same names
+            const existingPrizes = bughuntForm.querySelector('input[name="prizes"]');
+            const existingPublish = bughuntForm.querySelector('input[name="publish_bughunt"]');
+            if (existingPrizes) existingPrizes.remove();
+            if (existingPublish) existingPublish.remove();
+            
+            // Add new hidden inputs
         bughuntForm.appendChild(prizeArrayInput);
         bughuntForm.appendChild(publishHunt);
 
+            console.log('[PublishBughunt] Form elements:', bughuntForm.elements.length);
+            console.log('[PublishBughunt] Form action:', bughuntForm.action);
+            console.log('[PublishBughunt] Form method:', bughuntForm.method);
+            console.log('[PublishBughunt] Submitting form...');
         bughuntForm.submit();
+            
+        } catch (error) {
+            console.error('[PublishBughunt] Error:', error);
+            alert('An error occurred while submitting the form. Please check the console for details.');
+        }
     }
-
-    else{
-        bughuntForm.reportValidity();
-    }
-
     
-
-}
-
-function displayLogoPreview() {
-    var fileInput = document.getElementById("logo");
-    var previewDiv = document.getElementById("previewLogoDiv");
+    function cancelForm() {
+        if (confirm("Are you sure you want to cancel? Your progress will be lost.")) {
+            window.history.back();
+        }
+    }
+    
+    function displayLogoPreview() {
+        // This function is kept for backward compatibility
+        // The new template uses previewUploadedImage function
+        const fileInput = document.getElementById("logo");
+        const previewDiv = document.getElementById("previewLogoDiv");
+        
+        if (!fileInput || !previewDiv) {
+            console.error('[displayLogoPreview] Required elements not found');
+            return;
+        }
 
     if (fileInput.files.length > 0) {
-        var file = fileInput.files[0];
-        var reader = new FileReader();
+            const file = fileInput.files[0];
+            const reader = new FileReader();
 
         reader.onload = function(event) {
-        var preview = document.createElement("img");
+                const preview = document.createElement("img");
         preview.src = event.target.result;
+                preview.style.width = "100%";
+                preview.style.height = "100%";
+                preview.style.objectFit = "cover";
         previewDiv.innerHTML = "";
         previewDiv.appendChild(preview);
         };
@@ -202,195 +350,318 @@ function displayLogoPreview() {
     }
 }
 
-let valid_s = document.getElementById("every_valid_submissions");
-let winning_projects = document.getElementById("number_of_winning_projects");
-valid_s.addEventListener('click',()=>{
-    winning_projects.value = 1;
-    if (valid_s.checked) {
-        winning_projects.disabled = true;
-        winning_projects.style.display = "none";
-    } else {
-        winning_projects.disabled = false;
-        winning_projects.style.display = "block";
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
-})
-
-function displayBannerPreview() {
-    var fileInput = document.getElementById("banner");
-    var previewDiv = document.getElementById("bannerPreview");
-
-    if (fileInput.files.length > 0) {
-        var file = fileInput.files[0];
-        var reader = new FileReader();
-
-        reader.onload = function(event) {
-            var img = new Image();
-            img.src = event.target.result;
-
-            img.onload = function() {
-                var canvas = document.createElement("canvas");
-                var ctx = canvas.getContext("2d");
-
-                var maxDim = 300;
-                var scale = Math.min(maxDim / img.width, maxDim / img.height);
-
-                canvas.width = img.width * scale;
-                canvas.height = img.height * scale;
-
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                previewDiv.innerHTML = "";
-                previewDiv.style.display = "flex";
-                previewDiv.style.justifyContent = "center";
-                previewDiv.appendChild(canvas);
-            };
-        };
-
-        reader.readAsDataURL(file);
-    } else {
-        previewDiv.innerHTML = "";
+    
+    // Initialize event listeners when DOM is ready
+    function initializeEventListeners() {
+        console.log('[initializeEventListeners] Setting up event listeners...');
+        
+        const valid_s = document.getElementById("every_valid_submissions");
+        const winning_projects = document.getElementById("number_of_winning_projects");
+        
+        if (valid_s && winning_projects) {
+            valid_s.addEventListener('click', function() {
+                winning_projects.value = 1;
+                if (valid_s.checked) {
+                    winning_projects.disabled = true;
+                    winning_projects.style.display = "none";
+                } else {
+                    winning_projects.disabled = false;
+                    winning_projects.style.display = "block";
+                }
+            });
+            console.log('[initializeEventListeners] Checkbox listener added');
+        }
     }
-}
-
+    
+    // Additional functions for edit mode
 function removePrize(event, prizeId, organizationId) {
     event.preventDefault();
     if (!confirm("Are you sure you want to delete this prize?")) {
         return;
     }
 
-    // Show loading indicator (you can customize this as needed)
+        // Show loading indicator
     let prizeContainer = document.getElementById(`prize-container-${prizeId}`);
     let loadingIndicator = document.createElement('div');
     loadingIndicator.innerText = "Loading...";
     prizeContainer.appendChild(loadingIndicator);
 
-    // Make AJAX call to delete the prize with organization_id
+        // Make AJAX call to delete the prize
     fetch(`/organization/delete_prize/${prizeId}/${organizationId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRFToken': getCookie('csrftoken')
         },
     })
-    .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
     .then(data => {
         if (data.success) {
-            // Remove the prize from the DOM
             prizeContainer.parentNode.removeChild(prizeContainer);
             alert("Prize deleted successfully!");
         } else {
-            alert("Failed to delete prize. Please try again.");
+                alert(data.message || "Failed to delete prize. Please try again.");
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert("An error occurred. Please try again.");
+            alert("Network error occurred while deleting the prize. Please check your connection and try again.");
+        })
+        .finally(() => {
+            if (loadingIndicator && loadingIndicator.parentNode) {
+                loadingIndicator.remove();
+            }
     });
 }
 
 function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubmissions, description, organizationId) {
-    event.preventDefault(); // Prevent the form from submitting
+        event.preventDefault();
     alert("Edit the prize details in the form above and click the 'Update Prize' button to save changes.");
     document.getElementById('prize_name').value = prizeName;
     document.getElementById('cash_value').value = cashValue;
     document.getElementById('number_of_winning_projects').value = noOfProjects;
-    // if every_valid_submissions is true then disable the number_of_winning_projects input field and also hide it
+        
     if (validSubmissions) {
         document.getElementById('number_of_winning_projects').disabled = true;
         document.getElementById('number_of_winning_projects').style.display = "none";
     }
+        
     document.getElementById('prize_description').value = description;
     document.getElementById('every_valid_submissions').checked = validSubmissions ? true : false;
     document.getElementById('add_prize_button').innerText = 'Update Prize';
-    document.getElementById('add_prize_button').setAttribute('onclick', `updatePrize(${prizeId}, ${organizationId})`);
-    // hive the cryptocurrencyDiv 
+    const addPrizeButton = document.getElementById('add_prize_button');
+    addPrizeButton.onclick = null; // Clear any previous handler
+    addPrizeButton.onclick = function() { updatePrize(prizeId, organizationId); };
     document.getElementById('cryptocurrencyDiv').style.display = "none";
 }
 
-function updatePrize(prizeId, organizationId) {
-    let prize_name = document.getElementById("prize_name");
-    let cash_value = document.getElementById("cash_value");
-    let number_of_winning_projects = document.getElementById("number_of_winning_projects");
-    let every_valid_submissions = document.getElementById("every_valid_submissions");
-    let prize_description = document.getElementById("prize_description");
-
-    if (prize_name.value.trim() === "" || cash_value.value <= 0 || number_of_winning_projects.value <= 0){
-        alert("Please fill in all fields correctly");
-        return;
-    }
-
-    let prize_data = {
-        id: prizeId,
-        prize_name: prize_name.value,
-        cash_value: cash_value.value,
-        number_of_winning_projects: number_of_winning_projects.value,
-        every_valid_submissions: every_valid_submissions.checked,
-        prize_description: prize_description.value,
-    }
-
-    // Make AJAX call to update the prize with organization_id
-    fetch(`/organization/edit_prize/${prizeId}/${organizationId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify(prize_data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the prize in the DOM
-            let prizeContainer = document.getElementById(`prize-container-${prizeId}`);
-            const paragraph = prizeContainer.querySelectorAll('p');
-            prize_data.prize_name = prize_data.prize_name.trim().substring(0, 8) + '...';
-            prizeContainer.querySelector('h2').innerText = prize_data.prize_name;
-            paragraph[1].innerText = `$${prize_data.cash_value}`;
-            if (prize_data.every_valid_submissions){
-                prize_data.number_of_winning_projects = "All Valid Submissions";
-            }
-            paragraph[3].innerText = prize_data.number_of_winning_projects;
-            paragraph[5].innerText = prize_data.every_valid_submissions;
-            // description slice to 55 characters
-            prize_data.prize_description = prize_data.prize_description.trim().substring(0, 55) + '...';
-            paragraph[7].innerText = prize_data.prize_description;
-            // we should have to update the edit button to update the editPrize function attributes
-            prizeContainer.querySelector('#EditPrizeButton').setAttribute('onclick', `editPrize(event, ${prizeId}, '${prize_data.prize_name}', ${prize_data.cash_value}, ${prize_data.number_of_winning_projects}, ${prize_data.every_valid_submissions}, '${prize_data.prize_description}', ${organizationId})`);
-            // and then reset the form
-            prize_name.value = "";
-            cash_value.value = 0;
+    function updatePrize(prizeId, organizationId) {
+        let prize_name = document.getElementById("prize_name");
+        let cash_value = document.getElementById("cash_value");
+        let number_of_winning_projects = document.getElementById("number_of_winning_projects");
+        let every_valid_submissions = document.getElementById("every_valid_submissions");
+        let prize_description = document.getElementById("prize_description");
+        
+        // Set default value for number_of_winning_projects if empty
+        if (!number_of_winning_projects.value || number_of_winning_projects.value === "") {
             number_of_winning_projects.value = 1;
-            if(number_of_winning_projects.disabled){
-                number_of_winning_projects.disabled = false;
-                number_of_winning_projects.style.display = "block";
-            }
-            every_valid_submissions.checked = false;
-            prize_description.value = "";
-            document.getElementById('add_prize_button').innerText = 'Add Prize';
-            document.getElementById('add_prize_button').setAttribute('onclick', 'add_prize()');
-            document.getElementById('cryptocurrencyDiv').style.display = "block";
-            alert('Prize updated successfully');
-        } else {
-            alert("Failed to update prize. Please try again.");
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert("An error occurred. Please try again.");
-    });
-}
+        
+        if (prize_name.value.trim() === "" || cash_value.value <= 0 || number_of_winning_projects.value <= 0) {
+            alert("Please fill in all fields correctly");
+            return;
+        }
+        
+        let prize_data = {
+            id: prizeId,
+            prize_name: prize_name.value,
+            cash_value: cash_value.value,
+            number_of_winning_projects: number_of_winning_projects.value,
+            every_valid_submissions: every_valid_submissions.checked,
+            prize_description: prize_description.value,
+            organization_id: organizationId
+        };
+        
+        console.log('[updatePrize] Updating prize:', prize_data);
+        
+        // Update the prize in the prize_array (client-side only for new bounties)
+        const prizeIndex = prize_array.findIndex(p => p.id == prizeId);
+        if (prizeIndex !== -1) {
+            prize_array[prizeIndex] = prize_data;
+            console.log('[updatePrize] Updated prize_array:', prize_array);
+        }
+        
+        // Remove the old prize element and create a new one with updated data
+        const oldPrizeContainer = document.getElementById(`prize-container-${prizeId}`);
+        if (oldPrizeContainer) {
+            oldPrizeContainer.remove();
+        }
+        
+        // Create updated prize element
+        createPrizeElement(prize_data);
+        
+        // Reset the form completely
+        prize_name.value = "";
+        cash_value.value = "";
+        number_of_winning_projects.value = "1";
+        every_valid_submissions.checked = false;
+        prize_description.value = "";
+        
+        // Restore number_of_winning_projects input visibility and enabled state
+        number_of_winning_projects.disabled = false;
+        number_of_winning_projects.style.display = "";
+        
+        // Reset the "Add Prize" button
+        const addPrizeButton = document.getElementById('add_prize_button');
+        addPrizeButton.innerText = 'Add Prize';
+        addPrizeButton.onclick = add_prize;
+        addPrizeButton.disabled = false;
+        
+        // Show success message
+        alert('Prize updated successfully!');
+        
+        console.log('[updatePrize] Prize updated successfully');
+    }
+    
+     // Image preview functions for logo/banner uploads
+     function previewUploadedImage(input, previewId, defaultIconId, removeButtonId) {
+         const preview = document.getElementById(previewId);
+         const defaultIcon = document.getElementById(defaultIconId);
+         const removeButton = document.getElementById(removeButtonId);
+         
+         // Determine error div based on preview type (logo vs banner)
+         const errorDivId = previewId.includes('logo') ? 'logoError' : 'bannerError';
+         const errorDiv = document.getElementById(errorDivId);
+         
+         // Clear any previous errors
+         if (errorDiv) {
+             errorDiv.style.display = 'none';
+             errorDiv.textContent = '';
+         }
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+        if (!preview || !defaultIcon || !removeButton) {
+            console.error('One or more required elements not found');
+            return;
+        }
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Please select a valid image file (JPG, PNG, GIF, or WebP)';
+                    errorDiv.style.display = 'block';
+                }
+                input.value = '';
+                return;
             }
+            
+            // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'File size must be less than 5MB';
+                    errorDiv.style.display = 'block';
+                }
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // Set the image source
+                preview.src = e.target.result;
+                
+                // Use style.display for more reliable showing/hiding
+                preview.style.display = 'block';
+                defaultIcon.style.display = 'none';
+                removeButton.style.display = 'inline-flex';
+                
+                // Also use classList as backup
+                preview.classList.remove('hidden');
+                defaultIcon.classList.add('hidden');
+                removeButton.classList.remove('hidden');
+            }
+            
+            reader.onerror = function() {
+                console.error('Error reading file');
+                if (errorDiv) {
+                    errorDiv.textContent = 'Error reading the file. Please try again.';
+                    errorDiv.style.display = 'block';
+                }
+                input.value = '';
+            }
+            
+            reader.readAsDataURL(file);
         }
     }
-    return cookieValue;
-}
+
+     function removeUploadedImage(inputId, previewId, defaultIconId, removeButtonId) {
+         const input = document.getElementById(inputId);
+         const preview = document.getElementById(previewId);
+         const defaultIcon = document.getElementById(defaultIconId);
+         const removeButton = document.getElementById(removeButtonId);
+         
+         // Determine error div based on input type (logo vs banner)
+         const errorDivId = inputId.includes('logo') ? 'logoError' : 'bannerError';
+         const errorDiv = document.getElementById(errorDivId);
+
+        if (!input || !preview || !defaultIcon || !removeButton) {
+            console.error('One or more required elements not found');
+            return;
+        }
+        
+        // Clear the file input and preview
+        input.value = '';
+        preview.src = '';
+        
+        // Use style.display for more reliable showing/hiding
+        preview.style.display = 'none';
+        defaultIcon.style.display = 'flex';
+        removeButton.style.display = 'none';
+        
+        // Also use classList as backup
+        preview.classList.add('hidden');
+        defaultIcon.classList.remove('hidden');
+        removeButton.classList.add('hidden');
+        
+        // Clear any errors
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+        }
+    }
+    
+    // Expose functions globally
+
+    window.add_prize = add_prize;
+    window.PublishBughunt = PublishBughunt;
+    window.cancelForm = cancelForm;
+    window.displayLogoPreview = displayLogoPreview;
+    window.previewUploadedImage = previewUploadedImage;
+    window.removeUploadedImage = removeUploadedImage;
+    window.remove_prize = remove_prize;
+    window.removePrize = removePrize;
+    window.editPrize = editPrize;
+    window.updatePrize = updatePrize;
+    window.escapeHTML = escapeHTML;
+    window.prize_array = prize_array;
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeEventListeners);
+    } else {
+        // DOM is already loaded
+        initializeEventListeners();
+    }
+    
+    console.log('[Hunt Controller] Script loaded successfully');
+    console.log('[Hunt Controller] Functions available:', {
+        add_prize: typeof window.add_prize,
+        PublishBughunt: typeof window.PublishBughunt,
+        cancelForm: typeof window.cancelForm
+    });
+    
+})();

@@ -14,6 +14,21 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <h1 class="text-center text-red-600 text-2xl mt-10 mb-5">Global Activity Feed</h1>
+    <!-- RSS Feed Link -->
+    <div class="flex justify-center mb-3">
+        <a href="{% url 'activity_feed_rss' %}"
+           class="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+           title="Subscribe to RSS Feed">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-5 w-5"
+                 viewBox="0 0 20 20"
+                 fill="currentColor">
+                <path d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z" />
+                <path d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1zM3 15a2 2 0 114 0 2 2 0 01-4 0z" />
+            </svg>
+            Subscribe to RSS Feed
+        </a>
+    </div>
     <div class="bg-gray-50 rounded-lg shadow-md mx-auto p-5 max-w-4xl overflow-y-auto max-h-[calc(100vh-60px)] mb-5 relative">
         <ul class="space-y-5 p-5">
             {% for activity in page_obj %}
@@ -64,6 +79,12 @@
                                 <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
                                         data-id="{{ activity.id }}"
                                         onclick="approveActivity({{ activity.id }})">Approve</button>
+                            {% endif %}
+                            <!-- Delete Button (for superadmins only) -->
+                            {% if request.user.is_superuser %}
+                                <button class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors duration-200"
+                                        data-id="{{ activity.id }}"
+                                        onclick="deleteActivity({{ activity.id }})">Delete</button>
                             {% endif %}
                             <!-- Approved Label -->
                             {% if activity.is_approved %}
@@ -159,6 +180,28 @@
               }
           })
           .catch(error => console.error("Error:", error));
+      }
+
+      function deleteActivity(activityId) {
+          if (confirm("Are you sure you want to delete this activity? This action cannot be undone.")) {
+              fetch(`/activity/delete/${activityId}/`, {
+                  method: "POST",
+                  headers: { "X-CSRFToken": getCookie("csrftoken") },
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      location.reload();
+                  } else {
+                      alert(data.error || "Failed to delete activity");
+                      console.error(data.error);
+                  }
+              })
+              .catch(error => {
+                  alert("An error occurred while deleting the activity");
+                  console.error("Error:", error);
+              });
+          }
       }
 
     </script>
