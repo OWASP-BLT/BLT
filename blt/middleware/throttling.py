@@ -1,5 +1,4 @@
 import logging
-import sys
 
 from django.conf import settings
 from django.core.cache import cache
@@ -49,7 +48,7 @@ class ThrottlingMiddleware:
     def should_skip_throttle(self, request):
         """Check if request should be exempt from throttling."""
         # Skip throttling during tests
-        if "test" in sys.argv:
+        if getattr(settings, "IS_TEST", False) or getattr(settings, "TESTING", False):
             logger.debug("Skipping throttling for test mode")
             return True
         if any(request.path.startswith(p) for p in self.EXEMPT_PATHS):

@@ -3,8 +3,9 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 
-from website.models import Labs, TaskContent, Tasks
+from website.models import Labs, TaskContent, Tasks, UserLabProgress, UserTaskProgress
 
 
 @login_required
@@ -22,6 +23,13 @@ def dashboard(request):
         elif "command" in lab.name.lower():
             icon = "terminal"
 
+        # Get user progress for this lab
+        try:
+            user_lab_progress = UserLabProgress.objects.get(user=request.user, lab=lab)
+            progress = user_lab_progress.calculate_progress_percentage()
+        except UserLabProgress.DoesNotExist:
+            progress = 0
+
         labs_data.append(
             {
                 "id": lab.id,
@@ -30,7 +38,7 @@ def dashboard(request):
                 "icon": icon,
                 "total_tasks": lab.total_tasks,
                 "color": "#e74c3c",
-                "progress": 0,  # in next PR progress schema
+                "progress": progress,
                 "estimated_time": lab.estimated_time,
             }
         )
@@ -43,10 +51,16 @@ def lab_detail(request, lab_id):
     """Display detailed view of a specific lab with its tasks"""
     lab = get_object_or_404(Labs, id=lab_id, is_active=True)
     tasks = Tasks.objects.filter(lab=lab, is_active=True).order_by("order")
+    completed_task_ids = set(
+        UserTaskProgress.objects.filter(user=request.user, task__in=tasks, completed=True).values_list(
+            "task_id", flat=True
+        )
+    )
 
     context = {
         "lab": lab,
         "tasks": tasks,
+        "completed_task_ids": completed_task_ids,
     }
     return render(request, "lab_detail.html", context)
 
@@ -57,6 +71,16 @@ def task_detail(request, lab_id, task_id):
     lab = get_object_or_404(Labs, id=lab_id, is_active=True)
     task = get_object_or_404(Tasks, id=task_id, lab=lab, is_active=True)
 
+    # Create or get user lab progress
+    user_lab_progress, created = UserLabProgress.objects.get_or_create(user=request.user, lab=lab)
+
+    # Get user task progress
+    try:
+        user_task_progress = UserTaskProgress.objects.get(user=request.user, task=task)
+        task_completed = user_task_progress.completed
+    except UserTaskProgress.DoesNotExist:
+        task_completed = False
+
     try:
         content = task.content
     except TaskContent.DoesNotExist:
@@ -66,6 +90,7 @@ def task_detail(request, lab_id, task_id):
         "lab": lab,
         "task": task,
         "content": content,
+        "task_completed": task_completed,
     }
     return render(request, "task_detail.html", context)
 
@@ -90,12 +115,29 @@ def submit_answer(request, lab_id, task_id):
 
         is_correct = user_answer == correct_answer
 
+        # Update user task progress
+        user_task_progress, created = UserTaskProgress.objects.get_or_create(user=request.user, task=task)
+        user_task_progress.attempts += 1
+
+        if is_correct and not user_task_progress.completed:
+            user_task_progress.completed = True
+            user_task_progress.completed_at = timezone.now()
+            user_task_progress.user_answer = user_answer
+
+        user_task_progress.save()
+
+        # Create or update lab progress
+        user_lab_progress, lab_created = UserLabProgress.objects.get_or_create(user=request.user, lab=lab)
+
         return JsonResponse(
             {
                 "correct": is_correct,
                 "user_answer": user_answer,
                 "correct_answer": correct_answer,
-                "message": "Correct!" if is_correct else f"Incorrect. The correct answer is {correct_answer}.",
+                "message": "Correct! Task completed!"
+                if is_correct
+                else f"Incorrect. The correct answer is {correct_answer}.",
+                "task_completed": user_task_progress.completed,
             }
         )
 
@@ -110,6 +152,20 @@ def submit_answer(request, lab_id, task_id):
         else:
             is_correct = False
 
+        # Update user task progress
+        user_task_progress, created = UserTaskProgress.objects.get_or_create(user=request.user, task=task)
+        user_task_progress.attempts += 1
+
+        if is_correct and not user_task_progress.completed:
+            user_task_progress.completed = True
+            user_task_progress.completed_at = timezone.now()
+            user_task_progress.user_answer = user_payload
+
+        user_task_progress.save()
+
+        # Create or update lab progress
+        user_lab_progress, lab_created = UserLabProgress.objects.get_or_create(user=request.user, lab=lab)
+
         return JsonResponse(
             {
                 "correct": is_correct,
@@ -117,9 +173,10 @@ def submit_answer(request, lab_id, task_id):
                 "expected_payload": expected_payload if expected_payload else "Not defined",
                 "user_cleaned": user_payload.strip().lower() if expected_payload else "N/A",
                 "expected_cleaned": expected_payload.strip().lower() if expected_payload else "N/A",
-                "message": "Great job! You successfully completed the simulation."
+                "message": "Great job! You successfully completed the simulation!"
                 if is_correct
                 else "Try a different approach. Check the hints for guidance.",
+                "task_completed": user_task_progress.completed,
             }
         )
 
