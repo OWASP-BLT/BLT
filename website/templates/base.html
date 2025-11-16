@@ -99,6 +99,15 @@
                 darkMode: 'class',
             }
         </script>
+        <!-- Apply dark mode immediately to prevent white flash -->
+        <script>
+            (function() {
+                const savedTheme = localStorage.getItem("theme");
+                if (savedTheme === "dark") {
+                    document.documentElement.classList.add("dark");
+                }
+            })();
+        </script>
         <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
         <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
