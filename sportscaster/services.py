@@ -98,11 +98,21 @@ class GitHubService:
             # Remove trailing slashes and .git
             url = url.rstrip("/").replace(".git", "")
 
-            # Handle github.com URLs
-            if "github.com" in url:
-                parts = url.split("github.com/")[-1].split("/")
-                if len(parts) >= 2:
-                    return {"owner": parts[0], "repo": parts[1]}
+            # Validate that the URL is from github.com domain
+            if not url.startswith(("https://github.com/", "http://github.com/", "github.com/")):
+                return None
+
+            # Extract the path after github.com/
+            if "://" in url:
+                # URL with protocol
+                parts = url.split("://")[-1].split("/")
+                if len(parts) >= 3 and parts[0] == "github.com":
+                    return {"owner": parts[1], "repo": parts[2]}
+            else:
+                # URL without protocol
+                parts = url.split("/")
+                if len(parts) >= 3 and parts[0] == "github.com":
+                    return {"owner": parts[1], "repo": parts[2]}
 
             return None
         except Exception as e:
