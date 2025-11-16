@@ -412,8 +412,10 @@ def create_staking_pool(request):
             description = request.POST.get("description")
             pool_type = request.POST.get("pool_type", "head_to_head")
             challenge_id = request.POST.get("challenge_id")
-            stake_amount = Decimal(request.POST.get("stake_amount", "0"))
-            days_duration = int(request.POST.get("days_duration", "7"))
+            stake_amount_str = request.POST.get("stake_amount") or "0"
+            days_duration_str = request.POST.get("days_duration") or "7"
+            stake_amount = Decimal(stake_amount_str)
+            days_duration = int(days_duration_str)
 
             # Validate inputs
             if not all([name, description, challenge_id]) or stake_amount <= 0:
