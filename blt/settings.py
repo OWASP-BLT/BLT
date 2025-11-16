@@ -329,17 +329,34 @@ else:
     # But make sure we keep the EMAIL_BACKEND setting from above
     pass
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+# Database configuration
+# Use file-based SQLite for testing to avoid transaction/savepoint issues
+if TESTING:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "test_db.sqlite3"),
+            "OPTIONS": {
+                "timeout": 30,  # Increase timeout for concurrent access
+            },
+            "TEST": {
+                "NAME": os.path.join(BASE_DIR, "test_db.sqlite3"),
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        }
+    }
 
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
+    if not TESTING:
+        DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
@@ -630,3 +647,19 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+# Bounty Payout Configuration
+# API token for authenticating bounty payout requests
+BLT_API_TOKEN = os.environ.get("BLT_API_TOKEN")
+# GitHub username that sponsors will be created from (default: DonnieBLT)
+GITHUB_SPONSOR_USERNAME = os.environ.get("GITHUB_SPONSOR_USERNAME", "DonnieBLT")
+# Allowlist of repositories eligible for automated bounty payouts (prevents budget drain attacks)
+# Format: {"owner/repo", "another-org/another-repo"}
+BLT_ALLOWED_BOUNTY_REPOS = {
+    os.environ.get("BLT_ALLOWED_BOUNTY_REPO_1", "OWASP-BLT/BLT"),
+}
+# Add additional repos from environment if configured
+if os.environ.get("BLT_ALLOWED_BOUNTY_REPO_2"):
+    BLT_ALLOWED_BOUNTY_REPOS.add(os.environ.get("BLT_ALLOWED_BOUNTY_REPO_2"))
+if os.environ.get("BLT_ALLOWED_BOUNTY_REPO_3"):
+    BLT_ALLOWED_BOUNTY_REPOS.add(os.environ.get("BLT_ALLOWED_BOUNTY_REPO_3"))
