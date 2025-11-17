@@ -17,11 +17,11 @@
                         <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                     </svg>
                 </li>
-                <li class="text-gray-700">{{ project.name }}</li>
+                <li class="text-gray-700 dark:text-gray-300">{{ project.name }}</li>
             </ol>
         </nav>
         <!-- Organization Banner (if exists) -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 mb-8">
             {% if project.organization %}
                 <div class="relative h-32 bg-gradient-to-r from-gray-800 to-gray-900">
                     <!-- Organization Background Pattern -->
@@ -48,7 +48,7 @@
                                      alt="{{ project.organization.name }}"
                                      class="w-20 h-20 rounded-lg ring-4 ring-white/10 shadow-xl">
                             {% else %}
-                                <div class="w-20 h-20 rounded-lg bg-white/10 flex items-center justify-center ring-4 ring-white/10">
+                                <div class="w-20 h-20 rounded-lg bg-white/10 dark:bg-gray-800/10 flex items-center justify-center ring-4 ring-white/10">
                                     <span class="text-3xl text-white font-bold">{{ project.organization.name|slice:":1"|upper }}</span>
                                 </div>
                             {% endif %}
@@ -65,14 +65,16 @@
             {% else %}
                 <div class="relative h-32 bg-gradient-to-r from-gray-100 to-gray-50 flex items-center px-8">
                     <div class="max-w-3xl">
-                        <div class="text-gray-400 text-sm font-medium mb-1">Organization</div>
-                        <h2 class="text-xl text-gray-600">This is an independent project not associated with any organization</h2>
+                        <div class="text-gray-400 dark:text-gray-600 text-sm font-medium mb-1">Organization</div>
+                        <h2 class="text-xl text-gray-600 dark:text-gray-400">
+                            This is an independent project not associated with any organization
+                        </h2>
                     </div>
                 </div>
             {% endif %}
         </div>
         <!-- Project Header -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 mb-8">
             <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
                 <div class="flex items-start gap-6">
                     {% if project.logo %}
@@ -82,7 +84,7 @@
                              alt="{{ project.name }}"
                              class="w-24 h-24 rounded-lg shadow-lg">
                     {% else %}
-                        <div class="w-24 h-24 rounded-lg bg-white/20 flex items-center justify-center">
+                        <div class="w-24 h-24 rounded-lg bg-white/20 dark:bg-gray-800/20 flex items-center justify-center">
                             <span class="text-3xl text-white font-bold">{{ project.name|slice:":1"|upper }}</span>
                         </div>
                     {% endif %}
@@ -95,7 +97,7 @@
                                 <a href="{{ project.url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">
+                                   class="inline-flex items-center px-4 py-2 bg-white/10 dark:bg-gray-800/10 hover:bg-white/20 rounded-lg text-white transition">
                                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
                                         <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
@@ -107,7 +109,7 @@
                                 <a href="{{ project.twitter }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">
+                                   class="inline-flex items-center px-4 py-2 bg-white/10 dark:bg-gray-800/10 hover:bg-white/20 rounded-lg text-white transition">
                                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
                                     </svg>
@@ -118,11 +120,22 @@
                                 <a href="{{ project.facebook }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">
+                                   class="inline-flex items-center px-4 py-2 bg-white/10 dark:bg-gray-800/10 hover:bg-white/20 rounded-lg text-white transition">
                                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 2C6.48 2 2 6.48 2 12c0 4.94 3.63 9.02 8.35 9.8V15.5H7.5v-3h2.85V10.7c0-2.82 1.68-4.38 4.25-4.38 1.23 0 2.55.22 2.55.22v2.82h-1.43c-1.41 0-1.85.87-1.85 1.77v2.13h3l-.3 3h-2.7v6.5C18.37 21.02 22 16.94 22 12c0-5.52-4.48-10-10-10z" />
                                     </svg>
                                     Facebook
+                                </a>
+                            {% endif %}
+                            {% if project.slack %}
+                                <a href="{{ project.slack }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">
+                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+                                    </svg>
+                                    Slack
                                 </a>
                             {% endif %}
                         </div>
@@ -130,46 +143,58 @@
                 </div>
             </div>
             <!-- Project Metrics -->
-            <div class="p-6 bg-gray-50 border-t border-gray-200">
+            <div class="p-6 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <div class="text-sm text-gray-500">Total Stars</div>
-                        <div class="text-2xl font-bold text-gray-900">{{ repo_metrics.total_stars|default:"0"|intcomma }}</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-500 dark:text-gray-500">Total Stars</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ repo_metrics.total_stars|default:"0"|intcomma }}
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <div class="text-sm text-gray-500">Total Forks</div>
-                        <div class="text-2xl font-bold text-gray-900">{{ repo_metrics.total_forks|default:"0"|intcomma }}</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-500 dark:text-gray-500">Total Forks</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ repo_metrics.total_forks|default:"0"|intcomma }}
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <div class="text-sm text-gray-500">Total Issues</div>
-                        <div class="text-2xl font-bold text-gray-900">{{ repo_metrics.total_issues|default:"0"|intcomma }}</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-500 dark:text-gray-500">Total Issues</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ repo_metrics.total_issues|default:"0"|intcomma }}
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <div class="text-sm text-gray-500">Contributors</div>
-                        <div class="text-2xl font-bold text-gray-900">{{ repo_metrics.total_contributors|default:"0"|intcomma }}</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-500 dark:text-gray-500">Contributors</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ repo_metrics.total_contributors|default:"0"|intcomma }}
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <div class="text-sm text-gray-500">Total Commits</div>
-                        <div class="text-2xl font-bold text-gray-900">{{ repo_metrics.total_commits|default:"0"|intcomma }}</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-500 dark:text-gray-500">Total Commits</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ repo_metrics.total_commits|default:"0"|intcomma }}
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <div class="text-sm text-gray-500">Open PRs</div>
-                        <div class="text-2xl font-bold text-gray-900">{{ repo_metrics.total_prs|default:"0"|intcomma }}</div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-500 dark:text-gray-500">Open PRs</div>
+                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ repo_metrics.total_prs|default:"0"|intcomma }}
+                        </div>
                     </div>
                 </div>
             </div>
             <!-- Badge URL Section -->
-            <div class="p-6 bg-gray-50 border-t border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Project View Count Badge</h3>
+            <div class="p-6 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Project View Count Badge</h3>
                 <div class="flex flex-col gap-4">
                     <!-- HTML Format -->
                     <div class="space-y-2">
-                        <div class="text-gray-700 font-medium">HTML:</div>
+                        <div class="text-gray-700 dark:text-gray-300 font-medium">HTML:</div>
                         <div class="relative">
                             <input type="text"
                                    readonly
                                    value='&lt;img alt="Views" src="{{ request.scheme }}://{{ request.get_host }}{% url 'project-badge' project.slug %}" &gt;'
-                                   class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg pr-24 font-mono text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                   class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg pr-24 font-mono text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
                                    id="badge-url-html">
                             <button onclick="copyToClipboard('badge-url-html')"
                                     class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md transition-colors">
@@ -182,21 +207,23 @@
         </div>
         <!-- Associated Repositories -->
         <div class="grid gap-6">
-            <h2 class="text-2xl font-bold text-gray-900">Associated Repositories</h2>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Associated Repositories</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {% for repo in repositories %}
-                    <div class="bg-white rounded-xl border-2 border-gray-200 hover:border-red-500 transition-all duration-200 hover:shadow-lg">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-red-500 transition-all duration-200 hover:shadow-lg">
                         <div class="p-6">
                             <a href="{% url 'repo_detail' repo.slug %}"
                                class="flex items-center justify-between mb-4">
-                                <h3 class="text-xl font-bold text-gray-800">{{ repo.name }}</h3>
+                                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">{{ repo.name }}</h3>
                                 {% if repo.is_main %}
                                     <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Main</span>
                                 {% elif repo.is_wiki %}
                                     <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Wiki</span>
                                 {% endif %}
                             </a>
-                            {% if repo.description %}<p class="text-gray-600 text-base leading-relaxed mb-6">{{ repo.description }}</p>{% endif %}
+                            {% if repo.description %}
+                                <p class="text-gray-600 dark:text-gray-400 text-base leading-relaxed mb-6">{{ repo.description }}</p>
+                            {% endif %}
                             <!-- Repository Stats -->
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                                 <div class="flex items-center space-x-2">
@@ -217,9 +244,9 @@
                                 </div>
                             </div>
                             <!-- Additional Repository Info -->
-                            <div class="space-y-3 border-t border-gray-200 pt-4">
+                            <div class="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4">
                                 {% if repo.primary_language %}
-                                    <div class="flex items-center text-sm text-gray-600">
+                                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
                                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                                         </svg>
@@ -227,7 +254,7 @@
                                     </div>
                                 {% endif %}
                                 {% if repo.license %}
-                                    <div class="flex items-center text-sm text-gray-600">
+                                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
                                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 2a1 1 0 00-1 1v1.323l-3.954 1.582A1 1 0 004 6.82v4.286a1 1 0 00.491.858l3.772 2.378a1 1 0 001.474 0l3.772-2.378A1 1 0 0014 11.105V6.82a1 1 0 00-.546-.915L9.5 4.323V3a1 1 0 00-1-1zm0 1.5v1.323l3.954 1.582v4.286l-3.772 2.378L6.41 10.69V6.404L10 4.823z" clip-rule="evenodd" />
                                         </svg>
@@ -235,7 +262,7 @@
                                     </div>
                                 {% endif %}
                                 {% if repo.last_commit_date %}
-                                    <div class="flex items-center text-sm text-gray-600">
+                                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
                                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
                                         </svg>
@@ -243,7 +270,7 @@
                                     </div>
                                 {% endif %}
                                 {% if repo.release_name %}
-                                    <div class="flex items-center text-sm text-gray-600">
+                                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
                                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                                         </svg>
@@ -253,13 +280,13 @@
                                 {% endif %}
                             </div>
                             <!-- Repository Actions -->
-                            <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                                <div class="text-sm text-gray-500">Updated {{ repo.last_updated|naturaltime }}</div>
+                            <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <div class="text-sm text-gray-500 dark:text-gray-500">Updated {{ repo.last_updated|naturaltime }}</div>
                                 <div class="flex gap-3">
                                     {% if repo.homepage_url %}
                                         <a href="{{ repo.homepage_url }}"
                                            target="_blank"
-                                           class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                           class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50">
                                             <svg class="w-4 h-4 mr-2"
                                                  fill="none"
                                                  stroke="currentColor"
@@ -283,22 +310,22 @@
                     </div>
                 {% empty %}
                     <div class="col-span-full text-center py-8">
-                        <p class="text-gray-500 text-lg">No repositories found for this project.</p>
+                        <p class="text-gray-500 dark:text-gray-500 text-lg">No repositories found for this project.</p>
                     </div>
                 {% endfor %}
             </div>
         </div>
         <!-- Project Timeline/History -->
-        <div class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">Project Timeline on {{ site_name }}</h2>
+        <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Project Timeline on {{ site_name }}</h2>
             <div class="space-y-4">
-                <div class="flex items-center text-sm text-gray-600">
+                <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
                     </svg>
                     Created: {{ created_date.full }} ({{ created_date.relative }})
                 </div>
-                <div class="flex items-center text-sm text-gray-600">
+                <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
                     </svg>
