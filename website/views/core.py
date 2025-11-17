@@ -1294,6 +1294,7 @@ def home(request):
             merged_at__month=current_time.month,  # Current month only
             merged_at__year=current_time.year,  # Current year
         )
+        .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
         .values("contributor__name", "contributor__avatar_url", "contributor__github_url")
         .annotate(total_prs=Count("id"))
         .order_by("-total_prs")[:5]
