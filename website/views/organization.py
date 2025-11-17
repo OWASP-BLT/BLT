@@ -40,6 +40,13 @@ from django.views.generic.edit import CreateView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
+from slack_sdk.web import WebClient
+from slack_sdk.errors import SlackApiError
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
+from .models import OrganizationAdmin, SlackIntegration
+
 from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
 from website.models import (
     IP,
@@ -147,6 +154,60 @@ def organization_dashboard(request, template="index_organization.html"):
         return render(request, template, context)
     except OrganizationAdmin.DoesNotExist:
         return redirect("/")
+        
+@login_required(login_url="/accounts/login")
+def organization_slack_apps(request, template="organization_slack_apps.html"):
+    try:
+        # Check if user is an organization admin
+        organization_admin = OrganizationAdmin.objects.get(user=request.user)
+        if not organization_admin.is_active:
+            return HttpResponseRedirect("/")
+
+        organization = organization_admin.organization
+        
+        try:
+            slack_integration = SlackIntegration.objects.get(integration__organization=organization)
+            workspace_token = slack_integration.bot_access_token
+            if not workspace_token:
+                return render(request, template, {"error": "Slack bot token missing.", "organization": organization})
+
+            slack_client = WebClient(token=workspace_token)
+            apps_response = slack_client.apps_list()
+            installed_apps = apps_response.get("apps", [])
+
+            apps_with_commands = []
+            for app in installed_apps:
+                app_id = app.get("id")
+                app_name = app.get("name")
+                app_description = app.get("description", "")
+                app_commands = []
+                
+                try:
+                    commands_response = slack_client.apps_commands_list(app_id=app_id)
+                    app_commands = commands_response.get("commands", [])
+                except SlackApiError:
+                    pass
+
+                apps_with_commands.append({
+                    "id": app_id,
+                    "name": app_name,
+                    "description": app_description,
+                    "commands": app_commands
+                })
+
+            context = {
+                "organization": organization,
+                "apps": apps_with_commands,
+                "workspace_name": slack_integration.workspace_name or "Your Workspace"
+            }
+            return render(request, template, context)
+        
+        except SlackIntegration.DoesNotExist:
+            return render(request, template, {"error": "Slack integration not configured.", "organization": organization})
+    
+    except OrganizationAdmin.DoesNotExist:
+        return HttpResponseRedirect("/")
+
 
 
 @login_required(login_url="/accounts/login")
@@ -496,18 +557,12 @@ class Listbounties(TemplateView):
 
         # Fetch GitHub issues with $5 label for first page
         issue_state = request.GET.get("issue_state", "open")
-        per_page = 10  # Number of issues to show per page
 
         try:
-            github_issues, total_count = self.github_issues_with_bounties(
-                "$5", issue_state=issue_state, per_page=per_page
-            )
-            has_more_pages = total_count > per_page
+            github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
-            total_count = 0
-            has_more_pages = False
 
         # Calculate bounty statistics
         BOUNTY_AMOUNT = 5  # Dollar amount per bounty issue
@@ -549,8 +604,6 @@ class Listbounties(TemplateView):
             "domains": Domain.objects.values("id", "name").all(),
             "github_issues": github_issues,
             "current_page": 1,
-            "total_github_issues": total_count,
-            "has_more_pages": has_more_pages,
             "selected_issue_state": issue_state,
             "total_issues_count": total_issues_count,
             "paid_count": paid_count,
@@ -561,186 +614,69 @@ class Listbounties(TemplateView):
         return render(request, self.template_name, context)
 
     def github_issues_with_bounties(self, label, issue_state="open", page=1, per_page=10):
-        """
-        Fetch GitHub issues with a specific bounty label directly from GitHub API
-        with enhanced pagination support.
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
+        cached_issues = cache.get(cache_key)
 
-        Args:
-            label (str): The label to search for (e.g. "$5")
-            issue_state (str): Issue state to filter by ("open", "closed", or "all")
-            page (int): Page number to fetch
-            per_page (int): Number of issues per page (max 100)
+        if cached_issues is not None:
+            return cached_issues
 
-        Returns:
-            tuple: (formatted_issues, total_count)
+        params = {"labels": label, "state": issue_state, "per_page": per_page, "page": page}
 
-        Caching:
-            Results are cached based on the input parameters (label, issue_state, page, per_page).
-            Cached results are returned if available to reduce API calls and improve performance.
+        headers = {}
+        github_token = getattr(settings, "GITHUB_API_TOKEN", None)
+        if github_token:
+            headers["Authorization"] = f"token {github_token}"
 
-        Error Handling:
-            If an error occurs during the API request (such as rate limiting, network issues, or API failures),
-            the function returns an empty list and a count of zero. Errors are logged, and error results are not cached.
-        """
-        # Validate inputs
-        if page < 1:
-            page = 1
-        if per_page < 1 or per_page > 100:  # GitHub API limits to 100 per page
-            per_page = 10
-
-        # Generate cache key based on parameters
-        cache_key = f"github_issues_{label}_{issue_state}_page_{page}_per_{per_page}"
-        cached_data = cache.get(cache_key)
-
-        if cached_data is not None:
-            return cached_data
-
-        # API request count tracking
-        start_time = time.time()
-
-        # GitHub API endpoint - use search API for better performance and pagination support
         try:
-            encoded_label = label.replace("$", "%24")
-            query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
-            url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
-
-            headers = {
-                "Accept": "application/vnd.github.v3+json",
-                "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)",
-            }
-
-            # Try both token names since the code is using inconsistent environment variable names
-            github_token = getattr(settings, "GITHUB_TOKEN", None)
-            if not github_token:
-                github_token = getattr(settings, "GITHUB_API_TOKEN", None)
-            if github_token:
-                headers["Authorization"] = f"token {github_token}"
-            if getattr(settings, "GITHUB_TOKEN", None) and getattr(settings, "GITHUB_API_TOKEN", None):
-                logger.warning(
-                    "Both GITHUB_TOKEN and GITHUB_API_TOKEN are set in settings. Please consolidate to a single token name to avoid confusion."
-                )
-
-            logger.info(
-                f"Fetching GitHub issues with {label} label, state={issue_state}, page={page}, per_page={per_page}"
+            response = requests.get(
+                "https://api.github.com/repos/OWASP-BLT/BLT/issues", params=params, headers=headers, timeout=5
             )
-            response = requests.get(url, headers=headers, timeout=10)
 
-            # Handle rate limiting explicitly
-            if (
-                response.status_code == 403
-                and "X-RateLimit-Remaining" in response.headers
-                and int(response.headers["X-RateLimit-Remaining"]) == 0
-            ):
-                reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
-                current_time = int(time.time())
-                minutes_to_reset = max(1, int((reset_time - current_time) / 60))
+            response.raise_for_status()
 
-                logger.warning(f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
-                # Do not cache empty result for rate limit errors; allow fresh attempts
-                return [], 0
+            issues = response.json()
+            formatted_issues = []
 
-            if response.status_code == 200:
-                data = response.json()
-                issues = data.get("items", [])
-                total_count = data.get("total_count", 0)
+            for issue in issues:
+                related_prs = []
+                if issue.get("pull_request") is None:
+                    formatted_issue = {
+                        "id": issue.get("id"),
+                        "number": issue.get("number"),
+                        "title": issue.get("title"),
+                        "url": issue.get("html_url"),
+                        "repository": "OWASP-BLT/BLT",
+                        "created_at": issue.get("created_at"),
+                        "updated_at": issue.get("updated_at"),
+                        "labels": [label.get("name") for label in issue.get("labels", [])],
+                        "user": issue.get("user", {}).get("login") if issue.get("user") else None,
+                        "state": issue.get("state"),
+                        "related_prs": related_prs,
+                        "closed_at": issue.get("closed_at"),
+                    }
 
-                formatted_issues = []
+                    formatted_issues.append(formatted_issue)
 
-                for issue in issues:
-                    # Skip pull requests
-                    if issue.get("pull_request") is None:
-                        formatted_issue = {
-                            "id": issue.get("id"),
-                            "number": issue.get("number"),
-                            "title": issue.get("title"),
-                            "url": issue.get("html_url"),
-                            "repository": "OWASP-BLT/BLT",
-                            "created_at": issue.get("created_at"),
-                            "updated_at": issue.get("updated_at"),
-                            "labels": [label.get("name") for label in issue.get("labels", [])],
-                            "user": issue.get("user", {}).get("login") if issue.get("user") else None,
-                            "state": issue.get("state"),
-                            "related_prs": [],
-                            "closed_at": issue.get("closed_at"),
-                        }
+            # Cache for 5 minutes
+            cache.set(cache_key, formatted_issues, timeout=300)
+            return formatted_issues
 
-                        formatted_issues.append(formatted_issue)
-
-                # Cache results - Use longer cache time for older/stable data
-                cache_time = 300  # 5 minutes default
-                if issue_state == "closed":
-                    cache_time = 1800  # 30 minutes for closed issues which change less often
-
-                result = (formatted_issues, total_count)
-                cache.set(cache_key, result, timeout=cache_time)
-
-                # Log performance metrics
-                duration = time.time() - start_time
-                logger.info(
-                    f"Retrieved {len(formatted_issues)} issues (of {total_count} total) "
-                    f"for page {page} in {duration:.2f}s"
-                )
-
-                return result
-            else:
-                # Log the error response from GitHub
-                logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
-                # Return empty result with a short cache time to avoid hammering the API
-                cache.set(cache_key, ([], 0), timeout=60)  # Cache failure for 1 minute
-                return [], 0
-
-        except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
-            # Don't cache errors - could be a transient failure
-            return [], 0
+        except requests.RequestException as e:
+            logger.error(f"GitHub API request failed: {str(e)}")
+            return []
 
 
 def load_more_issues(request):
-    """
-    AJAX handler for loading more GitHub issues with pagination support
-    """
     page = int(request.GET.get("page", 1))
     state = request.GET.get("state", "open")
-    per_page = int(request.GET.get("per_page", 10))
-
-    # Validate inputs
-    if page < 1:
-        page = 1
-    if per_page < 1 or per_page > 100:
-        per_page = 10
 
     try:
-        # Track the time taken to fetch issues
-        start_time = time.time()
-
         view = Listbounties()
-        issues, total_count = view.github_issues_with_bounties("$5", issue_state=state, page=page, per_page=per_page)
-
-        # Calculate if there are more pages
-        has_more = (page * per_page) < total_count if total_count else False
-
-        # Log performance metrics
-        duration = time.time() - start_time
-        logger.info(
-            f"Loaded {len(issues)} issues for page {page} in {duration:.2f}s "
-            f"(total: {total_count}, has_more: {has_more})"
-        )
-
-        return JsonResponse(
-            {
-                "success": True,
-                "issues": issues,
-                "next_page": page + 1 if has_more else None,
-                "total_count": total_count,
-                "current_page": page,
-                "per_page": per_page,
-            }
-        )
+        issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
+        return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
     except Exception as e:
         logger.error(f"Error loading more issues: {str(e)}")
-        return JsonResponse(
-            {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
-        )
+        return JsonResponse({"success": False, "error": "An unexpected error occurred."})
 
 
 class DraftHunts(TemplateView):
@@ -1111,16 +1047,6 @@ class HuntCreate(CreateView):
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
 
-    def get_success_url(self):
-        try:
-            if self.object.domain and self.object.domain.organization and self.object.domain.organization.slug:
-                return reverse("organization_detail", kwargs={"slug": self.object.domain.organization.slug})
-        except AttributeError as e:
-            logger.error(
-                "AttributeError in HuntCreate.get_success_url: Unable to access organization details", exc_info=e
-            )
-        return reverse("organizations")
-
 
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
@@ -1307,9 +1233,7 @@ def sizzle_daily_log(request):
             blockers = request.POST.get("blockers")
             goal_accomplished = request.POST.get("goal_accomplished") == "on"
             current_mood = request.POST.get("feeling")
-            logger.debug(
-                f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
-            )
+            print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
 
             DailyStatusReport.objects.create(
                 user=request.user,
@@ -1889,7 +1813,7 @@ class ReportIpView(FormView):
         if form.is_valid():
             ip_address = form.cleaned_data.get("ip_address")
             ip_type = form.cleaned_data.get("ip_type")
-            logger.debug(f"{ip_address} {ip_type}")
+            print(ip_address + " " + ip_type)
 
             if not self.is_valid_ip(ip_address, ip_type):
                 messages.error(request, f"Invalid {ip_type} address format.")
@@ -2083,19 +2007,6 @@ def approve_activity(request, id):
             return JsonResponse({"success": False})
     else:
         return JsonResponse({"success": False, "error": "Not authorized"})
-
-
-@login_required
-@require_POST
-def delete_activity(request, id):
-    """Allow superadmins to delete activities from the feed."""
-    if not request.user.is_superuser:
-        return JsonResponse({"success": False, "error": "Only superadmins can delete activities"}, status=403)
-
-    activity = get_object_or_404(Activity, id=id)
-    activity.delete()
-
-    return JsonResponse({"success": True, "message": "Activity deleted successfully"})
 
 
 def truncate_text(text, length=15):
@@ -2862,10 +2773,10 @@ class BountyPayoutsView(ListView):
         Default to closed issues instead of open, and fetch 100 per page without date limitations
         """
         cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
-        cached_data = cache.get(cache_key)
+        cached_issues = cache.get(cache_key)
 
-        if cached_data:
-            return cached_data
+        if cached_issues:
+            return cached_issues
 
         # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
         encoded_label = label.replace("$", "%24")
@@ -2881,11 +2792,10 @@ class BountyPayoutsView(ListView):
                 data = response.json()
                 issues = data.get("items", [])
                 total_count = data.get("total_count", 0)
-                result = (issues, total_count)
                 # Cache the results for 30 minutes
-                cache.set(cache_key, result, 60 * 30)
+                cache.set(cache_key, issues, 60 * 30)
 
-                return result
+                return issues, total_count
             else:
                 # Log the error response from GitHub
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
@@ -3216,10 +3126,6 @@ class BountyPayoutsView(ListView):
                             success_message += ". Labels added on GitHub"
                         if comment_success:
                             success_message += ". Comment added on GitHub"
-
-                        # Note: Notifications to the admin team and users are automatically
-                        # created by the post_save signal on GitHubIssue model
-                        success_message += ". Notifications sent to admin team and issue reporter"
 
                         messages.success(request, success_message)
 
@@ -3680,7 +3586,7 @@ class BountyPayoutsView(ListView):
     def find_prs_mentioning_issue(self, issue, owner, repo_name, issue_number):
         """
         Find pull requests that mention this issue using closing keywords
-        like "Closes #123" or "Fixes #123" in their body text.
+        like "Closes #123" or "Fixes #123" in their body.
         """
         import logging
 

@@ -115,7 +115,25 @@
     <div class="clearfix"></div>
 </div>
 </div>
+
+<!-- Sidebar menu -->
+<div class="sidebar-menu">
+    <ul class="nav nav-sidebar">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'organization_dashboard' %}">Dashboard</a>
+        </li>
+        <!-- Add Slack Apps link for organization admins -->
+        {% if user.is_authenticated and user_is_organization_admin %}
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'organization_slack_apps' %}">
+                <i class="fab fa-slack"></i> Slack Apps
+            </a>
+        </li>
+        {% endif %}
+        <!-- Other menu items can go here -->
+    </ul>
 </div>
+
 <div id="page-wrapper">
     {% block content %}
     {% endblock content %}
@@ -127,3 +145,4 @@
 <script src="{% static 'js/scripts.js' %}"></script>
 <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
 </html>
+
