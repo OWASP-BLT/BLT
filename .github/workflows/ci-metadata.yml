@@ -1,0 +1,243 @@
+name: CI Metadata
+
+# This workflow handles all write operations (comments, labels) for CI checks.
+# It uses workflow_run to safely work with fork PRs after CI/CD completes.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  workflow_run:
+    workflows: ["CI/CD Optimized"]
+    types:
+      - completed
+
+permissions:
+  contents: read  # Only read - we never modify repository contents
+  pull-requests: write
+  issues: write
+  actions: read
+
+jobs:
+  update-pre-commit-metadata:
+    runs-on: ubuntu-latest
+    # Only run for workflow_run events (not pull_request_target to avoid race conditions)
+    # We wait for CI/CD to complete before updating metadata
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'cancelled'
+    steps:
+      - name: Get PR number and workflow status
+        id: get_pr_info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get PR number from workflow_run event
+            const workflowRun = context.payload.workflow_run;
+            const workflowConclusion = workflowRun.conclusion;
+            
+            // Handle deleted forks or missing head_repository
+            if (!workflowRun.head_repository) {
+              core.warning('head_repository is null (fork may be deleted). Skipping PR lookup.');
+              return;
+            }
+            
+            // Additional null-safety checks
+            if (!workflowRun.head_repository.owner || !workflowRun.head_branch) {
+              core.warning('Missing head_repository.owner or head_branch. Skipping PR lookup.');
+              return;
+            }
+            
+            // Get associated PRs
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${workflowRun.head_repository.owner.login}:${workflowRun.head_branch}`,
+            });
+            
+            if (prs.length === 0) {
+              core.info('No open PR found for this workflow run. PR may be closed or merged.');
+              return;
+            }
+            
+            const prNumber = prs[0].number;
+            const precommitPassed = workflowConclusion === 'success';
+            core.info(`Event: workflow_run, PR #${prNumber}, conclusion: ${workflowConclusion}`);
+            
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('precommit_passed', precommitPassed);
+            core.setOutput('workflow_conclusion', workflowConclusion);
+
+      - name: Download pre-commit output artifact
+        if: steps.get_pr_info.outputs.workflow_conclusion == 'failure'
+        uses: actions/download-artifact@v4
+        with:
+          name: pre-commit-output
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+        continue-on-error: true
+
+      - name: Comment on PR if pre-commit fails
+        if: |
+          steps.get_pr_info.outputs.pr_number &&
+          steps.get_pr_info.outputs.precommit_passed == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = ${{ steps.get_pr_info.outputs.pr_number }};
+            
+            let precommitOutput = '';
+            try {
+              precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
+            } catch (err) {
+              precommitOutput = 'Output not available';
+            }
+            
+            // Get last 100 lines of output
+            const lines = precommitOutput.split('\n');
+            const last100Lines = lines.slice(-100).join('\n');
+            const truncated = lines.length > 100;
+            
+            // Check if we already posted a similar comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100,
+            });
+            
+            const commentMarker = '<!-- pre-commit-failure -->';
+            const existingComment = comments.find(c => c.body && c.body.includes(commentMarker));
+            
+            const message = `${commentMarker}
+            ## Pre-commit checks failed
+            
+            The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
+            
+            \`\`\`bash
+            # Install pre-commit if you haven't already
+            pip install pre-commit
+            
+            # Run pre-commit on all files
+            pre-commit run --all-files
+            
+            # Or run pre-commit on staged files only
+            pre-commit run
+            \`\`\`
+            
+            After running these commands, the pre-commit hooks will automatically fix most issues. 
+            Please review the changes, commit them, and push to your branch.
+            
+            **Tip**: You can set up pre-commit to run automatically on every commit by running:
+            \`\`\`bash
+            pre-commit install
+            \`\`\`
+            
+            <details>
+            <summary>Pre-commit output${truncated ? ' (last 100 lines)' : ''}</summary>
+            
+            \`\`\`
+            ${last100Lines}
+            \`\`\`
+            
+            </details>
+            
+            For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
+            
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: message
+              });
+              core.info(`Updated existing comment on PR #${prNumber}`);
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: message
+              });
+              core.info(`Created new comment on PR #${prNumber}`);
+            }
+
+      - name: Add pre-commit status label
+        if: steps.get_pr_info.outputs.pr_number
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = ${{ steps.get_pr_info.outputs.pr_number }};
+            
+            // Determine label based on workflow conclusion
+            const precommitPassedStr = '${{ steps.get_pr_info.outputs.precommit_passed }}';
+            const precommitPassed = precommitPassedStr === 'true';
+            const newLabel = precommitPassed ? 'pre-commit: passed' : 'pre-commit: failed';
+            const labelColor = precommitPassed ? '0e8a16' : 'e74c3c';  // Green or Red
+            const description = precommitPassed ? 'Pre-commit checks passed' : 'Pre-commit checks failed';
+            
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+            
+            // Remove any existing pre-commit labels
+            const preCommitRegex = /^pre-commit:/i;
+            for (const name of currentNames) {
+              if (preCommitRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+            
+            // Ensure the new label exists (create if missing)
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            await ensureLabelExists(newLabel);
+            
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
+              await github.rest.issues.addLabels({ 
+                owner, 
+                repo, 
+                issue_number: pull_number, 
+                labels: [newLabel] 
+              });
+              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+            }
+            
+            core.info(`Pre-commit status: ${precommitPassed ? 'passed' : 'failed'}`);
