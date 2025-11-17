@@ -78,7 +78,7 @@ jobs:
     name: Run pre-commit
     # Run on pull_request_target (for write permissions on forked PRs), push to main, or manual trigger
     # Don't run on pull_request to avoid duplication with pull_request_target
-    if: github.event_name == 'pull_request_target' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
+    if: github.event_name != 'pull_request'
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -106,7 +106,7 @@ jobs:
           set -e
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && steps.pre-commit.outputs.exit_code != '0'
+        if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
           script: |
@@ -159,7 +159,7 @@ jobs:
               body: message
             });
       - name: Add pre-commit status label
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
