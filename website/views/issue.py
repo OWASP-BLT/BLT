@@ -695,9 +695,12 @@ class IssueBaseCreate(object):
                     django_file,
                     save=True,
                 )
-            except ValidationError:
-                # Skip setting screenshot if validation fails
-                pass
+            except ValidationError as e:
+                # Screenshots are required - show error message
+                messages.error(self.request, f"Invalid screenshot: {e}")
+            except Exception as e:
+                # Handle file open/save errors
+                messages.error(self.request, "Failed to process screenshot file")
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
@@ -862,9 +865,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 validate_screenshot_hash(screenshot_hash.strip())
                 screenshot_path = os.path.join("uploads", f"{screenshot_hash}.png")
                 initial["screenshot"] = screenshot_path
-            except ValidationError:
-                # Skip setting initial screenshot if validation fails
-                pass
+            except ValidationError as e:
+                # Screenshots are required - show error and redirect
+                messages.error(self.request, f"Invalid screenshot: {e}")
         return initial
 
     def post(self, request, *args, **kwargs):
