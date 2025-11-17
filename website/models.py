@@ -547,7 +547,7 @@ class Issue(models.Model):
                     cvss_metric_v = next(iter(metrics))
                     return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
-            print(e)
+            logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
 
     class Meta:
@@ -1386,7 +1386,7 @@ class Activity(models.Model):
             self.save()
             return True
         except Exception as e:
-            print(e)
+            logger.error(f"Error posting activity to BlueSky: {e}")
 
 
 class Badge(models.Model):
@@ -2310,7 +2310,9 @@ class Hackathon(models.Model):
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
             elif pr.contributor and pr.contributor.github_id:
-                # Skip bot accounts
+                # Skip bot accounts - check contributor_type field (primary) and name patterns (fallback)
+                if pr.contributor.contributor_type == "Bot":
+                    continue
                 github_username = pr.contributor.name
                 if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
                     continue
