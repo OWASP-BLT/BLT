@@ -547,7 +547,7 @@ class Issue(models.Model):
                     cvss_metric_v = next(iter(metrics))
                     return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
-            print(e)
+            logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
 
     class Meta:
@@ -1386,7 +1386,7 @@ class Activity(models.Model):
             self.save()
             return True
         except Exception as e:
-            print(e)
+            logger.error(f"Error posting activity to BlueSky: {e}")
 
 
 class Badge(models.Model):
