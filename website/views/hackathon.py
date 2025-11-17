@@ -214,7 +214,7 @@ class HackathonDetailView(DetailView):
         # Get merged PR data
         merged_pr_data = (
             self._get_base_pr_query(hackathon, repo_ids, is_merged=True)
-            .annotate(date=TruncDate("created_at"))
+            .annotate(date=TruncDate("merged_at"))
             .values("date")
             .annotate(count=Count("id"))
             .order_by("date")
