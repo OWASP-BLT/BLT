@@ -56,7 +56,7 @@
                                id="id_username"
                                name="username"
                                value="{{ form.username.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                         <span class="help-block">{{ form.username.errors }}</span>
                     </div>
                     <!-- Email Field -->
@@ -67,7 +67,7 @@
                                id="id_email"
                                name="email"
                                value="{{ form.email.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
                     <!-- Password Field -->
@@ -81,7 +81,7 @@
                                    id="id_password"
                                    name="password1"
                                    value="{{ form.password1.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-500 hover:text-gray-800 focus:outline-none"
@@ -112,7 +112,7 @@
                                    id="id_password2"
                                    name="password2"
                                    value="{{ form.password2.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-500 hover:text-gray-800 focus:outline-none"
@@ -160,7 +160,7 @@
                         <input type="text"
                                name="captcha_1"
                                placeholder="Enter Captcha"
-                               class="px-2 py-1 mt-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-red-200 w-1/2"
+                               class="px-2 py-1 mt-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-red-200 w-1/2 dark:bg-gray-700 dark:text-white"
                                required>
                         <span class="help-block">{{ form.captcha.errors }}</span>
                     </div>
