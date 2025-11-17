@@ -20,9 +20,6 @@ class Command(LoggedBaseCommand):
         )
 
     def handle(self, **options):
-        # Clear existing records
-        Contribution.objects.all().delete()
-
         # GitHub repository details
         repo = options["repo"]
         owner, repo_name = repo.split("/")
@@ -92,88 +89,81 @@ class Command(LoggedBaseCommand):
             else:
                 url = None
 
-        contributions_to_create = []
-
+        # Process items incrementally using update_or_create
         for item in items:
+            github_id = None
+            contribution_data = {}
+
             if data_type == "pulls":
                 user = item["user"]["login"]
-                contributions_to_create.append(
-                    Contribution(
-                        github_username=user,
-                        title=item["title"][:255],  # Truncate to 255 characters
-                        description=(item.get("body") or "")[:255],  # Truncate to 255 characters
-                        contribution_type="pull_request",
-                        github_id=str(item["id"]),
-                        github_url=item["html_url"],
-                        created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
-                        status=item["state"],
-                        repository=project,
-                    )
-                )
+                github_id = str(item["id"])
+                contribution_data = {
+                    "github_username": user,
+                    "title": item["title"][:255],  # Truncate to 255 characters
+                    "description": (item.get("body") or "")[:255],  # Truncate to 255 characters
+                    "contribution_type": "pull_request",
+                    "github_url": item["html_url"],
+                    "created": datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                    "status": item["state"],
+                    "repository": project,
+                }
             elif data_type == "issuesopen":
                 if "pull_request" in item:
                     continue
                 user = item["user"]["login"]
-                contributions_to_create.append(
-                    Contribution(
-                        github_username=user,
-                        title=item["title"],
-                        description=item.get("body") or "",
-                        contribution_type="issue_opened",
-                        github_id=str(item["id"]),
-                        github_url=item["html_url"],
-                        created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
-                        status="open",
-                        repository=project,
-                    )
-                )
+                github_id = str(item["id"])
+                contribution_data = {
+                    "github_username": user,
+                    "title": item["title"],
+                    "description": item.get("body") or "",
+                    "contribution_type": "issue_opened",
+                    "github_url": item["html_url"],
+                    "created": datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                    "status": "open",
+                    "repository": project,
+                }
             elif data_type == "issuesclosed":
                 if "pull_request" in item:
                     continue
                 user = item["user"]["login"]
-                contributions_to_create.append(
-                    Contribution(
-                        github_username=user,
-                        title=item["title"],
-                        description=item.get("body") or "",
-                        contribution_type="issue_closed",
-                        github_id=str(item["id"]),
-                        github_url=item["html_url"],
-                        created=datetime.strptime(item.get("closed_at") or item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
-                        status="closed",
-                        repository=project,
-                    )
-                )
+                github_id = str(item["id"])
+                contribution_data = {
+                    "github_username": user,
+                    "title": item["title"],
+                    "description": item.get("body") or "",
+                    "contribution_type": "issue_closed",
+                    "github_url": item["html_url"],
+                    "created": datetime.strptime(item.get("closed_at") or item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                    "status": "closed",
+                    "repository": project,
+                }
             elif data_type == "commits":
                 if item["author"] is None:
                     continue  # Skip commits without an associated GitHub user
                 user = item["author"]["login"]
-                contributions_to_create.append(
-                    Contribution(
-                        title=item["commit"]["message"][:255],  # Truncate to 255 characters
-                        description=item["commit"]["message"][:255],  # Truncate to 255 characters
-                        github_username=user,
-                        contribution_type="commit",
-                        github_id=item["sha"],
-                        github_url=item["html_url"],
-                        created=datetime.strptime(item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"),
-                        repository=project,
-                    )
-                )
+                github_id = item["sha"]
+                contribution_data = {
+                    "title": item["commit"]["message"][:255],  # Truncate to 255 characters
+                    "description": item["commit"]["message"][:255],  # Truncate to 255 characters
+                    "github_username": user,
+                    "contribution_type": "commit",
+                    "github_url": item["html_url"],
+                    "created": datetime.strptime(item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"),
+                    "repository": project,
+                }
             elif data_type == "comments":
                 user = item["user"]["login"]
-                contributions_to_create.append(
-                    Contribution(
-                        title=item["body"][:255],  # Truncate to 255 characters
-                        description=item["body"][:255],  # Truncate to 255 characters
-                        github_username=user,
-                        contribution_type="comment",
-                        github_id=str(item["id"]),
-                        github_url=item["html_url"],
-                        created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
-                        repository=project,
-                    )
-                )
+                github_id = str(item["id"])
+                contribution_data = {
+                    "title": item["body"][:255],  # Truncate to 255 characters
+                    "description": item["body"][:255],  # Truncate to 255 characters
+                    "github_username": user,
+                    "contribution_type": "comment",
+                    "github_url": item["html_url"],
+                    "created": datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                    "repository": project,
+                }
 
-        # Bulk create contributions
-        Contribution.objects.bulk_create(contributions_to_create, ignore_conflicts=True)
+            # Use update_or_create to add or update the contribution
+            if github_id and contribution_data:
+                Contribution.objects.update_or_create(github_id=github_id, defaults=contribution_data)
