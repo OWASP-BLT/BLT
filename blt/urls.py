@@ -39,6 +39,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.feeds import ActivityFeed
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -334,7 +335,6 @@ from website.views.user import (
     view_thread,
 )
 from website.views.video_call import video_call
-from website.feeds import ActivityFeed
 
 admin.autodiscover()
 
