@@ -29,7 +29,7 @@
             <div class="space-y-4">
                 <div class="flex items-center border rounded-lg overflow-hidden">
                     <i class="fa fa-bug bg-red-500 text-white p-4"></i>
-                    <input class="w-full py-2 px-3 outline-none placeholder:text-base"
+                    <input class="w-full py-2 px-3 outline-none placeholder:text-base dark:bg-gray-700 dark:text-white"
                            type="text"
                            placeholder="Name of the bug bounty"
                            name="name"
@@ -38,7 +38,7 @@
                 {% if form.errors %}<p class="text-red-500 text-sm mt-1">{{ form.url.errors }}</p>{% endif %}
                 <div class="flex items-center border rounded-lg overflow-hidden">
                     <i class="fa fa-link bg-red-500 text-white p-4"></i>
-                    <input class="w-full py-2 px-3 outline-none placeholder:text-base"
+                    <input class="w-full py-2 px-3 outline-none placeholder:text-base dark:bg-gray-700 dark:text-white"
                            type="text"
                            placeholder="http://example.com"
                            name="url"
@@ -64,7 +64,7 @@
                     <textarea name="description"
                               id="description"
                               rows="3"
-                              class="w-full py-2 px-3 outline-none placeholder:text-base h-[180px]"
+                              class="w-full py-2 px-3 outline-none placeholder:text-base h-[180px] dark:bg-gray-700 dark:text-white"
                               placeholder="Describe bug issue">{{ form.description.value|default:'' }}</textarea>
                 </div>
                 {% if form.description.errors %}
