@@ -214,7 +214,7 @@ class HackathonDetailView(DetailView):
         # Get merged PR data
         merged_pr_data = (
             self._get_base_pr_query(hackathon, repo_ids, is_merged=True)
-            .annotate(date=TruncDate("created_at"))
+            .annotate(date=TruncDate("merged_at"))
             .values("date")
             .annotate(count=Count("id"))
             .order_by("date")
@@ -600,3 +600,55 @@ def _process_pull_request(pr_data, hackathon, repo):
 
         new_pr.save()
         return True  # New PR added
+
+
+@login_required
+def add_org_repos_to_hackathon(request, slug):
+    """View to add all organization repositories to a hackathon."""
+    hackathon = get_object_or_404(Hackathon, slug=slug)
+
+    # Check if user has permission to manage this hackathon
+    user = request.user
+    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+        messages.error(request, "You don't have permission to manage this hackathon.")
+        return redirect("hackathons")
+
+    try:
+        # Get all repos from the hackathon's organization
+        org_repos = Repo.objects.filter(organization=hackathon.organization)
+
+        if not org_repos.exists():
+            messages.warning(
+                request,
+                f"No repositories found for organization {hackathon.organization.name}. "
+                "Please sync the organization's repositories first.",
+            )
+            return redirect("hackathons")
+
+        # Add all org repos to the hackathon
+        added_count = 0
+        already_added_count = 0
+
+        for repo in org_repos:
+            if hackathon.repositories.filter(id=repo.id).exists():
+                already_added_count += 1
+            else:
+                hackathon.repositories.add(repo)
+                added_count += 1
+
+        if added_count > 0:
+            messages.success(
+                request,
+                f"Successfully added {added_count} repositories to {hackathon.name}. "
+                f"({already_added_count} were already added)",
+            )
+        else:
+            messages.info(
+                request,
+                f"All {already_added_count} repositories from {hackathon.organization.name} "
+                "are already part of this hackathon.",
+            )
+    except Exception:
+        messages.error(request, "An error occurred while adding repositories to the hackathon.")
+
+    return redirect("hackathons")

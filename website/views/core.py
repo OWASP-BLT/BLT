@@ -72,6 +72,8 @@ from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_ur
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
+logger = logging.getLogger(__name__)
+
 
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
@@ -1292,6 +1294,7 @@ def home(request):
             merged_at__month=current_time.month,  # Current month only
             merged_at__year=current_time.year,  # Current year
         )
+        .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
         .values("contributor__name", "contributor__avatar_url", "contributor__github_url")
         .annotate(total_prs=Count("id"))
         .order_by("-total_prs")[:5]

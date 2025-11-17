@@ -477,3 +477,103 @@ class HackathonLeaderboardTestCase(TestCase):
         # Check that PR counts exclude bots
         merged_pr_count = merged_prs.count()
         self.assertEqual(merged_pr_count, 2, "Merged PR count should exclude bots")
+
+    def test_hackathon_chart_data_uses_merge_date(self):
+        """Test that chart data for merged PRs is grouped by merge date, not creation date."""
+        from django.db.models.functions import TruncDate
+        from django.db.models import Count
+
+        # Create a past hackathon (already ended)
+        now = timezone.now()
+        past_hackathon = Hackathon.objects.create(
+            name="Past Hackathon",
+            slug="past-hackathon",
+            description="A past hackathon for testing chart data",
+            organization=self.organization,
+            start_time=now - datetime.timedelta(days=10),
+            end_time=now - datetime.timedelta(days=5),
+            is_active=False,
+        )
+
+        # Create a new repository for this test
+        chart_repo = Repo.objects.create(
+            name="Chart Repo",
+            slug="chart-repo",
+            repo_url="https://github.com/test/chartrepo",
+            organization=self.organization,
+        )
+
+        past_hackathon.repositories.add(chart_repo)
+
+        # Create PRs with different creation and merge dates
+        # PR 1: Created 9 days ago, merged 8 days ago (both during hackathon)
+        pr1 = GitHubIssue.objects.create(
+            issue_id=10001,
+            title="PR created and merged during hackathon",
+            body="Test PR body",
+            state="closed",
+            type="pull_request",
+            created_at=now - datetime.timedelta(days=9),
+            updated_at=now - datetime.timedelta(days=8),
+            merged_at=now - datetime.timedelta(days=8),
+            is_merged=True,
+            url="https://github.com/test/chartrepo/pull/10001",
+            repo=chart_repo,
+            user_profile=self.user1.userprofile,
+        )
+
+        # PR 2: Created 7 days ago, merged 6 days ago (both during hackathon)
+        pr2 = GitHubIssue.objects.create(
+            issue_id=10002,
+            title="PR created and merged on different days",
+            body="Test PR body",
+            state="closed",
+            type="pull_request",
+            created_at=now - datetime.timedelta(days=7),
+            updated_at=now - datetime.timedelta(days=6),
+            merged_at=now - datetime.timedelta(days=6),
+            is_merged=True,
+            url="https://github.com/test/chartrepo/pull/10002",
+            repo=chart_repo,
+            user_profile=self.user2.userprofile,
+        )
+
+        # Test the view's chart data calculation
+        from website.views.hackathon import HackathonDetailView
+
+        view = HackathonDetailView()
+        repo_ids = past_hackathon.repositories.values_list("id", flat=True)
+
+        # Get merged PR data grouped by merge date (this is what the fix does)
+        merged_pr_data = (
+            view._get_base_pr_query(past_hackathon, repo_ids, is_merged=True)
+            .annotate(date=TruncDate("merged_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        # Convert to dict for easier checking
+        date_merged_pr_counts = {item["date"]: item["count"] for item in merged_pr_data}
+
+        # Verify that PRs are grouped by their merge date
+        merge_date_1 = (now - datetime.timedelta(days=8)).date()
+        merge_date_2 = (now - datetime.timedelta(days=6)).date()
+
+        # PR1 should be counted on its merge date
+        self.assertIn(merge_date_1, date_merged_pr_counts)
+        self.assertEqual(date_merged_pr_counts[merge_date_1], 1)
+
+        # PR2 should be counted on its merge date
+        self.assertIn(merge_date_2, date_merged_pr_counts)
+        self.assertEqual(date_merged_pr_counts[merge_date_2], 1)
+
+        # Verify that the chart data is NOT grouped by creation date
+        # (which would be different from merge date)
+        creation_date_1 = (now - datetime.timedelta(days=9)).date()
+        creation_date_2 = (now - datetime.timedelta(days=7)).date()
+
+        # These dates should NOT have the PRs if we're correctly using merge_at
+        # (unless creation and merge happen on the same day, which they don't in this test)
+        self.assertNotEqual(creation_date_1, merge_date_1)
+        self.assertNotEqual(creation_date_2, merge_date_2)

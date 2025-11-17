@@ -1022,7 +1022,7 @@ class RepoDetailView(DetailView):
 
         # Add breadcrumbs
         context["breadcrumbs"] = [
-            {"title": "Repositories", "url": reverse("project_list")},
+            {"title": "Repositories", "url": reverse("repo_list")},
             {"title": repo.name, "url": None},
         ]
 
