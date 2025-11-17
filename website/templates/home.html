@@ -253,27 +253,27 @@
                                     </p>
                                     <p class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
                                     <!-- Hackathon Statistics -->
-                                    <div class="grid grid-cols-3 gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+                                    <div class="grid grid-cols-3 gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                                         <div class="text-center">
                                             <div class="flex items-center justify-center mb-1">
                                                 <i class="fas fa-users text-[#e74c3c] text-lg"></i>
                                             </div>
-                                            <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.participant_count }}</div>
-                                            <div class="text-xs text-gray-600">Participants</div>
+                                            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ hackathon.stats.participant_count }}</div>
+                                            <div class="text-xs text-gray-600 dark:text-gray-400">Participants</div>
                                         </div>
                                         <div class="text-center">
                                             <div class="flex items-center justify-center mb-1">
                                                 <i class="fas fa-code-branch text-[#e74c3c] text-lg"></i>
                                             </div>
-                                            <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.total_prs }}</div>
-                                            <div class="text-xs text-gray-600">Pull Requests</div>
+                                            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ hackathon.stats.total_prs }}</div>
+                                            <div class="text-xs text-gray-600 dark:text-gray-400">Pull Requests</div>
                                         </div>
                                         <div class="text-center">
                                             <div class="flex items-center justify-center mb-1">
                                                 <i class="fas fa-check-circle text-[#e74c3c] text-lg"></i>
                                             </div>
-                                            <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.merged_pr_count }}</div>
-                                            <div class="text-xs text-gray-600">Merged PRs</div>
+                                            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ hackathon.stats.merged_pr_count }}</div>
+                                            <div class="text-xs text-gray-600 dark:text-gray-400">Merged PRs</div>
                                         </div>
                                     </div>
                                     <div class="flex items-center text-sm text-gray-500 mb-4">
