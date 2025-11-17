@@ -252,40 +252,39 @@
     class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                     </p>
                                     <p class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
-                                    <div class="flex items-center text-sm text-gray-500 dark:text-gray-500 mb-4">
-                                        <div class="grid grid-cols-3 gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
-                                            <div class="text-center">
-                                                <div class="flex items-center justify-center mb-1">
-                                                    <i class="fas fa-users text-[#e74c3c] text-lg"></i>
-                                                </div>
-                                                <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.participant_count }}</div>
-                                                <div class="text-xs text-gray-600">Participants</div>
+                                    <!-- Hackathon Statistics -->
+                                    <div class="grid grid-cols-3 gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-1">
+                                                <i class="fas fa-users text-[#e74c3c] text-lg"></i>
                                             </div>
-                                            <div class="text-center">
-                                                <div class="flex items-center justify-center mb-1">
-                                                    <i class="fas fa-code-branch text-[#e74c3c] text-lg"></i>
-                                                </div>
-                                                <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.total_prs }}</div>
-                                                <div class="text-xs text-gray-600">Pull Requests</div>
-                                            </div>
-                                            <div class="text-center">
-                                                <div class="flex items-center justify-center mb-1">
-                                                    <i class="fas fa-check-circle text-[#e74c3c] text-lg"></i>
-                                                </div>
-                                                <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.merged_pr_count }}</div>
-                                                <div class="text-xs text-gray-600">Merged PRs</div>
-                                            </div>
+                                            <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.participant_count }}</div>
+                                            <div class="text-xs text-gray-600">Participants</div>
                                         </div>
-                                        <div class="flex items-center text-sm text-gray-500 mb-4">
-                                            <i class="far fa-calendar mr-2"></i>
-                                            <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-1">
+                                                <i class="fas fa-code-branch text-[#e74c3c] text-lg"></i>
+                                            </div>
+                                            <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.total_prs }}</div>
+                                            <div class="text-xs text-gray-600">Pull Requests</div>
                                         </div>
-                                        <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
-                                           class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
-                                            View Details
-                                            <i class="fas fa-arrow-right ml-2"></i>
-                                        </a>
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-1">
+                                                <i class="fas fa-check-circle text-[#e74c3c] text-lg"></i>
+                                            </div>
+                                            <div class="text-xl font-bold text-gray-900">{{ hackathon.stats.merged_pr_count }}</div>
+                                            <div class="text-xs text-gray-600">Merged PRs</div>
+                                        </div>
                                     </div>
+                                    <div class="flex items-center text-sm text-gray-500 mb-4">
+                                        <i class="far fa-calendar mr-2"></i>
+                                        <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
+                                    </div>
+                                    <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
+                                       class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
+                                        View Details
+                                        <i class="fas fa-arrow-right ml-2"></i>
+                                    </a>
                                 </div>
                             {% endfor %}
                         </div>
@@ -1210,19 +1209,20 @@
         <!-- Add GitHub Buttons Script at the end of the content block -->
         <script async defer src="https://buttons.github.io/buttons.js"></script>
         <script>
-        function copyReferralLink() {
-            var copyText = document.getElementById("referralLink");
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            document.execCommand("copy");
-            
-            // Show feedback
-            var button = event.target.closest('button');
-            var originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
-            setTimeout(function() {
-                button.innerHTML = originalText;
-            }, 2000);
-        }
+    function copyReferralLink() {
+        var copyText = document.getElementById("referralLink");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        document.execCommand("copy");
+        
+        // Show feedback
+        var button = event.target.closest('button');
+        var originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+        setTimeout(function() {
+            button.innerHTML = originalText;
+        }, 2000);
+    }
         </script>
-    {% endblock content %}
+    </div>
+{% endblock content %}
