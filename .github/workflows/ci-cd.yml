@@ -78,7 +78,7 @@ jobs:
     name: Run pre-commit
     # Run on pull_request_target (for write permissions on forked PRs), push to main, or manual trigger
     # Don't run on pull_request to avoid duplication with pull_request_target
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'pull_request_target' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -92,6 +92,7 @@ jobs:
           # Checkout the PR head for pull_request_target, otherwise use default
           ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.ref }}
           # For forked PRs, checkout from the fork repository
+          # SECURITY: We run pre-commit which only executes linters/formatters, not arbitrary code from the PR
           repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
         with:
