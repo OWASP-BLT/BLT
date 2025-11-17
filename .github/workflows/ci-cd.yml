@@ -80,9 +80,8 @@ jobs:
 
   pre-commit:
     name: Run pre-commit
-    # Run on pull_request_target (for write permissions on forked PRs), push to main, or manual trigger
-    # Don't run on pull_request to avoid duplication with pull_request_target
-    if: github.event_name == 'pull_request_target' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
+    # Run on pull_request_target (for forked PRs with write permissions), pull_request (for same-repo PRs),
+    # push to main, or manual trigger. The concurrency group prevents duplicate runs.
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -93,9 +92,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Checkout the PR head for pull_request_target, otherwise use default
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.ref }}
-          # For forked PRs, checkout from the fork repository
+          # For pull_request_target, explicitly checkout the PR head from the fork
+          # For pull_request, the default behavior already checks out the PR head
+          ref: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.event.pull_request.head.sha || github.ref }}
+          # For forked PRs with pull_request_target, checkout from the fork repository
           # SECURITY: We run pre-commit which only executes linters/formatters, not arbitrary code from the PR
           repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
@@ -111,7 +111,7 @@ jobs:
           set -e
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code != '0'
+        if: (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
           script: |
@@ -164,7 +164,7 @@ jobs:
               body: message
             });
       - name: Add pre-commit status label
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
