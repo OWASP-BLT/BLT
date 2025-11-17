@@ -20,74 +20,74 @@
             <p class="text-[#e74c3c] font-satoshi font-bold text-[35px] px-8">Dashboard</p>
         </div>
         <div class="flex flex-col lg:flex-row gap-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
-            <div class="flex justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-                        <i class="fa-solid fa-bug fa-2x text-black"></i>
+                        <i class="fa-solid fa-bug fa-2x text-black dark:text-white"></i>
                     </div>
                     <div>
                         <a href="{% url 'organization_manage_bugs' organization %}">
-                            <p class="text-black text-3xl font-bold">{{ total_info.total_organization_bugs }}</p>
-                            <p class="text-black text-md font-extralight">Total Bugs</p>
+                            <p class="text-black dark:text-white text-3xl font-bold">{{ total_info.total_organization_bugs }}</p>
+                            <p class="text-black dark:text-white text-md font-extralight">Total Bugs</p>
                         </a>
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex flex-wrap justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-                        <i class="fa-sharp fa-solid fa-flag fa-2x text-black"></i>
+                        <i class="fa-sharp fa-solid fa-flag fa-2x text-black dark:text-white"></i>
                     </div>
                     <div>
                         <a href="{% url 'organization_manage_bughunts' organization %}">
-                            <p class="text-black text-3xl font-bold">{{ total_info.total_bug_hunts }}</p>
-                            <p class="text-black text-md font-extralight">Bug Bounties</p>
+                            <p class="text-black dark:text-white text-3xl font-bold">{{ total_info.total_bug_hunts }}</p>
+                            <p class="text-black dark:text-white text-md font-extralight">Bug Bounties</p>
                         </a>
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex flex-wrap justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-                        <i class="fa-sharp fa-solid fa-globe fa-2x text-black"></i>
+                        <i class="fa-sharp fa-solid fa-globe fa-2x text-black dark:text-white"></i>
                     </div>
                     <div>
                         <a href="{% url 'organization_manage_domains' organization %}">
-                            <p class="text-black text-3xl font-bold">{{ total_info.total_domains }}</p>
-                            <p class="text-black text-md font-extralight">Domains</p>
+                            <p class="text-black dark:text-white text-3xl font-bold">{{ total_info.total_domains }}</p>
+                            <p class="text-black dark:text-white text-md font-extralight">Domains</p>
                         </a>
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex flex-wrap justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-                        <i class="fa-sharp fa-solid fa-dollar-sign fa-2x text-black"></i>
+                        <i class="fa-sharp fa-solid fa-dollar-sign fa-2x text-black dark:text-white"></i>
                     </div>
                     <div>
-                        <p class="text-black text-3xl font-bold">$ {{ total_info.total_money_distributed }}</p>
-                        <p class="text-black text-md font-extralight">Money Distributed</p>
+                        <p class="text-black dark:text-white text-3xl font-bold">$ {{ total_info.total_money_distributed }}</p>
+                        <p class="text-black dark:text-white text-md font-extralight">Money Distributed</p>
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex flex-wrap justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-                        <i class="fa-solid fa-shield-halved fa-2x text-black"></i>
+                        <i class="fa-solid fa-shield-halved fa-2x text-black dark:text-white"></i>
                     </div>
                     <div>
                         <a href="#security-incidents">
-                            <p class="text-black text-3xl font-bold">{{ security_incidents_summary.total_security_issues }}</p>
-                            <p class="text-black text-md font-extralight">Security Issues</p>
+                            <p class="text-black dark:text-white text-3xl font-bold">{{ security_incidents_summary.total_security_issues }}</p>
+                            <p class="text-black dark:text-white text-md font-extralight">Security Issues</p>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
         <div class="flex flex-col lg:flex-row gap-y-5 mt-4">
-            <div class="flex flex-col ps-8 gap-5 ">
+            <div class="flex flex-col ps-8 gap-5">
                 <div class="flex flex-col lg:flex-row gap-5 bg-[#F3F5F7]">
-                    <div class="bg-white p-5 rounded-xl lg:w-[56vh]">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl lg:w-[56vh]">
                         <div class="header-container">
                             <h3 class="section-header">Bug Reported Type</h3>
                         </div>
@@ -95,7 +95,7 @@
                             <canvas id="bugTypePie" height="220px" width="660px"></canvas>
                         </div>
                     </div>
-                    <div class="bg-white p-5 rounded-xl lg:w-[56vh]">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl lg:w-[56vh]">
                         <div class="header-container">
                             <h3 class="section-header">Reported on Domains</h3>
                         </div>
@@ -104,13 +104,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-white p-5 rounded-xl w-full lg:w-[115vh]">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl w-full lg:w-[115vh]">
                     <h3 class="section-header">Monthly Reports of {{ get_current_year_monthly_reported_bar_data.current_year }}</h3>
                     <div class="bar-chart">
                         <canvas id="myChart" height="220px" width="660px"></canvas>
                     </div>
                 </div>
-                <div class="p-5 bg-white rounded-xl flex lg:flex-row lg:w-[115vh]">
+                <div class="p-5 bg-white dark:bg-gray-800 rounded-xl flex lg:flex-row lg:w-[115vh]">
                     <div class="w-full">
                         <div class="header-container">
                             <h3 class="section-header">Total Reported</h3>
@@ -197,7 +197,7 @@
             </div>
         </div>
         <div class="mx-5 flex flex-col gap-5 lg:w-[60vh]">
-            <div class="rounded-xl bg-white p-5">
+            <div class="rounded-xl bg-white dark:bg-gray-800 p-5">
                 <div class="header-container">
                     <h3 class="section-header">Your balance</h3>
                     <svg width="24"
@@ -281,18 +281,18 @@
     </div>
     <!-- Security Incidents Summary Section -->
     <div id="security-incidents" class="w-full px-8 mt-8">
-        <div class="bg-white rounded-xl p-6 shadow-sm">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Security Incidents Summary</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Security Incidents Summary</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Recent Incidents -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Recent Incidents (30 days)</h3>
-                    <p class="text-3xl font-bold text-[#e74c3c]">{{ security_incidents_summary.recent_incidents }}</p>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Recent Incidents (30 days)</h3>
+                    <p class="text-3xl font-bold text-red-600">{{ security_incidents_summary.recent_incidents }}</p>
                 </div>
                 <!-- Average Resolution Time -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Avg Resolution Time</h3>
-                    <p class="text-3xl font-bold text-gray-700">
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Avg Resolution Time</h3>
+                    <p class="text-3xl font-bold text-gray-700 dark:text-gray-300">
                         {% if security_incidents_summary.avg_resolution_time %}
                             {{ security_incidents_summary.avg_resolution_time|timesince }}
                         {% else %}
@@ -301,25 +301,25 @@
                     </p>
                 </div>
                 <!-- Severity Distribution -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Severity Distribution</h3>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Severity Distribution</h3>
                     <div class="space-y-2">
                         {% for severity in security_incidents_summary.severity_distribution %}
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Level {{ severity.severity }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">Level {{ severity.severity }}</span>
                                 <span class="font-semibold">{{ severity.count }}</span>
                             </div>
                         {% endfor %}
                     </div>
                 </div>
                 <!-- Top Affected Domains -->
-                <div class="bg-gray-50 p-4 rounded-lg md:col-span-2 lg:col-span-3">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Top Affected Domains</h3>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg md:col-span-2 lg:col-span-3">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Top Affected Domains</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {% for domain in security_incidents_summary.top_affected_domains %}
-                            <div class="bg-white p-3 rounded-md shadow-sm">
-                                <p class="font-medium text-gray-800">{{ domain.domain__name }}</p>
-                                <p class="text-sm text-gray-600">{{ domain.count }} incidents</p>
+                            <div class="bg-white dark:bg-gray-800 p-3 rounded-md shadow-sm">
+                                <p class="font-medium text-gray-800 dark:text-gray-200">{{ domain.domain__name }}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ domain.count }} incidents</p>
                             </div>
                         {% endfor %}
                     </div>
@@ -329,12 +329,12 @@
     </div>
     <!-- Threat Intelligence Section -->
     <div id="threat-intelligence" class="w-full px-8 mt-8">
-        <div class="bg-white rounded-xl p-6 shadow-sm">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Threat Intelligence</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Threat Intelligence</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Risk Score -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Security Risk Score</h3>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Security Risk Score</h3>
                     <div class="relative pt-1">
                         <div class="flex mb-2 items-center justify-between">
                             <div>
@@ -346,25 +346,25 @@
                     </div>
                 </div>
                 <!-- Top Attack Vectors -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Top Issue Categories</h3>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Top Issue Categories</h3>
                     <div class="space-y-2">
                         {% for vector in threat_intelligence.attack_vectors %}
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-600">{{ vector.vulnerability_type }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">{{ vector.vulnerability_type }}</span>
                                 <span class="font-semibold">{{ vector.count }}</span>
                             </div>
                         {% endfor %}
                     </div>
                 </div>
                 <!-- Recent Security Alerts -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Recent Security Alerts</h3>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Recent Security Alerts</h3>
                     <div class="space-y-3">
                         {% for alert in threat_intelligence.recent_alerts %}
                             <div class="flex items-center space-x-2">
-                                <span class="w-2 h-2 rounded-full {% if alert.cve_score >= 8 %}bg-[#e74c3c]{% elif alert.cve_score >= 5 %}bg-yellow-500{% else %}bg-orange-500{% endif %}"></span>
-                                <span class="text-sm text-gray-600 truncate">{{ alert.description }}</span>
+                                <span class="w-2 h-2 rounded-full {% if alert.cve_score >= 8 %}bg-red-500{% elif alert.cve_score >= 5 %}bg-yellow-500{% else %}bg-orange-500{% endif %}"></span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400 truncate">{{ alert.description }}</span>
                             </div>
                         {% endfor %}
                     </div>
