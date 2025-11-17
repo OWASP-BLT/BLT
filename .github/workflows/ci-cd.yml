@@ -1,8 +1,19 @@
 name: CI/CD Optimized
 
+# SECURITY NOTE:
+# - pull_request: Used for test/docker-test jobs that don't need write permissions
+# - pull_request_target: Used for pre-commit job to enable commenting/labeling on forked PRs
+#   When using pull_request_target, we explicitly checkout the PR head to run checks on the actual PR code
+
 on:
   #merge_group:
   pull_request:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   push:
     branches:
       - main
@@ -65,6 +76,9 @@ jobs:
 
   pre-commit:
     name: Run pre-commit
+    # Run on pull_request_target (for write permissions on forked PRs), push to main, or manual trigger
+    # Don't run on pull_request to avoid duplication with pull_request_target
+    if: github.event_name == 'pull_request_target' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -74,6 +88,11 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Checkout the PR head for pull_request_target, otherwise use default
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.ref }}
+          # For forked PRs, checkout from the fork repository
+          repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
@@ -87,7 +106,7 @@ jobs:
           set -e
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: github.event_name == 'pull_request' && steps.pre-commit.outputs.exit_code != '0'
+        if: (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
           script: |
@@ -140,7 +159,7 @@ jobs:
               body: message
             });
       - name: Add pre-commit status label
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
