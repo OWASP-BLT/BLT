@@ -328,8 +328,17 @@ class HackathonForm(forms.ModelForm):
                 # When editing, show all repositories from the organization
                 self.fields["repositories"].queryset = Repo.objects.filter(organization=self.instance.organization)
             else:
-                # When creating new, start with empty queryset
-                self.fields["repositories"].queryset = Repo.objects.none()
+                # When creating new, try to get organization from form data
+                organization_id = None
+                if "data" in kwargs and kwargs["data"]:
+                    organization_id = kwargs["data"].get("organization")
+
+                if organization_id:
+                    # Show repositories from the selected organization
+                    self.fields["repositories"].queryset = Repo.objects.filter(organization_id=organization_id)
+                else:
+                    # No organization selected yet, start with empty queryset
+                    self.fields["repositories"].queryset = Repo.objects.none()
 
     def clean_new_repo_urls(self):
         """Validate and parse new repository URLs."""

@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -115,6 +115,14 @@ class HackathonDetailView(DetailView):
                 created_at__lte=hackathon.end_time,
             )
 
+        # Exclude bot accounts from contributors
+        # Filter by contributor_type field (primary check) and name patterns (fallback)
+        query = query.exclude(
+            Q(contributor__contributor_type="Bot")
+            | Q(contributor__name__endswith="[bot]")
+            | Q(contributor__name__icontains="bot")
+        )
+
         return query
 
     def _get_date_range_data(self, start_date, end_date, data_dict, default_value=0):
@@ -136,11 +144,15 @@ class HackathonDetailView(DetailView):
         user_profile_count = prs.exclude(user_profile=None).values("user_profile").distinct().count()
 
         # Count unique contributors (GitHub users not registered on the platform)
-        # Exclude bot accounts
+        # Exclude bot accounts using contributor_type field (primary) and name patterns (fallback)
         contributor_count = (
             prs.filter(user_profile=None)
             .exclude(contributor=None)
-            .exclude(contributor__name__endswith="[bot]")
+            .exclude(
+                Q(contributor__contributor_type="Bot")
+                | Q(contributor__name__endswith="[bot]")
+                | Q(contributor__name__icontains="bot")
+            )
             .values("contributor")
             .distinct()
             .count()
@@ -168,14 +180,22 @@ class HackathonDetailView(DetailView):
         repos_with_pr_counts = []
 
         for repo in repositories:
-            # Count merged PRs for this repository
-            merged_pr_count = GitHubIssue.objects.filter(
-                repo=repo,
-                type="pull_request",
-                is_merged=True,
-                merged_at__gte=hackathon.start_time,
-                merged_at__lte=hackathon.end_time,
-            ).count()
+            # Count merged PRs for this repository (excluding bots)
+            merged_pr_count = (
+                GitHubIssue.objects.filter(
+                    repo=repo,
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=hackathon.start_time,
+                    merged_at__lte=hackathon.end_time,
+                )
+                .exclude(
+                    Q(contributor__contributor_type="Bot")
+                    | Q(contributor__name__endswith="[bot]")
+                    | Q(contributor__name__icontains="bot")
+                )
+                .count()
+            )
 
             repos_with_pr_counts.append({"repo": repo, "merged_pr_count": merged_pr_count})
 
@@ -194,7 +214,7 @@ class HackathonDetailView(DetailView):
         # Get merged PR data
         merged_pr_data = (
             self._get_base_pr_query(hackathon, repo_ids, is_merged=True)
-            .annotate(date=TruncDate("created_at"))
+            .annotate(date=TruncDate("merged_at"))
             .values("date")
             .annotate(count=Count("id"))
             .order_by("date")
