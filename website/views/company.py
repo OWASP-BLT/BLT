@@ -736,7 +736,7 @@ class AddDomainView(View):
         if method == "delete":
             return self.delete(request, *args, **kwargs)
         elif method == "put":
-            print("*" * 100)
+            logger.debug("=" * 100)
             return self.put(request, *args, **kwargs)
 
         return super().dispatch(request, *args, **kwargs)
