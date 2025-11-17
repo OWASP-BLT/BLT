@@ -1,6 +1,6 @@
 import os
 import time
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
@@ -393,7 +393,7 @@ class OrganizationTests(TestCase):
     @patch("website.views.company.requests.get")
     def test_create_and_list_organization(self, mock_requests_get):
         # Mock the URL validation request
-        mock_response = patch("requests.Response")
+        mock_response = Mock()
         mock_response.status_code = 200
         mock_requests_get.return_value = mock_response
 
