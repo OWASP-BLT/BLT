@@ -680,26 +680,26 @@ class IssueBaseCreate(object):
             from django.core.exceptions import ValidationError
 
             try:
-                screenshot_hash = self.request.POST.get("screenshot-hash")
-                filename = screenshot_hash
-                extension = filename.split(".")[-1]
-                screenshot_hash = filename[:99] + str(uuid.uuid4()) + "." + extension
-                self.request.POST["screenshot-hash"] = screenshot_hash
+                original_hash = self.request.POST.get("screenshot-hash").strip()
+                # Validate the original user input first
+                validate_screenshot_hash(original_hash)
 
-                validate_screenshot_hash(screenshot_hash.strip())
-                screenshot_path = os.path.join("uploads", f"{screenshot_hash}.png")
+                # Extract extension and generate unique hash
+                extension = original_hash.split(".")[-1] if "." in original_hash else "png"
+                unique_hash = original_hash[:99] + str(uuid.uuid4()) + "." + extension
+                self.request.POST["screenshot-hash"] = unique_hash
+
+                screenshot_path = os.path.join("uploads", f"{unique_hash}")
                 reopen = default_storage.open(screenshot_path, "rb")
                 django_file = File(reopen)
                 obj.screenshot.save(
-                    f"{screenshot_hash}.png",
+                    f"{unique_hash}",
                     django_file,
                     save=True,
                 )
-            except ValidationError as e:
-                # Screenshots are required - show error message
-                messages.error(self.request, f"Invalid screenshot: {e}")
-            except Exception as e:
-                # Handle file open/save errors
+            except ValidationError:
+                messages.error(self.request, "Invalid screenshot hash provided")
+            except Exception:
                 messages.error(self.request, "Failed to process screenshot file")
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
@@ -861,13 +861,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
             from django.core.exceptions import ValidationError
 
             try:
-                screenshot_hash = self.request.POST.get("screenshot-hash")
-                validate_screenshot_hash(screenshot_hash.strip())
-                screenshot_path = os.path.join("uploads", f"{screenshot_hash}.png")
+                screenshot_hash = self.request.POST.get("screenshot-hash").strip()
+                validate_screenshot_hash(screenshot_hash)
+                screenshot_path = os.path.join("uploads", screenshot_hash)
                 initial["screenshot"] = screenshot_path
-            except ValidationError as e:
-                # Screenshots are required - show error and redirect
-                messages.error(self.request, f"Invalid screenshot: {e}")
+            except ValidationError:
+                messages.error(self.request, "Invalid screenshot hash provided")
         return initial
 
     def post(self, request, *args, **kwargs):
