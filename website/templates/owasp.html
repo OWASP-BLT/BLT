@@ -20,22 +20,22 @@
     {% include "includes/sidenav.html" %}
     <div class="bg-gradient-to-b from-gray-50 to-white min-h-screen">
         <!-- Hero Section -->
-        <div class="bg-gray-900 text-white">
+        <div class="bg-gray-900 dark:bg-gray-50 text-white">
             <div class="container mx-auto px-4 py-16 md:py-24">
                 <div class="max-w-3xl">
                     <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
                         Welcome to <span class="text-[#e74c3c]">OWASP</span>
                     </h1>
-                    <p class="text-xl md:text-2xl text-gray-300 leading-relaxed mb-8">
+                    <p class="text-xl md:text-2xl text-gray-300 dark:text-gray-700 leading-relaxed mb-8">
                         Join the global community dedicated to improving software security through open-source collaboration.
                     </p>
                     <div class="flex flex-wrap gap-3">
                         <a href="https://owasp.org/chapters"
-                           class="px-6 py-3 bg-[#e74c3c] hover:bg-opacity-90 text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl hover:text-white "
+                           class="px-6 py-3 bg-[#e74c3c] hover:bg-opacity-90 text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl hover:text-white"
                            target="_blank"
                            rel="noopener noreferrer">Find Local Chapter</a>
                         <a href="https://owasp.org/membership"
-                           class="px-6 py-3 bg-white text-gray-900 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl "
+                           class="px-6 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl"
                            target="_blank"
                            rel="noopener noreferrer">Become a Member</a>
                     </div>
@@ -44,13 +44,13 @@
         </div>
         <div class="container mx-auto px-4 py-12 md:py-20">
             <!-- What is OWASP Section -->
-            <section class=" mx-auto mb-20">
-                <h2 class="text-3xl md:text-4xl font-bold mb-6 text-gray-900">What is OWASP?</h2>
-                <p class="text-lg text-gray-700 leading-relaxed mb-4">
+            <section class="mx-auto mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100">What is OWASP?</h2>
+                <p class="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
                     The Open Worldwide Application Security Project (OWASP) is a community-driven organization dedicated to improving the security of software. Our mission is to make security visible so that individuals and organizations worldwide can make informed decisions about software security risks.
                 </p>
-                <div class="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-[#e74c3c]">
-                    <p class="text-gray-700 italic">
+                <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border-l-4 border-[#e74c3c]">
+                    <p class="text-gray-700 dark:text-gray-300 italic">
                         Founded in 2001, OWASP has become the global standard for application security best practices and resources.
                     </p>
                 </div>
@@ -60,9 +60,9 @@
                 <h2 class="text-3xl md:text-4xl font-bold mb-8">Getting Involved</h2>
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <!-- Card 1 -->
-                    <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
                         <h3 class="text-2xl font-bold mb-4">Join a Local Chapter</h3>
-                        <p class="text-gray-600 mb-6">
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">
                             Connect with like-minded professionals and engage with the community in person or virtually.
                         </p>
                         <ul class="space-y-3 mb-6">
@@ -102,9 +102,9 @@
                         </a>
                     </div>
                     <!-- Card 2 -->
-                    <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
                         <h3 class="text-2xl font-bold mb-4">Become a Member</h3>
-                        <p class="text-gray-600 mb-6">
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">
                             Join OWASP as a member to access exclusive benefits while supporting the community's mission.
                         </p>
                         <ul class="space-y-3 mb-6">
@@ -144,9 +144,9 @@
                         </a>
                     </div>
                     <!-- Card 3 -->
-                    <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
                         <h3 class="text-2xl font-bold mb-4">Contribute to Projects</h3>
-                        <p class="text-gray-600 mb-6">
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">
                             Whether you're a developer, writer, designer, or security expert, there's a role for you.
                         </p>
                         <ul class="space-y-3 mb-6">
@@ -190,8 +190,8 @@
             <!-- Featured Projects Section -->
             <section class="mb-20">
                 <h2 class="text-3xl md:text-4xl font-bold mb-8">Featured Projects</h2>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200 dark:divide-gray-700">
                         <a href="https://owasp.org/www-project-top-ten/"
                            class="p-8 hover:bg-gray-50 transition-all"
                            target="_blank"
@@ -207,7 +207,7 @@
                                 </svg>
                             </div>
                             <h3 class="text-xl font-bold mb-2">OWASP Top Ten</h3>
-                            <p class="text-gray-600">
+                            <p class="text-gray-600 dark:text-gray-400">
                                 A standard awareness document for developers about the most critical security risks to web applications.
                             </p>
                         </a>
@@ -226,7 +226,9 @@
                                 </svg>
                             </div>
                             <h3 class="text-xl font-bold mb-2">OWASP ZAP</h3>
-                            <p class="text-gray-600">Zed Attack Proxy is a free security tool used to find vulnerabilities in web applications.</p>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Zed Attack Proxy is a free security tool used to find vulnerabilities in web applications.
+                            </p>
                         </a>
                         <a href="https://owasp.org/www-project-application-security-verification-standard/"
                            class="p-8 hover:bg-gray-50 transition-all"
@@ -243,7 +245,7 @@
                                 </svg>
                             </div>
                             <h3 class="text-xl font-bold mb-2">OWASP ASVS</h3>
-                            <p class="text-gray-600">
+                            <p class="text-gray-600 dark:text-gray-400">
                                 Application Security Verification Standard provides a basis for testing web application security controls.
                             </p>
                         </a>
@@ -251,7 +253,7 @@
                 </div>
                 <div class="mt-8 text-center">
                     <a href="https://owasp.org/projects/"
-                       class="inline-flex items-center px-6 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-all shadow-sm"
+                       class="inline-flex items-center px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-all shadow-sm"
                        target="_blank"
                        rel="noopener noreferrer">
                         Explore all projects
@@ -267,7 +269,7 @@
             </section>
             <!-- Start Your Own Section -->
             <section class="mb-20">
-                <div class="bg-gray-900 text-white rounded-xl shadow-xl overflow-hidden">
+                <div class="bg-gray-900 dark:bg-gray-50 text-white rounded-xl shadow-xl overflow-hidden">
                     <div class="grid md:grid-cols-2">
                         <div class="p-8 md:p-12">
                             <div class="inline-block p-3 bg-[#e74c3c] bg-opacity-20 rounded-lg mb-6">
@@ -280,7 +282,7 @@
                                 </svg>
                             </div>
                             <h2 class="text-3xl md:text-4xl font-bold mb-4">Start Your Own Project</h2>
-                            <p class="text-gray-300 mb-8">
+                            <p class="text-gray-300 dark:text-gray-700 mb-8">
                                 OWASP encourages innovation and supports individuals looking to start their own security projects. Propose your idea, get mentorship, and showcase your project to a global audience.
                             </p>
                             <a href="https://owasp.org/www-policy/"
@@ -297,7 +299,7 @@
                                 </svg>
                             </a>
                         </div>
-                        <div class="bg-gray-800 p-8 md:p-12 flex items-center justify-center">
+                        <div class="bg-gray-800 dark:bg-gray-100 p-8 md:p-12 flex items-center justify-center">
                             <div class="space-y-6 text-center md:text-left">
                                 <div class="flex flex-col md:flex-row items-center md:items-start">
                                     <div class="flex items-center justify-center h-10 w-10 rounded-full bg-[#e74c3c] bg-opacity-20 md:mr-4">
@@ -312,7 +314,7 @@
                                     </div>
                                     <div class="mt-3 md:mt-0">
                                         <h3 class="text-xl font-semibold mb-1">Mentorship Network</h3>
-                                        <p class="text-gray-400">Access OWASP's vast network for guidance</p>
+                                        <p class="text-gray-400 dark:text-gray-600">Access OWASP's vast network for guidance</p>
                                     </div>
                                 </div>
                                 <div class="flex flex-col md:flex-row items-center md:items-start">
@@ -328,7 +330,7 @@
                                     </div>
                                     <div class="mt-3 md:mt-0">
                                         <h3 class="text-xl font-semibold mb-1">Funding Opportunities</h3>
-                                        <p class="text-gray-400">Resources to help projects grow</p>
+                                        <p class="text-gray-400 dark:text-gray-600">Resources to help projects grow</p>
                                     </div>
                                 </div>
                                 <div class="flex flex-col md:flex-row items-center md:items-start">
@@ -344,7 +346,7 @@
                                     </div>
                                     <div class="mt-3 md:mt-0">
                                         <h3 class="text-xl font-semibold mb-1">Global Events</h3>
-                                        <p class="text-gray-400">Showcase at OWASP conferences</p>
+                                        <p class="text-gray-400 dark:text-gray-600">Showcase at OWASP conferences</p>
                                     </div>
                                 </div>
                             </div>
@@ -355,7 +357,7 @@
             <!-- Connect Section -->
             <section class="mb-20">
                 <h2 class="text-3xl md:text-4xl font-bold mb-8">Stay Connected</h2>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 md:p-12">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 md:p-12">
                     <div class="grid md:grid-cols-3 gap-8">
                         <a href="https://owasp.org/events/"
                            class="flex flex-col items-center text-center p-6 rounded-lg hover:bg-gray-50 transition-all"
@@ -372,7 +374,7 @@
                                 </svg>
                             </div>
                             <h3 class="text-xl font-bold mb-2">Global Events</h3>
-                            <p class="text-gray-600">Attend OWASP AppSec conferences to network with industry leaders</p>
+                            <p class="text-gray-600 dark:text-gray-400">Attend OWASP AppSec conferences to network with industry leaders</p>
                         </a>
                         <a href="https://twitter.com/owasp"
                            class="flex flex-col items-center text-center p-6 rounded-lg hover:bg-gray-50 transition-all"
@@ -389,7 +391,7 @@
                                 </svg>
                             </div>
                             <h3 class="text-xl font-bold mb-2">Social Media</h3>
-                            <p class="text-gray-600">Follow OWASP on Twitter, LinkedIn, and other platforms</p>
+                            <p class="text-gray-600 dark:text-gray-400">Follow OWASP on Twitter, LinkedIn, and other platforms</p>
                         </a>
                         <a href="https://owasp.org/"
                            class="flex flex-col items-center text-center p-6 rounded-lg hover:bg-gray-50 transition-all"
@@ -406,7 +408,7 @@
                                 </svg>
                             </div>
                             <h3 class="text-xl font-bold mb-2">Newsletters</h3>
-                            <p class="text-gray-600">Sign up for OWASP newsletters to stay updated on events</p>
+                            <p class="text-gray-600 dark:text-gray-400">Sign up for OWASP newsletters to stay updated on events</p>
                         </a>
                     </div>
                 </div>
@@ -417,16 +419,16 @@
                     <div class="p-8 md:p-12">
                         <div class="max-w-3xl mx-auto text-center">
                             <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Join the OWASP Community Today</h2>
-                            <p class="text-xl text-gray-300 mb-8">
+                            <p class="text-xl text-gray-300 dark:text-gray-700 mb-8">
                                 Whether you're here to learn, connect, or innovate, there's a place for you at OWASP. Take the first step today.
                             </p>
                             <div class="flex flex-wrap justify-center gap-4">
                                 <a href="https://owasp.org/membership"
-                                   class="px-8 py-4 bg-[#e74c3c] hover:bg-opacity-90 text-white hover:text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl ">
+                                   class="px-8 py-4 bg-[#e74c3c] hover:bg-opacity-90 text-white hover:text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl">
                                     Join OWASP
                                 </a>
                                 <a href="https://owasp.org/"
-                                   class="px-8 py-4 bg-white text-gray-900 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl ">
+                                   class="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl">
                                     Learn More
                                 </a>
                             </div>
