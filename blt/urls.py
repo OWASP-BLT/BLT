@@ -149,6 +149,7 @@ from website.views.hackathon import (
     HackathonPrizeCreateView,
     HackathonSponsorCreateView,
     HackathonUpdateView,
+    add_org_repos_to_hackathon,
     refresh_repository_data,
 )
 from website.views.issue import (
@@ -1090,6 +1091,12 @@ urlpatterns = [
                     "<slug:hackathon_slug>/refresh-repo/<int:repo_id>/",
                     refresh_repository_data,
                     name="refresh_repository_data",
+                ),
+                # Add the new URL pattern for adding all org repos to hackathon
+                path(
+                    "<slug:slug>/add-org-repos/",
+                    add_org_repos_to_hackathon,
+                    name="add_org_repos_to_hackathon",
                 ),
             ]
         ),
