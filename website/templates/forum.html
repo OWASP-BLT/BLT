@@ -126,7 +126,7 @@
                              id="comments-{{ post.id }}">
                             <form class="mb-6" onsubmit="submitComment(event, {{ post.id }})">
                                 {% csrf_token %}
-                                <textarea class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                <textarea class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white"
                                           placeholder="Add a comment..."
                                           required></textarea>
                                 <button type="submit"
@@ -171,7 +171,7 @@
                         <input type="text"
                                id="title"
                                name="title"
-                               class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                               class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white"
                                placeholder="Enter your discussion title"
                                required>
                     </div>
@@ -194,7 +194,7 @@
                         <textarea id="description"
                                   name="description"
                                   rows="4"
-                                  class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                  class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white"
                                   placeholder="Write your discussion post"
                                   required></textarea>
                     </div>

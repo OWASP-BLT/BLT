@@ -1,11 +1,13 @@
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils.timezone import now
 
-from website.models import Domain, Issue, Organization
+from website.models import DailyStatusReport, Domain, Issue, Organization
 from website.views.organization import BountyPayoutsView
 
 
@@ -114,3 +116,40 @@ class BountyPayoutsViewTests(TestCase):
         issues, total_count = result
         self.assertEqual(len(issues), 0)
         self.assertEqual(total_count, 0)
+
+
+class SizzleCheckInViewTests(TestCase):
+    def setUp(self):
+        # Create test user
+        self.client = Client()
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+        self.client.login(username="testuser", password="testpass123")
+
+    def test_add_sizzle_checkin_view_loads(self):
+        """Test that the add sizzle check-in view loads correctly"""
+        response = self.client.get(reverse("add_sizzle_checkin"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "What did you work on previously?")
+
+    def test_fill_from_previous_button_appears_with_yesterday_report(self):
+        """Test that the Fill from Previous Check-in button appears when yesterday's report exists"""
+        # Create yesterday's report
+        yesterday = now().date() - timedelta(days=1)
+        DailyStatusReport.objects.create(
+            user=self.user,
+            date=yesterday,
+            previous_work="Previous work from yesterday",
+            next_plan="This should be filled in today's previous work",
+            blockers="No blockers",
+        )
+
+        response = self.client.get(reverse("add_sizzle_checkin"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Fill from Previous Check-in")
+        self.assertContains(response, "fillFromPreviousBtn")
+
+    def test_fill_from_previous_button_not_shown_without_yesterday_report(self):
+        """Test that the Fill from Previous Check-in button is not shown when no yesterday report exists"""
+        response = self.client.get(reverse("add_sizzle_checkin"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Fill from Previous Check-in")
