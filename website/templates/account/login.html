@@ -45,7 +45,7 @@
                     {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "conditions" %}</a>
                 </p>
             </div>
-            <!-- Right Side (Login Form) -->
+            <!-- Right Side (Login Form) d -->
             <div class="p-5 bg-white dark:bg-gray-800 md:flex-1">
                 <h3 class="text-2xl font-semibold text-gray-700 dark:text-gray-300">{% trans "Account Login" %}</h3>
                 <form class="flex flex-col space-y-4 login"
@@ -65,7 +65,7 @@
                                id="id_login"
                                name="login"
                                value="{{ form.login.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                         <span class="help-block text-sm text-red-500">{{ form.login.errors }}</span>
                     </div>
                     <!-- Password Field -->
@@ -81,7 +81,7 @@
                                    id="id_password"
                                    name="password"
                                    value="{{ form.password.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-500 hover:text-gray-800 focus:outline-none"
