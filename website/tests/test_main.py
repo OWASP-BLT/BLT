@@ -11,7 +11,7 @@ from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from selenium import webdriver
-from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -150,10 +150,22 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        # Wait for login to complete by checking for the username in the page
+        WebDriverWait(self.selenium, 30).until(EC.text_to_be_present_in_element((By.TAG_NAME, "body"), "@bugbug"))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-        # Add explicit wait for the URL input field
-        url_input = WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.NAME, "url")))
+        # Wait for the form/field to be ready and be tolerant to input/textarea changes
+        try:
+            url_input = WebDriverWait(self.selenium, 60).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='url'], textarea[name='url']"))
+            )
+        except TimeoutException:
+            # Save artifacts for CI debugging
+            try:
+                self.selenium.save_screenshot("ci_failure_test_post_bug_full_url.png")
+            except Exception:
+                pass
+            print("DEBUG - page source at failure:\n", self.selenium.page_source)
+            raise
         url_input.send_keys("https://blt.owasp.org/report/")
         self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
         self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
@@ -175,11 +187,23 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        # Wait for login to complete by checking for the username in the page
+        WebDriverWait(self.selenium, 30).until(EC.text_to_be_present_in_element((By.TAG_NAME, "body"), "@bugbug"))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-        # Wait for the form to load completely before interacting with it
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.NAME, "url")))
-        self.selenium.find_element("name", "url").send_keys("https://google.com")
+        # Wait for the form/field to be ready and be tolerant to input/textarea changes
+        try:
+            url_input = WebDriverWait(self.selenium, 60).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='url'], textarea[name='url']"))
+            )
+        except TimeoutException:
+            # Save artifacts for CI debugging
+            try:
+                self.selenium.save_screenshot("ci_failure_test_post_bug_domain_url.png")
+            except Exception:
+                pass
+            print("DEBUG - page source at failure:\n", self.selenium.page_source)
+            raise
+        url_input.send_keys("https://google.com")
         self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
         self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))

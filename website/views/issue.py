@@ -689,18 +689,26 @@ class IssueBaseCreate(object):
                 unique_hash = original_hash[:99] + str(uuid.uuid4()) + "." + extension
                 self.request.POST["screenshot-hash"] = unique_hash
 
-                screenshot_path = os.path.join("uploads", f"{unique_hash}")
-                reopen = default_storage.open(screenshot_path, "rb")
-                django_file = File(reopen)
-                obj.screenshot.save(
-                    f"{unique_hash}",
-                    django_file,
-                    save=True,
-                )
+                # Open file using original_hash (the actual uploaded filename)
+                screenshot_path = os.path.join("uploads", original_hash)
+                try:
+                    reopen = default_storage.open(screenshot_path, "rb")
+                    django_file = File(reopen)
+                    # Save with unique_hash to avoid collisions
+                    obj.screenshot.save(
+                        unique_hash,
+                        django_file,
+                        save=True,
+                    )
+                finally:
+                    if "reopen" in locals():
+                        reopen.close()
             except ValidationError:
                 messages.error(self.request, "Invalid screenshot hash provided")
-            except Exception:
-                messages.error(self.request, "Failed to process screenshot file")
+            except FileNotFoundError:
+                messages.error(self.request, "Screenshot file not found. Please upload again.")
+            except (OSError, IOError):
+                messages.error(self.request, "Failed to process screenshot file. Please try again.")
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
@@ -863,7 +871,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             try:
                 screenshot_hash = self.request.POST.get("screenshot-hash").strip()
                 validate_screenshot_hash(screenshot_hash)
-                screenshot_path = os.path.join("uploads", screenshot_hash)
+                screenshot_path = os.path.join("uploads", f"{screenshot_hash}.png")
                 initial["screenshot"] = screenshot_path
             except ValidationError:
                 messages.error(self.request, "Invalid screenshot hash provided")
