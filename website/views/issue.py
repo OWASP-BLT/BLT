@@ -944,6 +944,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         return super().post(request, *args, **kwargs)
 
+    def _check_for_spam(self, form):
+        spam_detector = SpamDetection()
+        result = spam_detector.check_bug_report(
+            title=form.cleaned_data.get("description", ""),
+            description=form.cleaned_data.get("markdown_description", ""),
+            url=form.cleaned_data.get("url", ""),
+        )
+        is_spam = result.get("is_spam", False)
+        spam_score = result.get("spam_score", 0)
+        spam_reason = result.get("reason", "")
+        return is_spam, spam_score, spam_reason
+
     def form_valid(self, form):
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
@@ -968,22 +980,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
             return HttpResponseRedirect("/")
 
         # Check for Spam
-        spam_detector = SpamDetection()
-
-        result = spam_detector.check_bug_report(
-            title=form.cleaned_data.get("description", ""),
-            description=form.cleaned_data.get("markdown_description", ""),
-            url=form.cleaned_data.get("url", ""),
-        )
-        # result : dict  contains - "spam_score" : int , "is_spam" : bool , "reason" : string
-        is_spam = result.get("is_spam", False)
+        is_spam, spam_score, spam_reason = self._check_for_spam(form)
         spam_flagged = False
         if is_spam:
             import logging
 
             logger = logging.getLogger(__name__)
             logger.warning(
-                f"Potential spam detected - Score: {result.get('spam_score')}, "
+                f"Potential spam detected - Score: {spam_score}, "
                 f"IP: {reporter_ip}, "
                 f"Description: {description[:100]}"
             )
@@ -1111,12 +1115,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 logger.warning(f"Domain not found, creating new: name={clean_domain_no_www}, url={clean_domain}")
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
                 domain.save()
+
             if spam_flagged:
                 obj.is_hidden = True
-                spam_report = f"""Potential spam detected - Score: {result.get('spam_score')}
-                    Reason: {result.get('reason')}
-                    Description: {description[:100]}
-                    """
+                
             # Don't save issue if security vulnerability
             if form.instance.label == "4" or form.instance.label == 4:
                 dest_email = getattr(domain, "email", None)
