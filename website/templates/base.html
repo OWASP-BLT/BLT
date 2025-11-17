@@ -124,10 +124,8 @@
         {% block style %}
         {% endblock style %}
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
-        {% block include_header %}
-            {% include "includes/header.html" %}
-        {% endblock %}
+    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] text-gray-900 dark:text-gray-100 transition-colors duration-300">
+        {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
         <main class="min-h-screen pb-[70px] mt-[20px]">
