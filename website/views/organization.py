@@ -940,6 +940,61 @@ class DomainDetailView(ListView):
     def get_queryset(self):
         return Issue.objects.none()  # We'll handle the queryset in get_context_data
 
+    def get_company_news(self, company_name):
+        """Fetch recent news articles about the company using GNews API."""
+        news_articles = []
+
+        # Check if GNews API token is configured
+        gnews_token = getattr(settings, "GNEWS_API_TOKEN", None)
+        if not gnews_token:
+            logger.warning("GNews API token not configured in settings")
+            return news_articles
+
+        try:
+            # GNews API endpoint with company search - use quotes for exact company name matching
+            url = "https://gnews.io/api/v4/search"
+            # Construct a more specific search query about the company
+            search_query = f'"{company_name}" AND (company OR corporation OR business OR tech OR technology)'
+            params = {"q": search_query, "max": 5, "lang": "en", "token": gnews_token}
+
+            # Make API request with timeout
+            response = requests.get(url, params=params, timeout=10)
+
+            if response.status_code == 200:
+                data = response.json()
+                articles = data.get("articles", [])
+
+                # Process and format articles
+                for article in articles[:5]:  # Limit to 5 articles
+                    news_articles.append(
+                        {
+                            "title": article.get("title", ""),
+                            "description": article.get("description", ""),
+                            "url": article.get("url", ""),
+                            "source": article.get("source", {}).get("name", ""),
+                            "publishedAt": article.get("publishedAt", ""),
+                            "image": article.get("image", ""),
+                        }
+                    )
+
+                logger.info(f"Successfully fetched {len(news_articles)} news articles for {company_name}")
+
+            elif response.status_code == 429:
+                logger.warning("GNews API rate limit exceeded")
+            elif response.status_code == 401:
+                logger.error("GNews API authentication failed - check token")
+            else:
+                logger.warning(f"GNews API returned status code {response.status_code}")
+
+        except requests.exceptions.Timeout:
+            logger.warning("GNews API request timed out")
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"GNews API request failed: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error fetching news for {company_name}: {str(e)}")
+
+        return news_articles
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
@@ -970,6 +1025,10 @@ class DomainDetailView(ListView):
                 # Fetch related trademarks for the organization, ordered by filing date
                 trademarks = Trademark.objects.filter(organization=organization).order_by("-filing_date")
                 context["trademarks"] = trademarks
+
+            # Fetch company news using the domain/organization name
+            company_name = context["name"]
+            context["company_news"] = self.get_company_news(company_name)
 
             # Get open and closed issues
             open_issues = (

@@ -370,6 +370,41 @@
                         </ul>
                     </div>
                 </div>
+                <!-- Latest News -->
+                <div class="flex flex-col gap-4">
+                    <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">{% trans "Latest News" %}</h1>
+                    <div class="news-section w-full">
+                        {% if company_news %}
+                            <div class="flex flex-col gap-3">
+                                {% for article in company_news %}
+                                    <div class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-4 rounded-lg hover:shadow-md transition duration-200">
+                                        <div class="flex flex-col gap-2">
+                                            <a href="{{ article.url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="text-lg font-semibold text-[#e74c3c] hover:text-red-600 transition duration-200">
+                                                {{ article.title }}
+                                            </a>
+                                            {% if article.description %}
+                                                <p class="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">{{ article.description }}</p>
+                                            {% endif %}
+                                            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
+                                                {% if article.source %}<span class="font-medium">{{ article.source }}</span>{% endif %}
+                                                {% if article.publishedAt %}<span>{{ article.publishedAt|date:"M d, Y" }}</span>{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                <i class="fas fa-newspaper text-[#e74c3c] text-4xl mb-4"></i>
+                                <p class="text-gray-600 dark:text-gray-400">No recent news found for {{ name }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">News updates will appear here when available</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>

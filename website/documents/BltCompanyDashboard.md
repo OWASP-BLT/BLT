@@ -17,6 +17,7 @@ Users interact with the Company Dashboard through the following steps:
 - **Bug Report Items**: Each bug report includes a title, description snippet, status (open/closed), tags (e.g., General, Security), user who reported it, and the time since it was reported.
 - **Subscription Button**: Allows users to subscribe to updates for bugs reported for the company.
 - **Top Bug Hunters**: Displays a list of users who have reported the most bugs for the company, with their usernames and bug counts.
+- **Latest News**: Shows 3-5 recent news articles about the company fetched from GNews API, including article titles, descriptions, sources, and publication dates.
 - **Pagination Controls**: Allows users to navigate through multiple pages of bug reports.
 
 #### 4. Visual Design
@@ -43,3 +44,13 @@ The dashboard is designed with several features to enhance performance and user 
 - **Responsive Design**: The layout is fully responsive, adapting to different screen sizes and devices, ensuring a consistent and accessible experience across desktops, tablets, and mobile devices.
 - **Lazy Loading**: Bug report items and other media elements are loaded as needed, reducing initial load times and improving overall performance.
 - **Efficient Data Retrieval**: The page uses efficient data retrieval techniques to fetch and display bug reports quickly, minimizing wait times and enhancing user satisfaction.
+
+#### 8. Latest News Feature
+The Latest News section provides users with up-to-date information about the company:
+- **News Integration**: Utilizes the GNews API to fetch 3-5 recent news articles specifically about the company using targeted search queries.
+- **Article Display**: Each news article includes the title, description, source, and publication date with proper formatting and styling.
+- **External Links**: Article titles are clickable links that open the full articles in new tabs for detailed reading.
+- **Fallback Content**: When no news articles are available or if the API fails, a user-friendly message is displayed instead of leaving the section empty.
+- **Error Handling**: Robust error handling ensures that API failures, rate limits, or network issues don't break the dashboard functionality.
+- **Configuration**: The feature requires a `GNEWS_API_TOKEN` setting to be configured in the Django settings for API access.
+- **Performance**: News fetching includes timeout handling and logging to ensure optimal performance and debugging capabilities.

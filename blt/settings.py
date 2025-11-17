@@ -601,6 +601,9 @@ BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
 # OpenAI API Configuration
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# GNews API Configuration
+GNEWS_API_TOKEN = os.environ.get("GNEWS_API_TOKEN")
+
 ASGI_APPLICATION = "blt.asgi.application"
 
 CHANNEL_LAYERS = {
