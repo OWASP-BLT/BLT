@@ -1,0 +1,34 @@
+---
+all:
+  hosts:
+    blt_server:
+      ansible_host: your.server.ip.or.hostname
+      ansible_user: ubuntu
+      ansible_ssh_private_key_file: ~/.ssh/your_key.pem
+      ansible_python_interpreter: /usr/bin/python3
+
+  vars:
+    # Application settings
+    app_user: bltapp
+    app_dir: /opt/blt
+    venv_dir: "{{ app_dir }}/venv"
+    
+    # Repository
+    repo_url: https://github.com/OWASP-BLT/BLT.git
+    branch: main
+    
+    # Domain
+    domain: yourdomain.com
+    
+    # PostgreSQL settings
+    postgres_db_name: blt
+    postgres_db_user: blt_user
+    postgres_db_password: changeme_secure_password
+    
+    # Enable remote PostgreSQL access (true/false)
+    # When false, PostgreSQL will only accept local connections
+    # When true, PostgreSQL will listen on all interfaces and port 5432 will be opened in firewall
+    enable_remote_postgres: false
+    
+    # Uvicorn workers
+    uvicorn_workers: 4
