@@ -328,3 +328,26 @@ class DarkModeTests(TestCase):
         # Check for dark mode related content (script tag with darkMode reference)
         content = response.content.decode()
         self.assertTrue("darkMode.js" in content or "darkMode" in content, "Dark mode script not found in response")
+
+
+class StatusPageTests(TestCase):
+    """Test suite for status page functionality"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_status_page_loads(self):
+        """Test that the status page loads without errors"""
+        response = self.client.get(reverse("status_page"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("status", response.context)
+
+    def test_status_page_has_required_context(self):
+        """Test that status page provides expected context data"""
+        response = self.client.get(reverse("status_page"))
+        self.assertEqual(response.status_code, 200)
+        status = response.context["status"]
+
+        # Check for essential status data keys
+        self.assertIn("management_commands", status)
+        self.assertIn("available_commands", status)
