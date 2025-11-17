@@ -1755,13 +1755,13 @@ def management_commands(request):
             try:
                 command_file = command_class.__module__.replace(".", os.sep) + ".py"
                 command_path = os.path.join(settings.BASE_DIR, command_file)
-                
+
                 if os.path.exists(command_path):
                     command_info["file_path"] = command_path
                     # Get file modification time
                     mtime = os.path.getmtime(command_path)
                     command_info["file_modified"] = datetime.fromtimestamp(mtime, tz=pytz.UTC)
-                    
+
                     # Generate GitHub URL
                     # Assuming the repo is OWASP-BLT/BLT
                     relative_path = os.path.relpath(command_path, settings.BASE_DIR)
@@ -2016,7 +2016,7 @@ def run_management_command(request):
                     log_entry.execution_time = execution_time
                 except Exception:
                     pass
-                
+
                 log_entry.success = False
                 log_entry.save()
 
