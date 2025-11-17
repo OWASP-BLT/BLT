@@ -72,6 +72,8 @@ from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_ur
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
+logger = logging.getLogger(__name__)
+
 
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
