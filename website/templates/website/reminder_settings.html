@@ -2,16 +2,16 @@
 {% load static %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 py-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-8 text-center sm:text-left">
-                <h1 class="text-2xl font-bold text-gray-800">Reminder Settings</h1>
+                <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Reminder Settings</h1>
                 <div class="h-1 w-20 bg-[#e74c3c] mt-2 mb-3"></div>
-                <p class="mt-2 text-gray-600">Customize when and how you receive your daily reminders</p>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">Customize when and how you receive your daily reminders</p>
             </div>
             <!-- Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <!-- Messages -->
                 {% if messages %}
                     <div class="px-6 pt-6">
@@ -47,7 +47,7 @@
                     <form method="post" class="space-y-6">
                         {% csrf_token %}
                         <!-- Reminder Status -->
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                        <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-center justify-between">
                             <div class="flex items-center">
                                 <span class="mr-3 text-[#e74c3c]">
                                     <svg class="w-6 h-6"
@@ -59,13 +59,13 @@
                                     </svg>
                                 </span>
                                 <div>
-                                    <h3 class="font-medium text-gray-800">Daily Reminders</h3>
-                                    <p class="text-sm text-gray-500">Receive a notification every day</p>
+                                    <h3 class="font-medium text-gray-800 dark:text-gray-200">Daily Reminders</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-500">Receive a notification every day</p>
                                 </div>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 {{ form.is_active }}
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none  rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#e74c3c]">
+                                <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#e74c3c]">
                                 </div>
                             </label>
                         </div>
@@ -73,11 +73,11 @@
                             <!-- Reminder Time -->
                             <div class="space-y-2">
                                 <label for="{{ form.reminder_time.id_for_label }}"
-                                       class="block text-sm font-medium text-gray-700">
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     What time would you like to be reminded?
                                 </label>
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 z-20">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-500 z-20">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                              width="20"
                                              height="20"
@@ -94,15 +94,17 @@
                                     <p class="mt-1 text-sm text-[#e74c3c]">{{ form.reminder_time.errors.0 }}</p>
                                 {% endif %}
                                 {% if form.reminder_time.help_text %}
-                                    <p class="mt-1 text-xs text-gray-500">{{ form.reminder_time.help_text }}</p>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">{{ form.reminder_time.help_text }}</p>
                                 {% endif %}
                             </div>
                             <!-- Timezone -->
                             <div class="space-y-2">
                                 <label for="{{ form.timezone.id_for_label }}"
-                                       class="block text-sm font-medium text-gray-700">Your timezone</label>
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Your timezone
+                                </label>
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 z-20">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-500 z-20">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                              width="20"
                                              height="20"
@@ -116,11 +118,13 @@
                                     <div class="timezone-select-wrapper w-full">{{ form.timezone }}</div>
                                 </div>
                                 {% if form.timezone.errors %}<p class="mt-1 text-sm text-[#e74c3c]">{{ form.timezone.errors.0 }}</p>{% endif %}
-                                {% if form.timezone.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.timezone.help_text }}</p>{% endif %}
+                                {% if form.timezone.help_text %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-500">{{ form.timezone.help_text }}</p>
+                                {% endif %}
                             </div>
                         </div>
                         <!-- Submit Button -->
-                        <div class="pt-6">
+                        <div class="pt-6 space-y-3">
                             <button type="submit"
                                     class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none transition-colors duration-200">
                                 <svg class="w-5 h-5 mr-2"
@@ -133,6 +137,21 @@
                                 Save Settings
                             </button>
                         </div>
+                    </form>
+                    <!-- Test Reminder Button -->
+                    <form method="post" action="{% url 'send_test_reminder' %}" class="mt-3">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="w-full flex justify-center items-center py-3 px-4 border-2 border-[#e74c3c] rounded-lg shadow-sm text-base font-medium text-[#e74c3c] bg-white dark:bg-gray-800 hover:bg-[#e74c3c] hover:text-white focus:outline-none transition-colors duration-200">
+                            <svg class="w-5 h-5 mr-2"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                            </svg>
+                            Send Test Reminder
+                        </button>
                     </form>
                 </div>
             </div>
