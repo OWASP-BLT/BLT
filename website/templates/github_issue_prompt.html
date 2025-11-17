@@ -29,29 +29,33 @@
               method="post"
               action="{% url 'get_github_issue' %}"
               enctype="multipart/form-data"
-              class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md opacity-100 translate-y-0 transition-all duration-500 ease-out"
+              class="w-[96%] bg-white dark:bg-gray-800 rounded-2xl p-10 my-10 shadow-md opacity-100 translate-y-0 transition-all duration-500 ease-out"
               onsubmit="return validateGithubIssueSubmit()">
             {% csrf_token %}
             <!-- Description and URL -->
             <div class="w-full pb-12">
-                <p class="text-5xl font-bold text-gray-900">GENERATE GITHUB ISSUE</p>
+                <p class="text-5xl font-bold text-gray-900 dark:text-gray-100">GENERATE GITHUB ISSUE</p>
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <!-- Detailed Description -->
                     <div class="sm:col-span-5">
-                        <label for="description" class="block text-2xl font-bold text-gray-900">Detailed Description</label>
+                        <label for="description"
+                               class="block text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            Detailed Description
+                        </label>
                         <div class="mt-4">
                             <textarea id="description"
                                       name="description"
                                       rows="15"
                                       placeholder="Describe the issue in detail"
-                                      class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-red-600"></textarea>
+                                      class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-red-600"></textarea>
                         </div>
                     </div>
                 </div>
                 <!-- Repository URL -->
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5">
-                        <label for="repository_url" class="block text-2xl font-bold text-gray-900">
+                        <label for="repository_url"
+                               class="block text-2xl font-bold text-gray-900 dark:text-gray-100">
                             Enter GitHub Repository URL (Optional)
                         </label>
                         <div class="mt-4">
@@ -59,7 +63,7 @@
                                    type="text"
                                    name="repository_url"
                                    placeholder="Enter repository URL"
-                                   class="block w-full mt-4 placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-red-600" />
+                                   class="block w-full mt-4 placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-red-600" />
                         </div>
                     </div>
                 </div>

@@ -19,39 +19,42 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 py-12">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header Section -->
             <div class="text-center mb-12">
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">Support OWASP BLT</h1>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Support OWASP BLT</h1>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
                     Help us make the web more secure by supporting our mission. Your contribution directly impacts the development of open-source security tools.
                 </p>
             </div>
             <!-- Donation Options Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                 <!-- Monthly Prize Sponsorship Card -->
-                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
                     <div class="p-8">
                         <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-2xl mb-6">
                             <i class="fas fa-trophy text-3xl text-[#e74c3c]"></i>
                         </div>
-                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Sponsor Monthly Prizes</h2>
-                        <p class="text-gray-600 mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Sponsor Monthly Prizes</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">
                             Reward top contributors and encourage high-quality bug reports by sponsoring our monthly leaderboard prizes.
                         </p>
                         <form class="space-y-4">
                             <div>
-                                <label for="bchAddress" class="block text-sm font-medium text-gray-700 mb-2">BCH Address</label>
+                                <label for="bchAddress"
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    BCH Address
+                                </label>
                                 <div class="relative">
                                     <input type="text"
                                            id="bchAddress"
                                            name="bchAddress"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-[#e74c3c] focus:border-[#e74c3c] transition-colors"
+                                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-[#e74c3c] focus:border-[#e74c3c] transition-colors"
                                            placeholder="Enter your BCH address"
                                            required>
                                     <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                        <i class="fas fa-bitcoin text-gray-400"></i>
+                                        <i class="fas fa-bitcoin text-gray-400 dark:text-gray-600"></i>
                                     </div>
                                 </div>
                             </div>
@@ -64,13 +67,13 @@
                     </div>
                 </div>
                 <!-- Direct Project Support Card -->
-                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
                     <div class="p-8">
                         <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-2xl mb-6">
                             <i class="fas fa-heart text-3xl text-[#e74c3c]"></i>
                         </div>
-                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Support Development</h2>
-                        <p class="text-gray-600 mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Support Development</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">
                             Help us maintain and improve OWASP BLT by supporting our development efforts directly.
                         </p>
                         <div class="space-y-4">
@@ -91,42 +94,42 @@
                 </div>
             </div>
             <!-- Benefits Section -->
-            <div class="bg-white rounded-2xl shadow-xl p-8 mb-16">
-                <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Benefits of Supporting OWASP BLT</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-16">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">Benefits of Supporting OWASP BLT</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div class="text-center">
                         <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mx-auto mb-4">
                             <i class="fas fa-shield-alt text-2xl text-[#e74c3c]"></i>
                         </div>
                         <h3 class="text-lg font-semibold mb-2">Strengthen Security</h3>
-                        <p class="text-gray-600">Help make the web more secure by supporting open-source security tools.</p>
+                        <p class="text-gray-600 dark:text-gray-400">Help make the web more secure by supporting open-source security tools.</p>
                     </div>
                     <div class="text-center">
                         <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mx-auto mb-4">
                             <i class="fas fa-users text-2xl text-[#e74c3c]"></i>
                         </div>
                         <h3 class="text-lg font-semibold mb-2">Build Community</h3>
-                        <p class="text-gray-600">Foster a vibrant community of security researchers and developers.</p>
+                        <p class="text-gray-600 dark:text-gray-400">Foster a vibrant community of security researchers and developers.</p>
                     </div>
                     <div class="text-center">
                         <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mx-auto mb-4">
                             <i class="fas fa-star text-2xl text-[#e74c3c]"></i>
                         </div>
                         <h3 class="text-lg font-semibold mb-2">Gain Recognition</h3>
-                        <p class="text-gray-600">Get acknowledged as a supporter in our community and documentation.</p>
+                        <p class="text-gray-600 dark:text-gray-400">Get acknowledged as a supporter in our community and documentation.</p>
                     </div>
                 </div>
             </div>
             <!-- FAQ Section -->
-            <div class="bg-white rounded-2xl shadow-xl p-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Frequently Asked Questions</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">Frequently Asked Questions</h2>
                 <div class="space-y-6 max-w-3xl mx-auto">
                     <div>
                         <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
                             <i class="fas fa-question-circle text-[#e74c3c]"></i>
                             How are donations used?
                         </h3>
-                        <p class="text-gray-600">
+                        <p class="text-gray-600 dark:text-gray-400">
                             Donations support ongoing development, server costs, and monthly prizes for top contributors.
                         </p>
                     </div>
@@ -135,7 +138,7 @@
                             <i class="fas fa-question-circle text-[#e74c3c]"></i>
                             Is my donation tax-deductible?
                         </h3>
-                        <p class="text-gray-600">
+                        <p class="text-gray-600 dark:text-gray-400">
                             Yes, donations through Open Collective are tax-deductible in many countries as we're part of OWASP Foundation.
                         </p>
                     </div>
@@ -144,7 +147,9 @@
                             <i class="fas fa-question-circle text-[#e74c3c]"></i>
                             Can I sponsor specific features?
                         </h3>
-                        <p class="text-gray-600">Yes! Contact our team to discuss sponsoring specific feature development or improvements.</p>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Yes! Contact our team to discuss sponsoring specific feature development or improvements.
+                        </p>
                     </div>
                 </div>
             </div>

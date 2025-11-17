@@ -1,23 +1,25 @@
 <div class="space-y-6">
     {% if channels %}
-        <h2 class="text-2xl font-bold text-gray-100">Recommended Discussion Channels</h2>
+        <h2 class="text-2xl font-bold text-gray-100 dark:text-gray-900">Recommended Discussion Channels</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for item in channels %}
-                <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105">
+                <div class="bg-gray-800 dark:bg-gray-100 rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105">
                     <div class="p-6 space-y-4">
                         <!-- Channel Name -->
                         <h3 class="text-xl font-semibold text-white">{{ item.channel.name }}</h3>
                         <!-- Description -->
-                        <p class="text-gray-300 line-clamp-3">{{ item.channel.description|default:"No description available." }}</p>
+                        <p class="text-gray-300 dark:text-gray-700 line-clamp-3">
+                            {{ item.channel.description|default:"No description available." }}
+                        </p>
                         <!-- Source -->
                         <div class="flex items-center space-x-2">
-                            <span class="text-sm font-medium text-gray-400">Source:</span>
-                            <span class="text-sm text-gray-300">{{ item.channel.source }}</span>
+                            <span class="text-sm font-medium text-gray-400 dark:text-gray-600">Source:</span>
+                            <span class="text-sm text-gray-300 dark:text-gray-700">{{ item.channel.source }}</span>
                         </div>
                         <!-- Member Count -->
                         <div class="flex items-center space-x-2">
-                            <span class="text-sm font-medium text-gray-400">Members:</span>
-                            <span class="text-sm text-gray-300">{{ item.channel.member_count }}</span>
+                            <span class="text-sm font-medium text-gray-400 dark:text-gray-600">Members:</span>
+                            <span class="text-sm text-gray-300 dark:text-gray-700">{{ item.channel.member_count }}</span>
                         </div>
                         <!-- Tags -->
                         {% if item.channel.tags.exists %}
@@ -29,11 +31,11 @@
                         {% endif %}
                         <!-- Relevance Score -->
                         <div class="flex items-center space-x-2">
-                            <span class="text-sm font-medium text-gray-400">Relevance Score:</span>
+                            <span class="text-sm font-medium text-gray-400 dark:text-gray-600">Relevance Score:</span>
                             <span class="text-sm text-green-400 font-semibold">{{ item.relevance_score }}</span>
                         </div>
                         <!-- Reasoning -->
-                        <div class="text-sm text-gray-300">
+                        <div class="text-sm text-gray-300 dark:text-gray-700">
                             <span class="font-medium">Reason:</span> {{ item.reasoning }}
                         </div>
                         <!-- Invite URL -->
@@ -51,7 +53,7 @@
         </div>
     {% else %}
         <div class="text-center py-12">
-            <p class="text-lg text-gray-300">No recommended discussion channels found.</p>
+            <p class="text-lg text-gray-300 dark:text-gray-700">No recommended discussion channels found.</p>
         </div>
     {% endif %}
 </div>

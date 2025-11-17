@@ -1,37 +1,37 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <div class="w-full h-full">
-    <div class="w-full h-full bg-white rounded-lg  border border-gray-900/10 p-6">
-        <h1 class="text-gray-800 text-2xl mb-4 font-semibold">BUG DESCRIPTION</h1>
+    <div class="w-full h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-900/10 p-6">
+        <h1 class="text-gray-800 dark:text-gray-200 text-2xl mb-4 font-semibold">BUG DESCRIPTION</h1>
         <div class="w-full flex flex-col items-center justify-between mb-4 md:flex-row md:justify-between">
-            <div class="w-full flex justify-around  md:justify-start gap-1 ">
+            <div class="w-full flex justify-around md:justify-start gap-1">
                 <button id="boldButton"
                         type="button"
-                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-gray-400 hover:bg-gray-500  transition-all duration-200 ease-in-out  text-white rounded-md">
+                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 transition-all duration-200 ease-in-out text-white rounded-md">
                     Bold
                 </button>
                 <button id="italicButton"
                         type="button"
-                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-gray-400 hover:bg-gray-500  transition-all duration-200 ease-in-out  text-white rounded-md">
+                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 transition-all duration-200 ease-in-out text-white rounded-md">
                     Italic
                 </button>
                 <button id="imageButton"
                         type="button"
-                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-gray-400 hover:bg-gray-500  transition-all duration-200 ease-in-out  text-white rounded-md">
+                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 transition-all duration-200 ease-in-out text-white rounded-md">
                     Add Image
                 </button>
                 <button id="linkButton"
                         type="button"
-                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-gray-400 hover:bg-gray-500  transition-all duration-200 ease-in-out  text-white rounded-md">
+                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 transition-all duration-200 ease-in-out text-white rounded-md">
                     Add Link
                 </button>
                 <button id="previewButton"
                         type="button"
-                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-red-500  hover:bg-red-600  transition-all duration-200 ease-in-out text-white rounded-md">
+                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-red-500 hover:bg-red-600 transition-all duration-200 ease-in-out text-white rounded-md">
                     Preview
                 </button>
                 <button id="editButton"
                         type="button"
-                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-red-500  hover:bg-red-600  text-white rounded-md hidden">
+                        class="text-sm px-3 py-2 md:text-xl m-1 md:px-6 font-medium bg-red-500 hover:bg-red-600 text-white rounded-md hidden">
                     Edit
                 </button>
             </div>
@@ -39,10 +39,10 @@
         <div class="flex">
             <textarea id="markdownInput"
                       name="markdown_description"
-                      class="flex-1 h-[200px] bg-gray-100 text-xl placeholder:text-xl resize-none border border-gray-300 rounded-md p-5"
+                      class="flex-1 h-[200px] bg-gray-100 dark:bg-gray-800 text-xl placeholder:text-xl resize-none border border-gray-300 dark:border-gray-600 rounded-md p-5"
                       placeholder="Enter your markdown here...">{{ form.markdown_description.value|default:'' }}</textarea>
             <div id="previewContainer"
-                 class="h-[200px] flex-1 bg-white rounded-md p-4 hidden">
+                 class="h-[200px] flex-1 bg-white dark:bg-gray-800 rounded-md p-4 hidden">
                 <div id="markdownPreview"></div>
             </div>
         </div>

@@ -21,7 +21,7 @@
             <!-- Page Header -->
             <div class="mb-8">
                 <h1 class="text-[#e74c3c] font-satoshi font-bold text-[35px]">Add Bug Bounty</h1>
-                <p class="text-gray-600 text-sm mt-2">
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-2">
                     Create a new bug bounty program to engage security researchers and strengthen your application security.
                 </p>
             </div>
@@ -31,16 +31,16 @@
                   id="add_bughunt_form"
                   enctype="multipart/form-data">
                 {% csrf_token %}
-                <div class="bg-white p-10 border border-gray-200 rounded-xl shadow-md ">
+                <div class="bg-white dark:bg-gray-800 p-10 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md">
                     <div class="pb-12">
-                        <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Information</h2>
-                        <p class="mt-1 text-sm text-gray-600">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Bug Bounty Information</h2>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                             Provide details about your bug bounty program and set the timeline for researchers.
                         </p>
                         <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                             <div class="sm:col-span-3">
                                 <label for="bughunt_name"
-                                       class="block text-sm font-medium leading-6 text-gray-900">
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
                                     Bug Bounty Name
                                 </label>
                                 <div class="mt-2">
@@ -50,12 +50,14 @@
                                            autocomplete="bughunt_name"
                                            placeholder="Hunt 1.0"
                                            required
-                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                                 </div>
                             </div>
                             <div class="sm:col-span-3">
                                 <label for="domain_url"
-                                       class="block text-sm font-medium leading-6 text-gray-900">Domain Url</label>
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Domain Url
+                                </label>
                                 <div class="mt-2">
                                     <input type="text"
                                            name="domain_url"
@@ -63,20 +65,20 @@
                                            autocomplete="domain_url"
                                            placeholder="https://domain.xyz"
                                            required
-                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                                 </div>
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="domain"
-                                       class="block text-sm font-medium leading-6 text-gray-900">
-                                    Domain <span class="text-xs text-gray-500">(Select the domain for this bug bounty)</span>
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Domain <span class="text-xs text-gray-500 dark:text-gray-500">(Select the domain for this bug bounty)</span>
                                 </label>
                                 <div class="mt-2 w-full">
                                     <select id="domain"
                                             name="domain"
                                             autocomplete="domain-name"
                                             required
-                                            class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 bg-white transition-colors duration-200 cursor-pointer sm:text-sm sm:leading-6">
+                                            class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 bg-white dark:bg-gray-800 transition-colors duration-200 cursor-pointer sm:text-sm sm:leading-6">
                                         <option value="" disabled selected>Select a domain</option>
                                         {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
                                     </select>
@@ -84,11 +86,13 @@
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="start_date"
-                                       class="block text-sm font-medium leading-6 text-gray-900">Start Date</label>
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Start Date
+                                </label>
                                 <div class="mt-2">
                                     <div class="relative">
                                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <svg class="w-4 h-4 text-gray-500"
+                                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-500"
                                                  aria-hidden="true"
                                                  xmlns="http://www.w3.org/2000/svg"
                                                  fill="currentColor"
@@ -100,18 +104,20 @@
                                                id="start_date"
                                                required
                                                type="text"
-                                               class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
+                                               class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
                                                placeholder="MM/DD/YYYY">
                                     </div>
                                 </div>
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="end_date"
-                                       class="block text-sm font-medium leading-6 text-gray-900">End Date</label>
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    End Date
+                                </label>
                                 <div class="mt-2">
                                     <div class="relative">
                                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <svg class="w-4 h-4 text-gray-500"
+                                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-500"
                                                  aria-hidden="true"
                                                  xmlns="http://www.w3.org/2000/svg"
                                                  fill="currentColor"
@@ -123,7 +129,7 @@
                                                id="end_date"
                                                required
                                                type="text"
-                                               class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
+                                               class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
                                                placeholder="MM/DD/YYYY">
                                     </div>
                                 </div>
@@ -131,15 +137,18 @@
                         </div>
                         <div class="space-y-12">
                             <div class="border-b border-gray-900/10 pb-12 mt-10">
-                                <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Assets</h2>
-                                <p class="mt-1 text-sm text-gray-600">Upload logo and banner images for your bug bounty program.</p>
+                                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Bug Bounty Assets</h2>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Upload logo and banner images for your bug bounty program.</p>
                                 <div class="col-span-full mt-8">
-                                    <label for="logo" class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Logo</label>
+                                    <label for="logo"
+                                           class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                        Bug Bounty Logo
+                                    </label>
                                     <div class="mt-2 flex flex-col gap-4">
                                         <div class="flex items-center gap-x-3">
                                             <label for="logo" class="relative cursor-pointer">
                                                 <div id="previewLogoDiv"
-                                                     class="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 hover:border-[#e74c3c] transition-colors duration-200">
+                                                     class="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#e74c3c] transition-colors duration-200">
                                                     <img id="logoPreview"
                                                          height="128"
                                                          width="128"
@@ -180,12 +189,14 @@
                                                 <div id="logoError" class="hidden text-xs text-[#e74c3c] mt-1"></div>
                                             </div>
                                         </div>
-                                        <p class="text-sm text-gray-500">Recommended: Square image, JPG/PNG/GIF, max 5MB, at least 128x128px</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-500">
+                                            Recommended: Square image, JPG/PNG/GIF, max 5MB, at least 128x128px
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="col-span-full mt-8">
                                     <label for="banner"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
+                                           class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
                                         Bug Bounty Banner
                                     </label>
                                     <label for="banner" class="cursor-pointer block">
@@ -197,11 +208,11 @@
                                                      aria-hidden="true">
                                                     <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
                                                 </svg>
-                                                <div class="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
+                                                <div class="mt-4 flex text-sm leading-6 text-gray-600 dark:text-gray-400 justify-center">
                                                     <span class="font-semibold text-[#e74c3c]">Upload a banner</span>
                                                     <p class="pl-1">or drag and drop</p>
                                                 </div>
-                                                <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
+                                                <p class="text-xs leading-5 text-gray-600 dark:text-gray-400">PNG, JPG, GIF up to 10MB</p>
                                             </div>
                                         </div>
                                         <input id="banner"
@@ -217,10 +228,10 @@
                                                 <img id="bannerPreview"
                                                      height="128"
                                                      width="128"
-                                                     class="hidden max-w-md max-h-48 object-cover rounded-lg border-2 border-gray-200"
+                                                     class="hidden max-w-md max-h-48 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
                                                      alt="Banner preview" />
                                                 <div id="defaultBannerIcon"
-                                                     class="flex items-center justify-center w-64 h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-gray-400">
+                                                     class="flex items-center justify-center w-64 h-32 bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-400 dark:text-gray-600">
                                                     <svg class="w-12 h-12"
                                                          fill="none"
                                                          stroke="currentColor"
@@ -250,23 +261,27 @@
                                                 <div id="bannerError" class="hidden text-xs text-[#e74c3c] mt-1"></div>
                                             </div>
                                         </div>
-                                        <p class="text-sm text-gray-500">Recommended: Wide banner image, JPG/PNG/GIF, max 5MB, aspect ratio 16:9 or similar</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-500">
+                                            Recommended: Wide banner image, JPG/PNG/GIF, max 5MB, aspect ratio 16:9 or similar
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="border-b border-gray-900/10 pb-12 mt-10">
-                            <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Description</h2>
-                            <p class="mt-1 text-sm text-gray-600">Provide a detailed description of your bug bounty program, scope, and rules.</p>
+                            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Bug Bounty Description</h2>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                Provide a detailed description of your bug bounty program, scope, and rules.
+                            </p>
                             <div class="mt-6">{% include "organization/organization_includes/md_editor.html" %}</div>
                         </div>
                         <div class="border-b border-gray-900/10 pb-12 mt-10">
-                            <h2 class="text-xl font-semibold text-gray-900">Bug Bounty Prizes</h2>
-                            <p class="mt-1 text-sm text-gray-600">
+                            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Bug Bounty Prizes</h2>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                                 Define the prizes and rewards for security researchers who find valid vulnerabilities.
                             </p>
-                            <div class="bg-gray-50 w-full p-7 mt-6 rounded-lg">
-                                <p class="text-sm text-gray-600 mb-4">
+                            <div class="bg-gray-50 dark:bg-gray-900 w-full p-7 mt-6 rounded-lg">
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                     Fill in the prize details below and click "Add Prize" to add it to your bug bounty program.
                                 </p>
                                 <div>
@@ -277,7 +292,7 @@
                                            name="prize_name"
                                            id="prize_name"
                                            placeholder="1st Prize"
-                                           class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none">
+                                           class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 dark:border-gray-700 outline-none">
                                 </div>
                                 <div class="mt-3">
                                     <label for="cash_value" class="font-bold">
@@ -288,7 +303,7 @@
                                            placeholder="1000"
                                            name="cash_value"
                                            id="cash_value"
-                                           class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none">
+                                           class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 dark:border-gray-700 outline-none">
                                 </div>
                                 <div class="mt-3">
                                     <label for="number_of_winning_projects" class="font-bold">Number of Winning Projects</label>
@@ -297,7 +312,7 @@
                                            placeholder="1 (Minimum)"
                                            id="number_of_winning_projects"
                                            name="number_of_winning_projects"
-                                           class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none">
+                                           class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 dark:border-gray-700 outline-none">
                                 </div>
                                 <div class="mt-2 flex items-center">
                                     <input type="checkbox"
@@ -313,11 +328,11 @@
                                     <textarea type="text"
                                               name="prize_description"
                                               id="prize_description"
-                                              class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none"></textarea>
+                                              class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 dark:border-gray-700 outline-none"></textarea>
                                 </div>
                                 <div class="mt-3 flex flex-col" id="cryptocurrencyDiv">
                                     <label class="font-bold">Will this prize will be paid in cryptocurrency?</label>
-                                    <p class="text-[12px] text-gray-700 ml-1">
+                                    <p class="text-[12px] text-gray-700 dark:text-gray-300 ml-1">
                                         Check below if your prize is paid in cryptocurrency, and list the cash value of the cryptocurrenty and specify the crypto name in Hunt description eg: $100 USD in ETH
                                     </p>
                                     <div class="mt-2 flex items-center">
@@ -339,16 +354,16 @@
                                  id="list-prize-container"></div>
                         </div>
                         <!-- Action Buttons -->
-                        <div class=" py-6 ">
+                        <div class="py-6">
                             <div class="flex items-center justify-end gap-x-6">
                                 <button type="button"
                                         onclick="cancelForm()"
-                                        class="text-md font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+                                        class="text-md font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-colors duration-200">
                                     Cancel
                                 </button>
                                 <button type="button"
                                         onclick="PublishBughunt('false')"
-                                        class="rounded-md bg-gray-600 px-12 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-gray-700 transition-all duration-200">
+                                        class="rounded-md bg-gray-600 dark:bg-gray-300 px-12 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-gray-700 transition-all duration-200">
                                     Save as Draft
                                 </button>
                                 <button type="button"

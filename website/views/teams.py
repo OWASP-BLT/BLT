@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -15,6 +16,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from website.models import Challenge, JoinRequest, Kudos, Organization, UserProfile
+
+logger = logging.getLogger(__name__)
 
 
 class TeamOverview(TemplateView):
@@ -247,7 +250,7 @@ class GiveKudosView(APIView):
             # Fetch sender using GitHub username from UserProfile
             sender_profile = UserProfile.objects.filter(github_url__icontains=sender_github).first()
             sender = sender_profile.user if sender_profile else None
-            print(sender_profile)
+            logger.debug(f"Sender profile: {sender_profile}")
             if not receiver or not sender:
                 return Response({"success": False, "error": "Invalid sender or receiver username"}, status=404)
 

@@ -14,9 +14,9 @@
     <!-- Loading Overlay -->
     <div id="loadingOverlay"
          class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg shadow-xl flex items-center gap-4">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl flex items-center gap-4">
             <div class="animate-spin rounded-full h-8 w-8 border-4 border-red-500 border-t-transparent"></div>
-            <span class="text-gray-700 text-lg">Syncing repository data...</span>
+            <span class="text-gray-700 dark:text-gray-300 text-lg">Syncing repository data...</span>
         </div>
     </div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -28,11 +28,12 @@
                         {% if not forloop.last %}
                             <div class="flex items-center">
                                 {% if crumb.url %}
-                                    <a href="{{ crumb.url }}" class="text-gray-500 hover:text-[#e74c3c]">{{ crumb.title }}</a>
+                                    <a href="{{ crumb.url }}"
+                                       class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c]">{{ crumb.title }}</a>
                                 {% else %}
-                                    <span class="text-gray-500">{{ crumb.title }}</span>
+                                    <span class="text-gray-500 dark:text-gray-500">{{ crumb.title }}</span>
                                 {% endif %}
-                                <svg class="flex-shrink-0 h-5 w-5 text-gray-400 ml-4"
+                                <svg class="flex-shrink-0 h-5 w-5 text-gray-400 dark:text-gray-600 ml-4"
                                      fill="currentColor"
                                      viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -46,7 +47,7 @@
             </ol>
         </nav>
         <!-- Repository Header -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
             <div class="flex items-start justify-between">
                 <div class="flex-1">
                     <div class="flex items-center gap-4 mb-4">
@@ -58,7 +59,7 @@
                                  class="w-16 h-16 rounded-lg">
                         {% endif %}
                         <div>
-                            <h1 class="text-3xl font-bold text-gray-900">{{ repo.name }}</h1>
+                            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ repo.name }}</h1>
                             <div class="flex items-center gap-3 mt-2">
                                 {% if repo.project %}
                                     <a href="{% url 'project_detail' slug=repo.project.slug %}"
@@ -69,7 +70,7 @@
                                         Part of {{ repo.project.name }}
                                     </a>
                                     {% if repo.project.organization %}
-                                        <span class="text-gray-400">•</span>
+                                        <span class="text-gray-400 dark:text-gray-600">•</span>
                                         <a href="{% url 'organization_detail' repo.project.organization.slug %}"
                                            class="text-[#e74c3c] hover:text-[#c0392b]">
                                             {{ repo.project.organization.name }}
@@ -79,7 +80,7 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-gray-600 text-lg">{{ repo.description|default:"No description available." }}</p>
+                    <p class="text-gray-600 dark:text-gray-400 text-lg">{{ repo.description|default:"No description available." }}</p>
                 </div>
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-4">
@@ -107,17 +108,17 @@
                 </div>
             </div>
             <!-- Badge URL Section -->
-            <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Repository View Count Badge</h3>
+            <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Repository View Count Badge</h3>
                 <div class="flex flex-col gap-4">
                     <!-- HTML Format -->
                     <div class="space-y-2">
-                        <div class="text-gray-700 font-medium">HTML:</div>
+                        <div class="text-gray-700 dark:text-gray-300 font-medium">HTML:</div>
                         <div class="relative">
                             <input type="text"
                                    readonly
                                    value='&lt;img alt="Views" src="{{ request.scheme }}://{{ request.get_host }}{% url 'repo-badge' repo.slug %}" &gt;'
-                                   class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg pr-24 font-mono text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                   class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg pr-24 font-mono text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
                                    id="badge-url-html">
                             <button onclick="copyToClipboard('badge-url-html')"
                                     class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md transition-colors">
@@ -135,7 +136,7 @@
                          viewBox="0 0 20 20">
                         <path d="M10 2a6 6 0 00-6 6c0 2.42 1.14 4.08 2.29 5.12.38.33.71.6.95.93.22.29.35.61.37 1.01.02.41.34.74.75.74h4.68c.41 0 .73-.33.75-.74.02-.4.15-.72.37-1.01.24-.33.57-.6.95-.93C14.86 12.08 16 10.42 16 8a6 6 0 00-6-6zM7 17a1 1 0 000 2h6a1 1 0 000-2H7z" />
                     </svg>
-                    <h3 class="text-xl font-bold text-gray-900">AI Summary</h3>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">AI Summary</h3>
                     <div class="refresh-container relative inline-flex ml-2">
                         <button class="refresh-btn relative"
                                 data-section="ai_summary"
@@ -149,19 +150,20 @@
                         </button>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg overflow-x-auto">
-                    <article class="prose prose-red max-w-none text-black" id="ai-summary-content">
+                <div class="bg-white dark:bg-gray-800 rounded-lg overflow-x-auto">
+                    <article class="prose prose-red max-w-none text-black dark:text-white"
+                             id="ai-summary-content">
                         <!-- Summary -->
                         {% if repo.ai_summary %}
                             {{ repo.ai_summary }}
                         {% else %}
-                            <p class="text-gray-600 italic">AI summary unavailable for this repo.</p>
+                            <p class="text-gray-600 dark:text-gray-400 italic">AI summary unavailable for this repo.</p>
                         {% endif %}
                     </article>
                 </div>
             </div>
             <!-- Repository Type & Metadata -->
-            <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-6">
+            <div class="mt-6 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div class="flex items-center gap-6">
                     {% if repo.is_main %}
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -178,7 +180,7 @@
                             Wiki Repository
                         </span>
                     {% else %}
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
                             <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0h8v12H6V4z" clip-rule="evenodd" />
                             </svg>
@@ -194,7 +196,7 @@
                         </span>
                     {% endif %}
                     <div class="flex flex-wrap items-center gap-2 relative">
-                        <span class="text-gray-500">Tags:</span>
+                        <span class="text-gray-500 dark:text-gray-500">Tags:</span>
                         <div class="flex flex-wrap gap-2">
                             {% for tag in repo.tags.all %}
                                 <span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600">{{ tag.name }}</span>
@@ -215,16 +217,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="text-sm text-gray-500">
+                <div class="text-sm text-gray-500 dark:text-gray-500">
                     <div>Created {{ repo.created|date:"M d, Y" }}</div>
                     <div data-stat="last-updated">Updated {{ repo.last_updated|naturaltime }}</div>
                 </div>
             </div>
             <!-- Quick Stats -->
             <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6 mt-8">
-                <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Stars</span>
+                        <span class="text-gray-600 dark:text-gray-400">Stars</span>
                         <svg class="w-5 h-5 text-yellow-400"
                              fill="currentColor"
                              viewBox="0 0 20 20">
@@ -233,18 +235,18 @@
                     </div>
                     <p class="text-2xl font-bold mt-2" data-stat="stars">{{ repo.stars|intcomma }}</p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Forks</span>
+                        <span class="text-gray-600 dark:text-gray-400">Forks</span>
                         <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M8.4 17.143c-1.914-.572-3.426-2-4.4-3.715v2.572c0 2.286 3.714 4 8 4s8-1.714 8-4v-2.572c-.974 1.715-2.486 3.143-4.4 3.715-1.143.286-2.857.286-4 .286s-2.857 0-4-.286zM12 3.429c-4.286 0-8 1.714-8 4s3.714 4 8 4 8-1.714 8-4-3.714-4-8-4zM12 13.429c-4.286 0-8-1.714-8-4v2.571c0 2.286 3.714 4 8 4s8-1.714 8-4V9.429c0 2.286-3.714 4-8 4z" />
                         </svg>
                     </div>
                     <p class="text-2xl font-bold mt-2" data-stat="forks">{{ repo.forks|intcomma }}</p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Watchers</span>
+                        <span class="text-gray-600 dark:text-gray-400">Watchers</span>
                         <svg class="w-5 h-5 text-green-400"
                              fill="currentColor"
                              viewBox="0 0 20 20">
@@ -254,9 +256,9 @@
                     </div>
                     <p class="text-2xl font-bold mt-2" data-stat="watchers">{{ repo.watchers|intcomma }}</p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Network</span>
+                        <span class="text-gray-600 dark:text-gray-400">Network</span>
                         <svg class="w-5 h-5 text-purple-400"
                              fill="currentColor"
                              viewBox="0 0 20 20">
@@ -265,9 +267,9 @@
                     </div>
                     <p class="text-2xl font-bold mt-2" data-stat="network">{{ repo.network_count|intcomma }}</p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Subscribers</span>
+                        <span class="text-gray-600 dark:text-gray-400">Subscribers</span>
                         <svg class="w-5 h-5 text-indigo-400"
                              fill="currentColor"
                              viewBox="0 0 20 20">
@@ -283,10 +285,10 @@
             <!-- Main Content Area -->
             <div class="lg:col-span-2 space-y-8">
                 <!-- Activity Metrics -->
-                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                                 <svg class="w-6 h-6 text-red-500 mr-2"
                                      fill="currentColor"
                                      viewBox="0 0 20 20">
@@ -313,9 +315,9 @@
                             <div class="relative group">
                                 <div class="absolute inset-0 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-lg transform transition-transform group-hover:scale-105 opacity-0 group-hover:opacity-100">
                                 </div>
-                                <div class="relative bg-white rounded-lg border-2 border-gray-200 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                                <div class="relative bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
                                     <div class="flex items-center justify-between mb-4">
-                                        <h3 class="text-lg font-semibold text-gray-900">Issues</h3>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Issues</h3>
                                         <span class="p-2 bg-red-100 rounded-full">
                                             <svg class="w-5 h-5 text-red-600"
                                                  fill="none"
@@ -327,18 +329,21 @@
                                     </div>
                                     <div class="space-y-3">
                                         <div class="flex items-center justify-between">
-                                            <span class="text-gray-600">Open</span>
-                                            <span class="font-semibold text-gray-900" data-stat="open_issues">{{ repo.open_issues|intcomma }}</span>
+                                            <span class="text-gray-600 dark:text-gray-400">Open</span>
+                                            <span class="font-semibold text-gray-900 dark:text-gray-100"
+                                                  data-stat="open_issues">{{ repo.open_issues|intcomma }}</span>
                                         </div>
                                         <div class="flex items-center justify-between">
-                                            <span class="text-gray-600">Closed</span>
-                                            <span class="font-semibold text-gray-900" data-stat="closed_issues">{{ repo.closed_issues|intcomma }}</span>
+                                            <span class="text-gray-600 dark:text-gray-400">Closed</span>
+                                            <span class="font-semibold text-gray-900 dark:text-gray-100"
+                                                  data-stat="closed_issues">{{ repo.closed_issues|intcomma }}</span>
                                         </div>
                                     </div>
-                                    <div class="mt-4 pt-3 border-t border-gray-200">
+                                    <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
                                         <div class="flex items-center justify-between">
-                                            <span class="text-sm font-medium text-gray-500">Total</span>
-                                            <span class="text-xl font-bold text-gray-900" data-stat="total_issues">{{ repo.total_issues|intcomma }}</span>
+                                            <span class="text-sm font-medium text-gray-500 dark:text-gray-500">Total</span>
+                                            <span class="text-xl font-bold text-gray-900 dark:text-gray-100"
+                                                  data-stat="total_issues">{{ repo.total_issues|intcomma }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -347,9 +352,9 @@
                             <div class="relative group">
                                 <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-lg transform transition-transform group-hover:scale-105 opacity-0 group-hover:opacity-100">
                                 </div>
-                                <div class="relative bg-white rounded-lg border-2 border-gray-200 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                                <div class="relative bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
                                     <div class="flex items-center justify-between mb-4">
-                                        <h3 class="text-lg font-semibold text-gray-900">Pull Requests</h3>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Pull Requests</h3>
                                         <span class="p-2 bg-blue-100 rounded-full">
                                             <svg class="w-5 h-5 text-blue-600"
                                                  fill="none"
@@ -361,11 +366,11 @@
                                     </div>
                                     <div class="flex items-center justify-center py-4">
                                         <div class="text-center">
-                                            <div class="text-3xl font-bold text-gray-900"
+                                            <div class="text-3xl font-bold text-gray-900 dark:text-gray-100"
                                                  data-stat="open_pull_requests">
                                                 {{ repo.open_pull_requests|intcomma }}
                                             </div>
-                                            <div class="text-sm text-gray-500 mt-1">Open PRs</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-500 mt-1">Open PRs</div>
                                         </div>
                                     </div>
                                 </div>
@@ -374,9 +379,9 @@
                             <div class="relative group">
                                 <div class="absolute inset-0 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-lg transform transition-transform group-hover:scale-105 opacity-0 group-hover:opacity-100">
                                 </div>
-                                <div class="relative bg-white rounded-lg border-2 border-gray-200 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                                <div class="relative bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
                                     <div class="flex items-center justify-between mb-4">
-                                        <h3 class="text-lg font-semibold text-gray-900">Commits</h3>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Commits</h3>
                                         <span class="p-2 bg-green-100 rounded-full">
                                             <svg class="w-5 h-5 text-green-600"
                                                  fill="none"
@@ -388,11 +393,12 @@
                                     </div>
                                     <div class="space-y-3">
                                         <div class="flex flex-col">
-                                            <div class="text-3xl font-bold text-gray-900" data-stat="commit_count">{{ repo.commit_count|intcomma }}</div>
-                                            <div class="text-sm text-gray-500">Total Commits</div>
+                                            <div class="text-3xl font-bold text-gray-900 dark:text-gray-100"
+                                                 data-stat="commit_count">{{ repo.commit_count|intcomma }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-500">Total Commits</div>
                                         </div>
-                                        <div class="flex items-center text-sm text-gray-600 mt-2">
-                                            <svg class="w-4 h-4 mr-1 text-gray-400"
+                                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                            <svg class="w-4 h-4 mr-1 text-gray-400 dark:text-gray-600"
                                                  fill="currentColor"
                                                  viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
@@ -407,7 +413,7 @@
                     </div>
                 </section>
                 <!-- Statistics Charts -->
-                <!-- <section class="bg-white py-6 px-4 rounded-lg shadow-lg">
+                <!-- <section class="bg-white dark:bg-gray-800 py-6 px-4 rounded-lg shadow-lg">
                     <h2 class="text-pink-500 font-bold text-lg">
                         {{ repo.contributor_count|intcomma }} Contributions in the Last 30 Days
                     </h2>
@@ -444,7 +450,7 @@
                                 </span>
                                 <p class="text-blue-500">Issues</p>
                             </div>
-                            <span class="loader-svg ml-4 flex items-center text-gray-400">
+                            <span class="loader-svg ml-4 flex items-center text-gray-400 dark:text-gray-600">
                                 <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
@@ -463,7 +469,7 @@
                                 </span>
                                 <p class="text-purple-500">Pull Requests</p>
                             </div>
-                            <span class="loader-svg ml-4 flex items-center text-gray-400">
+                            <span class="loader-svg ml-4 flex items-center text-gray-400 dark:text-gray-600">
                                 <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
@@ -482,7 +488,7 @@
                                 </span>
                                 <p class="text-orange-500">Pushes & Commits</p>
                             </div>
-                            <span class="loader-svg ml-4 flex items-center text-gray-400">
+                            <span class="loader-svg ml-4 flex items-center text-gray-400 dark:text-gray-600">
                                 <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
@@ -495,10 +501,10 @@
                     </div>
                 </section> -->
                 <!-- Community Section -->
-                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                                 <svg class="w-6 h-6 text-red-500 mr-2"
                                      fill="currentColor"
                                      viewBox="0 0 20 20">
@@ -523,7 +529,7 @@
                         <div class="space-y-6">
                             <!-- Contributors Summary -->
                             <div class="flex items-center justify-between">
-                                <h3 class="text-lg font-semibold text-gray-900">Top Contributors</h3>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Contributors</h3>
                                 <span class="px-3 py-1 bg-red-50 text-red-600 rounded-full text-sm font-medium"
                                       data-community="total-count">
                                     {{ repo.contributor_count|intcomma }} total contributors
@@ -532,22 +538,22 @@
                             <!-- Top Contributors Grid -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 contributors-grid">
                                 {% for contributor in top_contributors %}
-                                    <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                                    <div class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors group">
                                         <img src="{{ contributor.avatar_url }}"
                                              width="30"
                                              height="30"
                                              alt="{{ contributor.name }}"
                                              class="w-12 h-12 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform">
                                         <div class="flex-grow">
-                                            <div class="font-medium text-gray-900">
+                                            <div class="font-medium text-gray-900 dark:text-gray-100">
                                                 {{ contributor.name }}
                                                 {% if contributor.verified %}<span class="ml-1 text-green-500" title="Verified Contributor">✓</span>{% endif %}
                                             </div>
-                                            <div class="text-sm text-gray-500">{{ contributor.contributions|intcomma }} commits</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-500">{{ contributor.contributions|intcomma }} commits</div>
                                         </div>
                                         <a href="{{ contributor.github_url }}"
                                            target="_blank"
-                                           class="p-2 text-gray-400 hover:text-gray-600">
+                                           class="p-2 text-gray-400 dark:text-gray-600 hover:text-gray-600">
                                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                                                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                                             </svg>
@@ -557,7 +563,7 @@
                             </div>
                             <!-- Other Contributors Summary -->
                             {% if repo.contributor_count > 6 %}
-                                <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                                     <div class="flex items-center justify-between">
                                         <div class="flex -space-x-2">
                                             {% for contributor in repo.contributor.all|dictsortreversed:"contributions"|slice:"6:11" %}
@@ -569,7 +575,7 @@
                                                      title="{{ contributor.name }} ({{ contributor.contributions }} contributions)">
                                             {% endfor %}
                                             {% if repo.contributor_count > 11 %}
-                                                <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-sm font-medium text-gray-600">
+                                                <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm font-medium text-gray-600 dark:text-gray-400">
                                                     +{{ repo.contributor_count|add:"-11" }}
                                                 </div>
                                             {% endif %}
@@ -589,10 +595,10 @@
                     </div>
                 </section>
                 <!-- Contributor Statistics Section -->
-                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                                 <svg class="w-6 h-6 text-red-500 mr-2"
                                      fill="currentColor"
                                      viewBox="0 0 20 20">
@@ -617,7 +623,7 @@
                                 </div>
                                 <!-- Existing filter dropdown -->
                                 <select id="time-period-select"
-                                        class="form-select rounded-lg border-gray-300 text-sm"
+                                        class="form-select rounded-lg border-gray-300 dark:border-gray-600 text-sm"
                                         onchange="updateContributorStats(this.value)">
                                     {% for value, label in time_period_options %}
                                         <option value="{{ value }}" {% if time_period == value %}selected{% endif %}>{{ label }}</option>
@@ -627,19 +633,33 @@
                         </div>
                         <!-- Statistics Table -->
                         <div class="overflow-x-auto contributor-stats-table">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                 <thead>
-                                    <tr class="bg-gray-50">
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contributor</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Commits</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Issues Opened</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Issues Closed</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pull Requests</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Comments</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Impact</th>
+                                    <tr class="bg-gray-50 dark:bg-gray-900">
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                            Contributor
+                                        </th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                            Commits
+                                        </th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                            Issues Opened
+                                        </th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                            Issues Closed
+                                        </th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                            Pull Requests
+                                        </th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                            Comments
+                                        </th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                            Total Impact
+                                        </th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                     {% for stat in contributor_stats %}
                                         <tr class="hover:bg-gray-50 transition-colors">
                                             <td class="px-4 py-4 whitespace-nowrap">
@@ -650,8 +670,8 @@
                                                          src="{{ stat.contributor.avatar_url }}"
                                                          alt="{{ stat.contributor.name }}">
                                                     <div class="ml-3">
-                                                        <div class="text-sm font-medium text-gray-900">{{ stat.contributor.name }}</div>
-                                                        <div class="text-sm text-gray-500">@{{ stat.contributor.github_id }}</div>
+                                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ stat.contributor.name }}</div>
+                                                        <div class="text-sm text-gray-500 dark:text-gray-500">@{{ stat.contributor.github_id }}</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -678,16 +698,19 @@
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">No contributor statistics available for this period</td>
+                                            <td colspan="7"
+                                                class="px-4 py-8 text-center text-gray-500 dark:text-gray-500">
+                                                No contributor statistics available for this period
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                             {% if is_paginated %}
-                                <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 sm:px-6">
+                                <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
                                     <div class="flex-1 flex items-center justify-between">
                                         <div>
-                                            <p class="text-sm text-gray-700">
+                                            <p class="text-sm text-gray-700 dark:text-gray-300">
                                                 Showing
                                                 <span class="font-medium">{{ page_obj.start_index }}</span>
                                                 to
@@ -701,25 +724,25 @@
                                             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                                                 {% if page_obj.has_previous %}
                                                     <button type="button"
-                                                            class="pagination-link relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                                            class="pagination-link relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50"
                                                             data-page="{{ page_obj.previous_page_number }}">
                                                         Previous
                                                     </button>
                                                 {% endif %}
                                                 {% for i in page_obj.paginator.page_range %}
                                                     {% if page_obj.number == i %}
-                                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-red-50 text-sm font-medium text-red-600">
+                                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-red-50 text-sm font-medium text-red-600">
                                                             {{ i }}
                                                         </span>
                                                     {% else %}
                                                         <button type="button"
-                                                                class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                                                class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50"
                                                                 data-page="{{ i }}">{{ i }}</button>
                                                     {% endif %}
                                                 {% endfor %}
                                                 {% if page_obj.has_next %}
                                                     <button type="button"
-                                                            class="pagination-link relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                                            class="pagination-link relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50"
                                                             data-page="{{ page_obj.next_page_number }}">Next</button>
                                                 {% endif %}
                                             </nav>
@@ -731,10 +754,10 @@
                     </div>
                 </section>
                 <!-- Technical Details Section -->
-                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                                 <svg class="w-6 h-6 text-red-500 mr-2"
                                      fill="currentColor"
                                      viewBox="0 0 20 20">
@@ -758,8 +781,8 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Language and Stack -->
-                            <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                                     <svg class="w-5 h-5 text-indigo-500 mr-2"
                                          fill="currentColor"
                                          viewBox="0 0 20 20">
@@ -769,27 +792,27 @@
                                 </h3>
                                 <div class="space-y-3">
                                     <div class="flex items-center gap-2">
-                                        <span class="text-gray-600 shrink-0">Primary Language:</span>
-                                        <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200 truncate"
+                                        <span class="text-gray-600 dark:text-gray-400 shrink-0">Primary Language:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100 px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700 truncate"
                                               data-tech="primary_language">
                                             {{ repo.primary_language|default:"Not specified" }}
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-gray-600 shrink-0">Repository Size:</span>
-                                        <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200 truncate"
+                                        <span class="text-gray-600 dark:text-gray-400 shrink-0">Repository Size:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100 px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700 truncate"
                                               data-tech="size">{{ repo.size|filesizeformat }}</span>
                                     </div>
                                     <div class="flex items-start gap-2">
-                                        <span class="text-gray-600 shrink-0 mt-1">License:</span>
-                                        <div class="font-medium text-gray-900 px-3 py-1 bg-white rounded-lg shadow-sm border border-gray-200 flex-1 break-words"
+                                        <span class="text-gray-600 dark:text-gray-400 shrink-0 mt-1">License:</span>
+                                        <div class="font-medium text-gray-900 dark:text-gray-100 px-3 py-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex-1 break-words"
                                              data-tech="license">{{ repo.license|default:"Not specified" }}</div>
                                     </div>
                                 </div>
                             </div>
                             <!-- Release Information -->
-                            <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                                     <svg class="w-5 h-5 text-green-500 mr-2"
                                          fill="currentColor"
                                          viewBox="0 0 20 20">
@@ -801,40 +824,40 @@
                                     <div class="space-y-3">
                                         {% if repo.release_name %}
                                             <div class="flex justify-between items-center">
-                                                <span class="text-gray-600">Version</span>
-                                                <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                                <span class="text-gray-600 dark:text-gray-400">Version</span>
+                                                <span class="font-medium text-gray-900 dark:text-gray-100 px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700"
                                                       data-tech="release_name">{{ repo.release_name }}</span>
                                             </div>
                                         {% endif %}
                                         {% if repo.release_datetime %}
                                             <div class="flex justify-between items-center">
-                                                <span class="text-gray-600">Release Date</span>
-                                                <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                                <span class="text-gray-600 dark:text-gray-400">Release Date</span>
+                                                <span class="font-medium text-gray-900 dark:text-gray-100 px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700"
                                                       data-tech="release_date">
                                                     {{ repo.release_datetime|date:"M d, Y" }}
                                                 </span>
                                             </div>
                                         {% endif %}
                                         <div class="flex justify-between items-center">
-                                            <span class="text-gray-600">Last Commit</span>
-                                            <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                            <span class="text-gray-600 dark:text-gray-400">Last Commit</span>
+                                            <span class="font-medium text-gray-900 dark:text-gray-100 px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700"
                                                   data-tech="last_commit_date">
                                                 {{ repo.last_commit_date|date:"M d, Y" }}
                                             </span>
                                         </div>
                                     </div>
                                 {% else %}
-                                    <div class="text-gray-500 text-center py-4">No release information available</div>
+                                    <div class="text-gray-500 dark:text-gray-500 text-center py-4">No release information available</div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
                 </section>
                 <!-- Milestone Section -->
-                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                                 <svg class="w-6 h-6 text-red-500 mr-2"
                                      fill="currentColor"
                                      viewBox="0 0 20 20">
@@ -846,14 +869,14 @@
                         <div class="space-y-6">
                             {% if milestones %}
                                 {% for milestone in milestones %}
-                                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:bg-gray-100 transition-colors duration-150">
+                                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-100 transition-colors duration-150">
                                         <div class="flex justify-between items-start mb-3">
                                             <div class="flex flex-row items-start gap-4">
-                                                <h3 class="text-lg font-semibold text-gray-900">{{ milestone.title }}</h3>
-                                                <!-- {% if milestone.description %}<p class="text-gray-600 mt-1">{{ milestone.description }}</p>{% endif %} -->
+                                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ milestone.title }}</h3>
+                                                <!-- {% if milestone.description %}<p class="text-gray-600 dark:text-gray-400 mt-1">{{ milestone.description }}</p>{% endif %} -->
                                             </div>
                                             <div class="flex flex-row items-start gap-2">
-                                                <div class="text-xs text-gray-500 flex items-center pt-0.5">
+                                                <div class="text-xs text-gray-500 dark:text-gray-500 flex items-center pt-0.5">
                                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
                                                     </svg>
@@ -871,25 +894,25 @@
                                                     {% if total_issues > 0 %}
                                                         {% widthratio milestone.closed_issues total_issues 100 as percentage %}
                                                         <div class="flex items-center">
-                                                            <div class="w-full bg-gray-200 rounded-full h-3 mr-2 relative">
+                                                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mr-2 relative">
                                                                 <div class="bg-[#e74c3c] h-3 rounded-full absolute top-0 left-0 progress-bar"
                                                                      data-percentage="{{ percentage }}"></div>
                                                             </div>
-                                                            <span class="text-sm font-medium text-gray-700">{{ percentage }}%</span>
+                                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ percentage }}%</span>
                                                         </div>
                                                     {% else %}
                                                         <div class="flex items-center">
-                                                            <div class="w-full bg-gray-200 rounded-full h-3 mr-2 relative">
+                                                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mr-2 relative">
                                                                 <div class="bg-blue-600 h-3 rounded-full absolute top-0 left-0 w-0"></div>
                                                             </div>
-                                                            <span class="text-sm font-medium text-gray-700">0%</span>
+                                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">0%</span>
                                                         </div>
                                                     {% endif %}
                                                 {% endwith %}
                                             </div>
                                             <!-- Issues Count and GitHub Link (Right Half) -->
                                             <div class="flex items-center justify-between w-1/2">
-                                                <div class="flex items-center text-sm text-gray-600 mr-3">
+                                                <div class="flex items-center text-sm text-gray-600 dark:text-gray-400 mr-3">
                                                     <svg class="w-4 h-4 mr-1 text-red-400"
                                                          fill="currentColor"
                                                          viewBox="0 0 20 20">
@@ -900,7 +923,7 @@
                                                 </div>
                                                 <a href="{{ milestone.html_url }}"
                                                    target="_blank"
-                                                   class="text-sm text-red-600 hover:text-red-800 flex items-center ">
+                                                   class="text-sm text-red-600 hover:text-red-800 flex items-center">
                                                     View on GitHub
                                                     <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -909,7 +932,7 @@
                                             </div>
                                         </div>
                                         {% if milestone.due_on %}
-                                            <div class="mt-2 text-xs text-gray-500">
+                                            <div class="mt-2 text-xs text-gray-500 dark:text-gray-500">
                                                 <svg class="w-3 h-3 mr-1 inline" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1z" clip-rule="evenodd" />
                                                 </svg>
@@ -920,11 +943,11 @@
                                 {% endfor %}
                                 <!-- MILESTONE PAGINATION CONTROLS - ALWAYS VISIBLE -->
                                 {% if milestone_pagination.total_pages > 1 %}
-                                    <div class="mt-8 border-t border-gray-200 pt-6">
+                                    <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
                                         <div class="flex items-center justify-between px-4 py-3 sm:px-6">
                                             <div class="flex-1 flex items-center justify-between">
                                                 <div>
-                                                    <p class="text-sm text-gray-700">
+                                                    <p class="text-sm text-gray-700 dark:text-gray-300">
                                                         Showing
                                                         <span class="font-medium">milestone page {{ milestone_pagination.current_page }}</span>
                                                         of
@@ -935,7 +958,7 @@
                                                     <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                                                         {% if milestone_pagination.has_previous %}
                                                             <a href="?milestone_page={{ milestone_pagination.previous_page }}{% if time_period %}&time_period={{ time_period }}{% endif %}"
-                                                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50">
                                                                 <span class="sr-only">Previous</span>
                                                                 <svg class="h-5 w-5"
                                                                      xmlns="http://www.w3.org/2000/svg"
@@ -946,7 +969,7 @@
                                                                 </svg>
                                                             </a>
                                                         {% else %}
-                                                            <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                                            <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
                                                                 <span class="sr-only">Previous</span>
                                                                 <svg class="h-5 w-5"
                                                                      xmlns="http://www.w3.org/2000/svg"
@@ -959,19 +982,19 @@
                                                         {% endif %}
                                                         {% for page_num in milestone_pagination.page_range %}
                                                             {% if page_num == milestone_pagination.current_page %}
-                                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-red-50 text-sm font-medium text-red-600">
+                                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-red-50 text-sm font-medium text-red-600">
                                                                     {{ page_num }}
                                                                 </span>
                                                             {% else %}
                                                                 <a href="?milestone_page={{ page_num }}{% if time_period %}&time_period={{ time_period }}{% endif %}"
-                                                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50">
                                                                     {{ page_num }}
                                                                 </a>
                                                             {% endif %}
                                                         {% endfor %}
                                                         {% if milestone_pagination.has_next %}
                                                             <a href="?milestone_page={{ milestone_pagination.next_page }}{% if time_period %}&time_period={{ time_period }}{% endif %}"
-                                                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50">
                                                                 <span class="sr-only">Next</span>
                                                                 <svg class="h-5 w-5"
                                                                      xmlns="http://www.w3.org/2000/svg"
@@ -982,7 +1005,7 @@
                                                                 </svg>
                                                             </a>
                                                         {% else %}
-                                                            <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                                            <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed">
                                                                 <span class="sr-only">Next</span>
                                                                 <svg class="h-5 w-5"
                                                                      xmlns="http://www.w3.org/2000/svg"
@@ -1000,8 +1023,8 @@
                                     </div>
                                 {% endif %}
                             {% else %}
-                                <div class="bg-gray-50 rounded-lg border border-gray-200 p-6 text-center">
-                                    <p class="text-gray-500">No milestones found for this repository.</p>
+                                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
+                                    <p class="text-gray-500 dark:text-gray-500">No milestones found for this repository.</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -1011,9 +1034,9 @@
             <!-- Sidebar -->
             <div class="space-y-8">
                 <!-- Related Repositories -->
-                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
-                        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
                             <svg class="w-6 h-6 text-red-500 mr-2"
                                  fill="currentColor"
                                  viewBox="0 0 24 24">
@@ -1025,7 +1048,7 @@
                         <div class="space-y-4">
                             {% for related_repo in related_repos %}
                                 <a href="{% url 'repo_detail' related_repo.slug %}" class="group block">
-                                    <div class="p-4 bg-gray-50 rounded-lg border-2 border-transparent hover:border-red-500 transition-all duration-200 hover:shadow-lg relative overflow-hidden">
+                                    <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-transparent hover:border-red-500 transition-all duration-200 hover:shadow-lg relative overflow-hidden">
                                         <!-- Gradient overlay on hover -->
                                         <div class="absolute inset-0 bg-gradient-to-r from-red-500/0 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity">
                                         </div>
@@ -1034,7 +1057,9 @@
                                             <!-- Header -->
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="flex items-center gap-3">
-                                                    <h3 class="font-medium text-gray-900 group-hover:text-red-600 transition-colors">{{ related_repo.name }}</h3>
+                                                    <h3 class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-red-600 transition-colors">
+                                                        {{ related_repo.name }}
+                                                    </h3>
                                                     {% if related_repo.is_main %}
                                                         <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Main</span>
                                                     {% elif related_repo.is_wiki %}
@@ -1052,12 +1077,12 @@
                                             </div>
                                             <!-- Description -->
                                             {% if related_repo.description %}
-                                                <p class="text-sm text-gray-600 line-clamp-2 group-hover:text-gray-900 transition-colors">
+                                                <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 group-hover:text-gray-900 transition-colors">
                                                     {{ related_repo.description|truncatechars:120 }}
                                                 </p>
                                             {% endif %}
                                             <!-- Metrics -->
-                                            <div class="mt-3 flex items-center gap-4 text-xs text-gray-500">
+                                            <div class="mt-3 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
                                                 <span class="flex items-center gap-1">
                                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -1083,7 +1108,7 @@
                                 </a>
                             {% empty %}
                                 <div class="text-center py-6">
-                                    <p class="text-gray-500">No related repositories found</p>
+                                    <p class="text-gray-500 dark:text-gray-500">No related repositories found</p>
                                 </div>
                             {% endfor %}
                         </div>
@@ -1093,7 +1118,7 @@
         </div>
     </div>
     <!-- GitHub Issues and PRs Section -->
-    <div class="mt-10 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="mt-10 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center">
                 <svg class="w-6 h-6 text-[#e74c3c] mr-2"
@@ -1101,7 +1126,7 @@
                      viewBox="0 0 24 24">
                     <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                 </svg>
-                <h2 class="text-2xl font-bold text-gray-900">GitHub Issues & Pull Requests</h2>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">GitHub Issues & Pull Requests</h2>
             </div>
             <button id="refresh-github-data"
                     data-repo-id="{{ repo.id }}"
@@ -1117,18 +1142,18 @@
         </div>
         <!-- Stats Cards -->
         <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                 <div class="flex items-center justify-between">
-                    <span class="text-gray-600">Open Issues</span>
+                    <span class="text-gray-600 dark:text-gray-400">Open Issues</span>
                     <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
                     </svg>
                 </div>
                 <p class="text-2xl font-bold mt-2" id="issues-count">{{ github_issues_count }}</p>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                 <div class="flex items-center justify-between">
-                    <span class="text-gray-600">Pull Requests</span>
+                    <span class="text-gray-600 dark:text-gray-400">Pull Requests</span>
                     <svg class="w-5 h-5 text-purple-500"
                          fill="currentColor"
                          viewBox="0 0 20 20">
@@ -1137,9 +1162,9 @@
                 </div>
                 <p class="text-2xl font-bold mt-2" id="prs-count">{{ github_prs_count }}</p>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                 <div class="flex items-center justify-between">
-                    <span class="text-gray-600">Bounty Issues</span>
+                    <span class="text-gray-600 dark:text-gray-400">Bounty Issues</span>
                     <svg class="w-5 h-5 text-green-500"
                          fill="currentColor"
                          viewBox="0 0 20 20">
@@ -1152,17 +1177,17 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <!-- Issues Section -->
-            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-900">Issues</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Issues</h3>
                         <a href="{{ repo.repo_url }}/issues"
                            target="_blank"
                            class="text-sm text-[#e74c3c] hover:underline">View All</a>
                     </div>
                 </div>
                 {% if github_issues %}
-                    <div class="divide-y divide-gray-200">
+                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
                         {% for issue in github_issues %}
                             <div class="p-4 hover:bg-gray-50 transition-colors">
                                 <div class="flex items-start">
@@ -1173,7 +1198,9 @@
                                         <a href="{{ issue.url }}"
                                            target="_blank"
                                            class="text-[#e74c3c] hover:underline font-medium">{{ issue.title }}</a>
-                                        <div class="mt-1 text-sm text-gray-600">#{{ issue.issue_id }} opened {{ issue.created_at|date:"M d, Y" }}</div>
+                                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                            #{{ issue.issue_id }} opened {{ issue.created_at|date:"M d, Y" }}
+                                        </div>
                                         {% if issue.has_dollar_tag %}
                                             <span class="mt-2 inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">$ Bounty</span>
                                         {% endif %}
@@ -1184,22 +1211,22 @@
                     </div>
                 {% else %}
                     <div class="p-6 text-center">
-                        <p class="text-gray-600">No issues found for this repository.</p>
+                        <p class="text-gray-600 dark:text-gray-400">No issues found for this repository.</p>
                     </div>
                 {% endif %}
             </div>
             <!-- Pull Requests Section -->
-            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-900">Pull Requests</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Pull Requests</h3>
                         <a href="{{ repo.repo_url }}/pulls"
                            target="_blank"
                            class="text-sm text-[#e74c3c] hover:underline">View All</a>
                     </div>
                 </div>
                 {% if github_prs %}
-                    <div class="divide-y divide-gray-200">
+                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
                         {% for pr in github_prs %}
                             <div class="p-4 hover:bg-gray-50 transition-colors">
                                 <div class="flex items-start">
@@ -1210,7 +1237,7 @@
                                         <a href="{{ pr.url }}"
                                            target="_blank"
                                            class="text-[#e74c3c] hover:underline font-medium">{{ pr.title }}</a>
-                                        <div class="mt-1 text-sm text-gray-600">
+                                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                                             #{{ pr.issue_id }} opened {{ pr.created_at|date:"M d, Y" }}
                                             {% if pr.is_merged %}
                                                 <span class="text-purple-600 ml-2">Merged</span>
@@ -1225,23 +1252,23 @@
                     </div>
                 {% else %}
                     <div class="p-6 text-center">
-                        <p class="text-gray-600">No pull requests found for this repository.</p>
+                        <p class="text-gray-600 dark:text-gray-400">No pull requests found for this repository.</p>
                     </div>
                 {% endif %}
             </div>
         </div>
         <!-- Bounties Section -->
         {% if dollar_tag_issues %}
-            <div class="mt-8 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-900">Issues with Bounties</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Issues with Bounties</h3>
                         <a href="{{ repo.repo_url }}/issues?q=is%3Aissue+label%3A%24"
                            target="_blank"
                            class="text-sm text-[#e74c3c] hover:underline">View All</a>
                     </div>
                 </div>
-                <div class="divide-y divide-gray-200">
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
                     {% for issue in dollar_tag_issues %}
                         <div class="p-4 hover:bg-gray-50 transition-colors">
                             <div class="flex items-start">
@@ -1252,7 +1279,9 @@
                                     <a href="{{ issue.url }}"
                                        target="_blank"
                                        class="text-[#e74c3c] hover:underline font-medium">{{ issue.title }}</a>
-                                    <div class="mt-1 text-sm text-gray-600">#{{ issue.issue_id }} opened {{ issue.created_at|date:"M d, Y" }}</div>
+                                    <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                        #{{ issue.issue_id }} opened {{ issue.created_at|date:"M d, Y" }}
+                                    </div>
                                     <span class="mt-2 inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">$ Bounty</span>
                                 </div>
                             </div>
@@ -1261,9 +1290,8 @@
                 </div>
             </div>
         {% endif %}
-        <div class="mt-6 text-sm text-gray-500 text-right" id="last-updated-text">
-            Last updated: {{ repo.last_updated|date:"M d, Y H:i" }}
-        </div>
+        <div class="mt-6 text-sm text-gray-500 dark:text-gray-500 text-right"
+             id="last-updated-text">Last updated: {{ repo.last_updated|date:"M d, Y H:i" }}</div>
     </div>
     <!-- Repository Stats -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -1271,17 +1299,17 @@
     </div>
     <!-- Stargazers Section -->
     <div id="stargazers-section">
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Stargazers</h2>
-                <span class="text-gray-600">({{ total_stargazers|default:stargazers|length }} total)</span>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Stargazers</h2>
+                <span class="text-gray-600 dark:text-gray-400">({{ total_stargazers|default:stargazers|length }} total)</span>
             </div>
             <!-- Filter Controls -->
             <div class="flex gap-2 mb-6">
                 <a href="?filter=all"
-                   class="stargazers-filter-link px-4 py-2 rounded-lg {% if filter_type == 'all' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">All</a>
+                   class="stargazers-filter-link px-4 py-2 rounded-lg {% if filter_type == 'all' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %} transition-colors">All</a>
                 <a href="?filter=recent"
-                   class="stargazers-filter-link px-4 py-2 rounded-lg {% if filter_type == 'recent' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">Recent</a>
+                   class="stargazers-filter-link px-4 py-2 rounded-lg {% if filter_type == 'recent' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %} transition-colors">Recent</a>
             </div>
             {% if stargazers_error %}
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{{ stargazers_error }}</div>
@@ -1289,7 +1317,7 @@
             {% if stargazers %}
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {% for stargazer in stargazers %}
-                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
                             <img src="{{ stargazer.avatar_url }}"
                                  alt="{{ stargazer.login }}'s avatar"
                                  class="w-10 h-10 rounded-full"
@@ -1300,7 +1328,7 @@
                                    target="_blank"
                                    class="text-[#e74c3c] hover:underline">{{ stargazer.login }}</a>
                                 {% if stargazer.starred_at %}
-                                    <p class="text-xs text-gray-500">Starred: {{ stargazer.starred_at|date:"M d, Y" }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500">Starred: {{ stargazer.starred_at|date:"M d, Y" }}</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -1312,7 +1340,7 @@
                         <div class="flex justify-center items-center space-x-2">
                             {% if current_page > 1 %}
                                 <a href="?filter={{ filter_type }}&page={{ current_page|add:'-1' }}"
-                                   class="stargazers-pagination-link px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">Previous</a>
+                                   class="stargazers-pagination-link px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 transition-colors">Previous</a>
                             {% endif %}
                             <div class="flex items-center space-x-2">
                                 {% for i in "1"|ljust:total_pages %}
@@ -1321,7 +1349,7 @@
                                             <span class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg">{{ page_num }}</span>
                                         {% elif page_num == 1 or page_num == total_pages or page_num|add:"-2" <= current_page and page_num|add:"2" >= current_page %}
                                             <a href="?filter={{ filter_type }}&page={{ page_num }}"
-                                               class="stargazers-pagination-link px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">{{ page_num }}</a>
+                                               class="stargazers-pagination-link px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 transition-colors">{{ page_num }}</a>
                                         {% elif page_num == 2 and current_page > 3 %}
                                             <span class="px-2">...</span>
                                         {% elif page_num == total_pages|add:"-1" and current_page < total_pages|add:"-2" %}
@@ -1332,14 +1360,14 @@
                             </div>
                             {% if current_page < total_pages %}
                                 <a href="?filter={{ filter_type }}&page={{ current_page|add:'1' }}"
-                                   class="stargazers-pagination-link px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">Next</a>
+                                   class="stargazers-pagination-link px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 transition-colors">Next</a>
                             {% endif %}
                         </div>
-                        <span class="text-gray-600">Page {{ current_page }} of {{ total_pages }}</span>
+                        <span class="text-gray-600 dark:text-gray-400">Page {{ current_page }} of {{ total_pages }}</span>
                     </div>
                 {% endif %}
             {% else %}
-                <p class="text-gray-600 italic">No stargazers found for this repository.</p>
+                <p class="text-gray-600 dark:text-gray-400 italic">No stargazers found for this repository.</p>
             {% endif %}
         </div>
     </div>

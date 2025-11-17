@@ -1,9 +1,9 @@
 {% load custom_filters %}
-<div class="hidden lg:block w-64 bg-white shadow-lg border-r border-gray-200 fixed top-0 left-0 h-screen overflow-y-auto">
-    <div class="mt-20 p-3 sticky top-0 bg-white z-10 border-b border-gray-200">
+<div class="hidden lg:block w-64 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700 fixed top-0 left-0 h-screen overflow-y-auto">
+    <div class="mt-20 p-3 sticky top-0 bg-white dark:bg-gray-800 z-10 border-b border-gray-200 dark:border-gray-700">
         <h2 class="text-xl font-bold mt-5">{{ course.title }}</h2>
         {% if request.user.userprofile != course.instructor %}
-            <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+            <div class="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                 <div class="bg-blue-600 h-1.5 rounded-full progress-bar"
                      style="width: {{ course_progress }}%"></div>
             </div>
@@ -12,11 +12,11 @@
     </div>
     <nav class="mt-2">
         {% for section in sections %}
-            <div class="border-b border-gray-100 last:border-b-0">
+            <div class="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
                 <div class="px-4 py-3 flex items-center justify-between cursor-pointer section-header"
                      data-section-id="{{ section.id }}">
-                    <span class="font-medium text-gray-800">{{ section.title }}</span>
-                    <svg class="w-4 h-4 text-gray-500 section-toggle transform transition-transform duration-200"
+                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ section.title }}</span>
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-500 section-toggle transform transition-transform duration-200"
                          fill="none"
                          stroke="currentColor"
                          viewBox="0 0 24 24">
@@ -51,7 +51,7 @@
                                         <path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
                                     </svg>
                                 {% else %}
-                                    <svg class="w-4 h-4 text-gray-500"
+                                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-500"
                                          fill="none"
                                          stroke="currentColor"
                                          viewBox="0 0 24 24">
@@ -61,7 +61,7 @@
                             </div>
                             <div class="ml-2 text-sm flex-grow overflow-hidden">
                                 <span class="truncate block">{{ lecture.title }}</span>
-                                <span class="text-xs text-gray-500">
+                                <span class="text-xs text-gray-500 dark:text-gray-500">
                                     {% if lecture.duration %}{{ lecture.duration }} min{% endif %}
                                 </span>
                             </div>

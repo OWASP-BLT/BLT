@@ -1,4 +1,5 @@
 import json
+import logging
 from urllib.parse import urlparse
 
 from django.contrib import messages
@@ -12,6 +13,8 @@ from django.views.decorators.http import require_GET, require_POST
 from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
+
+logger = logging.getLogger(__name__)
 
 
 def is_valid_url(url, url_type):
@@ -197,7 +200,7 @@ def mark_lecture_complete(request):
             return JsonResponse({"success": True, "status": "COMPLETED", "progress": progress})
 
         except Exception as e:
-            print("Error: ", str(e))
+            logger.error(f"Error: {str(e)}")
             return JsonResponse({"status": "error", "message": "An error occured, please try again later"}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request method"})
@@ -453,7 +456,7 @@ def update_sections_order(request, course_id):
 
         return JsonResponse({"status": "success"})
     except Exception as e:
-        print("Error: ", str(e))
+        logger.error(f"Error: {str(e)}")
         return JsonResponse({"status": "error", "message": "An error occured, please try again later"}, status=400)
 
 
@@ -477,7 +480,7 @@ def update_lectures_order(request, section_id):
 
         return JsonResponse({"status": "success"})
     except Exception as e:
-        print("Error: ", str(e))
+        logger.error(f"Error: {str(e)}")
         return JsonResponse({"status": "error", "message": "An error occured, please try again later"}, status=400)
 
 
@@ -575,5 +578,5 @@ def create_or_update_course(request):
         else:
             return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
     except Exception as e:
-        print(f"Error in create_or_update_course: {e}")
+        logger.error(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)

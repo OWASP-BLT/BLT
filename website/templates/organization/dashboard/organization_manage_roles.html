@@ -18,12 +18,14 @@
 {% block body %}
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <!-- Header Section -->
-        <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Manage Roles</h1>
-                        <p class="mt-1 text-sm text-gray-500">Control user access and permissions within your organization</p>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Manage Roles</h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">
+                            Control user access and permissions within your organization
+                        </p>
                     </div>
                     {% if is_org_admin or user_role_level == 0 %}
                         <button type="button"
@@ -45,28 +47,28 @@
         <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
             <!-- Roles List -->
             {% if roles %}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-900">User Roles & Permissions</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">User Roles & Permissions</h2>
                     </div>
                     <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+                        <thead class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">User</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Role</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Domain</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Added</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">User</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Role</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Domain</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Status</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Added</th>
                                 {% if is_org_admin or user_role_level == 0 %}
-                                    <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Actions</th>
+                                    <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">Actions</th>
                                 {% endif %}
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             {% for role in roles %}
                                 <tr class="hover:bg-gray-50 transition-colors duration-150">
                                     <td class="px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                             {{ role.username }}
                                             {% if role.is_owner %}
                                                 <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -74,7 +76,7 @@
                                                 </span>
                                             {% endif %}
                                         </div>
-                                        <div class="text-sm text-gray-500">{{ role.email }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-500">{{ role.email }}</div>
                                     </td>
                                     <td class="px-6 py-4">
                                         {% if role.role == 0 %}
@@ -85,20 +87,20 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         {% if role.domain_name %}
-                                            <div class="text-sm text-gray-900">{{ role.domain_name }}</div>
+                                            <div class="text-sm text-gray-900 dark:text-gray-100">{{ role.domain_name }}</div>
                                         {% else %}
-                                            <div class="text-sm text-gray-500 italic">All Domains</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-500 italic">All Domains</div>
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4">
                                         {% if role.is_active %}
                                             <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Active</span>
                                         {% else %}
-                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">Inactive</span>
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full">Inactive</span>
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-600">{{ role.created|date:"M j, Y" }}</div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">{{ role.created|date:"M j, Y" }}</div>
                                     </td>
                                     {% if is_org_admin or user_role_level == 0 %}
                                         <td class="px-6 py-4 text-right">
@@ -131,9 +133,9 @@
                                                     </button>
                                                 {% else %}
                                                     {% if role.is_owner %}
-                                                        <span class="text-gray-400 italic">Owner</span>
+                                                        <span class="text-gray-400 dark:text-gray-600 italic">Owner</span>
                                                     {% else %}
-                                                        <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg cursor-not-allowed font-medium text-sm"
+                                                        <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 rounded-lg cursor-not-allowed font-medium text-sm"
                                                               title="You cannot edit or remove your own role">
                                                             <svg class="w-4 h-4 mr-1.5"
                                                                  fill="none"
@@ -156,7 +158,7 @@
                 </div>
             {% else %}
                 <!-- Empty State -->
-                <div class="bg-white rounded-lg border border-gray-200 p-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8">
                     <div class="text-center">
                         <svg class="mx-auto h-16 w-16 text-[#e74c3c]"
                              fill="none"
@@ -164,8 +166,8 @@
                              viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01m-6.938 4h13.856A2 2 0 0021 18.078V5.922A2 2 0 0018.928 4H5.072A2 2 0 003 5.922v12.156A2 2 0 005.062 20z" />
                         </svg>
-                        <h3 class="mt-4 text-xl font-semibold text-gray-900">No roles assigned yet</h3>
-                        <p class="mt-2 text-gray-500">Get started by adding user roles to your organization.</p>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900 dark:text-gray-100">No roles assigned yet</h3>
+                        <p class="mt-2 text-gray-500 dark:text-gray-500">Get started by adding user roles to your organization.</p>
                         {% if is_org_admin or user_role_level == 0 %}
                             <div class="mt-6">
                                 <button onclick="openAddRoleModal()"
@@ -188,34 +190,34 @@
     <!-- Add Role Modal -->
     <div id="addRoleModal"
          class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-t-lg rounded-b-lg shadow-xl w-full max-w-md mx-4">
+        <div class="bg-white dark:bg-gray-800 rounded-t-lg rounded-b-lg shadow-xl w-full max-w-md mx-4">
             <form id="addRoleForm" method="post" action="">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_role">
-                <div class="px-6 py-4 border-b border-gray-200 rounded-t-lg">
-                    <h3 class="text-xl font-bold text-gray-900">Add New Role</h3>
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 rounded-t-lg">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">Add New Role</h3>
                 </div>
                 <div class="px-6 py-4 space-y-4">
                     <!-- User Selection -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             User Email <span class="text-red-500">*</span>
                         </label>
                         <input type="email"
                                name="email"
                                required
                                placeholder="user@example.com"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
-                        <p class="text-xs text-gray-500 mt-1">Enter the email address of the user you want to add</p>
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Enter the email address of the user you want to add</p>
                     </div>
                     <!-- Role Selection -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Role <span class="text-red-500">*</span>
                         </label>
                         <select name="role"
                                 required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
                             <option value="">Choose role...</option>
                             <option value="1">Moderator</option>
                             <option value="0">Administrator</option>
@@ -223,19 +225,19 @@
                     </div>
                     <!-- Domain Selection -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Assign to Domain (Optional)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Assign to Domain (Optional)</label>
                         <select name="domain_id"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
                             <option value="">All Domains</option>
                             {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
                         </select>
-                        <p class="text-xs text-gray-500 mt-1">Leave empty for organization-wide access</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Leave empty for organization-wide access</p>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-lg">
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 rounded-b-lg">
                     <button type="button"
                             onclick="closeAddRoleModal()"
-                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
                         Cancel
                     </button>
                     <button type="submit"
@@ -249,46 +251,46 @@
     <!-- Edit Role Modal -->
     <div id="editRoleModal"
          class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
             <form id="editRoleForm" method="post" action="">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="update_role">
                 <input type="hidden" id="edit_role_id" name="role_id">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-xl font-bold text-gray-900">Edit Role</h3>
-                    <p class="text-sm text-gray-500 mt-1">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">Edit Role</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">
                         User: <span id="edit_username" class="font-medium"></span>
                     </p>
                 </div>
                 <div class="px-6 py-4 space-y-4">
                     <!-- Role Selection -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Role <span class="text-red-500">*</span>
                         </label>
                         <select id="edit_role"
                                 name="role"
                                 required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
                             <option value="1">Moderator</option>
                             <option value="0">Administrator</option>
                         </select>
                     </div>
                     <!-- Domain Selection -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Assign to Domain (Optional)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Assign to Domain (Optional)</label>
                         <select id="edit_domain"
                                 name="domain_id"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
                             <option value="">All Domains</option>
                             {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
                         </select>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
                     <button type="button"
                             onclick="closeEditRoleModal()"
-                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
                         Cancel
                     </button>
                     <button type="submit"

@@ -6,14 +6,14 @@
     {% include "includes/sidenav.html" %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Location Map</h1>
-            <p class="mt-2 text-sm text-gray-600">View locations around the world</p>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Location Map</h1>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">View locations around the world</p>
         </div>
         <div class="mb-6">
             <div class="flex flex-wrap gap-4">
                 {% for type in marker_types %}
                     <a href="?type={{ type.id }}"
-                       class="inline-flex items-center px-4 py-2 rounded-lg {% if marker_type == type.id %}bg-[#e74c3c] text-white{% else %}bg-white text-gray-700 hover:bg-gray-50 border border-gray-200{% endif %} transition-colors duration-200">
+                       class="inline-flex items-center px-4 py-2 rounded-lg {% if marker_type == type.id %}bg-[#e74c3c] text-white{% else %}bg-white text-gray-700 dark:text-gray-300 hover:bg-gray-50 border border-gray-200{% endif %} transition-colors duration-200">
                         <i class="fas {{ type.icon }} mr-2"></i>
                         {{ type.name }}
                     </a>
@@ -32,16 +32,16 @@
             </div>
         </div>
         <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Locations</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Locations</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for location in locations %}
                     {% if location.latitude and location.longitude %}
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow duration-200">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <h3 class="text-lg font-medium text-gray-900">{{ location.name }}</h3>
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ location.name }}</h3>
                                     {% if location.city or location.country %}
-                                        <p class="text-sm text-gray-600 mt-1">
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                             {% if location.city %}{{ location.city }}{% endif %}
                                             {% if location.city and location.country %},{% endif %}
                                             {% if location.country %}{{ location.country }}{% endif %}
@@ -71,8 +71,8 @@
                     {% endif %}
                 {% empty %}
                     <div class="col-span-full text-center py-12">
-                        <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                            <svg class="w-12 h-12 text-gray-400"
+                        <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                            <svg class="w-12 h-12 text-gray-400 dark:text-gray-600"
                                  fill="none"
                                  viewBox="0 0 24 24"
                                  stroke="currentColor">
@@ -80,8 +80,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </div>
-                        <p class="text-gray-500 text-lg">No locations found</p>
-                        <p class="text-gray-400 mt-2">Try selecting a different location type</p>
+                        <p class="text-gray-500 dark:text-gray-500 text-lg">No locations found</p>
+                        <p class="text-gray-400 dark:text-gray-600 mt-2">Try selecting a different location type</p>
                     </div>
                 {% endfor %}
                 this map was inspired by the map on OWASP Nest
@@ -152,9 +152,9 @@
                             {% if location.logo %}
                                 <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-20 h-20 mx-auto mb-4 object-contain" width="80" height="80" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.3s" />
                             {% endif %}
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ location.name }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{{ location.name }}</h3>
                             {% if location.city or location.country %}
-                                <p class="text-sm text-gray-600 mb-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                     {% if location.city %}{{ location.city }}{% endif %}
                                     {% if location.city and location.country %}, {% endif %}
                                     {% if location.country %}{{ location.country }}{% endif %}

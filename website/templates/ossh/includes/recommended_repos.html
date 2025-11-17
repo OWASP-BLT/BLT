@@ -9,9 +9,11 @@
                         Score: {{ repo.relevance_score }}
                     </span>
                 </div>
-                <p class="text-gray-300 italic mb-4">{{ repo.repo.description|default:"No description available." }}</p>
+                <p class="text-gray-300 dark:text-gray-700 italic mb-4">
+                    {{ repo.repo.description|default:"No description available." }}
+                </p>
                 <div class="mb-4">
-                    <p class="text-sm text-gray-400">
+                    <p class="text-sm text-gray-400 dark:text-gray-600">
                         <span class="font-semibold text-indigo-400">Why this repo?</span> {{ repo.reasoning }}
                     </p>
                 </div>
@@ -22,12 +24,12 @@
                         </span>
                     {% endif %}
                     {% for tag in repo.repo.tags.all %}
-                        <span class="bg-gray-600 text-white text-sm font-medium px-3 py-1 rounded-full flex items-center">
+                        <span class="bg-gray-600 dark:bg-gray-300 text-white text-sm font-medium px-3 py-1 rounded-full flex items-center">
                             <span class="mr-1">🏷️</span>{{ tag.name }}
                         </span>
                     {% endfor %}
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-300">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-300 dark:text-gray-700">
                     <p class="flex items-center">
                         <span class="mr-2">⭐</span>
                         <span class="font-semibold text-white">{{ repo.repo.stars }}</span> Stars

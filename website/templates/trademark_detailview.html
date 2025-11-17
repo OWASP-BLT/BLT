@@ -17,17 +17,17 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
         {% if available %}
-            <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="max-w-lg mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
                 <div class="relative p-8 text-center">
                     <img class="mx-auto h-32 w-32 mb-6"
                          height="128"
                          width="128"
                          alt="Trademark available Image"
                          src="{% static 'img/TM.png' %}">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Available!</h2>
-                    <p class="text-lg text-gray-600 mb-8">Trademark is available for Registration</p>
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Available!</h2>
+                    <p class="text-lg text-gray-600 dark:text-gray-400 mb-8">Trademark is available for Registration</p>
                     <div class="flex gap-4 justify-center">
                         <a href="{% url 'home' %}"
                            class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors">
@@ -55,9 +55,9 @@
         {% else %}
             <div class="max-w-[95%] mx-auto">
                 <div class="flex items-center justify-between mb-6">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
                         Search Results
-                        <span class="ml-2 text-lg text-gray-500">{{ count }} results found for "{{ query }}"</span>
+                        <span class="ml-2 text-lg text-gray-500 dark:text-gray-500">{{ count }} results found for "{{ query }}"</span>
                     </h1>
                     <a href="{% url 'trademark_search' %}"
                        class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors">
@@ -70,18 +70,26 @@
                         New Search
                     </a>
                 </div>
-                <div class="overflow-x-auto bg-white rounded-xl shadow-md">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-900">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration Info</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner Details</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                    Registration Info
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                    Dates
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                    Owner Details
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {% for item in items %}
                                 {% for owner in item.owners %}
                                     <tr class="hover:bg-gray-50 cursor-pointer transition-colors"
@@ -91,28 +99,28 @@
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="text-sm">
-                                                <div class="font-medium text-gray-900">Reg #: {{ item.registration_number }}</div>
-                                                <div class="text-gray-500">Serial #: {{ item.serial_number }}</div>
+                                                <div class="font-medium text-gray-900 dark:text-gray-100">Reg #: {{ item.registration_number }}</div>
+                                                <div class="text-gray-500 dark:text-gray-500">Serial #: {{ item.serial_number }}</div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="text-sm">
-                                                <div class="text-gray-900">Filed: {{ item.filing_date }}</div>
-                                                <div class="text-gray-500">Registered: {{ item.registration_date }}</div>
-                                                <div class="text-gray-500">Expires: {{ item.expiration_date }}</div>
+                                                <div class="text-gray-900 dark:text-gray-100">Filed: {{ item.filing_date }}</div>
+                                                <div class="text-gray-500 dark:text-gray-500">Registered: {{ item.registration_date }}</div>
+                                                <div class="text-gray-500 dark:text-gray-500">Expires: {{ item.expiration_date }}</div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="text-sm">
-                                                <div class="font-medium text-gray-900">{{ owner.name }}</div>
-                                                <div class="text-gray-500">
+                                                <div class="font-medium text-gray-900 dark:text-gray-100">{{ owner.name }}</div>
+                                                <div class="text-gray-500 dark:text-gray-500">
                                                     {{ owner.address1 }}
                                                     {% if owner.address2 %}{{ owner.address2 }},{% endif %}
                                                     {{ owner.city }}, {{ owner.state }}
                                                     {% if owner.country %}, {{ owner.country }}{% endif %}
                                                     {% if owner.postcode %}{{ owner.postcode }}{% endif %}
                                                 </div>
-                                                <div class="text-gray-500">{{ owner.owner_label }}</div>
+                                                <div class="text-gray-500 dark:text-gray-500">{{ owner.owner_label }}</div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">

@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 import requests
@@ -9,18 +10,20 @@ from django.utils.timezone import now
 from website.management.base import LoggedBaseCommand
 from website.models import Organization
 
+logger = logging.getLogger(__name__)
+
 
 def search_uspto_database(term):
     """
     Search the USPTO trademark database using RapidAPI.
     """
     if not term or not term.strip():
-        print(f"Error: Empty or invalid term {term} provided for USPTO search.")
+        logger.error(f"Empty or invalid term {term} provided for USPTO search.")
         return None
 
     url = "https://uspto-trademark.p.rapidapi.com/v1/batchTrademarkSearch/"
     payload = {"keywords": f'["{term}"]', "start_index": "0"}
-    print(payload)
+    logger.debug(f"USPTO search payload: {payload}")
     headers = {
         "x-rapidapi-key": f"{settings.USPTO_API}",
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
@@ -30,8 +33,8 @@ def search_uspto_database(term):
     if response.status_code == 200:
         return response.json()
     else:
-        print(f"Error: Received status code {response.status_code} - {response.reason}")
-        print(response.json())
+        logger.error(f"Received status code {response.status_code} - {response.reason}")
+        logger.error(f"Response: {response.json()}")
     return None
 
 
@@ -46,9 +49,9 @@ def send_email_alert(organization, results_count):
         "Please log in to the system for more details."
     )
     from_email = settings.DEFAULT_FROM_EMAIL
-    print(from_email)
+    logger.debug(f"Sending email from: {from_email}")
     recipient_list = [organization.email]
-    print(recipient_list)
+    logger.debug(f"Recipients: {recipient_list}")
 
     send_mail(subject, message, from_email, recipient_list)
 

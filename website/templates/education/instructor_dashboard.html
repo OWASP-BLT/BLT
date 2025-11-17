@@ -4,7 +4,7 @@
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto mt-10">
         <div class="text-center mb-10">
-            <h1 class="text-5xl font-bold flex items-center justify-center gap-3 text-gray-800">
+            <h1 class="text-5xl font-bold flex items-center justify-center gap-3 text-gray-800 dark:text-gray-200">
                 <i class="fas fa-book-open text-blue-600"></i> {{ user.username|capfirst }}'s Courses
             </h1>
             <button class="mt-4 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300"
@@ -23,8 +23,8 @@
         {% include "education/includes/standalone_lecture_list.html" %}
     </div>
     <div id="createCourseModal"
-         class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden">
-        <div class="bg-white rounded-lg shadow-lg w-1/2">
+         class="fixed inset-0 bg-gray-900 dark:bg-gray-50 bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-1/2">
             <div class="p-6">{% include "education/includes/create_or_update_course_form.html" %}</div>
             <div class="flex justify-end p-6">
                 <button class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-800 transition-colors duration-300"

@@ -13,8 +13,10 @@
                 <h3 class="text-2xl font-semibold text-indigo-300">{{ user_data.profile.name }}</h3>
                 <p class="text-indigo-500">@{{ user_data.profile.username }}</p>
             </div>
-            {% if user_data.profile.bio %}<p class="text-gray-300 text-center italic">"{{ user_data.profile.bio }}"</p>{% endif %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
+            {% if user_data.profile.bio %}
+                <p class="text-gray-300 dark:text-gray-700 text-center italic">"{{ user_data.profile.bio }}"</p>
+            {% endif %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300 dark:text-gray-700">
                 {% if user_data.profile.location %}
                     <p class="flex items-center">
                         <span class="mr-2">📍</span>{{ user_data.profile.location }}

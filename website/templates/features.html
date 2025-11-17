@@ -17,18 +17,18 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <!-- BLT Features  -->
-    <div class="container mx-auto px-4 py-6 m-2 ">
+    <div class="container mx-auto px-4 py-6 m-2">
         <div class="relative sm:flex sm:flex-col">
             <h1 class="text-3xl font-bold mb-4 text-center">BLT Features</h1>
             <a href="/forum/"
-               class=" absolute top-0 right-9 border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors shadow-md">Suggest New Feature</a>
-            <p class="text-gray-600 mb-6 text-center">
+               class="absolute top-0 right-9 border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors shadow-md">Suggest New Feature</a>
+            <p class="text-gray-600 dark:text-gray-400 mb-6 text-center">
                 Explore the key features of OWASP BLT, designed to enhance bug tracking and security collaboration.
             </p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <!-- PR reviews -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/pr-review.png' %}"
                      alt="PR_review"
                      height="100"
@@ -38,10 +38,10 @@
                     <h2 class="text-xl font-semibold">Automated PR Review</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
-                <p class="text-gray-600 mb-2">
+                <p class="text-gray-600 dark:text-gray-400 mb-2">
                     This feature enables users to submit a GitHub pull request (PR) link and a roadmap document (as a GitHub issue link). The system will analyze the PR using AI and return a detailed report based on predefined metrics.
                 </p>
-                <p class="text-gray-500 text-sm mb-4">Added on: 2024-12-19</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm mb-4">Added on: 2024-12-19</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/submit-roadmap-pr/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">submit PR for Review</a>
@@ -50,7 +50,7 @@
                 </div>
             </div>
             <!-- Chat Bot -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/chat-bot.png' %}"
                      alt="chat_bot"
                      height="100"
@@ -60,10 +60,10 @@
                     <h2 class="text-xl font-semibold">Chat Bot</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
-                <p class="text-gray-600 mb-2">
+                <p class="text-gray-600 dark:text-gray-400 mb-2">
                     The Chat Bot feature in OWASP BLT is an AI-powered virtual assistant that provides real-time support, answers user queries, and assists with bug reporting and issue tracking.
                 </p>
-                <p class="text-gray-500 text-sm mb-4">Added on: 2024-06-30</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm mb-4">Added on: 2024-06-30</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Chat with Bot</a>
@@ -72,7 +72,7 @@
                 </div>
             </div>
             <!-- AI-Powered GitHub Issue Generator  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/generate-issue.png' %}"
                      alt="generate_issue"
                      height="100"
@@ -82,10 +82,10 @@
                     <h2 class="text-xl font-semibold">GitHub Issue Generator</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
-                <p class="text-gray-600 mb-2">
+                <p class="text-gray-600 dark:text-gray-400 mb-2">
                     Easily create detailed GitHub issues by entering a short description. Our AI analyzes your input and generates a structured issue with steps, tasks, and AI agent instructions
                 </p>
-                <p class="text-gray-500 text-sm mb-4">Added on: 2025-02-03</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm mb-4">Added on: 2025-02-03</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/github-issue-prompt/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Generate Issue</a>
@@ -94,7 +94,7 @@
                 </div>
             </div>
             <!-- AI-Powered Project Summary  Generator-->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/ai-summary.png' %}"
                      alt="ai_summary"
                      height="100"
@@ -104,10 +104,10 @@
                     <h2 class="text-xl font-semibold">Project Summary Generator</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
-                <p class="text-gray-600 mb-2">
+                <p class="text-gray-600 dark:text-gray-400 mb-2">
                     The AI-Powered Project Summary feature in OWASP BLT provides an automated summary of project activities and key metrics using AI, offering users a quick and comprehensive overview of project status and progress.
                 </p>
-                <p class="text-gray-500 text-sm mb-4">Added on: 2025-02-14</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm mb-4">Added on: 2025-02-14</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/projects/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">show projects summary</a>
@@ -116,7 +116,7 @@
                 </div>
             </div>
             <!-- similarity-scan -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/similarity-scan.png' %}"
                      alt="similarity_scan"
                      height="100"
@@ -126,10 +126,10 @@
                     <h2 class="text-xl font-semibold">Similarity-scan</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
-                <p class="text-gray-600 mb-2">
+                <p class="text-gray-600 dark:text-gray-400 mb-2">
                     Compare GitHub repositories for function, model, and method similarities using AI and traditional methods. Receive detailed similarity scores and reports.
                 </p>
-                <p class="text-gray-500 text-sm mb-4">Added on: 2024-12-21</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm mb-4">Added on: 2024-12-21</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/similarity-scan/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view scan</a>
@@ -138,18 +138,18 @@
                 </div>
             </div>
             <!-- Activity feed -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/activity-feed.png' %}"
                      alt="feed"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-52 object-contain">
                 <h2 class="text-xl font-semibold">Activity Feed</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Provides real-time updates on recent activities within the platform, including new bug reports, comments, and status changes.
                 </p>
-                <p class="text-gray-500 text-sm mb-4">Added on:2024-11-24</p>
-                <div class="flex justify-between mt-auto ">
+                <p class="text-gray-500 dark:text-gray-500 text-sm mb-4">Added on:2024-11-24</p>
+                <div class="flex justify-between mt-auto">
                     <a href="/feed/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Feed</a>
                     <a href="https://github.com/OWASP-BLT/BLT/pull/2931"
@@ -157,17 +157,17 @@
                 </div>
             </div>
             <!-- BACON (Coin) -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'images/bacon.png' %}"
                      alt="bacon coin"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">BACON (Coin)</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     An internal currency or reward system to incentivize contributions and participation within the platform.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2 years ago</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2 years ago</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/bacon/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Coins</a>
@@ -176,17 +176,17 @@
                 </div>
             </div>
             <!-- badges -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/badges.png' %}"
                      alt="badges"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Badges</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Users earn badges for various activities, such as making their first social media post, creating a project board, or reporting a bug, recognizing and encouraging community engagement.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-12-04</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-12-04</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/badges/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Earn Badges</a>
@@ -195,17 +195,17 @@
                 </div>
             </div>
             <!-- Bid on Issues -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/bid.png' %}"
                      alt="bid"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Bid On Issues</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Allows developers to bid on resolving reported issues, creating a marketplace for bug fixes and feature implementations.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:2024-05-12</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:2024-05-12</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/bidding/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Bids</a>
@@ -214,17 +214,17 @@
                 </div>
             </div>
             <!-- Blt extesnion   -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/blt-extension.png' %}"
                      alt="blt_extension"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">BLT Extension</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The chrome extension to BLT that allows you to take screenshots of websites and report them
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 3 years ago</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 3 years ago</p>
                 <div class="flex justify-between mt-auto">
                     <a href="https://github.com/OWASP-BLT/BLT-Extension/releases"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Download extension</a>
@@ -233,17 +233,17 @@
                 </div>
             </div>
             <!-- BLT slack bot  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/slack-bot.png' %}"
                      alt="slack-bot"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">BLT Slack Bot</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The BLT Slack Bot integrates seamlessly with Slack to provide real-time notifications, commands, and interactions directly within your Slack workspace, enhancing collaboration and productivity.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2025-01-19</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2025-01-19</p>
                 <div class="flex justify-between mt-auto">
                     <a href="https://owasp.org/slack/invite"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Use slack Bot </a>
@@ -252,17 +252,17 @@
                 </div>
             </div>
             <!-- Education -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/bltv.png' %}"
                      alt="Education"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Education</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     A media feature, possibly offering video content related to the platform, such as tutorials, webinars, or promotional materials.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-03-04</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-03-04</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/education/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view BLTV</a>
@@ -271,17 +271,17 @@
                 </div>
             </div>
             <!-- Bug Bounties -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/bug-bounty.png' %}"
                      alt="bug Bounties"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Bug Bounties</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Enables organizations to offer rewards for identifying and reporting specific vulnerabilities, encouraging proactive security assessments.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:2016-09-04</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:2016-09-04</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/hunt/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Bounties</a>
@@ -290,17 +290,17 @@
                 </div>
             </div>
             <!-- Contributors -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/contributors.png' %}"
                      alt="contributors"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Contributors</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Lists individuals who have contributed to the platform, acknowledging their efforts and promoting community recognition.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2023-03-25</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2023-03-25</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/contributors/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Contributors</a>
@@ -309,17 +309,17 @@
                 </div>
             </div>
             <!-- Developer Api  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/swagger-api.png' %}"
                      alt="developer_api"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Developer API</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The Swagger page on the BLT platform provides an interactive interface for exploring and testing the platform's API endpoints. It allows developers to view available API methods, understand request and response structures, and execute API calls directly from the browser, facilitating efficient integration and development.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2021-04-15</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2021-04-15</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/swagger/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Developer API</a>
@@ -328,17 +328,17 @@
                 </div>
             </div>
             <!-- Discussion Rooms -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/rooms.png' %}"
                      alt="rooms"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Discussion Rooms</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The OWASP BLT Discussion Rooms feature provides a platform for real-time text communication among users.it allows users to create and delete chat rooms, facilitating instant collaboration and information sharing within the community.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2025-02-09</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2025-02-09</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/discussion-rooms/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view rooms</a>
@@ -347,17 +347,17 @@
                 </div>
             </div>
             <!-- Donations -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/donate.png' %}"
                      alt="donate"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Donations</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Allows individuals and organizations to donate funds to support the platform's operations and development initiatives.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-11-28</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-11-28</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/donate/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Donate</a>
@@ -366,17 +366,17 @@
                 </div>
             </div>
             <!-- flutter app  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/app.png' %}"
                      alt="flutter_app"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Flutter APP</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The Flutter App feature in OWASP BLT provides a mobile application built with Flutter, allowing users to access and manage the platform's functionalities on the go. This app enhances user convenience and engagement by offering a seamless mobile experience.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 3 years ago</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 3 years ago</p>
                 <div class="flex justify-between mt-auto">
                     <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Download App</a>
@@ -385,17 +385,17 @@
                 </div>
             </div>
             <!-- forum -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/forum.png' %}"
                      alt="forum"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Forum</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Encourages users to submit ideas and feedback to improve the platform, fostering community-driven development.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2025-02-22</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2025-02-22</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/forum/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"> View Forum</a>
@@ -404,17 +404,17 @@
                 </div>
             </div>
             <!-- github action   -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/github-action.png' %}"
                      alt="github_action"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Github Action</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The GitHub Action feature in OWASP BLT automates workflows directly within your GitHub repository, enabling continuous integration and deployment, and enhancing development efficiency.lets contributors type /assign to be assigned issues and automatically removes it within 24 hours
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2 years ago</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2 years ago</p>
                 <div class="flex justify-between mt-auto">
                     <a href="https://github.com/OWASP-BLT/BLT/issues"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view on Github</a>
@@ -423,17 +423,17 @@
                 </div>
             </div>
             <!-- Gsoc  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'images/gsoc.png' %}"
                      alt="gsoc"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Gsoc</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The Google Summer of Code (GSoC) is a global program that offers students stipends to write code for open-source projects. OWASP BLT participates in GSoC to mentor students and help them contribute to the platform.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-11-11</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-11-11</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/gsoc/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">participate</a>
@@ -442,17 +442,17 @@
                 </div>
             </div>
             <!-- invite referrals  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/referral.png' %}"
                      alt="referral"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Invite/Referral</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The Invite/Referral feature in OWASP BLT allows users to invite organisations to join the platform. This feature promotes community growth and engagement by enabling users to expand their network within the platform
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2016-09-21</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2016-09-21</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/invite/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Invite Organisations</a>
@@ -461,17 +461,17 @@
                 </div>
             </div>
             <!-- Issues (Bugs) -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full ">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/report-bug.png' %}"
                      alt="issues"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-52 object-contain">
                 <h2 class="text-xl font-semibold">Issues (Bugs)</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Allows users to view, report, and manage software bugs. Users can submit detailed bug reports, track their status, and collaborate with others to resolve them.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2016-09-03</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2016-09-03</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/issues/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Manage Issues</a>
@@ -480,17 +480,17 @@
                 </div>
             </div>
             <!-- Leaderboard -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/leaderboard.png' %}"
                      alt="leaderboard_global"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Leaderboard</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Ranks users based on their contributions, fostering a competitive environment to encourage active participation.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2016-11-17</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2016-11-17</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/leaderboard/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Leaders</a>
@@ -499,17 +499,17 @@
                 </div>
             </div>
             <!-- oraganisatiions  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/org.png' %}"
                      alt="Organisations"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Organisations</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The Organizations feature in OWASP BLT allows users to create, manage, and collaborate within various organizations, providing a centralized platform for overseeing projects, tracking bugs, and enhancing team productivity.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-11-11</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-11-11</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/organizations/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">show Organisations</a>
@@ -518,17 +518,17 @@
                 </div>
             </div>
             <!-- oraganisations Dashboard  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/org-dashboard.png' %}"
                      alt="org_dashboard"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Organisations Dashboard</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Create and manage your own Bug Bounty contest with ease! Add enticing prizes, specify the domain and timeline, and upload essential assets like logos and banners. Start your competition today and engage participants with a well-organized, detailed setup.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-12-22</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-12-22</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/organization/dashboard/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">show Dashboard</a>
@@ -537,17 +537,17 @@
                 </div>
             </div>
             <!-- projects   -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/project.png' %}"
                      alt="project"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Projects</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The Projects feature in OWASP BLT allows users to view and manage various projects within the platform, providing easy access to project details and related resources.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-12-29</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-12-29</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/projects/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">List Projects</a>
@@ -556,17 +556,17 @@
                 </div>
             </div>
             <!-- Report Ip  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/report-ip.png' %}"
                      alt="report_ip"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Report IP</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     This feature enables users to report suspicious IP addresses or ranges involved in scanning or attacks, enhancing collaborative security efforts.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-11-13</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-11-13</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/reported-ips/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Report IP</a>
@@ -575,17 +575,17 @@
                 </div>
             </div>
             <!-- repo  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/repo.png' %}"
                      alt="repo"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Repositories</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The Repositories feature in OWASP BLT allows users to view and manage various repositories within the platform, providing easy access to project codebases and related resources.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2025-02-14</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2025-02-14</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/repo_list/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">show Repos</a>
@@ -594,17 +594,17 @@
                 </div>
             </div>
             <!-- Scoreboard -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/scoreboard.png' %}"
                      alt="scoreboard"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Scoreboard</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The OWASP BLT Scoreboard allows users to track and compare domain performance by viewing open and closed issues, email events, and top testers for each domain.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:2017-01-29</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:2017-01-29</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/scoreboard/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Scores</a>
@@ -613,17 +613,17 @@
                 </div>
             </div>
             <!-- Sitemap  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/sitemap.png' %}"
                      alt="sitemap"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">SiteMap</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Provides a visual representation of the website's structure, helping users navigate and understand the layout of the site
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-05-04</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-05-04</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/sitemap/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View SiteMap</a>
@@ -632,17 +632,17 @@
                 </div>
             </div>
             <!-- Sizzle (Time Tracking) -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/sizzle.png' %}"
                      alt="sizzle"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Sizzle (Time Tracking)</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     A time tracking tool integrated into the platform to monitor the time spent on various tasks and issues, aiding in project management and productivity analysis.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:2024-08-25</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:2024-08-25</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/sizzle/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Track Time</a>
@@ -651,17 +651,17 @@
                 </div>
             </div>
             <!-- Sponsorships -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/sponsor.png' %}"
                      alt="sponsor "
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Sponsorships</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Provides opportunities for organizations to sponsor the platform or specific projects, supporting ongoing development and maintenance.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2023-08-23</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2023-08-23</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/sponsor/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Sponsors</a>
@@ -670,17 +670,17 @@
                 </div>
             </div>
             <!-- Stats -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/blt-stat.png' %}"
                      alt="blt-stat"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Stats</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Displays various statistics related to the platform, such as user activity, bug reports, and other key metrics to track performance and engagement.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2016-09-11</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2016-09-11</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/stats/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Stat</a>
@@ -689,17 +689,17 @@
                 </div>
             </div>
             <!-- Stats Dashboard  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/stats-dashboard.png' %}"
                      alt="stat_dashboard"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Stats Dashboard</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Offers a comprehensive dashboard with detailed statistics and visualizations, allowing users to monitor and analyze platform activity and performance.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2025-02-09</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2025-02-09</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/stats-dashboard/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Dashboard</a>
@@ -708,17 +708,17 @@
                 </div>
             </div>
             <!-- steak based point system  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/steak.png' %}"
                      alt="steak"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Steak based point system</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     A streak-based point system is a gamification strategy that rewards users for consecutive successful actions, encouraging consistent engagement.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-12-24</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-12-24</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/profile/{{ user.username }}"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view steak</a>
@@ -727,17 +727,17 @@
                 </div>
             </div>
             <!-- Teams  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/teams.png' %}"
                      alt="teams"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Teams</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     This section allows users to create and manage teams, add members, and collaborate on projects within the platform, fostering teamwork and collective progress.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-12-18</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-12-18</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/teams/overview/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Create Team</a>
@@ -746,17 +746,17 @@
                 </div>
             </div>
             <!-- Template List  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/template-list.png' %}"
                      alt="template_list"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Template List</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The Template List feature in OWASP BLT provides a curated collection of templates for various project types, offering users a starting point for creating new projects and enhancing productivity.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2025-02-16</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2025-02-16</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/template_list/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Template List</a>
@@ -765,17 +765,17 @@
                 </div>
             </div>
             <!-- Tomato (Funding) -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/funding.png' %}"
                      alt="funding"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Tomato (Funding)</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     A funding mechanism to support projects and contributors, possibly through donations or sponsorships, promoting sustained development efforts.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-07-11</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2024-07-11</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/blt-tomato/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Funding</a>
@@ -784,17 +784,17 @@
                 </div>
             </div>
             <!-- Trademark Search -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/trademark.png' %}"
                      alt="trademarks"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Trademark Search</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Provides a tool to search for registered trademarks, assisting in ensuring that project names and branding do not infringe on existing trademarks.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:2024-03-01</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:2024-03-01</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/trademarks/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Search Trademarks</a>
@@ -803,17 +803,17 @@
                 </div>
             </div>
             <!-- user-Profile  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/user-profile.png' %}"
                      alt="user_profile"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">User Profile</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The User Profile feature in OWASP BLT allows users to create and manage their personal profiles. Users can showcase their statistics, followers, and contributions within the platform. This feature enhances user engagement by providing a personalized space for each user to display their achievements and interact with the community.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2016-8-28</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2016-8-28</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/profile/{{ user.username }}"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">show profile</a>
@@ -822,17 +822,17 @@
                 </div>
             </div>
             <!-- website Stat  -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/web-stats.png' %}"
                      alt="web_Stats"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">WebSite Stats</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     Provides detailed statistics about the website's performance, including traffic, user engagement, and other key metrics.
                 </p>
-                <p class="text-gray-500 text-sm">Added on: 2025-02-16</p>
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on: 2025-02-16</p>
                 <div class="flex justify-between mt-auto">
                     <a href="/website_stats/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"> View Website Stat</a>
@@ -844,15 +844,15 @@
     </div>
     <!--  upcoming Features  -->
     <div>
-        <h1 class="text-3xl font-bold my-4 text-center ">Features In Progress</h1>
-        <p class="text-gray-600 mb-6 text-center">
+        <h1 class="text-3xl font-bold my-4 text-center">Features In Progress</h1>
+        <p class="text-gray-600 dark:text-gray-400 mb-6 text-center">
             These features are currently in development! Contribute and help us build these exciting innovations to take BLT to the next level. Your input and collaboration will make a huge impact!
         </p>
     </div>
-    <div class="container mx-auto px-4 py-6 m-2 ">
+    <div class="container mx-auto px-4 py-6 m-2">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <!--  AI-Assisted Coder for Automated Issue-to-PR Workflow   -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/coming-soon.png' %}"
                      alt="assisted_coder"
                      height="100"
@@ -862,11 +862,11 @@
                     <h2 class="text-xl font-semibold">AI-Assisted Coder for Automated Issue-to-PR Workflow</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     An AI-assisted coder that automates the issue-to-PR workflow by cloning the repo, setting up the environment, generating required code changes, running tests, and submitting a pull request—all with minimal manual intervention.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:Upcoming</p>
-                <div class="flex justify-between mt-auto ">
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:Upcoming</p>
+                <div class="flex justify-between mt-auto">
                     <a href="#"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view Assisted coder </a>
                     <a href="https://github.com/OWASP-BLT/BLT/issues/3312"
@@ -874,7 +874,7 @@
                 </div>
             </div>
             <!-- AI-Powered GitHub Sportscaster Live Stream   -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/coming-soon.png' %}"
                      alt="Sportscaster"
                      height="100"
@@ -884,11 +884,11 @@
                     <h2 class="text-xl font-semibold">AI-Powered GitHub Sportscaster</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     An AI-powered GitHub Sportscaster that live-streams project activity with real-time play-by-play commentary, leaderboards, and animated announcements. It tracks stars, pull requests, commits, and more, offering a dynamic video feed with project logos, user avatars, and engaging insights.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:Upcoming</p>
-                <div class="flex justify-between mt-auto ">
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:Upcoming</p>
+                <div class="flex justify-between mt-auto">
                     <a href="#"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view Live Stream</a>
                     <a href="https://github.com/OWASP-BLT/BLT/issues/3313"
@@ -896,7 +896,7 @@
                 </div>
             </div>
             <!-- 3.Open Source Sorting Hat-->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/coming-soon.png' %}"
                      alt="ossh"
                      height="100"
@@ -906,11 +906,11 @@
                     <h2 class="text-xl font-semibold">Open Source Sorting Hat</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     The "Open Source Sorting Hat" is a personalized recommendation engine that analyzes a developer's GitHub profile to suggest tailored open-source projects, communities, events, and resources, enhancing their engagement in the open-source ecosystem.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:Upcoming</p>
-                <div class="flex justify-between mt-auto ">
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:Upcoming</p>
+                <div class="flex justify-between mt-auto">
                     <a href="#"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Get Recommendation
                     </a>
@@ -919,18 +919,18 @@
                 </div>
             </div>
             <!-- 4.project Stats   -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/coming-soon.png' %}"
                      alt="feed"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Projects Stats</h2>
-                <p class="text-gray-600 my-2">
+                <p class="text-gray-600 dark:text-gray-400 my-2">
                     A dynamic project leaderboard that showcases GitHub metrics (stars, forks, commits, issues) along with additional insights like code quality, community engagement, and social media influence. It features real-time updates, interactive sorting/filtering, and visually engaging animations to highlight project performance.
                 </p>
-                <p class="text-gray-500 text-sm">Added on:upcoming</p>
-                <div class="flex justify-between mt-auto ">
+                <p class="text-gray-500 dark:text-gray-500 text-sm">Added on:upcoming</p>
+                <div class="flex justify-between mt-auto">
                     <a href="#"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Projects Stat</a>
                     <a href="https://github.com/OWASP-BLT/BLT/issues/3314"

@@ -19,8 +19,8 @@
 {% endblock og_description %}
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100">
-        <div class="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
+    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 dark:bg-gray-800">
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
             <div class="text-center">
                 <!-- Email Icon -->
                 <div class="mx-auto mb-6 w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
@@ -33,13 +33,13 @@
                     </svg>
                 </div>
                 <!-- Heading -->
-                <h1 class="text-2xl font-bold text-gray-900 mb-4">{% trans "Confirm Email Address" %}</h1>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">{% trans "Confirm Email Address" %}</h1>
                 {% if confirmation %}
                     {% if confirmation.email_address.verified %}
                         <!-- Already Verified -->
                         <div class="text-green-600 mb-6">
                             <p class="text-lg font-semibold mb-2">{% trans "Email Already Verified" %}</p>
-                            <p class="text-gray-600">
+                            <p class="text-gray-600 dark:text-gray-400">
                                 {% blocktrans with confirmation.email_address.email as email %}Your email address {{ email }} has already been confirmed.{% endblocktrans %}
                             </p>
                         </div>
@@ -49,9 +49,9 @@
                         </a>
                     {% else %}
                         <!-- Confirm Email -->
-                        <div class="text-gray-600 mb-6">
+                        <div class="text-gray-600 dark:text-gray-400 mb-6">
                             <p class="mb-4">
-                                {% blocktrans with confirmation.email_address.email as email %}Please confirm that <strong class="text-gray-900">{{ email }}</strong> is an email address for user {{ confirmation.email_address.user }}.{% endblocktrans %}
+                                {% blocktrans with confirmation.email_address.email as email %}Please confirm that <strong class="text-gray-900 dark:text-gray-100">{{ email }}</strong> is an email address for user {{ confirmation.email_address.user }}.{% endblocktrans %}
                             </p>
                         </div>
                         <form method="post"
@@ -63,7 +63,7 @@
                             </button>
                         </form>
                         <a href="{% url 'home' %}"
-                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 bg-gray-200 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
+                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
                             {% trans "Cancel" %}
                         </a>
                     {% endif %}
@@ -80,7 +80,7 @@
                             </svg>
                         </div>
                         <h2 class="text-xl font-bold mb-2">{% trans "Invalid Verification Link" %}</h2>
-                        <p class="text-gray-600 mb-4">
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
                             {% trans "This email confirmation link expired or is invalid. Please request a new verification email." %}
                         </p>
                     </div>
@@ -90,7 +90,7 @@
                             {% trans "Request New Verification Email" %}
                         </a>
                         <a href="{% url 'home' %}"
-                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 bg-gray-200 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
+                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
                             {% trans "Return to Home" %}
                         </a>
                     </div>

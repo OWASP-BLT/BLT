@@ -4,15 +4,15 @@
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto mt-10 bg-gray-2 rounded-sm shadow-md p-7">
         <div class="flex items-center justify-center">
-            <div class="flex items-center space-x-8 max-w-4xl mx-auto p-8 bg-white relative">
-                <div class="w-44 h-44 rounded-sm shadow-md bg-gray-100 flex items-center justify-center">
+            <div class="flex items-center space-x-8 max-w-4xl mx-auto p-8 bg-white dark:bg-gray-800 relative">
+                <div class="w-44 h-44 rounded-sm shadow-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                     <i class="fas {% if lecture.content_type == 'VIDEO' %}fa-video{% elif lecture.content_type == 'LIVE' %}fa-video{% elif lecture.content_type == 'DOCUMENT' %}fa-file-alt{% elif lecture.content_type == 'QUIZ' %}fa-question-circle{% endif %} text-blue-600 text-6xl"></i>
                 </div>
                 <!-- <img src="{{ lecture.thumbnail.url }}" alt="Lecture Thumbnail" class="w-44 h-44 rounded-sm shadow-md" width="176" height="176">
                         In case lectures have the feature to add thumbnails later
 -->
                 <div class="flex flex-col space-y-4 w-full">
-                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
                         <i class="fas {% if lecture.content_type == 'VIDEO' %}fa-video{% elif lecture.content_type == 'LIVE' %}fa-video{% elif lecture.content_type == 'DOCUMENT' %}fa-file-alt{% elif lecture.content_type == 'QUIZ' %}fa-question-circle{% endif %} text-blue-600"></i>
                         {{ lecture.title|escape|capfirst }}
                     </h1>
@@ -26,21 +26,21 @@
                             <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
                         </a>
                     {% endif %}
-                    <p class="text-gray-600 text-sm">{{ lecture.description|escape|truncatewords:50 }}</p>
-                    <div class="flex items-center space-x-4 text-sm text-gray-700 font-medium">
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">{{ lecture.description|escape|truncatewords:50 }}</p>
+                    <div class="flex items-center space-x-4 text-sm text-gray-700 dark:text-gray-300 font-medium">
                         <span class="flex items-center gap-1">
-                            <i class="fas fa-user text-gray-500"></i>
+                            <i class="fas fa-user text-gray-500 dark:text-gray-500"></i>
                             <a href="/profile/{{ lecture.instructor.user.username|escape }}">
                                 <span>Instructor: {{ lecture.instructor.user.username|escape }}</span>
                             </a>
                         </span>
                         <span class="flex items-center gap-1">
-                            <i class="fas fa-clock text-gray-500"></i>
+                            <i class="fas fa-clock text-gray-500 dark:text-gray-500"></i>
                             <span>Duration: {{ lecture.duration|escape }} minutes</span>
                         </span>
                         {% if lecture.scheduled_time %}
                             <span class="flex items-center gap-1">
-                                <i class="fas fa-calendar-alt text-gray-500"></i>
+                                <i class="fas fa-calendar-alt text-gray-500 dark:text-gray-500"></i>
                                 <span>Scheduled: {{ lecture.scheduled_time|date:"F d, Y H:i"|escape }}</span>
                             </span>
                         {% endif %}
@@ -54,17 +54,17 @@
                     </div>
                     <div class="flex flex-wrap gap-2 mt-2">
                         {% for tag in lecture.tags.all %}
-                            <span class="bg-gray-200 text-gray-800 text-xs font-medium px-3 py-1 rounded-full shadow-sm">{{ tag.name|escape }}</span>
+                            <span class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-medium px-3 py-1 rounded-full shadow-sm">{{ tag.name|escape }}</span>
                         {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
-        <div class="mt-10 rounded-lg bg-white p-6 shadow-md">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Lecture Content</h2>
+        <div class="mt-10 rounded-lg bg-white dark:bg-gray-800 p-6 shadow-md">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Lecture Content</h2>
             {% if lecture.content_type == "VIDEO" and lecture.embed_url %}
-                <div class="bg-gray-100 p-4 rounded-lg">
-                    <p class="text-gray-800">{{ lecture.content|escape|linebreaks }}</p>
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                    <p class="text-gray-800 dark:text-gray-200">{{ lecture.content|escape|linebreaks }}</p>
                 </div>
                 <div class="mb-6 w-full">
                     <iframe src="{{ lecture.embed_url|escape }}"
@@ -84,11 +84,11 @@
     class="underline">{{ lecture.live_url|escape }}</a>
                 </p>
             {% elif lecture.content_type == "DOCUMENT" %}
-                <div class="bg-gray-100 p-4 rounded-lg">
-                    <p class="text-gray-800">{{ lecture.content|escape|linebreaks }}</p>
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                    <p class="text-gray-800 dark:text-gray-200">{{ lecture.content|escape|linebreaks }}</p>
                 </div>
                 <!-- {% elif lecture.content_type == "QUIZ" %}
-                <p class="text-gray-800">Quiz content will be displayed here.</p> -->
+                <p class="text-gray-800 dark:text-gray-200">Quiz content will be displayed here.</p> -->
             {% endif %}
         </div>
     </div>

@@ -40,32 +40,34 @@
             </a>
         </div>
         <!-- Date Range Display -->
-        <div class="text-lg text-gray-700 mb-6 text-center">Showing contributions from {{ start_date }} to {{ end_date }}</div>
+        <div class="text-lg text-gray-700 dark:text-gray-300 mb-6 text-center">
+            Showing contributions from {{ start_date }} to {{ end_date }}
+        </div>
         <!-- User Statistics Table -->
         <div class="max-w-5xl mx-auto">
             <table id="userStatsTable"
-                   class="table-auto divide-y divide-gray-200 mx-auto">
-                <thead class="bg-gray-100">
+                   class="table-auto divide-y divide-gray-200 dark:divide-gray-700 mx-auto">
+                <thead class="bg-gray-100 dark:bg-gray-800">
                     <tr>
-                        <th class="px-4 py-3 text-left text-base font-semibold text-gray-600 uppercase">Username</th>
-                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Commits</th>
-                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Issues Opened</th>
-                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Issues Closed</th>
-                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">PRs</th>
-                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Comments</th>
-                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Total</th>
+                        <th class="px-4 py-3 text-left text-base font-semibold text-gray-600 dark:text-gray-400 uppercase">Username</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 dark:text-gray-400 uppercase">Commits</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 dark:text-gray-400 uppercase">Issues Opened</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 dark:text-gray-400 uppercase">Issues Closed</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 dark:text-gray-400 uppercase">PRs</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 dark:text-gray-400 uppercase">Comments</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 dark:text-gray-400 uppercase">Total</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {% for username, stats in user_stats.items %}
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 whitespace-nowrap text-lg font-medium text-gray-900">{{ username }}</td>
-                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.commits }}</td>
-                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.issues_opened }}</td>
-                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.issues_closed }}</td>
-                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.prs }}</td>
-                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.comments }}</td>
-                            <td class="px-4 py-3 text-center text-lg font-bold text-gray-900">{{ stats.total }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-lg font-medium text-gray-900 dark:text-gray-100">{{ username }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800 dark:text-gray-200">{{ stats.commits }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800 dark:text-gray-200">{{ stats.issues_opened }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800 dark:text-gray-200">{{ stats.issues_closed }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800 dark:text-gray-200">{{ stats.prs }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800 dark:text-gray-200">{{ stats.comments }}</td>
+                            <td class="px-4 py-3 text-center text-lg font-bold text-gray-900 dark:text-gray-100">{{ stats.total }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

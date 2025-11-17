@@ -228,7 +228,7 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             # Generate embeddings for function text
             text_embedding = generate_embedding(function_text)
             if text_embedding is None:
-                print(f"Error generating embedding for function text: {function_text}")
+                logger.error(f"Error generating embedding for function text: {function_text}")
                 return None  # Terminate process immediately
 
             if i % 5 == 0:
@@ -573,7 +573,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
 
         except Exception as e:
-            print(f"Error in delete_message_broadcast: {e}")
+            logger.error(f"Error in delete_message_broadcast: {e}")
 
     async def reaction_update(self, event):
         """Handles broadcasting reaction updates to all users in the room."""

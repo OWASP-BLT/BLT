@@ -23,7 +23,7 @@
             <div class="flex-1">
                 <!-- Header -->
                 <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                         All
                         {% if label %}<span class="text-[#e74c3c]">{{ label }}</span>{% endif %}
                         Issues
@@ -35,7 +35,7 @@
                     <!-- Filter Pills -->
                     <div class="flex flex-wrap gap-2">
                         <a href="{% url 'all_activity' %}"
-                           class="inline-flex items-center px-3 py-1 rounded-full text-sm {% if not label and not user %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">
+                           class="inline-flex items-center px-3 py-1 rounded-full text-sm {% if not label and not user %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %} transition-colors">
                             All Issues
                         </a>
                         {% if label %}
@@ -67,7 +67,7 @@
                              aria-label="Pagination">
                             {% if page_obj.has_previous %}
                                 <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                                   class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
+                                   class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 transition-colors">
                                     First
                                 </a>
                             {% endif %}
@@ -78,31 +78,33 @@
                                     </span>
                                 {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
                                     <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
                                         {{ num }}
                                     </a>
                                 {% endif %}
                             {% endfor %}
                             {% if page_obj.has_next %}
                                 <a href="?page={{ page_obj.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                                   class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
+                                   class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 transition-colors">
                                     Last
                                 </a>
                             {% endif %}
                         </nav>
-                        <p class="text-sm text-gray-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </p>
                     </div>
                 {% endif %}
             </div>
             <!-- Sidebar -->
             <div class="w-full lg:w-80 mt-8 lg:mt-0">
                 <!-- Leaderboard -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden sticky top-8">
-                    <div class="p-4 border-b border-gray-200 bg-gray-50">
-                        <h2 class="text-lg font-semibold text-gray-900">Top Contributors</h2>
-                        <p class="text-sm text-gray-600 mt-1">This Month's Leaders</p>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-8">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Contributors</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">This Month's Leaders</p>
                     </div>
-                    <div class="divide-y divide-gray-200">
+                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
                         {% for user in top_users|slice:":5" %}
                             <div class="p-4 hover:bg-gray-50 transition-colors">
                                 <div class="flex items-center space-x-3">
@@ -112,8 +114,8 @@
                                          width="40"
                                          height="40">
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 truncate">{{ user.username }}</p>
-                                        <p class="text-xs text-gray-500">{{ user.points }} points</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ user.username }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500">{{ user.points }} points</p>
                                     </div>
                                     <div class="flex-shrink-0 text-[#e74c3c] font-medium">#{{ forloop.counter }}</div>
                                 </div>
@@ -121,7 +123,7 @@
                         {% endfor %}
                     </div>
                     {% if not top_users %}
-                        <div class="p-4 text-center text-gray-500">
+                        <div class="p-4 text-center text-gray-500 dark:text-gray-500">
                             <p class="text-sm">No contributors yet this month</p>
                         </div>
                     {% endif %}

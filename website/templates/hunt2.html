@@ -13,14 +13,14 @@
           type="text/css"
           href="{% static 'css/mtr-datepicker.default-theme.min.css' %}" />
     <form id="create-hunt"
-          class="fixed top-[105%] left-1/2 transform -translate-x-1/2 w-1/2 bg-white rounded-lg shadow-lg p-6">
+          class="fixed top-[105%] left-1/2 transform -translate-x-1/2 w-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         {% csrf_token %}
         <!-- Modal Header -->
         <div class="mb-6">
             <h4 class="text-2xl font-bold">
-                <span class="text-black">START A</span> BUG BOUNTY
+                <span class="text-black dark:text-white">START A</span> BUG BOUNTY
             </h4>
-            <h6 class="text-gray-600">Enter URL, App name or GPS location of issue</h6>
+            <h6 class="text-gray-600 dark:text-gray-400">Enter URL, App name or GPS location of issue</h6>
         </div>
         <!-- Modal Body -->
         <div class="space-y-6">
@@ -29,7 +29,7 @@
                 <input type="text"
                        name="name"
                        required
-                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                        placeholder="Enter Name for the Bug Bounty"
                        id="name"
                        value="">
@@ -42,12 +42,12 @@
             <!-- Date/Time Pickers -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                    <label for="name" class="block text-gray-700">Start Date/Time :</label>
+                    <label for="name" class="block text-gray-700 dark:text-gray-300">Start Date/Time :</label>
                     <div id="datepicker-1-res" class="hidden"></div>
                     <div id="datepicker-1"></div>
                 </div>
                 <div>
-                    <label for="name" class="block text-gray-700">End Date/Time :</label>
+                    <label for="name" class="block text-gray-700 dark:text-gray-300">End Date/Time :</label>
                     <div id="datepicker-2-res" class="hidden"></div>
                     <div id="datepicker-2"></div>
                 </div>
@@ -55,22 +55,22 @@
             <!-- Domain Selection -->
             <div>
                 <select name="domain"
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         id="domain">
                     {% for domain in domains %}<option>{{ domain.id }} - {{ domain.name }}</option>{% endfor %}
                 </select>
             </div>
             <!-- Prizes Section -->
             <div>
-                <span class="block text-gray-700">Prizes</span>
+                <span class="block text-gray-700 dark:text-gray-300">Prizes</span>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block">
                             <input name="prize_winner"
                                    type="number"
                                    placeholder="Winner"
-                                   class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <span class="text-gray-600">$</span>
+                                   class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <span class="text-gray-600 dark:text-gray-400">$</span>
                         </label>
                     </div>
                     <div>
@@ -78,8 +78,8 @@
                             <input placeholder="Runner's Up"
                                    name="prize_runner"
                                    type="number"
-                                   class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <span class="text-gray-600">$</span>
+                                   class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <span class="text-gray-600 dark:text-gray-400">$</span>
                         </label>
                     </div>
                     <div>
@@ -87,12 +87,12 @@
                             <input placeholder="2nd Runner's Up"
                                    name="prize_second_runner"
                                    type="number"
-                                   class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <span class="text-gray-600">$</span>
+                                   class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <span class="text-gray-600 dark:text-gray-400">$</span>
                         </label>
                     </div>
                 </div>
-                <p class="text-sm text-gray-600 mt-2">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
                     (Your wallet must contain the total prize money, if not you can go to profile to add money to wallet)
                 </p>
             </div>
@@ -111,7 +111,7 @@
                 Save
             </button>
             <button type="reset"
-                    class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition duration-200">
+                    class="bg-gray-500 dark:bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition duration-200">
                 Reset
             </button>
         </div>

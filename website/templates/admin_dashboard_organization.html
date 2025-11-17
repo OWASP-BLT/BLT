@@ -30,7 +30,7 @@
                                class="list-group-item">{{ organization.name }}</a>
                         {% else %}
                             <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
-                               class="list-group-item list-group-item-danger ">{{ organization.name }}</a>
+                               class="list-group-item list-group-item-danger">{{ organization.name }}</a>
                         {% endif %}
                     {% endfor %}
                 </div>

@@ -13,7 +13,9 @@
                         <i class="fas fa-pen"></i> Continue Studying
                     </button>
                 </a>
-                {% if is_completed %}<p class="text-black">Congratulations! You have completed this course.</p>{% endif %}
+                {% if is_completed %}
+                    <p class="text-black dark:text-white">Congratulations! You have completed this course.</p>
+                {% endif %}
             {% else %}
                 <a href="{% url 'enroll' course.id %}">
                     <button class="my-4 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded">
@@ -25,22 +27,24 @@
                 {% for section in sections %}
                     <div id="section-{{ forloop.counter }}" class="mb-12 scroll-mt-6">
                         <div class="flex items-center mb-6">
-                            <h1 class="text-3xl font-extrabold text-gray-900 border-b-4 border-blue-500 pb-2">{{ section.title }}</h1>
+                            <h1 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 border-b-4 border-blue-500 pb-2">
+                                {{ section.title }}
+                            </h1>
                         </div>
                         <div class="space-y-4">
                             {% if section.lectures.all %}
                                 {% for lecture in section.lectures.all %}
                                     <div id="lecture-{{ forloop.parentloop.counter }}-{{ forloop.counter }}"
-                                         class="bg-white rounded-lg shadow-lg border border-gray-300 p-5 flex flex-col gap-3 scroll-mt-6">
+                                         class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600 p-5 flex flex-col gap-3 scroll-mt-6">
                                         <div class="flex items-center justify-between">
-                                            <h3 class="font-semibold text-lg text-gray-800">
+                                            <h3 class="font-semibold text-lg text-gray-800 dark:text-gray-200">
                                                 {{ forloop.parentloop.counter }}.{{ forloop.counter }} - {{ lecture.title }}
                                             </h3>
-                                            <span class="px-3 py-1 rounded-md font-medium text-sm {% if lecture.content_type == 'VIDEO' %} bg-blue-100 text-blue-800 {% elif lecture.content_type == 'LIVE' %} bg-green-100 text-green-800 {% elif lecture.content_type == 'DOCUMENT' %} bg-yellow-100 text-yellow-800 {% else %} bg-gray-200 text-gray-800 {% endif %}">
+                                            <span class="px-3 py-1 rounded-md font-medium text-sm {% if lecture.content_type == 'VIDEO' %} bg-blue-100 text-blue-800 {% elif lecture.content_type == 'LIVE' %} bg-green-100 text-green-800 {% elif lecture.content_type == 'DOCUMENT' %} bg-yellow-100 text-yellow-800 {% else %} bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 {% endif %}">
                                                 {{ lecture.get_content_type_display }}
                                             </span>
                                         </div>
-                                        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-700">
+                                        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                                             {% if lecture.video_url %}
                                                 <a href="{{ lecture.video_url }}"
                                                    class="flex items-center gap-1 text-blue-600 hover:text-blue-800">
@@ -60,26 +64,28 @@
                                                 </a>
                                             {% endif %}
                                             {% if lecture.scheduled_time %}
-                                                <span class="flex items-center gap-1 text-gray-600">
+                                                <span class="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                                                     <i class="fas fa-calendar-alt"></i> {{ lecture.scheduled_time|date:"M d, H:i" }}
                                                 </span>
                                             {% endif %}
                                         </div>
                                         {% if lecture.content %}
-                                            <div class="text-md text-gray-800 max-h-60 overflow-y-auto border-l-4 border-gray-300 pl-4">{{ lecture.content }}</div>
+                                            <div class="text-md text-gray-800 dark:text-gray-200 max-h-60 overflow-y-auto border-l-4 border-gray-300 dark:border-gray-600 pl-4">
+                                                {{ lecture.content }}
+                                            </div>
                                         {% endif %}
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <p class="text-center text-gray-500 italic">No lectures available for this section.</p>
+                                <p class="text-center text-gray-500 dark:text-gray-500 italic">No lectures available for this section.</p>
                             {% endif %}
                         </div>
                     </div>
                 {% endfor %}
             {% else %}
                 <div class="text-center mt-10">
-                    <h2 class="text-2xl font-bold text-gray-700">No content available</h2>
-                    <p class="text-gray-500">Check back later for updates!</p>
+                    <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">No content available</h2>
+                    <p class="text-gray-500 dark:text-gray-500">Check back later for updates!</p>
                 </div>
             {% endif %}
         </div>

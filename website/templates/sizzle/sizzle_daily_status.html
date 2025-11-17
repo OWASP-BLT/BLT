@@ -22,7 +22,7 @@
         <!-- Main Content Section -->
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
-                <h1 class="text-4xl font-semibold text-gray-800 mb-8">Your Sizzle Daily Status Report</h1>
+                <h1 class="text-4xl font-semibold text-gray-800 dark:text-gray-200 mb-8">Your Sizzle Daily Status Report</h1>
             </div>
             <div class="flex space-x-10 items-center mb-8 mt-8">
                 <a href="{% url 'sizzle' %}"
@@ -43,10 +43,10 @@
                 </a>
             </div>
             <!-- Display Daily Status Reports -->
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
                 <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">Your Daily Status Reports</div>
                 {% for report in reports %}
-                    <div class="p-6 border-b border-gray-200">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                         <h2 class="text-xl font-semibold mb-2">Date: {{ report.date }}</h2>
                         <p>
                             <strong>What did you work on previously?</strong>

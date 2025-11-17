@@ -1,8 +1,8 @@
 {% load gravatar %}
 {% load static %}
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col h-full">
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col h-full">
     <!-- Header with user info -->
-    <div class="p-4 border-b border-gray-200">
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <!-- User Avatar -->
@@ -41,16 +41,16 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center space-x-2">
                         <a href="{{ activity.user.get_absolute_url }}"
-                           class="text-sm font-semibold text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                           class="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors truncate">
                             {{ activity.user|default:"Anonymous" }}
                         </a>
-                        <span class="text-sm text-gray-400">•</span>
+                        <span class="text-sm text-gray-400 dark:text-gray-600">•</span>
                         <a href="{% url 'domain' slug=activity.domain_name %}"
-                           class="text-sm text-gray-600 hover:text-[#e74c3c] transition-colors truncate">
+                           class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors truncate">
                             {{ activity.domain_title }}
                         </a>
                     </div>
-                    <p class="text-xs text-gray-500 mt-0.5">{{ activity.created|timesince }} ago</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{{ activity.created|timesince }} ago</p>
                 </div>
             </div>
             <!-- Admin Controls -->
@@ -94,11 +94,11 @@
             </div>
             <div class="flex-1">
                 <a href="{{ activity.get_absolute_url }}"
-                   class="text-base font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                   class="text-base font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors">
                     {{ activity.description|truncatechars:150 }}
                 </a>
                 {% if activity.domain.organization %}
-                    <p class="text-sm text-gray-500 mt-1">
+                    <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">
                         Organization:
                         <a href="{% url 'organization_detail' activity.domain.organization.slug %}"
                            class="text-[#e74c3c] hover:underline">{{ activity.domain.organization.name }}</a>
@@ -110,7 +110,7 @@
         <a href="{{ activity.url }}"
            target="_blank"
            rel="noopener noreferrer"
-           class="text-sm text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block mb-4">
+           class="text-sm text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block mb-4">
             {{ activity.url|truncatechars:60 }}
         </a>
         <!-- Status and Type Labels -->
@@ -131,7 +131,7 @@
     </div>
     <!-- Screenshot -->
     {% if activity.screenshot or activity_screenshots %}
-        <div class="border-t border-gray-200">
+        <div class="border-t border-gray-200 dark:border-gray-700">
             <div class="relative w-full h-48">
                 {% for screenshot_activity,screenshot in activity_screenshots.items %}
                     {% if activity == screenshot_activity %}
@@ -139,7 +139,7 @@
                             <img src="{{ screenshot.image.url }}"
                                  loading="lazy"
                                  alt="Issue screenshot"
-                                 class="w-full h-full object-contain bg-gray-50"
+                                 class="w-full h-full object-contain bg-gray-50 dark:bg-gray-900"
                                  width="100%"
                                  height="100%">
                         </a>
@@ -150,7 +150,7 @@
                         <img src="{{ activity.screenshot.url }}"
                              loading="lazy"
                              alt="Issue screenshot"
-                             class="w-full h-full object-contain bg-gray-50"
+                             class="w-full h-full object-contain bg-gray-50 dark:bg-gray-900"
                              width="100%"
                              height="100%">
                     </a>
@@ -159,11 +159,11 @@
         </div>
     {% endif %}
     <!-- Footer -->
-    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
         <div class="flex justify-between items-center">
             <!-- Comments -->
             <a href="{{ activity.get_absolute_url }}#comments"
-               class="text-sm text-gray-500 hover:text-[#e74c3c]">
+               class="text-sm text-gray-500 dark:text-gray-500 hover:text-[#e74c3c]">
                 {% if activity.comments.all|length > 0 %}
                     {{ activity.comments.all|length }} comment{{ activity.comments.all|length|pluralize }}
                 {% else %}
@@ -172,7 +172,7 @@
             </a>
             <!-- View Details -->
             <a href="{{ activity.get_absolute_url }}"
-               class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-[#e74c3c]">
+               class="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 hover:text-[#e74c3c]">
                 View Details
             </a>
         </div>

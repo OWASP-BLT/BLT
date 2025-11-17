@@ -25,7 +25,7 @@
             <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for hunt in hunts %}
                     <li class="flex">
-                        <div class="bg-white rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
                             {% if hunt.logo %}
                                 <div class="w-full h-48 overflow-hidden">
                                     <img src="{{ hunt.logo }}"
