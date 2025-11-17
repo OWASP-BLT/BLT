@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from urllib.parse import urlparse
 
 import pytz
 import requests
@@ -59,12 +60,27 @@ class Command(BaseCommand):
             blt_repos_from_db = Repo.objects.filter(repo_url__icontains="OWASP-BLT")
 
             if blt_repos_from_db.exists():
-                # Extract owner/repo from database URLs
+                # Extract owner/repo from database URLs using proper URL parsing
                 all_repos = []
                 for repo in blt_repos_from_db:
-                    if "github.com" in repo.repo_url:
-                        parts = repo.repo_url.split("github.com/")[-1].strip("/")
-                        all_repos.append(parts)
+                    try:
+                        # Parse URL properly to validate domain
+                        parsed = urlparse(repo.repo_url)
+
+                        # Validate that this is actually a github.com URL
+                        if parsed.netloc.lower() == "github.com":
+                            # Extract path and clean it
+                            path = parsed.path.strip("/").replace(".git", "")
+                            parts = path.split("/")
+
+                            # Validate format (should be owner/repo)
+                            if len(parts) >= 2:
+                                owner_repo = "/".join(parts[:2])  # Take only owner/repo, ignore extra paths
+                                all_repos.append(owner_repo)
+                    except Exception as e:
+                        self.stdout.write(self.style.WARNING(f"Invalid URL format for repo {repo.name}: {str(e)}"))
+                        continue
+
                 self.stdout.write(f"Auto-discovered {len(all_repos)} BLT repositories from database")
             else:
                 # Fallback to GSOC25_PROJECTS

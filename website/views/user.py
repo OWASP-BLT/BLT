@@ -345,7 +345,7 @@ def get_github_stats(user_profile):
 
     # Get review ranking
     all_reviewers = (
-        UserProfile.objects.annotate(review_count=Count("reviews_made"))
+        UserProfile.objects.annotate(review_count=Count("reviews_made_as_user"))
         .filter(review_count__gt=0)
         .order_by("-review_count")
     )

@@ -1873,14 +1873,14 @@ class GitHubReview(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="reviews_made",
+        related_name="reviews_made_as_user",
     )
     reviewer_contributor = models.ForeignKey(
         Contributor,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="reviews_made",
+        related_name="reviews_made_as_contributor",
     )
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)  # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
