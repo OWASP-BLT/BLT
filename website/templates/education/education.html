@@ -20,39 +20,39 @@
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto mt-10">
         <div class="text-center mb-8">
-            <h1 class="text-5xl font-bold flex items-center justify-center gap-3 text-gray-800">
+            <h1 class="text-5xl font-bold flex items-center justify-center gap-3 text-gray-800 dark:text-gray-200">
                 <i class="fas fa-tv text-[#e74c3c]"></i> Education
             </h1>
         </div>
         <!-- New Explainer Section -->
-        <div class="max-w-4xl mx-auto mb-12 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-900">
+        <div class="max-w-4xl mx-auto mb-12 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100">
                 <i class="fas fa-lightbulb text-[#e74c3c]"></i>
                 Welcome to OWASP BLT Education
             </h2>
-            <p class="text-gray-700 leading-relaxed mb-4">
+            <p class="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
                 Welcome to our comprehensive learning platform where security meets education! OWASP BLT Education offers expert-led courses in web security, bug hunting, and ethical hacking. Whether you're a beginner or an experienced professional, our structured learning paths will help you master the skills needed to identify and fix security vulnerabilities.
             </p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <div class="flex items-start gap-3">
                     <i class="fas fa-graduation-cap text-[#e74c3c] mt-1"></i>
                     <div>
-                        <h3 class="font-medium text-gray-900">Learn</h3>
-                        <p class="text-sm text-gray-600">Access structured courses with hands-on exercises</p>
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">Learn</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Access structured courses with hands-on exercises</p>
                     </div>
                 </div>
                 <div class="flex items-start gap-3">
                     <i class="fas fa-certificate text-[#e74c3c] mt-1"></i>
                     <div>
-                        <h3 class="font-medium text-gray-900">Practice</h3>
-                        <p class="text-sm text-gray-600">Apply your knowledge with real-world scenarios</p>
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">Practice</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Apply your knowledge with real-world scenarios</p>
                     </div>
                 </div>
                 <div class="flex items-start gap-3">
                     <i class="fas fa-award text-[#e74c3c] mt-1"></i>
                     <div>
-                        <h3 class="font-medium text-gray-900">Achieve</h3>
-                        <p class="text-sm text-gray-600">Earn certificates and build your portfolio</p>
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100">Achieve</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Earn certificates and build your portfolio</p>
                     </div>
                 </div>
             </div>
@@ -75,8 +75,8 @@
                 {% include "education/includes/course_list.html" %}
             {% else %}
                 <div class="text-center py-16">
-                    <h2 class="text-2xl font-semibold text-gray-700">No courses available</h2>
-                    <p class="text-gray-500">Check back later for new content.</p>
+                    <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-300">No courses available</h2>
+                    <p class="text-gray-500 dark:text-gray-500">Check back later for new content.</p>
                 </div>
             {% endif %}
         </div>
@@ -86,13 +86,13 @@
         {% if lectures %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for lecture in lectures %}
-                    <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                         <h2 class="text-xl font-semibold mb-2">{{ lecture.title }}</h2>
-                        <p class="text-gray-500 text-sm mb-2">
+                        <p class="text-gray-500 dark:text-gray-500 text-sm mb-2">
                             {{ lecture.get_content_type_display }} •
                             {% if lecture.duration %}{{ lecture.duration }} min{% endif %}
                         </p>
-                        {% if lecture.description %}<p class="text-gray-700 mb-4">{{ lecture.description }}</p>{% endif %}
+                        {% if lecture.description %}<p class="text-gray-700 dark:text-gray-300 mb-4">{{ lecture.description }}</p>{% endif %}
                         {% if lecture.content_type == "VIDEO" and lecture.embed_url %}
                             <div class="mb-4">
                                 <iframe src="{{ lecture.embed_url }}"
@@ -105,7 +105,7 @@
                                 <a href="{{ lecture.video_url }}" target="_blank">Watch Separately</a>
                             </p>
                         {% elif lecture.content_type == "DOCUMENT" %}
-                            <div class="prose max-w-none bg-gray-100 p-4 rounded-lg">{{ lecture.content|safe }}</div>
+                            <div class="prose max-w-none bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">{{ lecture.content|safe }}</div>
                         {% elif lecture.content_type == "QUIZ" %}
                             <div class="bg-yellow-50 p-4 rounded-md">
                                 <p class="font-medium mb-3">This is a quiz section. Complete all questions to mark this lecture as completed.</p>
@@ -144,15 +144,15 @@
             </div>
         {% else %}
             <div class="text-center py-16">
-                <h2 class="text-2xl font-semibold text-gray-700">No lectures available</h2>
-                <p class="text-gray-500">Check back later for new content.</p>
+                <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-300">No lectures available</h2>
+                <p class="text-gray-500 dark:text-gray-500">Check back later for new content.</p>
             </div>
         {% endif %}
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold">Featured videos</h1>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/N_59irHRjzM"
@@ -163,7 +163,7 @@
                             allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/IYBRVRfPCK8"
@@ -174,7 +174,7 @@
                             allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/jNp3J6HLpqc"
@@ -185,7 +185,7 @@
                             allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/OmxGrjGA_ck"
@@ -196,7 +196,7 @@
                             allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="bg-white shadow-md rounded-md overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-md overflow-hidden">
                 <div class="video-responsive">
                     <iframe class="w-full h-64"
                             src="https://www.youtube.com/embed/C_UIm1QR67o"

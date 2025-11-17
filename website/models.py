@@ -18,7 +18,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
@@ -199,6 +198,15 @@ class Organization(models.Model):
         max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
     )
 
+    # GitHub and GSOC fields
+    github_org = models.CharField(max_length=255, blank=True, null=True, help_text="GitHub organization name")
+    gsoc_years = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Comma-separated list of years participated in Google Summer of Code (e.g., '2024,2023,2022')",
+    )
+
     def is_admin(self, user):
         """Check if the user is an admin of the organization."""
         return self.admin == user
@@ -299,16 +307,13 @@ class Domain(models.Model):
     def get_logo(self):
         if self.logo:
             return self.logo.url
-        image_request = requests.get("https://logo.clearbit.com/" + self.name)
-        try:
-            if image_request.status_code == 200:
-                image_content = ContentFile(image_request.content)
-                self.logo.save(self.name + ".jpg", image_content)
-                return self.logo.url
-
-        except:
-            favicon_url = self.url + "/favicon.ico"
-            return favicon_url
+        # Use Google's favicon service as a free alternative to Clearbit
+        # Extract domain from URL for better compatibility
+        parsed_url = urlparse(self.url if "://" in self.url else f"http://{self.url}")
+        domain = parsed_url.netloc or self.name
+        # Google favicon service with 128px size for better quality
+        favicon_url = f"https://www.google.com/s2/favicons?domain={domain}&sz=128"
+        return favicon_url
 
     @property
     def hostname_domain(self):
@@ -542,7 +547,7 @@ class Issue(models.Model):
                     cvss_metric_v = next(iter(metrics))
                     return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
-            print(e)
+            logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
 
     class Meta:
@@ -1119,6 +1124,9 @@ class Project(models.Model):
     url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
+    slack = models.URLField(null=True, blank=True)
+    slack_channel = models.CharField(max_length=255, blank=True, null=True)
+    slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
@@ -1378,7 +1386,7 @@ class Activity(models.Model):
             self.save()
             return True
         except Exception as e:
-            print(e)
+            logger.error(f"Error posting activity to BlueSky: {e}")
 
 
 class Badge(models.Model):
@@ -2468,7 +2476,9 @@ class Hackathon(models.Model):
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
             elif pr.contributor and pr.contributor.github_id:
-                # Skip bot accounts
+                # Skip bot accounts - check contributor_type field (primary) and name patterns (fallback)
+                if pr.contributor.contributor_type == "Bot":
+                    continue
                 github_username = pr.contributor.name
                 if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
                     continue
