@@ -4,6 +4,10 @@ name: CI/CD Optimized
 # - pull_request: Used for test/docker-test jobs that don't need write permissions
 # - pull_request_target: Used for pre-commit job to enable commenting/labeling on forked PRs
 #   When using pull_request_target, we explicitly checkout the PR head to run checks on the actual PR code
+#   WARNING: This allows execution of pre-commit hooks from forked PRs. The hooks are defined in
+#   .pre-commit-config.yaml which could be modified by the fork. However, this is necessary to
+#   validate PR code and is consistent with the repository's pre-commit-fix.yaml workflow.
+#   Maintainers should review PRs for malicious pre-commit hook modifications.
 
 on:
   #merge_group:
