@@ -275,3 +275,56 @@ class TopEarnersTests(TestCase):
         user3_earner = next((e for e in top_earners_list if e.user == self.user3), None)
         self.assertIsNotNone(user3_earner)
         self.assertEqual(user3_earner.total_earnings, Decimal("40.00"))
+
+
+class DarkModeTests(TestCase):
+    """Test suite for dark mode functionality"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_set_theme_endpoint_accepts_dark(self):
+        """Test that the set-theme endpoint accepts and saves dark theme"""
+        response = self.client.post(
+            reverse("set_theme"), data=json.dumps({"theme": "dark"}), content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["theme"], "dark")
+
+    def test_set_theme_endpoint_accepts_light(self):
+        """Test that the set-theme endpoint accepts and saves light theme"""
+        response = self.client.post(
+            reverse("set_theme"), data=json.dumps({"theme": "light"}), content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["theme"], "light")
+
+    def test_set_theme_invalid_method(self):
+        """Test that GET request to set-theme endpoint returns error"""
+        response = self.client.get(reverse("set_theme"))
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+
+    def test_dark_mode_toggle_in_base_template(self):
+        """Test that dark mode toggle is present in base template"""
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        # Check for dark mode JS and CSS references (may be hashed in production)
+        self.assertTrue(
+            "darkMode" in response.content.decode() or "dark-mode" in response.content.decode(),
+            "Dark mode script reference not found in response",
+        )
+        self.assertContains(response, "custom-scrollbar")
+
+    def test_dark_mode_script_loads(self):
+        """Test that dark mode JS script is included in pages"""
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        # Check for dark mode related content (script tag with darkMode reference)
+        content = response.content.decode()
+        self.assertTrue("darkMode.js" in content or "darkMode" in content, "Dark mode script not found in response")

@@ -41,6 +41,7 @@ module.exports = {
       'meta-7': '#FF6766',
       'meta-8': '#F0950C',
       'meta-9': '#E5E7EB',
+      red: '#e74c3c',
       success: '#219653',
       danger: '#D34053',
       warning: '#FFA70B',

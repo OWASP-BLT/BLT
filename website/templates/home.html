@@ -19,36 +19,37 @@
     {% if debug_mode %}
         <!-- Local Mode Panel -->
         <div id="dev-panel"
-             class="bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg max-w-7xl mx-auto mt-4">
+             class="bg-gray-900 dark:bg-gray-50 text-white p-4 mb-4 rounded-lg shadow-lg max-w-7xl mx-auto mt-4">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center">
                     <i class="fas fa-code text-[#e74c3c] mr-2"></i>
                     <h2 class="text-xl font-bold">Local Mode</h2>
                     <span class="ml-2 px-2 py-1 bg-[#e74c3c] text-white text-xs rounded-full">DEBUG=True</span>
                 </div>
-                <button id="toggle-dev-panel" class="text-gray-400 hover:text-white">
+                <button id="toggle-dev-panel"
+                        class="text-gray-400 dark:text-gray-600 hover:text-white">
                     <i class="fas fa-chevron-up"></i>
                 </button>
             </div>
             <div id="dev-panel-content">
                 <!-- System Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div class="bg-gray-800 p-3 rounded-lg">
-                        <h3 class="text-sm font-semibold text-gray-400 mb-1">System Stats</h3>
+                    <div class="bg-gray-800 dark:bg-gray-100 p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-400 dark:text-gray-600 mb-1">System Stats</h3>
                         <ul class="text-sm">
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Memory Usage:</span>
                                 <span class="font-mono">{{ system_stats.memory_usage }}</span>
                             </li>
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>CPU Usage:</span>
                                 <span class="font-mono">{{ system_stats.cpu_percent }}</span>
                             </li>
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Python Version:</span>
                                 <span class="font-mono text-xs">{{ system_stats.python_version|truncatechars:20 }}</span>
                             </li>
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Django Version:</span>
                                 <span class="font-mono">{{ system_stats.django_version }}</span>
                             </li>
@@ -58,22 +59,22 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="bg-gray-800 p-3 rounded-lg">
-                        <h3 class="text-sm font-semibold text-gray-400 mb-1">Database Stats</h3>
+                    <div class="bg-gray-800 dark:bg-gray-100 p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-400 dark:text-gray-600 mb-1">Database Stats</h3>
                         <ul class="text-sm">
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Users:</span>
                                 <span id="user-count" class="font-mono">Loading...</span>
                             </li>
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Issues:</span>
                                 <span id="issue-count" class="font-mono">Loading...</span>
                             </li>
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Organizations:</span>
                                 <span id="org-count" class="font-mono">Loading...</span>
                             </li>
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Domains:</span>
                                 <span id="domain-count" class="font-mono">Loading...</span>
                             </li>
@@ -83,14 +84,14 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="bg-gray-800 p-3 rounded-lg">
-                        <h3 class="text-sm font-semibold text-gray-400 mb-1">Cache Stats</h3>
+                    <div class="bg-gray-800 dark:bg-gray-100 p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-400 dark:text-gray-600 mb-1">Cache Stats</h3>
                         <ul class="text-sm">
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Cache Backend:</span>
                                 <span id="cache-backend" class="font-mono">Loading...</span>
                             </li>
-                            <li class="flex justify-between py-1 border-b border-gray-700">
+                            <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200">
                                 <span>Cache Keys:</span>
                                 <span id="cache-keys" class="font-mono">Loading...</span>
                             </li>
@@ -126,8 +127,8 @@
                 </div>
                 <!-- Status Messages -->
                 <div id="dev-status-messages" class="mt-4 hidden">
-                    <div class="bg-gray-800 p-3 rounded-lg">
-                        <h3 class="text-sm font-semibold text-gray-400 mb-1">Status</h3>
+                    <div class="bg-gray-800 dark:bg-gray-100 p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-400 dark:text-gray-600 mb-1">Status</h3>
                         <div id="dev-status-content"
                              class="text-sm font-mono bg-black p-2 rounded h-32 overflow-y-auto"></div>
                     </div>
@@ -139,8 +140,8 @@
     <div class="relative mt-9">
         <!-- Hero Section -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h1 class="text-4xl font-bold mb-5 text-black/90">OWASP BLT: Secure the Web, Get Rewarded</h1>
-            <p class="text-lg mb-4 text-black/80">
+            <h1 class="text-4xl font-bold mb-5 text-black/90 dark:text-white/90">OWASP BLT: Secure the Web, Get Rewarded</h1>
+            <p class="text-lg mb-4 text-black/80 dark:text-white/80">
                 Strengthen <span class="font-bold">worldwide applications</span> by <span class="font-bold">finding and fixing security & coding issues</span> through <span class="font-bold">bug bounties and issue rewards.</span> Earn <span class="font-bold">money via GitHub Sponsors & BCH</span> and get recognized with <span class="font-bold">BACON</span>, the first open-source security token on Bitcoin Runes.
             </p>
         </div>
@@ -150,19 +151,19 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <!-- Feature 1 -->
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-shield-virus fa-2xl text-[#e74c3c]"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-1">Protect Applications</h3>
-                        <p class="text-sm text-gray-600">Safeguard your applications from security vulnerabilities.</p>
+                        <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Protect Applications</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Safeguard your applications from security vulnerabilities.</p>
                     </div>
                     <!-- Feature 2 -->
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-hand-holding-usd fa-2xl text-[#e74c3c]"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-1">Earn Rewards</h3>
-                        <p class="text-sm text-gray-600">Get rewarded for your security findings.</p>
+                        <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Earn Rewards</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Get rewarded for your security findings.</p>
                         <a href="{% url 'hunts' %}"
                            class="inline-block mt-3 text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm">
                             <span class="flex items-center gap-1">
@@ -173,22 +174,22 @@
                     </div>
                     <!-- Feature 3 -->
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-robot fa-2xl text-[#e74c3c]"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-1">Automate Security</h3>
-                        <p class="text-sm text-gray-600">Streamline your security workflows.</p>
+                        <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Automate Security</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Streamline your security workflows.</p>
                     </div>
                     <!-- New Education Feature -->
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-graduation-cap fa-2xl text-[#e74c3c]"></i>
                         </div>
                         <div class="relative">
                             <span class="absolute -top-1 right-0 inline-flex items-center px-2 py-0.5 text-xs font-medium bg-[#e74c3c] text-white rounded-full animate-pulse">NEW</span>
-                            <h3 class="text-lg font-semibold mb-1">Learn & Grow</h3>
+                            <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Learn & Grow</h3>
                         </div>
-                        <p class="text-sm text-gray-600">Access expert-led security courses.</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Access expert-led security courses.</p>
                         <a href="{% url 'education' %}"
                            class="inline-block mt-3 text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm">
                             <span class="flex items-center gap-1">
@@ -203,20 +204,20 @@
         <!-- Decorative Divider -->
         <div class="max-w-7xl mx-auto px-4 py-8">
             <div class="flex items-center justify-center">
-                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent"></div>
                 <div class="mx-2">
                     <a href="{% url 'register_organization' %}"
-                       class=" flex items-center justify-center gap-3 px-4 py-3 text-xl rounded-md border border-gray-300  hover:text-black hover:shadow-md transition-all duration-300">
+                       class=" flex items-center justify-center gap-3 px-4 py-3 text-xl rounded-md border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:text-black dark:hover:text-white hover:shadow-md transition-all duration-300">
                         <i class="fas fa-building text-[#e74c3c]"></i>
                         <span class="font-medium text-center">Register Organization</span>
                     </a>
                 </div>
-                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent"></div>
             </div>
         </div>
         <!-- Recent Hackathons Section -->
         {% if recent_hackathons %}
-            <section class="py-12 bg-white">
+            <section class="py-12 bg-white dark:bg-gray-900 transition-colors">
                 <div class="max-w-7xl mx-auto px-4">
                     <div class="mb-8">
                         <div class="flex items-center gap-4 mb-3">
@@ -224,13 +225,13 @@
                             <h2 class="text-3xl font-bold">Recent Hackathons</h2>
                             <div class="flex-grow h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
                         </div>
-                        <p class="text-gray-600 text-base">
+                        <p class="text-gray-600 dark:text-gray-400 text-base">
                             Join our coding competitions, collaborate with the community, and win amazing prizes!
                         </p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         {% for hackathon in recent_hackathons %}
-                            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200 dark:border-gray-700">
                                 {% if hackathon.banner_image %}
                                     <div class="h-48 bg-cover bg-center"
                                          style="background-image: url('{{ hackathon.banner_image.url }}')"></div>
@@ -241,17 +242,17 @@
                                 {% endif %}
                                 <div class="p-6">
                                     <div class="flex justify-between items-start mb-2">
-                                        <h3 class="text-xl font-bold text-gray-900">{{ hackathon.name }}</h3>
+                                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ hackathon.name }}</h3>
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ hackathon.status_badge_class }}">
                                             {{ hackathon.status_text }}
                                         </span>
                                     </div>
-                                    <p class="text-gray-600 text-sm mb-3">
+                                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">
                                         Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
     class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                     </p>
-                                    <p class="text-gray-700 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
-                                    <div class="flex items-center text-sm text-gray-500 mb-4">
+                                    <p class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
+                                    <div class="flex items-center text-sm text-gray-500 dark:text-gray-500 mb-4">
                                         <i class="far fa-calendar mr-2"></i>
                                         <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
                                     </div>
@@ -265,29 +266,36 @@
                         {% endfor %}
                     </div>
                     <div class="text-center">
-                        <a href="{% url 'hackathons' %}"
-                           class="inline-flex items-center px-6 py-3 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-colors duration-200">
-                            View All Hackathons
-                            <i class="fas fa-arrow-right ml-2"></i>
-                        </a>
+                        <div class="flex flex-wrap items-center justify-center gap-4">
+                            <a href="{% url 'hackathons' %}"
+                               class="inline-flex items-center px-6 py-3 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-colors duration-200">
+                                View All Hackathons
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </a>
+                            <a href="{% url 'hackathon_create' %}"
+                               class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] font-medium transition-colors duration-200 shadow-md">
+                                <i class="fas fa-plus mr-2"></i>
+                                Start Your Own Hackathon
+                            </a>
+                        </div>
                     </div>
                 </div>
             </section>
         {% endif %}
         <!-- Leaderboard Section -->
-        <section class="py-12 bg-gray-50">
+        <section class="py-12 bg-gray-50 dark:bg-gray-900">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold mb-4">Community Leaderboards</h2>
-                    <div class="inline-flex items-center justify-center px-6 py-3 bg-white rounded-full shadow-md mb-8">
+                    <div class="inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-gray-800 rounded-full shadow-md mb-8">
                         <i class="fas fa-trophy text-[#e74c3c] mr-3"></i>
                         <span class="text-xl font-bold">Total Bounties Earned: $155</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Top Earners -->
-                    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                        <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
                                 <h3 class="text-lg font-bold">Top Earners</h3>
                                 <i class="fas fa-dollar-sign"></i>
@@ -324,7 +332,7 @@
                                         <span class="text-green-600 font-medium">${{ profile.total_earnings|floatformat:2 }}</span>
                                     </div>
                                 {% empty %}
-                                    <div class="text-center text-gray-500">
+                                    <div class="text-center text-gray-500 dark:text-gray-500">
                                         <p>No earnings recorded yet</p>
                                     </div>
                                 {% endfor %}
@@ -332,8 +340,8 @@
                         </div>
                     </div>
                     <!-- Top Bug Reporters -->
-                    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                        <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
                                 <h3 class="text-lg font-bold">Top Bug Reporters</h3>
                                 <i class="fas fa-bug"></i>
@@ -369,10 +377,10 @@
                                                 {{ user.username }}
                                             </a>
                                         </div>
-                                        <span class="text-sm text-gray-500">{{ user.bug_count }} bugs</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-500">{{ user.bug_count }} bugs</span>
                                     </div>
                                 {% empty %}
-                                    <div class="text-center text-gray-500">
+                                    <div class="text-center text-gray-500 dark:text-gray-500">
                                         <p>No bug reports yet</p>
                                     </div>
                                 {% endfor %}
@@ -380,8 +388,8 @@
                         </div>
                     </div>
                     <!-- Top PR Contributors -->
-                    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                        <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
                                 <h3 class="text-lg font-bold">TOP BLT PRs - {{ current_time|date:"M" }}</h3>
                                 <i class="fas fa-code-branch"></i>
@@ -413,10 +421,10 @@
                                                 {{ user.contributor__name }}
                                             </a>
                                         </div>
-                                        <span class="text-sm text-gray-500">{{ user.total_prs }} PRs</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-500">{{ user.total_prs }} PRs</span>
                                     </div>
                                 {% empty %}
-                                    <div class="text-center text-gray-500">
+                                    <div class="text-center text-gray-500 dark:text-gray-500">
                                         <p>No BLT PRs for {{ current_time|date:"F Y" }}</p>
                                         <a href="https://github.com/OWASP-BLT/BLT/pulls"
                                            target="_blank"
@@ -429,8 +437,8 @@
                         </div>
                     </div>
                     <!-- Top Referrals -->
-                    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                        <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
                                 <h3 class="text-lg font-bold">Top Referrals</h3>
                                 <i class="fas fa-user-plus"></i>
@@ -467,7 +475,7 @@
                                             </a>
                                         </div>
                                         <div class="flex items-center">
-                                            <span class="text-sm text-gray-500 mr-3">
+                                            <span class="text-sm text-gray-500 dark:text-gray-500 mr-3">
                                                 <i class="fas fa-star text-yellow-400 mr-1"></i>
                                                 {{ invite.point_by_referral }} pts
                                             </span>
@@ -478,7 +486,7 @@
                                         </div>
                                     </div>
                                 {% empty %}
-                                    <div class="text-center text-gray-500">
+                                    <div class="text-center text-gray-500 dark:text-gray-500">
                                         <p>No referrals recorded yet</p>
                                         <a href="{% url 'invite' %}"
                                            class="text-[#e74c3c] hover:text-[#c0392b] font-medium mt-2 inline-block">
@@ -496,19 +504,19 @@
         <!-- Project Cards Section -->
         <section class="py-6">
             <div class="max-w-7xl mx-auto px-4">
-                <div class=" mb-8">
+                <div class="mb-8">
                     <div class="flex items-center gap-4">
                         <i class="fas fa-code-branch text-2xl text-[#e74c3c]"></i>
                         <h2 class="text-3xl font-bold">Our Components</h2>
                         <div class="flex-grow h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
                     </div>
-                    <p class="text-gray-600 text-base max-w-9xl mx-auto mt-3">
+                    <p class="text-gray-600 dark:text-gray-400 text-base max-w-9xl mx-auto mt-3">
                         Four key components power OWASP BLT. The core, mobile access, browser integration, and automation—working together to secure applications worldwide.
                     </p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Core Card -->
-                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-shield-alt text-2xl text-[#e74c3c]"></i>
                             <h4 class="font-bold text-lg">
@@ -516,15 +524,17 @@
                                    class="hover:text-[#e74c3c] transition-colors">Django Core</a>
                             </h4>
                         </div>
-                        <p class="text-gray-600 text-sm mb-4 flex-grow">The main engine powering OWASP BLT's system API and Slack Bot.</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 flex-grow">
+                            The main engine powering OWASP BLT's system API and Slack Bot.
+                        </p>
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'blt' %}
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
@@ -535,7 +545,7 @@
                         </div>
                     </div>
                     <!-- App Card -->
-                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-mobile-alt text-2xl text-[#e74c3c]"></i>
                             <h4 class="font-bold text-lg">
@@ -543,15 +553,17 @@
                                    class="hover:text-[#e74c3c] transition-colors">Flutter iOS App</a>
                             </h4>
                         </div>
-                        <p class="text-gray-600 text-sm mb-4 flex-grow">Mobile application for on-the-go bug reporting and management.</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 flex-grow">
+                            Mobile application for on-the-go bug reporting and management.
+                        </p>
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Flutter"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'flutter' %}
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
@@ -562,7 +574,7 @@
                         </div>
                     </div>
                     <!-- Extension Card -->
-                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-puzzle-piece text-2xl text-[#e74c3c]"></i>
                             <h4 class="font-bold text-lg">
@@ -570,15 +582,17 @@
                                    class="hover:text-[#e74c3c] transition-colors">Chrome Extension</a>
                             </h4>
                         </div>
-                        <p class="text-gray-600 text-sm mb-4 flex-grow">Browser extension for quick bug reporting and screenshots.</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 flex-grow">
+                            Browser extension for quick bug reporting and screenshots.
+                        </p>
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Extension"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'extension' %}
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
@@ -589,7 +603,7 @@
                         </div>
                     </div>
                     <!-- Action Card -->
-                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-bolt text-2xl text-[#e74c3c]"></i>
                             <h4 class="font-bold text-lg">
@@ -597,15 +611,17 @@
                                    class="hover:text-[#e74c3c] transition-colors">GitHub Action</a>
                             </h4>
                         </div>
-                        <p class="text-gray-600 text-sm mb-4 flex-grow">GitHub Action for automated security checks and reporting.</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 flex-grow">
+                            GitHub Action for automated security checks and reporting.
+                        </p>
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Action"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'action' %}
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
@@ -621,14 +637,14 @@
         <!-- Referral Program Card -->
         {% if user.is_authenticated %}
             <div class="max-w-7xl mx-auto px-4 mb-8">
-                <div class="bg-white rounded-xl shadow-lg p-6 border border-[#e74c3c]">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-[#e74c3c]">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="p-3 bg-red-50 rounded-lg">
                             <i class="fas fa-users text-[#e74c3c] text-2xl"></i>
                         </div>
                         <div>
                             <h3 class="text-xl font-bold">Referral Program</h3>
-                            <p class="text-gray-600">Invite friends to join BLT and earn points!</p>
+                            <p class="text-gray-600 dark:text-gray-400">Invite friends to join BLT and earn points!</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 mb-4">
@@ -636,7 +652,7 @@
                             <input type="text"
                                    id="referralLink"
                                    value="https://{{ request.get_host }}{% url 'referral_signup' %}?ref={{ referral_code }}"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                   class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900"
                                    readonly>
                         </div>
                         <button onclick="copyReferralLink()"
@@ -644,7 +660,7 @@
                             <i class="fas fa-copy mr-2"></i>Copy Link
                         </button>
                     </div>
-                    <div class="text-sm text-gray-600">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
                         <p>
                             <i class="fas fa-check-circle text-green-500 mr-2"></i>Earn 2 points for each friend who joins
                         </p>
@@ -659,14 +675,14 @@
             </div>
         {% else %}
             <div class="max-w-7xl mx-auto px-4 mb-8">
-                <div class="bg-white rounded-xl shadow-lg p-6 border border-[#e74c3c]">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-[#e74c3c]">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="p-3 bg-red-50 rounded-lg">
                             <i class="fas fa-users text-[#e74c3c] text-2xl"></i>
                         </div>
                         <div>
                             <h3 class="text-xl font-bold">Join Our Referral Program</h3>
-                            <p class="text-gray-600">Sign in to get your referral link and start earning points!</p>
+                            <p class="text-gray-600 dark:text-gray-400">Sign in to get your referral link and start earning points!</p>
                         </div>
                     </div>
                     <div class="flex justify-center">
@@ -694,22 +710,22 @@
                 <h2 class="text-3xl font-bold text-center mb-12">Latest Activity</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     <!-- Latest Repositories -->
-                    <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xl font-semibold text-gray-800">Latest Repositories</h3>
-                                <span class="text-sm text-gray-500">({{ total_repos }} total)</span>
+                                <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Latest Repositories</h3>
+                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ total_repos }} total)</span>
                             </div>
                             <div class="space-y-4">
                                 {% for repo in latest_repos %}
                                     <div class="flex items-center justify-between">
                                         <a href="{% url 'repo_detail' repo.slug %}"
                                            class="text-sm hover:text-[#e74c3c] truncate max-w-[280px]">{{ repo.name }}</a>
-                                        <span class="text-xs text-gray-500">{{ repo.primary_language|default:"-" }}</span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-500">{{ repo.primary_language|default:"-" }}</span>
                                     </div>
                                 {% endfor %}
                             </div>
-                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-100">
+                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                                 <a href="{% url 'repo_list' %}"
                                    class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">View All</a>
                                 <a href="{% url 'repo_list' %}"
@@ -726,18 +742,18 @@
                         </div>
                     </div>
                     <!-- Recent Forum Posts -->
-                    <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xl font-semibold text-gray-800">Recent Discussions</h3>
-                                <span class="text-sm text-gray-500">({{ recent_posts.count }} recent)</span>
+                                <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Recent Discussions</h3>
+                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ recent_posts.count }} recent)</span>
                             </div>
                             <div class="space-y-4">
                                 {% for post in recent_posts %}
                                     <div class="flex flex-col gap-1">
                                         <a href="{% url 'view_forum' %}?post={{ post.id }}"
                                            class="text-sm hover:text-[#e74c3c] font-medium">{{ post.title }}</a>
-                                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                                        <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
                                             <span class="flex items-center gap-1">
                                                 <i class="fas fa-user"></i>
                                                 {{ post.user|default:"Anonymous" }}
@@ -749,10 +765,10 @@
                                         </div>
                                     </div>
                                 {% empty %}
-                                    <p class="text-sm text-gray-500">No discussions yet</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-500">No discussions yet</p>
                                 {% endfor %}
                             </div>
-                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-100">
+                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                                 <a href="{% url 'view_forum' %}"
                                    class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">View All</a>
                                 <a href="{% url 'view_forum' %}"
@@ -771,20 +787,20 @@
             </div>
         </section>
         <!-- Latest Bugs -->
-        <section class="py-12 bg-gray-50">
+        <section class="py-12 bg-gray-50 dark:bg-gray-900">
             <div class="max-w-7xl mx-auto px-4">
                 <h2 class="text-3xl font-bold text-center mb-12">Latest Bug Reports</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     {% for bug in latest_bugs|slice:":2" %}
-                        <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                             <div class="p-6">
                                 <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-xl font-semibold text-gray-800 truncate">{{ bug.description }}</h3>
+                                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 truncate">{{ bug.description }}</h3>
                                     <span class="px-2 py-1 bg-{{ bug.status|yesno:'green-100,red-100' }} text-{{ bug.status|yesno:'green-800,red-800' }} rounded-full text-xs">
                                         {{ bug.status|default:"open"|title }}
                                     </span>
                                 </div>
-                                <div class="flex items-center text-gray-600 text-sm mb-4">
+                                <div class="flex items-center text-gray-600 dark:text-gray-400 text-sm mb-4">
                                     <i class="fas fa-globe mr-2"></i>
                                     <a href="{{ bug.url }}"
                                        class="hover:text-[#e74c3c] truncate"
@@ -799,7 +815,7 @@
                                              height="128">
                                     </div>
                                 {% endif %}
-                                <div class="flex justify-between items-center text-sm text-gray-500">
+                                <div class="flex justify-between items-center text-sm text-gray-500 dark:text-gray-500">
                                     <div class="flex items-center">
                                         {% if bug.user %}
                                             {% if bug.user.userprofile.avatar %}
@@ -823,7 +839,7 @@
                                     </div>
                                     <span>{{ bug.created|timesince }} ago</span>
                                 </div>
-                                <div class="flex justify-between mt-6 pt-4 border-t border-gray-100">
+                                <div class="flex justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                                     <div class="flex items-center">
                                         <span class="flex items-center mr-4"><i class="fas fa-thumbs-up text-green-500 mr-1"></i> {{ bug.upvoted.count }}</span>
                                         <span class="flex items-center"><i class="fas fa-tag text-blue-500 mr-1"></i> {{ bug.get_label_display }}</span>
@@ -835,7 +851,7 @@
                         </div>
                     {% empty %}
                         <div class="col-span-2 text-center p-8">
-                            <p class="text-gray-500 mb-4">No bug reports available yet.</p>
+                            <p class="text-gray-500 dark:text-gray-500 mb-4">No bug reports available yet.</p>
                             <a href="{% url 'report' %}"
                                class="inline-block px-6 py-3 bg-[#e74c3c] text-white rounded-md hover:bg-[#c0392b]">Report a Bug</a>
                         </div>
@@ -856,7 +872,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     {% if latest_blog_posts %}
                         {% for post in latest_blog_posts %}
-                            <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                                 {% if post.image %}
                                     <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ post.image.url }}"
@@ -868,7 +884,7 @@
                                 {% endif %}
                                 <div class="p-6">
                                     <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
-                                    <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                    <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-500 mb-4">
                                         <span class="flex items-center gap-1">
                                             <i class="fas fa-user"></i>
                                             {{ post.author.username }}
@@ -878,195 +894,195 @@
                                             {{ post.created_at|timesince }} ago
                                         </span>
                                     </div>
-                                    <p class="text-gray-700 mb-4">{{ post.content|truncatewords:30 }}</p>
+                                    <p class="text-gray-700 dark:text-gray-300 mb-4">{{ post.content|truncatewords:30 }}</p>
                                     <a href="{% url 'post_detail' slug=post.slug %}"
                                        class="text-[#e74c3c] hover:text-[#c0392b] font-medium">Read more</a>
                                 </div>
                             </div>
                         {% endfor %}
                     {% else %}
-                        <p class="text-gray-500 text-center">No blog posts available.</p>
+                        <p class="text-gray-500 dark:text-gray-500 text-center">No blog posts available.</p>
                     {% endif %}
                 </div>
             </div>
         </section>
         <!-- Tools for Organizations Section -->
-        <section class="py-12 bg-gray-50">
+        <section class="py-12 bg-gray-50 dark:bg-gray-900">
             <div class="max-w-7xl mx-auto px-4">
                 <h2 class="text-3xl font-bold text-center mb-12">Tools for Organizations</h2>
                 <!-- Primary Tools Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
                     <!-- Organizations -->
                     <a href="{% url 'organizations' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-building text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Organizations</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Browse and manage organizations</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Browse and manage organizations</p>
                     </a>
                     <!-- Add Organization -->
                     <a href="{% url 'register_organization' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-plus text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Register Organization</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Add your company to our platform</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Add your company to our platform</p>
                     </a>
                     <!-- Domains -->
                     <a href="{% url 'domains' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-globe text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Domains</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Manage website domains and assets</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Manage website domains and assets</p>
                     </a>
                     <!-- Bugs -->
                     <a href="{% url 'issues' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-bug text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Bugs</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">View and track reported vulnerabilities</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">View and track reported vulnerabilities</p>
                     </a>
                     <!-- Issues -->
                     <a href="{% url 'github_issues' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-exclamation-circle text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Issues</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Track GitHub issues and tasks</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Track GitHub issues and tasks</p>
                     </a>
                 </div>
                 <!-- Secondary Tools Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
                     <!-- Bounties -->
                     <a href="{% url 'hunts' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-dollar-sign text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Bounties</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Set up and manage bug bounty programs</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Set up and manage bug bounty programs</p>
                     </a>
                     <!-- Check-ins -->
                     <a href="{% url 'checkIN' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-calendar-check text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Check-ins</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Schedule and track security reviews</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Schedule and track security reviews</p>
                     </a>
                     <!-- Time Logs -->
                     <a href="{% url 'sizzle' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-clock text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Time Logs</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Track time spent on security tasks</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Track time spent on security tasks</p>
                     </a>
                     <!-- Trademarks -->
                     <a href="{% url 'trademark_search' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-trademark text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Trademarks</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Search and monitor trademark usage</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Search and monitor trademark usage</p>
                     </a>
                     <!-- Map -->
                     <a href="{% url 'map' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-map-marked-alt text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Map</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">View global security activity</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">View global security activity</p>
                     </a>
                 </div>
             </div>
         </section>
         <!-- Tools for Projects Section -->
-        <section class="py-12 bg-white">
+        <section class="py-12 bg-white dark:bg-gray-800">
             <div class="max-w-7xl mx-auto px-4">
                 <h2 class="text-3xl font-bold text-center mb-8">Tools for Projects</h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     <!-- Projects -->
                     <a href="{% url 'project_list' %}"
-                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-project-diagram text-2xl text-[#e74c3c] mb-2"></i>
                         <span class="text-base font-medium text-center">Projects</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Manage your security projects</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Manage your security projects</p>
                     </a>
                     <!-- Repositories -->
                     <a href="{% url 'repo_list' %}"
-                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-code-branch text-2xl text-[#e74c3c] mb-2"></i>
                         <span class="text-base font-medium text-center">Repositories</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Connect and monitor GitHub repos</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Connect and monitor GitHub repos</p>
                     </a>
                     <!-- Bid on Issues -->
                     <a href="{% url 'BiddingData' %}"
-                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-gavel text-2xl text-[#e74c3c] mb-2"></i>
                         <span class="text-base font-medium text-center">Bid on Issues</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Place bids on open issues</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Place bids on open issues</p>
                     </a>
                     <!-- Funding -->
                     <a href="{% url 'sponsor' %}"
-                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-hand-holding-usd text-2xl text-[#e74c3c] mb-2"></i>
                         <span class="text-base font-medium text-center">Funding</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Manage project funding & rewards</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Manage project funding & rewards</p>
                     </a>
                     <!-- Bacon -->
                     <a href="{% url 'bacon' %}"
-                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-bacon text-2xl text-[#e74c3c] mb-2"></i>
                         <span class="text-base font-medium text-center">Bacon</span>
-                        <p class="text-xs text-gray-600 text-center mt-1">Earn & manage Bacon tokens</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Earn & manage Bacon tokens</p>
                     </a>
                 </div>
             </div>
         </section>
         <!-- Tools for Users & Teams Section -->
-        <section class="py-12 bg-gray-50">
+        <section class="py-12 bg-gray-50 dark:bg-gray-900">
             <div class="max-w-7xl mx-auto px-4">
                 <h2 class="text-3xl font-bold text-center mb-12">Tools for Users & Teams</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                     <!-- Users -->
                     <a href="{% url 'users' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-users text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Users</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Manage team members</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Manage team members</p>
                     </a>
                     <!-- Teams -->
                     <a href="{% url 'team_overview' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-user-friends text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Teams</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Create & manage teams</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Create & manage teams</p>
                     </a>
                     <!-- Challenges -->
                     <a href="{% url 'team_challenges' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-flag text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Challenges</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Security challenges</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Security challenges</p>
                     </a>
                     <!-- Leaderboards -->
                     <a href="{% url 'team_leaderboard' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-trophy text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Leaderboards</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Track achievements</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Track achievements</p>
                     </a>
                     <!-- Badges -->
                     <a href="{% url 'badges' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-medal text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Badges</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Earn achievements</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Earn achievements</p>
                     </a>
                     <!-- Analytics -->
                     <a href="{% url 'team_leaderboard' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-chart-line text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Analytics</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Team performance</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Team performance</p>
                     </a>
                 </div>
             </div>
         </section>
         <!-- Corporate Supporters Section -->
-        <section class="bg-white rounded-xl shadow-sm p-8 mb-8">
+        <section class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 mb-8">
             <div class="max-w-3xl mx-auto">
                 <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
                     <i class="fas fa-handshake text-[#e74c3c]"></i>
@@ -1083,7 +1099,7 @@
                                  height="128"
                                  class="max-w-full max-h-full">
                         </a>
-                        <p class="text-gray-700">
+                        <p class="text-gray-700 dark:text-gray-300">
                             BLT is an official OWASP project, adhering to the highest standards of open-source security.
                         </p>
                     </div>
@@ -1097,7 +1113,9 @@
                                  height="128"
                                  class="max-w-full max-h-full">
                         </a>
-                        <p class="text-gray-700">Sentry provides BLT with a free plan for error monitoring and performance tracking.</p>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            Sentry provides BLT with a free plan for error monitoring and performance tracking.
+                        </p>
                     </div>
                     <!-- Google -->
                     <div class="flex flex-col items-center text-center">
@@ -1109,7 +1127,7 @@
                                  height="92"
                                  class="max-w-full max-h-full">
                         </a>
-                        <p class="text-gray-700">
+                        <p class="text-gray-700 dark:text-gray-300">
                             Google supports BLT through <a href="{% url 'gsoc' %}" class="text-[#e74c3c] hover:text-[#c0392b]">Google Summer of Code</a>, fostering student contributions.
                         </p>
                     </div>
@@ -1118,7 +1136,7 @@
                         <div class="w-32 h-32 flex items-center justify-center mb-4 border-2 border-dashed border-[#e74c3c] rounded-lg">
                             <i class="fas fa-image text-6xl text-[#e74c3c]"></i>
                         </div>
-                        <p class="text-gray-700">
+                        <p class="text-gray-700 dark:text-gray-300">
                             Donate to the BLT project to support our development and have your logo featured here. <a href="https://owasp.org/donate?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool"
     target="_blank"
     class="text-[#e74c3c] hover:text-[#c0392b]">Become a Supporter</a>
