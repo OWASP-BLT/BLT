@@ -69,7 +69,7 @@
                                        name="role"
                                        id="id_role"
                                        value="{{ form.role.value }}"
-                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                        placeholder="e.g., Security Researcher">
                             </div>
                             <div>
@@ -80,7 +80,7 @@
                                 <textarea name="description"
                                           id="id_description"
                                           rows="4"
-                                          class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                          class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                           placeholder="Tell us about yourself...">{{ form.description.value }}</textarea>
                             </div>
                         </div>
@@ -96,7 +96,7 @@
                                        name="discounted_hourly_rate"
                                        id="id_discounted_hourly_rate"
                                        value="{{ form.discounted_hourly_rate.value }}"
-                                       class="w-full placeholder:text-base pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                        placeholder="0.00">
                             </div>
                         </div>
@@ -115,7 +115,7 @@
                                                name="linkedin_url"
                                                id="id_linkedin_url"
                                                value="{{ form.linkedin_url.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                                placeholder="https://linkedin.com/in/username">
                                     </div>
                                 </div>
@@ -130,7 +130,7 @@
                                                name="github_url"
                                                id="id_github_url"
                                                value="{{ form.github_url.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                                placeholder="https://github.com/username">
                                     </div>
                                 </div>
@@ -145,7 +145,7 @@
                                                name="x_username"
                                                id="id_x_username"
                                                value="{{ form.x_username.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                                placeholder="@username">
                                     </div>
                                 </div>
@@ -160,7 +160,7 @@
                                                name="website_url"
                                                id="id_website_url"
                                                value="{{ form.website_url.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                                placeholder="https://yourwebsite.com">
                                     </div>
                                 </div>
@@ -191,7 +191,7 @@
                                        name="email"
                                        id="id_email"
                                        value="{{ form.email.value|default_if_none:'' }}"
-                                       class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                        required>
                             </div>
                             {% if form.email.errors %}<div class="mt-2 text-sm text-red-600">{{ form.email.errors }}</div>{% endif %}
@@ -211,7 +211,7 @@
                                                name="btc_address"
                                                id="id_btc_address"
                                                value="{{ form.btc_address.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                                placeholder="BTC Address">
                                     </div>
                                 </div>
@@ -226,7 +226,7 @@
                                                name="bch_address"
                                                id="id_bch_address"
                                                value="{{ form.bch_address.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                                placeholder="BCH Address">
                                     </div>
                                 </div>
@@ -241,7 +241,7 @@
                                                name="eth_address"
                                                id="id_eth_address"
                                                value="{{ form.eth_address.value|default_if_none:'' }}"
-                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                                placeholder="ETH Address">
                                     </div>
                                 </div>
@@ -253,7 +253,7 @@
                             <div class="relative">
                                 <input type="text"
                                        id="tagSearch"
-                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                        placeholder="Search tags...">
                             </div>
                             <div id="tagContainer"
@@ -282,7 +282,7 @@
                             <div class="relative">
                                 <input type="text"
                                        id="domainSearch"
-                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                        placeholder="Search domains...">
                             </div>
                             <div id="domainContainer"
@@ -311,7 +311,7 @@
                             <div class="relative">
                                 <input type="text"
                                        id="userSearch"
-                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white"
                                        placeholder="Search users...">
                             </div>
                             <div id="userContainer"
