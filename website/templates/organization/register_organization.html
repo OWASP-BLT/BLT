@@ -21,7 +21,6 @@
     <div class="flex flex-col min-h-screen">
         <div class="flex-1  flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
             <div class="w-full lg:max-w-[90%]">
-                <!-- Page Header -->
                 <div class="mb-8 text-center">
                     <h1 class="text-3xl font-bold text-red-500 sm:text-4xl ">{% trans "Register Organization" %}</h1>
                     <p class="mt-3 text-gray-600 max-w-2xl mx-auto">
@@ -32,13 +31,11 @@
                         Earn <a href="/bacon" class="font-bold hover:text-red-700 underline mx-1">10 BACON</a> tokens on registration!
                     </div>
                 </div>
-                <!-- Registration Form -->
                 <form method="post"
                       action="#"
                       enctype="multipart/form-data"
                       class="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
                     {% csrf_token %}
-                    <!-- Organization Information Section -->
                     <div class="p-6 sm:p-8 border-b border-gray-200">
                         <div class="flex items-center mb-6">
                             <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
@@ -47,7 +44,6 @@
                             <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Organization Information" %}</h2>
                         </div>
                         <div class="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-6">
-                            <!-- Organization Name -->
                             <div class="sm:col-span-3">
                                 <label for="organization_name"
                                        class="block text-lg font-medium text-gray-700">
@@ -66,7 +62,6 @@
                                            class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
                                 </div>
                             </div>
-                            <!-- Organization URL -->
                             <div class="sm:col-span-3">
                                 <label for="organization_url"
                                        class="block text-lg font-medium text-gray-700">
@@ -85,7 +80,6 @@
                                            class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
                                 </div>
                             </div>
-                            <!-- Support Email -->
                             <div class="sm:col-span-2">
                                 <label for="support_email" class="block text-lg font-medium text-gray-700">
                                     {% trans "Support Email" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
@@ -102,7 +96,6 @@
                                            class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
                                 </div>
                             </div>
-                            <!-- Twitter URL -->
                             <div class="sm:col-span-2">
                                 <label for="twitter_url" class="block text-lg font-medium text-gray-700">
                                     {% trans "Twitter URL" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
@@ -119,7 +112,6 @@
                                            class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
                                 </div>
                             </div>
-                            <!-- Facebook URL -->
                             <div class="sm:col-span-2">
                                 <label for="facebook_url" class="block text-lg font-medium text-gray-700">
                                     {% trans "Facebook URL" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
@@ -138,7 +130,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Organization Logo Section -->
                     <div class="p-6 sm:p-8 border-b border-gray-200">
                         <div class="flex items-center mb-6">
                             <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
@@ -171,7 +162,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Organization Managers Section -->
                     <div class="p-6 sm:p-8">
                         <div class="flex items-center mb-6">
                             <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
@@ -186,7 +176,6 @@
                             <label for="email" class="block text-lg font-medium text-gray-700">
                                 {% trans "Email addresses" %} <span class="text-[#e74c3c]">*</span>
                             </label>
-                            <!-- Email inputs will be added here dynamically -->
                         </div>
                         <button type="button"
                                 onclick="add_email_container()"
@@ -195,7 +184,6 @@
                             {% trans "Add Email" %}
                         </button>
                     </div>
-                    <!-- Form Actions -->
                     <div class="px-6 py-4 sm:px-8 bg-gray-50 flex items-center justify-end space-x-4 border-t border-gray-200">
                         <button type="button"
                                 onclick="cancelForm()"
@@ -217,9 +205,38 @@
                         </button>
                     </div>
                 </form>
+                {% if recent_organizations %}
+                    <div class="mt-8">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Recently Registered Organizations</h3>
+                        <p class="mt-1 text-sm text-gray-600">Check out the latest organizations that have joined our platform.</p>
+                        <ul role="list"
+                            class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                            {% for org in recent_organizations %}
+                                <li class="col-span-1 flex rounded-md shadow-sm">
+                                    <div class="flex-shrink-0 flex items-center justify-center w-16 h-16 bg-gray-200 rounded-l-md">
+                                        <svg class="h-8 w-8 text-gray-600"
+                                             xmlns="http://www.w3.org/2000/svg"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke-width="1.5"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M8.25 6h7.5m-7.5 3h7.5m-7.5 3h7.5m-7.5 3h7.5m-7.5 3h7.5" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex flex-1 items-center justify-between truncate rounded-r-md border-b border-r border-t border-gray-200 bg-white">
+                                        <div class="flex-1 truncate px-4 py-2 text-sm">
+                                            <a href="{{ org.get_absolute_url }}"
+                                               class="font-medium text-gray-900 hover:text-gray-600">{{ org.name }}</a>
+                                            <p class="text-gray-500">{{ org.created|timesince }} ago</p>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
             </div>
         </div>
-        <!-- Notification Messages -->
         {% if messages %}
             <div id="notification-container"
                  class="fixed bottom-5 right-5 z-50 space-y-4">
@@ -243,7 +260,26 @@
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
-                    {% else %}
+                    {% elif message.level_tag == 'warning' %}
+                        <div id="alert-warning-{{ forloop.counter }}"
+                             class="popup-errors flex items-start p-4 mb-4 w-80 text-yellow-800 border-l-4 border-yellow-500 bg-yellow-50 rounded-md shadow-lg"
+                             role="alert">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800">{% trans "Warning" %}</h3>
+                                <div class="mt-1 text-sm text-yellow-700">{{ message }}</div>
+                            </div>
+                            <button type="button"
+                                    onclick="removeError('alert-warning-{{ forloop.counter }}')"
+                                    class="ml-auto -mx-1.5 -my-1.5 bg-yellow-50 text-yellow-500 rounded-lg p-1.5 hover:bg-yellow-100 inline-flex h-8 w-8 items-center justify-center"
+                                    aria-label="{% trans 'Dismiss' %}">
+                                <span class="sr-only">{% trans "Dismiss" %}</span>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    {% elif message.level_tag == 'success' %}
                         <div id="alert-success-{{ forloop.counter }}"
                              class="popup-errors flex items-start p-4 mb-4 w-80 text-green-800 border-l-4 border-green-500 bg-green-50 rounded-md shadow-lg"
                              role="alert">
@@ -257,6 +293,25 @@
                             <button type="button"
                                     onclick="removeError('alert-success-{{ forloop.counter }}')"
                                     class="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg p-1.5 hover:bg-green-100 inline-flex h-8 w-8 items-center justify-center"
+                                    aria-label="{% trans 'Dismiss' %}">
+                                <span class="sr-only">{% trans "Dismiss" %}</span>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    {% else %}
+                        <div id="alert-default-{{ forloop.counter }}"
+                             class="popup-errors flex items-start p-4 mb-4 w-80 text-blue-800 border-l-4 border-blue-500 bg-blue-50 rounded-md shadow-lg"
+                             role="alert">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <i class="fas fa-info-circle text-blue-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-blue-800">{% trans "Info" %}</h3>
+                                <div class="mt-1 text-sm text-blue-700">{{ message }}</div>
+                            </div>
+                            <button type="button"
+                                    onclick="removeError('alert-default-{{ forloop.counter }}')"
+                                    class="ml-auto -mx-1.5 -my-1.5 bg-blue-50 text-blue-500 rounded-lg p-1.5 hover:bg-blue-100 inline-flex h-8 w-8 items-center justify-center"
                                     aria-label="{% trans 'Dismiss' %}">
                                 <span class="sr-only">{% trans "Dismiss" %}</span>
                                 <i class="fas fa-times"></i>

@@ -230,6 +230,9 @@ class Organization(models.Model):
 
         super().save(*args, **kwargs)
 
+    def get_absolute_url(self):
+        return reverse("organization_detail", kwargs={"slug": self.slug})
+
 
 class JoinRequest(models.Model):
     team = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
