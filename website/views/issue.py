@@ -1021,7 +1021,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         form.instance.reporter_ip_address = reporter_ip
 
         @atomic
-        def create_issue(self, form):
+        def create_issue(self, form, spam_score, spam_reason):
             # Validate screenshots first before any database operations
             if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get("screenshot-hash"):
                 messages.error(self.request, "Screenshot is needed!")
@@ -1053,6 +1053,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         )
             tokenauth = False
             obj = form.save(commit=False)
+            obj.spam_score = spam_score
+            obj.spam_reason = spam_reason
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
             if report_anonymous:
@@ -1455,7 +1457,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.process_issue(self.request.user, obj, domain_exists, domain)
                 return HttpResponseRedirect("/")
 
-        return create_issue(self, form)
+        return create_issue(self, form, spam_score, spam_reason)
 
     def get_context_data(self, **kwargs):
         # if self.request is a get, clear out the form data
