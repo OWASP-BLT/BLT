@@ -13,7 +13,15 @@ from website.models import Contributor, GitHubIssue, GitHubReview, Repo, UserPro
 class Command(LoggedBaseCommand):
     help = "Fetches and updates GitHub issue and review data for users with GitHub profiles"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--all-blt-repos",
+            action="store_true",
+            help="Also fetch all PRs from BLT repos (not just from BLT users)",
+        )
+
     def handle(self, *args, **options):
+        fetch_all_blt = options.get("all_blt_repos", False)
         users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
         user_count = users_with_github.count()
 
@@ -137,41 +145,59 @@ class Command(LoggedBaseCommand):
                             reviews_response.raise_for_status()  # Check for HTTP errors
                             reviews_data = reviews_response.json()
 
-                            # Store reviews made by ANY user (not just the PR author)
+                            # Store ALL reviews (not just from BLT users)
                             if isinstance(reviews_data, list):
                                 for review in reviews_data:
-                                    reviewer_login = review.get("user", {}).get("login")
-                                    if reviewer_login:
-                                        # Try to find the reviewer's UserProfile
-                                        try:
-                                            # Construct the expected URL for an exact match
-                                            expected_github_url = f"https://github.com/{reviewer_login}"
-                                            reviewer_profile = UserProfile.objects.filter(
-                                                github_url__iexact=expected_github_url
-                                            ).first()
+                                    if not review.get("user"):
+                                        continue
 
-                                            if reviewer_profile:
-                                                GitHubReview.objects.update_or_create(
-                                                    review_id=review["id"],
-                                                    defaults={
-                                                        "pull_request": github_issue,
-                                                        "reviewer": reviewer_profile,  # The actual reviewer, not the PR author
-                                                        "body": review.get("body", ""),
-                                                        "state": review["state"],
-                                                        "submitted_at": timezone.make_aware(
-                                                            datetime.strptime(
-                                                                review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ"
-                                                            )
-                                                        ),
-                                                        "url": review["html_url"],
-                                                    },
-                                                )
-                                        except Exception as e:
-                                            self.stdout.write(
-                                                self.style.WARNING(
-                                                    f"Could not find UserProfile for reviewer {reviewer_login}: {str(e)}"
-                                                )
-                                            )
+                                    reviewer_login = review["user"].get("login")
+                                    reviewer_github_id = review["user"].get("id")
+                                    reviewer_github_url = review["user"].get("html_url")
+                                    reviewer_avatar_url = review["user"].get("avatar_url")
+
+                                    # Skip bot accounts
+                                    if reviewer_login and (
+                                        reviewer_login.endswith("[bot]") or "bot" in reviewer_login.lower()
+                                    ):
+                                        continue
+
+                                    # Get or create reviewer contributor
+                                    reviewer_contributor = None
+                                    if reviewer_github_id:
+                                        reviewer_contributor, _ = Contributor.objects.get_or_create(
+                                            github_id=reviewer_github_id,
+                                            defaults={
+                                                "name": reviewer_login,
+                                                "github_url": reviewer_github_url,
+                                                "avatar_url": reviewer_avatar_url,
+                                                "contributor_type": "User",
+                                                "contributions": 0,
+                                            },
+                                        )
+
+                                    # Check if reviewer has a UserProfile
+                                    reviewer_profile = None
+                                    if reviewer_github_url:
+                                        reviewer_profile = UserProfile.objects.filter(
+                                            github_url=reviewer_github_url
+                                        ).first()
+
+                                    # Create or update the review
+                                    GitHubReview.objects.update_or_create(
+                                        review_id=review["id"],
+                                        defaults={
+                                            "pull_request": github_issue,
+                                            "reviewer": reviewer_profile,
+                                            "reviewer_contributor": reviewer_contributor,
+                                            "body": review.get("body", ""),
+                                            "state": review["state"],
+                                            "submitted_at": timezone.make_aware(
+                                                datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ")
+                                            ),
+                                            "url": review["html_url"],
+                                        },
+                                    )
                         except requests.exceptions.RequestException as e:
                             self.stdout.write(
                                 self.style.ERROR(f"Error fetching reviews for PR {pr['number']}: {str(e)}")
@@ -204,3 +230,17 @@ class Command(LoggedBaseCommand):
 
         self.stdout.write("-" * 50)
         self.stdout.write(self.style.SUCCESS("GitHub data fetch completed!"))
+
+        # Optionally fetch all PRs from BLT repos (not just from BLT users)
+        if fetch_all_blt:
+            from django.core.management import call_command
+
+            self.stdout.write("")
+            self.stdout.write("=" * 50)
+            self.stdout.write(self.style.SUCCESS("Fetching all PRs from BLT repos..."))
+            self.stdout.write("=" * 50)
+            try:
+                call_command("fetch_gsoc_prs")
+                self.stdout.write(self.style.SUCCESS("Successfully fetched all BLT repo PRs!"))
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error fetching BLT repo PRs: {str(e)}"))
