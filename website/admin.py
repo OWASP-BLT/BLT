@@ -21,7 +21,6 @@ from website.models import (
     BaconSubmission,
     BaconToken,
     Badge,
-    BannedApp,
     Bid,
     Blocked,
     Challenge,

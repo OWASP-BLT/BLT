@@ -102,6 +102,7 @@ INSTALLED_APPS = (
     "storages",
     "channels",
 )
+INSTALLED_APPS += ("banned_apps",)
 
 if DEBUG:
     INSTALLED_APPS += ("livereload",)

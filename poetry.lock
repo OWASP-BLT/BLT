@@ -251,6 +251,25 @@ tests = ["cloudpickle ; platform_python_implementation == \"CPython\"", "hypothe
 tests-mypy = ["mypy (>=1.11.1) ; platform_python_implementation == \"CPython\" and python_version >= \"3.10\"", "pytest-mypy-plugins ; platform_python_implementation == \"CPython\" and python_version >= \"3.10\""]
 
 [[package]]
+name = "banned-apps"
+version = "0.1.0"
+description = "Standalone Django app for managing banned applications."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+Django = ">=3.2"
+
+[package.source]
+type = "git"
+url = "https://github.com/Nachiket-Roy/banned-apps.git"
+reference = "main"
+resolved_reference = "78053b52e037093746b8721d6865818a21c0bd32"
+
+[[package]]
 name = "beautifulsoup4"
 version = "4.13.3"
 description = "Screen-scraping library"
@@ -4080,4 +4099,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "e22f5905e7e22c69955d69c0a22eb8f8aa14aec657f58e26d15f1c627cb4f1be"
+content-hash = "26fd3cba1277233fe9948db02d6c6ca11f4d33c4fb7781efeb7087e9a9f412d5"
