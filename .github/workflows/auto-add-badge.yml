@@ -27,7 +27,7 @@ jobs:
 
               let newBody;
               if (issue.body) {
-                newBody = `${issue.body}${separator}${badgeSection}`;
+                newBody = `${badgeSection}${separator}${issue.body}`;
               } else {
                 newBody = badgeSection;
               }
