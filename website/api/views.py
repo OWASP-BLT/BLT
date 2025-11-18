@@ -1,33 +1,41 @@
+import hashlib
 import json
+import logging
 import smtplib
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
+from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+logger = logging.getLogger(__name__)
+
 from website.models import (
+    IP,
     ActivityLog,
     Contributor,
     Domain,
+    GitHubIssue,
     Hunt,
     HuntPrize,
     InviteFriend,
@@ -1031,3 +1039,149 @@ class OwaspComplianceChecker(APIView):
         }
 
         return Response(report, status=status.HTTP_200_OK)
+
+
+def get_client_ip(request):
+    """Extract client IP address from request."""
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+    x_real_ip = request.META.get("HTTP_X_REAL_IP")
+    if x_real_ip:
+        return x_real_ip
+    return request.META.get("REMOTE_ADDR", "")
+
+
+def generate_issue_badge_svg(view_count, bounty_amount):
+    """Generate SVG badge with view count and bounty information."""
+    svg_template = f"""<svg xmlns="http://www.w3.org/2000/svg" width="300" height="24">
+        <defs>
+            <style>
+                .badge-text {{ font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #fff; font-weight: 600; }}
+            </style>
+            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#e74c3c;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#c0392b;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+        <rect width="300" height="24" fill="url(#grad)" rx="4"/>
+        <text x="150" y="16" text-anchor="middle" class="badge-text">👁 {view_count} views | 💰 {bounty_amount}</text>
+    </svg>"""
+    return svg_template.strip()
+
+
+@api_view(["GET"])
+def github_issue_badge(request, issue_number):
+    """
+    Generate dynamic SVG badge showing view count and bounty for a GitHub issue.
+    GET /api/v1/badge/issue/{issue_number}/
+
+    Returns an SVG badge with:
+    - View count for past 30 days (from IP logs)
+    - Current bounty amount (from GitHubIssue model)
+    """
+    try:
+        # Check cache first
+        cache_key = f"badge_issue_{issue_number}"
+        cached_data = cache.get(cache_key)
+
+        # Check ETag for conditional request
+        request_etag = request.headers.get("If-None-Match")
+
+        if cached_data:
+            if request_etag and request_etag == cached_data["etag"]:
+                return Response(status=status.HTTP_304_NOT_MODIFIED)
+
+            # Return cached badge
+            return HttpResponse(
+                cached_data["svg"],
+                content_type="image/svg+xml",
+                headers={
+                    "ETag": cached_data["etag"],
+                    "Cache-Control": "public, max-age=300",
+                },
+            )
+
+        # Get or create GitHubIssue record
+        github_issue, _ = GitHubIssue.objects.get_or_create(
+            issue_id=issue_number,
+            defaults={
+                "title": f"Issue {issue_number}",
+                "state": "open",
+                "url": f"https://github.com/issues/{issue_number}",
+                "created_at": timezone.now(),
+                "updated_at": timezone.now(),
+            },
+        )
+
+        # Calculate view count from past 30 days
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        view_count = (
+            IP.objects.filter(
+                path__icontains=f"issues/{issue_number}",
+                created__gte=thirty_days_ago,
+            ).aggregate(total=Sum("count"))["total"]
+            or 0
+        )
+
+        # Get bounty amount
+        bounty_amount = "$0"
+        if github_issue.p2p_amount_usd:
+            bounty_amount = f"${int(github_issue.p2p_amount_usd)}"
+
+        # Track badge view
+        client_ip = get_client_ip(request)
+        badge_path = f"/api/v1/badge/issue/{issue_number}/"
+
+        # Update or create IP log entry
+        ip_log, created = IP.objects.get_or_create(
+            address=client_ip,
+            path=badge_path,
+            defaults={
+                "method": "GET",
+                "agent": request.META.get("HTTP_USER_AGENT", "")[:255],
+                "issuenumber": issue_number,
+                "count": 1,
+            },
+        )
+        if not created:
+            ip_log.count += 1
+            ip_log.save(update_fields=["count"])
+
+        # Generate SVG badge
+        svg_content = generate_issue_badge_svg(view_count, bounty_amount)
+
+        # Generate ETag based on content
+        etag = hashlib.md5(svg_content.encode()).hexdigest()
+
+        # Cache for 5 minutes (300 seconds)
+        cache.set(
+            cache_key,
+            {"svg": svg_content, "etag": etag},
+            timeout=300,
+        )
+
+        return HttpResponse(
+            svg_content,
+            content_type="image/svg+xml",
+            headers={
+                "ETag": etag,
+                "Cache-Control": "public, max-age=300",
+            },
+        )
+
+    except Exception as e:
+        logger.error(
+            f"Error generating badge for issue {issue_number}: {str(e)}",
+            exc_info=True,
+        )
+        # Return a simple error badge
+        error_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="300" height="24">
+            <rect width="300" height="24" fill="#555" rx="4"/>
+            <text x="150" y="16" text-anchor="middle" style="font-size: 12px; fill: #fff; font-family: Arial;">Badge unavailable</text>
+        </svg>"""
+        return HttpResponse(
+            error_svg,
+            content_type="image/svg+xml",
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

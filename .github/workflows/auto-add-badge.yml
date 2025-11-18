@@ -1,0 +1,48 @@
+name: Auto-Add Badge to Issues
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  add-badge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add activity badge to issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const badgeUrl = `https://owaspblt.org/api/v1/badge/issue/${issue.number}/`;
+            const badgeMarkdown = `[![OWASP BLT Activity Badge](${badgeUrl})](${badgeUrl})`;
+
+            // Check if badge already exists in the issue body
+            if (!issue.body || !issue.body.includes(badgeUrl)) {
+              const separator = "\n\n---\n\n";
+              const badgeSection = `## 📊 Activity & Bounty\n\n${badgeMarkdown}`;
+
+              let newBody;
+              if (issue.body) {
+                newBody = `${issue.body}${separator}${badgeSection}`;
+              } else {
+                newBody = badgeSection;
+              }
+
+              try {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: newBody,
+                });
+                console.log(`✅ Badge added to issue #${issue.number}`);
+              } catch (error) {
+                console.error(`❌ Failed to add badge to issue #${issue.number}: ${error.message}`);
+              }
+            } else {
+              console.log(`ℹ️ Badge already exists in issue #${issue.number}`);
+            }
