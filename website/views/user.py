@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
+
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages

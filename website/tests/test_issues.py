@@ -1,4 +1,5 @@
 import json
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -55,7 +56,6 @@ class IssueCommentTests(TestCase):
 
 
 @override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
-<<<<<<< HEAD:website/tests/test_issues.py
 class GitHubIssueImageURLTests(TestCase):
     """Test that image URLs are properly formatted for GitHub issues"""
 
