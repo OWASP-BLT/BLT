@@ -1122,11 +1122,6 @@ urlpatterns = [
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     # banned_apps url
-    path(
-        "banned_apps/",
-        RedirectView.as_view(url="/banned_apps/"),
-        name="banned_apps",
-    ),
     path("banned_apps/", include("banned_apps.urls")),
 ]
 
