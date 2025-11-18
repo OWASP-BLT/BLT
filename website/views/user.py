@@ -583,7 +583,10 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 type="pull_request",
                 is_merged=True,
                 contributor__isnull=False,
-                repo__repo_url__icontains="OWASP-BLT",
+            )
+            .filter(
+                Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
             .select_related("contributor", "user_profile__user")
             .values(
@@ -602,7 +605,10 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         reviewed_pr_leaderboard = (
             GitHubReview.objects.filter(
                 reviewer_contributor__isnull=False,
-                pull_request__repo__repo_url__icontains="OWASP-BLT",
+            )
+            .filter(
+                Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(pull_request__repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
             .select_related("reviewer_contributor", "reviewer__user")
             .values(

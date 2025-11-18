@@ -7,6 +7,7 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from website.models import Contributor, GitHubIssue, Repo, UserProfile
@@ -57,7 +58,10 @@ class Command(BaseCommand):
             self.stdout.write(f"Processing specific repositories: {', '.join(all_repos)}")
         else:
             # Auto-discover BLT repos from database, or use GSOC25_PROJECTS as fallback
-            blt_repos_from_db = Repo.objects.filter(repo_url__icontains="OWASP-BLT")
+            blt_repos_from_db = Repo.objects.filter(
+                Q(repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(repo_url__startswith="https://github.com/owasp-blt/")
+            )
 
             if blt_repos_from_db.exists():
                 # Extract owner/repo from database URLs using proper URL parsing
@@ -319,11 +323,18 @@ class Command(BaseCommand):
                 github_id = pr["user"]["id"]
                 github_username = pr["user"]["login"]
                 avatar_url = pr["user"]["avatar_url"]
+                user_type = pr["user"].get("type", "User")
 
-                # Skip bot accounts
-                if github_username.endswith("[bot]") or "bot" in github_username.lower():
+                # Skip bot accounts using GitHub API type field
+                if user_type == "Bot":
                     if verbose:
                         self.stdout.write(f"Skipping bot account: {github_username}")
+                    continue
+
+                # Fallback check for bot naming patterns
+                if github_username.endswith("[bot]"):
+                    if verbose:
+                        self.stdout.write(f"Skipping bot account (by name): {github_username}")
                     continue
 
                 try:
@@ -333,7 +344,7 @@ class Command(BaseCommand):
                             "name": github_username,
                             "github_url": github_url,
                             "avatar_url": avatar_url,
-                            "contributor_type": "User",
+                            "contributor_type": user_type,
                             "contributions": 1,
                         },
                     )
@@ -446,24 +457,34 @@ class Command(BaseCommand):
                 reviewer_github_id = review["user"].get("id")
                 reviewer_github_url = review["user"].get("html_url")
                 reviewer_avatar_url = review["user"].get("avatar_url")
+                reviewer_type = review["user"].get("type", "User")
 
-                # Skip bot accounts
-                if reviewer_login and (reviewer_login.endswith("[bot]") or "bot" in reviewer_login.lower()):
+                # Skip bot accounts using GitHub API type field
+                if reviewer_type == "Bot":
+                    continue
+
+                # Fallback check for bot naming patterns
+                if reviewer_login and reviewer_login.endswith("[bot]"):
                     continue
 
                 # Get or create reviewer contributor
                 reviewer_contributor = None
                 if reviewer_github_id:
-                    reviewer_contributor, _ = Contributor.objects.get_or_create(
+                    reviewer_contributor, created = Contributor.objects.get_or_create(
                         github_id=reviewer_github_id,
                         defaults={
                             "name": reviewer_login,
                             "github_url": reviewer_github_url,
                             "avatar_url": reviewer_avatar_url,
-                            "contributor_type": "User",
-                            "contributions": 0,
+                            "contributor_type": reviewer_type,
+                            "contributions": 1,
                         },
                     )
+
+                    if not created:
+                        # Increment review count for existing contributors
+                        reviewer_contributor.contributions += 1
+                        reviewer_contributor.save()
 
                 # Check if reviewer has a UserProfile
                 reviewer_profile = None
