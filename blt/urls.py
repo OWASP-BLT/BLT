@@ -12,8 +12,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.views.generic import TemplateView
-from django.views.generic.base import RedirectView
+from django.views.generic import RedirectView, TemplateView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
@@ -1188,6 +1187,11 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     # banned_apps url
+    path(
+        "banned_apps/",
+        RedirectView.as_view(url="/banned_apps/"),
+        name="banned_apps",
+    ),
     path("banned_apps/", include("banned_apps.urls")),
 ]
 
