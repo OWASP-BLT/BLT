@@ -957,15 +957,21 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def _check_for_spam(self, form):
-        spam_detector = SpamDetection()
-        result = spam_detector.check_bug_report(
-            title=form.cleaned_data.get("description", ""),
-            description=form.cleaned_data.get("markdown_description", ""),
-            url=form.cleaned_data.get("url", ""),
-        )
-        is_spam = result.get("is_spam", False)
-        spam_score = result.get("spam_score", 0)
-        spam_reason = result.get("reason", "")
+        try:
+            spam_detector = SpamDetection()
+            result = spam_detector.check_bug_report(
+                title=form.cleaned_data.get("description", ""),
+                description=form.cleaned_data.get("markdown_description", ""),
+                url=form.cleaned_data.get("url", ""),
+            )
+            is_spam = result.get("is_spam", False)
+            spam_score = result.get("spam_score", 0)
+            spam_reason = result.get("reason", "")
+        except Exception:
+            # If spam detection fails for any reason, log and continue
+            logger.exception("Spam detection failed; treating as non-spam")
+            is_spam, spam_score, spam_reason = False, 0, ""
+
         return is_spam, spam_score, spam_reason
 
     def form_valid(self, form):
@@ -993,24 +999,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         # Check for Spam
         is_spam, spam_score, spam_reason = self._check_for_spam(form)
-        spam_flagged = False
-        if is_spam:
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.warning(
-                f"Potential spam detected - Score: {spam_score}, "
-                f"IP: {reporter_ip}, "
-                f"Description: {description[:100]}"
-            )
-
-            spam_flagged = True
-            form.instance.is_hidden = True
-            messages.warning(
-                self.request,
-                "Your submission has been flagged for review and will be visible once approved by a moderator.",
-            )
-
+        logger.info(f"Spam check result: is_spam={is_spam}, spam_score={spam_score}, spam_reason='{spam_reason}'")
+        
         limit = 50 if self.request.user.is_authenticated else 30
         today = timezone.now().date()
         recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
@@ -1021,7 +1011,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         form.instance.reporter_ip_address = reporter_ip
 
         @atomic
-        def create_issue(self, form, spam_score, spam_reason):
+        def create_issue(self, form):
             # Validate screenshots first before any database operations
             if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get("screenshot-hash"):
                 messages.error(self.request, "Screenshot is needed!")
@@ -1055,6 +1045,19 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj = form.save(commit=False)
             obj.spam_score = spam_score
             obj.spam_reason = spam_reason
+            if spam_score >= 6: 
+                obj.is_hidden = True
+                obj.verified = False
+                messages.warning(
+                    self.request,
+                    "Your submission has been flagged for review and will be visible once approved by a moderator. Try again with a better description.",
+                )
+                logger.warning(
+                    f"Potential spam detected - Score: {spam_score}, Reason: {spam_reason} "
+                    f"IP: {reporter_ip}, "
+                    f"Description: {description[:100]}"
+                )
+        
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
             if report_anonymous:
@@ -1126,9 +1129,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 logger.warning(f"Domain not found, creating new: name={clean_domain_no_www}, url={clean_domain}")
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
                 domain.save()
-
-            if spam_flagged:
-                obj.is_hidden = True
                 
             # Don't save issue if security vulnerability
             if form.instance.label == "4" or form.instance.label == 4:
@@ -1457,7 +1457,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.process_issue(self.request.user, obj, domain_exists, domain)
                 return HttpResponseRedirect("/")
 
-        return create_issue(self, form, spam_score, spam_reason)
+        return create_issue(self, form,)
 
     def get_context_data(self, **kwargs):
         # if self.request is a get, clear out the form data

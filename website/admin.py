@@ -184,6 +184,10 @@ class IssueAdmin(admin.ModelAdmin):
         "url",
         "domain",
         "description",
+        "spam_score",
+        "spam_reason",
+        "verified",
+        "is_hidden",
         "closed_by",
         "closed_date",
         "screenshot",
@@ -192,8 +196,29 @@ class IssueAdmin(admin.ModelAdmin):
     )
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
-    list_filter = ["domain", "user"]
+    list_filter = ["domain", "user", "verified", "is_hidden", "created"]
+    actions = ['approve_issues', 'mark_as_spam', 'delete_issues', 'unmark_as_spam']
 
+    def approve_issues(self, request, queryset):
+        queryset.update(verified=True, is_hidden=False)
+        self.message_user(request, f"{queryset.count()} issues approved.")
+    approve_issues.short_description = "Approve selected issues"
+
+    def mark_as_spam(self, request, queryset):
+        queryset.update(is_hidden=True, verified=False)
+        self.message_user(request, f"{queryset.count()} issues marked as spam.")
+    mark_as_spam.short_description = "Mark as spam"
+
+    def delete_issues(self, request, queryset):
+        count = queryset.count()
+        queryset.delete()
+        self.message_user(request, f"{count} issues deleted.")
+    delete_issues.short_description = "Delete selected issues"
+
+    def unmark_as_spam(self, request, queryset):
+        queryset.update(is_hidden=False)
+        self.message_user(request, f"{queryset.count()} issues unmarked as spam.")
+    unmark_as_spam.short_description = "Unmark as spam"
 
 class HuntAdmin(admin.ModelAdmin):
     list_display = (

@@ -30,7 +30,7 @@ class SpamDetection:
          Returns:
              dict: {
                  'is_spam': bool,
-                 'spam_score': int (0-100),
+                 'spam_score': int (0-10),
                  'reason': str
              }
         """
@@ -44,27 +44,36 @@ class SpamDetection:
             logger.error("Error in spam detection: %s", e, exc_info=True)  
             return {"is_spam": False, "spam_score": 0, "reason": "Error parsing spam detection response"}  
         else:
+            if response.get("spam_score") is None:
+                return {"is_spam": False, "spam_score": 0, "reason": "Invalid spam detection response"}
             return response
 
     def _get_system_prompt(self, title, desc, url) -> str:
         return f"""
             You are a spam detector for a bug bounty platform. 
             Analyze this bug report.
-
+            The spam score is an integer from 0 to 10, where:
             0 = Definitely legitimate bug report
-            100 = Definitely spam
+            10 = Definitely spam
+            
+            The report may be considered spam for reasons such as:
+            - Irrelevant content
+            - Malicious links
+            - Repetitive submissions
+            - Incoherent or nonsensical text
+            - Excessive use of promotional language
+            - Known spam patterns
 
-            You have to be smart and understand that the bug report could be well-written with high details but still be spammy (e.g., fake reports, irrelevant content, etc.).
-            Use your judgment: the report may be very detailed but could still be fake, irrelevant, or promotional.  
-
+            Just because a report has a link does not automatically make it spam and vice versa. Also consider the context and content of the report.
+            If the report seems legitimate, assign a low spam score and explain why. Also just because a report is short does not make it spam.
             Bug Report Details:
-            Title: {title}
-            Description: {desc}
-            URL: {url or 'N/A'}
+            Bug Title: {title}
+            Bug Description: {desc}
+            Domain URL: {url or 'N/A'}
 
             Be accurate and precise in your reasoning.
             return a JSON object with the following fields:
-                - **spam_score**: integer from 0 to 100 (0 = definitely legitimate, 100 = definitely spam)  
+                - **spam_score**: integer from 0 to 10 (0 = definitely legitimate, 10 = definitely spam)  
                 - **is_spam**: boolean, whether the report is considered spam given the score  
                 - **reason**:  string explanation for the spamminess (or lack of) 
             """
@@ -72,7 +81,7 @@ class SpamDetection:
     def get_gemini_response(self, prompt: str) -> str:
 
         response = self.client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt,
             config={
                 "response_mime_type": "application/json",
@@ -83,6 +92,6 @@ class SpamDetection:
 
 
 class Spam(BaseModel):
-    spam_score: int = Field(ge=0, le=100, description="Spam score from 0-100")
+    spam_score: int = Field(ge=0, le=10, description="Spam score from 0-10")
     is_spam: bool = Field(description="Whether it's considered spam")
     reason: str = Field(description="Reason for spam classification")
