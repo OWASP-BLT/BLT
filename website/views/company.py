@@ -844,7 +844,7 @@ class AddDomainView(View):
         if method == "delete":
             return self.delete(request, *args, **kwargs)
         elif method == "put":
-            print("*" * 100)
+            logger.debug("=" * 100)
             return self.put(request, *args, **kwargs)
 
         return super().dispatch(request, *args, **kwargs)
@@ -1156,7 +1156,7 @@ class AddSlackIntegrationView(View):
                 if not cursor:
                     break
         except Exception as e:
-            print("Error fetching channels", e)
+            logger.error(f"Error fetching channels: {e}")
         return channels
 
     @validate_organization_user
@@ -1205,7 +1205,7 @@ class AddSlackIntegrationView(View):
                 if not cursor:
                     break
         except Exception as e:
-            print("Error fetching channel ID:", e)
+            logger.error(f"Error fetching channel ID: {e}")
         return None
 
     @validate_organization_user

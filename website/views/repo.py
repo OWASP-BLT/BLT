@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import time
@@ -19,6 +20,8 @@ from django.views.generic import DetailView, ListView
 
 from website.models import Organization, Repo
 from website.utils import ai_summary, markdown_to_text
+
+logger = logging.getLogger(__name__)
 
 
 class RepoListView(ListView):
@@ -146,12 +149,12 @@ class RepoDetailView(DetailView):
         repo = self.get_object()
 
         # Debug all POST data
-        print(f"POST data: {request.POST}")
-        print(f"Content-Type: {request.headers.get('Content-Type', 'Not provided')}")
+        logger.debug(f"POST data: {request.POST}")
+        logger.debug(f"Content-Type: {request.headers.get('Content-Type', 'Not provided')}")
 
         # Get section parameter
         section = request.POST.get("section")
-        print(f"Section from POST: '{section}'")
+        logger.debug(f"Section from POST: '{section}'")
 
         # If section is not in POST data, try to get it from body
         if not section:
@@ -162,7 +165,7 @@ class RepoDetailView(DetailView):
 
                 content_type = request.headers.get("Content-Type", "").lower()
                 body_str = request.body.decode("utf-8")
-                print(f"Raw body: {body_str}")
+                logger.debug(f"Raw body: {body_str}")
 
                 if "application/json" in content_type:
                     # Try to parse as JSON
@@ -170,21 +173,21 @@ class RepoDetailView(DetailView):
                         body_data = json.loads(body_str)
                         if "section" in body_data:
                             section = body_data["section"]
-                            print(f"Section from JSON body: '{section}'")
+                            logger.debug(f"Section from JSON body: '{section}'")
                     except json.JSONDecodeError:
-                        print("Failed to parse body as JSON")
+                        logger.debug("Failed to parse body as JSON")
 
                 elif "application/x-www-form-urlencoded" in content_type:
                     # Try to parse as form data
                     body_params = parse_qs(body_str)
                     if "section" in body_params:
                         section = body_params["section"][0]
-                        print(f"Section from form body: '{section}'")
+                        logger.debug(f"Section from form body: '{section}'")
 
                 elif "multipart/form-data" in content_type:
                     # For multipart/form-data, we should already have it in request.POST
                     # But we can try to parse the boundary and extract data if needed
-                    print("Multipart form data detected, should be in request.POST")
+                    logger.debug("Multipart form data detected, should be in request.POST")
 
                 # If still no section, try a simple key=value parsing
                 if not section:
@@ -198,15 +201,15 @@ class RepoDetailView(DetailView):
 
                     if "section" in body_params:
                         section = body_params["section"]
-                        print(f"Section from simple parsing: '{section}'")
+                        logger.debug(f"Section from simple parsing: '{section}'")
             except Exception as e:
-                print(f"Error parsing body: {e}")
+                logger.warning(f"Error parsing body: {e}")
 
         # Normalize the section parameter
         if section:
             if isinstance(section, str):
                 section = section.strip().lower()
-                print(f"Normalized section: '{section}'")
+                logger.debug(f"Normalized section: '{section}'")
         else:
             return JsonResponse({"status": "error", "message": "No section parameter provided"}, status=400)
 
@@ -401,12 +404,12 @@ def add_repo(request):
         if not use_token:
             # Remove auth header if token is invalid or missing
             headers.pop("Authorization", None)
-            print("Using anonymous GitHub API access")  # Debug log
+            logger.debug("Using anonymous GitHub API access")
 
         # Fetch repository data
-        print(f"Fetching repo data from: {api_url}")  # Debug log
+        logger.debug(f"Fetching repo data from: {api_url}")
         response = requests.get(api_url, headers=headers)
-        print(f"GitHub API Response Status: {response.status_code}")  # Debug log
+        logger.debug(f"GitHub API Response Status: {response.status_code}")
 
         if response.status_code == 404:
             return JsonResponse(
@@ -421,7 +424,7 @@ def add_repo(request):
         elif response.status_code != 200:
             error_data = response.json()
             error_message = error_data.get("message", "Failed to fetch repository data")
-            print(f"GitHub API Error: {error_message}")  # Debug log
+            logger.error(f"GitHub API Error: {error_message}")
             return JsonResponse(
                 {"status": "error", "message": f"GitHub API Error: {error_message}"},
                 status=response.status_code,
@@ -554,20 +557,20 @@ def refresh_repo_data(request, repo_id):
     Run the update_repos_dynamic command for a specific repository
     """
     try:
-        print(f"Refresh request received for repo_id: {repo_id}")
+        logger.info(f"Refresh request received for repo_id: {repo_id}")
 
         # Check if the repository exists
         repo = Repo.objects.get(id=repo_id)
 
         # Log the refresh attempt
-        print(f"Refreshing repository data for {repo.name} (ID: {repo_id})")
-        print(f"Repository URL: {repo.repo_url}")
+        logger.info(f"Refreshing repository data for {repo.name} (ID: {repo_id})")
+        logger.debug(f"Repository URL: {repo.repo_url}")
 
         try:
             # Run the command with the specific repo ID
-            print("Calling update_repos_dynamic command...")
+            logger.debug("Calling update_repos_dynamic command...")
             call_command("update_repos_dynamic", repo_id=repo_id)
-            print("Command completed successfully")
+            logger.debug("Command completed successfully")
 
             # Refresh the repo object to get the latest data
             repo.refresh_from_db()
@@ -578,7 +581,7 @@ def refresh_repo_data(request, repo_id):
             dollar_tag_count = repo.github_issues.filter(has_dollar_tag=True).count()
 
             # Log the results
-            print(
+            logger.info(
                 f"Repository refresh complete. Issues: {issues_count}, "
                 f"PRs: {prs_count}, Bounty Issues: {dollar_tag_count}"
             )
@@ -596,11 +599,11 @@ def refresh_repo_data(request, repo_id):
                 }
             )
         except Exception as cmd_error:
-            print(f"Error running command: {str(cmd_error)}")
-            print(f"Error type: {type(cmd_error).__name__}")
+            logger.error(f"Error running command: {str(cmd_error)}")
+            logger.error(f"Error type: {type(cmd_error).__name__}")
             import traceback
 
-            traceback.print_exc()
+            logger.error(traceback.format_exc())
 
             return JsonResponse(
                 {
@@ -612,14 +615,14 @@ def refresh_repo_data(request, repo_id):
             )
 
     except Repo.DoesNotExist:
-        print(f"Repository with ID {repo_id} not found")
+        logger.warning(f"Repository with ID {repo_id} not found")
         return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
     except Exception as e:
-        print(f"Error refreshing repository data: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
+        logger.error(f"Error refreshing repository data: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
         import traceback
 
-        traceback.print_exc()
+        logger.error(traceback.format_exc())
 
         return JsonResponse(
             {
