@@ -1114,16 +1114,6 @@ def github_issue_badge(request, issue_number):
             },
         )
 
-        # Calculate view count from past 30 days
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-        view_count = (
-            IP.objects.filter(
-                path__icontains=f"issues/{issue_number}",
-                created__gte=thirty_days_ago,
-            ).aggregate(total=Sum("count"))["total"]
-            or 0
-        )
-
         # Get bounty amount
         bounty_amount = "$0"
         if github_issue.p2p_amount_usd:
@@ -1132,6 +1122,18 @@ def github_issue_badge(request, issue_number):
         # Track badge view
         client_ip = get_client_ip(request)
         badge_path = f"/api/v1/badge/issue/{issue_number}/"
+
+        # Calculate view count from past 30 days (using badge path)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        view_count = (
+            IP.objects.filter(
+                path=badge_path,
+                created__gte=thirty_days_ago,
+            ).aggregate(
+                total=Sum("count")
+            )["total"]
+            or 0
+        )
 
         # Update or create IP log entry
         ip_log, created = IP.objects.get_or_create(

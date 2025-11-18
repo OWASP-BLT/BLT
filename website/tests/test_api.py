@@ -247,7 +247,7 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
 
     def setUp(self):
         """Set up test data."""
-        from website.models import GitHubIssue, Repo, IP
+        from website.models import GitHubIssue, Repo
 
         self.repo = Repo.objects.create(
             name="Test Repo",
@@ -283,10 +283,10 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
         """Test that badge SVG contains view count."""
         from website.models import IP
 
-        # Create some IP log entries
+        # Create some IP log entries with the badge path
         IP.objects.create(
             address="192.168.1.1",
-            path="/issues/123",
+            path="/api/v1/badge/issue/123/",
             method="GET",
             count=5,
         )
@@ -351,7 +351,7 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
         """Test that badge displays $0 when no bounty is set."""
         from website.models import GitHubIssue
 
-        issue_no_bounty = GitHubIssue.objects.create(
+        GitHubIssue.objects.create(
             issue_id=456,
             title="Issue without bounty",
             body="Test",
@@ -373,7 +373,7 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
         from website.models import IP
 
         url = "/api/v1/badge/issue/123/"
-        response = self.client.get(url)
+        self.client.get(url)
 
         # Check that IP log was created
         ip_logs = IP.objects.filter(path__icontains="/api/v1/badge/issue/123/")
