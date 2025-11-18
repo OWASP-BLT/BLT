@@ -141,7 +141,7 @@ class Command(LoggedBaseCommand):
                         # Fetch reviews for this pull request
                         reviews_url = pr["pull_request"]["url"] + "/reviews"
                         try:
-                            reviews_response = requests.get(reviews_url, headers=headers)
+                            reviews_response = requests.get(reviews_url, headers=headers, timeout=10)
                             reviews_response.raise_for_status()  # Check for HTTP errors
                             reviews_data = reviews_response.json()
 
@@ -155,11 +155,14 @@ class Command(LoggedBaseCommand):
                                     reviewer_github_id = review["user"].get("id")
                                     reviewer_github_url = review["user"].get("html_url")
                                     reviewer_avatar_url = review["user"].get("avatar_url")
+                                    reviewer_type = review["user"].get("type", "User")
 
-                                    # Skip bot accounts
-                                    if reviewer_login and (
-                                        reviewer_login.endswith("[bot]") or "bot" in reviewer_login.lower()
-                                    ):
+                                    # Skip bot accounts using GitHub API type first
+                                    if reviewer_type == "Bot":
+                                        continue
+
+                                    # Fallback check for bot naming patterns
+                                    if reviewer_login and reviewer_login.endswith("[bot]"):
                                         continue
 
                                     # Get or create reviewer contributor
@@ -171,7 +174,7 @@ class Command(LoggedBaseCommand):
                                                 "name": reviewer_login,
                                                 "github_url": reviewer_github_url,
                                                 "avatar_url": reviewer_avatar_url,
-                                                "contributor_type": "User",
+                                                "contributor_type": reviewer_type,
                                                 "contributions": 0,
                                             },
                                         )

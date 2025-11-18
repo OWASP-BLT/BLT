@@ -33,4 +33,12 @@ class Migration(migrations.Migration):
                 to="website.contributor",
             ),
         ),
+        # Add CheckConstraint to ensure at least one reviewer field is populated
+        migrations.AddConstraint(
+            model_name="githubreview",
+            constraint=models.CheckConstraint(
+                check=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
+                name="at_least_one_reviewer",
+            ),
+        ),
     ]

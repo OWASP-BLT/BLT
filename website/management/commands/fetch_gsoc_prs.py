@@ -89,7 +89,7 @@ class Command(BaseCommand):
             else:
                 # Fallback to GSOC25_PROJECTS
                 all_repos = []
-                for project, repos in GSOC25_PROJECTS.items():
+                for _project, repos in GSOC25_PROJECTS.items():
                     all_repos.extend(repos)
                 # Remove duplicates
                 all_repos = list(set(all_repos))
@@ -510,6 +510,6 @@ class Command(BaseCommand):
                 if verbose:
                     self.stdout.write(f"  Saved review by {reviewer_login}")
 
-        except Exception as e:
+        except (requests.RequestException, ValueError) as e:
             if verbose:
                 self.stdout.write(self.style.WARNING(f"  Error fetching reviews: {str(e)}"))

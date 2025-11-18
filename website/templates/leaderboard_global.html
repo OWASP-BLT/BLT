@@ -96,7 +96,7 @@
                                         {% else %}
                                             <img src="{% gravatar_url 'default@example.com' 50 %}"
                                                  class="size-11 select-none border border-gray-200 dark:border-gray-700 rounded-full"
-                                                 alt="username"
+                                                 alt="{{ leader.contributor__name|default:'Unknown User' }}"
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
@@ -141,7 +141,7 @@
                                         {% else %}
                                             <img src="{% gravatar_url 'default@example.com' 50 %}"
                                                  class="size-11 select-none border border-gray-200 dark:border-gray-700 rounded-full"
-                                                 alt="username"
+                                                 alt="{{ leader.reviewer_contributor__name|default:'Unknown User' }}"
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
