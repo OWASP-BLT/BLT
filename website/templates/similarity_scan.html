@@ -2,10 +2,10 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <div class="container mx-auto w-4/5 mt-16 p-5 border border-black rounded-lg bg-white shadow-md relative">
-        <h1 class="text-center text-black text-3xl font-bold">Similarity Check</h1>
+    <div class="container mx-auto w-4/5 mt-16 p-5 border border-black rounded-lg bg-white dark:bg-gray-800 shadow-md relative">
+        <h1 class="text-center text-black dark:text-white text-3xl font-bold">Similarity Check</h1>
         <!-- Legend -->
-        <div class="absolute top-5 right-5 bg-white border border-black rounded-lg p-3 shadow-md">
+        <div class="absolute top-5 right-5 bg-white dark:bg-gray-800 border border-black rounded-lg p-3 shadow-md">
             <div class="flex items-center mb-1">
                 <span class="block w-5 h-5 mr-2 bg-green-500"></span>High Similarity
             </div>
@@ -25,13 +25,13 @@
                            name="repo1"
                            type="text"
                            placeholder="Enter first repository URL or path"
-                           class="border border-gray-300 p-2 rounded-md w-full"
+                           class="border border-gray-300 dark:border-gray-600 p-2 rounded-md w-full"
                            required>
                 </div>
                 <div class="flex-1">
                     <select id="type1"
                             name="type1"
-                            class="border border-gray-300 p-2 rounded-md w-full">
+                            class="border border-gray-300 dark:border-gray-600 p-2 rounded-md w-full">
                         <option value="github">GitHub</option>
                     </select>
                 </div>
@@ -40,7 +40,7 @@
                            name="branch1"
                            type="text"
                            placeholder="Enter the branch name"
-                           class="border border-gray-300 p-2 rounded-md w-1/2"
+                           class="border border-gray-300 dark:border-gray-600 p-2 rounded-md w-1/2"
                            required>
                 </div>
             </div>
@@ -50,13 +50,13 @@
                            name="repo2"
                            type="text"
                            placeholder="Enter second repository URL or path"
-                           class="border border-gray-300 p-2 rounded-md w-full"
+                           class="border border-gray-300 dark:border-gray-600 p-2 rounded-md w-full"
                            required>
                 </div>
                 <div class="flex-1">
                     <select id="type2"
                             name="type2"
-                            class="border border-gray-300 p-2 rounded-md w-full">
+                            class="border border-gray-300 dark:border-gray-600 p-2 rounded-md w-full">
                         <option value="github">GitHub</option>
                     </select>
                 </div>
@@ -65,7 +65,7 @@
                            name="branch2"
                            type="text"
                            placeholder="Enter the branch name"
-                           class="border border-gray-300 p-2 rounded-md w-1/2"
+                           class="border border-gray-300 dark:border-gray-600 p-2 rounded-md w-1/2"
                            required>
                 </div>
             </div>

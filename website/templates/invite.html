@@ -21,19 +21,18 @@
     <div class="flex w-full flex-col items-center justify-between md:py-5 py-3 px-4 md:px-0">
         <div class="border rounded-md md:w-[900px] w-full flex flex-col gap-7 items-center justify-center shadow-lg md:py-10 p-4">
             <div class="flex flex-col gap-3.5 items-center justify-center text-center text-sm md:text-base">
-                <h1 class="text-3xl font-extrabold text-black/90 border-b-2 border-[#e74c3c]/70 pb-1">
+                <h1 class="text-3xl font-extrabold text-black/90 dark:text-white/90 border-b-2 border-red-500/70 pb-1">
                     {% trans "Invite an Organization" %}
                 </h1>
-                <div class="flex flex-col gap-3 text-black/65">
+                <div class="flex flex-col gap-3 text-black/65 dark:text-white/65">
                     <div class="flex flex-col items-center justify-center">
                         {% if user_logged_in %}
                             <p>
-                                {% trans "Invite an organization to join our platform and earn" %} <span class="font-bold text-[#e74c3c]">{% trans "+5 points" %}</span> {% trans "when they do." %}
+                                {% trans "Invite an organization to join our platform and earn" %} <span class="font-bold text-red-500/70">{% trans "+5 points" %}</span> {% trans "when they do." %}
                             </p>
                         {% else %}
                             <p>
-                                {% trans "Invite an organization to join our platform." %} <a href="{% url 'account_login' %}"
-    class="font-bold text-[#e74c3c] hover:underline">{% trans "Login" %}</a> {% trans "to earn +5 points when they register via your referral link." %}
+                                {% trans "Invite an organization to join our platform." %} <a href="{% url 'account_login' %}" class="font-bold text-red-500/70 hover:underline">{% trans "Login" %}</a> {% trans "to earn +5 points when they register via your referral link." %}
                             </p>
                         {% endif %}
                     </div>

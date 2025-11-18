@@ -39,6 +39,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.feeds import ActivityFeed
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -93,17 +94,15 @@ from website.views.core import (
     badge_list,
     check_owasp_compliance,
     donate_view,
-    facebook_callback,
     features_view,
     find_key,
-    github_callback,
-    google_callback,
     home,
     invite_organization,
     management_commands,
     robots_txt,
     run_management_command,
     search,
+    set_theme,
     set_vote_status,
     sitemap,
     sponsor_view,
@@ -151,6 +150,7 @@ from website.views.hackathon import (
     HackathonPrizeCreateView,
     HackathonSponsorCreateView,
     HackathonUpdateView,
+    add_org_repos_to_hackathon,
     refresh_repository_data,
 )
 from website.views.issue import (
@@ -226,6 +226,7 @@ from website.views.organization import (
     approve_activity,
     checkIN,
     checkIN_detail,
+    delete_activity,
     delete_room,
     delete_time_entry,
     dislike_activity,
@@ -380,6 +381,7 @@ urlpatterns = [
     path("referral/", referral_signup, name="referral_signup"),
     path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
+    path("set-theme/", set_theme, name="set_theme"),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
         "rest-auth/password/reset/confirm/<str:uidb64>/<str:token>",
@@ -391,12 +393,12 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="user_deletion"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    path("accounts/github/login/callback/", github_views.oauth2_callback, name="github_callback"),
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     path("auth/github/url/", github_views.oauth2_login),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
-    path("accounts/google/login/callback/", google_callback, name="google_callback"),
-    path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
+    path("accounts/google/login/callback/", google_views.oauth2_callback, name="google_callback"),
+    path("accounts/facebook/login/callback/", facebook_views.oauth2_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
@@ -756,6 +758,7 @@ urlpatterns = [
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
+    re_path(r"^feed/rss/$", ActivityFeed(), name="activity_feed_rss"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -811,6 +814,7 @@ urlpatterns = [
     path("activity/like/<int:id>/", like_activity, name="like_activity"),
     path("activity/dislike/<int:id>/", dislike_activity, name="dislike_activity"),
     path("activity/approve/<int:id>/", approve_activity, name="approve_activity"),
+    path("activity/delete/<int:id>/", delete_activity, name="delete_activity"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     re_path(r"^robots\.txt$", robots_txt),
@@ -1087,6 +1091,12 @@ urlpatterns = [
                     "<slug:hackathon_slug>/refresh-repo/<int:repo_id>/",
                     refresh_repository_data,
                     name="refresh_repository_data",
+                ),
+                # Add the new URL pattern for adding all org repos to hackathon
+                path(
+                    "<slug:slug>/add-org-repos/",
+                    add_org_repos_to_hackathon,
+                    name="add_org_repos_to_hackathon",
                 ),
             ]
         ),
