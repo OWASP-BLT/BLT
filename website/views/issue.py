@@ -365,6 +365,7 @@ def newhome(request, template="bugs_list.html"):
     }
     return render(request, template, context)
 
+
 @staff_member_required
 def moderation_queue(request):
     """
@@ -372,32 +373,37 @@ def moderation_queue(request):
     moderation actions (approve, mark as spam).
     """
     # Handle POST requests for moderation actions first
-    if request.method == 'POST':
-        issue_id_str = request.POST.get('issue_id')
-        action = request.POST.get('action')
+    if request.method == "POST":
+        issue_id_str = request.POST.get("issue_id")
+        action = request.POST.get("action")
 
         if not issue_id_str or not action:
             messages.error(request, "Invalid request. Missing issue ID or action.")
-            return redirect('moderation_queue')
+            return redirect("moderation_queue")
 
         try:
             issue_id = int(issue_id_str)
             issue = Issue.objects.get(id=issue_id)
 
-            if action == 'approve':
+            if action == "approve":
                 issue.verified = True
                 issue.is_hidden = False
-                issue.status = 'open'
+                issue.status = "open"
                 issue.save()
                 messages.success(request, f"Issue #{issue.id} has been approved.")
-            
-            elif action == 'spam':
+
+            elif action == "spam":
                 issue.verified = False
                 issue.is_hidden = True
-                issue.status = 'spam'
+                issue.status = "spam"
                 issue.save()
                 messages.success(request, f"Issue #{issue.id} has been marked as spam.")
-            
+
+            elif action == "delete":
+                deleted_issue_id = issue.id  # Capture the ID before deletion
+                issue.delete()
+                messages.success(request, f"Issue #{deleted_issue_id} has been deleted.")
+
             else:
                 messages.error(request, "Invalid moderation action specified.")
 
@@ -406,24 +412,23 @@ def moderation_queue(request):
         except Issue.DoesNotExist:
             # This is the most likely error. Let's give a very specific message.
             messages.error(request, f"Could not find an issue with ID #{issue_id_str} in the database.")
-        
-        return redirect('moderation_queue')
+
+        return redirect("moderation_queue")
 
     # Handle GET requests: Display the list of issues for moderation
-    
-    # Issues that are not verified OR are explicitly hidden need review.
-    pending_issues = Issue.objects.filter(
-        Q(verified=False) & ~Q(status='spam')
-    ).order_by('-spam_score', '-created')
 
-    spam_issues = Issue.objects.filter(status='spam').order_by('-created')
+    # Issues that are not verified OR are explicitly hidden need review.
+    pending_issues = Issue.objects.filter(Q(verified=False) & ~Q(status="spam")).order_by("-spam_score", "-created")
+
+    spam_issues = Issue.objects.filter(status="spam").order_by("-created")
 
     context = {
-        'pending_issues': pending_issues,
-        'spam_issues': spam_issues,
+        "pending_issues": pending_issues,
+        "spam_issues": spam_issues,
     }
-    
-    return render(request, 'moderation/queue.html', context)
+
+    return render(request, "moderation/queue.html", context)
+
 
 # The delete_issue function performs delete operation from the database
 @login_required

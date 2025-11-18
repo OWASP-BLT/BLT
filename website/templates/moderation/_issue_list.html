@@ -19,7 +19,7 @@
                             <p class="text-sm text-gray-900 dark:text-gray-100 truncate max-w-xs">{{ issue.description }}</p>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="{{ issue.url }}" target="_blank" class="text-sm text-gray-500 dark:text-gray-400 hover:underline truncate max-w-xs">{{ issue.url }}</a>
+                              <a href="{{ issue.url }}" target="_blank" rel="noopener noreferrer" class="text-sm text-gray-500 dark:text-gray-400 hover:underline truncate max-w-xs">{{ issue.url }}</a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if issue.spam_score >= 70 %}bg-red-100 text-red-800{% elif issue.spam_score >= 50 %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %}">
@@ -51,6 +51,13 @@
                                     <input type="hidden" name="issue_id" value="{{ issue.id }}">
                                     <button type="submit" name="action" value="spam" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" title="Mark as Spam">
                                         <i class="fas fa-ban"></i>
+                                    </button>
+                                </form>
+                                <form action="{% url 'moderation_queue' %}" method="post" class="inline-block">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                    <button type="submit" name="action" value="delete" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" title="Delete">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
                             </div>
