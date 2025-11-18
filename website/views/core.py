@@ -2966,15 +2966,35 @@ def invite_organization(request):
             context["exists"] = False
             return render(request, "invite.html", context)
 
+        # Reject sample/placeholder emails
+        import re
+
+        if re.match(r"^sample-\d+@invite\.placeholder$", email):
+            messages.error(
+                request,
+                "This email format is reserved for system use. Please provide a valid organization email address.",
+            )
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
         # Validate organization_name length
         if len(organization_name) > 255:
             messages.error(request, "Organization name is too long (max 255 characters).")
             context["exists"] = False
             return render(request, "invite.html", context)
 
-        # Rate limiting check
-        rate_limit_key = f"invite_org_{request.user.id}"
-        invite_count = cache.get(rate_limit_key, 0)
+        # Rate limiting check - DB-backed for reliability
+        from django.utils import timezone
+
+        today = timezone.now().date()
+        invite_count = (
+            InviteOrganization.objects.filter(sender=request.user, created__date=today)
+            .exclude(
+                email__regex=r"^sample-\d+@invite\.placeholder$"  # Exclude sample invites from count
+            )
+            .count()
+        )
+
         if invite_count >= 10:  # 10 invites per day
             messages.error(request, "Daily invitation limit reached. Please try again tomorrow.")
             context["exists"] = False
@@ -2996,9 +3016,6 @@ def invite_organization(request):
         referral_link = f"{base_url}?ref={invite_record.referral_code}"
         context["referral_link"] = referral_link
         context["show_points_message"] = True
-
-        # Increment rate limit counter
-        cache.set(rate_limit_key, invite_count + 1, 86400)  # 24 hours
 
     # Check if user is authenticated for referral tracking (GET request or after POST)
     if request.user.is_authenticated and "referral_link" not in context:
