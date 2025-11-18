@@ -1187,11 +1187,6 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     # banned_apps url
-    path(
-        "banned_apps/",
-        RedirectView.as_view(url="/banned_apps/"),
-        name="banned_apps",
-    ),
     path("banned_apps/", include("banned_apps.urls")),
 ]
 
