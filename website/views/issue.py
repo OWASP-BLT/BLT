@@ -1000,7 +1000,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # Check for Spam
         is_spam, spam_score, spam_reason = self._check_for_spam(form)
         logger.info(f"Spam check result: is_spam={is_spam}, spam_score={spam_score}, spam_reason='{spam_reason}'")
-        
+
         limit = 50 if self.request.user.is_authenticated else 30
         today = timezone.now().date()
         recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
@@ -1045,9 +1045,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj = form.save(commit=False)
             obj.spam_score = spam_score
             obj.spam_reason = spam_reason
-            if spam_score >= 6: 
+            if spam_score >= 6:
                 obj.is_hidden = True
                 obj.verified = False
+                obj.save()
                 messages.warning(
                     self.request,
                     "Your submission has been flagged for review and will be visible once approved by a moderator. Try again with a better description.",
@@ -1057,7 +1058,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     f"IP: {reporter_ip}, "
                     f"Description: {description[:100]}"
                 )
-        
+
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
             if report_anonymous:
@@ -1129,7 +1130,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 logger.warning(f"Domain not found, creating new: name={clean_domain_no_www}, url={clean_domain}")
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
                 domain.save()
-                
+
             # Don't save issue if security vulnerability
             if form.instance.label == "4" or form.instance.label == 4:
                 dest_email = getattr(domain, "email", None)
@@ -1457,7 +1458,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.process_issue(self.request.user, obj, domain_exists, domain)
                 return HttpResponseRedirect("/")
 
-        return create_issue(self, form,)
+        return create_issue(
+            self,
+            form,
+        )
 
     def get_context_data(self, **kwargs):
         # if self.request is a get, clear out the form data
