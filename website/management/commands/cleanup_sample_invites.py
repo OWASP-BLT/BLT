@@ -39,9 +39,7 @@ class Command(BaseCommand):
 
         if dry_run:
             self.stdout.write(
-                self.style.WARNING(
-                    f"DRY RUN: Would delete {count} sample invite records older than {days} days"
-                )
+                self.style.WARNING(f"DRY RUN: Would delete {count} sample invite records older than {days} days")
             )
             if count > 0:
                 self.stdout.write("Sample records that would be deleted:")
@@ -52,7 +50,5 @@ class Command(BaseCommand):
         else:
             deleted_count, _ = sample_invites.delete()
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"Successfully deleted {deleted_count} sample invite records older than {days} days"
-                )
+                self.style.SUCCESS(f"Successfully deleted {deleted_count} sample invite records older than {days} days")
             )

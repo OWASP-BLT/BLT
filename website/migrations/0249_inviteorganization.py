@@ -37,7 +37,8 @@ class Migration(migrations.Migration):
                 (
                     "sender",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
                         related_name="sent_org_invites",
                         to=settings.AUTH_USER_MODEL,
                     ),

@@ -249,7 +249,7 @@ class RegisterOrganizationView(View):
                     # Update success message optimistically - actual processing happens after commit
                     try:
                         invite = InviteOrganization.objects.get(referral_code=ref_code, points_awarded=False)
-                        if invite.sender:
+                        if invite.sender and not re.match(SAMPLE_INVITE_EMAIL_PATTERN, invite.email):
                             success_message = f"Organization registered successfully! {invite.sender.username} will earn 5 points for the referral."
                     except InviteOrganization.DoesNotExist:
                         pass

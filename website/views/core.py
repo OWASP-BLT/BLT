@@ -3032,31 +3032,9 @@ def invite_organization(request):
         base_url = request.build_absolute_uri(reverse("register_organization"))
         referral_link = f"{base_url}?ref={invite_record.referral_code}"
         context["referral_link"] = referral_link
-        context["show_points_message"] = True
 
-    # Check if user is authenticated for referral tracking (GET request or after POST)
-    if request.user.is_authenticated and "referral_link" not in context:
-        # Try to get cached referral link first to avoid DB query on every GET
-        cache_key = f"sample_referral_{request.user.id}"
-        referral_link = cache.get(cache_key)
-
-        if not referral_link:
-            # Cache miss - create/retrieve sample invite record
-            # Use placeholder email since EmailField doesn't allow empty strings
-            sample_email = f"sample-{request.user.id}@invite.placeholder"
-            sample_invite, created = InviteOrganization.objects.get_or_create(
-                sender=request.user, email=sample_email, organization_name=""
-            )
-
-            base_url = request.build_absolute_uri(reverse("register_organization"))
-            referral_link = f"{base_url}?ref={sample_invite.referral_code}"
-            # Cache for 24 hours to avoid repeated DB queries
-            cache.set(cache_key, referral_link, 86400)
-
-        context["referral_link"] = referral_link
-        context["show_points_message"] = True
-        context["is_sample_link"] = True  # Flag to indicate this is just for display
-    elif not request.user.is_authenticated:
+    # Add login prompt for non-authenticated users
+    if not request.user.is_authenticated:
         context["show_login_prompt"] = True
 
     # Add template context variables - check if we have the data in context

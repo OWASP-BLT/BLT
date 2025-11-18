@@ -689,7 +689,7 @@ class InviteFriend(models.Model):
 
 
 class InviteOrganization(models.Model):
-    sender = models.ForeignKey(User, related_name="sent_org_invites", on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, related_name="sent_org_invites", on_delete=models.SET_NULL, null=True)
     email = models.EmailField()
     organization_name = models.CharField(max_length=255, blank=True)
     referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False, unique=True)
@@ -700,7 +700,8 @@ class InviteOrganization(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Organization invite from {self.sender} to {self.email}"
+        sender_name = self.sender.username if self.sender else "Unknown"
+        return f"Organization invite from {sender_name} to {self.email}"
 
 
 def user_images_path(instance, filename):
