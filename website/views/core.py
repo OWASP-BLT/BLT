@@ -78,6 +78,9 @@ from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_ur
 
 logger = logging.getLogger(__name__)
 
+# Constants
+SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
+
 
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
@@ -2985,9 +2988,7 @@ def invite_organization(request):
             return render(request, "invite.html", context)
 
         # Reject sample/placeholder emails
-        import re
-
-        if re.match(r"^sample-\d+@invite\.placeholder$", email):
+        if re.match(SAMPLE_INVITE_EMAIL_PATTERN, email):
             messages.error(
                 request,
                 "This email format is reserved for system use. Please provide a valid organization email address.",
@@ -3002,13 +3003,11 @@ def invite_organization(request):
             return render(request, "invite.html", context)
 
         # Rate limiting check - DB-backed for reliability
-        from django.utils import timezone
-
         today = timezone.now().date()
         invite_count = (
             InviteOrganization.objects.filter(sender=request.user, created__date=today)
             .exclude(
-                email__regex=r"^sample-\d+@invite\.placeholder$"  # Exclude sample invites from count
+                email__regex=SAMPLE_INVITE_EMAIL_PATTERN  # Exclude sample invites from count
             )
             .count()
         )
@@ -3107,7 +3106,8 @@ def invite_organization(request):
     context["user_logged_in"] = request.user.is_authenticated
 
     return render(request, "invite.html", context)
-  
+
+
 @csrf_exempt
 def set_theme(request):
     """View to save user's theme preference"""

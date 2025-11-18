@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -39,6 +40,7 @@ from website.models import (
     Winner,
 )
 from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
+from website.views.core import SAMPLE_INVITE_EMAIL_PATTERN
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -144,9 +146,11 @@ class RegisterOrganizationView(View):
                 # Verify the referral code exists in the database
                 if not InviteOrganization.objects.filter(referral_code=ref_code, points_awarded=False).exists():
                     messages.warning(request, "Invalid or expired referral code.")
+                    request.session.pop("org_ref", None)
                     return render(request, "organization/register_organization.html", {})
             except (ValueError, AttributeError):
                 messages.warning(request, "Invalid referral code.")
+                request.session.pop("org_ref", None)
                 return render(request, "organization/register_organization.html", {})
             request.session["org_ref"] = ref_code
 
@@ -215,6 +219,9 @@ class RegisterOrganizationView(View):
                                 )
                                 if not invite.sender:
                                     raise ValueError("Invalid invite sender")
+                                # Reject sample/placeholder invites
+                                if re.match(SAMPLE_INVITE_EMAIL_PATTERN, invite.email):
+                                    raise ValueError("Sample referral links cannot be used for registration")
                                 # Award 5 points to the sender
                                 Points.objects.create(
                                     user=invite.sender,
@@ -1497,7 +1504,7 @@ class OrganizationDashboardManageRolesView(View):
         try:
             parsed_url = urlparse(organization_url)
             organization_domain = parsed_url.netloc.replace("www.", "").strip()
-        except Exception:
+        except (TypeError, ValueError):
             logger.warning(f"Failed to parse organization URL: {organization_obj.url}")
             organization_domain = ""
 

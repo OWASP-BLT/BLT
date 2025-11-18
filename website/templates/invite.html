@@ -32,13 +32,14 @@
                             </p>
                         {% else %}
                             <p>
-                                {% trans "Invite an organization to join our platform." %} <a href="{% url 'account_login' %}" class="font-bold text-red-500/70 hover:underline">{% trans "Login" %}</a> {% trans "to earn +5 points when they register via your referral link." %}
+                                {% trans "Invite an organization to join our platform." %} <a href="{% url 'account_login' %}"
+    class="font-bold text-red-500/70 hover:underline">{% trans "Login" %}</a> {% trans "to earn +5 points when they register via your referral link." %}
                             </p>
                         {% endif %}
                     </div>
                 </div>
             </div>
-            {% if not exists %}
+            {% if not exists and user_logged_in %}
                 <form role="form"
                       action="{% url 'invite' %}"
                       method="post"

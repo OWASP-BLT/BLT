@@ -10,7 +10,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("website", "0246_add_user_progress_models"),
+        ("website", "0247_organization_github_org_gsoc_years"),
+        ("website", "0248_add_slack_fields_to_project"),
     ]
 
     operations = [
