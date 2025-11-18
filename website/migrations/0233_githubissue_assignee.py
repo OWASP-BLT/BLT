@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0232_bannedapp"),
+        ("website", "0231_organization_check_ins_enabled_notification"),
     ]
 
     operations = [

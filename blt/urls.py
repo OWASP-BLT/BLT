@@ -1125,6 +1125,8 @@ urlpatterns = [
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
+    # banned_apps url
+    path("banned_apps/", include("banned_apps.urls")),
 ]
 
 if settings.DEBUG:

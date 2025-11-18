@@ -1,7 +1,6 @@
+from banned_apps.models import BannedApp
 from django.http import JsonResponse
 from django.views.generic import TemplateView
-
-from website.models import BannedApp
 
 
 class BannedAppsView(TemplateView):
