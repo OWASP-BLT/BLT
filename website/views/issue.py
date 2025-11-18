@@ -17,6 +17,7 @@ from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -364,6 +365,65 @@ def newhome(request, template="bugs_list.html"):
     }
     return render(request, template, context)
 
+@staff_member_required
+def moderation_queue(request):
+    """
+    Renders a queue of issues flagged for moderation and handles
+    moderation actions (approve, mark as spam).
+    """
+    # Handle POST requests for moderation actions first
+    if request.method == 'POST':
+        issue_id_str = request.POST.get('issue_id')
+        action = request.POST.get('action')
+
+        if not issue_id_str or not action:
+            messages.error(request, "Invalid request. Missing issue ID or action.")
+            return redirect('moderation_queue')
+
+        try:
+            issue_id = int(issue_id_str)
+            issue = Issue.objects.get(id=issue_id)
+
+            if action == 'approve':
+                issue.verified = True
+                issue.is_hidden = False
+                issue.status = 'open'
+                issue.save()
+                messages.success(request, f"Issue #{issue.id} has been approved.")
+            
+            elif action == 'spam':
+                issue.verified = False
+                issue.is_hidden = True
+                issue.status = 'spam'
+                issue.save()
+                messages.success(request, f"Issue #{issue.id} has been marked as spam.")
+            
+            else:
+                messages.error(request, "Invalid moderation action specified.")
+
+        except ValueError:
+            messages.error(request, f"Invalid issue ID: '{issue_id_str}'. Must be an integer.")
+        except Issue.DoesNotExist:
+            # This is the most likely error. Let's give a very specific message.
+            messages.error(request, f"Could not find an issue with ID #{issue_id_str} in the database.")
+        
+        return redirect('moderation_queue')
+
+    # Handle GET requests: Display the list of issues for moderation
+    
+    # Issues that are not verified OR are explicitly hidden need review.
+    pending_issues = Issue.objects.filter(
+        Q(verified=False) & ~Q(status='spam')
+    ).order_by('-spam_score', '-created')
+
+    spam_issues = Issue.objects.filter(status='spam').order_by('-created')
+
+    context = {
+        'pending_issues': pending_issues,
+        'spam_issues': spam_issues,
+    }
+    
+    return render(request, 'moderation/queue.html', context)
 
 # The delete_issue function performs delete operation from the database
 @login_required

@@ -196,9 +196,8 @@ class IssueAdmin(admin.ModelAdmin):
     )
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
-    list_filter = ["domain", "user", "verified", "is_hidden", "created"]
-    actions = ["approve_issues", "mark_as_spam", "unmark_as_spam"]
-
+    list_filter = ("domain", "user", "verified", "is_hidden", "created")
+    actions = ("approve_issues", "mark_as_spam", "unmark_as_spam")
     def approve_issues(self, request, queryset):
         queryset.update(verified=True, is_hidden=False)
         self.message_user(request, f"{queryset.count()} issues approved.")

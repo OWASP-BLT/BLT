@@ -1,0 +1,71 @@
+{% if issues %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Issue</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">URL</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Spam Score</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Submitter</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Spam Reason</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for issue in issues %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{% url 'issue_view' issue.id %}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">#{{ issue.id }}</a>
+                            <p class="text-sm text-gray-900 dark:text-gray-100 truncate max-w-xs">{{ issue.description }}</p>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{{ issue.url }}" target="_blank" class="text-sm text-gray-500 dark:text-gray-400 hover:underline truncate max-w-xs">{{ issue.url }}</a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if issue.spam_score >= 70 %}bg-red-100 text-red-800{% elif issue.spam_score >= 50 %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                {{ issue.spam_score|default:"N/A" }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {% if issue.user %}
+                                <a href="{% url 'profile_view' issue.user.username %}" class="hover:underline">{{ issue.user.username }}</a>
+                            {% else %}
+                                Anonymous
+                            {% endif %}
+                            <p class="text-xs">{{ issue.created|date:"M d, Y" }}</p>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 whitespace-normal break-words">
+                            {{ issue.spam_reason|default:"No reason provided" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex items-center space-x-2">
+                                <form action="{% url 'moderation_queue' %}" method="post" class="inline-block">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                    <button type="submit" name="action" value="approve" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" title="Approve">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <form action="{% url 'moderation_queue' %}" method="post" class="inline-block">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                    <button type="submit" name="action" value="spam" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" title="Mark as Spam">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="text-center py-12">
+        <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-800/20">
+            <i class="fas fa-check-circle text-4xl text-green-500 dark:text-green-400"></i>
+        </div>
+        <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">All Clear!</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">There are no issues in this category.</p>
+    </div>
+{% endif %}
