@@ -87,16 +87,10 @@
                             {% for leader in pr_leaderboard %}
                                 <div class="flex justify-between items-center">
                                     <div class="flex gap-2 items-center truncate">
-                                        {% if leader.github_username %}
-                                            <img src="https://github.com/{{ leader.github_username }}.png"
+                                        {% if leader.contributor__avatar_url %}
+                                            <img src="{{ leader.contributor__avatar_url }}"
                                                  class="size-11 select-none border border-gray-200 dark:border-gray-700 rounded-full"
-                                                 alt="{{ leader.user_profile__user__username }}"
-                                                 width="50px"
-                                                 height="50px">
-                                        {% elif leader.user_profile__user__email %}
-                                            <img src="{% gravatar_url leader.user_profile__user__email 50 %}"
-                                                 class="size-11 select-none border border-gray-200 dark:border-gray-700 rounded-full"
-                                                 alt="username"
+                                                 alt="{{ leader.contributor__name }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
@@ -110,10 +104,10 @@
                                             <a href="{% url 'profile' slug=leader.user_profile__user__username %}"
                                                class="text-lg transition-all duration-200">{{ leader.user_profile__user__username }}</a>
                                         {% else %}
-                                            <span class="text-lg text-gray-500 dark:text-gray-500">Unknown User</span>
+                                            <span class="text-lg text-gray-500 dark:text-gray-500">{{ leader.contributor__name|default:"Unknown User" }}</span>
                                         {% endif %}
-                                        {% if leader.user_profile__github_url %}
-                                            <a href="{{ leader.user_profile__github_url }}"
+                                        {% if leader.contributor__github_url %}
+                                            <a href="{{ leader.contributor__github_url }}"
                                                target="_blank"
                                                class="ml-2">
                                                 <i class="fab fa-github text-xl"></i>
@@ -138,16 +132,10 @@
                             {% for leader in code_review_leaderboard %}
                                 <div class="flex justify-between items-center">
                                     <div class="flex gap-2 items-center truncate">
-                                        {% if leader.github_username %}
-                                            <img src="https://github.com/{{ leader.github_username }}.png"
+                                        {% if leader.reviewer_contributor__avatar_url %}
+                                            <img src="{{ leader.reviewer_contributor__avatar_url }}"
                                                  class="size-11 select-none border border-gray-200 dark:border-gray-700 rounded-full"
-                                                 alt="{{ leader.reviewer__user__username }}"
-                                                 width="50px"
-                                                 height="50px">
-                                        {% elif leader.reviewer__user__email %}
-                                            <img src="{% gravatar_url leader.reviewer__user__email 50 %}"
-                                                 class="size-11 select-none border border-gray-200 dark:border-gray-700 rounded-full"
-                                                 alt="username"
+                                                 alt="{{ leader.reviewer_contributor__name }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
@@ -162,13 +150,15 @@
                                                class="text-lg transition-all duration-200">
                                                 {{ leader.reviewer__user__username }}
                                             </a>
-                                            {% if leader.reviewer__github_url %}
-                                                <a href="{{ leader.reviewer__github_url }}" target="_blank" class="ml-2">
-                                                    <i class="fab fa-github text-xl"></i>
-                                                </a>
-                                            {% endif %}
                                         {% else %}
-                                            <span class="text-lg text-gray-500 dark:text-gray-500">Unknown User</span>
+                                            <span class="text-lg text-gray-500 dark:text-gray-500">{{ leader.reviewer_contributor__name|default:"Unknown User" }}</span>
+                                        {% endif %}
+                                        {% if leader.reviewer_contributor__github_url %}
+                                            <a href="{{ leader.reviewer_contributor__github_url }}"
+                                               target="_blank"
+                                               class="ml-2">
+                                                <i class="fab fa-github text-xl"></i>
+                                            </a>
                                         {% endif %}
                                     </div>
                                     <span class="pull-right badge bg-gray-100 dark:bg-gray-800 flex-shrink-0 rounded-md py-1 px-2 select-none">Reviews: {{ leader.total_reviews }}</span>
