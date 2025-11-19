@@ -60,8 +60,7 @@ DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
 
 SITE_ID = 1
-if DEBUG:
-    CAPTCHA_TEST_MODE = True
+
 # Scout settings
 SCOUT_MONITOR = True
 SCOUT_KEY = os.environ.get("SCOUT_KEY")
