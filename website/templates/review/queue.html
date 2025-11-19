@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Moderation Queue{% endblock %}
+{% block title %}Review Queue{% endblock %}
 
 {% block content %}
 {% include "includes/sidenav.html" %}
 <div class="p-6 lg:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
     <div class="max-w-7xl mx-auto">
         <div class="mb-8">
-            <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">Moderation Queue</h1>
+            <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">Review Queue</h1>
             <p class="text-lg text-gray-600 dark:text-gray-400">Review and moderate pending issues.</p>
         </div>
 
@@ -36,10 +36,10 @@
             </div>
             <div id="myTabContent">
                 <div class="p-4 bg-white dark:bg-gray-800 rounded-lg md:p-8" id="all" role="tabpanel" aria-labelledby="all-tab">
-                    {% include 'moderation/_issue_list.html' with issues=pending_issues %}
+                    {% include 'review/_issue_list.html' with issues=pending_issues %}
                 </div>
                 <div class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg md:p-8" id="spam" role="tabpanel" aria-labelledby="spam-tab">
-                    {% include 'moderation/_issue_list.html' with issues=spam_issues %}
+                    {% include 'review/_issue_list.html' with issues=spam_issues %}
                 </div>
             </div>
         </div>

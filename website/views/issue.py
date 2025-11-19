@@ -367,19 +367,26 @@ def newhome(request, template="bugs_list.html"):
 
 
 @staff_member_required
-def moderation_queue(request):
-    """
-    Renders a queue of issues flagged for moderation and handles
-    moderation actions (approve, mark as spam).
-    """
-    # Handle POST requests for moderation actions first
+def review_queue(request):
+    # Handle POST requests for review actions
     if request.method == "POST":
-        issue_id_str = request.POST.get("issue_id")
         action = request.POST.get("action")
 
+        if action == "delete_selected":
+            issue_ids = request.POST.getlist("issue_ids")
+            if not issue_ids:
+                messages.error(request, "You didn't select any issues to delete.")
+            else:
+                count = len(issue_ids)
+                Issue.objects.filter(id__in=issue_ids).delete()
+                messages.success(request, f"Successfully deleted {count} issue(s).")
+            return redirect("review_queue")
+
+        # Handle single-issue actions
+        issue_id_str = request.POST.get("issue_id")
         if not issue_id_str or not action:
             messages.error(request, "Invalid request. Missing issue ID or action.")
-            return redirect("moderation_queue")
+            return redirect("review_queue")
 
         try:
             issue_id = int(issue_id_str)
@@ -398,36 +405,27 @@ def moderation_queue(request):
                 issue.status = "spam"
                 issue.save()
                 messages.success(request, f"Issue #{issue.id} has been marked as spam.")
-
-            elif action == "delete":
-                deleted_issue_id = issue.id  # Capture the ID before deletion
-                issue.delete()
-                messages.success(request, f"Issue #{deleted_issue_id} has been deleted.")
-
+            
             else:
-                messages.error(request, "Invalid moderation action specified.")
+                messages.error(request, "Invalid review action specified.")
 
         except ValueError:
             messages.error(request, f"Invalid issue ID: '{issue_id_str}'. Must be an integer.")
         except Issue.DoesNotExist:
-            # This is the most likely error. Let's give a very specific message.
             messages.error(request, f"Could not find an issue with ID #{issue_id_str} in the database.")
 
-        return redirect("moderation_queue")
+        return redirect("review_queue")
 
-    # Handle GET requests: Display the list of issues for moderation
-
-    # Issues that are not verified OR are explicitly hidden need review.
-    pending_issues = Issue.objects.filter(Q(verified=False) & ~Q(status="spam")).order_by("-spam_score", "-created")
-
-    spam_issues = Issue.objects.filter(status="spam").order_by("-created")
+    # Handle GET requests: Display the list of issues for review
+    pending_issues = Issue.objects.filter(~Q(status="spam") & Q(is_hidden=True)).order_by("-spam_score", "-created")
+    spam_issues = Issue.objects.filter(Q(status="spam") & Q(is_hidden=True)).order_by("-created")   
 
     context = {
         "pending_issues": pending_issues,
         "spam_issues": spam_issues,
     }
 
-    return render(request, "moderation/queue.html", context)
+    return render(request, "review/queue.html", context)
 
 
 # The delete_issue function performs delete operation from the database
@@ -1095,7 +1093,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
 
             # Only validate uploaded screenshots if there are any
-
             if len(self.request.FILES.getlist("screenshots")) > 0:
                 for screenshot in self.request.FILES.getlist("screenshots"):
                     img_valid = image_validator(screenshot)
@@ -1123,6 +1120,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     f"IP: {reporter_ip}, "
                     f"Description: {description[:100]}"
                 )
+                return HttpResponseRedirect("/")
 
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
@@ -1135,7 +1133,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     if self.request.POST.get("token") == token.key:
                         obj.user = User.objects.get(id=token.user_id)
                         tokenauth = True
-
             captcha_form = CaptchaForm(self.request.POST)
             if not captcha_form.is_valid() and not settings.TESTING:
                 messages.error(self.request, "Invalid Captcha!")
@@ -1144,7 +1141,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-
             parsed_url = urlparse(obj.url)
             clean_domain = parsed_url.netloc
             clean_domain_no_www = clean_domain.replace("www.", "")
