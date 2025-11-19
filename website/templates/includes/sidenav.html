@@ -104,56 +104,56 @@
                         </a>
                         <a href="{% url 'map' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'map' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'map' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'map' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-map-marker-alt"></i>
                             </div>
                             <span class="truncate">{% trans "Map" %}</span>
                         </a>
                         <a href="{% url 'feed' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'feed' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'feed' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'feed' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-rss"></i>
                             </div>
                             <span class="truncate">{% trans "Feed" %}</span>
                         </a>
                         <a href="{% url 'hackathons' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'hackathons' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'hackathons' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'hackathons' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-trophy"></i>
                             </div>
                             <span class="truncate">{% trans "Hackathons" %}</span>
                         </a>
                         <a href="{% url 'issues' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'issues' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'issues' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'issues' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-bug"></i>
                             </div>
                             <span class="truncate">{% trans "Bugs" %}</span>
                         </a>
                         <a href="{% url 'github_issues' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'github_issues' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'github_issues' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'github_issues' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fab fa-github"></i>
                             </div>
                             <span class="truncate">{% trans "Issues" %}</span>
                         </a>
                         <a href="{% url 'sizzle' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'sizzle' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'sizzle' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'sizzle' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-fire"></i>
                             </div>
                             <span class="truncate">{% trans "Time Logs" %}</span>
                         </a>
                         <a href="{% url 'checkIN' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'checkIN' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'checkIN' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'checkIN' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-user-check"></i>
                             </div>
                             <span class="truncate">{% trans "Check-In" %}</span>
                         </a>
                         <a href="{% url 'scoreboard' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'scoreboard' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'scoreboard' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'scoreboard' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-trophy"></i>
                             </div>
                             <span class="truncate">{% trans "Scoreboard" %}</span>
