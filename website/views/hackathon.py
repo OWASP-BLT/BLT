@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from datetime import timedelta
 
@@ -27,6 +28,9 @@ from website.models import (
     Repo,
     UserProfile,
 )
+
+logger = logging.getLogger(__name__)
+REPO_REFRESH_DELAY_SECONDS = getattr(settings, "HACKATHON_REPO_REFRESH_DELAY", 1.0)
 
 
 class HackathonListView(ListView):
@@ -456,13 +460,31 @@ def refresh_all_hackathon_repositories(request, slug):
     total_new_prs = 0
     failed_repos = []
 
-    for repo in repositories:
+    for index, repo in enumerate(repositories, start=1):
         try:
             new_prs = _refresh_repository_pull_requests(hackathon, repo)
             total_new_prs += new_prs
             refreshed_count += 1
-        except Exception as exc:
+        except requests.exceptions.RequestException as exc:
             failed_repos.append(repo.name)
+            logger.warning(
+                "GitHub API request failed while refreshing repo '%s' for hackathon '%s': %s",
+                repo.name,
+                hackathon.slug,
+                exc,
+                exc_info=True,
+            )
+        except Exception:
+            failed_repos.append(repo.name)
+            logger.exception(
+                "Unexpected error while refreshing repo '%s' for hackathon '%s'",
+                repo.name,
+                hackathon.slug,
+            )
+
+        if index < len(repositories) and REPO_REFRESH_DELAY_SECONDS > 0:
+            # Sleep briefly to avoid tripping GitHub's secondary rate limits across repositories.
+            time.sleep(REPO_REFRESH_DELAY_SECONDS)
 
     if refreshed_count:
         messages.success(
