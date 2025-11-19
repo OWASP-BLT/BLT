@@ -1102,22 +1102,15 @@ def github_issue_badge(request, issue_number):
                 },
             )
 
-        # Get or create GitHubIssue record
-        github_issue, _ = GitHubIssue.objects.get_or_create(
-            issue_id=issue_number,
-            defaults={
-                "title": f"Issue {issue_number}",
-                "state": "open",
-                "url": f"https://github.com/issues/{issue_number}",
-                "created_at": timezone.now(),
-                "updated_at": timezone.now(),
-            },
-        )
-
-        # Get bounty amount
-        bounty_amount = "$0"
-        if github_issue.p2p_amount_usd:
-            bounty_amount = f"${int(github_issue.p2p_amount_usd)}"
+        # Try to get existing GitHubIssue record (don't create to prevent abuse)
+        try:
+            github_issue = GitHubIssue.objects.get(issue_id=issue_number)
+            bounty_amount = "$0"
+            if github_issue.p2p_amount_usd:
+                bounty_amount = f"${int(github_issue.p2p_amount_usd)}"
+        except GitHubIssue.DoesNotExist:
+            # Issue doesn't exist - return default badge without creating record
+            bounty_amount = "$0"
 
         # Track badge view
         client_ip = get_client_ip(request)
@@ -1129,9 +1122,7 @@ def github_issue_badge(request, issue_number):
             IP.objects.filter(
                 path=badge_path,
                 created__gte=thirty_days_ago,
-            ).aggregate(
-                total=Sum("count")
-            )["total"]
+            ).aggregate(total=Sum("count"))["total"]
             or 0
         )
 
@@ -1174,7 +1165,9 @@ def github_issue_badge(request, issue_number):
 
     except Exception as e:
         logger.error(
-            f"Error generating badge for issue {issue_number}: {str(e)}",
+            "Error generating badge for issue %s: %s",
+            issue_number,
+            str(e),
             exc_info=True,
         )
         # Return a simple error badge
