@@ -1,8 +1,11 @@
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
+from decimal import Decimal
 
+import requests
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -48,6 +51,7 @@ from website.models import (
     Monitor,
     Notification,
     Points,
+    Repo,
     Tag,
     Thread,
     User,
@@ -1011,12 +1015,202 @@ def github_webhook(request):
 
 
 def handle_pull_request_event(payload):
+    # Enhanced to handle automatic payments for merged PRs with bounty labels
     if payload["action"] == "closed" and payload["pull_request"]["merged"]:
         pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
         if pr_user_profile:
             pr_user_instance = pr_user_profile.user
             assign_github_badge(pr_user_instance, "First PR Merged")
+
+            # Check for bounty labels ($5, $10, etc.)
+            labels = [label["name"] for label in payload["pull_request"]["labels"]]
+            bounty_amount = extract_bounty_from_labels(labels)
+
+            if bounty_amount:
+                # Process automatic payment
+                process_bounty_payment(
+                    pr_user_profile=pr_user_profile, bounty_amount=bounty_amount, pr_data=payload["pull_request"]
+                )
     return JsonResponse({"status": "success"}, status=200)
+
+
+def extract_bounty_from_labels(labels):
+    # Extract bounty amount from PR labels like $5, $10, etc.
+    for label in labels:
+        match = re.match(r"\$(\d+)", label)
+        if match:
+            return Decimal(match.group(1))
+    return None
+
+
+def send_crypto_payment(address, amount, currency):
+    """
+    Send cryptocurrency payment. This needs integration with:
+    - BitPay API for BCH
+    - Coinbase Commerce API
+    - Direct blockchain transaction via bitcoin_utils.py
+    - Or your preferred payment processor
+    """
+    if currency == "BCH":
+        from website.bitcoin_utils import send_bch_payment
+
+        tx_id = send_bch_payment(address, str(amount))
+        return tx_id
+    raise NotImplementedError(f"Payment method {currency} not implemented")
+
+
+def record_payment(pr_user_profile, pr_data, tx_id, amount, currency):
+    """Record payment in database"""
+
+    repo_name = pr_data["base"]["repo"]["name"]
+    repo = Repo.objects.filter(name__iexact=repo_name).first()
+
+    if repo:
+        # Find or create GitHubIssue record for this PR
+        github_issue, created = GitHubIssue.objects.get_or_create(
+            repo=repo,
+            number=pr_data["number"],
+            defaults={
+                "title": pr_data["title"],
+                "type": "pull_request",
+                "user_profile": pr_user_profile,
+                "is_merged": True,
+                "merged_at": timezone.now(),
+            },
+        )
+
+        # Record transaction ID
+        if currency == "BCH":
+            github_issue.bch_tx_id = tx_id
+        else:
+            github_issue.sponsors_tx_id = tx_id
+
+        github_issue.save()
+
+    # Update user's winnings
+    pr_user_profile.winnings = (pr_user_profile.winnings or 0) + Decimal(amount)
+    pr_user_profile.save()
+
+
+def post_payment_comment(pr_data, tx_id, amount, currency):
+    # Post confirmation comment to the PR
+
+    repo_full_name = pr_data["base"]["repo"]["full_name"]
+    pr_number = pr_data["number"]
+
+    if currency == "BCH":
+        explorer_url = f"https://blockchair.com/bitcoin-cash/transaction/{tx_id}"
+        comment_body = (
+            f"🎉 **Payment Sent!**\n\n"
+            f"${amount} has been automatically sent via Bitcoin Cash (BCH).\n\n"
+            f"**Transaction ID:** `{tx_id}`\n"
+            f"**View Transaction:** {explorer_url}\n\n"
+            f"Thank you for your contribution! 🙏"
+        )
+    else:
+        comment_body = f"Payment of ${amount} sent via {currency}. Transaction ID: {tx_id}"
+
+    url = f"https://api.github.com/repos/{repo_full_name}/issues/{pr_number}/comments"
+    headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+    response = requests.post(url, json={"body": comment_body}, headers=headers, timeout=10)
+    return response.status_code == 201
+
+
+def notify_user_missing_address(user, pr_data):
+    # Notify user they need to add a crypto address
+    # Send email
+    send_mail(
+        subject="Action Required: Add BCH Address for Payment",
+        message=(
+            f"Your PR #{pr_data['number']} has been merged and is eligible for a bounty payment!\n\n"
+            f"However, we don't have a cryptocurrency address on file for you.\n\n"
+            f"Please add your BCH address (preferred) at: {settings.SITE_URL}/profile/edit/\n\n"
+            f"Note: BCH addresses must start with 'bitcoincash:'"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+    )
+
+
+def check_existing_payment(repo_full_name, pr_number):
+    repo_short = repo_full_name.split("/")[-1]
+    repo = Repo.objects.filter(name__iexact=repo_short).first()
+    if not repo:
+        return False
+
+    issue = GitHubIssue.objects.filter(repo=repo, number=pr_number).first()
+    if not issue:
+        return False
+
+    return bool(issue.bch_tx_id or issue.sponsors_tx_id)
+
+
+def notify_admin_payment_failure(pr_data, error_message):
+    admin_email = settings.ADMIN_EMAIL
+    send_mail(
+        subject=f"Payment Failure for PR #{pr_data['number']}",
+        message=f"Error processing payment:\n\n{error_message}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[admin_email],
+    )
+
+
+def process_bounty_payment(pr_user_profile, bounty_amount, pr_data):
+    """
+    Process automatic bounty payment for merged PR.
+    Prefers BCH addresses.
+    """
+
+    # Step 1: Select BCH address
+    if pr_user_profile.bch_address:
+        payment_address = pr_user_profile.bch_address
+        payment_method = "BCH"
+    else:
+        notify_user_missing_address(pr_user_profile.user, pr_data)
+        logger.warning(f"User {pr_user_profile.user.username} has no crypto address for PR #{pr_data['number']}")
+        return
+
+    # Step 2: Validate BCH address format
+    if not payment_address.startswith("bitcoincash:"):
+        logger.error(f"Invalid BCH address: {payment_address}")
+        notify_admin_payment_failure(pr_data, "Invalid BCH address format")
+        return
+
+    # Step 3: Prevent duplicate payment
+    pr_number = pr_data["number"]
+    repo_full_name = pr_data["base"]["repo"]["full_name"]
+
+    if check_existing_payment(repo_full_name, pr_number):
+        logger.info(f"PR #{pr_number} already paid, skipping")
+        return
+
+    # Step 4: Execute payment
+    try:
+        logger.info(
+            f"Initiating BCH payment for PR #{pr_number}: "
+            f"{bounty_amount} BCH to address {payment_address} "
+            f"for user {pr_user_profile.user.username}"
+        )
+
+        tx_id = send_crypto_payment(address=payment_address, amount=bounty_amount, currency=payment_method)
+
+        # Step 5: Save payment record
+        record_payment(
+            pr_user_profile=pr_user_profile, pr_data=pr_data, tx_id=tx_id, amount=bounty_amount, currency=payment_method
+        )
+
+        # Step 6: Comment on PR
+        post_payment_comment(pr_data, tx_id, bounty_amount, payment_method)
+
+        logger.info(
+            f"Successfully paid {bounty_amount} {payment_method} to "
+            f"{pr_user_profile.user.username} for PR #{pr_number}"
+        )
+
+    except Exception as e:
+        logger.error(f"Payment failed for PR #{pr_number}: {str(e)}")
+        notify_admin_payment_failure(pr_data, str(e))
 
 
 def handle_push_event(payload):
