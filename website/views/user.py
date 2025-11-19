@@ -1083,7 +1083,7 @@ def record_payment(pr_user_profile, pr_data, tx_id, currency, usd_amount):
 
     # Use atomic transaction to prevent partial writes
     with transaction.atomic():
-        github_issue, _ = GitHubIssue.objects.get_or_create(
+        github_issue, created = GitHubIssue.objects.get_or_create(
             repo=repo,
             number=pr_number,
             defaults={
