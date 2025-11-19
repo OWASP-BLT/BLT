@@ -16,6 +16,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -32,7 +33,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
-from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
@@ -136,8 +136,7 @@ def update_bch_address(request):
             messages.error(request, f"Please provide a valid {selected_crypto} Address.")
     else:
         messages.error(request, "Invalid request method.")
-
-        username = request.user.username if request.user.username else "default_username"
+        username = request.user.username or "default_username"
         return redirect(reverse("profile", args=[username]))
 
 
@@ -1029,7 +1028,7 @@ def handle_pull_request_event(payload):
             if bounty_amount:
                 # Process automatic payment
                 process_bounty_payment(
-                    pr_user_profile=pr_user_profile, bounty_amount=bounty_amount, pr_data=payload["pull_request"]
+                    pr_user_profile=pr_user_profile, usd_amount=bounty_amount, pr_data=payload["pull_request"]
                 )
     return JsonResponse({"status": "success"}, status=200)
 
@@ -1037,7 +1036,7 @@ def handle_pull_request_event(payload):
 def extract_bounty_from_labels(labels):
     # Extract bounty amount from PR labels like $5, $10, etc.
     for label in labels:
-        match = re.match(r"\$(\d+)", label)
+        match = re.match(r"^\$(\d+(?:\.\d+)?)$", label.strip())
         if match:
             return Decimal(match.group(1))
     return None
@@ -1059,19 +1058,36 @@ def send_crypto_payment(address, amount, currency):
     raise NotImplementedError(f"Payment method {currency} not implemented")
 
 
-def record_payment(pr_user_profile, pr_data, tx_id, amount, currency):
-    """Record payment in database"""
+def record_payment(pr_user_profile, pr_data, tx_id, bch_amount, currency, usd_amount):
+    """
+    Record payment into GitHubIssue + update user winnings safely.
+    """
 
-    repo_name = pr_data["base"]["repo"]["name"]
+    # Extract repo name safely
+    try:
+        repo_name = pr_data["base"]["repo"]["name"]
+    except KeyError:
+        logger.error("PR data missing base.repo.name structure")
+        return
+
     repo = Repo.objects.filter(name__iexact=repo_name).first()
+    if not repo:
+        logger.warning(
+            "Repo %s not tracked; refusing to record payment for PR #%s",
+            repo_name,
+            pr_data.get("number"),
+        )
+        return
 
-    if repo:
-        # Find or create GitHubIssue record for this PR
+    pr_number = pr_data.get("number")
+
+    # Use atomic transaction to prevent partial writes
+    with transaction.atomic():
         github_issue, created = GitHubIssue.objects.get_or_create(
             repo=repo,
-            number=pr_data["number"],
+            number=pr_number,
             defaults={
-                "title": pr_data["title"],
+                "title": pr_data.get("title", ""),
                 "type": "pull_request",
                 "user_profile": pr_user_profile,
                 "is_merged": True,
@@ -1079,7 +1095,11 @@ def record_payment(pr_user_profile, pr_data, tx_id, amount, currency):
             },
         )
 
-        # Record transaction ID
+        # If issue exists but missing user_profile, set it
+        if not created and github_issue.user_profile is None:
+            github_issue.user_profile = pr_user_profile
+
+        # Add transaction IDs
         if currency == "BCH":
             github_issue.bch_tx_id = tx_id
         else:
@@ -1087,13 +1107,27 @@ def record_payment(pr_user_profile, pr_data, tx_id, amount, currency):
 
         github_issue.save()
 
-    # Update user's winnings
-    pr_user_profile.winnings = (pr_user_profile.winnings or 0) + Decimal(amount)
-    pr_user_profile.save()
+        # Safe Decimal calculation for winnings
+        current_win = pr_user_profile.winnings or Decimal("0")
+        pr_user_profile.winnings = current_win + Decimal(str(usd_amount))
+        pr_user_profile.save()
+
+    logger.info(
+        "Recorded payment for PR #%s user=%s amount=%s USD",
+        pr_number,
+        pr_user_profile.user.username,
+        usd_amount,
+    )
 
 
 def post_payment_comment(pr_data, tx_id, amount, currency):
     # Post confirmation comment to the PR
+    if isinstance(amount, dict):
+        bch_amount = amount["bch"]
+        usd_amount = amount["usd"]
+    else:
+        bch_amount = amount
+        usd_amount = None
 
     repo_full_name = pr_data["base"]["repo"]["full_name"]
     pr_number = pr_data["number"]
@@ -1102,13 +1136,13 @@ def post_payment_comment(pr_data, tx_id, amount, currency):
         explorer_url = f"https://blockchair.com/bitcoin-cash/transaction/{tx_id}"
         comment_body = (
             f"🎉 **Payment Sent!**\n\n"
-            f"${amount} has been automatically sent via Bitcoin Cash (BCH).\n\n"
+            f"${usd_amount} has been automatically sent via Bitcoin Cash (BCH).\n\n"
             f"**Transaction ID:** `{tx_id}`\n"
             f"**View Transaction:** {explorer_url}\n\n"
             f"Thank you for your contribution! 🙏"
         )
     else:
-        comment_body = f"Payment of ${amount} sent via {currency}. Transaction ID: {tx_id}"
+        comment_body = f"${usd_amount} USD ({bch_amount} BCH) has been automatically sent..."
 
     url = f"https://api.github.com/repos/{repo_full_name}/issues/{pr_number}/comments"
     headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
@@ -1137,7 +1171,8 @@ def check_existing_payment(repo_full_name, pr_number):
     repo_short = repo_full_name.split("/")[-1]
     repo = Repo.objects.filter(name__iexact=repo_short).first()
     if not repo:
-        return False
+        logger.info("Repo %s not tracked; skipping payment for PR #%s", repo_full_name, pr_number)
+        return True  # treat as already handled / ineligible
 
     issue = GitHubIssue.objects.filter(repo=repo, number=pr_number).first()
     if not issue:
@@ -1156,11 +1191,42 @@ def notify_admin_payment_failure(pr_data, error_message):
     )
 
 
-def process_bounty_payment(pr_user_profile, bounty_amount, pr_data):
+def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
     """
     Process automatic bounty payment for merged PR.
     Prefers BCH addresses.
     """
+    # --- SAFETY GATE 1: PAYMENT ENABLED ---
+    if not getattr(settings, "PAYMENT_ENABLED", False):
+        logger.info("PAYMENT_ENABLED is False; skipping autopay for PR #%s", pr_data["number"])
+        return
+
+    # --- MAX_AUTO_PAYMENT in USD ---
+    max_auto = getattr(settings, "MAX_AUTO_PAYMENT", None)
+    if max_auto is not None:
+        max_auto_dec = Decimal(str(max_auto))
+        if usd_amount > max_auto_dec:
+            logger.warning(
+                "USD bounty %s exceeds MAX_AUTO_PAYMENT %s; skipping autopay for PR #%s",
+                usd_amount,
+                max_auto_dec,
+                pr_data["number"],
+            )
+            return
+
+    try:
+        resp = requests.get(
+            "https://api.coingecko.com/api/v3/simple/price",
+            params={"ids": "bitcoin-cash", "vs_currencies": "usd"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        rate = Decimal(str(resp.json()["bitcoin-cash"]["usd"]))
+        bch_amount = usd_amount / rate
+    except Exception as e:
+        logger.error(f"Unable to fetch BCH price: {e}")
+        notify_admin_payment_failure(pr_data, "Unable to fetch BCH/USD rate")
+        return
 
     # Step 1: Select BCH address
     if pr_user_profile.bch_address:
@@ -1189,22 +1255,27 @@ def process_bounty_payment(pr_user_profile, bounty_amount, pr_data):
     try:
         logger.info(
             f"Initiating BCH payment for PR #{pr_number}: "
-            f"{bounty_amount} BCH to address {payment_address} "
+            f"{bch_amount:.6f} BCH to address {payment_address} "
             f"for user {pr_user_profile.user.username}"
         )
 
-        tx_id = send_crypto_payment(address=payment_address, amount=bounty_amount, currency=payment_method)
+        tx_id = send_crypto_payment(address=payment_address, amount=bch_amount, currency=payment_method)
 
         # Step 5: Save payment record
         record_payment(
-            pr_user_profile=pr_user_profile, pr_data=pr_data, tx_id=tx_id, amount=bounty_amount, currency=payment_method
+            pr_user_profile=pr_user_profile,
+            pr_data=pr_data,
+            tx_id=tx_id,
+            bch_amount=bch_amount,
+            currency=payment_method,
+            usd_amount=usd_amount,
         )
 
         # Step 6: Comment on PR
-        post_payment_comment(pr_data, tx_id, bounty_amount, payment_method)
+        post_payment_comment(pr_data, tx_id, {"bch": bch_amount, "usd": usd_amount}, payment_method)
 
         logger.info(
-            f"Successfully paid {bounty_amount} {payment_method} to "
+            f"Successfully paid {bch_amount:.6f} {payment_method} to "
             f"{pr_user_profile.user.username} for PR #{pr_number}"
         )
 
