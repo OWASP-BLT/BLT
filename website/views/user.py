@@ -1058,7 +1058,7 @@ def send_crypto_payment(address, amount, currency):
     raise NotImplementedError(f"Payment method {currency} not implemented")
 
 
-def record_payment(pr_user_profile, pr_data, tx_id, bch_amount, currency, usd_amount):
+def record_payment(pr_user_profile, pr_data, tx_id, currency, usd_amount):
     """
     Record payment into GitHubIssue + update user winnings safely.
     """
@@ -1067,7 +1067,7 @@ def record_payment(pr_user_profile, pr_data, tx_id, bch_amount, currency, usd_am
     try:
         repo_name = pr_data["base"]["repo"]["name"]
     except KeyError:
-        logger.error("PR data missing base.repo.name structure")
+        logger.exception("PR data missing base.repo.name structure")
         return
 
     repo = Repo.objects.filter(name__iexact=repo_name).first()
@@ -1083,7 +1083,7 @@ def record_payment(pr_user_profile, pr_data, tx_id, bch_amount, currency, usd_am
 
     # Use atomic transaction to prevent partial writes
     with transaction.atomic():
-        github_issue, created = GitHubIssue.objects.get_or_create(
+        github_issue, _ = GitHubIssue.objects.get_or_create(
             repo=repo,
             number=pr_number,
             defaults={
@@ -1266,7 +1266,6 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
             pr_user_profile=pr_user_profile,
             pr_data=pr_data,
             tx_id=tx_id,
-            bch_amount=bch_amount,
             currency=payment_method,
             usd_amount=usd_amount,
         )
