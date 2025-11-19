@@ -14,7 +14,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -1138,8 +1138,8 @@ def github_issue_badge(request, issue_number):
             },
         )
         if not created:
-            ip_log.count += 1
-            ip_log.save(update_fields=["count"])
+            # Use atomic F() expression to prevent race conditions
+            IP.objects.filter(pk=ip_log.pk).update(count=F("count") + 1)
 
         # Generate SVG badge
         svg_content = generate_issue_badge_svg(view_count, bounty_amount)
