@@ -1224,7 +1224,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         rate = Decimal(str(resp.json()["bitcoin-cash"]["usd"]))
         bch_amount = usd_amount / rate
     except Exception as e:
-        logger.error(f"Unable to fetch BCH price: {e}")
+        logger.exception(f"Unable to fetch BCH price: {e}")
         notify_admin_payment_failure(pr_data, "Unable to fetch BCH/USD rate")
         return
 
@@ -1279,7 +1279,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         )
 
     except Exception as e:
-        logger.error(f"Payment failed for PR #{pr_number}: {str(e)}")
+        logger.exception(f"Payment failed for PR #{pr_number}: {str(e)}")
         notify_admin_payment_failure(pr_data, str(e))
 
 
