@@ -1081,52 +1081,11 @@ def github_issue_badge(request, issue_number):
     - Current bounty amount (from GitHubIssue model)
     """
     try:
-        # Check cache first
-        cache_key = f"badge_issue_{issue_number}"
-        cached_data = cache.get(cache_key)
-
-        # Check ETag for conditional request
-        request_etag = request.headers.get("If-None-Match")
-
-        if cached_data:
-            if request_etag and request_etag == cached_data["etag"]:
-                return Response(status=status.HTTP_304_NOT_MODIFIED)
-
-            # Return cached badge
-            return HttpResponse(
-                cached_data["svg"],
-                content_type="image/svg+xml",
-                headers={
-                    "ETag": cached_data["etag"],
-                    "Cache-Control": "public, max-age=300",
-                },
-            )
-
-        # Try to get existing GitHubIssue record (don't create to prevent abuse)
-        try:
-            github_issue = GitHubIssue.objects.get(issue_id=issue_number)
-            bounty_amount = "$0"
-            if github_issue.p2p_amount_usd:
-                bounty_amount = f"${int(github_issue.p2p_amount_usd)}"
-        except GitHubIssue.DoesNotExist:
-            # Issue doesn't exist - return default badge without creating record
-            bounty_amount = "$0"
-
-        # Track badge view
+        # Track badge view FIRST (before caching/counting) for accurate metrics
         client_ip = get_client_ip(request)
         badge_path = f"/api/v1/badge/issue/{issue_number}/"
 
-        # Calculate view count from past 30 days (using badge path)
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-        view_count = (
-            IP.objects.filter(
-                path=badge_path,
-                created__gte=thirty_days_ago,
-            ).aggregate(total=Sum("count"))["total"]
-            or 0
-        )
-
-        # Update or create IP log entry
+        # Update or create IP log entry atomically
         ip_log, created = IP.objects.get_or_create(
             address=client_ip,
             path=badge_path,
@@ -1141,11 +1100,59 @@ def github_issue_badge(request, issue_number):
             # Use atomic F() expression to prevent race conditions
             IP.objects.filter(pk=ip_log.pk).update(count=F("count") + 1)
 
+        # Check cache AFTER logging to ensure all views are tracked
+        cache_key = f"badge_issue_{issue_number}"
+        cached_data = cache.get(cache_key)
+
+        # Check ETag for conditional request
+        request_etag = request.headers.get("If-None-Match")
+
+        if cached_data:
+            # Always include cache headers for consistency
+            headers = {
+                "ETag": cached_data["etag"],
+                "Cache-Control": "public, max-age=300",
+            }
+
+            if request_etag and request_etag == cached_data["etag"]:
+                # 304 Not Modified with proper headers
+                return HttpResponse(
+                    status=status.HTTP_304_NOT_MODIFIED,
+                    headers=headers,
+                )
+
+            # Return cached badge with headers
+            return HttpResponse(
+                cached_data["svg"],
+                content_type="image/svg+xml",
+                headers=headers,
+            )
+
+        # Try to get existing GitHubIssue record (don't create to prevent abuse)
+        try:
+            github_issue = GitHubIssue.objects.get(issue_id=issue_number)
+            bounty_amount = "$0"
+            if github_issue.p2p_amount_usd:
+                bounty_amount = f"${int(github_issue.p2p_amount_usd)}"
+        except GitHubIssue.DoesNotExist:
+            # Issue doesn't exist - return default badge without creating record
+            bounty_amount = "$0"
+
+        # Calculate view count from past 30 days (AFTER incrementing, so current view counts)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        view_count = (
+            IP.objects.filter(
+                path=badge_path,
+                created__gte=thirty_days_ago,
+            ).aggregate(total=Sum("count"))["total"]
+            or 0
+        )
+
         # Generate SVG badge
         svg_content = generate_issue_badge_svg(view_count, bounty_amount)
 
-        # Generate ETag based on content
-        etag = hashlib.md5(svg_content.encode()).hexdigest()
+        # Generate ETag with secure hash (SHA-256 instead of MD5)
+        etag = hashlib.sha256(svg_content.encode()).hexdigest()[:32]  # Use first 32 chars
 
         # Cache for 5 minutes (300 seconds)
         cache.set(
