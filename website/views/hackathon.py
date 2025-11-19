@@ -437,6 +437,49 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
     return redirect("hackathon_detail", slug=hackathon_slug)
 
 
+@login_required
+def refresh_all_hackathon_repositories(request, slug):
+    """Refresh pull request data for all repositories linked to a hackathon."""
+    hackathon = get_object_or_404(Hackathon, slug=slug)
+
+    user = request.user
+    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+        messages.error(request, "You don't have permission to refresh repository data.")
+        return redirect("hackathon_detail", slug=slug)
+
+    repositories = list(hackathon.repositories.all())
+    if not repositories:
+        messages.info(request, f"No repositories are linked to {hackathon.name}.")
+        return redirect("hackathon_detail", slug=slug)
+
+    refreshed_count = 0
+    total_new_prs = 0
+    failed_repos = []
+
+    for repo in repositories:
+        try:
+            new_prs = _refresh_repository_pull_requests(hackathon, repo)
+            total_new_prs += new_prs
+            refreshed_count += 1
+        except Exception as exc:
+            failed_repos.append(repo.name)
+
+    if refreshed_count:
+        messages.success(
+            request,
+            f"Successfully refreshed {refreshed_count} repositories. Found {total_new_prs} new pull requests.",
+        )
+
+    if failed_repos:
+        repo_list = ", ".join(failed_repos)
+        messages.error(
+            request,
+            f"Unable to refresh the following repositories: {repo_list}. Please try again later.",
+        )
+
+    return redirect("hackathon_detail", slug=slug)
+
+
 def _refresh_repository_pull_requests(hackathon, repo):
     """Helper function to refresh pull request data from GitHub API."""
     # Extract owner and repo name from repo URL
