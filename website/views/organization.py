@@ -4028,15 +4028,6 @@ def add_slack_integration(request, slug):
     )
 
 
-import logging
-
-import requests
-from slack_sdk.errors import SlackApiError
-from slack_sdk.web import WebClient
-
-logger = logging.getLogger(__name__)
-
-
 @login_required(login_url="/accounts/login")
 def organization_slack_apps(request, id, template="organization/dashboard/slack_apps.html"):
     """
