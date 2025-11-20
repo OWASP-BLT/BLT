@@ -160,23 +160,19 @@ class RegisterOrganizationView(View):
         if organization_url == "" or Organization.objects.filter(url=organization_url).exists():
             messages.error(request, "organization URL is invalid or already exists.")
             return redirect("register_organization")
-
-        # Database constraint set to 250 char
+            
+        #Database constraint set to 250 char
         if len(organization_url) > 200:
             messages.error(request, "Organization URL is too long (maximum 200 characters).")
             return redirect("register_organization")
+        
+
 
         organization_logo = request.FILES.get("logo")
         if organization_logo:
             organization_logo_file = organization_logo.name.split(".")[0]
             extension = organization_logo.name.split(".")[-1]
-            # Ensure the total path length doesn't exceed 255 characters
-            # organization_logos/ (20) + filename + _ (1) + uuid (36) + . + extension
-            prefix_length = len("organization_logos/")
-            uuid_and_extension_length = 1 + 36 + 1 + len(extension)  # _uuid.ext
-            max_filename_length = 255 - prefix_length - uuid_and_extension_length
-            truncated_filename = organization_logo_file[:max_filename_length]
-            organization_logo.name = f"{truncated_filename}_{uuid.uuid4()}.{extension}"
+            organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
             logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
         else:
             logo_path = None
@@ -206,10 +202,7 @@ class RegisterOrganizationView(View):
             return render(request, "organization/register_organization.html")
         except Exception as e:
             if "value too long" in str(e):
-                messages.error(
-                    request,
-                    "One of the entered values is too long. Please check that all URLs and text fields are within the allowed length limits.",
-                )
+                messages.error(request, "One of the entered values is too long. Please check that all URLs and text fields are within the allowed length limits.")
             else:
                 messages.error(request, f"Error creating organization: {e}")
             if logo_path:
