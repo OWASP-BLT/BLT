@@ -364,12 +364,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         add_email_container();
         
-        // Add real-time length validation
         const fieldsToValidate = [
             { id: 'organization_url', maxLength: 200, name: 'Organization URL' },
-            { id: 'support_email', maxLength: 254, name: 'Support Email' },
-            { id: 'twitter_url', maxLength: 200, name: 'Twitter URL' },
-            { id: 'facebook_url', maxLength: 200, name: 'Facebook URL' }
         ];
         
         fieldsToValidate.forEach(function(field) {
