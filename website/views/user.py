@@ -262,32 +262,40 @@ def handle_user_signup(request, user, **kwargs):
             pass
 
 
+@login_required
 def update_bch_address(request):
-    if request.method == "POST":
-        selected_crypto = request.POST.get("selected_crypto")
-        new_address = request.POST.get("new_address")
-        if selected_crypto and new_address:
-            try:
-                user_profile = request.user.userprofile
-                if selected_crypto == "Bitcoin":
-                    user_profile.btc_address = new_address
-                elif selected_crypto == "Ethereum":
-                    user_profile.eth_address = new_address
-                elif selected_crypto == "BitcoinCash":
-                    user_profile.bch_address = new_address
-                else:
-                    messages.error(request, f"Invalid crypto selected: {selected_crypto}")
-                    return redirect(reverse("profile", args=[request.user.username]))
-                user_profile.save()
-                messages.success(request, f"{selected_crypto} Address updated successfully.")
-            except Exception as e:
-                messages.error(request, f"Failed to update {selected_crypto} Address.")
-        else:
-            messages.error(request, f"Please provide a valid {selected_crypto} Address.")
-    else:
+    if request.method != "POST":
         messages.error(request, "Invalid request method.")
-        username = request.user.username or "default_username"
-        return redirect(reverse("profile", args=[username]))
+        return redirect(reverse("profile", args=[request.user.username]))
+
+    selected_crypto = request.POST.get("selected_crypto")
+    new_address = request.POST.get("new_address")
+
+    if selected_crypto and new_address:
+        try:
+            user_profile = request.user.userprofile
+
+            if selected_crypto == "Bitcoin":
+                user_profile.btc_address = new_address
+            elif selected_crypto == "Ethereum":
+                user_profile.eth_address = new_address
+            elif selected_crypto == "BitcoinCash":
+                user_profile.bch_address = new_address
+            else:
+                messages.error(request, f"Invalid crypto selected: {selected_crypto}")
+                return redirect(reverse("profile", args=[request.user.username]))
+
+            user_profile.save()
+            messages.success(request, f"{selected_crypto} address updated successfully.")
+
+        except Exception:
+            logger.exception("Failed to update %s address for user %s", selected_crypto, request.user.username)
+            messages.error(request, f"Failed to update {selected_crypto} address.")
+
+    else:
+        messages.error(request, f"Please provide a valid {selected_crypto or 'crypto'} address.")
+
+    return redirect(reverse("profile", args=[request.user.username]))
 
 
 @login_required
