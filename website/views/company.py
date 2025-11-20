@@ -160,13 +160,11 @@ class RegisterOrganizationView(View):
         if organization_url == "" or Organization.objects.filter(url=organization_url).exists():
             messages.error(request, "organization URL is invalid or already exists.")
             return redirect("register_organization")
-            
-        #Database constraint set to 250 char
+
+        # Database constraint set to 250 char
         if len(organization_url) > 200:
             messages.error(request, "Organization URL is too long (maximum 200 characters).")
             return redirect("register_organization")
-        
-
 
         organization_logo = request.FILES.get("logo")
         if organization_logo:
@@ -202,7 +200,10 @@ class RegisterOrganizationView(View):
             return render(request, "organization/register_organization.html")
         except Exception as e:
             if "value too long" in str(e):
-                messages.error(request, "One of the entered values is too long. Please check that all URLs and text fields are within the allowed length limits.")
+                messages.error(
+                    request,
+                    "One of the entered values is too long. Please check that all URLs and text fields are within the allowed length limits.",
+                )
             else:
                 messages.error(request, f"Error creating organization: {e}")
             if logo_path:
