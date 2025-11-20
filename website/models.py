@@ -226,8 +226,6 @@ class Organization(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        from django.urls import reverse
-
         return reverse("organization_detail", kwargs={"slug": self.slug})
 
     def save(self, *args, **kwargs):
