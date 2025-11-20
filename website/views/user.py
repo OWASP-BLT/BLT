@@ -139,8 +139,8 @@ def alert_suspicious(event_type, message, user_profile=None, repo=None, pr_numbe
         SuspiciousEvent.objects.create(
             user_profile=user_profile, repo=repo, pr_number=pr_number, event_type=event_type, message=message
         )
-    except Exception as e:
-        logger.error("Failed to save suspicious event: %s", e)
+    except Exception:
+        logger.exception("Failed to save suspicious event")
 
     # Email admin
     try:
@@ -188,7 +188,7 @@ def gc_get(key, default=None):
             return False
         return val
     except Exception:
-        logger.exception("gc_get failed for key=%s", key)
+        logger.exception(f"gc_get failed for key {key}")
         return default
 
 
@@ -288,8 +288,8 @@ def update_bch_address(request):
             user_profile.save()
             messages.success(request, f"{selected_crypto} address updated successfully.")
 
-        except Exception:
-            logger.exception("Failed to update %s address for user %s", selected_crypto, request.user.username)
+        except Exception as e:
+            logger.exception(f"Failed to update address for user {selected_crypto} {request.user.username}")
             messages.error(request, f"Failed to update {selected_crypto} address.")
 
     else:
@@ -1420,9 +1420,8 @@ def record_payment_atomic(
                     bounty_issue.updated_at = timezone.now()
                     bounty_issue.save(update_fields=["updated_at"])
         except Exception:
-            logger.exception(
-                "Failed to add M2M link from bounty #%s to PR #%s (non-fatal)", bounty_issue.issue_id, pr_num
-            )
+            logger.exception(f"Failed to add M2M link from bounty #{bounty_issue.issue_id} to PR #{pr_num} (non-fatal)")
+
             # don't abort payout for link failure; continue.
 
         # 5. Idempotency check: PaymentRecord exists & completed => do nothing (already paid)
@@ -1439,6 +1438,24 @@ def record_payment_atomic(
 
         bounty_issue.updated_at = timezone.now()
         bounty_issue.save(update_fields=["bch_tx_id", "sponsors_tx_id", "updated_at"])
+        #  ATOMIC DAILY LIMIT ENFORCEMENT
+        daily_key = f"total_paid_{timezone.now().date()}"
+        DAILY_LIMIT = getattr(settings, "MAX_DAILY_PAYOUT_USD", Decimal("1500"))
+
+        current_total = Decimal(str(gc_get(daily_key, 0)))
+        projected = current_total + usd_amount_dec
+
+        if projected > DAILY_LIMIT:
+            logger.warning(
+                "Daily limit exceeded inside atomic block: current=%s add=%s > limit=%s",
+                current_total,
+                usd_amount_dec,
+                DAILY_LIMIT,
+            )
+            return False, "Daily limit exceeded"
+
+        # Safe update (atomic)
+        gc_set_atomic(daily_key, str(projected))
 
         # 7. Mark/create PaymentRecord as completed
         if pr_record:
@@ -1646,8 +1663,8 @@ def github_webhook(request):
             event_obj.save(update_fields=["processed", "processed_at", "response_status"])
             return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
 
-    except Exception as e:
-        logger.exception("Error processing delivery %s: %s", delivery_id, e)
+    except Exception:
+        logger.exception("Error processing delivery {delivery_id}")
         event_obj.response_status = 500
         event_obj.save(update_fields=["response_status"])
         return JsonResponse({"status": "error", "message": "Internal error"}, status=500)
@@ -1673,7 +1690,7 @@ def send_crypto_payment(address, amount, currency):
             raise ValueError("Empty txid returned by BCH backend")
         return tx_id
     except Exception as e:
-        logger.exception(f"send_crypto_payment failed: {e}")
+        logger.exception("send_crypto_payment failed")
         raise
 
 
@@ -1765,7 +1782,7 @@ def notify_user_missing_address(user, pr_data):
             recipient_list=[user.email],
         )
     except Exception:
-        logger.exception("Failed to send missing-address email for user=%s PR=%s", user.username, pr_data.get("number"))
+        logger.exception(f"Failed to send missing-address email for user={user.username} PR={pr_data.get('number')}")
 
 
 def notify_admin_payment_failure(pr_data, error_message):
@@ -1871,7 +1888,7 @@ def is_untrusted_github_account(github_username):
         )
         resp.raise_for_status()
         data = resp.json()
-    except Exception as e:
+    except Exception:
         return True, "GitHub profile lookup failed"
 
     created_at = datetime.fromisoformat(data["created_at"].replace("Z", "+00:00"))
@@ -2017,21 +2034,6 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         logger.error("AUTOPAY PIPELINE LOCKED — refusing to process payments")
         return
 
-    #  Global Daily Limit
-    DAILY_LIMIT = Decimal("1500")  # adjust
-    today_key = f"total_paid_{timezone.now().date()}"
-    current_total = Decimal(str(gc_get(today_key, 0)))
-
-    if current_total + usd_amount_dec > DAILY_LIMIT:
-        alert_suspicious(
-            "daily_limit_exceeded",
-            f"Payout blocked: ${usd_amount} would exceed daily limit of ${DAILY_LIMIT}.",
-            user_profile=pr_user_profile,
-            repo=repo,
-            pr_number=pr_number,
-        )
-        return
-
     # Alert if amount is unusually large
     MAX_PAYOUT = Decimal("50")  # <=== adjust
     if usd_amount_dec > MAX_PAYOUT:
@@ -2160,7 +2162,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
             record.save()
             return
 
-    except Exception as e:
+    except Exception:
         logger.exception("Rate lookup failed")
         record.status = "failed"
         record.save()
@@ -2201,12 +2203,11 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
             raise ValueError("Invalid payment txid returned")
 
     except Exception as e:
-        logger.exception("BCH payment failed: %s", e)
+        logger.exception("BCH payment failed")
         record.status = "failed"
         record.save(update_fields=["status"])
 
-        fail_count = int(gc_get("autopay_fail_count", 0)) + 1
-        gc_set_atomic("autopay_fail_count", fail_count)
+        gc_increment("autopay_fail_count", 1)
 
         if fail_count >= 5:
             alert_suspicious(
@@ -2247,17 +2248,13 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         notify_admin_payment_failure(pr_data, reason)
         return
 
-    # update daily total in GlobalConfig
-    new_total = Decimal(str(gc_get(today_key, 0))) + usd_amount_dec
-    gc_set_atomic(today_key, str(new_total))
-
     # reset failures
     gc_set_atomic("autopay_fail_count", 0)
 
     #  PR comment (non-fatal)
     try:
         post_payment_comment(pr_data, tx_id, {"bch": bch_amount, "usd": usd_amount_dec}, "BCH")
-    except Exception as e:
+    except Exception:
         logger.exception("Failed to post payment comment")
         notify_admin_payment_failure(pr_data, "Failed to post payment comment")
 
@@ -2452,7 +2449,7 @@ class UserChallengeListView(View):
 
             return JsonResponse({"success": False, "message": "Invalid action"})
 
-        except Exception as e:
+        except Exception:
             return JsonResponse({"success": False, "message": "An error occurred while updating the challenge"})
 
 
