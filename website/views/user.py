@@ -2103,11 +2103,6 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
 
     if record.status == "completed":
         logger.info("Autopay already completed for PR #%s", pr_number)
-        # update daily total(idempotent retry accounting)
-        today_key = f"total_paid_{timezone.now().date()}"
-        current_total = Decimal(str(gc_get(today_key, 0)))
-        new_total = current_total + usd_amount_dec
-        gc_set_atomic(today_key, str(new_total))
         gc_set_atomic("autopay_fail_count", 0)  # reset failure counter
         return
 
