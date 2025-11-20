@@ -72,6 +72,14 @@ from website.models import (
 
 logger = logging.getLogger(__name__)
 
+# allowed currencies for autopay
+ALLOWED_CURRENCIES = {"BCH"}
+
+import re
+
+# For parsing "Fixes #123", "Closes #123", "Resolves #123"
+FIXES_RE = re.compile(r"(?i)\b(?:fixes|closes|resolves)\s*#(\d+)\b")
+
 
 def get_daily_total():
     today = timezone.now().date()
@@ -148,6 +156,23 @@ def alert_suspicious(event_type, message, user_profile=None, repo=None, pr_numbe
         logger.warning("Could not send suspicious activity email")
 
 
+def gc_increment(key, amount):
+    """
+    Atomically increment a numeric GlobalConfig value.
+    Creates the row if missing.
+    Ensures no lost updates.
+    """
+    with transaction.atomic():
+        obj, created = GlobalConfig.objects.select_for_update().get_or_create(key=key, defaults={"value": amount})
+        if not created:
+            if isinstance(obj.value, (int, float)):
+                obj.value = obj.value + amount
+            else:
+                obj.value = Decimal(str(obj.value)) + Decimal(str(amount))
+        obj.save(update_fields=["value"])
+        return obj.value
+
+
 def gc_get(key, default=None):
     """
     Read a persistent GlobalConfig value. Returns python-native values when possible.
@@ -169,8 +194,22 @@ def gc_get(key, default=None):
         return default
 
 
-def gc_set(key, value):
-    GlobalConfig.objects.update_or_create(key=key, defaults={"value": value})
+def gc_get(key, default=None):
+    try:
+        return GlobalConfig.objects.get(key=key).value
+    except GlobalConfig.DoesNotExist:
+        return default
+
+
+def gc_set_atomic(key, value):
+    """
+    Safe set for GlobalConfig, preventing race conditions.
+    """
+    with transaction.atomic():
+        obj, _ = GlobalConfig.objects.select_for_update().get_or_create(key=key)
+        obj.value = value
+        obj.save(update_fields=["value"])
+        return obj.value
 
 
 def sign_payment_comment(repo_id, pr_number, bounty_issue_id=None, usd_amount=None, tx_id=None):
@@ -1112,11 +1151,34 @@ def handle_pull_request_event(payload):
         return JsonResponse({"status": "skipped", "reason": "unapproved repo"}, status=200)
 
     # Enhanced to handle automatic payments for merged PRs with bounty labels
-    if payload["action"] == "closed" and payload["pull_request"]["merged"]:
-        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
-        if pr_user_profile:
-            pr_user_instance = pr_user_profile.user
-            assign_github_badge(pr_user_instance, "First PR Merged")
+    action = payload.get("action")
+    pr = payload["pull_request"]
+
+    if action == "closed" and pr.get("merged"):
+        pr_user_profile = UserProfile.objects.filter(github_url=pr["user"]["html_url"]).first()
+
+        if not pr_user_profile:
+            logger.warning("No UserProfile found for PR author %s", pr["user"]["html_url"])
+            return JsonResponse({"status": "skipped", "reason": "no_user_profile"}, status=200)
+
+        # Award badge
+        assign_github_badge(pr_user_profile.user, "First PR Merged")
+
+        # Extract bounty labels
+        labels = pr.get("labels", [])
+        usd_amount = extract_bounty_from_labels(labels)
+
+        # No bounty → exit safely
+        if not usd_amount or usd_amount <= 0:
+            logger.info("Merged PR #%s has no bounty label; skipping autopay", pr["number"])
+            return JsonResponse({"status": "success", "reason": "no_bounty_label"}, status=200)
+
+        # Call full autopay pipeline
+        process_bounty_payment(
+            pr_user_profile=pr_user_profile,
+            usd_amount=usd_amount,
+            pr_data=pr,
+        )
 
     return JsonResponse({"status": "success"}, status=200)
 
@@ -1207,7 +1269,9 @@ def record_payment_atomic(
 
     with transaction.atomic():
         # Hard guarantee: only one completed PaymentRecord per PR
-        duplicate_records = PaymentRecord.objects.filter(repo=repo, pr_number=pr_num).exclude(status="pending")
+        duplicate_records = PaymentRecord.objects.filter(repo=repo, pr_number=pr_num, currency=currency).exclude(
+            status="pending"
+        )
 
         # If more than one exists → highly abnormal → freeze system & alert
         if duplicate_records.count() > 1:
@@ -1375,7 +1439,7 @@ def record_payment_atomic(
             pr_record.processed_at = timezone.now()
             pr_record.save(update_fields=["tx_id", "status", "processed_at"])
         else:
-            PaymentRecord.objects.create(
+            pr_record = PaymentRecord.objects.create(
                 repo=repo,
                 pr_number=pr_num,
                 user_profile=pr_user_profile,
@@ -1839,7 +1903,6 @@ def pr_fails_sanity_checks(pr_payload):
     deletions = pr_payload.get("deletions", 0)
     changed_files = pr_payload.get("changed_files", 0)
     title = pr_payload.get("title", "").lower()
-    body = pr_payload.get("body", "").lower()
 
     #  PR must have at least 3 lines added or removed
     if additions + deletions < 3:
@@ -1903,46 +1966,20 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         logger.warning("Repo not tracked: %s", repo_full_name)
         return
 
-    if not getattr(repo, "autopay_enabled", False):
-        logger.warning("Autopay blocked: repo %s has autopay disabled", repo.name)
-        return
-
     try:
         usd_amount_dec = Decimal(str(usd_amount))
     except (InvalidOperation, TypeError, ValueError):
         logger.error("Invalid usd_amount passed to process_bounty_payment: %r", usd_amount)
         return
 
-    if Decimal(str(usd_amount)) > getattr(repo, "max_payout_usd", Decimal("0")):
-        logger.error(
-            "Autopay blocked: PR #%s payout exceeds repo limit (%s USD > %s USD)",
-            pr_number,
-            usd_amount,
-            getattr(repo, "max_payout_usd", "unset"),
-        )
-        return
-
     if not repo.autopay_enabled:
         logger.warning("Autopay blocked: repo %s has autopay disabled", repo.name)
         return
 
-    if Decimal(str(usd_amount)) > repo.max_payout_usd:
-        logger.error(
-            "Autopay blocked: PR #%s payout exceeds repo limit (%s USD > %s USD)",
-            pr_number,
-            usd_amount,
-            repo.max_payout_usd,
-        )
-        return
-
     #  Short-Lived PR Cooldown Lock
     unique_key = f"autopay_lock_pr_{repo.id}_{pr_number}"
-    if cache.get(unique_key):
-        logger.warning("Autopay cooldown active for PR %s#%s", repo.name, pr_number)
-        return
     if not cache.add(unique_key, True, timeout=60):
         return
-    cache.set(unique_key, "1", timeout=5)
 
     #  PR Sanity Checks
     bad, reason = pr_fails_sanity_checks(pr_data)
@@ -1982,10 +2019,10 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
     DAILY_LIMIT = Decimal("1500")  # adjust
     today_key = f"total_paid_{timezone.now().date()}"
 
-    current_total = gc_get(today_key, Decimal("0"))
+    new_total = gc_increment(today_key, usd_amount_dec)
     current_total = Decimal(str(current_total))
 
-    if current_total + Decimal(str(usd_amount)) > DAILY_LIMIT:
+    if current_total + usd_amount_dec > DAILY_LIMIT:
         alert_suspicious(
             "daily_limit_exceeded",
             f"Payout blocked: ${usd_amount} would exceed daily limit of ${DAILY_LIMIT}.",
@@ -1997,7 +2034,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
 
     # Alert if amount is unusually large
     MAX_PAYOUT = Decimal("50")  # <=== adjust
-    if Decimal(str(usd_amount)) > MAX_PAYOUT:
+    if usd_amount_dec > MAX_PAYOUT:
         alert_suspicious(
             "large_payment",
             f"Large payout attempted: ${usd_amount} for PR #{pr_number}",
@@ -2008,33 +2045,33 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
 
     # STEP 0 — System-wide and repo-wide safety caps
     daily_total = get_daily_total()
-    if daily_total + Decimal(str(usd_amount)) > settings.MAX_DAILY_PAYOUT_USD:
+    if daily_total + usd_amount_dec > settings.MAX_DAILY_PAYOUT_USD:
         logger.error("Aborting autopay: daily USD cap exceeded.")
         return
 
     monthly_total = get_monthly_total()
-    if monthly_total + Decimal(str(usd_amount)) > settings.MAX_MONTHLY_PAYOUT_USD:
+    if monthly_total + usd_amount_dec > settings.MAX_MONTHLY_PAYOUT_USD:
         logger.error("Aborting autopay: monthly USD cap exceeded.")
         return
 
     repo_daily = get_daily_repo_total(repo)
-    if repo_daily + Decimal(str(usd_amount)) > settings.MAX_DAILY_REPO_PAYOUT_USD:
+    if repo_daily + usd_amount_dec > settings.MAX_DAILY_REPO_PAYOUT_USD:
         logger.error("Aborting autopay: repo daily cap exceeded. Repo: %s", repo.name)
         return
 
     repo_monthly = get_monthly_repo_total(repo)
-    if repo_monthly + Decimal(str(usd_amount)) > settings.MAX_MONTHLY_REPO_PAYOUT_USD:
+    if repo_monthly + usd_amount_dec > settings.MAX_MONTHLY_REPO_PAYOUT_USD:
         logger.error("Aborting autopay: repo monthly cap exceeded. Repo: %s", repo.name)
         return
 
     #  Per-user safety limits
     user_daily = get_user_daily_total(pr_user_profile)
-    if user_daily + Decimal(str(usd_amount)) > settings.MAX_USER_DAILY_PAYOUT_USD:
+    if user_daily + usd_amount_dec > settings.MAX_USER_DAILY_PAYOUT_USD:
         logger.error("User daily payout cap exceeded for user %s", pr_user_profile.user.username)
         return
 
     user_monthly = get_user_monthly_total(pr_user_profile)
-    if user_monthly + Decimal(str(usd_amount)) > settings.MAX_USER_MONTHLY_PAYOUT_USD:
+    if user_monthly + usd_amount_dec > settings.MAX_USER_MONTHLY_PAYOUT_USD:
         logger.error("User monthly payout cap exceeded for user %s", pr_user_profile.user.username)
         return
 
@@ -2057,7 +2094,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
     record, created = get_or_create_payment_record(
         repo=repo,
         pr_number=pr_number,
-        usd_amount=Decimal(str(usd_amount)),
+        usd_amount=usd_amount_dec,
         currency=currency,
         pr_user_profile=pr_user_profile,
     )
@@ -2065,9 +2102,9 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
     if record.status == "completed":
         logger.info("Autopay already completed for PR #%s", pr_number)
         # record total safely
-        new_total = current_total + Decimal(str(usd_amount))
-        gc_set(today_key, str(new_total))
-        gc_set("autopay_fail_count", 0)  # reset failure counter
+        new_total = current_total + usd_amount_dec
+        gc_set_atomic(today_key, str(new_total))
+        gc_set_atomic("autopay_fail_count", 0)  # reset failure counter
         return
 
     if record.status == "pending" and not created:
@@ -2109,7 +2146,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         )
         resp.raise_for_status()
         usd_rate = Decimal(str(resp.json()["bitcoin-cash"]["usd"]))
-        bch_amount = Decimal(str(usd_amount)) / usd_rate
+        bch_amount = usd_amount_dec / usd_rate
         #  Rate sanity check: reject insane values
         if usd_rate < Decimal("50") or usd_rate > Decimal("1000"):
             alert_suspicious(
@@ -2127,10 +2164,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         logger.exception("Rate lookup failed")
         record.status = "failed"
         record.save()
-        fail_count = gc_get("autopay_fail_count", 0)
-
-        fail_count = int(fail_count) + 1
-        gc_set("autopay_fail_count", fail_count)
+        fail_count = gc_increment("autopay_fail_count", 1)
 
         if fail_count >= 5:
             alert_suspicious(
@@ -2140,7 +2174,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
                 repo=repo,
                 pr_number=pr_number,
             )
-            gc_set("autopay_locked", True)
+            gc_set_atomic("autopay_locked", True)
 
         notify_admin_payment_failure(pr_data, "Rate lookup failed")
         return
@@ -2172,7 +2206,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         record.save(update_fields=["status"])
 
         fail_count = int(gc_get("autopay_fail_count", 0)) + 1
-        gc_set("autopay_fail_count", fail_count)
+        gc_set_atomic("autopay_fail_count", fail_count)
 
         if fail_count >= 5:
             alert_suspicious(
@@ -2182,19 +2216,19 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
                 repo=repo,
                 pr_number=pr_number,
             )
-            gc_set("autopay_locked", True)
+            gc_set_atomic("autopay_locked", True)
             notify_admin_payment_failure(pr_data, str(e))
         return
 
     #  Finalize atomically
     with transaction.atomic():
-        record_payment_atomic(
+        success, reason = record_payment_atomic(
             repo=repo,
             pr_number=pr_number,
             pr_user_profile=pr_user_profile,
             pr_data=pr_data,
             tx_id=tx_id,
-            usd_amount=usd_amount,
+            usd_amount=usd_amount_dec,
             currency="BCH",
             payload={"pull_request": pr_data},
             bch_amount=bch_amount,
@@ -2206,10 +2240,20 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
             repo_monthly=repo_monthly,
             daily_total=daily_total,
         )
+    if not success:
+        logger.error("Payment rejected inside atomic layer: %s", reason)
+        record.status = "failed"
+        record.save(update_fields=["status"])
+        notify_admin_payment_failure(pr_data, reason)
+        return
+
+    # update daily total in GlobalConfig
+
+    gc_set_atomic("autopay_fail_count", 0)
 
     #  PR comment (non-fatal)
     try:
-        post_payment_comment(pr_data, tx_id, {"bch": bch_amount, "usd": usd_amount}, "BCH")
+        post_payment_comment(pr_data, tx_id, {"bch": bch_amount, "usd": usd_amount_dec}, "BCH")
     except Exception as e:
         logger.exception("Failed to post payment comment")
         notify_admin_payment_failure(pr_data, "Failed to post payment comment")

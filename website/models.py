@@ -2958,6 +2958,7 @@ class WebhookEvent(models.Model):
     delivery_id = models.CharField(max_length=255, unique=True, db_index=True)
     event = models.CharField(max_length=100)
     payload = models.JSONField(null=True, blank=True)
+    signature = models.CharField(max_length=256, null=True, blank=True)
     processed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
@@ -2970,13 +2971,31 @@ class WebhookEvent(models.Model):
 
 
 class PaymentRecord(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_COMPLETED = "completed"
+    STATUS_FAILED = "failed"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_COMPLETED, "Completed"),
+        (STATUS_FAILED, "Failed"),
+        (STATUS_CANCELLED, "Cancelled"),
+    ]
+
     repo = models.ForeignKey("Repo", on_delete=models.CASCADE)
     pr_number = models.IntegerField()
-    user_profile = models.ForeignKey("UserProfile", on_delete=models.CASCADE, null=True, blank=True)
+    user_profile = models.ForeignKey("UserProfile", on_delete=models.SET_NULL, null=True, blank=True)
     currency = models.CharField(max_length=10)
     usd_amount = models.DecimalField(max_digits=12, decimal_places=2)
     tx_id = models.CharField(max_length=256, null=True, blank=True)
-    status = models.CharField(max_length=32, default="pending")  # pending, completed, failed
+
+    status = models.CharField(
+        max_length=32,
+        default=STATUS_PENDING,
+        choices=STATUS_CHOICES,
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
 
@@ -2985,6 +3004,19 @@ class PaymentRecord(models.Model):
         indexes = [
             models.Index(fields=["repo", "pr_number"]),
             models.Index(fields=["user_profile"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    status__in=[
+                        "pending",
+                        "completed",
+                        "failed",
+                        "cancelled",
+                    ]
+                ),
+                name="paymentrecord_valid_status",
+            )
         ]
 
 
@@ -3020,7 +3052,7 @@ class PaymentReceipt(models.Model):
     pr_number = models.IntegerField()
     bounty_issue_number = models.IntegerField(null=True, blank=True)
 
-    tx_id = models.CharField(max_length=256)
+    tx_id = models.CharField(max_length=256, unique=True)
     currency = models.CharField(max_length=10)
     usd_amount = models.DecimalField(max_digits=12, decimal_places=2)
     bch_amount = models.DecimalField(max_digits=18, decimal_places=8)

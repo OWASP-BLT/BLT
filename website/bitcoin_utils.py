@@ -1,7 +1,7 @@
 # bacon/bitcoin_utils.py
 
 import logging
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import requests
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -62,48 +62,99 @@ def issue_asset(asset_name, amount, identifier):
     return txid
 
 
+class BCHPaymentError(Exception):
+    # Base exception for BCH payment errors.
+    pass
+
+
+class BCHNetworkError(BCHPaymentError):
+    # Network or connectivity error.
+    pass
+
+
+class BCHProviderError(BCHPaymentError):
+    # Error returned by the payment provider
+    pass
+
+
+class BCHInvalidResponseError(BCHPaymentError):
+    # Invalid or malformed response from provider
+    pass
+
+
 def send_bch_payment(address, amount):
     """
     Send BCH payment using your BCH payment provider.
     Returns transaction ID.
     """
 
-    # Validate BCH address format
+    # 1. Validate amount
+    try:
+        amount_decimal = Decimal(str(amount))
+    except (InvalidOperation, TypeError, ValueError):
+        raise ValueError(f"Invalid amount: {amount}")
+
+    if amount_decimal <= 0:
+        raise ValueError(f"Amount must be positive: {amount}")
+
+    max_payment = Decimal(str(getattr(settings, "MAX_AUTO_PAYMENT", 100)))
+    if amount_decimal > max_payment:
+        raise ValueError(f"Amount {amount} exceeds maximum allowed payment {max_payment}")
+
+    # 2. Validate BCH address format (basic checks only)
+    if not address or not isinstance(address, str):
+        raise ValueError("Missing BCH address")
+
     if not address.startswith("bitcoincash:"):
         raise ValueError(f"Invalid BCH address: {address}")
 
-    # Format amount to 8 decimals (required for BCH)
-    formatted_amount = f"{Decimal(amount):.8f}"
+    # basic length sanity (CashAddr is long)
+    data_part = address.split("bitcoincash:", 1)[1]
+    if len(data_part) < 30:
+        raise ValueError(f"Invalid BCH address format: {address}")
 
-    url = settings.BCH_PAYMENT_API_URL
+    # 3. Validate provider configuration
+    api_key = getattr(settings, "BCH_API_KEY", None)
+    api_url = getattr(settings, "BCH_PAYMENT_API_URL", None)
 
-    payload = {"to_address": address, "amount": formatted_amount, "currency": "BCH"}
+    if not api_key or not api_url:
+        raise ValueError("BCH payment provider credentials not configured")
 
-    headers = {"Authorization": f"Bearer {settings.BCH_API_KEY}", "Content-Type": "application/json"}
+    # 4. Format amount to 8 decimals
+    formatted_amount = f"{amount_decimal:.8f}"
 
+    payload = {
+        "to_address": address,
+        "amount": formatted_amount,
+        "currency": "BCH",
+    }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    # 5. Send payment request
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response = requests.post(api_url, json=payload, headers=headers, timeout=10)
     except requests.exceptions.RequestException as e:
         logger.error(f"BCH payment request failed: {str(e)}")
-        raise Exception("BCH network/payment provider unreachable")
+        raise BCHNetworkError("BCH network/payment provider unreachable") from e
 
-    # Handle non-200 result
     if response.status_code != 200:
         logger.error(f"BCH payment failed ({response.status_code}): {response.text}")
-        raise Exception(f"BCH payment failed: {response.text}")
+        raise BCHProviderError(f"BCH payment failed: {response.text}")
 
     data = response.json()
 
-    # Check if provider sent an error
     if "error" in data:
         logger.error(f"BCH payment error: {data['error']}")
-        raise Exception(f"BCH payment failed: {data['error']}")
+        raise BCHProviderError(f"BCH payment failed: {data['error']}")
 
-    # Ensure transaction_id exists
     tx_id = data.get("transaction_id")
     if not tx_id:
         logger.error("BCH payment response missing transaction_id")
-        raise Exception("Invalid BCH payment response")
+        raise BCHInvalidResponseError("Invalid BCH payment response")
 
     logger.info(f"BCH payment success: tx {tx_id} to {address}")
 

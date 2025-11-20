@@ -98,7 +98,9 @@ from website.models import (
     Wallet,
     Winner,
 )
-from website.views.user import gc_set
+from website.views.user import gc_set_atomic
+
+from .models import GlobalConfig
 
 
 class UserResource(resources.ModelResource):
@@ -546,14 +548,37 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 class RepoAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
+    list_display = ("name", "autopay_enabled", "max_payout_usd")
+    list_editable = ("autopay_enabled", "max_payout_usd")
+    fields = (
         "name",
-        "description",
-        "created",
-        "modified",
+        "repo_url",
+        "autopay_enabled",
+        "max_payout_usd",
+        "allowed_autopay_labels",
     )
-    search_fields = ["name", "description"]
+
+
+class AutopayControlAdmin(admin.ModelAdmin):
+    change_list_template = "admin/autopay_dashboard.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path("unlock/", self.unlock),
+            path("reset_failures/", self.reset_failures),
+        ]
+        return custom + urls
+
+    def unlock(self, request):
+        gc_set_atomic("autopay_locked", False)
+        self.message_user(request, "Autopay unlocked.")
+        return redirect("..")
+
+    def reset_failures(self, request):
+        gc_set_atomic("autopay_fail_count", 0)
+        self.message_user(request, "Failure counter reset.")
+        return redirect("..")
 
 
 class ContributorAdmin(admin.ModelAdmin):
@@ -1049,6 +1074,7 @@ admin.site.register(StakingPool, StakingPoolAdmin)
 admin.site.register(StakingTransaction, StakingTransactionAdmin)
 admin.site.register(Thread, ThreadAdmin)
 admin.site.register(UserBadge, UserBadgeAdmin)
+admin.site.register(GlobalConfig, AutopayControlAdmin)
 
 
 @admin.register(BannedApp)
@@ -1064,28 +1090,6 @@ class BannedAppAdmin(admin.ModelAdmin):
         ("Country Information", {"fields": ("country_name", "country_code")}),
         ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
     )
-
-
-class AutopayControlAdmin(admin.ModelAdmin):
-    change_list_template = "admin/autopay_dashboard.html"
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom = [
-            path("unlock/", self.unlock),
-            path("reset_failures/", self.reset_failures),
-        ]
-        return custom + urls
-
-    def unlock(self, request):
-        gc_set("autopay_locked", False)
-        self.message_user(request, "Autopay unlocked.")
-        return redirect("..")
-
-    def reset_failures(self, request):
-        gc_set("autopay_fail_count", 0)
-        self.message_user(request, "Failure counter reset.")
-        return redirect("..")
 
 
 @admin.register(PaymentRecord)
@@ -1104,18 +1108,6 @@ class PaymentRecordAdmin(admin.ModelAdmin):
     list_filter = ("status", "currency", "repo")
     search_fields = ("pr_number", "user_profile__user__username", "tx_id")
     ordering = ("-created_at",)
-
-
-class RepoAdmin(admin.ModelAdmin):
-    list_display = ("name", "autopay_enabled", "max_payout_usd")
-    list_editable = ("autopay_enabled", "max_payout_usd")
-    fields = (
-        "name",
-        "repo_url",
-        "autopay_enabled",
-        "max_payout_usd",
-        "allowed_autopay_labels",
-    )
 
 
 @admin.register(SuspiciousEvent)
