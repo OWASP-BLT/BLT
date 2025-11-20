@@ -303,28 +303,8 @@ jobs:
       - name: Set up Docker
         run: |
           docker --version
-          # Install docker-compose with proper error handling and verification
-          COMPOSE_VERSION="v2.17.0"
-          COMPOSE_OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-          COMPOSE_ARCH=$(uname -m)
-          # Map architecture names
-          case "$COMPOSE_ARCH" in
-            x86_64) COMPOSE_ARCH="x86_64" ;;
-            aarch64|arm64) COMPOSE_ARCH="aarch64" ;;
-            *) echo "Unsupported architecture: $COMPOSE_ARCH" && exit 1 ;;
-          esac
-          # Download docker-compose binary
-          curl -Lf "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-${COMPOSE_OS}-${COMPOSE_ARCH}" -o /usr/local/bin/docker-compose
-          # Verify it's a valid binary (not HTML error page)
-          if ! file /usr/local/bin/docker-compose | grep -q "executable"; then
-            echo "ERROR: Downloaded file is not a valid binary"
-            head -20 /usr/local/bin/docker-compose
-            exit 1
-          fi
-          # Set executable permissions
-          chmod +x /usr/local/bin/docker-compose
-          # Verify installation works
-          docker-compose --version
+          # Use Docker Compose v2 (built-in Docker CLI plugin, no manual installation needed)
+          docker compose version
 
       - name: Build Docker image
         run: |
