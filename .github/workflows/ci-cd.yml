@@ -11,7 +11,6 @@ name: CI/CD Optimized
 
 on:
   #merge_group:
-  pull_request:
   pull_request_target:
     types:
       - opened
@@ -84,9 +83,7 @@ jobs:
 
   pre-commit:
     name: Run pre-commit
-    # Only run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
-    # This prevents duplicate runs and ensures we have permissions for forked PRs
-    if: github.event_name != 'pull_request'
+    # Run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
