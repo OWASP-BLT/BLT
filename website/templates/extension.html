@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}OWASP BLT Chrome Extension{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -215,7 +216,8 @@
                                     <video controls
                                            class="w-full aspect-video"
                                            aria-label="Job Application Tracker Demo">
-                                        <source src="https://github.com/user-attachments/assets/da337d3e-63af-41c8-97ff-351fe9e6b2c4"
+                                        {% comment %} Video file should be placed at website/static/videos/job-application-tracker-demo.mp4 {% endcomment %}
+                                        <source src="{% static 'videos/job-application-tracker-demo.mp4' %}"
                                                 type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
