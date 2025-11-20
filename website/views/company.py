@@ -153,6 +153,7 @@ class RegisterOrganizationView(View):
                 request.session.pop("org_ref", None)
                 return render(request, "organization/register_organization.html", {})
             request.session["org_ref"] = ref_code
+            request.session.modified = True
 
         return render(request, "organization/register_organization.html")
 
@@ -210,7 +211,10 @@ class RegisterOrganizationView(View):
                 success_message = "Organization registered successfully."
 
                 # Handle referral code after transaction commits to prevent failures from rolling back organization creation
+                points_awarded = False
+
                 def handle_referral():
+                    nonlocal points_awarded
                     try:
                         if ref_code:
                             with transaction.atomic():
@@ -232,11 +236,14 @@ class RegisterOrganizationView(View):
                                 invite.points_awarded = True
                                 invite.organization = organization
                                 invite.save()
+                                points_awarded = True
                     except InviteOrganization.DoesNotExist:
-                        # Invalid or already used referral code - silently ignore
-                        pass
+                        logger.warning(f"Referral code {ref_code} not found or already used")
+                    except ValueError as e:
+                        logger.warning(f"Invalid referral: {e}")
+                    except IntegrityError as e:
+                        logger.error(f"Database integrity error processing referral: {e}")
                     except Exception:
-                        # Log the error but don't fail - organization creation already succeeded
                         logger.exception("Failed to process referral code during organization registration")
                     finally:
                         # Always clear session
@@ -246,13 +253,6 @@ class RegisterOrganizationView(View):
                 # Schedule referral processing after transaction commits
                 if ref_code:
                     transaction.on_commit(handle_referral)
-                    # Update success message optimistically - actual processing happens after commit
-                    try:
-                        invite = InviteOrganization.objects.get(referral_code=ref_code, points_awarded=False)
-                        if invite.sender and not re.match(SAMPLE_INVITE_EMAIL_PATTERN, invite.email):
-                            success_message = f"Organization registered successfully! {invite.sender.username} will earn 5 points for the referral."
-                    except InviteOrganization.DoesNotExist:
-                        pass
                 else:
                     # Clear session immediately if no referral code
                     if "org_ref" in request.session:
