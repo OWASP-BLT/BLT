@@ -139,7 +139,7 @@ class Organization(models.Model):
     slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True, max_length=255)
-    url = models.URLField(unique=True)
+    url = models.URLField(unique=True, max_length=255)
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
     matrix_url = models.URLField(null=True, blank=True)
