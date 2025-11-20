@@ -63,6 +63,7 @@
                                            autocomplete="organization_name"
                                            placeholder="{% trans 'Enter organization name' %}"
                                            required
+                                           maxlength="250"
                                            class="block w-full pl-10 py-3 border-gray-200 dark:border-gray-700 rounded-md text-gray-900 dark:text-gray-100 placeholder:text-base text-base" />
                                 </div>
                             </div>
@@ -81,6 +82,7 @@
                                            id="organization_url"
                                            autocomplete="organization_url"
                                            placeholder="{% trans 'https://organization.com' %}"
+                                           maxlength="250"
                                            required
                                            class="block w-full pl-10 py-3 border-gray-200 dark:border-gray-700 rounded-md text-gray-900 dark:text-gray-100 placeholder:text-base text-base" />
                                 </div>
@@ -100,6 +102,7 @@
                                            id="support_email"
                                            autocomplete="email"
                                            placeholder="{% trans 'support@organization.com' %}"
+                                           maxlength="250"
                                            class="block w-full pl-10 py-3 border-gray-200 dark:border-gray-700 rounded-md text-gray-900 dark:text-gray-100 placeholder:text-base text-base" />
                                 </div>
                             </div>
@@ -118,6 +121,7 @@
                                            id="twitter_url"
                                            autocomplete="twitter"
                                            placeholder="{% trans 'https://twitter.com/handle' %}"
+                                           maxlength="250"
                                            class="block w-full pl-10 py-3 border-gray-200 dark:border-gray-700 rounded-md text-gray-900 dark:text-gray-100 placeholder:text-base text-base" />
                                 </div>
                             </div>
@@ -136,6 +140,7 @@
                                            id="facebook_url"
                                            autocomplete="facebook"
                                            placeholder="{% trans 'https://facebook.com/handle' %}"
+                                           maxlength="250"
                                            class="block w-full pl-10 py-3 border-gray-200 dark:border-gray-700 rounded-md text-gray-900 dark:text-gray-100 placeholder:text-base text-base" />
                                 </div>
                             </div>
@@ -358,6 +363,44 @@
     // Add the first email container by default
     document.addEventListener('DOMContentLoaded', function() {
         add_email_container();
+        
+        // Add real-time length validation
+        const fieldsToValidate = [
+            { id: 'organization_url', maxLength: 200, name: 'Organization URL' },
+            { id: 'support_email', maxLength: 254, name: 'Support Email' },
+            { id: 'twitter_url', maxLength: 200, name: 'Twitter URL' },
+            { id: 'facebook_url', maxLength: 200, name: 'Facebook URL' }
+        ];
+        
+        fieldsToValidate.forEach(function(field) {
+            const input = document.getElementById(field.id);
+            if (input) {
+                input.addEventListener('input', function() {
+                    validateFieldLength(this, field.maxLength, field.name);
+                });
+            }
+        });
     });
+    
+    function validateFieldLength(input, maxLength, fieldName) {
+        const warningId = input.id + '_warning';
+        let warning = document.getElementById(warningId);
+        
+        if (input.value.length > maxLength) {
+            if (!warning) {
+                warning = document.createElement('div');
+                warning.id = warningId;
+                warning.className = 'text-red-500 text-sm mt-1';
+                input.parentNode.parentNode.appendChild(warning);
+            }
+            warning.textContent = `${fieldName} is too long (${input.value.length}/${maxLength} characters). Please shorten it.`;
+            input.style.borderColor = '#e74c3c';
+        } else {
+            if (warning) {
+                warning.remove();
+            }
+            input.style.borderColor = '';
+        }
+    }
     </script>
 {% endblock scripts %}

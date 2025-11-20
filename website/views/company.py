@@ -149,6 +149,9 @@ class RegisterOrganizationView(View):
 
         organization_name = data.get("organization_name", "")
         organization_url = data.get("organization_url", "")
+        support_email = data.get("support_email", "")
+        twitter_url = data.get("twitter_url", "")
+        facebook_url = data.get("facebook_url", "")
 
         if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
             messages.error(request, "organization name is invalid or already exists.")
@@ -157,6 +160,13 @@ class RegisterOrganizationView(View):
         if organization_url == "" or Organization.objects.filter(url=organization_url).exists():
             messages.error(request, "organization URL is invalid or already exists.")
             return redirect("register_organization")
+            
+        #Database constraint set to 250 char
+        if len(organization_url) > 200:
+            messages.error(request, "Organization URL is too long (maximum 200 characters).")
+            return redirect("register_organization")
+        
+
 
         organization_logo = request.FILES.get("logo")
         if organization_logo:
@@ -172,10 +182,10 @@ class RegisterOrganizationView(View):
                 organization = Organization.objects.create(
                     admin=user,
                     name=organization_name,
-                    url=data["organization_url"],
-                    email=data["support_email"],
-                    twitter=data.get("twitter_url", ""),
-                    facebook=data.get("facebook_url", ""),
+                    url=organization_url,
+                    email=support_email,
+                    twitter=twitter_url,
+                    facebook=facebook_url,
                     logo=logo_path,
                     is_active=True,
                 )
@@ -187,6 +197,14 @@ class RegisterOrganizationView(View):
 
         except ValidationError as e:
             messages.error(request, f"Error saving organization: {e}")
+            if logo_path:
+                default_storage.delete(logo_path)
+            return render(request, "organization/register_organization.html")
+        except Exception as e:
+            if "value too long" in str(e):
+                messages.error(request, "One of the entered values is too long. Please check that all URLs and text fields are within the allowed length limits.")
+            else:
+                messages.error(request, f"Error creating organization: {e}")
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
