@@ -266,7 +266,7 @@
                     {% if leaderboard %}
                         <div class="space-y-6">
                             {% for entry in leaderboard %}
-                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50 dark:bg-gray-700 {% endif %} rounded-lg border border-gray-200 dark:border-gray-700">
+                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg border border-gray-200 dark:border-gray-700">
                                     <div class="flex items-center mb-3">
                                         <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
                                             {{ forloop.counter }}
