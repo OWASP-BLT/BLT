@@ -1,0 +1,92 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Slack Apps - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3">Slack Apps for {{ organization.name }}</h1>
+                <a href="{% url 'organization_dashboard_home' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+            <p class="text-muted">This page shows all Slack apps installed on your workspace and their available commands.</p>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> {{ error }}
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{{ workspace_name }} - Installed Apps</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if apps %}
+                    <div class="accordion" id="appsAccordion">
+                        {% for app in apps %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                                    <strong>{{ app.name }}</strong> 
+                                    {% if app.commands %}<span class="badge bg-info ms-2">{{ app.commands|length }} command(s)</span>{% endif %}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#appsAccordion">
+                                <div class="accordion-body">
+                                    <p>{{ app.description }}</p>
+                                    
+                                    {% if app.commands %}
+                                    <h6>Available Commands:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Command</th>
+                                                    <th>Description</th>
+                                                    <th>Usage</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for command in app.commands %}
+                                                <tr>
+                                                    <td><code>{{ command.command }}</code></td>
+                                                    <td>{{ command.description }}</td>
+                                                    <td>{% if command.usage %}<code>{{ command.usage }}</code>{% else %}<em>No usage info</em>{% endif %}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No commands available or accessible for this app.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center">
+                        <p>No Slack apps found in this workspace.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Add any additional JavaScript if needed
+</script>

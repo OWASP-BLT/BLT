@@ -1124,6 +1124,7 @@ urlpatterns = [
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
+    path("dashboard/organization/slack-apps/",organization_slack_apps,name="organization_slack_apps"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
 ]
 
