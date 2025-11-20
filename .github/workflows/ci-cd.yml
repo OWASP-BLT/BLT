@@ -111,9 +111,10 @@ jobs:
           set -e
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && steps.pre-commit.outputs.exit_code != '0'
+        if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
@@ -157,14 +158,22 @@ jobs:
             
             For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
             
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: message
-            });
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message
+              });
+            } catch (error) {
+              if (error.status === 403) {
+                core.warning('Permission denied: Cannot comment on PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.');
+              } else {
+                throw error;
+              }
+            }
       - name: Add pre-commit status label
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -230,13 +239,21 @@ jobs:
             
             // Add the label if it isn't already present
             if (!currentNames.has(newLabel)) {
-              await github.rest.issues.addLabels({ 
-                owner, 
-                repo, 
-                issue_number: pull_number, 
-                labels: [newLabel] 
-              });
-              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              try {
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [newLabel] 
+                });
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                } else {
+                  throw error;
+                }
+              }
             } else {
               core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }
