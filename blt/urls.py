@@ -240,6 +240,7 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    organization_slack_apps,
     room_messages_api,
     send_message_api,
     sizzle,
@@ -253,7 +254,6 @@ from website.views.organization import (
     user_sizzle_report,
     view_hunt,
     weekly_report,
-    organization_slack_apps,
 )
 from website.views.ossh import (
     get_github_data,
