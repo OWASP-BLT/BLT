@@ -161,8 +161,8 @@ class RegisterOrganizationView(View):
             messages.error(request, "organization URL is invalid or already exists.")
             return redirect("register_organization")
 
-        # Database constraint set to 250 char
-        if len(organization_url) > 200:
+        # Database constraint set to 255 char
+        if len(organization_url) > 255:
             messages.error(request, "Organization URL is too long (maximum 200 characters).")
             return redirect("register_organization")
 
