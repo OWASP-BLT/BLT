@@ -1121,7 +1121,9 @@ class Project(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    url = models.URLField(unique=True, null=True, blank=True, max_length=255)  # Made url nullable in case of no website also made the max_length as 255 because the default is 100
+    url = models.URLField(
+        unique=True, null=True, blank=True, max_length=255
+    )  # Made url nullable in case of no website also made the max_length as 255 because the default is 100
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     slack = models.URLField(null=True, blank=True)
