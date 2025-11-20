@@ -1510,6 +1510,10 @@ class Repo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
     last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
+    # NEW FIELDS
+    autopay_enabled = models.BooleanField(default=False)
+    max_payout_usd = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("100"))
+    allowed_autopay_labels = models.JSONField(default=list)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -2948,3 +2952,90 @@ class StakingTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
+
+
+class WebhookEvent(models.Model):
+    delivery_id = models.CharField(max_length=255, unique=True, db_index=True)
+    event = models.CharField(max_length=100)
+    payload = models.JSONField(null=True, blank=True)
+    processed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    response_status = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["delivery_id"]),
+        ]
+
+
+class PaymentRecord(models.Model):
+    repo = models.ForeignKey("Repo", on_delete=models.CASCADE)
+    pr_number = models.IntegerField()
+    user_profile = models.ForeignKey("UserProfile", on_delete=models.CASCADE, null=True, blank=True)
+    currency = models.CharField(max_length=10)
+    usd_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    tx_id = models.CharField(max_length=256, null=True, blank=True)
+    status = models.CharField(max_length=32, default="pending")  # pending, completed, failed
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = (("repo", "pr_number", "currency"),)
+        indexes = [
+            models.Index(fields=["repo", "pr_number"]),
+            models.Index(fields=["user_profile"]),
+        ]
+
+
+class SuspiciousEvent(models.Model):
+    user_profile = models.ForeignKey("UserProfile", on_delete=models.SET_NULL, null=True, blank=True)
+    repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True, blank=True)
+    pr_number = models.IntegerField(null=True, blank=True)
+
+    event_type = models.CharField(max_length=100)
+    message = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user_profile"]),
+            models.Index(fields=["repo"]),
+            models.Index(fields=["event_type"]),
+        ]
+
+
+class GlobalConfig(models.Model):
+    key = models.CharField(max_length=255, unique=True)
+    value = models.JSONField(default=dict)
+
+
+class PaymentReceipt(models.Model):
+    payment = models.OneToOneField("PaymentRecord", on_delete=models.CASCADE, related_name="receipt")
+
+    repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True)
+    user_profile = models.ForeignKey("UserProfile", on_delete=models.SET_NULL, null=True)
+
+    pr_number = models.IntegerField()
+    bounty_issue_number = models.IntegerField(null=True, blank=True)
+
+    tx_id = models.CharField(max_length=256)
+    currency = models.CharField(max_length=10)
+    usd_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    bch_amount = models.DecimalField(max_digits=18, decimal_places=8)
+    usd_rate = models.DecimalField(max_digits=18, decimal_places=8)
+
+    # FULL DATA SNAPSHOTS
+    pr_payload = models.JSONField()
+    metadata = models.JSONField(default=dict)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["repo"]),
+            models.Index(fields=["user_profile"]),
+            models.Index(fields=["pr_number"]),
+            models.Index(fields=["tx_id"]),
+        ]

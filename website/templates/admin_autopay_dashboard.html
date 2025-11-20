@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+    <h1>Autopay Control Panel</h1>
+    <p>
+        <strong>Autopay Locked:</strong> {{ gc_get("autopay_locked") }}
+    </p>
+    <p>
+        <strong>Failure Count:</strong> {{ gc_get("autopay_fail_count") }}
+    </p>
+    <a class="button" href="unlock/">Unlock Autopay</a>
+    <a class="button" href="reset_failures/">Reset Failure Counter</a>
+{% endblock %}

@@ -11,6 +11,21 @@ from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
 
+# Autopay system-wide limits
+MAX_DAILY_PAYOUT_USD = 300  # total system payout per day
+MAX_MONTHLY_PAYOUT_USD = 3000  # total system payout per month
+
+MAX_DAILY_REPO_PAYOUT_USD = 200  # per repo limit
+MAX_MONTHLY_REPO_PAYOUT_USD = 2000
+
+# Per-user payout caps
+MAX_USER_DAILY_PAYOUT_USD = 150
+MAX_USER_MONTHLY_PAYOUT_USD = 700
+
+# Per-user payout rate limiting
+MAX_AUTOPAY_PER_USER_PER_HOUR = 5
+
+
 environ.Env.read_env()
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -108,6 +123,11 @@ if DEBUG:
 
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
+GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+AUTOPAY_COMMENT_SIGNING_SECRET = os.getenv("AUTOPAY_COMMENT_SIGNING_SECRET", "")
+AUTOPAY_DRY_RUN = os.getenv("AUTOPAY_DRY_RUN", "false").lower() == "true"
+
+PAYMENT_ENABLED = True
 
 
 MIDDLEWARE = [
@@ -348,6 +368,9 @@ ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+ALLOWED_REPOS = {
+    "OWASP/BLT",
+}
 
 ALLOWED_HOSTS = [
     "127.0.0.1",

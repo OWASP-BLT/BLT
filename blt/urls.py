@@ -407,6 +407,7 @@ urlpatterns = [
         SlackCallbackView.as_view(),
         name="slack_oauth_callback",
     ),
+    path("github/webhook/", github_webhook, name="github_webhook"),
     path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),

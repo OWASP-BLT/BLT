@@ -1,10 +1,15 @@
+# stdlib
+import base64
+import hashlib
+import hmac
 import json
 import logging
 import os
 import re
-from datetime import datetime, timezone
-from decimal import Decimal
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 
+# 3rd-party
 import requests
 from allauth.account.signals import user_signed_up
 from django.conf import settings
@@ -16,7 +21,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.mail import send_mail
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -33,6 +38,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
+from website.bitcoin_utils import send_bch_payment
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
@@ -44,23 +50,137 @@ from website.models import (
     Domain,
     GitHubIssue,
     GitHubReview,
+    GlobalConfig,
     Hunt,
     InviteFriend,
     Issue,
     IssueScreenshot,
     Monitor,
     Notification,
+    PaymentReceipt,
+    PaymentRecord,
     Points,
     Repo,
+    SuspiciousEvent,
     Tag,
     Thread,
-    User,
     UserBadge,
     UserProfile,
     Wallet,
+    WebhookEvent,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def get_daily_total():
+    today = timezone.now().date()
+    total = PaymentRecord.objects.filter(status="completed", processed_at__date=today).aggregate(s=Sum("usd_amount"))[
+        "s"
+    ]
+    return total or Decimal("0")
+
+
+def get_monthly_total():
+    now = timezone.now()
+    total = PaymentRecord.objects.filter(
+        status="completed", processed_at__year=now.year, processed_at__month=now.month
+    ).aggregate(s=Sum("usd_amount"))["s"]
+    return total or Decimal("0")
+
+
+def get_daily_repo_total(repo):
+    today = timezone.now().date()
+    total = PaymentRecord.objects.filter(status="completed", repo=repo, processed_at__date=today).aggregate(
+        s=Sum("usd_amount")
+    )["s"]
+    return total or Decimal("0")
+
+
+def get_monthly_repo_total(repo):
+    now = timezone.now()
+    total = PaymentRecord.objects.filter(
+        status="completed", repo=repo, processed_at__year=now.year, processed_at__month=now.month
+    ).aggregate(s=Sum("usd_amount"))["s"]
+    return total or Decimal("0")
+
+
+def get_user_daily_total(user_profile):
+    today = timezone.now().date()
+    total = PaymentRecord.objects.filter(
+        user_profile=user_profile, status="completed", processed_at__date=today
+    ).aggregate(s=Sum("usd_amount"))["s"]
+    return total or Decimal("0")
+
+
+def get_user_monthly_total(user_profile):
+    now = timezone.now()
+    total = PaymentRecord.objects.filter(
+        user_profile=user_profile, status="completed", processed_at__year=now.year, processed_at__month=now.month
+    ).aggregate(s=Sum("usd_amount"))["s"]
+    return total or Decimal("0")
+
+
+def get_user_hourly_autopay_count(user_profile):
+    one_hour_ago = timezone.now() - timedelta(hours=1)
+    return PaymentRecord.objects.filter(
+        user_profile=user_profile, status="completed", processed_at__gte=one_hour_ago
+    ).count()
+
+
+def alert_suspicious(event_type, message, user_profile=None, repo=None, pr_number=None):
+    try:
+        SuspiciousEvent.objects.create(
+            user_profile=user_profile, repo=repo, pr_number=pr_number, event_type=event_type, message=message
+        )
+    except Exception as e:
+        logger.error("Failed to save suspicious event: %s", e)
+
+    # Email admin
+    try:
+        send_mail(
+            subject=f"[ALERT] {event_type}",
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.ADMIN_EMAIL],
+        )
+    except Exception:
+        logger.warning("Could not send suspicious activity email")
+
+
+def gc_get(key, default=None):
+    """
+    Read a persistent GlobalConfig value. Returns python-native values when possible.
+    Short-lived cooldowns should use cache instead of GlobalConfig.
+    """
+    try:
+        obj = GlobalConfig.objects.filter(key=key).first()
+        if not obj:
+            return default
+        # try to parse booleans/numbers that were stored as strings
+        val = obj.value
+        if val in ("True", "true", "1"):
+            return True
+        if val in ("False", "false", "0"):
+            return False
+        return val
+    except Exception:
+        logger.exception("gc_get failed for key=%s", key)
+        return default
+
+
+def gc_set(key, value):
+    GlobalConfig.objects.update_or_create(key=key, defaults={"value": value})
+
+
+def sign_payment_comment(repo_id, pr_number, bounty_issue_id=None, usd_amount=None, tx_id=None):
+    secret = getattr(settings, "AUTOPAY_COMMENT_SIGNING_SECRET", "")
+    if not secret:
+        return ""  # can't sign; return empty string to avoid crashing
+
+    msg = f"{repo_id}:{pr_number}:{bounty_issue_id or ''}:{usd_amount or ''}:{tx_id or ''}"
+    sig = hmac.new(secret.encode(), msg.encode(), hashlib.sha256).digest()
+    return base64.b64encode(sig).decode()
 
 
 def extract_github_username(github_url):
@@ -982,38 +1102,15 @@ def badge_user_list(request, badge_id):
     )
 
 
-@csrf_exempt
-def github_webhook(request):
-    if request.method == "POST":
-        # Validate GitHub signature
-        # this doesn't seem to work?
-        # signature = request.headers.get("X-Hub-Signature-256")
-        # if not validate_signature(request.body, signature):
-        #    return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
-
-        payload = json.loads(request.body)
-        event_type = request.headers.get("X-GitHub-Event", "")
-
-        event_handlers = {
-            "pull_request": handle_pull_request_event,
-            "push": handle_push_event,
-            "pull_request_review": handle_review_event,
-            "issues": handle_issue_event,
-            "status": handle_status_event,
-            "fork": handle_fork_event,
-            "create": handle_create_event,
-        }
-
-        handler = event_handlers.get(event_type)
-        if handler:
-            return handler(payload)
-        else:
-            return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
-    else:
-        return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
-
-
 def handle_pull_request_event(payload):
+    pr = payload["pull_request"]
+    action = payload.get("action")
+    repo_full_name = pr["base"]["repo"]["full_name"]
+    # Whitelist check
+    if repo_full_name not in settings.ALLOWED_REPOS:
+        logger.warning(f"Repo {repo_full_name} not allowed for autopay")
+        return JsonResponse({"status": "skipped", "reason": "unapproved repo"}, status=200)
+
     # Enhanced to handle automatic payments for merged PRs with bounty labels
     if payload["action"] == "closed" and payload["pull_request"]["merged"]:
         pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
@@ -1021,16 +1118,476 @@ def handle_pull_request_event(payload):
             pr_user_instance = pr_user_profile.user
             assign_github_badge(pr_user_instance, "First PR Merged")
 
-            # Check for bounty labels ($5, $10, etc.)
-            labels = [label["name"] for label in payload["pull_request"]["labels"]]
-            bounty_amount = extract_bounty_from_labels(labels)
-
-            if bounty_amount:
-                # Process automatic payment
-                process_bounty_payment(
-                    pr_user_profile=pr_user_profile, usd_amount=bounty_amount, pr_data=payload["pull_request"]
-                )
     return JsonResponse({"status": "success"}, status=200)
+
+
+def _extract_linked_issue_number(pr_payload=None, pr_data=None, payload=None):
+    """
+    Best-effort extraction of linked issue number:
+    1. payload.get("linked_issue_number") (explicit custom field)
+    2. payload.get("issue", {}).get("number") (if present)
+    3. parse PR body for "Fixes #123", "Closes #123", etc.
+    Returns int or None.
+    """
+    # explicit custom field is highest priority
+    if payload:
+        val = payload.get("linked_issue_number") or (payload.get("issue") or {}).get("number")
+        if val:
+            try:
+                return int(val)
+            except Exception:
+                pass
+
+    body = None
+    if pr_data and pr_data.get("body"):
+        body = pr_data.get("body")
+    elif pr_payload:
+        body = (pr_payload or {}).get("body")
+
+    if body:
+        m = FIXES_RE.search(body)
+        if m:
+            try:
+                return int(m.group(1))
+            except Exception:
+                pass
+
+    return None
+
+
+def record_payment_atomic(
+    repo,
+    pr_number,
+    pr_user_profile,
+    pr_data,
+    tx_id,
+    usd_amount,
+    currency,
+    payload=None,
+    bch_amount=None,
+    usd_rate=None,
+    address=None,
+    user_daily=None,
+    user_monthly=None,
+    repo_daily=None,
+    repo_monthly=None,
+    daily_total=None,
+):
+    """
+    Secure autopay flow ensuring:
+      - Payment is made only when a bounty issue (with $) is identified.
+      - Two DB rows are created/updated: PR GitHubIssue (type=pull_request) and Bounty GitHubIssue (type=issue).
+      - Bounty_issue is the record where tx_id is stored and audited.
+      - All writes occur inside transaction.atomic() with select_for_update() for locked rows.
+      - Idempotent via PaymentRecord.status check.
+    Returns: (True, "message") on success or (False, "reason") on abort/failure.
+    """
+
+    # 0. Basic validation
+    if not tx_id:
+        return False, "Missing tx_id"
+    if currency not in ALLOWED_CURRENCIES:
+        return False, f"Unsupported currency: {currency}"
+    try:
+        usd_amount_dec = Decimal(str(usd_amount))
+    except (InvalidOperation, TypeError, ValueError):
+        return False, "Invalid usd_amount"
+    if usd_amount_dec <= 0:
+        return False, "usd_amount must be > 0"
+
+    try:
+        pr_num = int(pr_number)
+    except Exception:
+        return False, "Invalid pr_number"
+
+    # Best-effort extract the linked bounty issue number
+    linked_issue_num = _extract_linked_issue_number(
+        pr_payload=(payload or {}).get("pull_request") if payload else None, pr_data=pr_data, payload=payload
+    )
+
+    with transaction.atomic():
+        # Hard guarantee: only one completed PaymentRecord per PR
+        duplicate_records = PaymentRecord.objects.filter(repo=repo, pr_number=pr_num).exclude(status="pending")
+
+        # If more than one exists → highly abnormal → freeze system & alert
+        if duplicate_records.count() > 1:
+            logger.critical(
+                "SECURITY ALERT: Duplicate completed PaymentRecord rows for PR #%s in repo=%s", pr_num, repo.id
+            )
+            return False, "Duplicate payment records detected — manual review required"
+
+        # Lock the only PaymentRecord to enforce inline idempotency
+        payment_row = PaymentRecord.objects.select_for_update().filter(repo=repo, pr_number=pr_num).first()
+
+        # If this row is already completed → abort safely
+        if payment_row and payment_row.status == "completed":
+            logger.info("Idempotency gate: PR #%s already paid (tx=%s)", pr_num, payment_row.tx_id)
+            return True, "Already completed"
+
+        # 1. Lock user profile (avoid concurrent winnings races)
+        profile = UserProfile.objects.select_for_update().get(pk=pr_user_profile.pk)
+
+        # 2. Find or create the PR GitHubIssue row (select_for_update to prevent duplicate creation)
+        pr_issue = (
+            GitHubIssue.objects.select_for_update().filter(repo=repo, issue_id=pr_num, type="pull_request").first()
+        )
+        if not pr_issue:
+            pr_title = (
+                (pr_data.get("title") if pr_data else None)
+                or (payload and payload.get("pull_request", {}).get("title"))
+                or f"PR #{pr_num}"
+            )
+            pr_body = (
+                (pr_data.get("body") if pr_data else None)
+                or (payload and payload.get("pull_request", {}).get("body"))
+                or ""
+            )
+            pr_url = (
+                (pr_data.get("html_url") if pr_data else None)
+                or (payload and payload.get("pull_request", {}).get("html_url"))
+                or ""
+            )
+            pr_created_at = None
+            pr_updated_at = None
+            try:
+                pr_payload = payload.get("pull_request") if payload else {}
+                pr_created_at = pr_payload.get("created_at")
+                pr_updated_at = pr_payload.get("updated_at")
+            except Exception:
+                pass
+            # required fields fallback
+            if not pr_created_at:
+                pr_created_at = timezone.now()
+            if not pr_updated_at:
+                pr_updated_at = timezone.now()
+
+            pr_issue = GitHubIssue.objects.create(
+                issue_id=pr_num,
+                repo=repo,
+                user_profile=pr_user_profile,
+                contributor=getattr(pr_user_profile, "contributor", None),
+                title=pr_title,
+                body=pr_body,
+                url=pr_url or "",
+                type="pull_request",
+                state=(pr_data.get("state") if pr_data else (payload and payload.get("pull_request", {}).get("state")))
+                or "closed",
+                created_at=pr_created_at,
+                updated_at=pr_updated_at,
+                is_merged=bool(
+                    (payload and payload.get("pull_request", {}).get("merged")) or (pr_data and pr_data.get("merged"))
+                ),
+            )
+
+        # 3. Locate the bounty issue (the thing we actually pay) — must have has_dollar_tag=True
+        bounty_issue = None
+        if linked_issue_num:
+            bounty_issue = (
+                GitHubIssue.objects.select_for_update()
+                .filter(repo=repo, issue_id=linked_issue_num, type="issue", has_dollar_tag=True)
+                .first()
+            )
+
+        # IMPORTANT: If we couldn't find a bounty issue via the extraction,
+        # DO NOT attempt to pay. This is the secure behavior.
+        if not bounty_issue:
+            # Optionally, you could try to find a "pending payment" mapping in DB (if your flow stored it previously).
+            # But the safest default is to abort — log details and return.
+            logger.warning(
+                "Autopay aborted: no bounty issue found for PR #%s in repo=%s. linked_issue_num=%s",
+                pr_num,
+                getattr(repo, "id", str(repo)),
+                linked_issue_num,
+            )
+            return False, "No bounty issue found (requires explicit linking or 'Fixes #NNN' in PR body)."
+
+        # 4. Link PR -> bounty issue (M2M). Use add() to not replace existing links.
+        try:
+            # Add only if not already linked
+            if not bounty_issue.linked_pull_requests.filter(pk=pr_issue.pk).exists():
+                # add expects a model instance
+                #  Safety guard before linking PR <-> bounty issue
+
+                # Prevent cross-repo linking (critical)
+                if bounty_issue.repo_id != pr_issue.repo_id:
+                    logger.error(
+                        "SECURITY ALERT: Attempted cross-repo linking: bounty #%s repo=%s, PR #%s repo=%s",
+                        bounty_issue.issue_id,
+                        bounty_issue.repo_id,
+                        pr_issue.issue_id,
+                        pr_issue.repo_id,
+                    )
+                    return False, "Cross-repo linking blocked"
+
+                # Prevent issue→issue linking
+                if pr_issue.type != "pull_request":
+                    logger.error("SECURITY ALERT: Non-PR linked as pull_request: id=%s", pr_issue.issue_id)
+                    return False, "Invalid link type — only PRs may be linked"
+
+                # Prevent multiple bounty issues for same PR (business rule)
+                existing_bounties = GitHubIssue.objects.filter(
+                    linked_pull_requests=pr_issue,
+                    type="issue",
+                    has_dollar_tag=True,
+                ).exclude(pk=bounty_issue.pk)
+
+                if existing_bounties.exists():
+                    logger.error(
+                        "SECURITY ALERT: PR #%s trying to link to second bounty issue; existing=%s new=%s",
+                        pr_issue.issue_id,
+                        list(existing_bounties.values_list("issue_id", flat=True)),
+                        bounty_issue.issue_id,
+                    )
+                    return False, "PR already linked to a different bounty"
+
+                # Prevent adding link twice
+                if bounty_issue.linked_pull_requests.filter(pk=pr_issue.pk).exists():
+                    logger.info("PR #%s already linked to bounty #%s", pr_issue.issue_id, bounty_issue.issue_id)
+                else:
+                    bounty_issue.linked_pull_requests.add(pr_issue)
+                    bounty_issue.updated_at = timezone.now()
+                    bounty_issue.save(update_fields=["updated_at"])
+        except Exception:
+            logger.exception(
+                "Failed to add M2M link from bounty #%s to PR #%s (non-fatal)", bounty_issue.issue_id, pr_num
+            )
+            # don't abort payout for link failure; continue.
+
+        # 5. Idempotency check: PaymentRecord exists & completed => do nothing (already paid)
+        pr_record = PaymentRecord.objects.select_for_update().filter(repo=repo, pr_number=pr_num).first()
+        if pr_record and pr_record.status == "completed":
+            logger.info("Autopay skipped: PaymentRecord already completed for repo=%s pr=%s", getattr(repo, "id", repo))
+            return True, "Already completed"
+
+        # 6. Save transaction on the bounty_issue (this keeps audit on canonical bounty)
+        if currency == "BCH":
+            bounty_issue.bch_tx_id = tx_id
+        else:
+            bounty_issue.sponsors_tx_id = tx_id
+
+        bounty_issue.updated_at = timezone.now()
+        bounty_issue.save(update_fields=["bch_tx_id", "sponsors_tx_id", "updated_at"])
+
+        # 7. Mark/create PaymentRecord as completed
+        if pr_record:
+            pr_record.tx_id = tx_id
+            pr_record.status = "completed"
+            pr_record.processed_at = timezone.now()
+            pr_record.save(update_fields=["tx_id", "status", "processed_at"])
+        else:
+            PaymentRecord.objects.create(
+                repo=repo,
+                pr_number=pr_num,
+                user_profile=pr_user_profile,
+                currency=currency,
+                usd_amount=usd_amount_dec,
+                tx_id=tx_id,
+                status="completed",
+                processed_at=timezone.now(),
+            )
+
+        # 8. Update winnings on the user profile (locked)
+        current_win = profile.winnings or Decimal("0")
+        profile.winnings = current_win + usd_amount_dec
+        profile.save(update_fields=["winnings"])
+
+        # 9. Final audit log
+        logger.info(
+            "Autopay recorded: repo=%s bounty_issue=%s pr=%s user=%s amount=%s tx=%s currency=%s",
+            getattr(repo, "id", str(repo)),
+            bounty_issue.issue_id,
+            pr_num,
+            pr_user_profile.user.username,
+            usd_amount_dec,
+            tx_id,
+            currency,
+        )
+        PaymentReceipt.objects.create(
+            payment=pr_record,
+            repo=repo,
+            user_profile=pr_user_profile,
+            pr_number=pr_num,
+            bounty_issue_number=bounty_issue.issue_id,
+            tx_id=tx_id,
+            currency=currency,
+            usd_amount=usd_amount_dec,
+            bch_amount=bch_amount,
+            usd_rate=usd_rate,
+            pr_payload=pr_data,
+            metadata={
+                "address": address,
+                "autopay_locked": gc_get("autopay_locked", False),
+                "limits": {
+                    "user_daily": float(user_daily),
+                    "user_monthly": float(user_monthly),
+                    "repo_daily": float(repo_daily),
+                    "repo_monthly": float(repo_monthly),
+                },
+                "system_daily_total": float(daily_total),
+            },
+        )
+    if bounty_issue.user_profile_id != pr_user_profile.id:
+        alert_suspicious(
+            "mismatched_author",
+            f"PR author ({pr_user_profile.user.username}) does not match bounty issue author",
+            user_profile=pr_user_profile,
+            repo=repo,
+            pr_number=pr_num,
+        )
+        return False, "Author mismatch"
+
+    # transaction.atomic() block ended successfully
+    return True, "Processed"
+
+
+def verify_github_signature(request):
+    secret = getattr(settings, "GITHUB_WEBHOOK_SECRET", None)
+    if not secret:
+        logger.error("Missing GITHUB_WEBHOOK_SECRET")
+        return False
+
+    signature = request.headers.get("X-Hub-Signature-256")
+    if not signature or "=" not in signature:
+        logger.warning("Missing or malformed  X-Hub-Signature-256 header")
+        return False
+
+    sha_name, received_sig = signature.split("=", 1)
+    if sha_name != "sha256":
+        logger.warning("Invalid signature format")
+        return False
+
+    mac = hmac.new(secret.encode(), msg=request.body, digestmod=hashlib.sha256)
+
+    expected_sig = mac.hexdigest()
+    validated = hmac.compare_digest(received_sig, expected_sig)
+    if not validated:
+        alert_suspicious(
+            "signature_failure",
+            f"Signature mismatch for webhook from (delivery={request.headers.get('X-GitHub-Delivery')})",
+        )
+        return False
+
+    return validated
+
+
+def repo_allowed(payload):
+    """
+    Ensure the webhook pertains to a tracked repo. Enforce the *base* repository when PR events are present.
+    """
+    # prefer base repo (for PRs) otherwise top-level repository
+    base_repo_full = payload.get("pull_request", {}).get("base", {}).get("repo", {}).get("full_name")
+    repo_full = base_repo_full or payload.get("repository", {}).get("full_name")
+    if not repo_full:
+        logger.warning("repo_allowed: could not find full_name in payload")
+        return False
+
+    allowed = repo_full in getattr(settings, "ALLOWED_REPOS", [])
+    if not allowed:
+        alert_suspicious("invalid_repo", f"Webhook from unapproved repo: {repo_full}")
+    return allowed
+
+
+@csrf_exempt
+def github_webhook(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
+
+    # 1) Signature verification
+    if not verify_github_signature(request):
+        logger.warning("Invalid GitHub webhook signature")
+        return JsonResponse({"status": "unauthorized"}, status=401)
+
+    # 2) Delivery ID (Idempotency)
+    delivery_id = request.headers.get("X-GitHub-Delivery")
+    event_type = request.headers.get("X-GitHub-Event", "")
+
+    if not delivery_id:
+        logger.warning("Missing X-GitHub-Delivery header")
+        return JsonResponse({"status": "error", "message": "Missing delivery id"}, status=400)
+
+    # 3) Load JSON payload
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
+
+    repo_full = payload.get("repository", {}).get("full_name", "unknown")
+
+    # 4) Rate limit per repo (simple)
+    rate_key = f"webhook_rl:{repo_full}"
+    if not cache.add(rate_key, 0, timeout=60):
+        try:
+            count = cache.incr(rate_key)
+        except Exception:
+            count = 9999
+    else:
+        cache.set(rate_key, 1, timeout=60)
+        count = 1
+
+    if count > 30:  # limit: 30 events per minute per repo
+        logger.warning("Rate limit reached for repo %s", repo_full)
+        return JsonResponse({"status": "rate_limited"}, status=429)
+
+    # 5) Idempotency gate (DB)
+    try:
+        event_obj, created = WebhookEvent.objects.get_or_create(
+            delivery_id=delivery_id, defaults={"event": event_type, "payload": payload}
+        )
+    except IntegrityError:
+        event_obj = WebhookEvent.objects.filter(delivery_id=delivery_id).first()
+        created = False
+
+    if not created:
+        if event_obj.processed:
+            logger.info("Duplicate webhook delivery %s skipped", delivery_id)
+            return JsonResponse({"status": "forbidden"}, status=403)
+        else:
+            # Another worker may be processing
+            age = (timezone.now() - event_obj.created_at).total_seconds()
+            if age < 300:
+                return JsonResponse({"status": "accepted"}, status=202)
+
+    # 6) Repo whitelist
+    if not repo_allowed(payload):
+        event_obj.processed = True
+        event_obj.processed_at = timezone.now()
+        event_obj.response_status = 200
+        event_obj.save(update_fields=["processed", "processed_at", "response_status"])
+        return JsonResponse({"status": "skipped", "reason": "unapproved repo"}, status=200)
+
+    # 7) Dispatch handlers
+    handlers = {
+        "pull_request": handle_pull_request_event,
+        "push": handle_push_event,
+        "pull_request_review": handle_review_event,
+        "issues": handle_issue_event,
+        "status": handle_status_event,
+        "fork": handle_fork_event,
+        "create": handle_create_event,
+    }
+
+    handler = handlers.get(event_type)
+
+    try:
+        if handler:
+            resp = handler(payload)
+            event_obj.processed = True
+            event_obj.processed_at = timezone.now()
+            event_obj.response_status = getattr(resp, "status_code", 200)
+            event_obj.save(update_fields=["processed", "processed_at", "response_status"])
+            return resp
+        else:
+            event_obj.processed = True
+            event_obj.processed_at = timezone.now()
+            event_obj.response_status = 400
+            event_obj.save(update_fields=["processed", "processed_at", "response_status"])
+            return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
+
+    except Exception as e:
+        logger.exception("Error processing delivery %s: %s", delivery_id, e)
+        event_obj.response_status = 500
+        event_obj.save(update_fields=["response_status"])
+        return JsonResponse({"status": "error", "message": "Internal error"}, status=500)
 
 
 def extract_bounty_from_labels(labels):
@@ -1043,85 +1600,26 @@ def extract_bounty_from_labels(labels):
 
 
 def send_crypto_payment(address, amount, currency):
-    """
-    Send cryptocurrency payment. This needs integration with:
-    - BitPay API for BCH
-    - Coinbase Commerce API
-    - Direct blockchain transaction via bitcoin_utils.py
-    - Or your preferred payment processor
-    """
-    if currency == "BCH":
-        from website.bitcoin_utils import send_bch_payment
+    if currency != "BCH":
+        raise NotImplementedError(f"Payment method {currency} not implemented")
 
-        tx_id = send_bch_payment(address, str(amount))
-        return tx_id
-    raise NotImplementedError(f"Payment method {currency} not implemented")
-
-
-def record_payment(pr_user_profile, pr_data, tx_id, currency, usd_amount):
-    """
-    Record payment into GitHubIssue + update user winnings safely.
-    """
-
-    # Extract repo name safely
     try:
-        repo_name = pr_data["base"]["repo"]["name"]
-    except KeyError:
-        logger.exception("PR data missing base.repo.name structure")
-        return
-
-    repo = Repo.objects.filter(name__iexact=repo_name).first()
-    if not repo:
-        logger.warning(
-            "Repo %s not tracked; refusing to record payment for PR #%s",
-            repo_name,
-            pr_data.get("number"),
-        )
-        return
-
-    pr_number = pr_data.get("number")
-
-    # Use atomic transaction to prevent partial writes
-    with transaction.atomic():
-        github_issue, created = GitHubIssue.objects.get_or_create(
-            repo=repo,
-            number=pr_number,
-            defaults={
-                "title": pr_data.get("title", ""),
-                "type": "pull_request",
-                "user_profile": pr_user_profile,
-                "is_merged": True,
-                "merged_at": timezone.now(),
-            },
-        )
-
-        # If issue exists but missing user_profile, set it
-        if not created and github_issue.user_profile is None:
-            github_issue.user_profile = pr_user_profile
-
-        # Add transaction IDs
-        if currency == "BCH":
-            github_issue.bch_tx_id = tx_id
-        else:
-            github_issue.sponsors_tx_id = tx_id
-
-        github_issue.save()
-
-        # Safe Decimal calculation for winnings
-        current_win = pr_user_profile.winnings or Decimal("0")
-        pr_user_profile.winnings = current_win + Decimal(str(usd_amount))
-        pr_user_profile.save()
-
-    logger.info(
-        "Recorded payment for PR #%s user=%s amount=%s USD",
-        pr_number,
-        pr_user_profile.user.username,
-        usd_amount,
-    )
+        tx_id = send_bch_payment(address, str(amount))
+        if not tx_id:
+            raise ValueError("Empty txid returned by BCH backend")
+        return tx_id
+    except Exception as e:
+        logger.exception(f"send_crypto_payment failed: {e}")
+        raise
 
 
 def post_payment_comment(pr_data, tx_id, amount, currency):
-    # Post confirmation comment to the PR
+    """
+    Post an authenticated autopay comment to the PR.
+    Includes cryptographic signature to prevent forgery.
+    """
+
+    # Normalize amount
     if isinstance(amount, dict):
         bch_amount = amount["bch"]
         usd_amount = amount["usd"]
@@ -1132,22 +1630,59 @@ def post_payment_comment(pr_data, tx_id, amount, currency):
     repo_full_name = pr_data["base"]["repo"]["full_name"]
     pr_number = pr_data["number"]
 
-    if currency == "BCH":
-        explorer_url = f"https://blockchair.com/bitcoin-cash/transaction/{tx_id}"
+    # Retrieve repo object (needed for signing)
+    repo_name = repo_full_name.split("/")[-1]
+    repo = Repo.objects.filter(name__iexact=repo_name).first()
+
+    if not repo:
+        logger.error("post_payment_comment: Repo not found (%s)", repo_full_name)
+        return False
+
+    # Generate cryptographic signature
+    signature = sign_payment_comment(
+        repo_id=repo.id,
+        pr_number=pr_number,
+        usd_amount=usd_amount,
+        tx_id=tx_id,
+    )
+
+    # Build final comment body
+    if getattr(settings, "AUTOPAY_DRY_RUN", False):
         comment_body = (
-            f"🎉 **Payment Sent!**\n\n"
-            f"${usd_amount} has been automatically sent via Bitcoin Cash (BCH).\n\n"
-            f"**Transaction ID:** `{tx_id}`\n"
-            f"**View Transaction:** {explorer_url}\n\n"
-            f"Thank you for your contribution! 🙏"
+            f" **DRY RUN MODE** — No real BCH payment has been sent.\n\n"
+            f"Autopay pipeline executed successfully but is in dry-run mode.\n"
+            f"Simulated Transaction ID: `{tx_id}`\n\n"
+            f"Please ignore this message."
         )
     else:
-        comment_body = f"${usd_amount} USD ({bch_amount} BCH) has been automatically sent..."
+        if currency == "BCH":
+            explorer_url = f"https://blockchair.com/bitcoin-cash/transaction/{tx_id}"
+            comment_body = (
+                f"**Payment Sent!**\n\n"
+                f"${usd_amount} has been automatically sent via **Bitcoin Cash (BCH)**.\n\n"
+                f"**BCH Amount:** `{bch_amount}`\n"
+                f"**Transaction ID:** `{tx_id}`\n"
+                f" **View Transaction:** {explorer_url}\n\n"
+                f"---\n"
+                f" **Autopay Signature:** `{signature}`\n"
+                f"_This cryptographic signature verifies this payment was generated by the official OWASP BLT autopay system._\n"
+                f"---\n"
+                f"Thank you for your contribution! "
+            )
+        else:
+            comment_body = (
+                f"${usd_amount} USD ({bch_amount} BCH) has been automatically sent.\n\n" f"🔏 Signature: `{signature}`"
+            )
 
+    # Send comment to GitHub
     url = f"https://api.github.com/repos/{repo_full_name}/issues/{pr_number}/comments"
     headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
 
     response = requests.post(url, json={"body": comment_body}, headers=headers, timeout=10)
+
+    if response.status_code != 201:
+        logger.error("Failed to post payment comment: %s", response.text)
+
     return response.status_code == 201
 
 
@@ -1167,53 +1702,405 @@ def notify_user_missing_address(user, pr_data):
     )
 
 
-def check_existing_payment(repo_full_name, pr_number):
-    repo_short = repo_full_name.split("/")[-1]
-    repo = Repo.objects.filter(name__iexact=repo_short).first()
-    if not repo:
-        logger.info("Repo %s not tracked; skipping payment for PR #%s", repo_full_name, pr_number)
-        return True  # treat as already handled / ineligible
-
-    issue = GitHubIssue.objects.filter(repo=repo, number=pr_number).first()
-    if not issue:
-        return False
-
-    return bool(issue.bch_tx_id or issue.sponsors_tx_id)
-
-
 def notify_admin_payment_failure(pr_data, error_message):
-    admin_email = settings.ADMIN_EMAIL
-    send_mail(
-        subject=f"Payment Failure for PR #{pr_data['number']}",
-        message=f"Error processing payment:\n\n{error_message}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[admin_email],
-    )
+    try:
+        send_mail(
+            subject=f"Payment Failure for PR #{pr_data.get('number')}",
+            message=f"Error processing payment:\n\n{error_message}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.ADMIN_EMAIL],
+        )
+    except Exception:
+        logger.exception("Failed to notify admin of payment failure")
+
+
+def get_or_create_payment_record(repo, pr_number, usd_amount, currency, pr_user_profile):
+    """
+    Creates a pending PaymentRecord or returns an existing one.
+    Ensures idempotency without requiring a DB uniqueness constraint.
+    """
+
+    with transaction.atomic():
+        existing = PaymentRecord.objects.filter(repo=repo, pr_number=pr_number).first()
+
+        if existing:
+            # Completed -> idempotent success; do not create new
+            if existing.status == "completed":
+                return existing, False
+            # Pending -> assume another worker; return to let caller decide handling
+            if existing.status == "pending":
+                return existing, False
+            # Failed -> if old, allow recreation; else return existing
+            if existing.status == "failed":
+                age = (
+                    (
+                        timezone.now()
+                        - (existing.updated_at if hasattr(existing, "updated_at") else existing.created_at)
+                    ).total_seconds()
+                    if existing.created_at
+                    else None
+                )
+                # If it's older than a configurable grace window, create a new record
+                grace_seconds = getattr(settings, "PAYMENT_FAILED_RETRY_GRACE_SECONDS", 3600)
+                if age is None or age > grace_seconds:
+                    new_rec = PaymentRecord.objects.create(
+                        repo=repo,
+                        pr_number=pr_number,
+                        user_profile=pr_user_profile,
+                        currency=currency,
+                        usd_amount=usd_amount,
+                        status="pending",
+                    )
+                    return new_rec, True
+                return existing, False
+
+        new_rec = PaymentRecord.objects.create(
+            repo=repo,
+            pr_number=pr_number,
+            user_profile=pr_user_profile,
+            currency=currency,
+            usd_amount=usd_amount,
+            status="pending",
+        )
+        return new_rec, True
+
+
+def finalize_payment_record(repo, pr_number, tx_id):
+    """
+    Marks PaymentRecord as completed & sets tx_id.
+    Safe & atomic.
+    """
+    with transaction.atomic():
+        rec = PaymentRecord.objects.select_for_update().filter(repo=repo, pr_number=pr_number).first()
+
+        if not rec:
+            logger.error(
+                "Missing PaymentRecord during finalize step repo=%s pr=%s", getattr(repo, "id", repo), pr_number
+            )
+            return None
+
+        # If already completed → idempotent return
+        if rec.status == "completed":
+            return rec
+
+        rec.tx_id = tx_id
+        rec.status = "completed"
+        rec.processed_at = timezone.now()
+        rec.save()
+
+        return rec
+
+
+def is_untrusted_github_account(github_username):
+    """
+    Returns (True, reason) if account is too new / suspicious.
+    Returns (False, None) if account looks OK.
+    """
+
+    try:
+        resp = requests.get(
+            f"https://api.github.com/users/{github_username}",
+            headers={"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        return True, "GitHub profile lookup failed"
+
+    created_at = datetime.fromisoformat(data["created_at"].replace("Z", "+00:00"))
+    age_days = (timezone.now() - created_at).days
+    followers = data.get("followers", 0)
+    public_repos = data.get("public_repos", 0)
+
+    #  Account younger than 7 days → block autopay
+    if age_days < 7:
+        return True, f"Account too new: {age_days} days old"
+
+    #  No followers AND less than 2 repos → likely bot
+    if followers == 0 and public_repos < 2:
+        return True, "Low-trust GitHub profile (0 followers, <2 repos)"
+
+    # Optional stricter rule
+    if public_repos == 0:
+        return True, "Empty GitHub profile"
+
+    return False, None
+
+
+def pr_fails_sanity_checks(pr_payload):
+    """
+    Returns (True, reason) if PR unsafe to autopay.
+    Returns (False, None) if PR is acceptable.
+    """
+
+    #  basic fields
+    additions = pr_payload.get("additions", 0)
+    deletions = pr_payload.get("deletions", 0)
+    changed_files = pr_payload.get("changed_files", 0)
+    title = pr_payload.get("title", "").lower()
+    body = pr_payload.get("body", "").lower()
+
+    #  PR must have at least 3 lines added or removed
+    if additions + deletions < 3:
+        return True, "PR too small (<3 LOC)"
+
+    #  at least 1 code file
+    # GitHub includes summary but not detailed list unless fetched separately.
+    # We fallback to changed_files.
+    if changed_files == 0:
+        return True, "PR contains no changed files"
+
+    #  Block doc-only PRs
+    if "documentation" in title or "docs" in title:
+        if additions < 20:  # allow real doc contributions only
+            return True, "Documentation-only PR too small"
+
+    #  Block suspicious titles
+    SUSPICIOUS_TITLES = [
+        "small fix",
+        "minor fix",
+        "update readme",
+        "typo",
+        "test",
+        "cleanup",
+        "patch",
+        "update",
+        "quick fix",
+    ]
+    if any(x in title for x in SUSPICIOUS_TITLES):
+        if additions < 15:
+            return True, "Suspicious low-effort PR title"
+
+    # # Block if PR deletes more than 3× it adds
+    # if deletions > additions * 3:
+    #     return True, "PR deletes too many lines relative to additions"
+
+    # #  Block PRs with empty or extremely short bodies
+    # if len(body.strip()) < 15:
+    #     return True, "PR body is too short"
+
+    # All good
+    return False, None
 
 
 def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
-    """
-    Process automatic bounty payment for merged PR.
-    Prefers BCH addresses.
-    """
-    # --- SAFETY GATE 1: PAYMENT ENABLED ---
-    if not getattr(settings, "PAYMENT_ENABLED", False):
-        logger.info("PAYMENT_ENABLED is False; skipping autopay for PR #%s", pr_data["number"])
+    pr_number = pr_data.get("number")
+    if pr_number is None:
+        logger.error("process_bounty_payment called without PR number")
         return
 
-    # --- MAX_AUTO_PAYMENT in USD ---
-    max_auto = getattr(settings, "MAX_AUTO_PAYMENT", None)
-    if max_auto is not None:
-        max_auto_dec = Decimal(str(max_auto))
-        if usd_amount > max_auto_dec:
-            logger.warning(
-                "USD bounty %s exceeds MAX_AUTO_PAYMENT %s; skipping autopay for PR #%s",
-                usd_amount,
-                max_auto_dec,
-                pr_data["number"],
-            )
+    # Ensure PR is merged
+    if not pr_data.get("merged"):
+        logger.warning("process_bounty_payment called for non-merged PR #%s", pr_number)
+        return
+
+    repo_full_name = pr_data["base"]["repo"]["full_name"]
+    repo_name = repo_full_name.split("/")[-1]
+    repo = Repo.objects.filter(name__iexact=repo_name).first()
+
+    if not repo:
+        logger.warning("Repo not tracked: %s", repo_full_name)
+        return
+
+    if not getattr(repo, "autopay_enabled", False):
+        logger.warning("Autopay blocked: repo %s has autopay disabled", repo.name)
+        return
+
+    try:
+        usd_amount_dec = Decimal(str(usd_amount))
+    except (InvalidOperation, TypeError, ValueError):
+        logger.error("Invalid usd_amount passed to process_bounty_payment: %r", usd_amount)
+        return
+
+    if Decimal(str(usd_amount)) > getattr(repo, "max_payout_usd", Decimal("0")):
+        logger.error(
+            "Autopay blocked: PR #%s payout exceeds repo limit (%s USD > %s USD)",
+            pr_number,
+            usd_amount,
+            getattr(repo, "max_payout_usd", "unset"),
+        )
+        return
+
+    if not repo.autopay_enabled:
+        logger.warning("Autopay blocked: repo %s has autopay disabled", repo.name)
+        return
+
+    if Decimal(str(usd_amount)) > repo.max_payout_usd:
+        logger.error(
+            "Autopay blocked: PR #%s payout exceeds repo limit (%s USD > %s USD)",
+            pr_number,
+            usd_amount,
+            repo.max_payout_usd,
+        )
+        return
+
+    #  Short-Lived PR Cooldown Lock
+    unique_key = f"autopay_lock_pr_{repo.id}_{pr_number}"
+    if cache.get(unique_key):
+        logger.warning("Autopay cooldown active for PR %s#%s", repo.name, pr_number)
+        return
+    if not cache.add(unique_key, True, timeout=60):
+        return
+    cache.set(unique_key, "1", timeout=5)
+
+    #  PR Sanity Checks
+    bad, reason = pr_fails_sanity_checks(pr_data)
+    if bad:
+        alert_suspicious(
+            "pr_sanity_failed",
+            f"Autopay blocked for PR #{pr_number}: {reason}",
+            user_profile=pr_user_profile,
+            repo=repo,
+            pr_number=pr_number,
+        )
+        logger.error("Blocked autopay: %s", reason)
+        return
+
+    # GitHub Trust Check
+    github_username = extract_github_username(pr_user_profile.github_url)
+    blocked, reason = is_untrusted_github_account(github_username)
+
+    if blocked:
+        alert_suspicious(
+            "untrusted_github_account",
+            f"Autopay blocked for PR #{pr_number}: {reason}",
+            user_profile=pr_user_profile,
+            repo=repo,
+            pr_number=pr_number,
+        )
+        logger.error("Autopay blocked: %s", reason)
+        return
+
+    # Autopay Lock Gate
+    lock_state = gc_get("autopay_locked", False)
+    if lock_state:
+        logger.error("AUTOPAY PIPELINE LOCKED — refusing to process payments")
+        return
+
+    #  Global Daily Limit
+    DAILY_LIMIT = Decimal("1500")  # adjust
+    today_key = f"total_paid_{timezone.now().date()}"
+
+    current_total = gc_get(today_key, Decimal("0"))
+    current_total = Decimal(str(current_total))
+
+    if current_total + Decimal(str(usd_amount)) > DAILY_LIMIT:
+        alert_suspicious(
+            "daily_limit_exceeded",
+            f"Payout blocked: ${usd_amount} would exceed daily limit of ${DAILY_LIMIT}.",
+            user_profile=pr_user_profile,
+            repo=repo,
+            pr_number=pr_number,
+        )
+        return
+
+    # Alert if amount is unusually large
+    MAX_PAYOUT = Decimal("50")  # <=== adjust
+    if Decimal(str(usd_amount)) > MAX_PAYOUT:
+        alert_suspicious(
+            "large_payment",
+            f"Large payout attempted: ${usd_amount} for PR #{pr_number}",
+            user_profile=pr_user_profile,
+            repo=repo,
+            pr_number=pr_number,
+        )
+
+    # STEP 0 — System-wide and repo-wide safety caps
+    daily_total = get_daily_total()
+    if daily_total + Decimal(str(usd_amount)) > settings.MAX_DAILY_PAYOUT_USD:
+        logger.error("Aborting autopay: daily USD cap exceeded.")
+        return
+
+    monthly_total = get_monthly_total()
+    if monthly_total + Decimal(str(usd_amount)) > settings.MAX_MONTHLY_PAYOUT_USD:
+        logger.error("Aborting autopay: monthly USD cap exceeded.")
+        return
+
+    repo_daily = get_daily_repo_total(repo)
+    if repo_daily + Decimal(str(usd_amount)) > settings.MAX_DAILY_REPO_PAYOUT_USD:
+        logger.error("Aborting autopay: repo daily cap exceeded. Repo: %s", repo.name)
+        return
+
+    repo_monthly = get_monthly_repo_total(repo)
+    if repo_monthly + Decimal(str(usd_amount)) > settings.MAX_MONTHLY_REPO_PAYOUT_USD:
+        logger.error("Aborting autopay: repo monthly cap exceeded. Repo: %s", repo.name)
+        return
+
+    #  Per-user safety limits
+    user_daily = get_user_daily_total(pr_user_profile)
+    if user_daily + Decimal(str(usd_amount)) > settings.MAX_USER_DAILY_PAYOUT_USD:
+        logger.error("User daily payout cap exceeded for user %s", pr_user_profile.user.username)
+        return
+
+    user_monthly = get_user_monthly_total(pr_user_profile)
+    if user_monthly + Decimal(str(usd_amount)) > settings.MAX_USER_MONTHLY_PAYOUT_USD:
+        logger.error("User monthly payout cap exceeded for user %s", pr_user_profile.user.username)
+        return
+
+    hourly_count = get_user_hourly_autopay_count(pr_user_profile)
+    if hourly_count >= settings.MAX_AUTOPAY_PER_USER_PER_HOUR:
+        logger.error("User autopay rate limit exceeded for %s", pr_user_profile.user.username)
+        return
+
+    """
+    Idempotent & safe autopay implementation matching your PaymentRecord model.
+    """
+
+    if not getattr(settings, "PAYMENT_ENABLED", False):
+        logger.info("Autopay disabled")
+        return
+
+    currency = "BCH"
+
+    #  Idempotent safe "claim"
+    record, created = get_or_create_payment_record(
+        repo=repo,
+        pr_number=pr_number,
+        usd_amount=Decimal(str(usd_amount)),
+        currency=currency,
+        pr_user_profile=pr_user_profile,
+    )
+
+    if record.status == "completed":
+        logger.info("Autopay already completed for PR #%s", pr_number)
+        # record total safely
+        new_total = current_total + Decimal(str(usd_amount))
+        gc_set(today_key, str(new_total))
+        gc_set("autopay_fail_count", 0)  # reset failure counter
+        return
+
+    if record.status == "pending" and not created:
+        # pending record already exists → assume another worker or retry
+        age_sec = (timezone.now() - record.created_at).total_seconds()
+        if age_sec < getattr(settings, "PAYMENT_PENDING_GRACE_SECONDS", 300):
+            logger.info("Payment already in-progress for PR #%s", pr_number)
             return
 
+        logger.warning("Stale pending payment for PR #%s — retrying...", pr_number)
+
+    #  Pick BCH address
+    address = pr_user_profile.bch_address
+    if not address:
+        alert_suspicious(
+            "missing_bch_address",
+            f"User {pr_user_profile.user.username} has no BCH address for PR #{pr_number}",
+            user_profile=pr_user_profile,
+            repo=repo,
+            pr_number=pr_number,
+        )
+        notify_user_missing_address(pr_user_profile.user, pr_data)
+        record.status = "failed"
+        record.save()
+        return
+
+    if not address.startswith("bitcoincash:"):
+        notify_admin_payment_failure(pr_data, "Invalid BCH address format")
+        record.status = "failed"
+        record.save()
+        return
+
+    #  Get BCH/USD rate
     try:
         resp = requests.get(
             "https://api.coingecko.com/api/v3/simple/price",
@@ -1221,66 +2108,111 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
             timeout=5,
         )
         resp.raise_for_status()
-        rate = Decimal(str(resp.json()["bitcoin-cash"]["usd"]))
-        bch_amount = usd_amount / rate
+        usd_rate = Decimal(str(resp.json()["bitcoin-cash"]["usd"]))
+        bch_amount = Decimal(str(usd_amount)) / usd_rate
+        #  Rate sanity check: reject insane values
+        if usd_rate < Decimal("50") or usd_rate > Decimal("1000"):
+            alert_suspicious(
+                "invalid_usd_rate",
+                f"Coingecko returned abnormal USD rate: {usd_rate}",
+                user_profile=pr_user_profile,
+                repo=repo,
+                pr_number=pr_number,
+            )
+            record.status = "failed"
+            record.save()
+            return
+
     except Exception as e:
-        logger.exception(f"Unable to fetch BCH price: {e}")
-        notify_admin_payment_failure(pr_data, "Unable to fetch BCH/USD rate")
+        logger.exception("Rate lookup failed")
+        record.status = "failed"
+        record.save()
+        fail_count = gc_get("autopay_fail_count", 0)
+
+        fail_count = int(fail_count) + 1
+        gc_set("autopay_fail_count", fail_count)
+
+        if fail_count >= 5:
+            alert_suspicious(
+                "autopay_locked",
+                "Autopay disabled due to repeated failures (>=5). Manual intervention required.",
+                user_profile=pr_user_profile,
+                repo=repo,
+                pr_number=pr_number,
+            )
+            gc_set("autopay_locked", True)
+
+        notify_admin_payment_failure(pr_data, "Rate lookup failed")
         return
 
-    # Step 1: Select BCH address
-    if pr_user_profile.bch_address:
-        payment_address = pr_user_profile.bch_address
-        payment_method = "BCH"
-    else:
-        notify_user_missing_address(pr_user_profile.user, pr_data)
-        logger.warning(f"User {pr_user_profile.user.username} has no crypto address for PR #{pr_data['number']}")
-        return
-
-    # Step 2: Validate BCH address format
-    if not payment_address.startswith("bitcoincash:"):
-        logger.error(f"Invalid BCH address: {payment_address}")
-        notify_admin_payment_failure(pr_data, "Invalid BCH address format")
-        return
-
-    # Step 3: Prevent duplicate payment
-    pr_number = pr_data["number"]
-    repo_full_name = pr_data["base"]["repo"]["full_name"]
-
-    if check_existing_payment(repo_full_name, pr_number):
-        logger.info(f"PR #{pr_number} already paid, skipping")
-        return
-
-    # Step 4: Execute payment
+    #  External BCH payment call (supports dry-run mode)
     try:
-        logger.info(
-            f"Initiating BCH payment for PR #{pr_number}: "
-            f"{bch_amount:.6f} BCH to address {payment_address} "
-            f"for user {pr_user_profile.user.username}"
-        )
+        if getattr(settings, "AUTOPAY_DRY_RUN", False):
+            # Simulated tx_id
+            tx_id = f"DRYRUN-{timezone.now().timestamp()}"
+            logger.warning("DRY RUN autopay: no real BCH payment sent. tx_id=%s", tx_id)
+        else:
+            # Real payment
+            tx_id = send_crypto_payment(address, bch_amount, "BCH")
 
-        tx_id = send_crypto_payment(address=payment_address, amount=bch_amount, currency=payment_method)
+        # tx_id validation
+        if not tx_id or len(str(tx_id)) < 10:
+            alert_suspicious(
+                "invalid_txid",
+                f"Suspicious txid returned: {tx_id}",
+                user_profile=pr_user_profile,
+                repo=repo,
+                pr_number=pr_number,
+            )
+            raise ValueError("Invalid payment txid returned")
 
-        # Step 5: Save payment record
-        record_payment(
+    except Exception as e:
+        logger.exception("BCH payment failed: %s", e)
+        record.status = "failed"
+        record.save(update_fields=["status"])
+
+        fail_count = int(gc_get("autopay_fail_count", 0)) + 1
+        gc_set("autopay_fail_count", fail_count)
+
+        if fail_count >= 5:
+            alert_suspicious(
+                "autopay_locked",
+                "Autopay disabled due to repeated failures.",
+                user_profile=pr_user_profile,
+                repo=repo,
+                pr_number=pr_number,
+            )
+            gc_set("autopay_locked", True)
+            notify_admin_payment_failure(pr_data, str(e))
+        return
+
+    #  Finalize atomically
+    with transaction.atomic():
+        record_payment_atomic(
+            repo=repo,
+            pr_number=pr_number,
             pr_user_profile=pr_user_profile,
             pr_data=pr_data,
             tx_id=tx_id,
-            currency=payment_method,
             usd_amount=usd_amount,
+            currency="BCH",
+            payload={"pull_request": pr_data},
+            bch_amount=bch_amount,
+            usd_rate=usd_rate,
+            address=address,
+            user_daily=user_daily,
+            user_monthly=user_monthly,
+            repo_daily=repo_daily,
+            repo_monthly=repo_monthly,
+            daily_total=daily_total,
         )
 
-        # Step 6: Comment on PR
-        post_payment_comment(pr_data, tx_id, {"bch": bch_amount, "usd": usd_amount}, payment_method)
-
-        logger.info(
-            f"Successfully paid {bch_amount:.6f} {payment_method} to "
-            f"{pr_user_profile.user.username} for PR #{pr_number}"
-        )
-
+    #  PR comment (non-fatal)
+    try:
+        post_payment_comment(pr_data, tx_id, {"bch": bch_amount, "usd": usd_amount}, "BCH")
     except Exception as e:
-        logger.exception(f"Payment failed for PR #{pr_number}: {str(e)}")
-        notify_admin_payment_failure(pr_data, str(e))
+        logger.exception("Failed to post payment comment")
+        notify_admin_payment_failure(pr_data, "Failed to post payment comment")
 
 
 def handle_push_event(payload):
