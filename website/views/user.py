@@ -1438,24 +1438,29 @@ def record_payment_atomic(
 
         bounty_issue.updated_at = timezone.now()
         bounty_issue.save(update_fields=["bch_tx_id", "sponsors_tx_id", "updated_at"])
-        #  ATOMIC DAILY LIMIT ENFORCEMENT
+
         daily_key = f"total_paid_{timezone.now().date()}"
         DAILY_LIMIT = getattr(settings, "MAX_DAILY_PAYOUT_USD", Decimal("1500"))
 
-        current_total = Decimal(str(gc_get(daily_key, 0)))
-        projected = current_total + usd_amount_dec
-
-        if projected > DAILY_LIMIT:
-            logger.warning(
-                "Daily limit exceeded inside atomic block: current=%s add=%s > limit=%s",
-                current_total,
-                usd_amount_dec,
-                DAILY_LIMIT,
+        # Atomic check-and-increment within single lock
+        with transaction.atomic():
+            config_obj, _ = GlobalConfig.objects.select_for_update().get_or_create(
+                key=daily_key, defaults={"value": "0"}
             )
-            return False, "Daily limit exceeded"
+            current_total = Decimal(str(config_obj.value))
+            projected = current_total + usd_amount_dec
 
-        # Safe update (atomic)
-        gc_set_atomic(daily_key, str(projected))
+            if projected > DAILY_LIMIT:
+                logger.warning(
+                    "Daily limit exceeded inside atomic block: current=%s add=%s > limit=%s",
+                    current_total,
+                    usd_amount_dec,
+                    DAILY_LIMIT,
+                )
+                return False, "Daily limit exceeded"
+
+            config_obj.value = str(projected)
+            config_obj.save(update_fields=["value"])
 
         # 7. Mark/create PaymentRecord as completed
         if pr_record:
@@ -1664,7 +1669,7 @@ def github_webhook(request):
             return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
 
     except Exception:
-        logger.exception("Error processing delivery {delivery_id}")
+        logger.exception(f"Error processing delivery {delivery_id}")
         event_obj.response_status = 500
         event_obj.save(update_fields=["response_status"])
         return JsonResponse({"status": "error", "message": "Internal error"}, status=500)
