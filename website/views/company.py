@@ -163,7 +163,7 @@ class RegisterOrganizationView(View):
 
         # Database constraint set to 255 char
         if len(organization_url) > 255:
-            messages.error(request, "Organization URL is too long (maximum 200 characters).")
+            messages.error(request, "Organization URL is too long (maximum 255 characters).")
             return redirect("register_organization")
 
         organization_logo = request.FILES.get("logo")
