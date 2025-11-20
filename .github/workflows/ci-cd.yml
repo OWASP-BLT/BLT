@@ -121,6 +121,7 @@ jobs:
         if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
