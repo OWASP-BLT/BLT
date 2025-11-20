@@ -21,10 +21,12 @@ RUN apt-get update && \
 #     ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
 
 # Install Chromium (works on all architectures)
-RUN apt-get update && \
-    apt-get install -y chromium && \
-    ln -sf /usr/bin/chromium /usr/local/bin/google-chrome && \
-    rm -rf /var/lib/apt/lists/*
+# Retry logic with --fix-missing for transient network errors
+RUN apt-get update \
+    && apt-get install -y --fix-missing chromium \
+    || (apt-get update && apt-get install -y --fix-missing chromium) \
+    && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry and dependencies
 RUN pip install poetry
