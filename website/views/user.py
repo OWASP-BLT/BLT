@@ -1993,7 +1993,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
     try:
         usd_amount_dec = Decimal(str(usd_amount))
     except (InvalidOperation, TypeError, ValueError):
-        logger.error("Invalid usd_amount passed to process_bounty_payment: %r", usd_amount)
+        logger.exception("Invalid usd_amount passed to process_bounty_payment: %r", usd_amount)
         return
 
     if not repo.autopay_enabled:
