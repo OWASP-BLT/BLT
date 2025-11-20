@@ -253,6 +253,7 @@ from website.views.organization import (
     user_sizzle_report,
     view_hunt,
     weekly_report,
+    organization_slack_apps,
 )
 from website.views.ossh import (
     get_github_data,
@@ -883,6 +884,11 @@ urlpatterns = [
         "organization/<int:id>/dashboard/add_slack_integration/",
         AddSlackIntegrationView.as_view(),
         name="add_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/slack/apps/",
+        organization_slack_apps,
+        name="organization_slack_apps",
     ),
     path(
         "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",
