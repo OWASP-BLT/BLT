@@ -239,7 +239,9 @@ class RegisterOrganizationView(View):
                         logger.warning(f"Invalid referral: {e}")
                     except IntegrityError as e:
                         logger.error(f"Database integrity error processing referral: {e}")
-                    except Exception:
+                    except DatabaseError as e:
+                        logger.exception("Database error processing referral code")
+                    except Exception as e:
                         logger.exception("Failed to process referral code during organization registration")
                     finally:
                         if "org_ref" in request.session:
@@ -248,7 +250,7 @@ class RegisterOrganizationView(View):
                     if not referral_succeeded:
                         messages.warning(
                             request,
-                            "Referral code could not be applied, but your organization was created successfully.",
+                            f"Referral code could not be applied ({type(e).__name__}), but your organization was created successfully.",
                         )
                 else:
                     if "org_ref" in request.session:
