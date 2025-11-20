@@ -138,7 +138,7 @@ class Organization(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True, max_length=255)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)

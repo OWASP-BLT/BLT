@@ -172,7 +172,13 @@ class RegisterOrganizationView(View):
         if organization_logo:
             organization_logo_file = organization_logo.name.split(".")[0]
             extension = organization_logo.name.split(".")[-1]
-            organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
+            # Ensure the total path length doesn't exceed 255 characters
+            # organization_logos/ (20) + filename + _ (1) + uuid (36) + . + extension
+            prefix_length = len("organization_logos/")
+            uuid_and_extension_length = 1 + 36 + 1 + len(extension)  # _uuid.ext
+            max_filename_length = 255 - prefix_length - uuid_and_extension_length
+            truncated_filename = organization_logo_file[:max_filename_length]
+            organization_logo.name = f"{truncated_filename}_{uuid.uuid4()}.{extension}"
             logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
         else:
             logo_path = None
