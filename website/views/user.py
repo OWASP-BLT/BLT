@@ -1279,6 +1279,7 @@ def record_payment_atomic(
         # If this row is already completed → abort safely
         if payment_row and payment_row.status == "completed":
             logger.info("Idempotency gate: PR #%s already paid (tx=%s)", pr_num, payment_row.tx_id)
+            gc_set_atomic("autopay_fail_count", 0)  # reset
             return True, "Already completed"
 
         # 1. Lock user profile (avoid concurrent winnings races)
@@ -1744,19 +1745,21 @@ def post_payment_comment(pr_data, tx_id, amount, currency):
 
 
 def notify_user_missing_address(user, pr_data):
-    # Notify user they need to add a crypto address
-    # Send email
-    send_mail(
-        subject="Action Required: Add BCH Address for Payment",
-        message=(
-            f"Your PR #{pr_data['number']} has been merged and is eligible for a bounty payment!\n\n"
-            f"However, we don't have a cryptocurrency address on file for you.\n\n"
-            f"Please add your BCH address (preferred) at: {settings.SITE_URL}/profile/edit/\n\n"
-            f"Note: BCH addresses must start with 'bitcoincash:'"
-        ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
-    )
+    """Best-effort email to prompt user to add a BCH address; must never break the webhook."""
+    try:
+        send_mail(
+            subject=f"Action Required: Add BCH Address for Payment (PR #{pr_data.get('number')})",
+            message=(
+                f"Your PR #{pr_data.get('number')} has been merged and is eligible for a bounty payment!\n\n"
+                f"However, we don't have a cryptocurrency address on file for you.\n\n"
+                f"Please add your BCH address (preferred) at: {settings.SITE_URL}/profile/edit/\n\n"
+                f"Note: BCH addresses must start with 'bitcoincash:'"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+        )
+    except Exception:
+        logger.exception("Failed to send missing-address email for user=%s PR=%s", user.username, pr_data.get("number"))
 
 
 def notify_admin_payment_failure(pr_data, error_message):
@@ -2023,9 +2026,6 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         )
         return
 
-    # Increment the counter after the check passes
-    gc_increment(today_key, usd_amount_dec)
-
     # Alert if amount is unusually large
     MAX_PAYOUT = Decimal("50")  # <=== adjust
     if usd_amount_dec > MAX_PAYOUT:
@@ -2242,7 +2242,10 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
         return
 
     # update daily total in GlobalConfig
+    new_total = Decimal(str(gc_get(today_key, 0))) + usd_amount_dec
+    gc_set_atomic(today_key, str(new_total))
 
+    # reset failures
     gc_set_atomic("autopay_fail_count", 0)
 
     #  PR comment (non-fatal)
