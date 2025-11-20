@@ -1261,15 +1261,6 @@ def record_payment_atomic(
     )
 
     with transaction.atomic():
-        if bounty_issue.user_profile_id != pr_user_profile.id:
-            alert_suspicious(
-                "mismatched_author",
-                f"PR author ({pr_user_profile.user.username}) does not match bounty issue author",
-                user_profile=pr_user_profile,
-                repo=repo,
-                pr_number=pr_num,
-            )
-            return False, "Author mismatch"
         # Hard guarantee: only one completed PaymentRecord per PR
         duplicate_records = PaymentRecord.objects.filter(repo=repo, pr_number=pr_num, currency=currency).exclude(
             status="pending"
@@ -1357,8 +1348,6 @@ def record_payment_atomic(
         # IMPORTANT: If we couldn't find a bounty issue via the extraction,
         # DO NOT attempt to pay. This is the secure behavior.
         if not bounty_issue:
-            # Optionally, you could try to find a "pending payment" mapping in DB (if your flow stored it previously).
-            # But the safest default is to abort — log details and return.
             logger.warning(
                 "Autopay aborted: no bounty issue found for PR #%s in repo=%s. linked_issue_num=%s",
                 pr_num,
@@ -1366,6 +1355,16 @@ def record_payment_atomic(
                 linked_issue_num,
             )
             return False, "No bounty issue found (requires explicit linking or 'Fixes #NNN' in PR body)."
+        #  Verify author match BEFORE processing payment
+        if bounty_issue.user_profile_id != pr_user_profile.id:
+            alert_suspicious(
+                "mismatched_author",
+                f"PR author ({pr_user_profile.user.username}) does not match bounty issue author",
+                user_profile=pr_user_profile,
+                repo=repo,
+                pr_number=pr_num,
+            )
+            return False, "Author mismatch"
 
         # 4. Link PR -> bounty issue (M2M). Use add() to not replace existing links.
         try:
@@ -1650,7 +1649,8 @@ def github_webhook(request):
 def extract_bounty_from_labels(labels):
     # Extract bounty amount from PR labels like $5, $10, etc.
     for label in labels:
-        match = re.match(r"^\$(\d+(?:\.\d+)?)$", label.strip())
+        label_name = label.get("name", "") if isinstance(label, dict) else str(label)
+        match = re.match(r"^\$(\d+(?:\.\d+)?)$", label_name.strip())
         if match:
             return Decimal(match.group(1))
     return None
