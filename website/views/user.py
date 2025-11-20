@@ -194,13 +194,6 @@ def gc_get(key, default=None):
         return default
 
 
-def gc_get(key, default=None):
-    try:
-        return GlobalConfig.objects.get(key=key).value
-    except GlobalConfig.DoesNotExist:
-        return default
-
-
 def gc_set_atomic(key, value):
     """
     Safe set for GlobalConfig, preventing race conditions.
@@ -1268,6 +1261,15 @@ def record_payment_atomic(
     )
 
     with transaction.atomic():
+        if bounty_issue.user_profile_id != pr_user_profile.id:
+            alert_suspicious(
+                "mismatched_author",
+                f"PR author ({pr_user_profile.user.username}) does not match bounty issue author",
+                user_profile=pr_user_profile,
+                repo=repo,
+                pr_number=pr_num,
+            )
+            return False, "Author mismatch"
         # Hard guarantee: only one completed PaymentRecord per PR
         duplicate_records = PaymentRecord.objects.filter(repo=repo, pr_number=pr_num, currency=currency).exclude(
             status="pending"
@@ -1490,15 +1492,6 @@ def record_payment_atomic(
                 "system_daily_total": float(daily_total),
             },
         )
-    if bounty_issue.user_profile_id != pr_user_profile.id:
-        alert_suspicious(
-            "mismatched_author",
-            f"PR author ({pr_user_profile.user.username}) does not match bounty issue author",
-            user_profile=pr_user_profile,
-            repo=repo,
-            pr_number=pr_num,
-        )
-        return False, "Author mismatch"
 
     # transaction.atomic() block ended successfully
     return True, "Processed"
@@ -2018,9 +2011,7 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
     #  Global Daily Limit
     DAILY_LIMIT = Decimal("1500")  # adjust
     today_key = f"total_paid_{timezone.now().date()}"
-
-    new_total = gc_increment(today_key, usd_amount_dec)
-    current_total = Decimal(str(current_total))
+    current_total = Decimal(str(gc_get(today_key, 0)))
 
     if current_total + usd_amount_dec > DAILY_LIMIT:
         alert_suspicious(
@@ -2031,6 +2022,9 @@ def process_bounty_payment(pr_user_profile, usd_amount, pr_data):
             pr_number=pr_number,
         )
         return
+
+    # Increment the counter after the check passes
+    gc_increment(today_key, usd_amount_dec)
 
     # Alert if amount is unusually large
     MAX_PAYOUT = Decimal("50")  # <=== adjust
