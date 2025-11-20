@@ -75,8 +75,6 @@ logger = logging.getLogger(__name__)
 # allowed currencies for autopay
 ALLOWED_CURRENCIES = {"BCH"}
 
-import re
-
 # For parsing "Fixes #123", "Closes #123", "Resolves #123"
 FIXES_RE = re.compile(r"(?i)\b(?:fixes|closes|resolves)\s*#(\d+)\b")
 
