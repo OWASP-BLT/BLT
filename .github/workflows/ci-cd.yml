@@ -31,6 +31,10 @@ env:
   FORCE_COLOR: 1
   POETRY_CACHE_DIR: ~/.cache/pypoetry
 
+# Default permissions for the workflow
+permissions:
+  contents: read
+
 concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -80,8 +84,9 @@ jobs:
 
   pre-commit:
     name: Run pre-commit
-    # Run on pull_request_target (for forked PRs with write permissions), pull_request (for same-repo PRs),
-    # push to main, or manual trigger. The concurrency group prevents duplicate runs.
+    # Only run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
+    # This prevents duplicate runs and ensures we have permissions for forked PRs
+    if: github.event_name != 'pull_request'
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -176,7 +181,6 @@ jobs:
         if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -271,10 +275,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     permissions:
-      issues: write
-      pull-requests: write
-      contents: write
-      actions: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -293,6 +294,8 @@ jobs:
 
   docker-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
