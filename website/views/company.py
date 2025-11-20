@@ -210,33 +210,29 @@ class RegisterOrganizationView(View):
                 ref_code = request.session.get("org_ref")
                 success_message = "Organization registered successfully."
 
-                # Handle referral code after transaction commits to prevent failures from rolling back organization creation
-                points_awarded = False
-
-                def handle_referral():
-                    nonlocal points_awarded
+                # Validate and process referral if present
+                if ref_code:
+                    referral_succeeded = False
                     try:
-                        if ref_code:
-                            with transaction.atomic():
-                                invite = InviteOrganization.objects.select_for_update().get(
-                                    referral_code=ref_code, points_awarded=False
-                                )
-                                if not invite.sender:
-                                    raise ValueError("Invalid invite sender")
-                                # Reject sample/placeholder invites
-                                if re.match(SAMPLE_INVITE_EMAIL_PATTERN, invite.email):
-                                    raise ValueError("Sample referral links cannot be used for registration")
-                                # Award 5 points to the sender
-                                Points.objects.create(
-                                    user=invite.sender,
-                                    score=5,
-                                    reason=f"Organization invite referral: {organization.name}",
-                                )
-                                # Mark points as awarded and link organization
-                                invite.points_awarded = True
-                                invite.organization = organization
-                                invite.save()
-                                points_awarded = True
+                        invite = InviteOrganization.objects.select_for_update().get(
+                            referral_code=ref_code, points_awarded=False
+                        )
+                        if not invite.sender:
+                            raise ValueError("Invalid invite sender")
+                        if re.match(SAMPLE_INVITE_EMAIL_PATTERN, invite.email):
+                            raise ValueError("Sample referral links cannot be used for registration")
+
+                        # Award points
+                        Points.objects.create(
+                            user=invite.sender,
+                            score=5,
+                            reason=f"Organization invite referral: {organization.name}",
+                        )
+                        invite.points_awarded = True
+                        invite.organization = organization
+                        invite.save()
+                        referral_succeeded = True
+                        success_message = f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral."
                     except InviteOrganization.DoesNotExist:
                         logger.warning(f"Referral code {ref_code} not found or already used")
                     except ValueError as e:
@@ -246,15 +242,15 @@ class RegisterOrganizationView(View):
                     except Exception:
                         logger.exception("Failed to process referral code during organization registration")
                     finally:
-                        # Always clear session
                         if "org_ref" in request.session:
                             del request.session["org_ref"]
 
-                # Schedule referral processing after transaction commits
-                if ref_code:
-                    transaction.on_commit(handle_referral)
+                    if not referral_succeeded:
+                        messages.warning(
+                            request,
+                            "Referral code could not be applied, but your organization was created successfully.",
+                        )
                 else:
-                    # Clear session immediately if no referral code
                     if "org_ref" in request.session:
                         del request.session["org_ref"]
 
