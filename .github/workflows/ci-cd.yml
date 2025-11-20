@@ -34,8 +34,6 @@ env:
 # Default permissions for the workflow
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
 
 concurrency:
   cancel-in-progress: true
@@ -276,10 +274,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     permissions:
-      issues: write
-      pull-requests: write
-      contents: write
-      actions: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -298,6 +293,8 @@ jobs:
 
   docker-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
