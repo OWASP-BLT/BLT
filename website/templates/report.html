@@ -264,6 +264,7 @@
                             <div id="screenshot-container"
                                  onclick="document.getElementById('screenshots').click()"
                                  class="relative group border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#e74c3c] rounded-xl p-6 transition-all duration-200 cursor-pointer">
+                                <div id="screenshot-hash-container" class="mt-4"></div>
                                 <div class="text-center">
                                     <div class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600 group-hover:text-[#e74c3c] transition-colors duration-200">
                                         <i class="fas fa-cloud-upload-alt text-4xl"></i>
@@ -655,7 +656,7 @@ function showToast(message, type = 'success') {
         
         if (hashValue) {
             // Hide the upload container
-            document.getElementById('screenshot-upload-container').style.display = 'none';
+            document.getElementById('screenshot-container').style.display = 'none';
             
             // Remove required attribute from screenshots input when we have a hash
             screenshotsInput.removeAttribute('required');
