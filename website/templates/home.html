@@ -217,71 +217,71 @@
         </div>
         <!-- Recent Hackathons Section -->
         {% if recent_hackathons %}
-            <section class="py-12 bg-white dark:bg-gray-900 transition-colors">
+            <section class="py-8 bg-white dark:bg-gray-900 transition-colors">
                 <div class="max-w-7xl mx-auto px-4">
-                    <div class="mb-8">
-                        <div class="flex items-center gap-4 mb-3">
-                            <i class="fas fa-trophy text-2xl text-[#e74c3c]"></i>
-                            <h2 class="text-3xl font-bold">Recent Hackathons</h2>
+                    <div class="mb-6">
+                        <div class="flex items-center gap-4 mb-2">
+                            <i class="fas fa-trophy text-xl text-[#e74c3c]"></i>
+                            <h2 class="text-2xl font-bold">Recent Hackathons</h2>
                             <div class="flex-grow h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
                         </div>
-                        <p class="text-gray-600 dark:text-gray-400 text-base">
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">
                             Join our coding competitions, collaborate with the community, and win amazing prizes!
                         </p>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         {% for hackathon in recent_hackathons %}
-                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200 dark:border-gray-700">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-200 dark:border-gray-700">
                                 {% if hackathon.banner_image %}
-                                    <div class="h-48 bg-cover bg-center"
+                                    <div class="h-32 bg-cover bg-center"
                                          style="background-image: url('{{ hackathon.banner_image.url }}')"></div>
                                 {% else %}
-                                    <div class="h-48 bg-gradient-to-r from-[#e74c3c] to-red-700 flex items-center justify-center">
-                                        <i class="fas fa-code text-white text-5xl"></i>
+                                    <div class="h-32 bg-gradient-to-r from-[#e74c3c] to-red-700 flex items-center justify-center">
+                                        <i class="fas fa-code text-white text-4xl"></i>
                                     </div>
                                 {% endif %}
-                                <div class="p-6">
+                                <div class="p-4">
                                     <div class="flex justify-between items-start mb-2">
-                                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ hackathon.name }}</h3>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ hackathon.status_badge_class }}">
+                                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ hackathon.name }}</h3>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ hackathon.status_badge_class }}">
                                             {{ hackathon.status_text }}
                                         </span>
                                     </div>
-                                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                                    <p class="text-gray-600 dark:text-gray-400 text-xs mb-2">
                                         Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
     class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                     </p>
-                                    <p class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
+                                    <p class="text-gray-700 dark:text-gray-300 text-sm mb-3 line-clamp-2">{{ hackathon.description|truncatechars:120 }}</p>
                                     <!-- Hackathon Statistics -->
-                                    <div class="grid grid-cols-3 gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                    <div class="grid grid-cols-3 gap-2 mb-3 p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
                                         <div class="text-center">
-                                            <div class="flex items-center justify-center mb-1">
-                                                <i class="fas fa-users text-[#e74c3c] text-lg"></i>
+                                            <div class="flex items-center justify-center mb-0.5">
+                                                <i class="fas fa-users text-[#e74c3c] text-sm"></i>
                                             </div>
-                                            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ hackathon.stats.participant_count }}</div>
+                                            <div class="text-lg font-bold text-gray-900 dark:text-white">{{ hackathon.stats.participant_count }}</div>
                                             <div class="text-xs text-gray-600 dark:text-gray-400">Participants</div>
                                         </div>
                                         <div class="text-center">
-                                            <div class="flex items-center justify-center mb-1">
-                                                <i class="fas fa-code-branch text-[#e74c3c] text-lg"></i>
+                                            <div class="flex items-center justify-center mb-0.5">
+                                                <i class="fas fa-code-branch text-[#e74c3c] text-sm"></i>
                                             </div>
-                                            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ hackathon.stats.total_prs }}</div>
+                                            <div class="text-lg font-bold text-gray-900 dark:text-white">{{ hackathon.stats.total_prs }}</div>
                                             <div class="text-xs text-gray-600 dark:text-gray-400">Pull Requests</div>
                                         </div>
                                         <div class="text-center">
-                                            <div class="flex items-center justify-center mb-1">
-                                                <i class="fas fa-check-circle text-[#e74c3c] text-lg"></i>
+                                            <div class="flex items-center justify-center mb-0.5">
+                                                <i class="fas fa-check-circle text-[#e74c3c] text-sm"></i>
                                             </div>
-                                            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ hackathon.stats.merged_pr_count }}</div>
+                                            <div class="text-lg font-bold text-gray-900 dark:text-white">{{ hackathon.stats.merged_pr_count }}</div>
                                             <div class="text-xs text-gray-600 dark:text-gray-400">Merged PRs</div>
                                         </div>
                                     </div>
-                                    <div class="flex items-center text-sm text-gray-500 mb-4">
-                                        <i class="far fa-calendar mr-2"></i>
+                                    <div class="flex items-center text-xs text-gray-500 mb-3">
+                                        <i class="far fa-calendar mr-1.5"></i>
                                         <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
                                     </div>
                                     <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
-                                       class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
+                                       class="inline-flex items-center justify-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
                                         View Details
                                         <i class="fas fa-arrow-right ml-2"></i>
                                     </a>
