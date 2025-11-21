@@ -39,7 +39,7 @@ from django.views.generic import DetailView, FormView, ListView, TemplateView, V
 from django.views.generic.edit import CreateView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from slack_sdk.errors import SlackApiError
+from slack_sdk.errors import SlackApiError, SlackRequestError
 from slack_sdk.web import WebClient
 
 from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
@@ -4090,7 +4090,20 @@ def organization_slack_apps(request, id, template="organization/dashboard/slack_
         return render(
             request,
             template,
-            {"error": f"Slack API error: {e.response.get('error')}", "organization": organization},
+            {
+                "error": f"Slack API error: {e.response.get('error')}",
+                "organization": organization,
+            },
+        )
+    except SlackRequestError as e:
+        # Network/connection/invalid response issues
+        return render(
+            request,
+            template,
+            {
+                "error": f"Slack network error: {str(e)}",
+                "organization": organization,
+            },
         )
 
     apps_with_commands = []
