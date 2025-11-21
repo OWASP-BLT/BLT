@@ -556,14 +556,14 @@ def search(request, template="search.html"):
 
     if query:
         # Search across multiple models
-        organizations = Organization.objects.filter(name__icontains=query)
+        organizations = Organization.objects.filter(name__icontains=query)[0:20]
         issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )
+        )[0:20]
         domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
         users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-        projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-        repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[0:20]
+        repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[0:20]
 
         context = {
             "request": request,
@@ -628,7 +628,7 @@ def search(request, template="search.html"):
             )[0:20],
         }
     elif stype == "organizations":
-        organizations = Organization.objects.filter(name__icontains=query)
+        organizations = Organization.objects.filter(name__icontains=query)[0:20]
 
         for org in organizations:
             d = Domain.objects.filter(organization=org).first()
@@ -637,27 +637,27 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "organizations": Organization.objects.filter(name__icontains=query),
+            "organizations": organizations,
         }
     elif stype == "projects":
         context = {
             "query": query,
             "type": stype,
-            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[0:20],
         }
     elif stype == "repos":
         context = {
             "query": query,
             "type": stype,
-            "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+            "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[0:20],
         }
     elif stype == "tags":
-        tags = Tag.objects.filter(name__icontains=query)
-        matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
-        matching_domains = Domain.objects.filter(tags__in=tags).distinct()
-        matching_issues = Issue.objects.filter(tags__in=tags).distinct()
-        matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
-        matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+        tags = Tag.objects.filter(name__icontains=query)[0:20]
+        matching_organizations = Organization.objects.filter(tags__in=tags).distinct()[0:20]
+        matching_domains = Domain.objects.filter(tags__in=tags).distinct()[0:20]
+        matching_issues = Issue.objects.filter(tags__in=tags).distinct()[0:20]
+        matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()[0:20]
+        matching_repos = Repo.objects.filter(tags__in=tags).distinct()[0:20]
         for org in matching_organizations:
             d = Domain.objects.filter(organization=org).first()
             if d:
@@ -676,7 +676,7 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "repos": Repo.objects.filter(primary_language__icontains=query),
+            "repos": Repo.objects.filter(primary_language__icontains=query)[0:20],
         }
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
@@ -831,13 +831,49 @@ def add_forum_post(request):
             title = data.get("title")
             category = data.get("category")
             description = data.get("description")
+            repo_id = data.get("repo")
+            project_id = data.get("project")
+            organization_id = data.get("organization")
 
             if not all([title, category, description]):
                 return JsonResponse({"status": "error", "message": "Missing required fields"})
 
-            post = ForumPost.objects.create(
-                user=request.user, title=title, category_id=category, description=description
-            )
+            # Validate category exists
+            try:
+                ForumCategory.objects.get(id=category)
+            except ForumCategory.DoesNotExist:
+                return JsonResponse({"status": "error", "message": "Invalid category"})
+
+            post_data = {
+                "user": request.user,
+                "title": title,
+                "category_id": category,
+                "description": description,
+            }
+
+            # Validate foreign key IDs before adding them
+            if repo_id:
+                try:
+                    Repo.objects.get(id=repo_id)
+                    post_data["repo_id"] = repo_id
+                except Repo.DoesNotExist:
+                    return JsonResponse({"status": "error", "message": "Invalid repo ID"})
+
+            if project_id:
+                try:
+                    Project.objects.get(id=project_id)
+                    post_data["project_id"] = project_id
+                except Project.DoesNotExist:
+                    return JsonResponse({"status": "error", "message": "Invalid project ID"})
+
+            if organization_id:
+                try:
+                    Organization.objects.get(id=organization_id)
+                    post_data["organization_id"] = organization_id
+                except Organization.DoesNotExist:
+                    return JsonResponse({"status": "error", "message": "Invalid organization ID"})
+
+            post = ForumPost.objects.create(**post_data)
 
             return JsonResponse({"status": "success", "post_id": post.id})
         except json.JSONDecodeError:
@@ -877,13 +913,31 @@ def view_forum(request):
     categories = ForumCategory.objects.all()
     selected_category = request.GET.get("category")
 
-    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+    posts = (
+        ForumPost.objects.select_related("user", "category", "repo", "project", "organization")
+        .prefetch_related("comments")
+        .all()
+    )
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
+    # Limit the number of organizations, projects, and repos to prevent performance issues
+    organizations = Organization.objects.all().order_by("name")[0:100]
+    projects = Project.objects.all().order_by("name")[0:100]
+    repos = Repo.objects.all().order_by("name")[0:100]
+
     return render(
-        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+        request,
+        "forum.html",
+        {
+            "categories": categories,
+            "posts": posts,
+            "selected_category": selected_category,
+            "organizations": organizations,
+            "projects": projects,
+            "repos": repos,
+        },
     )
 
 
