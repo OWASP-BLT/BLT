@@ -101,7 +101,7 @@
                                            maxlength="100"
                                            required
                                            placeholder="Brief description of the activity"
-                                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all" />
+                                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all bg-white dark:bg-gray-900" />
                                 </div>
                             </div>
                             <!-- Activity Type Field as Checkbox -->
@@ -143,7 +143,7 @@
                             <!-- IP Address Field -->
                             <div class="mb-3">
                                 <label for="ip_address"
-                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 bg-white dark:bg-gray-900">
                                     IP Address
                                 </label>
                                 <div class="relative rounded-md shadow-sm">
@@ -163,7 +163,7 @@
                                            aria-describedby="ip-validation-message"
                                            aria-invalid="false"
                                            placeholder="e.g. 192.168.1.1"
-                                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all" />
+                                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all bg-white dark:bg-gray-900" />
                                 </div>
                                 <p class="text-xs text-gray-500 dark:text-gray-500"
                                    id="ip-validation-message">Enter a valid IPv4 or IPv6 address</p>
@@ -215,7 +215,7 @@
                                           required
                                           rows="3"
                                           placeholder="Provide a detailed description of the activity..."
-                                          class="block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all"></textarea>
+                                          class="block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all bg-white dark:bg-gray-900"></textarea>
                             </div>
                         </div>
                         <!-- Security Verification Section -->
@@ -233,7 +233,7 @@
                                 Verification
                             </h2>
                             <div class="captcha-form mb-3">
-                                <div class="[&_img]:rounded-md [&_img]:shadow-sm [&_img]:border [&_img]:border-gray-200 [&_img]:mr-4 [&_input]:w-full [&_input]:border [&_input]:border-gray-300 [&_input]:rounded-lg [&_input]:p-2 [&_input]:text-md [&_input]:focus:ring-red-500 [&_input]:focus:border-red-500 [&_input]:transition-all">
+                                <div class="[&_img]:rounded-md [&_img]:shadow-sm [&_img]:border [&_img]:border-gray-200 [&_img]:mr-4 [&_input]:w-full [&_input]:border [&_input]:border-gray-300 [&_input]:rounded-lg [&_input]:p-2 [&_input]:text-md [&_input]:focus:ring-red-500 [&_input]:focus:border-red-500 [&_input]:transition-all [&>input]:bg-white dark:[&>input]:bg-gray-900">
                                     {{ captcha_form.captcha }}
                                 </div>
                             </div>
