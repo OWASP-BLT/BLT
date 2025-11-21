@@ -221,6 +221,54 @@ class ForumTests(TestCase):
         self.assertEqual(post.project.id, project.id)
         self.assertEqual(post.organization.id, organization.id)
 
+    def test_forum_post_with_invalid_ids(self):
+        # Test with invalid category ID (non-integer)
+        post_data = {
+            "title": "Test Post",
+            "category": "invalid",
+            "description": "Test Description",
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "error")
+        self.assertEqual(response.json()["message"], "Invalid category")
+
+        # Test with invalid repo ID (non-integer)
+        post_data = {
+            "title": "Test Post",
+            "category": self.category.id,
+            "description": "Test Description",
+            "repo": "not_a_number",
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "error")
+        self.assertEqual(response.json()["message"], "Invalid repo ID")
+
+        # Test with non-existent repo ID
+        post_data = {
+            "title": "Test Post",
+            "category": self.category.id,
+            "description": "Test Description",
+            "repo": 99999,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "error")
+        self.assertEqual(response.json()["message"], "Invalid repo ID")
+
 
 class TopEarnersTests(TestCase):
     def setUp(self):

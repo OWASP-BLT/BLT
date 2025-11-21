@@ -838,40 +838,50 @@ def add_forum_post(request):
             if not all([title, category, description]):
                 return JsonResponse({"status": "error", "message": "Missing required fields"})
 
-            # Validate category exists
+            # Validate category ID format and existence
             try:
-                ForumCategory.objects.get(id=category)
-            except ForumCategory.DoesNotExist:
+                category_id = int(category)
+            except (TypeError, ValueError):
+                return JsonResponse({"status": "error", "message": "Invalid category"})
+            if not ForumCategory.objects.filter(id=category_id).exists():
                 return JsonResponse({"status": "error", "message": "Invalid category"})
 
             post_data = {
                 "user": request.user,
                 "title": title,
-                "category_id": category,
+                "category_id": category_id,
                 "description": description,
             }
 
-            # Validate foreign key IDs before adding them
+            # Validate repo ID format and existence
             if repo_id:
                 try:
-                    Repo.objects.get(id=repo_id)
-                    post_data["repo_id"] = repo_id
-                except Repo.DoesNotExist:
+                    repo_pk = int(repo_id)
+                except (TypeError, ValueError):
                     return JsonResponse({"status": "error", "message": "Invalid repo ID"})
+                if not Repo.objects.filter(id=repo_pk).exists():
+                    return JsonResponse({"status": "error", "message": "Invalid repo ID"})
+                post_data["repo_id"] = repo_pk
 
+            # Validate project ID format and existence
             if project_id:
                 try:
-                    Project.objects.get(id=project_id)
-                    post_data["project_id"] = project_id
-                except Project.DoesNotExist:
+                    project_pk = int(project_id)
+                except (TypeError, ValueError):
                     return JsonResponse({"status": "error", "message": "Invalid project ID"})
+                if not Project.objects.filter(id=project_pk).exists():
+                    return JsonResponse({"status": "error", "message": "Invalid project ID"})
+                post_data["project_id"] = project_pk
 
+            # Validate organization ID format and existence
             if organization_id:
                 try:
-                    Organization.objects.get(id=organization_id)
-                    post_data["organization_id"] = organization_id
-                except Organization.DoesNotExist:
+                    organization_pk = int(organization_id)
+                except (TypeError, ValueError):
                     return JsonResponse({"status": "error", "message": "Invalid organization ID"})
+                if not Organization.objects.filter(id=organization_pk).exists():
+                    return JsonResponse({"status": "error", "message": "Invalid organization ID"})
+                post_data["organization_id"] = organization_pk
 
             post = ForumPost.objects.create(**post_data)
 

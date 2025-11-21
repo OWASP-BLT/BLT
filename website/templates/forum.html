@@ -222,6 +222,7 @@
                             Organization (Optional)
                             <a href="{% url 'register_organization' %}"
                                target="_blank"
+                               rel="noopener noreferrer"
                                class="ml-2 text-[#e74c3c] hover:text-[#c0392b] text-xs font-normal">
                                 <i class="fas fa-plus-circle"></i> Create New
                             </a>
@@ -239,6 +240,7 @@
                             Project (Optional)
                             <a href="{% url 'create_project' %}"
                                target="_blank"
+                               rel="noopener noreferrer"
                                class="ml-2 text-[#e74c3c] hover:text-[#c0392b] text-xs font-normal">
                                 <i class="fas fa-plus-circle"></i> Create New
                             </a>
@@ -256,6 +258,7 @@
                             Repository (Optional)
                             <a href="{% url 'add_repo' %}"
                                target="_blank"
+                               rel="noopener noreferrer"
                                class="ml-2 text-[#e74c3c] hover:text-[#c0392b] text-xs font-normal">
                                 <i class="fas fa-plus-circle"></i> Create New
                             </a>
@@ -399,7 +402,7 @@
                 closeNewSuggestionModal();
                 location.reload();
             } else {
-                alert('Error: Please fill all required fields.');
+                alert(data.message || 'Error: Please fill all required fields.');
             }
         })
         .catch(error => console.error('Error:', error));
