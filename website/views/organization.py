@@ -3973,7 +3973,11 @@ def add_slack_integration(request, slug):
             return redirect("organization_detail", slug=slug)
 
     integration = Integration.objects.filter(organization=organization, service_name="slack").first()
-    slack_integration = getattr(integration, "slack_integration", None) if integration else None
+    integration = Integration.objects.filter(organization=organization, service_name="slack").first()
+
+    slack_integration = None
+    if integration:
+        slack_integration = SlackIntegration.objects.filter(integration=integration).first()
 
     if not slack_integration:
         slack_integration = SlackIntegration()

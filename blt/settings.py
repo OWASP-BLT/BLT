@@ -85,7 +85,7 @@ INSTALLED_APPS = (
     "allauth.socialaccount.providers.facebook",
     "allauth.socialaccount.providers.google",
     "django_gravatar",
-    # "email_obfuscator",
+    "email_obfuscator",
     "import_export",
     "comments",
     "annoying",

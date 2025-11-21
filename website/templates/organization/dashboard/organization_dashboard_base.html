@@ -10,7 +10,7 @@
                 {% block title %}
                     {% env 'PROJECT_NAME' %}'s Dashboard | OWASP-BLT
                 {% endblock title %}
-            </title>o
+            </title>
             <meta name="description"
                   content="{% block description %}Seamlessly manage bug bounties, track vulnerabilities, and fortify your digital assets with {% env 'PROJECT_NAME' %}'s comprehensive platform. Empower your security team and engage researchers effectively.{% endblock description %}" />
             <meta name="keywords"
@@ -44,7 +44,6 @@
             <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
                     crossorigin="anonymous"></script>
         {% endif %}
-        {% load static %}
         <!-- Dark mode: same as base.html -->
         <script src="{% static 'js/darkMode.js' %}"></script>
         <script>
