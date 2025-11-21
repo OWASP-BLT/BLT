@@ -74,6 +74,29 @@ from website.utils import format_timedelta, get_client_ip, get_github_issue_titl
 logger = logging.getLogger(__name__)
 
 
+import time
+
+import requests
+from slack_sdk.errors import SlackApiError
+from slack_sdk.web import WebClient
+
+
+def slack_safe_call(client, method, **kwargs):
+    try:
+        return client.api_call(method, **kwargs)
+
+    except SlackApiError as e:
+        error = e.response.get("error")
+
+        # Rate-limit handling
+        if error == "ratelimited":
+            retry_after = int(e.response.headers.get("Retry-After", 1))
+            time.sleep(retry_after)
+            return client.api_call(method, **kwargs)
+
+        raise
+
+
 def add_domain_to_organization(request):
     if request.method == "POST":
         try:
@@ -3936,13 +3959,8 @@ class BountyPayoutsView(ListView):
 
 @login_required(login_url="/accounts/login")
 def add_slack_integration(request, slug):
-    """
-    Configure Slack integration settings for an organization.
-    """
-
     organization = get_object_or_404(Organization, slug=slug)
 
-    # Allow superusers OR matching organization admins
     if not request.user.is_superuser:
         try:
             admin_record = OrganizationAdmin.objects.get(user=request.user)
@@ -3954,7 +3972,7 @@ def add_slack_integration(request, slug):
             messages.error(request, "You do not have permission to edit this organization.")
             return redirect("organization_detail", slug=slug)
 
-    integration = Integration.objects.filter(company=organization, service_name="slack").first()
+    integration = Integration.objects.filter(organization=organization, service_name="slack").first()
     slack_integration = getattr(integration, "slack_integration", None) if integration else None
 
     if not slack_integration:
@@ -3963,7 +3981,6 @@ def add_slack_integration(request, slug):
     hours = list(range(24))
     channels = []
 
-    # Fetch Slack channels if bot token exists
     token = slack_integration.bot_access_token
     if not token:
         messages.warning(request, "Slack bot token is not configured.")
@@ -3977,12 +3994,9 @@ def add_slack_integration(request, slug):
                 channels = [c.get("name") for c in data.get("channels", []) if c.get("name")]
             else:
                 messages.error(request, f"Could not load channels: {data.get('error')}")
-
-        except requests.exceptions.RequestException as e:
-            logger.warning("Error fetching Slack channels: %s", e)
+        except requests.exceptions.RequestException:
             messages.error(request, "Unable to communicate with Slack API.")
-        except ValueError as e:
-            logger.warning("Invalid Slack response for conversations.list: %s", e)
+        except ValueError:
             messages.error(request, "Received invalid data from Slack.")
 
     if request.method == "POST":
@@ -4002,7 +4016,7 @@ def add_slack_integration(request, slug):
         if not integration:
             integration = Integration.objects.create(
                 service_name="slack",
-                company=organization,
+                organization=organization,
             )
 
         if not slack_integration.integration_id:
@@ -4032,11 +4046,6 @@ def add_slack_integration(request, slug):
 
 @login_required(login_url="/accounts/login")
 def organization_slack_apps(request, id, template="organization/dashboard/slack_apps.html"):
-    """
-    Display Slack apps installed in a workspace along with supported commands.
-    """
-
-    # Allow superusers OR matching organization admins
     try:
         organization = Organization.objects.get(pk=id)
     except Organization.DoesNotExist:
@@ -4054,7 +4063,7 @@ def organization_slack_apps(request, id, template="organization/dashboard/slack_
             return redirect("organization_detail", slug=organization.slug)
 
     try:
-        slack_integration = SlackIntegration.objects.get(integration__company=organization)
+        slack_integration = SlackIntegration.objects.get(integration__organization=organization)
     except SlackIntegration.DoesNotExist:
         return render(
             request,
@@ -4079,10 +4088,9 @@ def organization_slack_apps(request, id, template="organization/dashboard/slack_
     slack = WebClient(token=token)
 
     try:
-        apps_resp = slack.api_call("apps.list")
+        apps_resp = slack_safe_call(slack, "apps.list")
         installed_apps = apps_resp.get("apps", [])
     except SlackApiError as e:
-        logger.warning("Error fetching Slack apps: %s", e)
         return render(
             request,
             template,
@@ -4093,16 +4101,21 @@ def organization_slack_apps(request, id, template="organization/dashboard/slack_
 
     for app in installed_apps:
         app_id = app.get("id")
+        if not isinstance(app_id, str) or not app_id.strip():
+            continue
+
         app_name = app.get("name")
         app_desc = app.get("description", "")
-
         commands = []
 
         try:
-            cmd_resp = slack.api_call("apps.commands.list", params={"app_id": app_id})
+            cmd_resp = slack_safe_call(slack, "apps.commands.list", params={"app_id": app_id})
             commands = cmd_resp.get("commands", [])
         except SlackApiError as e:
             logger.warning("Slack command fetch failed for %s: %s", app_id, e)
+        except requests.exceptions.RequestException:
+            logger.warning("Network error while fetching commands for %s", app_id)
+            continue
         except Exception as e:
             logger.warning("Unexpected error fetching commands for %s: %s", app_id, e)
 
