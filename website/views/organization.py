@@ -74,13 +74,6 @@ from website.utils import format_timedelta, get_client_ip, get_github_issue_titl
 logger = logging.getLogger(__name__)
 
 
-import time
-
-import requests
-from slack_sdk.errors import SlackApiError
-from slack_sdk.web import WebClient
-
-
 def slack_safe_call(client, method, **kwargs):
     try:
         return client.api_call(method, **kwargs)
