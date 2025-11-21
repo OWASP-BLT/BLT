@@ -23,7 +23,7 @@ class Command(BaseCommand):
             help="Show what would be deleted without actually deleting",
         )
 
-    def handle(self, *_ , **options):
+    def handle(self, *_, **options):
         days = options["days"]
         dry_run = options["dry_run"]
         cutoff_date = timezone.now() - timedelta(days=days)

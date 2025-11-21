@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
@@ -213,6 +213,7 @@ class RegisterOrganizationView(View):
                 # Validate and process referral if present
                 if ref_code:
                     referral_succeeded = False
+                    referral_error_type = None
                     try:
                         invite = InviteOrganization.objects.select_for_update().get(
                             referral_code=ref_code, points_awarded=False
@@ -233,28 +234,32 @@ class RegisterOrganizationView(View):
                         invite.save()
                         referral_succeeded = True
                         success_message = f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral."
-                    except InviteOrganization.DoesNotExist:
+                    except InviteOrganization.DoesNotExist as e:
+                        referral_error_type = type(e).__name__
                         logger.warning(f"Referral code {ref_code} not found or already used")
                     except ValueError as e:
+                        referral_error_type = type(e).__name__
                         logger.warning(f"Invalid referral: {e}")
                     except IntegrityError as e:
-                        logger.error(f"Database integrity error processing referral: {e}")
+                        referral_error_type = type(e).__name__
+                        logger.exception(f"Database integrity error processing referral: {e}")
                     except DatabaseError as e:
+                        referral_error_type = type(e).__name__
                         logger.exception("Database error processing referral code")
                     except Exception as e:
+                        referral_error_type = type(e).__name__
                         logger.exception("Failed to process referral code during organization registration")
                     finally:
-                        if "org_ref" in request.session:
-                            del request.session["org_ref"]
+                        request.session.pop("org_ref", None)
 
                     if not referral_succeeded:
+                        error_detail = referral_error_type if referral_error_type else "Unknown error"
                         messages.warning(
                             request,
-                            f"Referral code could not be applied ({type(e).__name__}), but your organization was created successfully.",
+                            f"Referral code could not be applied ({error_detail}), but your organization was created successfully.",
                         )
                 else:
-                    if "org_ref" in request.session:
-                        del request.session["org_ref"]
+                    request.session.pop("org_ref", None)
 
                 messages.success(request, success_message)
 
