@@ -3973,7 +3973,6 @@ def add_slack_integration(request, slug):
             return redirect("organization_detail", slug=slug)
 
     integration = Integration.objects.filter(organization=organization, service_name="slack").first()
-    integration = Integration.objects.filter(organization=organization, service_name="slack").first()
 
     slack_integration = None
     if integration:
@@ -4023,7 +4022,7 @@ def add_slack_integration(request, slug):
                 organization=organization,
             )
 
-        if not slack_integration.integration_id:
+        if integration and not slack_integration.integration_id:
             slack_integration.integration = integration
 
         slack_integration.default_channel_name = selected_channel
@@ -4117,11 +4116,9 @@ def organization_slack_apps(request, id, template="organization/dashboard/slack_
             commands = cmd_resp.get("commands", [])
         except SlackApiError as e:
             logger.warning("Slack command fetch failed for %s: %s", app_id, e)
-        except requests.exceptions.RequestException:
-            logger.warning("Network error while fetching commands for %s", app_id)
-            continue
         except Exception as e:
-            logger.warning("Unexpected error fetching commands for %s: %s", app_id, e)
+            logger.exception("Unexpected error fetching commands for %s", app_id)
+            continue
 
         apps_with_commands.append(
             {
