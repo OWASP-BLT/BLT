@@ -1107,20 +1107,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj = form.save(commit=False)
             obj.spam_score = spam_score
             obj.spam_reason = spam_reason
-            if spam_score >= 6:
-                obj.is_hidden = True
-                obj.verified = False
-                obj.save()
-                messages.warning(
-                    self.request,
-                    "Your submission has been flagged for review and will be visible once approved by a moderator. Try again with a better description.",
-                )
-                logger.warning(
-                    f"Potential spam detected - Score: {spam_score}, Reason: {spam_reason} "
-                    f"IP: {reporter_ip}, "
-                    f"Description: {description[:100]}"
-                )
-                return HttpResponseRedirect("/")
 
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
@@ -1133,6 +1119,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     if self.request.POST.get("token") == token.key:
                         obj.user = User.objects.get(id=token.user_id)
                         tokenauth = True
+            
+            obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
+
             captcha_form = CaptchaForm(self.request.POST)
             if not captcha_form.is_valid() and not settings.TESTING:
                 messages.error(self.request, "Invalid Captcha!")
@@ -1150,7 +1139,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             # Try multiple domain lookup strategies to match domain creation logic
             domain = None
-
             # Strategy 1: Exact URL match
             domain = Domain.objects.filter(url=clean_domain).first()
             if domain:
@@ -1191,6 +1179,23 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 logger.warning(f"Domain not found, creating new: name={clean_domain_no_www}, url={clean_domain}")
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
                 domain.save()
+            
+            obj.domain = domain
+
+            if spam_score >= 6:
+                obj.is_hidden = True
+                obj.verified = False
+                obj.save()
+                messages.warning(
+                    self.request,
+                    "Your submission has been flagged for review and will be visible once approved by a moderator. Try again with a better description.",
+                )
+                logger.warning(
+                    f"Potential spam detected - Score: {spam_score}, Reason: {spam_reason} "
+                    f"IP: {reporter_ip}, "
+                    f"Description: {description[:100]}"
+                )
+                return HttpResponseRedirect("/")
 
             # Don't save issue if security vulnerability
             if form.instance.label == "4" or form.instance.label == 4:
@@ -1368,7 +1373,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     self.request, "Could not fetch CVE score at this time. Issue will be created without it."
                 )
 
-            obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
+
+            
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):

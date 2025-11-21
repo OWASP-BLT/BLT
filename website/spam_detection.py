@@ -1,8 +1,9 @@
+import logging
 import os
+
 from google import genai
-from google.genai import types
 from pydantic import BaseModel, Field
-import logging  
+
 logger = logging.getLogger(__name__) 
 
 class SpamDetection:

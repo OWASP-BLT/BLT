@@ -11,7 +11,7 @@
                 <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left">
-                            <input type="checkbox" id="select-all-{{ issues.0.id }}" class="select-all rounded border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                            <input type="checkbox" id="select-all-{{ tab_id }}" class="select-all rounded border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Issue</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">URL</th>
@@ -35,10 +35,16 @@
                                   <a href="{{ issue.url }}" target="_blank" rel="noopener noreferrer" class="text-sm text-gray-500 dark:text-gray-400 hover:underline truncate max-w-xs">{{ issue.url }}</a>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if issue.spam_score >= 70 %}bg-red-100 text-red-800{% elif issue.spam_score >= 50 %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if issue.spam_score is None or issue.spam_score == '' %}
+                                    bg-gray-100 text-gray-800
+                                {% elif issue.spam_score >= 6 %}
+                                    bg-red-100 text-red-800
+                                {% else %}
+                                    bg-green-100 text-green-800
+                                {% endif %}">
                                     {{ issue.spam_score|default:"N/A" }}
-                                </span>
-                            </td>
+                                </span>                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                 {% if issue.user %}
                                     <a href="{% url 'profile' issue.user.username %}" class="hover:underline">{{ issue.user.username }}</a>
@@ -75,13 +81,11 @@
         </div>
     </form>
     <script>
-        document.querySelectorAll('.select-all').forEach(function(selectAll) {
-            selectAll.addEventListener('change', function(e) {
-                const table = e.target.closest('table');
-                const checkboxes = table.querySelectorAll('.issue-checkbox');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = e.target.checked;
-                });
+        document.getElementById('select-all-{{ tab_id }}').addEventListener('change', function(e) {
+            const table = e.target.closest('table');
+            const checkboxes = table.querySelectorAll('.issue-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
             });
         });
     </script>

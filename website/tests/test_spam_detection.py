@@ -3,7 +3,6 @@ import unittest
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
-from django.conf import settings
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.contrib.messages.storage.fallback import FallbackStorage
@@ -15,7 +14,6 @@ from PIL import Image
 from website.admin import IssueAdmin
 from website.models import Domain, Issue, UserProfile
 from website.spam_detection import SpamDetection
-from website.utils import image_validator
 from website.views.issue import IssueCreate
 
 
@@ -190,7 +188,7 @@ class IssueCreateSpamIntegrationTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username="testuser",
-            password="testpassword",
+            password="testpassword",  # noqa: S106
             email="testuser@example.com"
         )
         self.user_profile, _ = UserProfile.objects.get_or_create(user=self.user)
@@ -198,7 +196,7 @@ class IssueCreateSpamIntegrationTests(TestCase):
             name="example.com",
             url="https://example.com"
         )
-        self.client.login(username="testuser", password="testpassword")
+        self.client.login(username="testuser", password="testpassword")  # noqa: S106
         
         # Create a valid image file
         file_obj = BytesIO()
@@ -344,7 +342,7 @@ class IssueAdminSpamActionTests(TestCase):
         self.superuser = User.objects.create_superuser(
             username="admin",
             email="admin@example.com",
-            password="adminpassword"
+            password="adminpassword"  # noqa: S106
         )
         
         self.domain = Domain.objects.create(name="example.com", url="https://example.com")
@@ -446,7 +444,7 @@ class SpamDetectionThresholdTests(TestCase):
 
     def setUp(self):
         """Set up the test environment for threshold tests."""
-        self.user = User.objects.create_user(username="testuser", password="testpassword")
+        self.user = User.objects.create_user(username="testuser", password="testpassword")  # noqa: S106
         self.domain = Domain.objects.create(name="example.com", url="https://example.com")
 
     def test_spam_score_at_threshold_is_hidden(self):

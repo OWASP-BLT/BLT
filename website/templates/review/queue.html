@@ -36,10 +36,10 @@
             </div>
             <div id="myTabContent">
                 <div class="p-4 bg-white dark:bg-gray-800 rounded-lg md:p-8" id="all" role="tabpanel" aria-labelledby="all-tab">
-                    {% include 'review/_issue_list.html' with issues=pending_issues %}
+                    {% include 'review/_issue_list.html' with issues=pending_issues tab_id='pending' %}
                 </div>
                 <div class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg md:p-8" id="spam" role="tabpanel" aria-labelledby="spam-tab">
-                    {% include 'review/_issue_list.html' with issues=spam_issues %}
+                    {% include 'review/_issue_list.html' with issues=spam_issues tab_id='spam' %}
                 </div>
             </div>
         </div>
