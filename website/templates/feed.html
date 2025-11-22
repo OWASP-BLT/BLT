@@ -29,39 +29,39 @@
             Subscribe to RSS Feed
         </a>
     </div>
-    <div class="bg-gray-50 rounded-lg shadow-md mx-auto p-5 max-w-4xl overflow-y-auto max-h-[calc(100vh-60px)] mb-5 relative">
+    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg shadow-md mx-auto p-5 max-w-4xl overflow-y-auto max-h-[calc(100vh-60px)] mb-5 relative">
         <ul class="space-y-5 p-5">
             {% for activity in page_obj %}
-                <li class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:scale-105 hover:shadow-md transition-transform duration-300 ease-in-out transform origin-center z-10">
+                <li class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm hover:scale-105 hover:shadow-md transition-transform duration-300 ease-in-out transform origin-center z-10">
                     <!-- Card Header -->
                     <div class="flex justify-between items-center mb-3">
                         <!-- Reporter and Time -->
-                        <div class="text-gray-800">
+                        <div class="text-gray-800 dark:text-gray-200">
                             <strong class="text-lg">{{ activity.user.username }}</strong>
-                            <span class="text-sm text-gray-500 ml-2">{{ activity.timestamp|date:"M d, Y, H:i A" }}</span>
+                            <span class="text-sm text-gray-500 dark:text-gray-500 ml-2">{{ activity.timestamp|date:"M d, Y, H:i A" }}</span>
                         </div>
                         <!-- Activity Type -->
                         <div class="flex items-center">
                             <span class="w-2 h-2 rounded-full mr-2 {% if activity.action_type == 'create' %}bg-red-500{% elif activity.action_type == 'update' %}bg-green-500{% else %}bg-white{% endif %}"></span>
-                            <span class="text-sm text-gray-700 capitalize">{{ activity.get_action_type_display }}</span>
+                            <span class="text-sm text-gray-700 dark:text-gray-300 capitalize">{{ activity.get_action_type_display }}</span>
                         </div>
                     </div>
                     <!-- Card Body -->
                     <div class="space-y-3">
                         <!-- Title -->
-                        <h3 class="text-xl font-semibold text-gray-900">{{ activity.title }}</h3>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ activity.title }}</h3>
                         <!-- Image -->
                         {% if activity.image %}
                             <div class="w-full">
                                 <img src="{{ activity.image.url }}"
                                      alt="Activity Image"
-                                     class="w-full rounded-lg border border-gray-200"
+                                     class="w-full rounded-lg border border-gray-200 dark:border-gray-700"
                                      width="{{ activity.image.width }}"
                                      height="{{ activity.image.height }}">
                             </div>
                         {% endif %}
                         <!-- Description -->
-                        <p class="text-gray-600 text-sm leading-relaxed">{{ activity.description }}</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{{ activity.description }}</p>
                         <!-- Action Buttons -->
                         <div class="flex gap-3 mt-4">
                             <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
@@ -82,7 +82,7 @@
                             {% endif %}
                             <!-- Delete Button (for superadmins only) -->
                             {% if request.user.is_superuser %}
-                                <button class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors duration-200"
+                                <button class="bg-gray-800 dark:bg-gray-100 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors duration-200"
                                         data-id="{{ activity.id }}"
                                         onclick="deleteActivity({{ activity.id }})">Delete</button>
                             {% endif %}
@@ -94,7 +94,7 @@
                     </div>
                 </li>
             {% empty %}
-                <p class="text-center text-gray-600">No activities recorded.</p>
+                <p class="text-center text-gray-600 dark:text-gray-400">No activities recorded.</p>
             {% endfor %}
         </ul>
     </div>
@@ -107,7 +107,7 @@
                 <a href="?page={{ page_obj.previous_page_number }}"
                    class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Previous</a>
             {% endif %}
-            <span class="text-gray-700 text-lg mx-4">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <span class="text-gray-700 dark:text-gray-300 text-lg mx-4">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
             {% if page_obj.has_next %}
                 <a href="?page={{ page_obj.next_page_number }}"
                    class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Next</a>
@@ -182,6 +182,7 @@
           .catch(error => console.error("Error:", error));
       }
 
+      {% if request.user.is_superuser %}
       function deleteActivity(activityId) {
           if (confirm("Are you sure you want to delete this activity? This action cannot be undone.")) {
               fetch(`/activity/delete/${activityId}/`, {
@@ -203,6 +204,7 @@
               });
           }
       }
+      {% endif %}
 
     </script>
 {% endblock %}
