@@ -62,11 +62,14 @@ def validate_workflows(workflow_dir=".github/workflows"):
     issues = []
     valid_count = 0
 
-    workflow_files = list(itertools.chain(Path(workflow_dir).glob("*.yml"), Path(workflow_dir).glob("*.yaml")))
+    workflow_dir_path = Path(workflow_dir)
+    yml_files = workflow_dir_path.glob("*.yml")
+    yaml_files = workflow_dir_path.glob("*.yaml")
+    workflow_files = list(itertools.chain(yml_files, yaml_files))
 
     for filepath in workflow_files:
         try:
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 content = yaml.safe_load(f)
 
             if content:
