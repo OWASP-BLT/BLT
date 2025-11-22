@@ -93,6 +93,10 @@
                                         </a>
                                     </li>
                                     <li>
+                                        <a href="{% url 'public_job_list' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-briefcase w-5 mr-2"></i>Jobs</a>
+                                    </li>
+                                    <li>
                                         <a href="{% url 'issues' %}"
                                            class="flex items-center transition-colors {% if request.resolver_match.url_name == 'issues' %} text-[#e74c3c] bg-[#feeceb] dark:bg-red-900/40 hover:bg-[#feeceb] dark:hover:bg-red-900/40 hover:text-[#e74c3c] cursor-default {% else %} text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] hover:bg-gray-100 dark:hover:bg-gray-800 {% endif %} ">
                                             <i class="fas fa-bug w-5 mr-2 {% if request.resolver_match.url_name == 'issues' %} text-[#e74c3c] {% else %} text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] {% endif %} "></i>
