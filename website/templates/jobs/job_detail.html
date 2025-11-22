@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ job.title }} - {{ job.organization.name }}{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <!-- Breadcrumb -->
+        <div class="bg-white border-b border-gray-200">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <nav class="flex items-center gap-2 text-sm text-gray-600">
+                    <a href="{% url 'home' %}"
+                       class="hover:text-[#e74c3c] transition-colors">Home</a>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <a href="{% url 'public_job_list' %}"
+                       class="hover:text-[#e74c3c] transition-colors">Jobs</a>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <span class="text-gray-900 font-medium">{{ job.title }}</span>
+                </nav>
+            </div>
+        </div>
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="space-y-8">
+                <!-- Job Header Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                    <!-- Company Info -->
+                    <div class="flex items-center gap-4 mb-6">
+                        {% if job.organization.logo %}
+                            <img src="{{ job.organization.logo.url }}"
+                                 alt="{{ job.organization.name }}"
+                                 width="64"
+                                 height="64"
+                                 class="w-16 h-16 rounded-lg object-cover">
+                        {% else %}
+                            <div class="w-16 h-16 bg-[#e74c3c] rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-2xl">{{ job.organization.name|first }}</span>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">{{ job.organization.name }}</h2>
+                            {% if job.organization.url %}
+                                <a href="{{ job.organization.url }}"
+                                   target="_blank"
+                                   class="text-sm text-[#e74c3c] hover:text-red-700 flex items-center gap-1">
+                                    Visit website
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                        </path>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Job Title -->
+                    <h1 class="text-4xl font-bold text-gray-900 mb-6">{{ job.title }}</h1>
+                    <!-- Job Meta Info -->
+                    <div class="flex flex-wrap items-center gap-6 text-gray-700 mb-8">
+                        {% if job.location %}
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-gray-500"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span class="font-medium">{{ job.location }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-gray-500"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            <span class="font-medium">{{ job.get_job_type_display }}</span>
+                        </div>
+                        {% if job.salary_range %}
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-gray-500"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                                <span class="font-medium">{{ job.salary_range }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="flex items-center gap-2 text-gray-500">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            <span>Posted {{ job.created_at|timesince }} ago</span>
+                        </div>
+                    </div>
+                    <!-- Apply Button -->
+                    {% if job.can_apply %}
+                        <div class="flex flex-wrap gap-4">
+                            {% if job.application_email %}
+                                <a href="mailto:{{ job.application_email }}"
+                                   class="inline-flex items-center px-8 py-3 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-colors">
+                                    Apply via Email
+                                    <svg class="w-5 h-5 ml-2"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            {% if job.application_url %}
+                                <a href="{{ job.application_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center px-8 py-3 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-colors">
+                                    Apply on Company Website
+                                    <svg class="w-5 h-5 ml-2"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                        </path>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium">
+                            <svg class="w-5 h-5 mr-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                </path>
+                            </svg>
+                            Applications Closed
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Job Description -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Job Description</h3>
+                    <div class="prose max-w-none text-gray-700">{{ job.description|linebreaks }}</div>
+                </div>
+                <!-- Requirements -->
+                {% if job.requirements %}
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Requirements</h3>
+                        <div class="prose max-w-none text-gray-700">{{ job.requirements|linebreaks }}</div>
+                    </div>
+                {% endif %}
+                <!-- Application Instructions -->
+                {% if job.application_instructions %}
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">How to Apply</h3>
+                        <div class="prose max-w-none text-gray-700">{{ job.application_instructions|linebreaks }}</div>
+                    </div>
+                {% endif %}
+                <!-- Back to Jobs Button -->
+                <div class="text-center">
+                    <a href="{% url 'public_job_list' %}"
+                       class="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5 mr-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to All Jobs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
