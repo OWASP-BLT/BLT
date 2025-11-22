@@ -29,6 +29,13 @@
                                   rows="5"
                                   class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                                   required></textarea>
+                        {% if yesterday_report %}
+                            <button type="button"
+                                    id="fillFromPreviousBtn"
+                                    class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                                Fill from Previous Check-in
+                            </button>
+                        {% endif %}
                     </div>
                     <div class="form-group mb-10">
                         <label for="next_plan_card"
@@ -168,6 +175,18 @@
                 textarea.value += emoji;
                 textarea.focus();
             });
+
+            // Fill from previous check-in button functionality
+            const fillFromPreviousBtn = document.getElementById('fillFromPreviousBtn');
+            if (fillFromPreviousBtn) {
+                fillFromPreviousBtn.addEventListener('click', () => {
+                    const previousWorkTextarea = document.getElementById('previous_work_card');
+                    {% if yesterday_report %}
+                        previousWorkTextarea.value = "{{ yesterday_report.next_plan|escapejs }}";
+                        previousWorkTextarea.focus();
+                    {% endif %}
+                });
+            }
         });
     </script>
 {% endblock content %}
