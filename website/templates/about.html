@@ -22,7 +22,7 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <!-- Main Content Container -->
-    <div class="flex-1 py-4 md:p-8 bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="flex-1 py-4 md:p-8 bg-white dark:bg-gray-900">
         <div class="container mx-auto max-w-[90%]">
             <!-- Hero Section -->
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 md:p-8 p-2 mb-10 transform transition-all hover:shadow-md">
@@ -66,28 +66,28 @@
                     <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">{% trans "What's in it for you?" %}</h2>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
                         <div class="w-16 h-16 rounded-full bg-[#e74c3c]/10 flex items-center justify-center mb-4">
                             <i class="fas fa-award text-[#e74c3c] text-2xl"></i>
                         </div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">{% trans "Points" %}</h3>
                         <p class="text-gray-700 dark:text-gray-300">{% trans "Earn points for every verified bug report" %}</p>
                     </div>
-                    <div class="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
                         <div class="w-16 h-16 rounded-full bg-[#e74c3c]/10 flex items-center justify-center mb-4">
                             <i class="fas fa-money-bill-wave text-[#e74c3c] text-2xl"></i>
                         </div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">{% trans "Bug Bounty Rewards" %}</h3>
                         <p class="text-gray-700 dark:text-gray-300">{% trans "Money if you join a BLT Sponsored Bug Bounty" %}</p>
                     </div>
-                    <div class="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
                         <div class="w-16 h-16 rounded-full bg-[#e74c3c]/10 flex items-center justify-center mb-4">
                             <i class="fas fa-trophy text-[#e74c3c] text-2xl"></i>
                         </div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">{% trans "Jackpot" %}</h3>
                         <p class="text-gray-700 dark:text-gray-300">{% trans "Jackpot money listed on the Leaderboard" %}</p>
                     </div>
-                    <div class="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
                         <div class="w-16 h-16 rounded-full bg-[#e74c3c]/10 flex items-center justify-center mb-4">
                             <i class="fas fa-hand-holding-usd text-[#e74c3c] text-2xl"></i>
                         </div>
@@ -141,7 +141,7 @@
                         </div>
                         <h2 class="text-2xl font-bold ml-4 text-gray-800 dark:text-gray-200">{% trans "For Organizations" %}</h2>
                     </div>
-                    <div class="text-gray-700 dark:text-gray-300 space-y-4 p-6 bg-gradient-to-r from-[#e74c3c]/5 to-[#e74c3c]/10 rounded-xl border border-[#e74c3c]/20">
+                    <div class="text-gray-700 dark:text-gray-300 space-y-4 p-6 bg-gradient-to-r from-[#e74c3c]/5 to-[#e74c3c]/10 dark:from-[#e74c3c]/10 dark:to-[#e74c3c]/20 rounded-xl border border-[#e74c3c]/20 dark:border-[#e74c3c]/30">
                         <p class="font-medium text-xl">{% trans "We want everyone to love your website." %}</p>
                         <p class="leading-relaxed">
                             {% trans "You want to keep your customers happy by giving them a consistent bug-free user experience. BLT offers monthly Bug Bounties through 4 different subscription plans to help you achieve this." %}
