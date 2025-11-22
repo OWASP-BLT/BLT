@@ -16,19 +16,19 @@
         <div class="w-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mr-8 h-fit">
             <h2 class="text-xl font-semibold mb-4 text-[#e74c3c]">Categories</h2>
             <ul class="space-y-2">
-                <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-50 {% if not selected_category %}bg-[#e74c3c] text-white{% endif %}"
+                <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 {% if not selected_category %}bg-[#e74c3c] text-white hover:bg-[#c0392b]{% else %}hover:bg-red-50{% endif %}"
                     onclick="filterByCategory('')">
                     <span>All Categories</span>
                     <span class="px-3 py-1 rounded-full text-sm font-medium {% if not selected_category %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
-                        {{ posts.count }}
+                        {{ total_posts_count }}
                     </span>
                 </li>
                 {% for category in categories %}
-                    <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-50 {% if selected_category == category.id %}bg-[#e74c3c] text-white{% endif %}"
+                    <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 {% if selected_category == category.id|stringformat:'s' %}bg-[#e74c3c] text-white hover:bg-[#c0392b]{% else %}hover:bg-red-50{% endif %}"
                         onclick="filterByCategory('{{ category.id }}')">
                         <span>{{ category.name }}</span>
-                        <span class="px-3 py-1 rounded-full text-sm font-medium {% if selected_category == category.id %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
-                            {{ category.post_set.count }}
+                        <span class="px-3 py-1 rounded-full text-sm font-medium {% if selected_category == category.id|stringformat:'s' %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
+                            {{ category.post_count }}
                         </span>
                     </li>
                 {% endfor %}
@@ -44,6 +44,16 @@
                     <i class="fas fa-plus"></i> New Discussion
                 </button>
             </div>
+            <!-- Login Message -->
+            {% if not user.is_authenticated %}
+                <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg">
+                    <p class="text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Please <a href="/accounts/login/?next={{ request.path }}"
+    class="underline font-medium hover:text-blue-600">log in</a> to vote, comment, or create discussions.</span>
+                    </p>
+                </div>
+            {% endif %}
             <!-- Filters -->
             <div class="flex gap-4 mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                 <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
@@ -119,32 +129,38 @@
                             </div>
                             <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                 <i class="fas fa-comments"></i>
-                                {{ post.comments.count }} Comments
+                                <span>{{ post.comments.count }} Comments</span>
                             </div>
                         </div>
                         <div class="border-t border-gray-100 dark:border-gray-800 p-6"
                              id="comments-{{ post.id }}">
-                            <form class="mb-6" onsubmit="submitComment(event, {{ post.id }})">
-                                {% csrf_token %}
-                                <textarea class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                          placeholder="Add a comment..."
-                                          required></textarea>
-                                <button type="submit"
-                                        class="bg-[#e74c3c] text-white px-6 py-2 rounded-md font-medium hover:bg-[#c0392b] transition-colors duration-200">
-                                    Post Comment
-                                </button>
-                            </form>
-                            <ul class="space-y-4">
-                                {% for comment in post.comments.all %}
-                                    <li class="border-b border-gray-100 dark:border-gray-800 pb-4">
-                                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                            <span>{{ comment.user }}</span>
-                                            <span>{{ comment.created|timesince }} ago</span>
-                                        </div>
-                                        <p class="text-gray-700 dark:text-gray-300">{{ comment.content }}</p>
-                                    </li>
-                                {% endfor %}
-                            </ul>
+                            {% if user.is_authenticated %}
+                                <form class="mb-6" onsubmit="submitComment(event, {{ post.id }})">
+                                    {% csrf_token %}
+                                    <textarea class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                              placeholder="Add a comment..."
+                                              required></textarea>
+                                    <button type="submit"
+                                            class="bg-[#e74c3c] text-white px-6 py-2 rounded-md font-medium hover:bg-[#c0392b] transition-colors duration-200">
+                                        Post Comment
+                                    </button>
+                                </form>
+                            {% endif %}
+                            {% if post.comments.all %}
+                                <ul class="space-y-4">
+                                    {% for comment in post.comments.all %}
+                                        <li class="border-b border-gray-100 dark:border-gray-800 pb-4 last:border-b-0">
+                                            <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                                <span class="font-medium">{{ comment.user }}</span>
+                                                <span>{{ comment.created|timesince }} ago</span>
+                                            </div>
+                                            <p class="text-gray-700 dark:text-gray-300">{{ comment.content }}</p>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-gray-500 dark:text-gray-400 text-center py-4">No comments yet. Be the first to comment!</p>
+                            {% endif %}
                         </div>
                     </li>
                 {% empty %}
@@ -274,8 +290,16 @@
                 down_vote: downVote
             }),
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 302 || response.redirected) {
+                showLoginMessage('Please log in to vote on discussions.');
+                return null;
+            }
+            return response.json();
+        })
         .then(data => {
+            if (!data) return;
+            
             if (data.success) {
                 upButton.querySelector('span').textContent = data.up_vote;
                 downButton.querySelector('span').textContent = data.down_vote;
@@ -284,9 +308,14 @@
                 upButton.classList.toggle('text-white', upVote);
                 downButton.classList.toggle('bg-[#e74c3c]', downVote);
                 downButton.classList.toggle('text-white', downVote);
+            } else {
+                showErrorMessage(data.error || 'Failed to vote. Please try again.');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorMessage('An error occurred. Please try again.');
+        });
     }
 
     function getCookie(name) {
@@ -295,7 +324,62 @@
         if (parts.length === 2) return parts.pop().split(';').shift();
     }
 
+    function showLoginMessage(message) {
+        showMessage(message, 'info');
+    }
+
+    function showErrorMessage(message) {
+        showMessage(message, 'error');
+    }
+
+    function showSuccessMessage(message) {
+        showMessage(message, 'success');
+    }
+
+    function showMessage(message, type = 'info') {
+        // Remove any existing messages
+        const existingMessage = document.getElementById('forum-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        // Create message element
+        const messageDiv = document.createElement('div');
+        messageDiv.id = 'forum-message';
+        messageDiv.className = `fixed top-20 right-4 z-[9999] px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${
+            type === 'error' ? 'bg-red-500 text-white' :
+            type === 'success' ? 'bg-green-500 text-white' :
+            'bg-blue-500 text-white'
+        }`;
+        messageDiv.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(messageDiv);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (messageDiv.parentElement) {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => messageDiv.remove(), 300);
+            }
+        }, 5000);
+    }
+
     function openNewSuggestionModal() {
+        {% if not user.is_authenticated %}
+        showLoginMessage('Please log in to create a new discussion.');
+        setTimeout(() => {
+            window.location.href = '/accounts/login/?next=/forum/';
+        }, 2000);
+        return;
+        {% endif %}
         document.getElementById('newSuggestionModal').classList.remove('hidden');
     }
 
@@ -320,17 +404,29 @@
                 description: formData.get('description')
             }),
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 302 || response.redirected) {
+                showLoginMessage('Please log in to create a discussion.');
+                return null;
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.status === 'success') {
+            if (!data) return;
+            
+            if (data.success) {
                 form.reset();
                 closeNewSuggestionModal();
-                location.reload();
+                showSuccessMessage('Discussion created successfully!');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('Error: Please fill all required fields.');
+                showErrorMessage(data.error || 'Please fill all required fields.');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorMessage('An error occurred. Please try again.');
+        });
     }
 
     function submitComment(event, postId) {
@@ -349,16 +445,28 @@
                 content: content
             }),
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 302 || response.redirected) {
+                showLoginMessage('Please log in to comment on discussions.');
+                return null;
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.status === 'success') {
+            if (!data) return;
+            
+            if (data.success) {
                 form.reset();
-                location.reload();
+                showSuccessMessage('Comment posted successfully!');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('Error posting comment. Please try again.');
+                showErrorMessage(data.error || 'Error posting comment. Please try again.');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorMessage('An error occurred. Please try again.');
+        });
     }
 
     function filterByCategory(categoryId) {

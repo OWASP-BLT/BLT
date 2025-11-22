@@ -770,6 +770,7 @@ def search(request, template="search.html"):
 
 
 @login_required
+@login_required
 def vote_forum_post(request):
     if request.method == "POST":
         try:
@@ -795,13 +796,14 @@ def vote_forum_post(request):
 
             return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
         except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
+            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
-        except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            logger.error(f"Error in vote_forum_post: {e}")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -813,14 +815,19 @@ def set_vote_status(request):
             vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
 
             return JsonResponse(
-                {"up_vote": vote.up_vote if vote else False, "down_vote": vote.down_vote if vote else False}
+                {
+                    "success": True,
+                    "up_vote": vote.up_vote if vote else False,
+                    "down_vote": vote.down_vote if vote else False,
+                }
             )
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
-        except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            logger.error(f"Error in set_vote_status: {e}")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -833,19 +840,20 @@ def add_forum_post(request):
             description = data.get("description")
 
             if not all([title, category, description]):
-                return JsonResponse({"status": "error", "message": "Missing required fields"})
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
             post = ForumPost.objects.create(
                 user=request.user, title=title, category_id=category, description=description
             )
 
-            return JsonResponse({"status": "success", "post_id": post.id})
+            return JsonResponse({"success": True, "post_id": post.id})
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
-        except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            logger.error(f"Error in add_forum_post: {e}")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -857,33 +865,51 @@ def add_forum_comment(request):
             content = data.get("content")
 
             if not all([post_id, content]):
-                return JsonResponse({"status": "error", "message": "Missing required fields"})
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
             post = ForumPost.objects.get(id=post_id)
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
 
-            return JsonResponse({"status": "success", "comment_id": comment.id})
+            return JsonResponse({"success": True, "comment_id": comment.id})
         except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
+            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
-        except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            logger.error(f"Error in add_forum_comment: {e}")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 def view_forum(request):
-    categories = ForumCategory.objects.all()
+    # Annotate categories with post counts
+    categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
+
+    # Get total posts count before filtering
+    total_posts_count = ForumPost.objects.count()
 
     posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
+    # Add user vote information if user is authenticated
+    if request.user.is_authenticated:
+        for post in posts:
+            user_vote = ForumVote.objects.filter(post=post, user=request.user).first()
+            post.user_vote = user_vote
+
     return render(
-        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+        request,
+        "forum.html",
+        {
+            "categories": categories,
+            "posts": posts,
+            "selected_category": selected_category,
+            "total_posts_count": total_posts_count,
+        },
     )
 
 
