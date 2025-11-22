@@ -95,7 +95,7 @@ jobs:
               }
               
               // Ensure the new label exists (create if missing)
-              async function ensureLabelExists(labelName) {
+              async function ensureLabelExists(labelName, color, desc) {
                 try {
                   await github.rest.issues.getLabel({ owner, repo, name: labelName });
                 } catch (e) {
@@ -104,8 +104,8 @@ jobs:
                       owner,
                       repo,
                       name: labelName,
-                      color: labelColor,
-                      description: description,
+                      color: color,
+                      description: desc,
                     });
                     core.info(`Created label ${labelName}`);
                   } else {
@@ -114,7 +114,7 @@ jobs:
                 }
               }
               
-              await ensureLabelExists(newLabel);
+              await ensureLabelExists(newLabel, labelColor, description);
               
               // Add the label if it isn't already present
               if (!currentNames.has(newLabel)) {
