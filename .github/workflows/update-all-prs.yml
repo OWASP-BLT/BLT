@@ -6,9 +6,10 @@ name: Update All PRs and Check Conflicts
 # It will:
 # 1. Fetch all open pull requests in the repository
 # 2. Attempt to update each PR's branch with the base branch
-# 3. Check each PR for merge conflicts
-# 4. Add/remove the "has-conflicts" label based on conflict status
-# 5. Add/remove informative comments about conflict resolution
+# 3. Trigger the CI/CD workflow to run on each successfully updated PR
+# 4. Check each PR for merge conflicts
+# 5. Add/remove the "has-conflicts" label based on conflict status
+# 6. Add/remove informative comments about conflict resolution
 #
 # Use this workflow to batch-check all PRs after significant changes to the main branch.
 on:
