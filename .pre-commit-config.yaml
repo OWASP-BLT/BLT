@@ -44,6 +44,14 @@ repos:
         types: [html]
         pass_filenames: false  # <-- ADD THIS LINE
         verbose: true
+      - id: validate-workflows
+        name: Validate GitHub Actions workflows
+        entry: python3
+        args: [.github/scripts/validate_workflows.py]
+        language: system
+        files: ^\.github/workflows/.*\.ya?ml$
+        pass_filenames: false
+        verbose: true
 
   - repo: local
     hooks:
