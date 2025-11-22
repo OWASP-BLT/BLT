@@ -33,7 +33,7 @@ services:
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    command: ./entrypoint.sh
+    command: ./scripts/entrypoint.sh
 
   init:
     profiles:
@@ -49,7 +49,7 @@ services:
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    command: ./entrypoint.sh
+    command: ./scripts/entrypoint.sh
 
 volumes:
   postgres_db:
