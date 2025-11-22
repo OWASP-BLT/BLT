@@ -22,7 +22,7 @@
     {% include "includes/sidenav.html" %}
     <div class="border lg:w-[1800px] w-full lg:mx-auto rounded-lg flex mt-[4vh] max-sm:mt-[5vh] max-sm:items-center justify-between max-sm:flex-col font-ubuntu">
         <!-- Left Section -->
-        <div class="lg:w-[25%] w-full border-r border-gray-300/80 flex p-4 flex-col">
+        <div class="lg:w-[25%] w-full border-r border-gray-300/80 dark:border-gray-600/80 flex p-4 flex-col">
             <!-- Logo or Gravatar -->
             <div class="inline-block relative h-[400px] w-full rounded-lg">
                 {% if domain.get_logo %}
@@ -72,7 +72,7 @@
                                 <a href="?open={{ opened.previous_page_number }}"
                                    class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">Previous</a>
                             {% endif %}
-                            <span class="text-gray-700 font-medium">Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
+                            <span class="text-gray-700 dark:text-gray-300 font-medium">Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
                             {% if opened.has_next %}
                                 <a href="?open={{ opened.next_page_number }}"
                                    class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">Next</a>
@@ -87,14 +87,14 @@
                                 {% include "includes/_new_activity.html" %}
                             {% endfor %}
                         {% else %}
-                            <div class="text-center py-8 text-gray-500">{% trans "No Activity Yet!" %}</div>
+                            <div class="text-center py-8 text-gray-500 dark:text-gray-500">{% trans "No Activity Yet!" %}</div>
                         {% endif %}
                         <div class="flex items-center justify-center gap-4 mt-6">
                             {% if closed.has_previous %}
                                 <a href="?close={{ closed.previous_page_number }}"
                                    class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">Previous</a>
                             {% endif %}
-                            <span class="text-gray-700 font-medium">Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
+                            <span class="text-gray-700 dark:text-gray-300 font-medium">Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
                             {% if closed.has_next %}
                                 <a href="?close={{ closed.next_page_number }}"
                                    class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">Next</a>
@@ -108,7 +108,7 @@
         <div class="lg:w-[75%] w-full p-4">
             <div class="flex flex-col gap-5">
                 <!-- Domain Header -->
-                <div class="bg-white border-b border-gray-300 p-6">
+                <div class="bg-white dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600 p-6">
                     <div class="flex flex-col gap-2">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-4">
@@ -132,7 +132,7 @@
                             </div>
                         </div>
                         {% if organization %}
-                            <div class="text-sm text-gray-600">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
                                 <span class="font-medium">{{ organization.name }}</span>
                             </div>
                         {% endif %}
@@ -140,8 +140,10 @@
                             <div class="flex flex-col gap-1 text-sm">
                                 <span class="text-[#e74c3c]">{{ domain.email|obfuscate_mailto }}</span>
                                 {% if domain.email_event %}
-                                    <div class="text-gray-600">Last email {{ domain.email_event|default:"" }} {{ domain.modified|timesince }} ago</div>
-                                    <div class="text-gray-600">Clicks {{ domain.clicks|default:"0" }}</div>
+                                    <div class="text-gray-600 dark:text-gray-400">
+                                        Last email {{ domain.email_event|default:"" }} {{ domain.modified|timesince }} ago
+                                    </div>
+                                    <div class="text-gray-600 dark:text-gray-400">Clicks {{ domain.clicks|default:"0" }}</div>
                                 {% endif %}
                             </div>
                         {% endif %}
@@ -149,10 +151,10 @@
                 </div>
                 <!-- Issue Stats -->
                 <div class="flex flex-col gap-3">
-                    <h1 class="text-xl font-semibold text-black/90">{% trans "Issue Stats" %}</h1>
+                    <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">{% trans "Issue Stats" %}</h1>
                     <div class="w-full flex flex-wrap gap-3">
                         {% for bug_type, count in bug_types.items %}
-                            <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
                                 {{ bug_type.icon }} {% trans bug_type.name %} {{ count }}
                             </button>
                         {% endfor %}
@@ -160,24 +162,24 @@
                 </div>
                 <!-- Domain Stats -->
                 <div class="flex flex-col gap-3">
-                    <h1 class="text-xl font-semibold text-black/90">{% trans "Domain Stats" %}</h1>
+                    <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">{% trans "Domain Stats" %}</h1>
                     <div class="w-full flex flex-wrap gap-3">
-                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                        <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
                             🏆 {% trans "Bugs Reported" %} {{ total_bugs }}
                         </button>
-                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                        <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
                             🐞 {% trans "Open Issues" %} {{ open_issues }}
                         </button>
-                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                        <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
                             ⌨️ {% trans "Closed Issues" %} {{ closed_issues }}
                         </button>
-                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                        <button class="bg-gray-100 dark:bg-gray-800 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
                             👀 {% trans "Views" %} {{ view_count }}
                         </button>
                     </div>
                 </div>
                 <!-- Security.txt Information -->
-                <div class="p-6 w-full border rounded-lg border-gray-300">
+                <div class="p-6 w-full border rounded-lg border-gray-300 dark:border-gray-600">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-2xl font-bold flex items-center gap-2">
                             <i class="fas fa-shield-alt text-[#e74c3c]"></i>
@@ -192,35 +194,39 @@
                         </span>
                     </div>
                     {% if domain.has_security_txt %}
-                        <div class="bg-gray-50 rounded-xl p-6">
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
                             <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
                                 <i class="fas fa-check-circle text-green-500"></i>
                                 Security.txt Found
                             </h3>
-                            <p class="text-gray-600 mb-4">
+                            <p class="text-gray-600 dark:text-gray-400 mb-4">
                                 This domain implements the security.txt standard (RFC 9116), making it easier for security researchers to report security vulnerabilities.
                             </p>
                             {% if domain.security_txt_checked_at %}
-                                <div class="text-sm text-gray-500 mb-4">Last checked: {{ domain.security_txt_checked_at|date:"F j, Y, g:i a" }}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-500 mb-4">
+                                    Last checked: {{ domain.security_txt_checked_at|date:"F j, Y, g:i a" }}
+                                </div>
                             {% endif %}
                         </div>
                     {% else %}
-                        <div class="bg-gray-50 rounded-xl p-6">
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
                             <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
                                 <i class="fas fa-times-circle text-red-500"></i>
                                 No Security.txt Found
                             </h3>
-                            <p class="text-gray-600 mb-4">
+                            <p class="text-gray-600 dark:text-gray-400 mb-4">
                                 This domain does not implement the security.txt standard (RFC 9116), which makes it harder for security researchers to report security vulnerabilities.
                             </p>
                             {% if domain.security_txt_checked_at %}
-                                <div class="text-sm text-gray-500">Last checked: {{ domain.security_txt_checked_at|date:"F j, Y, g:i a" }}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-500">
+                                    Last checked: {{ domain.security_txt_checked_at|date:"F j, Y, g:i a" }}
+                                </div>
                             {% endif %}
                         </div>
                     {% endif %}
                 </div>
                 <!-- Trademark Results -->
-                <div class="p-6 w-full border rounded-lg border-gray-300">
+                <div class="p-6 w-full border rounded-lg border-gray-300 dark:border-gray-600">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-2xl font-bold flex items-center gap-2">
                             <i class="fas fa-gavel text-[#e74c3c]"></i>
@@ -233,7 +239,7 @@
                     <div class="space-y-6 overflow-auto max-h-[600px] pr-2">
                         {% if trademarks|length > 0 %}
                             {% for trademark in trademarks %}
-                                <div class="bg-gray-50 rounded-xl p-6 hover:shadow-md transition duration-200">
+                                <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 hover:shadow-md transition duration-200">
                                     <h3 class="text-xl font-semibold flex items-center gap-2 mb-4">
                                         <i class="fas fa-search text-[#e74c3c]"></i>
                                         {{ trademark.keyword }}
@@ -267,7 +273,7 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="bg-white rounded-lg p-4 mb-4">
+                                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
                                         <p class="flex items-start gap-2">
                                             <i class="fas fa-info-circle text-[#e74c3c] mt-1"></i>
                                             <span>
@@ -277,7 +283,7 @@
                                         </p>
                                     </div>
                                     {% if trademark.owners %}
-                                        <div class="bg-white rounded-lg p-4">
+                                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
                                             <h4 class="font-semibold flex items-center gap-2 mb-2">
                                                 <i class="fas fa-users text-[#e74c3c]"></i>
                                                 Owners:
@@ -285,7 +291,7 @@
                                             <ul class="space-y-2">
                                                 {% for owner in trademark.owners.all %}
                                                     <li class="flex items-center gap-2">
-                                                        <i class="fas fa-user-circle text-gray-400"></i>
+                                                        <i class="fas fa-user-circle text-gray-400 dark:text-gray-600"></i>
                                                         {% if owner.name %}{{ owner.name }}{% endif %}
                                                         {% if owner.city %}, {{ owner.city }}{% endif %}
                                                         {% if owner.state %}, {{ owner.state }}{% endif %}
@@ -300,7 +306,7 @@
                         {% else %}
                             <div class="text-center py-12">
                                 <i class="fas fa-search text-[#e74c3c] text-5xl mb-4"></i>
-                                <p class="text-gray-600 mb-6">No trademark results found for {{ name }}</p>
+                                <p class="text-gray-600 dark:text-gray-400 mb-6">No trademark results found for {{ name }}</p>
                                 <a href="{% url 'trademark_search' %}"
                                    class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white hover:bg-red-600 hover:text-white rounded-lg hover:bg-opacity-90 transition-colors">
                                     <i class="fas fa-search mr-2"></i>
@@ -322,7 +328,7 @@
                 </div>
                 <!-- Top Hunters -->
                 <div class="flex flex-col gap-4">
-                    <h1 class="text-xl font-semibold text-black/90">{% trans "Top Hunters" %}</h1>
+                    <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">{% trans "Top Hunters" %}</h1>
                     <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh]">
                         <ul class="select-none w-full flex flex-col gap-4">
                             {% if leaderboard %}
