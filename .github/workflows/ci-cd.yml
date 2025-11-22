@@ -273,8 +273,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # For pull_request_target, explicitly checkout the PR head from the fork
+          ref: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.event.pull_request.head.sha || github.ref }}
+          repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
@@ -287,7 +293,102 @@ jobs:
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
-        run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+        id: run-tests
+        run: |
+          set +e
+          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          exit 0
+        continue-on-error: true
+      - name: Add test status label
+        if: github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            // Determine label based on test exit code
+            const testExitCode = '${{ steps.run-tests.outputs.exit_code }}';
+            const newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
+            const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
+            const description = testExitCode === '0' ? 'Django tests passed' : 'Django tests failed';
+            
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+            
+            // Remove any existing test labels
+            const testRegex = /^tests:/i;
+            for (const name of currentNames) {
+              if (testRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+            
+            // Ensure the new label exists (create if missing)
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            await ensureLabelExists(newLabel);
+            
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
+              try {
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [newLabel] 
+                });
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                } else {
+                  throw error;
+                }
+              }
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+            }
+            
+            core.info(`Test exit code: ${testExitCode}`);
+      - name: Fail the job if tests failed
+        if: steps.run-tests.outputs.exit_code != '0'
+        run: exit 1
 
   docker-test:
     runs-on: ubuntu-latest
