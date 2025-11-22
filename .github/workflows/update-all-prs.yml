@@ -111,21 +111,25 @@ jobs:
                 
                 // Trigger CI/CD workflow if the PR was successfully updated
                 // Note: We can only trigger workflows for branches in this repository, not forks
-                if (prWasUpdated && prData.head.repo && !prData.head.repo.fork) {
-                  try {
-                    core.info(`Triggering CI/CD workflow for PR #${pull_number} on branch ${prData.head.ref}...`);
-                    await github.rest.actions.createWorkflowDispatch({
-                      owner,
-                      repo,
-                      workflow_id: 'ci-cd.yml',
-                      ref: prData.head.ref
-                    });
-                    core.info(`✓ Triggered CI/CD workflow for PR #${pull_number}`);
-                  } catch (dispatchError) {
-                    core.warning(`Failed to trigger CI/CD workflow for PR #${pull_number}: ${dispatchError.message}`);
+                if (prWasUpdated) {
+                  if (!prData.head.repo) {
+                    core.warning(`Cannot trigger CI/CD for PR #${pull_number}: head repository data is missing`);
+                  } else if (prData.head.repo.fork) {
+                    core.info(`Skipping workflow trigger for PR #${pull_number} (from fork: ${prData.head.repo.full_name})`);
+                  } else {
+                    try {
+                      core.info(`Triggering CI/CD workflow for PR #${pull_number} on branch ${prData.head.ref}...`);
+                      await github.rest.actions.createWorkflowDispatch({
+                        owner,
+                        repo,
+                        workflow_id: 'ci-cd.yml',
+                        ref: prData.head.ref
+                      });
+                      core.info(`✓ Triggered CI/CD workflow for PR #${pull_number}`);
+                    } catch (dispatchError) {
+                      core.warning(`Failed to trigger CI/CD workflow for PR #${pull_number}: ${dispatchError.message}`);
+                    }
                   }
-                } else if (prWasUpdated && prData.head.repo && prData.head.repo.fork) {
-                  core.info(`Skipping workflow trigger for PR #${pull_number} (from fork: ${prData.head.repo.full_name})`);
                 }
                 
                 const hasConflicts = prData.mergeable === false;
