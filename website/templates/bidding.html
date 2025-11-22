@@ -54,7 +54,7 @@
                                 <input type="text"
                                        id="issueLinkInput"
                                        name="issue_url"
-                                       class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
+                                       class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200 bg-white dark:bg-gray-900"
                                        placeholder="https://github.com/owner/repo/issues/123">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <i class="fas fa-link text-gray-400 dark:text-gray-600"></i>
@@ -81,7 +81,7 @@
                             <input type="text"
                                    id="githubUsername"
                                    name="user"
-                                   class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
+                                   class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200 bg-white dark:bg-gray-900"
                                    placeholder="Enter GitHub username"
                                    value="{% if request.user.is_authenticated %}{{ request.user.username }}{% endif %}">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

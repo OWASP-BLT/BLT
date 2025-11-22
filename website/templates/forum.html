@@ -46,12 +46,12 @@
             </div>
             <!-- Filters -->
             <div class="flex gap-4 mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="categoryFilter">
                     <option value="">All Categories</option>
                     {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
                 </select>
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="statusFilter">
                     <option value="">All Status</option>
                     <option value="open">Open</option>
@@ -59,7 +59,7 @@
                     <option value="completed">Completed</option>
                     <option value="declined">Declined</option>
                 </select>
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="sortFilter">
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>

@@ -126,7 +126,7 @@
                                                    id="github_url"
                                                    name="github_url"
                                                    placeholder="https://github.com/owner/repo/pull/123"
-                                                   class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                                   class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200 bg-white dark:bg-gray-900"
                                                    required>
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <i class="fas fa-link text-gray-400 dark:text-gray-600"></i>
@@ -141,7 +141,7 @@
                                         <div class="relative">
                                             <select id="contribution_type"
                                                     name="contribution_type"
-                                                    class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                                    class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200 bg-white dark:bg-gray-900"
                                                     required>
                                                 <option value="" disabled selected>Select contribution type...</option>
                                                 <option value="security">Security Related</option>
@@ -162,7 +162,7 @@
                                                       name="description"
                                                       rows="4"
                                                       placeholder="Describe your contribution..."
-                                                      class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                                      class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200 bg-white dark:bg-gray-900"
                                                       required></textarea>
                                             <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
                                                 <i class="fas fa-pen text-gray-400 dark:text-gray-600"></i>
@@ -191,7 +191,7 @@
                                             <i class="fas fa-filter mr-2"></i>Transaction Status
                                         </label>
                                         <select name="tx-status"
-                                                class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200">
+                                                class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200 bg-white dark:bg-gray-900">
                                             <option value="">All Transactions</option>
                                             <option value="pending" {% if tx_status == "pending" %}selected{% endif %}>Pending</option>
                                             <option value="completed"
@@ -205,7 +205,7 @@
                                             <i class="fas fa-tasks mr-2"></i>Request Status
                                         </label>
                                         <select name="decision-status"
-                                                class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200">
+                                                class="block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200 bg-white dark:bg-gray-900">
                                             <option value="">All Statuses</option>
                                             <option value="accepted"
                                                     {% if decision_status == "accepted" %}selected{% endif %}>
