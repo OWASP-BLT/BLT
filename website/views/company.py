@@ -139,7 +139,7 @@ class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
         recent_organizations = Organization.objects.filter(is_active=True).order_by("-created")[:5]
         context = {"recent_organizations": recent_organizations}
-        
+
         # Handle referral code parameter
         ref_code = request.GET.get("ref")
         if ref_code:
@@ -157,10 +157,9 @@ class RegisterOrganizationView(View):
                 return render(request, "organization/register_organization.html", context)
             request.session["org_ref"] = ref_code
             request.session.modified = True
-            
+
         return render(request, "organization/register_organization.html", context)
 
-    
     def post(self, request, *args, **kwargs):
         user = request.user
         data = request.POST
