@@ -2392,9 +2392,13 @@ def job_detail(request, pk):
             job.organization.admin == request.user or job.organization.managers.filter(id=request.user.id).exists()
         )
 
-    # Public users can only see active, public jobs
-    if not is_org_member and (not job.is_public or job.status != "active"):
-        raise Http404("Job not found")
+    # Public users can only see active, public, non-expired jobs
+    if not is_org_member:
+        from django.utils import timezone
+
+        is_expired = job.expires_at and job.expires_at < timezone.now()
+        if not job.is_public or job.status != "active" or is_expired:
+            raise Http404("Job not found")
 
     # Increment view count
     job.increment_views()

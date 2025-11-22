@@ -324,6 +324,7 @@ class Job(models.Model):
     def increment_views(self):
         """Increment the view count for this job atomically"""
         Job.objects.filter(pk=self.pk).update(views_count=F("views_count") + 1)
+        self.refresh_from_db(fields=["views_count"])
 
     def is_expired(self):
         """Check if the job posting has expired"""

@@ -18,7 +18,7 @@ from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -1083,7 +1083,7 @@ class JobViewSet(viewsets.ModelViewSet):
         )
 
         if not is_member:
-            raise ParseError("You do not have permission to create jobs for this organization")
+            raise PermissionDenied("You do not have permission to create jobs for this organization")
 
         serializer.save(organization=organization, posted_by=self.request.user)
 
@@ -1098,7 +1098,7 @@ class JobViewSet(viewsets.ModelViewSet):
         )
 
         if not is_member:
-            raise ParseError("You do not have permission to update this job")
+            raise PermissionDenied("You do not have permission to update this job")
 
         serializer.save()
 
@@ -1111,12 +1111,12 @@ class JobViewSet(viewsets.ModelViewSet):
         )
 
         if not is_member:
-            raise ParseError("You do not have permission to delete this job")
+            raise PermissionDenied("You do not have permission to delete this job")
 
         instance.delete()
 
     @action(detail=True, methods=["post"])
-    def increment_view(self, request, pk=None):
+    def increment_view(self, _request, _pk=None):
         """Increment view count for a job"""
         job = self.get_object()
         job.increment_views()
