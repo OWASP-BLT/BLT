@@ -130,7 +130,7 @@
                             </div>
                             <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                 <i class="fas fa-comments"></i>
-                                <span>{{ post.comments.count }} Comments</span>
+                                <span>{{ post.comments.all|length }} Comments</span>
                             </div>
                         </div>
                         <div class="border-t border-gray-100 dark:border-gray-800 p-6"
@@ -246,8 +246,15 @@
             },
             body: JSON.stringify({id: suggestionId}),
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 302 || response.redirected) {
+                // Unauthenticated users don't need per-post vote state
+                return null;
+            }
+            return response.json();
+        })
         .then(data => {
+            if (!data) return;
             const upButton = document.querySelector(`[data-vote-type="up"][data-suggestion-id="${suggestionId}"]`);
             const downButton = document.querySelector(`[data-vote-type="down"][data-suggestion-id="${suggestionId}"]`);
             
@@ -395,7 +402,8 @@
         if (!isAuthenticated) {
             showLoginMessage('Please log in to create a new discussion.');
             setTimeout(() => {
-                window.location.href = '/accounts/login/?next=/forum/';
+                const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = `/accounts/login/?next=${currentPath}`;
             }, 2000);
             return;
         }

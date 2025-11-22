@@ -798,7 +798,7 @@ def vote_forum_post(request):
             return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError):
             logger.exception("Validation error in vote_forum_post")
             return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
@@ -847,8 +847,11 @@ def add_forum_post(request):
             if not all([title, category, description]):
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
+            # Explicitly validate category exists before creating post
+            category_obj = ForumCategory.objects.get(pk=category)
+
             post = ForumPost.objects.create(
-                user=request.user, title=title, category_id=category, description=description
+                user=request.user, title=title, category=category_obj, description=description
             )
 
             return JsonResponse({"success": True, "post_id": post.id})
