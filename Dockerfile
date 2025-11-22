@@ -23,10 +23,11 @@ RUN apt-get update && \
 # Install Chromium (works on all architectures)
 # Robust retry logic with dependency fixing for transient network errors
 RUN apt-get update \
-    && for i in 1 2 3 4 5; do \
+    && (for i in 1 2 3 4 5; do \
          apt-get install -y --fix-missing chromium && break || \
-         (sleep 10 && apt-get update); \
+         ([ $i -lt 5 ] && sleep 10 && apt-get update); \
        done \
+    && command -v chromium >/dev/null 2>&1) || exit 1 \
     && apt-get install -y -f \
     && apt-get install -y libz3-4 || true \
     && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome \
