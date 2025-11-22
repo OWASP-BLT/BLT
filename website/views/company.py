@@ -1082,8 +1082,10 @@ class AddSlackIntegrationView(View):
                 messages.error(request, "Slack integration is not configured. Please contact the administrator.")
                 return redirect("organization_manage_integrations", id=id)
 
-            # Validate organization ID is an integer
-            if not isinstance(id, int):
+            # Validate organization ID can be converted to an integer
+            try:
+                org_id = int(id)
+            except (ValueError, TypeError):
                 messages.error(request, "Invalid organization ID.")
                 return redirect("home")
 
@@ -1102,12 +1104,10 @@ class AddSlackIntegrationView(View):
                 return redirect("organization_manage_integrations", id=id)
 
             # Construct validated state parameter
-            state = urlencode({"organization_id": str(id)})
+            state = urlencode({"organization_id": str(org_id)})
 
             # Build OAuth URL using only validated components
-            from urllib.parse import urlencode as url_encode
-
-            params = url_encode(
+            params = urlencode(
                 {
                     "client_id": client_id,
                     "scope": "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands",
