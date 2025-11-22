@@ -327,10 +327,10 @@ def generate_embedding(text, retries=2, backoff_factor=2):
 
         except Exception as e:
             # If rate-limiting error occurs, wait and retry
-            print(f"Error encountered: {e}. Retrying in {2 ** attempt} seconds.")
+            logger.warning(f"Error encountered: {e}. Retrying in {2 ** attempt} seconds.")
             time.sleep(2**attempt)  # Exponential backoff
 
-    print(f"Failed to complete request after {retries} attempts.")
+    logger.error(f"Failed to complete request after {retries} attempts.")
     return None
 
 
@@ -377,7 +377,7 @@ def extract_function_signatures_and_content(repo_path):
                                 }
                                 functions.append(function_data)
                     except Exception as e:
-                        print(f"Error parsing {file_path}: {e}")
+                        logger.warning(f"Error parsing {file_path}: {e}")
     return functions
 
 

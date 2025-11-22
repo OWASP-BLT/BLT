@@ -17,9 +17,6 @@
 ## 📊 Project Stats
 
 <p align="center">
-  <a href="https://github.com/OWASP-BLT/BLT/actions">
-    <img src="https://github.com/OWASP-BLT/BLT/actions/workflows/auto-merge.yml/badge.svg" alt="Build Status">
-  </a>
   <a href="https://github.com/OWASP-BLT/BLT/blob/main/LICENSE.md">
     <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License">
   </a>

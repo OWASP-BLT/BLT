@@ -8,7 +8,7 @@
         {% include "includes/sidenav.html" %}
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
-                <h1 class="text-4xl font-semibold text-gray-800">Check-In Reports</h1>
+                <h1 class="text-4xl font-semibold text-gray-800 dark:text-gray-200">Check-In Reports</h1>
                 <div class="flex space-x-2">
                     {% if user.is_authenticated %}
                         <!-- Daily Status Report button -->
@@ -28,39 +28,39 @@
             <!-- if there is already data available then show the data -->
             {% if data %}
                 <div id="report-container">
-                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400"
+                    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
+                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400 dark:border-gray-500"
                              id="report-title">
                             Check-In Reports from {{ default_start_date }} to {{ default_end_date }}
                         </div>
-                        <table class="min-w-full bg-white">
+                        <table class="min-w-full bg-white dark:bg-gray-800">
                             <thead>
                                 <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Username</th>
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Blockers</th>
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Goal Accomplished</th>
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Current Mood</th>
-                                    <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Username</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Previous Work</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Next Plan</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Blockers</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Goal Accomplished</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Current Mood</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for item in data %}
                                     <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.username }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.previous_work }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.next_plan }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.blockers }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.username }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.previous_work }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.next_plan }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.blockers }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             {% if item.goal_accomplished %}
                                                 ✅ Yes
                                             {% else %}
                                                 ❌ No
                                             {% endif %}
                                         </td>
-                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.current_mood }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.current_mood }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             <a href="{% url 'checkIN_detail' item.id %}"
                                                class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
                                         </td>
@@ -73,10 +73,10 @@
             {% else %}
                 <!-- Container for Reports -->
                 <div id="report-container">
-                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400"
+                    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
+                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400 dark:border-gray-500"
                              id="report-title">Loading data...</div>
-                        <div class="p-4 text-gray-600">Please wait while data is loaded.</div>
+                        <div class="p-4 text-gray-600 dark:text-gray-400">Please wait while data is loaded.</div>
                     </div>
                 </div>
             {% endif %}
@@ -117,11 +117,11 @@ function initializeDaterangepicker(retryCount = 0) {
 
                         if (data.length === 0) {
                             $('#report-container').append(`
-                                <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
+                                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
+                                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400 dark:border-gray-500">
                                         No Data
                                     </div>
-                                    <div class="p-4 text-gray-600">No check-in reports found for the selected range.</div>
+                                    <div class="p-4 text-gray-600 dark:text-gray-400">No check-in reports found for the selected range.</div>
                                 </div>
                             `);
                             return;
@@ -145,11 +145,11 @@ function initializeDaterangepicker(retryCount = 0) {
                                 const detailUrl = "/check-in/" + item.id + "/"; // Construct URL directly
                                 rows += `
                                     <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 border-b border-gray-200">${item.username}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">${item.previous_work}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">${item.next_plan}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">${item.blockers}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.username}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.previous_work}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.next_plan}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.blockers}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             <a href="${detailUrl}" class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
                                         </td>
                                     </tr>
@@ -157,18 +157,18 @@ function initializeDaterangepicker(retryCount = 0) {
                             });
 
                             $('#report-container').append(`
-                                <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
+                                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
+                                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400 dark:border-gray-500">
                                         ${reportDate}
                                     </div>
-                                    <table class="min-w-full bg-white">
+                                    <table class="min-w-full bg-white dark:bg-gray-800">
                                         <thead>
                                             <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                                <th class="text-left py-3 px-4 border-b border-gray-200">Username</th>
-                                                <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
-                                                <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
-                                                <th class="text-left py-3 px-4 border-b border-gray-200">Blockers</th>
-                                                <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Username</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Previous Work</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Next Plan</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Blockers</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>

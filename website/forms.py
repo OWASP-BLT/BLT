@@ -11,6 +11,7 @@ from website.models import (
     HackathonPrize,
     HackathonSponsor,
     IpReport,
+    Job,
     Monitor,
     Organization,
     ReminderSettings,
@@ -173,7 +174,7 @@ class GitHubIssueForm(forms.Form):
         label="GitHub Issue URL",
         widget=forms.URLInput(
             attrs={
-                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
                 "placeholder": "https://github.com/owner/repo/issues/123",
             }
         ),
@@ -207,6 +208,22 @@ class GitHubIssueForm(forms.Form):
 
 
 class HackathonForm(forms.ModelForm):
+    new_repo_urls = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "class": (
+                    "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#e74c3c] "
+                    "focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50"
+                ),
+                "placeholder": "https://github.com/owner/repo1\nhttps://github.com/owner/repo2",
+            }
+        ),
+        label="New Repository URLs",
+        help_text="Enter GitHub repository URLs (one per line) to add new repositories to this hackathon",
+    )
+
     class Meta:
         model = Hackathon
         fields = [
@@ -312,8 +329,42 @@ class HackathonForm(forms.ModelForm):
                 # When editing, show all repositories from the organization
                 self.fields["repositories"].queryset = Repo.objects.filter(organization=self.instance.organization)
             else:
-                # When creating new, start with empty queryset
-                self.fields["repositories"].queryset = Repo.objects.none()
+                # When creating new, try to get organization from form data
+                organization_id = None
+                if "data" in kwargs and kwargs["data"]:
+                    organization_id = kwargs["data"].get("organization")
+
+                if organization_id:
+                    # Show repositories from the selected organization
+                    self.fields["repositories"].queryset = Repo.objects.filter(organization_id=organization_id)
+                else:
+                    # No organization selected yet, start with empty queryset
+                    self.fields["repositories"].queryset = Repo.objects.none()
+
+    def clean_new_repo_urls(self):
+        """Validate and parse new repository URLs."""
+        new_repo_urls = self.cleaned_data.get("new_repo_urls", "")
+        if not new_repo_urls:
+            return []
+
+        urls = [url.strip() for url in new_repo_urls.strip().split("\n") if url.strip()]
+        validated_urls = []
+
+        for url in urls:
+            # Basic validation for GitHub URLs
+            if not url.startswith("https://github.com/"):
+                raise forms.ValidationError(f"Invalid GitHub URL: {url}. URLs must start with https://github.com/")
+
+            # Check if URL has the correct format
+            parts = url.replace("https://github.com/", "").split("/")
+            if len(parts) < 2:
+                raise forms.ValidationError(
+                    f"Invalid GitHub URL format: {url}. Expected format: https://github.com/owner/repo"
+                )
+
+            validated_urls.append(url)
+
+        return validated_urls
 
     def clean_repositories(self):
         repositories = self.cleaned_data.get("repositories")
@@ -324,6 +375,39 @@ class HackathonForm(forms.ModelForm):
             valid_repos = Repo.objects.filter(id__in=[r.id for r in repositories], organization=organization)
             return valid_repos
         return repositories
+
+    def save(self, commit=True):
+        """Save the hackathon and create new repositories if provided."""
+        instance = super().save(commit=False)
+
+        if commit:
+            instance.save()
+            # Save many-to-many relationships
+            self.save_m2m()
+
+            # Create and add new repositories
+            new_repo_urls = self.cleaned_data.get("new_repo_urls", [])
+            if new_repo_urls:
+                organization = instance.organization
+                for repo_url in new_repo_urls:
+                    # Extract repo name from URL
+                    repo_name = repo_url.rstrip("/").split("/")[-1]
+
+                    # Check if repo already exists
+                    existing_repo = Repo.objects.filter(repo_url=repo_url).first()
+                    if existing_repo:
+                        # Add existing repo to hackathon
+                        instance.repositories.add(existing_repo)
+                    else:
+                        # Create new repo
+                        new_repo = Repo.objects.create(
+                            name=repo_name,
+                            repo_url=repo_url,
+                            organization=organization,
+                        )
+                        instance.repositories.add(new_repo)
+
+        return instance
 
 
 class HackathonSponsorForm(forms.ModelForm):
@@ -386,4 +470,134 @@ class ReminderSettingsForm(forms.ModelForm):
             "is_active": forms.CheckboxInput(
                 attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
             )
+        }
+
+
+class JobForm(forms.ModelForm):
+    """Form for creating and editing job postings"""
+
+    def clean(self):
+        """Validate that at least one application method is provided"""
+        cleaned_data = super().clean()
+        application_email = cleaned_data.get("application_email")
+        application_url = cleaned_data.get("application_url")
+        application_instructions = cleaned_data.get("application_instructions")
+
+        if not any([application_email, application_url, application_instructions]):
+            raise forms.ValidationError(
+                "Please provide at least one way for candidates to apply " "(email, URL, or instructions)."
+            )
+
+        return cleaned_data
+
+    class Meta:
+        model = Job
+        fields = [
+            "title",
+            "description",
+            "requirements",
+            "location",
+            "job_type",
+            "salary_range",
+            "is_public",
+            "status",
+            "expires_at",
+            "application_email",
+            "application_url",
+            "application_instructions",
+        ]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "e.g., Senior Software Engineer",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 6,
+                    "placeholder": "Describe the job role and responsibilities...",
+                }
+            ),
+            "requirements": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 5,
+                    "placeholder": "List required skills, experience, and qualifications...",
+                }
+            ),
+            "location": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "e.g., Remote, New York, or Hybrid",
+                }
+            ),
+            "job_type": forms.Select(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                }
+            ),
+            "salary_range": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "e.g., $80k-$120k, Competitive",
+                }
+            ),
+            "application_email": forms.EmailInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "careers@company.com",
+                }
+            ),
+            "application_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://company.com/apply",
+                }
+            ),
+            "application_instructions": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 3,
+                    "placeholder": "How should candidates apply? Any special instructions...",
+                }
+            ),
+            "is_public": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
+            ),
+            "status": forms.Select(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                }
+            ),
+            "expires_at": forms.DateTimeInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "type": "datetime-local",
+                    "placeholder": "YYYY-MM-DD HH:MM",
+                }
+            ),
+        }
+        labels = {
+            "title": "Job Title",
+            "description": "Job Description",
+            "requirements": "Requirements",
+            "location": "Location",
+            "job_type": "Job Type",
+            "salary_range": "Salary Range",
+            "is_public": "Make this job posting public",
+            "status": "Job Status",
+            "expires_at": "Expiration Date",
+            "application_email": "Application Email",
+            "application_url": "Application URL",
+            "application_instructions": "Application Instructions",
+        }
+        help_texts = {
+            "is_public": "Public jobs can be seen by anyone, even if your organization is private",
+            "status": "Draft jobs are not visible to anyone. Active jobs can receive applications. Paused jobs are visible but cannot receive applications.",
+            "expires_at": "Optional: Date and time when this job posting will automatically expire",
+            "application_email": "Optional: Email address where applications should be sent",
+            "application_url": "Optional: Link to external application page",
+            "application_instructions": "Optional: Custom instructions for applicants",
         }
