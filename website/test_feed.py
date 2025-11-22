@@ -12,21 +12,15 @@ class ActivityFeedTests(TestCase):
     def setUp(self):
         """Set up test data."""
         self.client = Client()
-        
+
         # Create regular user
-        self.user = User.objects.create_user(
-            username="testuser", 
-            password="testpass123", 
-            email="test@example.com"
-        )
-        
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+
         # Create superuser
         self.superuser = User.objects.create_superuser(
-            username="admin", 
-            password="adminpass123", 
-            email="admin@example.com"
+            username="admin", password="adminpass123", email="admin@example.com"
         )
-        
+
         # Create a test issue for activity content
         self.issue = Issue.objects.create(
             user=self.user,
@@ -34,7 +28,7 @@ class ActivityFeedTests(TestCase):
             description="Test issue for activity",
             status="open",
         )
-        
+
         # Create test activity
         content_type = ContentType.objects.get_for_model(Issue)
         self.activity = Activity.objects.create(
@@ -50,7 +44,7 @@ class ActivityFeedTests(TestCase):
         """Test that the feed page loads successfully."""
         url = reverse("feed")
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Global Activity Feed")
 
@@ -58,7 +52,7 @@ class ActivityFeedTests(TestCase):
         """Test that activities are displayed on the feed."""
         url = reverse("feed")
         response = self.client.get(url)
-        
+
         self.assertContains(response, self.activity.title)
         self.assertContains(response, self.activity.description)
         self.assertContains(response, self.user.username)
@@ -68,7 +62,7 @@ class ActivityFeedTests(TestCase):
         self.client.login(username="testuser", password="testpass123")
         url = reverse("feed")
         response = self.client.get(url)
-        
+
         # Check that delete button is not present
         self.assertNotContains(response, "deleteActivity")
 
@@ -77,7 +71,7 @@ class ActivityFeedTests(TestCase):
         self.client.login(username="admin", password="adminpass123")
         url = reverse("feed")
         response = self.client.get(url)
-        
+
         # Check that delete button is present
         self.assertContains(response, "deleteActivity")
 
@@ -86,7 +80,7 @@ class ActivityFeedTests(TestCase):
         self.client.login(username="testuser", password="testpass123")
         url = reverse("delete_activity", kwargs={"id": self.activity.id})
         response = self.client.post(url)
-        
+
         self.assertEqual(response.status_code, 403)
         # Activity should still exist
         self.assertTrue(Activity.objects.filter(id=self.activity.id).exists())
@@ -96,7 +90,7 @@ class ActivityFeedTests(TestCase):
         self.client.login(username="admin", password="adminpass123")
         url = reverse("delete_activity", kwargs={"id": self.activity.id})
         response = self.client.post(url)
-        
+
         self.assertEqual(response.status_code, 200)
         # Activity should be deleted
         self.assertFalse(Activity.objects.filter(id=self.activity.id).exists())
@@ -105,7 +99,7 @@ class ActivityFeedTests(TestCase):
         """Test that RSS feed is accessible."""
         url = reverse("activity_feed_rss")
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/rss+xml; charset=utf-8")
 
@@ -113,7 +107,7 @@ class ActivityFeedTests(TestCase):
         """Test that RSS feed contains activities."""
         url = reverse("activity_feed_rss")
         response = self.client.get(url)
-        
+
         content = response.content.decode("utf-8")
         self.assertIn(self.activity.title, content)
         self.assertIn(self.user.username, content)
@@ -122,7 +116,7 @@ class ActivityFeedTests(TestCase):
         """Test that RSS feed link is present on the feed page."""
         url = reverse("feed")
         response = self.client.get(url)
-        
+
         rss_url = reverse("activity_feed_rss")
         self.assertContains(response, rss_url)
         self.assertContains(response, "Subscribe to RSS Feed")

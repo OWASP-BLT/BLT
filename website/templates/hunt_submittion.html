@@ -31,7 +31,7 @@
         <form action="{% url 'submit_bug' hunt.pk %}"
               method="post"
               enctype="multipart/form-data"
-              class="bg-white p-6 rounded-lg shadow-md">
+              class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             {% csrf_token %}
             <div class="text-center mb-6">
                 <h1 class="text-2xl font-bold">Report a Bug</h1>
@@ -44,10 +44,10 @@
                 <!-- URL Input -->
                 <div class="form-group{% if form.url.errors %} has-error{% endif %}">
                     <div class="flex items-center">
-                        <span class="bg-gray-200 p-3 rounded-l-lg">
+                        <span class="bg-gray-200 dark:bg-gray-700 p-3 rounded-l-lg">
                             <i class="fa fa-external-link" aria-hidden="true"></i>
                         </span>
-                        <input class="flex-1 p-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        <input class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                type="url"
                                placeholder="https://testsite.com/bug-found"
                                name="url"
@@ -61,10 +61,10 @@
                 <!-- Description Textarea -->
                 <div class="form-group{% if form.description.errors %} has-error{% endif %}">
                     <div class="flex items-center">
-                        <span class="bg-gray-200 p-3 rounded-l-lg">
+                        <span class="bg-gray-200 dark:bg-gray-700 p-3 rounded-l-lg">
                             <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
                         </span>
-                        <textarea class="flex-1 p-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        <textarea class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   name="description"
                                   rows="3"
                                   placeholder="Describe bug issue">{{ form.description.value|default:'' }}</textarea>
@@ -73,10 +73,10 @@
                 </div>
                 <!-- Bug Type Dropdown -->
                 <div class="flex items-center">
-                    <span class="bg-gray-200 p-3 rounded-l-lg">
+                    <span class="bg-gray-200 dark:bg-gray-700 p-3 rounded-l-lg">
                         <i class="fa fa-list" aria-hidden="true"></i>
                     </span>
-                    <select class="flex-1 p-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <select class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             name="label"
                             required>
                         <option value="0" selected>General</option>
@@ -118,23 +118,27 @@
         <!-- Report Summary Table -->
         {% if issue_list %}
             <div class="mt-8 overflow-x-auto">
-                <table class="w-full border-collapse border border-gray-300">
+                <table class="w-full border-collapse border border-gray-300 dark:border-gray-600">
                     <caption class="text-xl font-bold mb-4">Report Summary</caption>
                     <thead>
-                        <tr class="bg-gray-100">
-                            <th class="p-3 border border-gray-300">ID</th>
-                            <th class="p-3 border border-gray-300">URL</th>
-                            <th class="p-3 border border-gray-300">Description</th>
-                            <th class="p-3 border border-gray-300">Type</th>
+                        <tr class="bg-gray-100 dark:bg-gray-800">
+                            <th class="p-3 border border-gray-300 dark:border-gray-600">ID</th>
+                            <th class="p-3 border border-gray-300 dark:border-gray-600">URL</th>
+                            <th class="p-3 border border-gray-300 dark:border-gray-600">Description</th>
+                            <th class="p-3 border border-gray-300 dark:border-gray-600">Type</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for issue in issue_list %}
-                            <tr class="bg-white even:bg-gray-50">
-                                <td class="p-3 border border-gray-300 text-center" data-label="ID">{{ forloop.counter }}</td>
-                                <td class="p-3 border border-gray-300" data-label="URL">{{ issue.url }}</td>
-                                <td class="p-3 border border-gray-300" data-label="Description">{{ issue.description }}</td>
-                                <td class="p-3 border border-gray-300" data-label="Type">{{ issue.get_label_display }}</td>
+                            <tr class="bg-white dark:bg-gray-800 even:bg-gray-50">
+                                <td class="p-3 border border-gray-300 dark:border-gray-600 text-center"
+                                    data-label="ID">{{ forloop.counter }}</td>
+                                <td class="p-3 border border-gray-300 dark:border-gray-600"
+                                    data-label="URL">{{ issue.url }}</td>
+                                <td class="p-3 border border-gray-300 dark:border-gray-600"
+                                    data-label="Description">{{ issue.description }}</td>
+                                <td class="p-3 border border-gray-300 dark:border-gray-600"
+                                    data-label="Type">{{ issue.get_label_display }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

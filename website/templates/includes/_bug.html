@@ -1,9 +1,9 @@
 {% load gravatar %}
 {% load static %}
 {% load custom_tags %}
-<div class="flex flex-col bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+<div class="flex flex-col bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
     <!-- Header with user info and label -->
-    <div class="p-4 flex items-center justify-between border-b border-gray-100">
+    <div class="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
         <div class="flex items-center gap-3">
             <!-- User Avatar -->
             <div class="flex-shrink-0">
@@ -41,13 +41,13 @@
             <div class="flex-1 min-w-0">
                 {% if bug.user.username is not None %}
                     <a href="{% url 'profile' slug=bug.user.username %}"
-                       class="text-sm font-medium text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                       class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors truncate">
                         {{ bug.user }}
                     </a>
                 {% else %}
-                    <span class="text-sm font-medium text-gray-900">Anonymous</span>
+                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Anonymous</span>
                 {% endif %}
-                <p class="text-xs text-gray-500">{{ bug.created|timesince }} ago</p>
+                <p class="text-xs text-gray-500 dark:text-gray-500">{{ bug.created|timesince }} ago</p>
             </div>
             <!-- Label -->
             <div class="flex-shrink-0">
@@ -96,9 +96,9 @@
             </div>
             <div class="flex-1">
                 <a href="{% url 'domain' slug=bug.domain_name %}"
-                   class="text-sm text-gray-600 hover:text-[#e74c3c] transition-colors">{{ bug.domain_name }}</a>
+                   class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors">{{ bug.domain_name }}</a>
                 {% if bug.domain.organization %}
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
                         Organization:
                         <a href="{% url 'organization_detail' bug.domain.organization.slug %}"
                            class="text-[#e74c3c] hover:underline">{{ bug.domain.organization.name }}</a>
@@ -108,27 +108,27 @@
         </div>
         <!-- Bug Title -->
         <a href="{% url 'issue_view' slug=bug.id %}"
-           class="block text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors line-clamp-3">
+           class="block text-lg font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors line-clamp-3">
             {{ bug.description|truncatechars:150 }}
         </a>
         <!-- URL -->
-        <span class="text-xs text-gray-600">
+        <span class="text-xs text-gray-600 dark:text-gray-400">
             <i class="fas fa-eye mr-1"></i>{{ bug.views }}
         </span>
         <!-- URL -->
         <a href="{{ bug.url }}"
            target="_blank"
            rel="noopener noreferrer"
-           class="mt-1 ml-1 text-sm text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block">
+           class="mt-1 ml-1 text-sm text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block">
             {{ bug.url|truncatechars:60 }}
         </a>
     </div>
     <!-- Screenshot -->
     {% if bug.screenshot or bugs_screenshots %}
-        <div class="border-t border-gray-100">
+        <div class="border-t border-gray-100 dark:border-gray-800">
             {% if bug.screenshot %}
                 <a href="{% url 'issue_view' slug=bug.id %}"
-                   class="block relative h-48 bg-gray-50">
+                   class="block relative h-48 bg-gray-50 dark:bg-gray-900">
                     <img src="{{ bug.screenshot.url }}"
                          alt="Bug Screenshot"
                          class="w-full h-full object-contain"
@@ -138,7 +138,7 @@
             {% else %}
                 {% for bug_key, bug_screenshots in bugs_screenshots.items %}
                     {% if bug == bug_key and bug_screenshots %}
-                        <div class="relative h-48 bg-gray-50">
+                        <div class="relative h-48 bg-gray-50 dark:bg-gray-900">
                             {% if bug_screenshots|length == 1 %}
                                 <a href="{% url 'issue_view' slug=bug.id %}" class="block h-full">
                                     <img src="{{ bug_screenshots.0.image.url }}"
@@ -173,13 +173,13 @@
         </div>
     {% endif %}
     <!-- Footer -->
-    <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
         <div class="flex justify-between items-center">
             <!-- Actions -->
             <div class="flex items-center space-x-4">
                 <!-- Like -->
                 <button onclick="like_unlike_handler(event, {{ bug.id }})"
-                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
                     <svg id="likeSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
@@ -192,7 +192,7 @@
                 </button>
                 <!-- Dislike -->
                 <button onclick="dislike_handler(event, {{ bug.id }})"
-                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
                     <svg id="dislikeSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
@@ -205,7 +205,7 @@
                 </button>
                 <!-- Flag -->
                 <button onclick="flag_unflag_handler(event, {{ bug.id }})"
-                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
                     <svg id="flagSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
@@ -219,7 +219,7 @@
             </div>
             <!-- View Details -->
             <a href="{{ bug.get_absolute_url }}"
-               class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:text-[#e74c3c] hover:border-[#e74c3c] transition-colors">
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:text-[#e74c3c] hover:border-[#e74c3c] transition-colors">
                 View Details
             </a>
         </div>

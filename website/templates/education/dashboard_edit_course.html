@@ -12,11 +12,11 @@
                      height="160">
                 <div>
                     <h1 class="text-3xl font-bold flex items-center gap-3 text-red-800">
-                        <i class="fas fa-graduation-cap text-black"></i>
+                        <i class="fas fa-graduation-cap text-black dark:text-white"></i>
                         {{ course.title|capfirst }}
                     </h1>
-                    <span class="block text-gray-700 mt-1">by {{ user.username }}</span>
-                    <span class="block text-sm text-gray-500 mt-1">Last updated: {{ course.updated_at|date:"F d, Y" }}</span>
+                    <span class="block text-gray-700 dark:text-gray-300 mt-1">by {{ user.username }}</span>
+                    <span class="block text-sm text-gray-500 dark:text-gray-500 mt-1">Last updated: {{ course.updated_at|date:"F d, Y" }}</span>
                     <a href="/education/instructor_dashboard/"
                        class="mt-4 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
                         <i class="fas fa-arrow-left mr-2"></i>
@@ -32,7 +32,7 @@
                     Content
                 </button>
                 <button data-tab="details"
-                        class="tablinks py-2 px-4 font-semibold transition-colors duration-300 border-b-2 border-transparent text-lg  hover:text-blue-600 focus:outline-none">
+                        class="tablinks py-2 px-4 font-semibold transition-colors duration-300 border-b-2 border-transparent text-lg hover:text-blue-600 focus:outline-none">
                     Details
                 </button>
             </div>
@@ -45,7 +45,7 @@
                 <div id="content-sections" class="flex"></div>
             </div>
             <div id="details"
-                 class="tabcontent p-4 bg-white flex shadow-sm items-center justify-center hidden">
+                 class="tabcontent p-4 bg-white dark:bg-gray-800 flex shadow-sm items-center justify-center hidden">
                 <div class="w-full max-w-4xl">{% include "education/includes/create_or_update_course_form.html" %}</div>
             </div>
         </div>
