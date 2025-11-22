@@ -42,13 +42,13 @@ jobs:
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
-    permissions: 
-      contents: read  # Minimal permission for checking out code
+    permissions:
+      contents: read # Minimal permission for checking out code
     outputs:
       python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Cache pre-commit hooks
         uses: actions/cache@v4
         with:
@@ -62,10 +62,16 @@ jobs:
         with:
           python-version: 3.11.2
 
+      - name: Install Poetry (official installer)
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          poetry --version
+
       - name: Get Poetry cache directory
         id: poetry-cache
         run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
-      
+
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
@@ -86,7 +92,7 @@ jobs:
     # Run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
     needs: setup
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       issues: write
       pull-requests: write
       contents: write
@@ -103,6 +109,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+      - name: Install Poetry (official installer)
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          poetry --version
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential libgmp-dev
+
+      - name: Install dependencies (with dev)
+        run: |
+          poetry config virtualenvs.create false --local || true
+          poetry install --no-interaction --no-ansi --with dev
+
       - name: Run pre-commit
         id: pre-commit
         run: |
@@ -266,7 +285,6 @@ jobs:
       - name: Print memory usage
         run: free -h
 
-
   test:
     name: Run Tests
     needs: setup
@@ -278,13 +296,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+
+      - name: Install Poetry (official installer)
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          poetry --version
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
-      - run: pip install poetry
-      - run: poetry lock
-      - run: poetry install --with dev
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver build-essential libgmp-dev
+
+      - name: Install dependencies (with dev)
+        run: |
+          poetry config virtualenvs.create false --local || true
+          poetry install --no-interaction --no-ansi --with dev
+
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast

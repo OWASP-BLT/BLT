@@ -680,17 +680,38 @@ class IssueBaseCreate(object):
         )
         obj.domain = domain
         if self.request.POST.get("screenshot-hash"):
-            filename = self.request.POST.get("screenshot-hash")
-            extension = filename.split(".")[-1]
-            self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
+            from django.core.exceptions import ValidationError
 
-            reopen = default_storage.open("uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
-            django_file = File(reopen)
-            obj.screenshot.save(
-                self.request.POST.get("screenshot-hash") + ".png",
-                django_file,
-                save=True,
-            )
+            try:
+                original_hash = self.request.POST.get("screenshot-hash").strip()
+                # Validate the original user input first
+                validate_screenshot_hash(original_hash)
+
+                # Extract extension and generate unique hash
+                extension = original_hash.split(".")[-1] if "." in original_hash else "png"
+                unique_hash = original_hash[:99] + str(uuid.uuid4()) + "." + extension
+                self.request.POST["screenshot-hash"] = unique_hash
+
+                # Open file using original_hash (the actual uploaded filename)
+                screenshot_path = os.path.join("uploads", original_hash)
+                try:
+                    reopen = default_storage.open(screenshot_path, "rb")
+                    django_file = File(reopen)
+                    # Save with unique_hash to avoid collisions
+                    obj.screenshot.save(
+                        unique_hash,
+                        django_file,
+                        save=True,
+                    )
+                finally:
+                    if "reopen" in locals():
+                        reopen.close()
+            except ValidationError:
+                messages.error(self.request, "Invalid screenshot hash provided")
+            except FileNotFoundError:
+                messages.error(self.request, "Screenshot file not found. Please upload again.")
+            except (OSError, IOError):
+                messages.error(self.request, "Failed to process screenshot file. Please try again.")
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
@@ -848,7 +869,15 @@ class IssueCreate(IssueBaseCreate, CreateView):
             tokenauth = False
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
-            initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
+            from django.core.exceptions import ValidationError
+
+            try:
+                screenshot_hash = self.request.POST.get("screenshot-hash").strip()
+                validate_screenshot_hash(screenshot_hash)
+                screenshot_path = os.path.join("uploads", f"{screenshot_hash}.png")
+                initial["screenshot"] = screenshot_path
+            except ValidationError:
+                messages.error(self.request, "Invalid screenshot hash provided")
         return initial
 
     def post(self, request, *args, **kwargs):
