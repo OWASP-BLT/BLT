@@ -51,7 +51,7 @@ class IPRestrictMiddlewareTestCase(TestCase):
     def test_blocked_ip_network(self):
         """Test that an IP in a blocked network is forbidden"""
         # Create a blocked network
-        Blocked.objects.create(ip_network="192.168.1.0", reason_for_block="Testing network")
+        Blocked.objects.create(ip_network="192.168.1.0/24", reason_for_block="Testing network")
 
         # Create a request from an IP in that network
         request = self.factory.get("/test/")
@@ -64,7 +64,7 @@ class IPRestrictMiddlewareTestCase(TestCase):
         self.assertIsInstance(response, HttpResponseForbidden)
 
         # Verify the block count was incremented
-        blocked = Blocked.objects.get(ip_network="192.168.1.0")
+        blocked = Blocked.objects.get(ip_network="192.168.1.0/24")
         self.assertEqual(blocked.count, 2)
 
     def test_blocked_user_agent(self):
@@ -149,7 +149,7 @@ class IPRestrictMiddlewareTestCase(TestCase):
     def test_cache_blocked_networks(self):
         """Test that blocked IP networks are cached"""
         # Create a blocked network
-        Blocked.objects.create(ip_network="10.0.0.0", reason_for_block="Testing network")
+        Blocked.objects.create(ip_network="10.0.0.0/8", reason_for_block="Testing network")
 
         # First call should hit database and cache the result
         blocked_networks = self.middleware.blocked_ip_network()

@@ -161,7 +161,7 @@ class IPRestrictMiddleware:
                 if ip_record.pk:
                     ip_record.save(update_fields=["agent", "count"])
 
-                # Check if a transaction is already active before starting a new one
+                # Delete duplicate records if in a transaction (autocommit is False)
                 if not transaction.get_autocommit():
                     ip_records.exclude(pk=ip_record.pk).delete()
             else:
