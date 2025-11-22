@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -115,6 +115,14 @@ class HackathonDetailView(DetailView):
                 created_at__lte=hackathon.end_time,
             )
 
+        # Exclude bot accounts from contributors
+        # Filter by contributor_type field (primary check) and name patterns (fallback)
+        query = query.exclude(
+            Q(contributor__contributor_type="Bot")
+            | Q(contributor__name__endswith="[bot]")
+            | Q(contributor__name__icontains="bot")
+        )
+
         return query
 
     def _get_date_range_data(self, start_date, end_date, data_dict, default_value=0):
@@ -136,11 +144,15 @@ class HackathonDetailView(DetailView):
         user_profile_count = prs.exclude(user_profile=None).values("user_profile").distinct().count()
 
         # Count unique contributors (GitHub users not registered on the platform)
-        # Exclude bot accounts
+        # Exclude bot accounts using contributor_type field (primary) and name patterns (fallback)
         contributor_count = (
             prs.filter(user_profile=None)
             .exclude(contributor=None)
-            .exclude(contributor__name__endswith="[bot]")
+            .exclude(
+                Q(contributor__contributor_type="Bot")
+                | Q(contributor__name__endswith="[bot]")
+                | Q(contributor__name__icontains="bot")
+            )
             .values("contributor")
             .distinct()
             .count()
@@ -168,14 +180,22 @@ class HackathonDetailView(DetailView):
         repos_with_pr_counts = []
 
         for repo in repositories:
-            # Count merged PRs for this repository
-            merged_pr_count = GitHubIssue.objects.filter(
-                repo=repo,
-                type="pull_request",
-                is_merged=True,
-                merged_at__gte=hackathon.start_time,
-                merged_at__lte=hackathon.end_time,
-            ).count()
+            # Count merged PRs for this repository (excluding bots)
+            merged_pr_count = (
+                GitHubIssue.objects.filter(
+                    repo=repo,
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=hackathon.start_time,
+                    merged_at__lte=hackathon.end_time,
+                )
+                .exclude(
+                    Q(contributor__contributor_type="Bot")
+                    | Q(contributor__name__endswith="[bot]")
+                    | Q(contributor__name__icontains="bot")
+                )
+                .count()
+            )
 
             repos_with_pr_counts.append({"repo": repo, "merged_pr_count": merged_pr_count})
 
@@ -194,7 +214,7 @@ class HackathonDetailView(DetailView):
         # Get merged PR data
         merged_pr_data = (
             self._get_base_pr_query(hackathon, repo_ids, is_merged=True)
-            .annotate(date=TruncDate("created_at"))
+            .annotate(date=TruncDate("merged_at"))
             .values("date")
             .annotate(count=Count("id"))
             .order_by("date")
@@ -253,26 +273,39 @@ class HackathonDetailView(DetailView):
         # Get the path for this hackathon
         hackathon_path = f"/hackathons/{hackathon.slug}/"
 
-        # Get the last 14 days of view data
+        # Calculate views during the hackathon timeframe
+        hackathon_start_date = hackathon.start_time.date()
+        hackathon_end_date = hackathon.end_time.date()
         today = timezone.now().date()
-        fourteen_days_ago = today - timedelta(days=14)
 
-        # Query IP table for view counts by date
-        view_data = (
-            IP.objects.filter(path=hackathon_path, created__date__gte=fourteen_days_ago)
+        # Use the end date or today, whichever is earlier for the chart
+        chart_end_date = min(hackathon_end_date, today)
+
+        # Query IP table for view counts during hackathon period
+        # Use path__contains to match the widget's behavior
+        hackathon_view_data = (
+            IP.objects.filter(
+                path__contains=hackathon_path,
+                created__date__gte=hackathon_start_date,
+                created__date__lte=chart_end_date,
+            )
             .annotate(date=TruncDate("created"))
             .values("date")
             .annotate(count=Sum("count"))
             .order_by("date")
         )
 
-        # Prepare data for the sparkline chart
-        date_counts = {item["date"]: item["count"] for item in view_data}
-        dates, counts = self._get_date_range_data(fourteen_days_ago, today, date_counts)
+        # Prepare data for the sparkline chart (hackathon timeframe)
+        date_counts = {item["date"]: item["count"] for item in hackathon_view_data}
+        dates, counts = self._get_date_range_data(hackathon_start_date, chart_end_date, date_counts)
 
         context["view_dates"] = json.dumps(dates)
         context["view_counts"] = json.dumps(counts)
-        context["total_views"] = sum(counts)
+        context["hackathon_views"] = sum(counts)
+
+        # Calculate all-time views (from the beginning)
+        all_time_views = IP.objects.filter(path__contains=hackathon_path).aggregate(total=Sum("count"))["total"] or 0
+        context["all_time_views"] = all_time_views
 
         return context
 
@@ -567,3 +600,55 @@ def _process_pull_request(pr_data, hackathon, repo):
 
         new_pr.save()
         return True  # New PR added
+
+
+@login_required
+def add_org_repos_to_hackathon(request, slug):
+    """View to add all organization repositories to a hackathon."""
+    hackathon = get_object_or_404(Hackathon, slug=slug)
+
+    # Check if user has permission to manage this hackathon
+    user = request.user
+    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+        messages.error(request, "You don't have permission to manage this hackathon.")
+        return redirect("hackathons")
+
+    try:
+        # Get all repos from the hackathon's organization
+        org_repos = Repo.objects.filter(organization=hackathon.organization)
+
+        if not org_repos.exists():
+            messages.warning(
+                request,
+                f"No repositories found for organization {hackathon.organization.name}. "
+                "Please sync the organization's repositories first.",
+            )
+            return redirect("hackathons")
+
+        # Add all org repos to the hackathon
+        added_count = 0
+        already_added_count = 0
+
+        for repo in org_repos:
+            if hackathon.repositories.filter(id=repo.id).exists():
+                already_added_count += 1
+            else:
+                hackathon.repositories.add(repo)
+                added_count += 1
+
+        if added_count > 0:
+            messages.success(
+                request,
+                f"Successfully added {added_count} repositories to {hackathon.name}. "
+                f"({already_added_count} were already added)",
+            )
+        else:
+            messages.info(
+                request,
+                f"All {already_added_count} repositories from {hackathon.organization.name} "
+                "are already part of this hackathon.",
+            )
+    except Exception:
+        messages.error(request, "An error occurred while adding repositories to the hackathon.")
+
+    return redirect("hackathons")

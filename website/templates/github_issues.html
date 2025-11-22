@@ -18,23 +18,23 @@
     <div class="container mx-auto px-4 py-8">
         <!-- Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-white rounded-lg shadow p-4 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
                 <h3 class="text-lg font-semibold">Total</h3>
                 <p class="text-2xl font-bold">{{ total_count }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-4 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
                 <h3 class="text-lg font-semibold">Open</h3>
                 <p class="text-2xl font-bold text-green-600">{{ open_count }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-4 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
                 <h3 class="text-lg font-semibold">Closed</h3>
-                <p class="text-2xl font-bold text-gray-600">{{ closed_count }}</p>
+                <p class="text-2xl font-bold text-gray-600 dark:text-gray-400">{{ closed_count }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-4 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
                 <h3 class="text-lg font-semibold">Pull Requests</h3>
                 <p class="text-2xl font-bold text-[#e74c3c]">{{ pr_count }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-4 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
                 <h3 class="text-lg font-semibold">Issues</h3>
                 <p class="text-2xl font-bold text-blue-600">{{ issue_count }}</p>
             </div>
@@ -42,22 +42,22 @@
         <!-- BACON Rewards Section -->
         <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
             <div class="sm:col-span-5">
-                <div class="bg-gray-50 p-6 rounded-lg border-2 border-[#e74c3c] shadow-sm">
+                <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg border-2 border-[#e74c3c] shadow-sm">
                     <div class="flex items-center gap-3 mb-4">
                         <i class="fas fa-bacon text-2xl text-[#e74c3c]"></i>
-                        <h3 class="text-xl font-semibold text-gray-900">BACON Rewards</h3>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">BACON Rewards</h3>
                     </div>
-                    <p class="text-gray-600 mb-4">
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">
                         Get rewarded with BACON tokens for your contributions! Create quality issues and earn tokens when they get resolved.
                     </p>
                     <div class="flex flex-wrap gap-4">
                         <div class="flex items-center gap-2">
                             <i class="fas fa-check-circle text-[#e74c3c]"></i>
-                            <span class="text-sm text-gray-700">5 BACON tokens for accepted issues</span>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">5 BACON tokens for accepted issues</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <i class="fas fa-star text-[#e74c3c]"></i>
-                            <span class="text-sm text-gray-700">Bonus tokens for security-related issues</span>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Bonus tokens for security-related issues</span>
                         </div>
                     </div>
                     <div class="mt-4">
@@ -72,7 +72,7 @@
         </div>
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <!-- Add GitHub Issue Form -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
             <h2 class="text-xl font-bold mb-4">Add GitHub Issue with Bounty</h2>
             {% if messages %}
                 <div class="mb-4">
@@ -87,9 +87,13 @@
                 {% csrf_token %}
                 <div>
                     <label for="{{ form.github_url.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-1">{{ form.github_url.label }}</label>
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ form.github_url.label }}
+                    </label>
                     {{ form.github_url }}
-                    {% if form.github_url.help_text %}<p class="mt-1 text-sm text-gray-500">{{ form.github_url.help_text }}</p>{% endif %}
+                    {% if form.github_url.help_text %}
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">{{ form.github_url.help_text }}</p>
+                    {% endif %}
                     {% if form.github_url.errors %}
                         <div class="mt-1 text-sm text-red-600">
                             {% for error in form.github_url.errors %}<p>{{ error }}</p>{% endfor %}
@@ -102,7 +106,7 @@
                             data-tooltip="Earn 5 BACON tokens for submitting a valid issue!">
                         Add GitHub Issue
                         <!-- Tooltip -->
-                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
+                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-50 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
                             <div class="flex items-center gap-2">
                                 <i class="fas fa-bacon"></i>
                                 <span>Earn 5 BACON tokens for submitting a valid issue!</span>
@@ -117,12 +121,12 @@
             </form>
         </div>
         <!-- Filters -->
-        <div class="bg-white rounded-lg shadow p-4 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8">
             <form method="get" class="flex flex-wrap gap-4">
                 <div class="flex-1 min-w-[200px]">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ">Type</label>
                     <select name="type"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900">
                         <option value="all" {% if current_type == 'all' %}selected{% endif %}>All Types</option>
                         <option value="issue" {% if current_type == 'issue' %}selected{% endif %}>Issues Only</option>
                         <option value="pull_request"
@@ -130,9 +134,9 @@
                     </select>
                 </div>
                 <div class="flex-1 min-w-[200px]">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">State</label>
                     <select name="state"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900">
                         <option value="all" {% if current_state == 'all' %}selected{% endif %}>All States</option>
                         <option value="open" {% if current_state == 'open' %}selected{% endif %}>Open</option>
                         <option value="closed" {% if current_state == 'closed' %}selected{% endif %}>Closed</option>
@@ -147,8 +151,8 @@
             </form>
         </div>
         <!-- Issues List -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <div class="divide-y divide-gray-200">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            <div class="divide-y divide-gray-200 dark:divide-gray-700">
                 {% for issue in issues %}
                     <div class="p-6 hover:bg-gray-50 transition-colors">
                         <div class="flex items-start gap-4">
@@ -170,7 +174,7 @@
                                            class="hover:text-[#e74c3c]">{{ issue.title }}</a>
                                         <a href="{{ issue.url }}"
                                            target="_blank"
-                                           class="text-gray-500 hover:text-[#e74c3c]"
+                                           class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c]"
                                            title="Open in GitHub">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                  class="h-5 w-5"
@@ -187,7 +191,7 @@
                                             Open
                                         </span>
                                     {% else %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
                                             Closed
                                         </span>
                                     {% endif %}
@@ -197,8 +201,8 @@
                                         </span>
                                     {% endif %}
                                 </div>
-                                {% if issue.body %}<p class="text-gray-600 mb-2 line-clamp-2">{{ issue.body }}</p>{% endif %}
-                                <div class="flex items-center gap-4 text-sm text-gray-500">
+                                {% if issue.body %}<p class="text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{{ issue.body }}</p>{% endif %}
+                                <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-500">
                                     <span>Created: {{ issue.created_at|date:"M d, Y" }}</span>
                                     {% if issue.closed_at %}<span>Closed: {{ issue.closed_at|date:"M d, Y" }}</span>{% endif %}
                                     {% if issue.repo %}
@@ -229,7 +233,7 @@
                         </div>
                     </div>
                 {% empty %}
-                    <div class="p-6 text-center text-gray-500">No issues found matching your criteria.</div>
+                    <div class="p-6 text-center text-gray-500 dark:text-gray-500">No issues found matching your criteria.</div>
                 {% endfor %}
             </div>
         </div>
@@ -239,16 +243,16 @@
                 <nav class="inline-flex rounded-md shadow">
                     {% if page_obj.has_previous %}
                         <a href="?page={{ page_obj.previous_page_number }}{% if current_type != 'all' %}&type={{ current_type }}{% endif %}{% if current_state != 'all' %}&state={{ current_state }}{% endif %}"
-                           class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                           class="px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50">
                             Previous
                         </a>
                     {% endif %}
-                    <span class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    <span class="px-3 py-2 border-t border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                     </span>
                     {% if page_obj.has_next %}
                         <a href="?page={{ page_obj.next_page_number }}{% if current_type != 'all' %}&type={{ current_type }}{% endif %}{% if current_state != 'all' %}&state={{ current_state }}{% endif %}"
-                           class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                           class="px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50">
                             Next
                         </a>
                     {% endif %}

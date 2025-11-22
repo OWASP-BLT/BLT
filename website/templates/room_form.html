@@ -5,7 +5,7 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-8">Create Room</h1>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Create Room</h1>
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
@@ -13,7 +13,7 @@
                 <button type="submit"
                         class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Create</button>
                 <a href="{% url 'rooms_list' %}"
-                   class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Cancel</a>
+                   class="bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Cancel</a>
             </div>
         </form>
     </div>
