@@ -21,7 +21,7 @@
     <div class="p-4 sm:ml-64">
         <div class="container mx-auto">
             <!-- Header Section -->
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
                 <div class="flex items-center gap-6">
                     <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
                         <svg class="w-8 h-8 text-white"
@@ -33,20 +33,20 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">Secure Video Call</h1>
-                        <p class="text-gray-600 mt-2">Create a private room and connect with others securely</p>
+                        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Secure Video Call</h1>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Create a private room and connect with others securely</p>
                     </div>
                 </div>
             </div>
             <!-- Main Content -->
             <div class="max-w-4xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-lg p-8">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
                     <!-- Initial Controls -->
                     <div id="initialControls"
-                         class="py-8 text-base leading-6 space-y-6 text-gray-600 sm:text-lg sm:leading-7">
+                         class="py-8 text-base leading-6 space-y-6 text-gray-600 dark:text-gray-400 sm:text-lg sm:leading-7">
                         <div class="text-center mb-8">
-                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Start a New Call</h2>
-                            <p class="text-gray-500">Create a private room and share the link with others</p>
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Start a New Call</h2>
+                            <p class="text-gray-500 dark:text-gray-500">Create a private room and share the link with others</p>
                         </div>
                         <button id="createRoom"
                                 class="w-full bg-[#e74c3c] text-white px-6 py-4 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 font-semibold shadow-lg flex items-center justify-center">
@@ -63,14 +63,14 @@
                     <!-- Share Link Section (Initially Hidden) -->
                     <div id="shareSection" class="hidden py-8 space-y-6">
                         <div class="text-center mb-6">
-                            <h3 class="text-2xl font-semibold text-gray-900 mb-2">Share this link to invite others</h3>
-                            <p class="text-gray-500 text-sm">The link will work for one person only</p>
+                            <h3 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Share this link to invite others</h3>
+                            <p class="text-gray-500 dark:text-gray-500 text-sm">The link will work for one person only</p>
                         </div>
                         <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                             <input type="text"
                                    id="shareLink"
                                    readonly
-                                   class="flex-1 px-4 py-3 bg-gray-50 text-gray-900 border border-gray-200 focus:ring-2 focus:ring-red-500 block w-full sm:text-sm rounded-xl shadow-sm">
+                                   class="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-red-500 block w-full sm:text-sm rounded-xl shadow-sm">
                             <button id="copyLink"
                                     class="bg-[#e74c3c] text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 font-semibold whitespace-nowrap flex items-center justify-center shadow-lg">
                                 <svg class="w-5 h-5 mr-2"
@@ -92,7 +92,7 @@
                     <div id="callInterface" class="hidden space-y-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <!-- Local Video -->
-                            <div class="relative aspect-video bg-gray-50 rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+                            <div class="relative aspect-video bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-800">
                                 <!-- Connection Status Indicators - Removed from top -->
                                 <video id="localVideo"
                                        autoplay
@@ -100,15 +100,15 @@
                                        playsinline
                                        class="w-full h-full object-cover transform scale-x-[-1]">
                                 </video>
-                                <div class="absolute bottom-3 left-3 bg-white bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100">
+                                <div class="absolute bottom-3 left-3 bg-white dark:bg-gray-800 bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                                     <div class="flex items-center gap-2">
-                                        <p class="text-gray-900 text-sm font-medium">You</p>
+                                        <p class="text-gray-900 dark:text-gray-100 text-sm font-medium">You</p>
                                         <!-- Moved encryption status here -->
                                         <i class="fas fa-lock text-green-500" title="End-to-end encrypted"></i>
                                     </div>
                                 </div>
                                 <!-- Local Audio Waveform -->
-                                <div class="absolute bottom-3 right-3 bg-white bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100">
+                                <div class="absolute bottom-3 right-3 bg-white dark:bg-gray-800 bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                                     <div id="localWaveform" class="flex items-center h-5 space-x-0.5">
                                         <!-- Waveform bars will be generated by JavaScript -->
                                         <div class="w-1 h-1 bg-[#e74c3c] rounded-full"></div>
@@ -120,17 +120,17 @@
                                 </div>
                             </div>
                             <!-- Remote Video -->
-                            <div class="relative aspect-video bg-gray-50 rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+                            <div class="relative aspect-video bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-800">
                                 <video id="remoteVideo"
                                        autoplay
                                        playsinline
                                        class="w-full h-full object-cover">
                                 </video>
-                                <div class="absolute bottom-3 left-3 bg-white bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100">
-                                    <p class="text-gray-900 text-sm font-medium">Remote</p>
+                                <div class="absolute bottom-3 left-3 bg-white dark:bg-gray-800 bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+                                    <p class="text-gray-900 dark:text-gray-100 text-sm font-medium">Remote</p>
                                 </div>
                                 <!-- Remote Audio Waveform -->
-                                <div class="absolute bottom-3 right-3 bg-white bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100">
+                                <div class="absolute bottom-3 right-3 bg-white dark:bg-gray-800 bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                                     <div id="remoteWaveform" class="flex items-center h-5 space-x-0.5">
                                         <!-- Waveform bars will be generated by JavaScript -->
                                         <div class="w-1 h-1 bg-[#e74c3c] rounded-full"></div>
@@ -144,12 +144,12 @@
                         </div>
                         <!-- Connection Status -->
                         <div id="connectionStatus"
-                             class="text-center py-3 px-4 rounded-xl bg-gray-50 text-gray-700 text-sm border border-gray-100 shadow-sm">
+                             class="text-center py-3 px-4 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-sm border border-gray-100 dark:border-gray-800 shadow-sm">
                         </div>
                         <!-- Server Status - Moved below videos -->
                         <div id="serverStatus"
-                             class="text-center py-3 px-4 rounded-xl bg-gray-50 text-gray-700 text-sm border border-gray-100 shadow-sm flex items-center justify-center gap-2 mt-2">
-                            <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                             class="text-center py-3 px-4 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-sm border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-center gap-2 mt-2">
+                            <div class="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
                             <span class="font-medium">Server: Checking...</span>
                         </div>
                         <!-- Call Controls -->

@@ -6,7 +6,7 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-12">
-        <div class="bg-white rounded-2xl shadow-md max-w-7xl mx-auto">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md max-w-7xl mx-auto">
             <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 md:p-10">
                 <div class="flex items-center space-x-6">
                     {% if badge.icon %}
@@ -16,7 +16,7 @@
                              height="96px"
                              width="96px">
                     {% else %}
-                        <div class="w-24 h-24 bg-white/20 rounded-xl flex items-center justify-center text-white text-3xl font-bold">
+                        <div class="w-24 h-24 bg-white/20 dark:bg-gray-800/20 rounded-xl flex items-center justify-center text-white text-3xl font-bold">
                             {{ badge.title|slice:":1" }}
                         </div>
                     {% endif %}
@@ -30,7 +30,7 @@
                 {% if profiles %}
                     <div class="grid grid-cols-1">
                         {% for profile in profiles %}
-                            <div class="w-full bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg">
+                            <div class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-lg">
                                 <div class="flex items-center justify-between space-x-6">
                                     <div class="flex items-center space-x-6">
                                         <div class="flex-shrink-0">
@@ -48,7 +48,7 @@
                                         </div>
                                         <div>
                                             <a href="{% url 'profile' slug=profile.user.username %}"
-                                               class="font-bold text-gray-800 text-3xl hover:text-indigo-600 transition">
+                                               class="font-bold text-gray-800 dark:text-gray-200 text-3xl hover:text-indigo-600 transition">
                                                 {{ profile.user.username }}
                                             </a>
                                         </div>
@@ -62,12 +62,12 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="text-center py-12 bg-gray-50 rounded-2xl">
-                        <p class="text-2xl text-gray-500 font-semibold">No users have been awarded this badge yet.</p>
+                    <div class="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-2xl">
+                        <p class="text-2xl text-gray-500 dark:text-gray-500 font-semibold">No users have been awarded this badge yet.</p>
                     </div>
                 {% endif %}
             </div>
-            <div class="bg-gray-100 p-6 md:p-10 text-center">
+            <div class="bg-gray-100 dark:bg-gray-800 p-6 md:p-10 text-center">
                 <a href="{% url 'badges' %}"
                    class="inline-block text-3xl px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
                     Back to Badges

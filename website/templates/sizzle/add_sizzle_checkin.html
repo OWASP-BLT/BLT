@@ -10,13 +10,13 @@
         {% include "includes/sidenav.html" %}
         <div class="main-content w-full py-8">
             <div class="mb-6">
-                <h1 class="text-4xl font-semibold text-gray-800 text-center">Add Daily Check-In</h1>
+                <h1 class="text-4xl font-semibold text-gray-800 dark:text-gray-200 text-center">Add Daily Check-In</h1>
             </div>
             <div class="flex justify-center">
                 <form id="checkInForm"
                       method="post"
                       action="{% url 'sizzle_daily_log' %}"
-                      class="w-full max-w-5xl bg-white shadow-sm rounded-lg p-6"
+                      class="w-full max-w-5xl bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6"
                       {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
                     {% csrf_token %}
                     {% if organizations_list %}
@@ -32,30 +32,46 @@
                         </div>
                     {% endif %}
                     <div class="form-group mb-10">
-                        <label for="previous_work_card" class="block text-gray-700 font-medium mb-2">What did you work on previously?</label>
+                        <label for="previous_work_card"
+                               class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                            What did you work on previously?
+                        </label>
                         <textarea id="previous_work_card"
                                   name="previous_work"
                                   rows="5"
-                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                                  class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                                   required></textarea>
+                        {% if yesterday_report %}
+                            <button type="button"
+                                    id="fillFromPreviousBtn"
+                                    class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                                Fill from Previous Check-in
+                            </button>
+                        {% endif %}
                     </div>
                     <div class="form-group mb-10">
-                        <label for="next_plan_card" class="block text-gray-700 font-medium mb-2">What do you plan to do next?</label>
+                        <label for="next_plan_card"
+                               class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                            What do you plan to do next?
+                        </label>
                         <textarea id="next_plan_card"
                                   name="next_plan"
                                   rows="5"
-                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                                  class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                                   required></textarea>
                     </div>
                     <div class="form-group mb-10">
-                        <label for="blockers_card" class="block text-gray-700 font-medium mb-2">Do you have any blockers?</label>
+                        <label for="blockers_card"
+                               class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                            Do you have any blockers?
+                        </label>
                         <textarea id="blockers_card"
                                   name="blockers"
                                   rows="5"
-                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
+                                  class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
                     </div>
                     {% if yesterday_report %}
-                        <div class="mb-5 bg-gray-100 py-4 px-2 rounded-lg">
+                        <div class="mb-5 bg-gray-100 dark:bg-gray-800 py-4 px-2 rounded-lg">
                             <p>
                                 <strong>Yesterday's plan:</strong> {{ yesterday_report.next_plan }}
                             </p>
@@ -64,27 +80,30 @@
                             </p>
                         </div>
                     {% else %}
-                        <div class="mb-10 bg-gray-100 rounded-lg">
+                        <div class="mb-10 bg-gray-100 dark:bg-gray-800 rounded-lg">
                             <p>No report available for yesterday.</p>
                         </div>
                     {% endif %}
                     <div class="form-group mb-10 flex items-center">
                         <label for="goal_accomplished_card"
-                               class="text-gray-700 font-medium mr-6 mt-4">
+                               class="text-gray-700 dark:text-gray-300 font-medium mr-6 mt-4">
                             Did you accomplish your goals for yesterday?
                         </label>
                         <input type="checkbox"
                                id="goal_accomplished_card"
                                name="goal_accomplished"
-                               class="w-15 h-15 border border-gray-300 rounded scale-150 focus:outline-none focus:ring-2 focus:ring-red-400">
+                               class="w-15 h-15 border border-gray-300 dark:border-gray-600 rounded scale-150 focus:outline-none focus:ring-2 focus:ring-red-400">
                     </div>
                     <div class="form-group mb-10">
-                        <label for="feeling_card" class="block text-gray-700 font-medium mb-2">How are you feeling today?</label>
+                        <label for="feeling_card"
+                               class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                            How are you feeling today?
+                        </label>
                         <div class="emoji-picker-container relative">
                             <textarea id="feeling_card"
                                       name="feeling"
                                       rows="5"
-                                      class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
+                                      class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
                             <button id="emoji-trigger"
                                     type="button"
                                     class="mt-2 px-4 py-2 text-white rounded border border-red-600 hover:bg-red-600">
@@ -103,36 +122,39 @@
             </div>
             <!-- Check-ins Summary Table -->
             <div class="mt-12">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Your Check-in History</h2>
-                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                    <table class="min-w-full bg-white">
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Your Check-in History</h2>
+                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                    <table class="min-w-full bg-white dark:bg-gray-800">
                         <thead>
                             <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Date</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Goals Accomplished</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Mood</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Date</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Goals Accomplished</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Mood</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Previous Work</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200 dark:border-gray-700">Next Plan</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for checkin in all_checkins %}
                                 <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ checkin.date|date:"F d, Y" }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">
+                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ checkin.date|date:"F d, Y" }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                         {% if checkin.goal_accomplished %}
                                             <span class="text-green-600">✅ Yes</span>
                                         {% else %}
                                             <span class="text-red-600">❌ No</span>
                                         {% endif %}
                                     </td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ checkin.current_mood }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ checkin.previous_work|truncatechars:100 }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ checkin.next_plan|truncatechars:100 }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ checkin.current_mood }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ checkin.previous_work|truncatechars:100 }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ checkin.next_plan|truncatechars:100 }}</td>
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="5" class="py-3 px-4 text-center text-gray-500">No check-ins found.</td>
+                                    <td colspan="5"
+                                        class="py-3 px-4 text-center text-gray-500 dark:text-gray-500">
+                                        No check-ins found.
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -165,6 +187,18 @@
                 textarea.value += emoji;
                 textarea.focus();
             });
+
+            // Fill from previous check-in button functionality
+            const fillFromPreviousBtn = document.getElementById('fillFromPreviousBtn');
+            if (fillFromPreviousBtn) {
+                fillFromPreviousBtn.addEventListener('click', () => {
+                    const previousWorkTextarea = document.getElementById('previous_work_card');
+                    {% if yesterday_report %}
+                        previousWorkTextarea.value = "{{ yesterday_report.next_plan|escapejs }}";
+                        previousWorkTextarea.focus();
+                    {% endif %}
+                });
+            }
         });
     </script>
 {% endblock content %}

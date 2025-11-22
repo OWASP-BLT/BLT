@@ -25,28 +25,28 @@
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <main class="container mx-auto py-12 px-4 min-h-screen bg-white">
+    <main class="container mx-auto py-12 px-4 min-h-screen bg-white dark:bg-gray-800">
         <!-- Hero Section -->
         <section class="text-center space-y-8 mb-20">
             <div class="relative">
-                <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900">
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-gray-100">
                     Meet our <span class="text-[#e74c3c]">Community</span>
                 </h1>
-                <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mt-2 text-gray-700">Members</h2>
+                <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold mt-2 text-gray-700 dark:text-gray-300">Members</h2>
             </div>
-            <p class="text-lg md:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto">
+            <p class="text-lg md:text-xl lg:text-2xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
                 A passionate community of open source contributors making the web safer
             </p>
             <div class="flex items-center justify-center gap-2">
                 <div class="h-1 w-16 bg-[#e74c3c] rounded-full"></div>
-                <div class="h-1 w-8 bg-gray-200 rounded-full"></div>
-                <div class="h-1 w-4 bg-gray-200 rounded-full"></div>
+                <div class="h-1 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                <div class="h-1 w-4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
             </div>
         </section>
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8 p-4">
             {% for contributor in contributors %}
                 <a href="{% url 'contributors' %}?contributor={{ contributor.id }}"
-                   class="group relative bg-white rounded-2xl shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                   class="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                     <div class="h-full flex flex-col">
                         <div class="h-24 bg-gradient-to-r from-[#e74c3c]/10 to-red-100/20 relative overflow-hidden">
                             <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\" 20 " height " 20 " viewBox " 0 0 20 20 " xmlns " http://www.w3.org/2000/svg " 3E 3Cg fill " 23e74c3c " fill-opacity " 0.05 " fill-rule " evenodd " 3E 3Ccircle cx " 3 " cy " 3 " r " 3 " / 3E 3Ccircle cx " 13 " cy " 13 " r " 3 " / 3E 3C/g 3E 3C/svg 3E ' opacity-30 ">
@@ -63,7 +63,7 @@
                         </div>
                         <div class="p-6 flex flex-col flex-grow">
                             <div class="text-center mb-4">
-                                <h3 class="text-xl font-bold text-gray-900 group-hover:text-[#e74c3c] transition-colors duration-300">
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-[#e74c3c] transition-colors duration-300">
                                     {{ contributor.name }}
                                 </h3>
                                 <p class="text-sm text-purple-600 mt-1 flex items-center justify-center">
@@ -71,25 +71,25 @@
                                     {{ contributor.location }}
                                 </p>
                             </div>
-                            <p class="text-gray-600 text-center text-sm line-clamp-3 group-hover:line-clamp-none transition-all duration-300 flex-grow">
+                            <p class="text-gray-600 dark:text-gray-400 text-center text-sm line-clamp-3 group-hover:line-clamp-none transition-all duration-300 flex-grow">
                                 {{ contributor.short_description }}
                             </p>
-                            <div class="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-gray-100">
+                            <div class="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                                 {% if contributor.twitter %}
                                     <button onclick="window.open('{{ contributor.twitter }}', '_blank'); event.preventDefault();"
-                                            class="text-gray-400 hover:text-[#e74c3c] transform hover:scale-125 transition-all duration-300 z-10">
+                                            class="text-gray-400 dark:text-gray-600 hover:text-[#e74c3c] transform hover:scale-125 transition-all duration-300 z-10">
                                         <i class="fa-brands fa-x-twitter fa-lg"></i>
                                     </button>
                                 {% endif %}
                                 {% if contributor.linkedin %}
                                     <button onclick="window.open('{{ contributor.linkedin }}', '_blank'); event.preventDefault();"
-                                            class="text-gray-400 hover:text-[#e74c3c] transform hover:scale-125 transition-all duration-300 z-10">
+                                            class="text-gray-400 dark:text-gray-600 hover:text-[#e74c3c] transform hover:scale-125 transition-all duration-300 z-10">
                                         <i class="fa-brands fa-linkedin fa-lg"></i>
                                     </button>
                                 {% endif %}
                                 {% if contributor.website %}
                                     <button onclick="window.open('{{ contributor.website }}', '_blank'); event.preventDefault();"
-                                            class="text-gray-400 hover:text-[#e74c3c] transform hover:scale-125 transition-all duration-300 z-10">
+                                            class="text-gray-400 dark:text-gray-600 hover:text-[#e74c3c] transform hover:scale-125 transition-all duration-300 z-10">
                                         <i class="fa-solid fa-globe fa-lg"></i>
                                     </button>
                                 {% endif %}
