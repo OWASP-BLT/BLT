@@ -7,7 +7,7 @@
 <div id="pageStatsContainer"
      class="fixed bottom-0 left-4 z-50 transition-all duration-300 transform translate-y-[calc(100%-40px)] hover:translate-y-0 group">
     <!-- Chart Icon and Handle here -->
-    <div class="flex justify-center items-center h-10 w-16 mx-auto bg-white rounded-t-lg shadow-md cursor-pointer">
+    <div class="flex justify-center items-center h-10 w-16 mx-auto bg-white dark:bg-gray-800 rounded-t-lg shadow-md cursor-pointer">
         <svg xmlns="http://www.w3.org/2000/svg"
              class="h-6 w-6 text-[#e74c3c]"
              fill="none"
@@ -17,8 +17,8 @@
         </svg>
     </div>
     <!-- Stats Content -->
-    <div class="bg-white shadow-lg rounded-lg p-3 w-72">
-        <div class="text-sm font-medium text-gray-700 mb-2">Page Views (Last 30 Days)</div>
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-3 w-72">
+        <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Page Views (Last 30 Days)</div>
         <!-- Bar Chart -->
         <div class="mb-3">
             <canvas id="pageViewsChart" height="120"></canvas>
@@ -27,7 +27,7 @@
         <div class="flex justify-between items-center">
             <div class="flex items-center">
                 <button id="upvoteBtn"
-                        class="text-gray-600 hover:text-[#e74c3c] focus:outline-none mr-2">
+                        class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] focus:outline-none mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg"
                          class="h-5 w-5"
                          viewBox="0 0 20 20"
@@ -37,12 +37,12 @@
                 </button>
                 <span id="upvoteCount" class="text-sm">{{ upvotes }}</span>
             </div>
-            <div class="text-xs text-center text-gray-500">
+            <div class="text-xs text-center text-gray-500 dark:text-gray-500">
                 Total:  <span id="totalViews">0</span> Views
             </div>
             <div class="flex items-center">
                 <button id="downvoteBtn"
-                        class="text-gray-600 hover:text-[#e74c3c] focus:outline-none mr-2">
+                        class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] focus:outline-none mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg"
                          class="h-5 w-5"
                          viewBox="0 0 20 20"

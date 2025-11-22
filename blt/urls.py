@@ -111,6 +111,7 @@ from website.views.core import (
     robots_txt,
     run_management_command,
     search,
+    set_theme,
     set_vote_status,
     sitemap,
     sponsor_view,
@@ -158,6 +159,7 @@ from website.views.hackathon import (
     HackathonPrizeCreateView,
     HackathonSponsorCreateView,
     HackathonUpdateView,
+    add_org_repos_to_hackathon,
     refresh_repository_data,
 )
 from website.views.issue import (
@@ -390,6 +392,7 @@ urlpatterns = [
     path("referral/", referral_signup, name="referral_signup"),
     path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
+    path("set-theme/", set_theme, name="set_theme"),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
         "rest-auth/password/reset/confirm/<str:uidb64>/<str:token>",
@@ -1134,6 +1137,12 @@ urlpatterns = [
                     "<slug:hackathon_slug>/refresh-repo/<int:repo_id>/",
                     refresh_repository_data,
                     name="refresh_repository_data",
+                ),
+                # Add the new URL pattern for adding all org repos to hackathon
+                path(
+                    "<slug:slug>/add-org-repos/",
+                    add_org_repos_to_hackathon,
+                    name="add_org_repos_to_hackathon",
                 ),
             ]
         ),

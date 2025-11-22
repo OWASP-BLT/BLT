@@ -23,7 +23,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {% if domains %}
                 {% for domain in domains %}
-                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
                         <div class="p-4">
                             <div class="flex justify-between items-start mb-4">
                                 <div class="flex items-center">
@@ -34,13 +34,13 @@
                                              height="48"
                                              class="w-12 h-12 rounded-full object-cover">
                                     {% else %}
-                                        <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <i class="fas fa-building text-gray-400 text-xl"></i>
+                                        <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                            <i class="fas fa-building text-gray-400 dark:text-gray-600 text-xl"></i>
                                         </div>
                                     {% endif %}
                                     <div class="ml-3">
-                                        <h3 class="font-semibold text-lg text-gray-800">{{ domain.name }}</h3>
-                                        {% if domain.email %}<p class="text-sm text-gray-600">{{ domain.email }}</p>{% endif %}
+                                        <h3 class="font-semibold text-lg text-gray-800 dark:text-gray-200">{{ domain.name }}</h3>
+                                        {% if domain.email %}<p class="text-sm text-gray-600 dark:text-gray-400">{{ domain.email }}</p>{% endif %}
                                     </div>
                                 </div>
                                 <div class="flex space-x-2">
@@ -61,30 +61,30 @@
                             </div>
                             <!-- Stats Section -->
                             <div class="mt-4 grid grid-cols-2 gap-4">
-                                <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-500">Issues</span>
-                                        <span class="text-sm font-medium text-gray-900">{{ domain.open_issues.count }}/{{ domain.closed_issues.count }}</span>
+                                        <span class="text-sm font-medium text-gray-500 dark:text-gray-500">Issues</span>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ domain.open_issues.count }}/{{ domain.closed_issues.count }}</span>
                                     </div>
                                     <div class="mt-1">
-                                        <div class="text-xs text-gray-500">Open/Closed</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-500">Open/Closed</div>
                                     </div>
                                 </div>
-                                <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-500">Clicks</span>
-                                        <span class="text-sm font-medium text-gray-900">{{ domain.clicks|default:"0" }}</span>
+                                        <span class="text-sm font-medium text-gray-500 dark:text-gray-500">Clicks</span>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ domain.clicks|default:"0" }}</span>
                                     </div>
                                     <div class="mt-1">
-                                        <div class="text-xs text-gray-500">Total Views</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-500">Total Views</div>
                                     </div>
                                 </div>
                             </div>
                             <div class="mt-4">
-                                <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-500">Top Tester</span>
-                                        <span class="text-sm font-medium text-gray-900">
+                                        <span class="text-sm font-medium text-gray-500 dark:text-gray-500">Top Tester</span>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                             {% with top_tester=domain.top_tester %}
                                                 {% if top_tester %}
                                                     {{ top_tester.username }}
@@ -96,7 +96,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-4 flex justify-between text-sm text-gray-500">
+                            <div class="mt-4 flex justify-between text-sm text-gray-500 dark:text-gray-500">
                                 <span>Created: {{ domain.created|date:"M d, Y" }}</span>
                                 {% if domain.is_active %}
                                     <span class="text-green-600 font-medium">Active</span>
@@ -108,7 +108,7 @@
                     </div>
                 {% endfor %}
             {% else %}
-                <div class="col-span-full text-center py-8 text-gray-500">
+                <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-500">
                     <i class="fas fa-folder-open text-4xl mb-2"></i>
                     <p>No domains found!</p>
                 </div>

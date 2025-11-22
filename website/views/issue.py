@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import os
 import smtplib
 import socket
@@ -85,6 +86,8 @@ from website.utils import (
 )
 
 from .constants import GSOC25_PROJECTS
+
+logger = logging.getLogger(__name__)
 
 
 @login_required(login_url="/accounts/login")
@@ -887,7 +890,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         if not settings.IS_TEST:
             try:
                 if settings.DOMAIN_NAME in url:
-                    print("Web site exists")
+                    logger.debug("Web site exists")
 
                 elif request.POST["label"] == "7":
                     pass
@@ -899,7 +902,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         try:
                             response = requests.get(safe_url, timeout=5)
                             if response.status_code == 200:
-                                print("Web site exists")
+                                logger.debug("Web site exists")
                             else:
                                 raise Exception
                         except Exception:
@@ -908,9 +911,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise Exception
             except Exception as e:
                 # Add debugging to understand URL validation issues
-                import logging
 
-                logger = logging.getLogger(__name__)
                 logger.warning(f"URL accessibility check failed for {url}: {str(e)}")
 
                 # Check if domain exists in our database before rejecting
@@ -1074,9 +1075,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             clean_domain_no_www = clean_domain.replace("www.", "")
 
             # Debug logging to help identify the issue
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.info(f"Bug creation - Looking for domain: netloc={clean_domain}, no_www={clean_domain_no_www}")
 
             # Try multiple domain lookup strategies to match domain creation logic
@@ -1130,7 +1128,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     dest_email = getattr(domain.organization, "email", None)
 
                 if dest_email:
-                    import logging
                     import secrets
                     import string
                     import tempfile
@@ -1139,8 +1136,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     import pyzipper
                     from django.core.exceptions import ValidationError
                     from django.core.mail import EmailMessage
-
-                    logger = logging.getLogger(__name__)
 
                     try:
                         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1649,7 +1644,7 @@ class IssueView(DetailView):
                     objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
                     self.object.save()
                 except Exception as e:
-                    print(e)
+                    logger.error(f"Error: {e}")
                     pass  # pass this temporarly to avoid error
         except Exception as e:
             pass  # pass this temporarly to avoid error
@@ -2000,7 +1995,7 @@ class GithubIssueView(TemplateView):
         try:
             access_token = SocialToken.objects.get(account__user=request.user, account__provider="github")
         except SocialToken.DoesNotExist:
-            print("Access token not found")
+            logger.warning("Access token not found")
             return redirect("github_login")
 
         token = access_token.token

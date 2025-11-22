@@ -17,7 +17,7 @@
                 <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in upcoming_hunts %}
                         <li class="flex">
-                            <div class="bg-white rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
                                 {% if hunt.logo %}
                                     <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ hunt.logo }}"
@@ -51,7 +51,7 @@
                 <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in ongoing_hunt %}
                         <li class="flex">
-                            <div class="bg-white rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
                                 {% if hunt.logo %}
                                     <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ hunt.logo }}"
@@ -83,7 +83,7 @@
                 <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in previous_hunt %}
                         <li class="flex">
-                            <div class="bg-white rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
                                 {% if hunt.logo %}
                                     <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ hunt.logo }}"
@@ -114,11 +114,11 @@
     <!-- Bottom-right icons -->
     <div class="fixed bottom-4 right-4 flex gap-4">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/index_user.html"
-           class="text-gray-700 hover:text-gray-900">
+           class="text-gray-700 dark:text-gray-300 hover:text-gray-900">
             <i class="fab fa-github text-2xl"></i>
         </a>
         <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1350&t=pqxWpF3hcYxjEDrs-1"
-           class="text-gray-700 hover:text-gray-900">
+           class="text-gray-700 dark:text-gray-300 hover:text-gray-900">
             <i class="fab fa-figma text-2xl"></i>
         </a>
     </div>
