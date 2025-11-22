@@ -133,7 +133,9 @@ def dashboard_view(request, *args, **kwargs):
 
 class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, "organization/register_organization.html")
+        recent_organizations = Organization.objects.filter(is_active=True).order_by("-created")[:5]
+        context = {"recent_organizations": recent_organizations}
+        return render(request, "organization/register_organization.html", context)
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -2203,3 +2205,301 @@ def check_domain_security_txt(request):
         return redirect("organization_manage_domains", id=domain.organization.id)
     else:
         return redirect("organization_manage_domains", id=request.user.userprofile.team.id)
+
+
+# Job Board Views
+
+
+class OrganizationDashboardManageJobsView(View):
+    """View for managing organization job postings"""
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        from website.models import Job
+
+        # For authenticated users, show organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+        else:
+            organizations = []
+
+        # Get the organization object
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
+
+        # Get all jobs for this organization
+        jobs = Job.objects.filter(organization=organization_obj).order_by("-created_at")
+
+        # Apply search and filters
+        search_query = request.GET.get("q", "")
+        status_filter = request.GET.get("status", "")
+        job_type_filter = request.GET.get("type", "")
+        visibility_filter = request.GET.get("visibility", "")
+
+        if search_query:
+            jobs = jobs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+
+        if status_filter:
+            jobs = jobs.filter(status=status_filter)
+
+        if job_type_filter:
+            jobs = jobs.filter(job_type=job_type_filter)
+
+        if visibility_filter:
+            if visibility_filter == "public":
+                jobs = jobs.filter(is_public=True)
+            elif visibility_filter == "private":
+                jobs = jobs.filter(is_public=False)
+
+        # Get statistics (from all jobs, not filtered)
+        all_jobs = Job.objects.filter(organization=organization_obj)
+        total_jobs = all_jobs.count()
+        active_jobs = all_jobs.filter(status="active").count()
+        draft_jobs = all_jobs.filter(status="draft").count()
+        public_jobs = all_jobs.filter(is_public=True).count()
+        total_views = all_jobs.aggregate(total=Sum("views_count"))["total"] or 0
+
+        context = {
+            "organization": id,
+            "organizations": organizations,
+            "organization_obj": organization_obj,
+            "jobs": jobs,
+            "total_jobs": total_jobs,
+            "active_jobs": active_jobs,
+            "draft_jobs": draft_jobs,
+            "public_jobs": public_jobs,
+            "total_views": total_views,
+            "search_query": search_query,
+            "status_filter": status_filter,
+            "job_type_filter": job_type_filter,
+            "visibility_filter": visibility_filter,
+        }
+
+        return render(request, "organization/dashboard/organization_manage_jobs.html", context)
+
+
+@login_required
+def create_job(request, id):
+    """Create a new job posting for the organization"""
+    from website.forms import JobForm
+
+    # Get organization and verify access
+    organization = get_object_or_404(Organization, id=id)
+
+    # Check if user is admin or manager
+    is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+    if not is_member:
+        messages.error(request, "You do not have permission to create jobs for this organization.")
+        return redirect("home")
+
+    if request.method == "POST":
+        form = JobForm(request.POST)
+        if form.is_valid():
+            job = form.save(commit=False)
+            job.organization = organization
+            job.posted_by = request.user
+            job.save()
+            messages.success(request, f"Job '{job.title}' has been created successfully!")
+            return redirect("organization_manage_jobs", id=id)
+    else:
+        form = JobForm()
+
+    # Get organizations for sidebar
+    if request.user.is_authenticated:
+        organizations = (
+            Organization.objects.values("name", "id")
+            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+            .distinct()
+        )
+    else:
+        organizations = []
+
+    context = {
+        "form": form,
+        "organization": id,
+        "organization_obj": organization,
+        "organizations": organizations,
+    }
+
+    return render(request, "organization/dashboard/create_job.html", context)
+
+
+@login_required
+def edit_job(request, id, job_id):
+    """Edit an existing job posting"""
+    from website.forms import JobForm
+    from website.models import Job
+
+    # Get organization and job
+    organization = get_object_or_404(Organization, id=id)
+    job = get_object_or_404(Job, id=job_id, organization=organization)
+
+    # Check permissions
+    is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+    if not is_member:
+        messages.error(request, "You do not have permission to edit this job.")
+        return redirect("home")
+
+    if request.method == "POST":
+        form = JobForm(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Job '{job.title}' has been updated successfully!")
+            return redirect("organization_manage_jobs", id=id)
+    else:
+        form = JobForm(instance=job)
+
+    # Get organizations for sidebar
+    if request.user.is_authenticated:
+        organizations = (
+            Organization.objects.values("name", "id")
+            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+            .distinct()
+        )
+    else:
+        organizations = []
+
+    context = {
+        "form": form,
+        "job": job,
+        "organization": id,
+        "organization_obj": organization,
+        "organizations": organizations,
+        "is_edit": True,
+    }
+
+    return render(request, "organization/dashboard/create_job.html", context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_job(request, id, job_id):
+    """Delete a job posting"""
+    from website.models import Job
+
+    organization = get_object_or_404(Organization, id=id)
+    job = get_object_or_404(Job, id=job_id, organization=organization)
+
+    # Check permissions
+    is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+    if not is_member:
+        messages.error(request, "You do not have permission to delete this job.")
+        return redirect("home")
+
+    job_title = job.title
+    job.delete()
+    messages.success(request, f"Job '{job_title}' has been deleted successfully!")
+
+    return redirect("organization_manage_jobs", id=id)
+
+
+@login_required
+@require_http_methods(["POST"])
+def toggle_job_status(request, id, job_id):
+    """Toggle job status between active and paused"""
+    from website.models import Job
+
+    organization = get_object_or_404(Organization, id=id)
+    job = get_object_or_404(Job, id=job_id, organization=organization)
+
+    # Check permissions
+    is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+    if not is_member:
+        return JsonResponse({"success": False, "message": "Permission denied"})
+
+    # Toggle between active and paused
+    if job.status == "active":
+        job.status = "paused"
+    elif job.status == "paused":
+        job.status = "active"
+
+    job.save(update_fields=["status"])
+
+    return JsonResponse({"success": True, "status": job.status})
+
+
+def public_job_list(request):
+    """Public view showing all active public jobs"""
+    from django.utils import timezone
+
+    from website.models import Job
+
+    # Get all public and active jobs that haven't expired
+    jobs = (
+        Job.objects.filter(is_public=True, status="active")
+        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+        .select_related("organization")
+        .order_by("-created_at")
+    )
+
+    # Search functionality
+    search_query = request.GET.get("q", "")
+    if search_query:
+        jobs = jobs.filter(
+            Q(title__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(location__icontains=search_query)
+            | Q(organization__name__icontains=search_query)
+        )
+
+    # Filter by job type
+    job_type = request.GET.get("type", "")
+    if job_type:
+        jobs = jobs.filter(job_type=job_type)
+
+    # Filter by location
+    location = request.GET.get("location", "")
+    if location:
+        jobs = jobs.filter(location__icontains=location)
+
+    context = {
+        "jobs": jobs,
+        "search_query": search_query,
+        "job_type_filter": job_type,
+        "location_filter": location,
+    }
+
+    return render(request, "jobs/public_job_list.html", context)
+
+
+def job_detail(request, pk):
+    """Public view for a single job posting; org members can see all their jobs"""
+    from django.http import Http404
+
+    from website.models import Job
+
+    job = get_object_or_404(Job, pk=pk)
+
+    # Check if user is org member (admin or manager)
+    is_org_member = False
+    if request.user.is_authenticated:
+        is_org_member = (
+            job.organization.admin == request.user or job.organization.managers.filter(id=request.user.id).exists()
+        )
+
+    # Public users can only see active, public, non-expired jobs
+    if not is_org_member:
+        from django.utils import timezone
+
+        is_expired = job.expires_at and job.expires_at < timezone.now()
+        if not job.is_public or job.status != "active" or is_expired:
+            raise Http404("Job not found")
+
+    # Increment view count
+    job.increment_views()
+
+    context = {
+        "job": job,
+    }
+
+    return render(request, "jobs/job_detail.html", context)

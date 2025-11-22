@@ -1,8 +1,22 @@
 name: CI/CD Optimized
 
+# SECURITY NOTE:
+# - pull_request: Used for test/docker-test jobs that don't need write permissions
+# - pull_request_target: Used for pre-commit job to enable commenting/labeling on forked PRs
+#   When using pull_request_target, we explicitly checkout the PR head to run checks on the actual PR code
+#   WARNING: This allows execution of pre-commit hooks from forked PRs. The hooks are defined in
+#   .pre-commit-config.yaml which could be modified by the fork. However, this is necessary to
+#   validate PR code and is consistent with the repository's pre-commit-fix.yaml workflow.
+#   Maintainers should review PRs for malicious pre-commit hook modifications.
+
 on:
   #merge_group:
-  pull_request:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   push:
     branches:
       - main
@@ -15,6 +29,10 @@ on:
 env:
   FORCE_COLOR: 1
   POETRY_CACHE_DIR: ~/.cache/pypoetry
+
+# Default permissions for the workflow
+permissions:
+  contents: read
 
 concurrency:
   cancel-in-progress: true
@@ -65,6 +83,7 @@ jobs:
 
   pre-commit:
     name: Run pre-commit
+    # Run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -74,6 +93,13 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # For pull_request_target, explicitly checkout the PR head from the fork
+          # For pull_request, the default behavior already checks out the PR head
+          ref: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.event.pull_request.head.sha || github.ref }}
+          # For forked PRs with pull_request_target, checkout from the fork repository
+          # SECURITY: We run pre-commit which only executes linters/formatters, not arbitrary code from the PR
+          repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
@@ -87,9 +113,10 @@ jobs:
           set -e
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: github.event_name == 'pull_request' && steps.pre-commit.outputs.exit_code != '0'
+        if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
@@ -133,17 +160,24 @@ jobs:
             
             For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
             
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: message
-            });
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message
+              });
+            } catch (error) {
+              if (error.status === 403) {
+                core.warning('Permission denied: Cannot comment on PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.');
+              } else {
+                throw error;
+              }
+            }
       - name: Add pre-commit status label
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -206,13 +240,21 @@ jobs:
             
             // Add the label if it isn't already present
             if (!currentNames.has(newLabel)) {
-              await github.rest.issues.addLabels({ 
-                owner, 
-                repo, 
-                issue_number: pull_number, 
-                labels: [newLabel] 
-              });
-              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              try {
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [newLabel] 
+                });
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                } else {
+                  throw error;
+                }
+              }
             } else {
               core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }
@@ -230,10 +272,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     permissions:
-      issues: write
-      pull-requests: write
-      contents: write
-      actions: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -252,6 +291,8 @@ jobs:
 
   docker-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

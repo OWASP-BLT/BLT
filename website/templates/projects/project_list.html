@@ -69,12 +69,12 @@
                                    name="search"
                                    value="{{ request.GET.search }}"
                                    placeholder="Search projects or repos..."
-                                   class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                                   class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900" />
                         </div>
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Organization</label>
                             <select name="organization"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900">
                                 <option value="">All Organizations</option>
                                 {% for org in organizations %}
                                     <option value="{{ org.id }}"
@@ -88,7 +88,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Repository Type</label>
                             <select name="repo_type"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900">
                                 <option value="all"
                                         {% if request.GET.repo_type == 'all' %}selected{% endif %}>
                                     All Repositories
@@ -106,7 +106,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sort By</label>
                             <select name="sort"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900">
                                 <option value="stars" {% if request.GET.sort == 'stars' %}selected{% endif %}>Stars</option>
                                 <option value="forks" {% if request.GET.sort == 'forks' %}selected{% endif %}>Forks</option>
                                 <option value="open_issues"
@@ -126,7 +126,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Order</label>
                             <select name="order"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900">
                                 <option value="asc" {% if request.GET.order == 'asc' %}selected{% endif %}>Ascending</option>
                                 <option value="desc" {% if request.GET.order == 'desc' %}selected{% endif %}>Descending</option>
                             </select>
