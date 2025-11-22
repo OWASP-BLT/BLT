@@ -2376,10 +2376,23 @@ def public_job_list(request):
 
 
 def job_detail(request, pk):
-    """Public view for a single job posting"""
+    """Public view for a single job posting; org members can see all their jobs"""
+    from django.http import Http404
+
     from website.models import Job
 
-    job = get_object_or_404(Job, pk=pk, is_public=True, status="active")
+    job = get_object_or_404(Job, pk=pk)
+
+    # Check if user is org member (admin or manager)
+    is_org_member = False
+    if request.user.is_authenticated:
+        is_org_member = (
+            job.organization.admin == request.user or job.organization.managers.filter(id=request.user.id).exists()
+        )
+
+    # Public users can only see active, public jobs
+    if not is_org_member and (not job.is_public or job.status != "active"):
+        raise Http404("Job not found")
 
     # Increment view count
     job.increment_views()

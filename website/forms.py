@@ -393,6 +393,20 @@ class ReminderSettingsForm(forms.ModelForm):
 class JobForm(forms.ModelForm):
     """Form for creating and editing job postings"""
 
+    def clean(self):
+        """Validate that at least one application method is provided"""
+        cleaned_data = super().clean()
+        application_email = cleaned_data.get("application_email")
+        application_url = cleaned_data.get("application_url")
+        application_instructions = cleaned_data.get("application_instructions")
+
+        if not any([application_email, application_url, application_instructions]):
+            raise forms.ValidationError(
+                "Please provide at least one way for candidates to apply " "(email, URL, or instructions)."
+            )
+
+        return cleaned_data
+
     class Meta:
         model = Job
         fields = [

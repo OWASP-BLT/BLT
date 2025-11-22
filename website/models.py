@@ -311,9 +311,8 @@ class Job(models.Model):
         return bool(self.application_email or self.application_url or self.application_instructions)
 
     def increment_views(self):
-        """Increment the view count for this job"""
-        self.views_count = F("views_count") + 1
-        self.save(update_fields=["views_count"])
+        """Increment the view count for this job atomically"""
+        Job.objects.filter(pk=self.pk).update(views_count=F("views_count") + 1)
 
     def is_expired(self):
         """Check if the job posting has expired"""
