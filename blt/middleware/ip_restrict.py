@@ -114,6 +114,7 @@ class IPRestrictMiddleware:
     def increment_block_count(self, ip=None, network=None, user_agent=None):
         """
         Increment the block count for a specific IP, network, or user agent in the Blocked model.
+        Note: For user_agent, pass the specific blocked pattern that matched, not the full user agent string.
         """
         with transaction.atomic():
             if ip:
@@ -121,18 +122,8 @@ class IPRestrictMiddleware:
             elif network:
                 blocked_entry = Blocked.objects.select_for_update().filter(ip_network=network).first()
             elif user_agent:
-                # Correct lookup: find if any user_agent_string is a substring of the user_agent
-                blocked_entry = (
-                    Blocked.objects.select_for_update()
-                    .filter(
-                        user_agent_string__in=[
-                            agent
-                            for agent in Blocked.objects.values_list("user_agent_string", flat=True)
-                            if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
-                        ]
-                    )
-                    .first()
-                )
+                # user_agent should be the specific blocked pattern that matched
+                blocked_entry = Blocked.objects.select_for_update().filter(user_agent_string=user_agent).first()
             else:
                 return  # Nothing to increment
 
@@ -181,6 +172,11 @@ class IPRestrictMiddleware:
         return self.process_request_sync(request)
 
     async def __acall__(self, request):
+        """
+        Asynchronous version of the middleware call method.
+        Handles async requests by checking blocked IPs, networks, and user agents,
+        then recording IP information for allowed requests.
+        """
         """
         Asynchronous version of the middleware call method
         """
