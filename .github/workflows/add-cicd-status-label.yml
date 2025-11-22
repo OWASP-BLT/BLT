@@ -1,0 +1,141 @@
+name: Add CI/CD Status Label
+
+# This workflow runs after CI/CD workflow completes and adds a label based on the result
+on:
+  workflow_run:
+    workflows: ["CI/CD Optimized"]
+    types:
+      - completed
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  add_cicd_status_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add CI/CD status label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const workflowRun = context.payload.workflow_run;
+            const conclusion = workflowRun.conclusion;
+            const status = workflowRun.status;
+            
+            // Only process completed workflows
+            if (status !== 'completed') {
+              core.info('Workflow is not completed yet. Skipping.');
+              return;
+            }
+            
+            // Get the pull requests associated with this workflow run
+            const pullRequests = workflowRun.pull_requests || [];
+            
+            if (pullRequests.length === 0) {
+              core.info('No pull requests associated with this workflow run. Skipping.');
+              return;
+            }
+            
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Process each pull request
+            for (const pr of pullRequests) {
+              const pull_number = pr.number;
+              
+              // Determine label based on CI/CD status
+              let newLabel, labelColor, description;
+              
+              if (conclusion === 'success') {
+                newLabel = 'ci-cd: passed';
+                labelColor = '0e8a16';  // Green
+                description = 'CI/CD tests passed';
+              } else if (conclusion === 'failure') {
+                newLabel = 'ci-cd: failed';
+                labelColor = 'e74c3c';  // Red
+                description = 'CI/CD tests failed';
+              } else if (conclusion === 'cancelled') {
+                newLabel = 'ci-cd: cancelled';
+                labelColor = '808080';  // Gray
+                description = 'CI/CD tests cancelled';
+              } else {
+                newLabel = `ci-cd: ${conclusion}`;
+                labelColor = 'fbca04';  // Yellow
+                description = `CI/CD tests ${conclusion}`;
+              }
+              
+              // Get current labels on the PR
+              const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+                owner, 
+                repo, 
+                issue_number: pull_number, 
+                per_page: 100 
+              });
+              const currentNames = new Set(current.map(l => l.name));
+              
+              // Remove any existing ci-cd labels
+              const cicdRegex = /^ci-cd:/i;
+              for (const name of currentNames) {
+                if (cicdRegex.test(name) && name !== newLabel) {
+                  try {
+                    await github.rest.issues.removeLabel({ 
+                      owner, 
+                      repo, 
+                      issue_number: pull_number, 
+                      name 
+                    });
+                    core.info(`Removed label ${name}`);
+                  } catch (err) {
+                    core.warning(`Failed to remove label ${name}: ${err.message}`);
+                  }
+                }
+              }
+              
+              // Ensure the new label exists (create if missing)
+              async function ensureLabelExists(labelName) {
+                try {
+                  await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                } catch (e) {
+                  if (e.status === 404) {
+                    await github.rest.issues.createLabel({
+                      owner,
+                      repo,
+                      name: labelName,
+                      color: labelColor,
+                      description: description,
+                    });
+                    core.info(`Created label ${labelName}`);
+                  } else {
+                    throw e;
+                  }
+                }
+              }
+              
+              await ensureLabelExists(newLabel);
+              
+              // Add the label if it isn't already present
+              if (!currentNames.has(newLabel)) {
+                try {
+                  await github.rest.issues.addLabels({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    labels: [newLabel] 
+                  });
+                  core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+                } catch (error) {
+                  if (error.status === 403) {
+                    core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                  } else {
+                    throw error;
+                  }
+                }
+              } else {
+                core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+              }
+              
+              core.info(`Processed PR #${pull_number} with CI/CD status: ${conclusion}`);
+            }
