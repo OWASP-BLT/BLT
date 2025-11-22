@@ -8,10 +8,15 @@ This script checks for:
 - Other common workflow configuration issues
 """
 
+import itertools
+import logging
 import sys
 from pathlib import Path
 
 import yaml
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
 def validate_workflow_run(filepath, content):
@@ -57,7 +62,7 @@ def validate_workflows(workflow_dir=".github/workflows"):
     issues = []
     valid_count = 0
 
-    workflow_files = list(Path(workflow_dir).glob("*.yml")) + list(Path(workflow_dir).glob("*.yaml"))
+    workflow_files = list(itertools.chain(Path(workflow_dir).glob("*.yml"), Path(workflow_dir).glob("*.yaml")))
 
     for filepath in workflow_files:
         try:
@@ -80,19 +85,19 @@ def validate_workflows(workflow_dir=".github/workflows"):
 
 def main():
     """Main entry point for workflow validation."""
-    print("Validating GitHub Actions workflow files...")  # noqa: T201
-    print("-" * 60)  # noqa: T201
+    logging.info("Validating GitHub Actions workflow files...")
+    logging.info("-" * 60)
 
     issues, valid_count, total_count = validate_workflows()
 
     if issues:
-        print(f"\n❌ Found {len(issues)} issue(s):\n")  # noqa: T201
+        logging.error("\n❌ Found %d issue(s):\n", len(issues))
         for issue in issues:
-            print(f"  • {issue}")  # noqa: T201
-        print(f"\n{valid_count}/{total_count} workflow files passed validation")  # noqa: T201
+            logging.error("  • %s", issue)
+        logging.info("\n%d/%d workflow files passed validation", valid_count, total_count)
         return 1
     else:
-        print(f"✅ All {total_count} workflow files passed validation")  # noqa: T201
+        logging.info("✅ All %d workflow files passed validation", total_count)
         return 0
 
 
