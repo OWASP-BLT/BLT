@@ -1,0 +1,250 @@
+name: Update All PRs and Check Conflicts
+
+# Manual workflow to update all open PRs and check for conflicts
+# 
+# This workflow can be triggered manually from the GitHub Actions tab.
+# It will:
+# 1. Fetch all open pull requests in the repository
+# 2. Attempt to update each PR's branch with the base branch
+# 3. Trigger the CI/CD workflow to run on each successfully updated PR
+# 4. Check each PR for merge conflicts
+# 5. Add/remove the "has-conflicts" label based on conflict status
+# 6. Add/remove informative comments about conflict resolution
+#
+# Use this workflow to batch-check all PRs after significant changes to the main branch.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+  workflows: write
+
+jobs:
+  update_and_check_prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update All PRs and Check for Conflicts
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            core.info('Fetching all open pull requests...');
+            
+            // Get all open PRs using pagination
+            const pullRequests = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+            
+            core.info(`Found ${pullRequests.length} open pull requests`);
+            
+            // Define the conflict label
+            const conflictLabel = 'has-conflicts';
+            const conflictLabelColor = 'e74c3c'; // Red (project's preferred red color)
+            const conflictLabelDescription = 'PR has merge conflicts that need to be resolved';
+            
+            // Ensure the conflict label exists in the repo
+            async function ensureLabelExists() {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: conflictLabel });
+                core.info(`Label "${conflictLabel}" already exists`);
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: conflictLabel,
+                    color: conflictLabelColor,
+                    description: conflictLabelDescription,
+                  });
+                  core.info(`Created label: ${conflictLabel}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            await ensureLabelExists();
+            
+            // Process each PR
+            for (const pr of pullRequests) {
+              const pull_number = pr.number;
+              core.info(`\n--- Processing PR #${pull_number}: ${pr.title} ---`);
+              
+              try {
+                // Try to update the PR branch with the base branch
+                core.info(`Attempting to update PR #${pull_number}...`);
+                let prWasUpdated = false;
+                try {
+                  await github.rest.pulls.updateBranch({
+                    owner,
+                    repo,
+                    pull_number,
+                  });
+                  core.info(`✓ Successfully updated PR #${pull_number}`);
+                  prWasUpdated = true;
+                } catch (updateError) {
+                  // PR might already be up to date or have other issues
+                  if (updateError.status === 422) {
+                    core.info(`PR #${pull_number} is already up to date or cannot be updated: ${updateError.message}`);
+                  } else {
+                    core.warning(`Failed to update PR #${pull_number}: ${updateError.message}`);
+                  }
+                }
+                
+                // Wait a bit for GitHub to process the update
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Get the latest PR data to check mergeable state
+                const { data: prData } = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number,
+                });
+                
+                // Trigger CI/CD workflow if the PR was successfully updated
+                // Note: We can only trigger workflows for branches in this repository, not forks
+                if (prWasUpdated) {
+                  if (!prData.head.repo) {
+                    core.warning(`Cannot trigger CI/CD for PR #${pull_number}: head repository data is missing`);
+                  } else if (prData.head.repo.fork) {
+                    core.info(`Skipping workflow trigger for PR #${pull_number} (from fork: ${prData.head.repo.full_name})`);
+                  } else {
+                    try {
+                      core.info(`Triggering CI/CD workflow for PR #${pull_number} on branch ${prData.head.ref}...`);
+                      await github.rest.actions.createWorkflowDispatch({
+                        owner,
+                        repo,
+                        workflow_id: 'ci-cd.yml',
+                        ref: prData.head.ref
+                      });
+                      core.info(`✓ Triggered CI/CD workflow for PR #${pull_number}`);
+                    } catch (dispatchError) {
+                      core.warning(`Failed to trigger CI/CD workflow for PR #${pull_number}: ${dispatchError.message}`);
+                    }
+                  }
+                }
+                
+                const hasConflicts = prData.mergeable === false;
+                const prAuthor = prData.user.login;
+                
+                core.info(`PR #${pull_number}: mergeable=${prData.mergeable}, conflicts=${hasConflicts}`);
+                
+                // Get current labels on the PR
+                const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  per_page: 100,
+                });
+                const currentLabelNames = new Set(currentLabels.map(l => l.name));
+                const hasConflictLabel = currentLabelNames.has(conflictLabel);
+                
+                // Get existing comments to check if we already commented
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  per_page: 100,
+                });
+                
+                // Find our conflict comment (using a unique marker)
+                const conflictCommentMarker = '<!-- pr-conflict-check -->';
+                const existingConflictComment = comments.find(comment => 
+                  comment.body && comment.body.includes(conflictCommentMarker)
+                );
+                
+                if (hasConflicts) {
+                  // Add the conflict label if not present
+                  if (!hasConflictLabel) {
+                    await github.rest.issues.addLabels({
+                      owner,
+                      repo,
+                      issue_number: pull_number,
+                      labels: [conflictLabel],
+                    });
+                    core.info(`✓ Added label "${conflictLabel}" to PR #${pull_number}`);
+                  } else {
+                    core.info(`Label "${conflictLabel}" already present on PR #${pull_number}`);
+                  }
+                  
+                  // Add a comment if one doesn't exist
+                  if (!existingConflictComment) {
+                    const commentBody = conflictCommentMarker + '\n' +
+                      '⚠️ **Merge Conflicts Detected**\n\n' +
+                      'Hi @' + prAuthor + '!\n\n' +
+                      'This pull request has merge conflicts with the base branch that need to be resolved before it can be merged.\n\n' +
+                      '**To resolve the conflicts:**\n\n' +
+                      '1. Sync your branch with the base branch:\n' +
+                      '   ```bash\n' +
+                      '   git fetch origin\n' +
+                      '   git merge origin/' + prData.base.ref + '\n' +
+                      '   ```\n\n' +
+                      '2. Resolve any conflicts in your editor\n\n' +
+                      '3. Commit the changes:\n' +
+                      '   ```bash\n' +
+                      '   git add .\n' +
+                      '   git commit -m "Resolve merge conflicts"\n' +
+                      '   git push\n' +
+                      '   ```\n\n' +
+                      'Once you push the resolved conflicts, this label and comment will be automatically updated.\n\n' +
+                      'Thank you! 🙏';
+
+                    await github.rest.issues.createComment({
+                      owner,
+                      repo,
+                      issue_number: pull_number,
+                      body: commentBody,
+                    });
+                    core.info(`✓ Added conflict comment to PR #${pull_number}`);
+                  } else {
+                    core.info(`Conflict comment already exists on PR #${pull_number}`);
+                  }
+                } else {
+                  // No conflicts - remove label and comment if present
+                  if (hasConflictLabel) {
+                    try {
+                      await github.rest.issues.removeLabel({
+                        owner,
+                        repo,
+                        issue_number: pull_number,
+                        name: conflictLabel,
+                      });
+                      core.info(`✓ Removed label "${conflictLabel}" from PR #${pull_number}`);
+                    } catch (err) {
+                      core.warning(`Failed to remove label "${conflictLabel}": ${err.message}`);
+                    }
+                  }
+                  
+                  // Remove the conflict comment if it exists
+                  if (existingConflictComment) {
+                    try {
+                      await github.rest.issues.deleteComment({
+                        owner,
+                        repo,
+                        comment_id: existingConflictComment.id,
+                      });
+                      core.info(`✓ Removed conflict comment from PR #${pull_number}`);
+                    } catch (err) {
+                      core.warning(`Failed to remove comment: ${err.message}`);
+                    }
+                  }
+                  
+                  core.info(`✓ PR #${pull_number} has no conflicts`);
+                }
+                
+              } catch (error) {
+                core.error(`Error processing PR #${pull_number}: ${error.message}`);
+              }
+            }
+            
+            core.info('\n=== Summary ===');
+            core.info(`Processed ${pullRequests.length} pull requests`);

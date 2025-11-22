@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from collections import defaultdict
 
@@ -12,6 +13,8 @@ from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Re
 from website.utils import fetch_github_user_data
 
 from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES, TAG_NORMALIZATION
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_TAGS = set(PROGRAMMING_LANGUAGES + COMMON_TECHNOLOGIES + COMMON_TOPICS)
 
@@ -64,7 +67,7 @@ def get_github_data(request):
 
             cached_data = cache.get(f"github_data_{github_username}")
             if cached_data:
-                print("Found cached user data")
+                logger.debug("Found cached user data")
                 user_data = cached_data
             else:
                 user_data = fetch_github_user_data(github_username)
@@ -80,7 +83,7 @@ def get_github_data(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_github_data: {e}", exc_info=True)
+            logger.error(f"Error in get_github_data: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -115,8 +118,8 @@ def preprocess_user_data(user_data):
         if (bytes_count / total_bytes * 100) >= 0.05
     }
 
-    print(user_tags)
-    print(language_weights)
+    logger.debug(f"User tags: {user_tags}")
+    logger.debug(f"Language weights: {language_weights}")
     return user_tags, language_weights
 
 
@@ -186,7 +189,7 @@ def get_recommended_repos(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_repos: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_repos: {e}")  # Print instead of logging
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -264,7 +267,7 @@ def get_recommended_communities(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_communities: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_communities: {e}")  # Print instead of logging
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -338,7 +341,7 @@ def get_recommended_discussion_channels(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_discussion_channels: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_discussion_channels: {e}")  # Print instead of logging
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -412,7 +415,7 @@ def get_recommended_articles(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_articles: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_articles: {e}")  # Print instead of logging
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
