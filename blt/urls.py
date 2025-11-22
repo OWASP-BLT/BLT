@@ -240,6 +240,7 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    organization_slack_apps,
     room_messages_api,
     send_message_api,
     sizzle,
@@ -883,6 +884,11 @@ urlpatterns = [
         "organization/<int:id>/dashboard/add_slack_integration/",
         AddSlackIntegrationView.as_view(),
         name="add_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/slack/apps/",
+        organization_slack_apps,
+        name="organization_slack_apps",
     ),
     path(
         "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",

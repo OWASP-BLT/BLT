@@ -35,10 +35,23 @@
               referrerpolicy="no-referrer" />
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+            }
+        </script>
         {% if not debug %}
             <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
                     crossorigin="anonymous"></script>
         {% endif %}
+        <!-- Dark mode: same as base.html -->
+        <script src="{% static 'js/darkMode.js' %}"></script>
+        <script>
+            const theme = localStorage.getItem("theme");
+            if (theme === "dark") {
+                document.documentElement.classList.add("dark");
+            }
+        </script>
     </head>
     <body>
         <div class="mt-[75px]">
