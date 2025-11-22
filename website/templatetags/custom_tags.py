@@ -222,3 +222,27 @@ def static_safe(path, default_path=None):
             except ValueError:
                 pass
         return ""
+
+
+@register.filter
+def index(sequence, position):
+    """
+    Returns the item at the given position in a sequence.
+    Usage: {{ my_list|index:0 }}
+    """
+    try:
+        return sequence[int(position)]
+    except (IndexError, KeyError, ValueError, TypeError):
+        return ""
+
+
+@register.filter
+def parse_json(value):
+    """
+    Parse a JSON string into a Python object.
+    Usage: {{ json_string|parse_json }}
+    """
+    try:
+        return json.loads(value)
+    except (ValueError, TypeError):
+        return []
