@@ -480,8 +480,8 @@ class HackathonLeaderboardTestCase(TestCase):
 
     def test_hackathon_chart_data_uses_merge_date(self):
         """Test that chart data for merged PRs is grouped by merge date, not creation date."""
-        from django.db.models.functions import TruncDate
         from django.db.models import Count
+        from django.db.models.functions import TruncDate
 
         # Create a past hackathon (already ended)
         now = timezone.now()
