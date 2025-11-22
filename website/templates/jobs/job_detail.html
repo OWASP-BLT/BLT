@@ -30,6 +30,8 @@
                         {% if job.organization.logo %}
                             <img src="{{ job.organization.logo.url }}"
                                  alt="{{ job.organization.name }}"
+                                 width="64"
+                                 height="64"
                                  class="w-16 h-16 rounded-lg object-cover">
                         {% else %}
                             <div class="w-16 h-16 bg-[#e74c3c] rounded-lg flex items-center justify-center">

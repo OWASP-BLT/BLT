@@ -154,7 +154,7 @@
                                         <div class="text-sm text-gray-600">{{ job.created_at|date:"M d, Y" }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                                        <a href="{% url 'edit_job' id=organization job_id=job.id %}"
+                                        <a href="{% url 'edit_job' organization job.id %}"
                                            class="text-blue-600 hover:text-blue-900"
                                            title="Edit">
                                             <i class="fas fa-edit"></i>
@@ -166,7 +166,7 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <form method="post"
-                                              action="{% url 'delete_job' id=organization job_id=job.id %}"
+                                              action="{% url 'delete_job' organization job.id %}"
                                               class="inline"
                                               onsubmit="return confirm('Are you sure you want to delete this job?');">
                                             {% csrf_token %}

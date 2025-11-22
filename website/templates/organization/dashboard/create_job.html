@@ -8,6 +8,7 @@
     {% endif %}
 {% endblock %}
 {% block body %}
+    {# djlint:off H025 #}
     <div class="h-full bg-gray-200 p-8">
         <!-- Form Card -->
         <div class="bg-white rounded-lg shadow-xl">
@@ -197,4 +198,6 @@
                 </div>
             </div>
         </div>
-    {% endblock body %}
+    </div>
+    {# djlint:on #}
+{% endblock body %}
