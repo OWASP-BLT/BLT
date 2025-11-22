@@ -798,8 +798,11 @@ def vote_forum_post(request):
             return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except Exception as e:
-            logger.error(f"Error in vote_forum_post: {e}")
+        except (ValueError, TypeError) as e:
+            logger.exception("Validation error in vote_forum_post")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
+        except Exception:
+            logger.exception("Unexpected error in vote_forum_post")
             return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
@@ -822,8 +825,11 @@ def set_vote_status(request):
             )
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except Exception as e:
-            logger.error(f"Error in set_vote_status: {e}")
+        except (ValueError, TypeError):
+            logger.exception("Validation error in set_vote_status")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
+        except Exception:
+            logger.exception("Unexpected error in set_vote_status")
             return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
@@ -848,8 +854,13 @@ def add_forum_post(request):
             return JsonResponse({"success": True, "post_id": post.id})
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except Exception as e:
-            logger.error(f"Error in add_forum_post: {e}")
+        except (ValueError, TypeError):
+            logger.exception("Validation error in add_forum_post")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
+        except ForumCategory.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
+        except Exception:
+            logger.exception("Unexpected error in add_forum_post")
             return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
@@ -874,8 +885,11 @@ def add_forum_comment(request):
             return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except Exception as e:
-            logger.error(f"Error in add_forum_comment: {e}")
+        except (ValueError, TypeError):
+            logger.exception("Validation error in add_forum_comment")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
+        except Exception:
+            logger.exception("Unexpected error in add_forum_comment")
             return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
@@ -885,6 +899,10 @@ def view_forum(request):
     # Annotate categories with post counts
     categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
+
+    # Add is_selected flag to categories for cleaner template logic
+    for category in categories:
+        category.is_selected = str(category.id) == selected_category
 
     # Get total posts count before filtering
     total_posts_count = ForumPost.objects.count()

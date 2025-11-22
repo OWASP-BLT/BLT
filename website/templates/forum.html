@@ -25,10 +25,10 @@
                     </span>
                 </li>
                 {% for category in categories %}
-                    <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 {% if selected_category == category.id|stringformat:'s' %}bg-[#e74c3c] text-white hover:bg-[#c0392b]{% else %}hover:bg-red-50{% endif %}"
+                    <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 {% if category.is_selected %}bg-[#e74c3c] text-white hover:bg-[#c0392b]{% else %}hover:bg-red-50{% endif %}"
                         onclick="filterByCategory('{{ category.id }}')">
                         <span>{{ category.name }}</span>
-                        <span class="px-3 py-1 rounded-full text-sm font-medium {% if selected_category == category.id|stringformat:'s' %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
+                        <span class="px-3 py-1 rounded-full text-sm font-medium {% if category.is_selected %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
                             {{ category.post_count }}
                         </span>
                     </li>
