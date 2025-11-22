@@ -140,7 +140,6 @@ def update_bch_address(request):
 @login_required
 def profile_edit(request):
     from allauth.account.models import EmailAddress
-    from allauth.account.utils import send_email_confirmation
 
     Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
@@ -182,7 +181,7 @@ def profile_edit(request):
 
                 # Create new unverified email entry
                 # Create or update email entry as unverified
-                EmailAddress.objects.update_or_create(
+                email_address, created = EmailAddress.objects.update_or_create(
                     user=request.user,
                     email=new_email,
                     defaults={"verified": False, "primary": False},
@@ -201,7 +200,7 @@ def profile_edit(request):
 
                 # Send verification email
                 try:
-                    send_email_confirmation(request, request.user, email=new_email)
+                    email_address.send_confirmation(request, signup=False)
                 except Exception as e:
                     logger.exception(f"Failed to send email confirmation to {new_email}: {e}")
                     messages.error(request, "Failed to send verification email. Please try again later.")
