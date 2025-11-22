@@ -770,7 +770,6 @@ def search(request, template="search.html"):
 
 
 @login_required
-@login_required
 def vote_forum_post(request):
     if request.method == "POST":
         try:
@@ -895,11 +894,15 @@ def view_forum(request):
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
-    # Add user vote information if user is authenticated
+    # Optimize user vote queries to avoid N+1 problem
     if request.user.is_authenticated:
+        # Get all votes for current user and these posts in one query
+        post_ids = [post.id for post in posts]
+        user_votes = {vote.post_id: vote for vote in ForumVote.objects.filter(post_id__in=post_ids, user=request.user)}
+
+        # Attach votes to posts
         for post in posts:
-            user_vote = ForumVote.objects.filter(post=post, user=request.user).first()
-            post.user_vote = user_vote
+            post.user_vote = user_votes.get(post.id)
 
     return render(
         request,
