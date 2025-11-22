@@ -6,9 +6,10 @@ name: Update All PRs and Check Conflicts
 # It will:
 # 1. Fetch all open pull requests in the repository
 # 2. Attempt to update each PR's branch with the base branch
-# 3. Check each PR for merge conflicts
-# 4. Add/remove the "has-conflicts" label based on conflict status
-# 5. Add/remove informative comments about conflict resolution
+# 3. Trigger the CI/CD workflow to run on each successfully updated PR
+# 4. Check each PR for merge conflicts
+# 5. Add/remove the "has-conflicts" label based on conflict status
+# 6. Add/remove informative comments about conflict resolution
 #
 # Use this workflow to batch-check all PRs after significant changes to the main branch.
 on:
@@ -18,6 +19,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  actions: write
 
 jobs:
   update_and_check_prs:
@@ -79,6 +81,7 @@ jobs:
               try {
                 // Try to update the PR branch with the base branch
                 core.info(`Attempting to update PR #${pull_number}...`);
+                let prWasUpdated = false;
                 try {
                   await github.rest.pulls.updateBranch({
                     owner,
@@ -86,6 +89,7 @@ jobs:
                     pull_number,
                   });
                   core.info(`✓ Successfully updated PR #${pull_number}`);
+                  prWasUpdated = true;
                 } catch (updateError) {
                   // PR might already be up to date or have other issues
                   if (updateError.status === 422) {
@@ -104,6 +108,29 @@ jobs:
                   repo,
                   pull_number,
                 });
+                
+                // Trigger CI/CD workflow if the PR was successfully updated
+                // Note: We can only trigger workflows for branches in this repository, not forks
+                if (prWasUpdated) {
+                  if (!prData.head.repo) {
+                    core.warning(`Cannot trigger CI/CD for PR #${pull_number}: head repository data is missing`);
+                  } else if (prData.head.repo.fork) {
+                    core.info(`Skipping workflow trigger for PR #${pull_number} (from fork: ${prData.head.repo.full_name})`);
+                  } else {
+                    try {
+                      core.info(`Triggering CI/CD workflow for PR #${pull_number} on branch ${prData.head.ref}...`);
+                      await github.rest.actions.createWorkflowDispatch({
+                        owner,
+                        repo,
+                        workflow_id: 'ci-cd.yml',
+                        ref: prData.head.ref
+                      });
+                      core.info(`✓ Triggered CI/CD workflow for PR #${pull_number}`);
+                    } catch (dispatchError) {
+                      core.warning(`Failed to trigger CI/CD workflow for PR #${pull_number}: ${dispatchError.message}`);
+                    }
+                  }
+                }
                 
                 const hasConflicts = prData.mergeable === false;
                 const prAuthor = prData.user.login;
