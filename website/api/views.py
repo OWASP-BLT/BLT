@@ -1119,7 +1119,7 @@ class JobViewSet(viewsets.ModelViewSet):
         instance.delete()
 
     @action(detail=True, methods=["post"])
-    def increment_view(self, _request, _pk=None):
+    def increment_view(self, request, pk=None):
         """Increment view count for a job"""
         job = self.get_object()
         job.increment_views()
