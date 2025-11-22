@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 import math
 import os
 import re
@@ -16,6 +17,8 @@ from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
 
 from website.models import Domain, Hunt, Issue, Project, SlackBotActivity, SlackIntegration, User
+
+logger = logging.getLogger(__name__)
 
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
@@ -1619,7 +1622,7 @@ def get_user_profile(username, workspace_client, user_id):
         return blocks
 
     except Exception as e:
-        print(f"Error in get_user_profile: {str(e)}")
+        logger.error(f"Error in get_user_profile: {str(e)}")
         return [
             {"type": "section", "text": {"type": "mrkdwn", "text": "❌ An error occurred while fetching user profile."}}
         ]
@@ -1644,7 +1647,7 @@ def get_owasp_contributions(username, headers):
         return "\n".join(contribution_text) if contribution_text else None
 
     except Exception as e:
-        print(f"Error getting contributions: {str(e)}")
+        logger.error(f"Error getting contributions: {str(e)}")
         return None
 
 
@@ -1659,7 +1662,7 @@ def get_org_prs(username, org, headers):
         return None
 
     except Exception as e:
-        print(f"Error getting PRs for {org}: {str(e)}")
+        logger.error(f"Error getting PRs for {org}: {str(e)}")
         return None
 
 
@@ -1676,7 +1679,7 @@ def get_gsoc_involvement(username):
         return None
 
     except Exception as e:
-        print(f"Error checking GSoC involvement: {str(e)}")
+        logger.error(f"Error checking GSoC involvement: {str(e)}")
         return None
 
 
@@ -1732,7 +1735,7 @@ def get_chapter_overview(workspace_client, user_id, search_term, activity):
         send_chapter_page(workspace_client, user_id, repos[:10])
 
     except Exception as e:
-        print(f"Error in get_chapter_overview: {str(e)}")
+        logger.error(f"Error in get_chapter_overview: {str(e)}")
         activity.success = False
         activity.error_message = str(e)
         activity.save()
@@ -1830,7 +1833,7 @@ def send_chapter_page(client, user_id, chapters):
         send_dm(client, user_id, "OWASP Chapters", blocks)
 
     except Exception as e:
-        print(f"Error sending chapter page: {str(e)}")
+        logger.error(f"Error sending chapter page: {str(e)}")
 
 
 def get_chapter_details(repo_name, headers, workspace_client, user_id):
@@ -1905,7 +1908,7 @@ def get_chapter_details(repo_name, headers, workspace_client, user_id):
         )
 
     except Exception as e:
-        print(f"Error getting chapter details: {str(e)}")
+        logger.error(f"Error getting chapter details: {str(e)}")
         return JsonResponse(
             {"response_type": "ephemeral", "text": "❌ An error occurred while fetching chapter details."}
         )
@@ -1935,7 +1938,7 @@ def handle_chapter_pagination(action, body, client):
         return HttpResponse()
 
     except Exception as e:
-        print(f"Error handling chapter pagination: {str(e)}")
+        logger.error(f"Error handling chapter pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating chapters."})
 
 
@@ -1953,7 +1956,7 @@ def fetch_owasp_events():
         return events_data
 
     except Exception as e:
-        print(f"Error fetching events: {str(e)}")
+        logger.error(f"Error fetching events: {str(e)}")
         return None
 
 
@@ -2109,7 +2112,7 @@ def get_event_overview(workspace_client, user_id, search_term, activity, team_id
                 send_dm(workspace_client, user_id, "OWASP Events", blocks)
 
             except Exception as e:
-                print(f"Error processing events: {str(e)}")
+                logger.error(f"Error processing events: {str(e)}")
                 send_dm(
                     workspace_client,
                     user_id,
@@ -2128,7 +2131,7 @@ def get_event_overview(workspace_client, user_id, search_term, activity, team_id
         return response
 
     except Exception as e:
-        print(f"Error in get_event_overview: {str(e)}")
+        logger.error(f"Error in get_event_overview: {str(e)}")
         activity.success = False
         activity.error_message = str(e)
         activity.save()
@@ -2205,7 +2208,7 @@ def handle_event_pagination(action, body, client):
         return HttpResponse()
 
     except Exception as e:
-        print(f"Error handling event pagination: {str(e)}")
+        logger.error(f"Error handling event pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating events."})
 
 
@@ -2261,7 +2264,7 @@ def get_committees_overview(workspace_client, user_id, search_term, activity):
         send_committee_page(workspace_client, user_id, repos[:5])
 
     except Exception as e:
-        print(f"Error in get_committees_overview: {str(e)}")
+        logger.error(f"Error in get_committees_overview: {str(e)}")
         activity.success = False
         activity.error_message = str(e)
         activity.save()
@@ -2359,7 +2362,7 @@ def send_committee_page(client, user_id, committees):
         send_dm(client, user_id, "OWASP Committees", blocks)
 
     except Exception as e:
-        print(f"Error sending committee page: {str(e)}")
+        logger.error(f"Error sending committee page: {str(e)}")
 
 
 def get_committee_details(repo_name, headers, workspace_client, user_id):
@@ -2434,7 +2437,7 @@ def get_committee_details(repo_name, headers, workspace_client, user_id):
         )
 
     except Exception as e:
-        print(f"Error getting committee details: {str(e)}")
+        logger.error(f"Error getting committee details: {str(e)}")
         return JsonResponse(
             {"response_type": "ephemeral", "text": "❌ An error occurred while fetching committee details."}
         )
@@ -2464,5 +2467,5 @@ def handle_committee_pagination(action, body, client):
         return HttpResponse()
 
     except Exception as e:
-        print(f"Error handling committee pagination: {str(e)}")
+        logger.error(f"Error handling committee pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})

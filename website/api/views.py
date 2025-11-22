@@ -18,7 +18,7 @@ from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -33,6 +33,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Job,
     Organization,
     Points,
     Project,
@@ -50,6 +51,8 @@ from website.serializers import (
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
+    JobPublicSerializer,
+    JobSerializer,
     OrganizationSerializer,
     ProjectSerializer,
     RepoSerializer,
@@ -1031,3 +1034,203 @@ class OwaspComplianceChecker(APIView):
         }
 
         return Response(report, status=status.HTTP_200_OK)
+
+
+class JobViewSet(viewsets.ModelViewSet):
+    """
+    API ViewSet for Job CRUD operations
+    Requires authentication for create, update, delete
+    """
+
+    serializer_class = JobSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "description", "location", "organization__name"]
+    ordering_fields = ["created_at", "updated_at", "views_count"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        """
+        Filter jobs based on user permissions
+        - Authenticated users see all their organization's jobs
+        - Unauthenticated users only see public jobs
+        """
+        if self.request.user.is_authenticated:
+            # Get organizations where user is admin or manager
+            user_orgs = Organization.objects.filter(
+                Q(admin=self.request.user) | Q(managers=self.request.user)
+            ).values_list("id", flat=True)
+
+            # Show own org jobs (all) + other public jobs
+            return Job.objects.filter(Q(organization_id__in=user_orgs) | Q(is_public=True, status="active")).distinct()
+        else:
+            # Only public, active, non-expired jobs for anonymous users
+            now = timezone.now()
+            return Job.objects.filter(is_public=True, status="active").filter(
+                Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+            )
+
+    def perform_create(self, serializer):
+        """Set the organization and posted_by when creating a job"""
+        org_id = self.request.data.get("organization")
+        if not org_id:
+            raise ParseError("Organization ID is required")
+
+        organization = Organization.objects.filter(id=org_id).first()
+        if not organization:
+            raise NotFound("Organization not found")
+
+        # Check if user has permission to post for this organization
+        is_member = (
+            organization.admin == self.request.user or organization.managers.filter(id=self.request.user.id).exists()
+        )
+
+        if not is_member:
+            raise PermissionDenied("You do not have permission to create jobs for this organization")
+
+        serializer.save(organization=organization, posted_by=self.request.user)
+
+    def perform_update(self, serializer):
+        """Check permissions before updating"""
+        job = self.get_object()
+
+        # Check if user has permission to update this job
+        is_member = (
+            job.organization.admin == self.request.user
+            or job.organization.managers.filter(id=self.request.user.id).exists()
+        )
+
+        if not is_member:
+            raise PermissionDenied("You do not have permission to update this job")
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """Check permissions before deleting"""
+        # Check if user has permission to delete this job
+        is_member = (
+            instance.organization.admin == self.request.user
+            or instance.organization.managers.filter(id=self.request.user.id).exists()
+        )
+
+        if not is_member:
+            raise PermissionDenied("You do not have permission to delete this job")
+
+        instance.delete()
+
+    @action(detail=True, methods=["post"])
+    def increment_view(self, request, pk=None):
+        """Increment view count for a job"""
+        job = self.get_object()
+        job.increment_views()
+        return Response({"views_count": job.views_count})
+
+
+class PublicJobListViewSet(APIView):
+    """
+    Public API endpoint for job listings
+    Returns only public and active jobs
+    No authentication required
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        """
+        Get all public jobs with optional filters
+        Query parameters:
+        - q: Search query (title, description, location)
+        - job_type: Filter by job type
+        - location: Filter by location
+        - organization: Filter by organization ID
+        """
+        from django.utils import timezone
+
+        # Filter by public, active status, and not expired
+        jobs = (
+            Job.objects.filter(is_public=True, status="active")
+            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+            .select_related("organization")
+        )
+
+        # Search
+        search_query = request.GET.get("q", "")
+        if search_query:
+            jobs = jobs.filter(
+                Q(title__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(location__icontains=search_query)
+                | Q(organization__name__icontains=search_query)
+            )
+
+        # Filter by job type
+        job_type = request.GET.get("job_type", "")
+        if job_type:
+            jobs = jobs.filter(job_type=job_type)
+
+        # Filter by location
+        location = request.GET.get("location", "")
+        if location:
+            jobs = jobs.filter(location__icontains=location)
+
+        # Filter by organization
+        org_id = request.GET.get("organization", "")
+        if org_id:
+            jobs = jobs.filter(organization_id=org_id)
+
+        # Pagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        paginated_jobs = paginator.paginate_queryset(jobs, request)
+
+        serializer = JobPublicSerializer(paginated_jobs, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class OrganizationJobStatsViewSet(APIView):
+    """
+    API endpoint for organization job statistics
+    Requires authentication
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, org_id):
+        """Get job statistics for an organization"""
+        organization = Organization.objects.filter(id=org_id).first()
+        if not organization:
+            raise NotFound("Organization not found")
+
+        # Check permissions
+        is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+        if not is_member:
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get statistics
+        total_jobs = Job.objects.filter(organization=organization).count()
+        active_jobs = Job.objects.filter(organization=organization, status="active").count()
+        draft_jobs = Job.objects.filter(organization=organization, status="draft").count()
+        paused_jobs = Job.objects.filter(organization=organization, status="paused").count()
+        closed_jobs = Job.objects.filter(organization=organization, status="closed").count()
+        public_jobs = Job.objects.filter(organization=organization, is_public=True).count()
+        total_views = Job.objects.filter(organization=organization).aggregate(total=Sum("views_count"))["total"] or 0
+
+        # Jobs by type
+        jobs_by_type = (
+            Job.objects.filter(organization=organization).values("job_type").annotate(count=Count("id")).order_by()
+        )
+
+        stats = {
+            "total_jobs": total_jobs,
+            "active_jobs": active_jobs,
+            "draft_jobs": draft_jobs,
+            "paused_jobs": paused_jobs,
+            "closed_jobs": closed_jobs,
+            "public_jobs": public_jobs,
+            "private_jobs": total_jobs - public_jobs,
+            "total_views": total_views,
+            "jobs_by_type": list(jobs_by_type),
+        }
+
+        return Response(stats)

@@ -20,8 +20,8 @@
 {% load custom_tags %}
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 h-full">
-        <div class="flex flex-col w-full max-w-md bg-white rounded-md shadow-lg md:flex-row md:max-w-2xl lg:max-w-4xl">
+    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 dark:bg-gray-800 h-full">
+        <div class="flex flex-col w-full max-w-md bg-white dark:bg-gray-800 rounded-md shadow-lg md:flex-row md:max-w-2xl lg:max-w-4xl">
             <!-- Left Section -->
             <div class="p-4 py-6 text-white bg-red-500 md:w-96 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
                 <div class="my-3 text-4xl font-bold tracking-wider text-center">
@@ -41,47 +41,50 @@
                 </p>
             </div>
             <!-- Right Section -->
-            <div class="p-5 bg-white md:flex-1">
-                <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans "Account SignUp" %}</h3>
+            <div class="p-5 bg-white dark:bg-gray-800 md:flex-1">
+                <h3 class="my-4 text-2xl font-semibold text-gray-700 dark:text-gray-300">{% trans "Account SignUp" %}</h3>
                 <form class="flex flex-col space-y-5 login"
                       method="post"
                       action="{% url 'account_signup' %}">
                     {% csrf_token %}
                     <!-- Username Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="email" class="text-sm font-semibold text-gray-500">Username</label>
+                        <label for="email"
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username</label>
                         <input autofocus
                                type="text"
                                id="id_username"
                                name="username"
                                value="{{ form.username.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                         <span class="help-block">{{ form.username.errors }}</span>
                     </div>
                     <!-- Email Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="email" class="text-sm font-semibold text-gray-500">Email</label>
+                        <label for="email"
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Email</label>
                         <input type="email"
                                id="id_email"
                                name="email"
                                value="{{ form.email.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
                     <!-- Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="password" class="text-sm font-semibold text-gray-500">Password</label>
+                            <label for="password"
+                                   class="text-sm font-semibold text-gray-500 dark:text-gray-500">Password</label>
                         </div>
                         <div class="relative">
                             <input type="password"
                                    id="id_password"
                                    name="password1"
                                    value="{{ form.password1.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                             <button type="button"
                                     id="togglePassword"
-                                    class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
+                                    class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-500 hover:text-gray-800 focus:outline-none"
                                     data-target="id_password">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                      viewBox="0 0 24 24"
@@ -99,17 +102,20 @@
                     <!-- Confirm Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="password" class="text-sm font-semibold text-gray-500">Confirm Password</label>
+                            <label for="password"
+                                   class="text-sm font-semibold text-gray-500 dark:text-gray-500">
+                                Confirm Password
+                            </label>
                         </div>
                         <div class="relative">
                             <input type="password"
                                    id="id_password2"
                                    name="password2"
                                    value="{{ form.password2.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                             <button type="button"
                                     id="togglePassword"
-                                    class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
+                                    class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-500 hover:text-gray-800 focus:outline-none"
                                     data-target="id_password2">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                      viewBox="0 0 24 24"
@@ -126,7 +132,8 @@
                     </div>
                     <!-- Captcha Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="captcha" class="text-sm font-semibold text-gray-500">Captcha</label>
+                        <label for="captcha"
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Captcha</label>
                         <div class="flex items-center">
                             <div class="captcha-container">
                                 <input type="hidden" name="captcha_0" value="{{ form.captcha.value.key }}">
@@ -135,7 +142,7 @@
                                      alt="Captcha Image"
                                      width="150"
                                      height="50"
-                                     class="border border-gray-300 rounded">
+                                     class="border border-gray-300 dark:border-gray-600 rounded">
                             </div>
                             <button type="button"
                                     onclick="refreshCaptcha()"
@@ -153,7 +160,7 @@
                         <input type="text"
                                name="captcha_1"
                                placeholder="Enter Captcha"
-                               class="px-2 py-1 mt-2 border border-gray-300 rounded focus:ring-red-200 w-1/2"
+                               class="px-2 py-1 mt-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-red-200 w-1/2 dark:bg-gray-700 dark:text-white"
                                required>
                         <span class="help-block">{{ form.captcha.errors }}</span>
                     </div>
@@ -189,7 +196,7 @@
             .then(data => {
                 captchaContainer.innerHTML = `
                     <input type="hidden" name="captcha_0" value="${data.key}">
-                    <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 rounded">
+                    <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 dark:border-gray-600 rounded">
                 `;
             })
             .catch(error => console.error('Error:', error));

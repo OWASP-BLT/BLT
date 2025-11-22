@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-100">
-        <header class="bg-white shadow">
+    <div class="min-h-screen bg-gray-100 dark:bg-gray-800">
+        <header class="bg-white dark:bg-gray-800 shadow">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900">{{ lab.name }}</h1>
-                        <p class="mt-2 text-gray-600">{{ lab.description }}</p>
-                        <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ lab.name }}</h1>
+                        <p class="mt-2 text-gray-600 dark:text-gray-400">{{ lab.description }}</p>
+                        <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500">
                             <span class="flex items-center">
                                 <svg class="w-4 h-4 mr-1"
                                      fill="none"
@@ -32,7 +32,7 @@
                         </div>
                     </div>
                     <a href="{% url 'simulation_dashboard' %}"
-                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50">
                         <svg class="w-4 h-4 mr-2"
                              fill="none"
                              stroke="currentColor"
@@ -46,13 +46,15 @@
         </header>
         <main>
             <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Lab Tasks</h3>
-                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Complete each task to master {{ lab.name }} techniques.</p>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">Lab Tasks</h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-500">
+                            Complete each task to master {{ lab.name }} techniques.
+                        </p>
                     </div>
                     {% if tasks %}
-                        <ul class="divide-y divide-gray-200">
+                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                             {% for task in tasks %}
                                 <li>
                                     <a href="{% url 'task_detail' lab.id task.id %}"
@@ -84,25 +86,30 @@
                                                 </div>
                                                 <div class="ml-4">
                                                     <div class="flex items-center">
-                                                        <span class="text-sm font-medium text-gray-500 mr-3">{{ task.order }}.</span>
-                                                        <p class="text-sm font-medium text-gray-900">{{ task.name }}</p>
+                                                        <span class="text-sm font-medium text-gray-500 dark:text-gray-500 mr-3">{{ task.order }}.</span>
+                                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ task.name }}</p>
                                                         <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if task.task_type == 'theory' %}bg-blue-100 text-blue-800{% else %}bg-red-100 text-red-800{% endif %}">
                                                             {{ task.get_task_type_display }}
                                                         </span>
                                                         {% if completed_task_ids and task.id in completed_task_ids %}
                                                             <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                                <svg class="w-4 h-4 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <svg class="w-4 h-4 mr-1 text-green-600"
+                                                                     fill="none"
+                                                                     stroke="currentColor"
+                                                                     viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                                 </svg>
                                                                 Completed
                                                             </span>
                                                         {% endif %}
                                                     </div>
-                                                    {% if task.description %}<p class="mt-1 text-sm text-gray-500">{{ task.description }}</p>{% endif %}
+                                                    {% if task.description %}
+                                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">{{ task.description }}</p>
+                                                    {% endif %}
                                                 </div>
                                             </div>
                                             <div class="flex items-center">
-                                                <svg class="w-5 h-5 text-gray-400"
+                                                <svg class="w-5 h-5 text-gray-400 dark:text-gray-600"
                                                      fill="none"
                                                      stroke="currentColor"
                                                      viewBox="0 0 24 24">
@@ -116,7 +123,7 @@
                         </ul>
                     {% else %}
                         <div class="px-4 py-5 sm:px-6">
-                            <p class="text-gray-500">No tasks available for this lab yet.</p>
+                            <p class="text-gray-500 dark:text-gray-500">No tasks available for this lab yet.</p>
                         </div>
                     {% endif %}
                 </div>

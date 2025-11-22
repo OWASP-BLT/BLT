@@ -7,7 +7,7 @@
 {% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-white py-12 relative overflow-hidden">
+    <div class="min-h-screen bg-white dark:bg-gray-800 py-12 relative overflow-hidden">
         <!-- Enhanced Cyber Background Elements -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
             <!-- Animated Circuit Board Pattern -->
@@ -85,29 +85,29 @@
             <!-- Header Section with Glitch Effect -->
             <div class="text-center mb-16">
                 <h1 data-text="Project Roadmap"
-                    class="glitch text-5xl font-bold text-gray-900 mb-6 flex items-center justify-center gap-4">
+                    class="glitch text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center justify-center gap-4">
                     <i class="fas fa-road text-[#e74c3c]"></i>
                     Project Roadmap
                 </h1>
-                <p class="text-xl text-gray-700 max-w-3xl mx-auto">
+                <p class="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
                     Discover our vision for the future of web security. Track our progress and upcoming features as we continue to evolve OWASP BLT.
                 </p>
             </div>
             <!-- Milestone List Section -->
-            <div class="bg-white rounded-3xl p-8 shadow-xl border border-gray-200 mb-16 relative overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-200 dark:border-gray-700 mb-16 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-br from-white via-gray-100 to-[#e74c3c] opacity-20"></div>
                 <div class="relative">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 flex items-center gap-3">
                         <i class="fas fa-tasks text-[#e74c3c]"></i>
                         Development Milestones {{ milestones|length }}
                     </h2>
                     <div class="space-y-6">
                         {% for milestone in milestones %}
-                            <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#e74c3c] hover:shadow-2xl transition-all duration-300">
+                            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border-l-4 border-[#e74c3c] hover:shadow-2xl transition-all duration-300">
                                 <div class="flex flex-wrap items-center gap-4 mb-4">
                                     <div class="flex items-center gap-2">
                                         <i class="{{ milestone.icon }} text-[#e74c3c]"></i>
-                                        <h3 class="text-2xl font-bold text-gray-900">{{ milestone.title }}</h3>
+                                        <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ milestone.title }}</h3>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
                                         {% for tag in milestone.tags %}
@@ -115,16 +115,18 @@
                                         {% endfor %}
                                     </div>
                                 </div>
-                                {% if milestone.description %}<p class="text-gray-700 mb-4">{{ milestone.description }}</p>{% endif %}
+                                {% if milestone.description %}
+                                    <p class="text-gray-700 dark:text-gray-300 mb-4">{{ milestone.description }}</p>
+                                {% endif %}
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                                         <i class="{{ milestone.progress_icon }} text-[#e74c3c]"></i>
                                     </div>
-                                    <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                         <div class="h-full bg-[#e74c3c] rounded-full"
                                              style="width: {{ milestone.progress }}"></div>
                                     </div>
-                                    <span class="text-sm font-medium text-gray-900">{{ milestone.progress }}</span>
+                                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ milestone.progress }}</span>
                                 </div>
                             </div>
                         {% endfor %}
@@ -132,41 +134,41 @@
                 </div>
             </div>
             <!-- Community Input Section -->
-            <div class="bg-white rounded-3xl p-8 shadow-xl border border-gray-200 relative overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-white via-gray-100 to-[#e74c3c] opacity-20"></div>
                 <div class="relative">
                     <div class="text-center mb-8">
-                        <h2 class="text-3xl font-bold text-gray-900 mb-4">Shape Our Future</h2>
-                        <p class="text-gray-700">
+                        <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">Shape Our Future</h2>
+                        <p class="text-gray-700 dark:text-gray-300">
                             Your voice matters in our development journey. Share your ideas and help us build the future of web security.
                         </p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <a href="{% url 'view_forum' %}" class="group">
-                            <div class="bg-white rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200">
-                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
-                                    <i class="fas fa-comments text-2xl text-gray-400 group-hover:text-white"></i>
+                            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
+                                    <i class="fas fa-comments text-2xl text-gray-400 dark:text-gray-600 group-hover:text-white"></i>
                                 </div>
-                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Join Discussion</h3>
-                                <p class="text-gray-700">Share your thoughts in our community forum</p>
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Join Discussion</h3>
+                                <p class="text-gray-700 dark:text-gray-300">Share your thoughts in our community forum</p>
                             </div>
                         </a>
                         <a href="{% url 'github_issues' %}" class="group">
-                            <div class="bg-white rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200">
-                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
-                                    <i class="fab fa-github text-2xl text-gray-400 group-hover:text-white"></i>
+                            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
+                                    <i class="fab fa-github text-2xl text-gray-400 dark:text-gray-600 group-hover:text-white"></i>
                                 </div>
-                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Submit Issues</h3>
-                                <p class="text-gray-700">Report bugs or request new features</p>
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Submit Issues</h3>
+                                <p class="text-gray-700 dark:text-gray-300">Report bugs or request new features</p>
                             </div>
                         </a>
                         <a href="{% url 'contribution_guidelines' %}" class="group">
-                            <div class="bg-white rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200">
-                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
-                                    <i class="fas fa-code text-2xl text-gray-400 group-hover:text-white"></i>
+                            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
+                                    <i class="fas fa-code text-2xl text-gray-400 dark:text-gray-600 group-hover:text-white"></i>
                                 </div>
-                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Contribute</h3>
-                                <p class="text-gray-700">Help us develop new features</p>
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Contribute</h3>
+                                <p class="text-gray-700 dark:text-gray-300">Help us develop new features</p>
                             </div>
                         </a>
                     </div>
