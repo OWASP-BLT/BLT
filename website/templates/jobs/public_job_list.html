@@ -34,6 +34,11 @@
                         <option value="freelance"
                                 {% if job_type_filter == 'freelance' %}selected{% endif %}>Freelance</option>
                     </select>
+                    <input type="text"
+                           name="location"
+                           value="{{ location_filter }}"
+                           placeholder="Location..."
+                           class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent w-48">
                     <button type="submit"
                             class="px-6 py-3 bg-[#e74c3c] text-white rounded-lg font-semibold hover:bg-red-700 transition-colors">
                         Search
@@ -109,7 +114,7 @@
                             Check back later for new opportunities
                         {% endif %}
                     </p>
-                    {% if search_query or job_type_filter %}
+                    {% if search_query or job_type_filter or location_filter %}
                         <a href="{% url 'public_job_list' %}"
                            class="inline-block mt-4 text-[#e74c3c] hover:text-red-700 font-semibold">Clear filters</a>
                     {% endif %}

@@ -1064,8 +1064,11 @@ class JobViewSet(viewsets.ModelViewSet):
             # Show own org jobs (all) + other public jobs
             return Job.objects.filter(Q(organization_id__in=user_orgs) | Q(is_public=True, status="active")).distinct()
         else:
-            # Only public and active jobs for anonymous users
-            return Job.objects.filter(is_public=True, status="active")
+            # Only public, active, non-expired jobs for anonymous users
+            now = timezone.now()
+            return Job.objects.filter(is_public=True, status="active").filter(
+                Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+            )
 
     def perform_create(self, serializer):
         """Set the organization and posted_by when creating a job"""
