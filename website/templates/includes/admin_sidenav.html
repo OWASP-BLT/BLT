@@ -1,8 +1,8 @@
-<div class="fixed top-0 left-0 h-full bg-black">
+<div class="fixed top-0 left-0 h-full bg-black dark:bg-gray-900">
     <ul class="flex flex-col">
-        <li class="{% if request.resolver_match.url_name == 'draft_hunts' %}bg-gray-700{% endif %}">
+        <li class="{% if request.resolver_match.url_name == 'draft_hunts' %}bg-gray-700 dark:bg-gray-800{% endif %}">
             <a href="{% url 'admin_organization_dashboard' %}"
-               class="flex items-center px-4 py-2 text-white hover:bg-gray-800">
+               class="flex items-center px-4 py-2 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
                 <i class="lnr lnr-chart-bars mr-2"></i>
                 <span>Organization</span>
             </a>

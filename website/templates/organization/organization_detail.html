@@ -11,13 +11,13 @@
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
         <!-- Breadcrumbs -->
-        <nav class="mb-4 flex items-center space-x-2 text-sm text-gray-500">
+        <nav class="mb-4 flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-500">
             <a href="{% url 'organizations' %}" class="hover:text-[#e74c3c]">
                 <i class="fas fa-building"></i>
                 Organizations
             </a>
-            <span class="text-gray-400">/</span>
-            <span class="text-gray-700">{{ organization.name }}</span>
+            <span class="text-gray-400 dark:text-gray-600">/</span>
+            <span class="text-gray-700 dark:text-gray-300">{{ organization.name }}</span>
             {% if user.is_staff %}
                 <div class="ml-auto flex items-center space-x-2">
                     <a href="{% url 'admin:website_organization_change' organization.id %}"
@@ -33,13 +33,13 @@
                 </div>
             {% endif %}
         </nav>
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             <!-- Header Section -->
             <div class="relative h-48 bg-gradient-to-r from-[#e74c3c] to-red-700">
                 <div class="absolute bottom-0 left-0 right-0 px-6 py-4">
                     <div class="flex items-center space-x-4">
                         {% if organization.logo %}
-                            <div class="w-24 h-24 bg-white rounded-lg shadow-md p-2 flex items-center justify-center">
+                            <div class="w-24 h-24 bg-white dark:bg-gray-800 rounded-lg shadow-md p-2 flex items-center justify-center">
                                 <img src="{{ MEDIA_URL }}{{ organization.logo }}"
                                      alt="{{ organization.name }} logo"
                                      width="96"
@@ -47,7 +47,7 @@
                                      class="max-w-full max-h-full object-contain">
                             </div>
                         {% else %}
-                            <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md">
+                            <div class="w-24 h-24 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-md">
                                 <i class="fas fa-building text-[#e74c3c] text-3xl"></i>
                             </div>
                         {% endif %}
@@ -64,7 +64,7 @@
                                 </a>
                             {% endif %}
                             {% if organization.type %}
-                                <div class="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                                <div class="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 dark:bg-gray-800/20 text-white">
                                     {{ organization.get_type_display }}
                                 </div>
                             {% endif %}
@@ -77,25 +77,25 @@
                 <!-- Contact Information -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Contact Information</h2>
                         <div class="space-y-3">
                             {% if organization.email %}
                                 <div class="flex items-center space-x-3">
                                     <i class="fas fa-envelope text-[#e74c3c]"></i>
                                     <a href="mailto:{{ organization.email }}"
-                                       class="text-gray-600 hover:text-[#e74c3c]">{{ organization.email }}</a>
+                                       class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">{{ organization.email }}</a>
                                 </div>
                             {% endif %}
                             <!-- Social Media Links -->
                             <div class="mt-4">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Social Media & Community</h3>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Social Media & Community</h3>
                                 <div class="grid grid-cols-2 gap-2">
                                     {% if organization.twitter %}
                                         <div class="flex items-center space-x-3">
                                             <i class="fab fa-twitter text-[#e74c3c]"></i>
                                             <a href="{{ organization.twitter }}"
                                                target="_blank"
-                                               class="text-gray-600 hover:text-[#e74c3c]">Twitter</a>
+                                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Twitter</a>
                                         </div>
                                     {% endif %}
                                     {% if organization.facebook %}
@@ -103,7 +103,7 @@
                                             <i class="fab fa-facebook text-[#e74c3c]"></i>
                                             <a href="{{ organization.facebook }}"
                                                target="_blank"
-                                               class="text-gray-600 hover:text-[#e74c3c]">Facebook</a>
+                                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Facebook</a>
                                         </div>
                                     {% endif %}
                                     {% if organization.matrix_url %}
@@ -111,7 +111,7 @@
                                             <i class="fas fa-comments text-[#e74c3c]"></i>
                                             <a href="{{ organization.matrix_url }}"
                                                target="_blank"
-                                               class="text-gray-600 hover:text-[#e74c3c]">Matrix</a>
+                                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Matrix</a>
                                         </div>
                                     {% endif %}
                                     {% if organization.slack_url %}
@@ -119,7 +119,7 @@
                                             <i class="fab fa-slack text-[#e74c3c]"></i>
                                             <a href="{{ organization.slack_url }}"
                                                target="_blank"
-                                               class="text-gray-600 hover:text-[#e74c3c]">Slack</a>
+                                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Slack</a>
                                         </div>
                                     {% endif %}
                                     {% if organization.discord_url %}
@@ -127,7 +127,7 @@
                                             <i class="fab fa-discord text-[#e74c3c]"></i>
                                             <a href="{{ organization.discord_url }}"
                                                target="_blank"
-                                               class="text-gray-600 hover:text-[#e74c3c]">Discord</a>
+                                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Discord</a>
                                         </div>
                                     {% endif %}
                                     {% if organization.gitter_url %}
@@ -135,7 +135,7 @@
                                             <i class="fab fa-gitter text-[#e74c3c]"></i>
                                             <a href="{{ organization.gitter_url }}"
                                                target="_blank"
-                                               class="text-gray-600 hover:text-[#e74c3c]">Gitter</a>
+                                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Gitter</a>
                                         </div>
                                     {% endif %}
                                     {% if organization.zulipchat_url %}
@@ -143,7 +143,7 @@
                                             <i class="fas fa-comment-dots text-[#e74c3c]"></i>
                                             <a href="{{ organization.zulipchat_url }}"
                                                target="_blank"
-                                               class="text-gray-600 hover:text-[#e74c3c]">Zulip</a>
+                                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Zulip</a>
                                         </div>
                                     {% endif %}
                                     {% if organization.element_url %}
@@ -151,7 +151,7 @@
                                             <i class="fas fa-comment-alt text-[#e74c3c]"></i>
                                             <a href="{{ organization.element_url }}"
                                                target="_blank"
-                                               class="text-gray-600 hover:text-[#e74c3c]">Element</a>
+                                               class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Element</a>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -159,8 +159,8 @@
                             <!-- Location Information -->
                             {% if organization.country or organization.address_line_1 %}
                                 <div class="mt-4">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Location</h3>
-                                    <div class="space-y-1 text-gray-600">
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Location</h3>
+                                    <div class="space-y-1 text-gray-600 dark:text-gray-400">
                                         {% if organization.country %}
                                             <div class="flex items-center space-x-2">
                                                 <i class="fas fa-globe text-[#e74c3c]"></i>
@@ -195,23 +195,23 @@
                         </div>
                     </div>
                     <div>
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Organization Details</h2>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Organization Details</h2>
                         <div class="space-y-3">
                             <div class="flex items-center space-x-3">
                                 <i class="fas fa-calendar text-[#e74c3c]"></i>
-                                <span class="text-gray-600">Added on {{ organization.created|date:"F j, Y" }}</span>
+                                <span class="text-gray-600 dark:text-gray-400">Added on {{ organization.created|date:"F j, Y" }}</span>
                             </div>
                             {% if organization.description %}
                                 <div class="flex items-start space-x-3">
                                     <i class="fas fa-info-circle text-[#e74c3c] mt-1"></i>
-                                    <p class="text-gray-600">{{ organization.description }}</p>
+                                    <p class="text-gray-600 dark:text-gray-400">{{ organization.description }}</p>
                                 </div>
                             {% endif %}
                             {% if organization.license %}
                                 <div class="flex items-start space-x-3">
                                     <i class="fas fa-file-contract text-[#e74c3c] mt-1"></i>
                                     <div>
-                                        <p class="text-gray-600">
+                                        <p class="text-gray-600 dark:text-gray-400">
                                             <span class="font-medium">License:</span> {{ organization.license }}
                                         </p>
                                     </div>
@@ -222,10 +222,10 @@
                                 <div class="flex items-start space-x-3 mt-2">
                                     <i class="fas fa-tags text-[#e74c3c] mt-1"></i>
                                     <div>
-                                        <p class="text-gray-600 font-medium mb-1">Categories:</p>
+                                        <p class="text-gray-600 dark:text-gray-400 font-medium mb-1">Categories:</p>
                                         <div class="flex flex-wrap gap-2">
                                             {% for category in organization.categories %}
-                                                <span class="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-700">{{ category }}</span>
+                                                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-xs text-gray-700 dark:text-gray-300">{{ category }}</span>
                                             {% endfor %}
                                         </div>
                                     </div>
@@ -235,10 +235,10 @@
                                 <div class="flex items-start space-x-3 mt-2">
                                     <i class="fas fa-code text-[#e74c3c] mt-1"></i>
                                     <div>
-                                        <p class="text-gray-600 font-medium mb-1">Technologies:</p>
+                                        <p class="text-gray-600 dark:text-gray-400 font-medium mb-1">Technologies:</p>
                                         <div class="flex flex-wrap gap-2">
                                             {% for tag in organization.tech_tags %}
-                                                <span class="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-700">{{ tag }}</span>
+                                                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-xs text-gray-700 dark:text-gray-300">{{ tag }}</span>
                                             {% endfor %}
                                         </div>
                                     </div>
@@ -248,10 +248,10 @@
                                 <div class="flex items-start space-x-3 mt-2">
                                     <i class="fas fa-bookmark text-[#e74c3c] mt-1"></i>
                                     <div>
-                                        <p class="text-gray-600 font-medium mb-1">Topics:</p>
+                                        <p class="text-gray-600 dark:text-gray-400 font-medium mb-1">Topics:</p>
                                         <div class="flex flex-wrap gap-2">
                                             {% for tag in organization.topic_tags %}
-                                                <span class="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-700">{{ tag }}</span>
+                                                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-xs text-gray-700 dark:text-gray-300">{{ tag }}</span>
                                             {% endfor %}
                                         </div>
                                     </div>
@@ -259,14 +259,14 @@
                             {% endif %}
                             <!-- GitHub Integration -->
                             <div class="mt-4 space-y-3">
-                                <h3 class="text-lg font-medium text-gray-900">GitHub Integration</h3>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">GitHub Integration</h3>
                                 {% if github_url %}
                                     <div class="flex items-center space-x-3">
                                         <i class="fab fa-github text-[#e74c3c]"></i>
                                         <a href="{{ github_url }}"
                                            target="_blank"
                                            rel="noopener noreferrer"
-                                           class="text-gray-600 hover:text-[#e74c3c]">{{ github_url }}</a>
+                                           class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">{{ github_url }}</a>
                                     </div>
                                     <button id="updateReposBtn"
                                             onclick="updateGithubRepos('{{ organization.slug }}')"
@@ -275,40 +275,46 @@
                                         Update GitHub Repositories
                                     </button>
                                     {% if organization.repos_updated_at %}
-                                        <div class="mt-2 text-sm text-gray-600">
+                                        <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                                             <i class="fas fa-clock text-[#e74c3c] mr-1"></i>
                                             Last updated: {{ organization.repos_updated_at|date:"F j, Y, g:i a" }}
-                                            <div class="text-xs text-gray-500 mt-1">
+                                            <div class="text-xs text-gray-500 dark:text-gray-500 mt-1">
                                                 <i class="fas fa-info-circle mr-1"></i>
                                                 Repository updates are limited to once per day.
                                             </div>
                                         </div>
                                     {% endif %}
                                     <div id="repoUpdateStatus" class="mt-2 hidden">
-                                        <div class="bg-gray-100 p-3 rounded-md">
+                                        <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md">
                                             <div class="flex items-center mb-2">
                                                 <i class="fas fa-spinner fa-spin text-[#e74c3c] mr-2"></i>
                                                 <span class="font-medium">Updating repositories...</span>
                                             </div>
                                             <div id="statusMessages"
-                                                 class="text-sm text-gray-600 max-h-40 overflow-y-auto"></div>
+                                                 class="text-sm text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto">
+                                            </div>
                                         </div>
                                     </div>
                                 {% else %}
-                                    <div class="bg-gray-50 p-4 rounded-md">
-                                        <p class="text-gray-700 mb-3">No GitHub URL set for this organization. Add one to sync repositories.</p>
+                                    <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-md">
+                                        <p class="text-gray-700 dark:text-gray-300 mb-3">
+                                            No GitHub URL set for this organization. Add one to sync repositories.
+                                        </p>
                                         <form method="post"
                                               action="{% url 'update_organization_repos' organization.slug %}">
                                             {% csrf_token %}
                                             <div class="flex flex-col space-y-2">
-                                                <label for="github_url" class="text-sm font-medium text-gray-700">GitHub URL</label>
+                                                <label for="github_url"
+                                                       class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    GitHub URL
+                                                </label>
                                                 <input type="url"
                                                        id="github_url"
                                                        name="github_url"
                                                        placeholder="https://github.com/organization-name"
-                                                       class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                                       class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                        required>
-                                                <p class="text-xs text-gray-500">Example: https://github.com/OWASP</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-500">Example: https://github.com/OWASP</p>
                                             </div>
                                             <button type="submit"
                                                     class="mt-3 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
@@ -321,14 +327,14 @@
                             </div>
                             <!-- Contributor Resources -->
                             <div class="mt-4 space-y-3">
-                                <h3 class="text-lg font-medium text-gray-900">Contributor Resources</h3>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Contributor Resources</h3>
                                 {% if organization.contributor_guidance_url %}
                                     <div class="flex items-center space-x-3">
                                         <i class="fas fa-book text-[#e74c3c]"></i>
                                         <a href="{{ organization.contributor_guidance_url }}"
                                            target="_blank"
                                            rel="noopener noreferrer"
-                                           class="text-gray-600 hover:text-[#e74c3c]">Contributor Guidelines</a>
+                                           class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Contributor Guidelines</a>
                                     </div>
                                 {% endif %}
                                 {% if organization.ideas_link %}
@@ -337,7 +343,7 @@
                                         <a href="{{ organization.ideas_link }}"
                                            target="_blank"
                                            rel="noopener noreferrer"
-                                           class="text-gray-600 hover:text-[#e74c3c]">Project Ideas</a>
+                                           class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">Project Ideas</a>
                                     </div>
                                 {% endif %}
                             </div>
@@ -346,16 +352,16 @@
                 </div>
                 <!-- Statistics -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900">Domains</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Domains</h3>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.domain_set.count }}</span>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
-                                <h3 class="text-lg font-semibold text-gray-900">Team Members</h3>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Team Members</h3>
                                 <a href="{% url 'join' %}?organization={{ organization.name|urlencode }}"
                                    class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
                                     <i class="fas fa-user-plus mr-2"></i>
@@ -365,23 +371,23 @@
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.members.count }}</span>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900">Total Points</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Total Points</h3>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.team_points }}</span>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                 <i class="fas fa-eye mr-2 text-[#e74c3c]"></i>Views
                             </h3>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ view_count }}</span>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                 <i class="fas fa-code-branch mr-2 text-[#e74c3c]"></i>Repositories
                             </h3>
                             <a href="{% url 'repo_list' %}?organization={{ organization.id }}"
@@ -394,10 +400,10 @@
                 <!-- Tags -->
                 {% if organization.tags.all %}
                     <div class="mb-8">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Tags</h2>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Tags</h2>
                         <div class="flex flex-wrap gap-2">
                             {% for tag in organization.tags.all %}
-                                <span class="px-3 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-200 transition-colors duration-200">
+                                <span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors duration-200">
                                     {{ tag.name }}
                                 </span>
                             {% endfor %}
@@ -406,11 +412,11 @@
                 {% endif %}
                 <!-- Organization Leadership -->
                 <div class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Leadership</h2>
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Leadership</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {% if organization.admin %}
-                            <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                                <h3 class="font-semibold text-gray-900 mb-2">Administrator</h3>
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Administrator</h3>
                                 <div class="flex items-center space-x-3">
                                     <img src="{% gravatar_url organization.admin.email 40 %}"
                                          alt="{{ organization.admin.username }}"
@@ -420,15 +426,15 @@
                                     <div>
                                         <p class="font-medium">{{ organization.admin.username }}</p>
                                         {% if organization.admin.profile.user_title %}
-                                            <p class="text-sm text-gray-600">{{ organization.admin.profile.user_title }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ organization.admin.profile.user_title }}</p>
                                         {% endif %}
                                     </div>
                                 </div>
                             </div>
                         {% endif %}
                         {% if organization.managers.all %}
-                            <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                                <h3 class="font-semibold text-gray-900 mb-2">Managers</h3>
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Managers</h3>
                                 <div class="space-y-3">
                                     {% for manager in organization.managers.all %}
                                         <div class="flex items-center space-x-3">
@@ -439,7 +445,9 @@
                                                  class="w-8 h-8 rounded-full">
                                             <div>
                                                 <p class="font-medium">{{ manager.username }}</p>
-                                                {% if manager.profile.user_title %}<p class="text-xs text-gray-600">{{ manager.profile.user_title }}</p>{% endif %}
+                                                {% if manager.profile.user_title %}
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400">{{ manager.profile.user_title }}</p>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     {% endfor %}
@@ -452,7 +460,7 @@
                 {% if top_projects %}
                     <div class="mb-8">
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-xl font-semibold text-gray-900">Top Projects</h2>
+                            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Top Projects</h2>
                             <button onclick="syncGithubProjects()"
                                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                                 <i class="fas fa-sync-alt mr-2"></i>
@@ -461,7 +469,7 @@
                         </div>
                         <div class="grid grid-cols-1 gap-4">
                             {% for project_data in top_projects %}
-                                <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1">
                                             <div class="flex items-center space-x-3">
@@ -477,18 +485,18 @@
                                                     </div>
                                                 {% endif %}
                                                 <div>
-                                                    <h3 class="font-semibold text-gray-900">{{ project_data.project.name }}</h3>
-                                                    <p class="text-sm text-gray-600 line-clamp-2">{{ project_data.project.description }}</p>
+                                                    <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ project_data.project.name }}</h3>
+                                                    <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{{ project_data.project.description }}</p>
                                                 </div>
                                             </div>
                                             <div class="mt-3 flex items-center space-x-6">
                                                 <div class="flex items-center space-x-2">
                                                     <i class="fas fa-code-branch text-[#e74c3c]"></i>
-                                                    <span class="text-sm text-gray-600">{{ project_data.total_prs|intcomma }} Pull Requests</span>
+                                                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ project_data.total_prs|intcomma }} Pull Requests</span>
                                                 </div>
                                                 <div class="flex items-center space-x-2">
                                                     <i class="fas fa-users text-[#e74c3c]"></i>
-                                                    <span class="text-sm text-gray-600">{{ project_data.total_contributors|intcomma }} Contributors</span>
+                                                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ project_data.total_contributors|intcomma }} Contributors</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -505,10 +513,10 @@
                 <!-- Top Contributors -->
                 {% if top_contributors %}
                     <div class="mb-8">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Top Contributors</h2>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Contributors</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {% for contributor in top_contributors %}
-                                <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
                                     <div class="flex items-center space-x-3">
                                         {% if contributor.avatar_url %}
                                             <img src="{{ contributor.avatar_url }}"
@@ -528,7 +536,7 @@
                                                     <span class="px-2 py-0.5 bg-[#e74c3c] text-white text-xs rounded-full">Team</span>
                                                 {% endif %}
                                             </div>
-                                            <div class="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                                            <div class="flex items-center space-x-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
                                                 <div class="flex items-center space-x-1">
                                                     <i class="fas fa-code-commit text-[#e74c3c] text-xs"></i>
                                                     <span>{{ contributor.contributions|intcomma }}</span>
@@ -551,9 +559,9 @@
                 {% else %}
                     <!-- Placeholder for future top contributors implementation -->
                     <div class="mb-8">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Top Contributors</h2>
-                        <div class="bg-gray-50 rounded-lg p-6 text-center">
-                            <p class="text-gray-600">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Contributors</h2>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 text-center">
+                            <p class="text-gray-600 dark:text-gray-400">
                                 <i class="fas fa-users text-[#e74c3c] text-4xl mb-3 block mx-auto"></i>
                                 Contributor data is being collected. Check back soon to see the top contributors for this organization.
                             </p>
@@ -652,18 +660,18 @@
                 <!-- Domains List -->
                 {% if organization.domain_set.all %}
                     <div class="mb-8">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Domains</h2>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Domains</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {% for domain in organization.domain_set.all %}
-                                <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                                     <div class="flex items-start justify-between">
                                         <div>
-                                            <h3 class="font-semibold text-gray-900">{{ domain.name }}</h3>
+                                            <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ domain.name }}</h3>
                                             {% if domain.url %}
                                                 <a href="{{ domain.url }}"
                                                    target="_blank"
                                                    rel="noopener noreferrer"
-                                                   class="text-sm text-gray-600 hover:text-[#e74c3c]">
+                                                   class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">
                                                     {{ domain.url }}
                                                 </a>
                                             {% endif %}
@@ -680,15 +688,15 @@
                 {% endif %}
                 <!-- Activity Timeline -->
                 <div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Activity Timeline</h2>
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Activity Timeline</h2>
                     <div class="space-y-4">
                         <div class="flex items-center space-x-3">
                             <div class="flex-shrink-0 w-8 h-8 rounded-full bg-[#e74c3c] flex items-center justify-center">
                                 <i class="fas fa-plus text-white"></i>
                             </div>
                             <div>
-                                <p class="text-gray-600">Organization Created</p>
-                                <p class="text-sm text-gray-500">{{ organization.created|date:"F j, Y" }}</p>
+                                <p class="text-gray-600 dark:text-gray-400">Organization Created</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-500">{{ organization.created|date:"F j, Y" }}</p>
                             </div>
                         </div>
                         {% if organization.modified %}
@@ -697,8 +705,8 @@
                                     <i class="fas fa-edit text-white"></i>
                                 </div>
                                 <div>
-                                    <p class="text-gray-600">Last Modified</p>
-                                    <p class="text-sm text-gray-500">{{ organization.modified|date:"F j, Y" }}</p>
+                                    <p class="text-gray-600 dark:text-gray-400">Last Modified</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-500">{{ organization.modified|date:"F j, Y" }}</p>
                                 </div>
                             </div>
                         {% endif %}
