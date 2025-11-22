@@ -247,7 +247,7 @@
             body: JSON.stringify({id: suggestionId}),
         })
         .then(response => {
-            if (response.status === 302 || response.redirected) {
+            if (response.redirected) {
                 // Unauthenticated users don't need per-post vote state
                 return null;
             }
@@ -299,7 +299,7 @@
             }),
         })
         .then(response => {
-            if (response.status === 302 || response.redirected) {
+            if (response.redirected) {
                 showLoginMessage('Please log in to vote on discussions.');
                 return null;
             }
@@ -433,7 +433,7 @@
             }),
         })
         .then(response => {
-            if (response.status === 302 || response.redirected) {
+            if (response.redirected) {
                 showLoginMessage('Please log in to create a discussion.');
                 return null;
             }
@@ -474,7 +474,7 @@
             }),
         })
         .then(response => {
-            if (response.status === 302 || response.redirected) {
+            if (response.redirected) {
                 showLoginMessage('Please log in to comment on discussions.');
                 return null;
             }
