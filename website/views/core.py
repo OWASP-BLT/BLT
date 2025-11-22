@@ -5,7 +5,6 @@ import os
 import re
 import subprocess
 import tracemalloc
-import urllib
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -69,15 +68,11 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import (
-    analyze_pr_content,
-    fetch_github_data,
-    rebuild_safe_url,
-    safe_redirect_allowed,
-    save_analysis_report,
-)
+from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
+
+logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------------------
@@ -94,21 +89,21 @@ def memory_usage_by_module(limit=1000):
     try:
         snapshot = tracemalloc.take_snapshot()
     except Exception as e:
-        print("Error taking memory snapshot: ", e)
+        logger.error(f"Error taking memory snapshot: {e}")
         return []
-    print("Memory snapshot taken. and it is: ", snapshot)
+    logger.debug(f"Memory snapshot taken: {snapshot}")
 
     stats = snapshot.statistics("traceback")
     for stat in stats[:10]:
-        print(stat.traceback.format())
-        print(f"Memory: {stat.size / 1024:.2f} KB")
+        logger.debug(stat.traceback.format())
+        logger.debug(f"Memory: {stat.size / 1024:.2f} KB")
 
     # Group memory usage by filename
     stats = snapshot.statistics("filename")
     module_usage = {}
 
     for stat in stats:
-        print("stat is: ", stat)
+        logger.debug(f"stat is: {stat}")
         if stat.traceback:
             filename = stat.traceback[0].filename
             # Accumulate memory usage
@@ -229,7 +224,7 @@ def status_page(request):
             bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
 
             try:
-                print("Checking Bitcoin RPC...")
+                logger.debug("Checking Bitcoin RPC...")
                 response = requests.post(
                     f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
                     json={
@@ -245,14 +240,14 @@ def status_page(request):
                     status_data["bitcoin"] = True
                     status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
             except requests.exceptions.RequestException as e:
-                print(f"Bitcoin RPC Error: {e}")
+                logger.error(f"Bitcoin RPC Error: {e}")
 
         # SendGrid API check
         if CHECK_SENDGRID:
             sendgrid_api_key = os.getenv("SENDGRID_PASSWORD")
             if sendgrid_api_key:
                 try:
-                    print("Checking SendGrid API...")
+                    logger.debug("Checking SendGrid API...")
                     response = requests.get(
                         "https://api.sendgrid.com/v3/user/account",
                         headers={"Authorization": f"Bearer {sendgrid_api_key}"},
@@ -260,14 +255,14 @@ def status_page(request):
                     )
                     status_data["sendgrid"] = response.status_code == 200
                 except requests.exceptions.RequestException as e:
-                    print(f"SendGrid API Error: {e}")
+                    logger.error(f"SendGrid API Error: {e}")
 
         # GitHub API check
         if CHECK_GITHUB:
             github_token = os.getenv("GITHUB_TOKEN")
             if github_token:
                 try:
-                    print("Checking GitHub API...")
+                    logger.debug("Checking GitHub API...")
                     # Check basic API access
                     response = requests.get(
                         "https://api.github.com/user/repos",
@@ -324,7 +319,7 @@ def status_page(request):
                     else:
                         status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
-                    print(f"GitHub API Error: {e}")
+                    logger.error(f"GitHub API Error: {e}")
                     status_data["github_rate_limit"] = None
 
         # OpenAI API check
@@ -332,7 +327,7 @@ def status_page(request):
             openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
             if openai_api_key:
                 try:
-                    print("Checking OpenAI API...")
+                    logger.debug("Checking OpenAI API...")
                     response = requests.get(
                         "https://api.openai.com/v1/models",
                         headers={"Authorization": f"Bearer {openai_api_key}"},
@@ -340,11 +335,11 @@ def status_page(request):
                     )
                     status_data["openai"] = response.status_code == 200
                 except requests.exceptions.RequestException as e:
-                    print(f"OpenAI API Error: {e}")
+                    logger.error(f"OpenAI API Error: {e}")
 
         # Memory usage checks
         if CHECK_MEMORY:
-            print("Getting memory usage information...")
+            logger.debug("Getting memory usage information...")
             tracemalloc.start()
 
             # Get top memory consumers
@@ -374,7 +369,7 @@ def status_page(request):
 
         # Database connection check
         if CHECK_DATABASE:
-            print("Getting database connection count...")
+            logger.debug("Getting database connection count...")
             if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
@@ -382,7 +377,7 @@ def status_page(request):
 
         # Redis stats
         if CHECK_REDIS:
-            print("Getting Redis stats...")
+            logger.debug("Getting Redis stats...")
             redis_url = os.environ.get("REDISCLOUD_URL")
 
             if redis_url:
@@ -542,27 +537,6 @@ def status_page(request):
             request, "status_page.html", {"status": status_data, "chart_data": status_data["template_chart_data"]}
         )
     return render(request, "status_page.html", {"status": status_data})
-
-
-def github_callback(request):
-    ALLOWED_HOSTS = ["github.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
-
-
-def google_callback(request):
-    ALLOWED_HOSTS = ["accounts.google.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
-
-
-def facebook_callback(request):
-    ALLOWED_HOSTS = ["www.facebook.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
 
 
 def find_key(request, token):
@@ -1187,13 +1161,13 @@ def sponsor_view(request):
             balance_bch = balance_satoshis / 100000000  # Convert from satoshis to BCH
             return balance_bch
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(f"An error occurred: {e}")
             return None
 
     bch_address = "bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
     balance = get_bch_balance(bch_address)
     if balance is not None:
-        print(f"Balance of {bch_address}: {balance} BCH")
+        logger.info(f"Balance of {bch_address}: {balance} BCH")
 
     return render(request, "sponsor.html", context={"balance": balance})
 
@@ -1292,7 +1266,7 @@ def home(request):
     try:
         last_commit = get_last_commit_date()
     except Exception as e:
-        print(f"Error getting last commit date: {e}")
+        logger.error(f"Error getting last commit date: {e}")
         last_commit = ""
 
     # Get latest repositories and total count
@@ -1320,6 +1294,7 @@ def home(request):
             merged_at__month=current_time.month,  # Current month only
             merged_at__year=current_time.year,  # Current year
         )
+        .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
         .values("contributor__name", "contributor__avatar_url", "contributor__github_url")
         .annotate(total_prs=Count("id"))
         .order_by("-total_prs")[:5]
@@ -1374,9 +1349,52 @@ def home(request):
     )
 
     # Get 2 most recent active hackathons ordered by start time (descending)
-    recent_hackathons = (
+    recent_hackathons_raw = (
         Hackathon.objects.filter(is_active=True).select_related("organization").order_by("-start_time")[:2]
     )
+
+    # Add statistics to each hackathon
+    recent_hackathons = []
+    for hackathon in recent_hackathons_raw:
+        repo_ids = hackathon.repositories.values_list("id", flat=True)
+
+        # Count merged pull requests during the hackathon
+        merged_prs = GitHubIssue.objects.filter(
+            repo__in=repo_ids,
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=hackathon.start_time,
+            merged_at__lte=hackathon.end_time,
+        )
+        merged_pr_count = merged_prs.count()
+
+        # Count total pull requests during the hackathon
+        total_prs = GitHubIssue.objects.filter(
+            repo__in=repo_ids,
+            type="pull_request",
+            created_at__gte=hackathon.start_time,
+            created_at__lte=hackathon.end_time,
+        ).count()
+
+        # Count unique participants (user profiles and contributors, excluding bots)
+        user_profile_count = merged_prs.exclude(user_profile=None).values("user_profile").distinct().count()
+        contributor_count = (
+            merged_prs.filter(user_profile=None)
+            .exclude(contributor=None)
+            .exclude(contributor__name__endswith="[bot]")
+            .values("contributor")
+            .distinct()
+            .count()
+        )
+        participant_count = user_profile_count + contributor_count
+
+        # Add stats to hackathon object
+        hackathon.stats = {
+            "participant_count": participant_count,
+            "total_prs": total_prs,
+            "merged_pr_count": merged_pr_count,
+        }
+        recent_hackathons.append(hackathon)
 
     # Get repository star counts for the specific repositories shown on the homepage
     repo_stars = []
@@ -1399,7 +1417,7 @@ def home(request):
             if repo:
                 repo_stars.append({"key": key, "stars": repo.stars})
         except Exception as e:
-            print(f"Error getting star count for {repo_name}: {e}")
+            logger.error(f"Error getting star count for {repo_name}: {e}")
 
     # Get system stats for developer mode
     system_stats = None
@@ -2923,3 +2941,30 @@ class RoadmapView(TemplateView):
 
 class StyleGuideView(TemplateView):
     template_name = "style_guide.html"
+
+
+@csrf_exempt
+def set_theme(request):
+    """View to save user's theme preference"""
+    if request.method == "POST":
+        try:
+            import json
+
+            data = json.loads(request.body)
+            theme = data.get("theme", "light")
+
+            # Save theme in session
+            request.session["theme"] = theme
+
+            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
+            # if request.user.is_authenticated:
+            #     profile = request.user.userprofile
+            #     profile.theme_preference = theme
+            #     profile.save()
+
+            return JsonResponse({"status": "success", "theme": theme})
+        except Exception as e:
+            logging.exception("Error occurred while setting theme")
+            return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)

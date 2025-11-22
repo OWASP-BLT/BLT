@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% load i18n %}
+{% block title %}
+    Confirm Email Address | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Complete your email verification to activate your account.
+{% endblock description %}
+{% block keywords %}
+    Email Confirmation, Account Activation, Email Verification
+{% endblock keywords %}
+{% block og_title %}
+    Complete Email Verification
+{% endblock og_title %}
+{% block og_description %}
+    Complete your email verification to activate your account.
+{% endblock og_description %}
+{% block natural_content %}
+    {% include "includes/sidenav.html" %}
+    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 dark:bg-gray-800">
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+            <div class="text-center">
+                <!-- Email Icon -->
+                <div class="mx-auto mb-6 w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-blue-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+                <!-- Heading -->
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">{% trans "Confirm Email Address" %}</h1>
+                {% if confirmation %}
+                    {% if confirmation.email_address.verified %}
+                        <!-- Already Verified -->
+                        <div class="text-green-600 mb-6">
+                            <p class="text-lg font-semibold mb-2">{% trans "Email Already Verified" %}</p>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                {% blocktrans with confirmation.email_address.email as email %}Your email address {{ email }} has already been confirmed.{% endblocktrans %}
+                            </p>
+                        </div>
+                        <a href="{% url 'account_login' %}"
+                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-white bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4 transition-colors duration-300 text-center">
+                            {% trans "Sign In" %}
+                        </a>
+                    {% else %}
+                        <!-- Confirm Email -->
+                        <div class="text-gray-600 dark:text-gray-400 mb-6">
+                            <p class="mb-4">
+                                {% blocktrans with confirmation.email_address.email as email %}Please confirm that <strong class="text-gray-900 dark:text-gray-100">{{ email }}</strong> is an email address for user {{ confirmation.email_address.user }}.{% endblocktrans %}
+                            </p>
+                        </div>
+                        <form method="post"
+                              action="{% url 'account_confirm_email' confirmation.key %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="w-full px-4 py-2 text-lg font-semibold text-white bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4 transition-colors duration-300 mb-4">
+                                {% trans "Confirm" %}
+                            </button>
+                        </form>
+                        <a href="{% url 'home' %}"
+                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
+                            {% trans "Cancel" %}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <!-- Invalid or Expired Link -->
+                    <div class="text-red-600 mb-6">
+                        <div class="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-red-600"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h2 class="text-xl font-bold mb-2">{% trans "Invalid Verification Link" %}</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            {% trans "This email confirmation link expired or is invalid. Please request a new verification email." %}
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <a href="{% url 'account_email' %}"
+                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-white bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4 transition-colors duration-300 text-center">
+                            {% trans "Request New Verification Email" %}
+                        </a>
+                        <a href="{% url 'home' %}"
+                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
+                            {% trans "Return to Home" %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock natural_content %}

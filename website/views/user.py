@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
@@ -56,6 +57,40 @@ from website.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def extract_github_username(github_url):
+    """
+    Extract GitHub username from a GitHub URL for avatar display.
+
+    Args:
+        github_url (str): GitHub URL like 'https://github.com/username' or 'https://github.com/apps/dependabot'
+
+    Returns:
+        str or None: The username part of the URL, or None if invalid/empty
+    """
+    if not github_url or not isinstance(github_url, str):
+        return None
+
+    # Strip trailing slashes and whitespace
+    github_url = github_url.strip().rstrip("/")  # Clean URL format
+
+    # Remove query parameters and fragments if present
+    github_url = github_url.split("?")[0].split("#")[0]
+
+    # Ensure URL contains at least one slash
+    if "/" not in github_url:
+        return None
+
+    # Split on "/" and get the last segment
+    segments = github_url.split("/")
+    username = segments[-1] if segments else None
+
+    # Return username only if it's non-empty and not domain parts or protocol prefixes
+    if username and username not in ["github.com", "www.github.com", "www", "http:", "https:"]:
+        return username
+
+    return None
 
 
 @receiver(user_signed_up)
@@ -104,32 +139,92 @@ def update_bch_address(request):
 
 @login_required
 def profile_edit(request):
+    from allauth.account.models import EmailAddress
+    from allauth.account.utils import send_email_confirmation
+
     Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
+    # Get the user's current email BEFORE changes
+    original_email = request.user.email
+
     if request.method == "POST":
         form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+
         if form.is_valid():
-            # Check if email is unique
             new_email = form.cleaned_data["email"]
+
+            # Check email uniqueness
             if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
                 form.add_error("email", "This email is already in use")
                 return render(request, "profile_edit.html", {"form": form})
 
-            # Save the form
+            # Check if the user already has this email
+            existing_email = EmailAddress.objects.filter(user=request.user, email=new_email).first()
+            if existing_email:
+                if existing_email.verified:
+                    form.add_error("email", "You already have this email verified. Please set it as primary instead.")
+                    return render(request, "profile_edit.html", {"form": form})
+
+            if EmailAddress.objects.exclude(user=request.user).filter(email=new_email).exists():
+                form.add_error("email", "This email is already registered or pending verification")
+                return render(request, "profile_edit.html", {"form": form})
+
+            # Detect email change before saving profile fields
+            email_changed = new_email != original_email
+
+            # Save profile form (does "not" touch email in user model)
             form.save()
 
-            # Update the User model's email
-            request.user.email = new_email
-            request.user.save()
+            if email_changed:
+                # Remove any pending unverified emails
+                EmailAddress.objects.filter(user=request.user, verified=False).delete()
 
+                # Create new unverified email entry
+                # Create or update email entry as unverified
+                EmailAddress.objects.update_or_create(
+                    user=request.user,
+                    email=new_email,
+                    defaults={"verified": False, "primary": False},
+                )
+
+                # Rate limit: atomic check-and-set to prevent race conditions
+                rate_key = f"email_verification_rate_{request.user.id}"
+
+                # add() only sets if key doesn't exist (atomic operation)
+                if not cache.add(rate_key, True, timeout=60):
+                    messages.warning(
+                        request,
+                        "Too many requests. Please wait a minute before trying again.",
+                    )
+                    return redirect("profile", slug=request.user.username)
+
+                # Send verification email
+                try:
+                    send_email_confirmation(request, request.user, email=new_email)
+                except Exception as e:
+                    logger.exception(f"Failed to send email confirmation to {new_email}: {e}")
+                    messages.error(request, "Failed to send verification email. Please try again later.")
+                    return redirect("profile", slug=request.user.username)
+
+                messages.info(
+                    request,
+                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
+                )
+                return redirect("profile", slug=request.user.username)
+
+            # No email change=normal success
             messages.success(request, "Profile updated successfully!")
             return redirect("profile", slug=request.user.username)
+
         else:
             messages.error(request, "Please correct the errors below.")
+
     else:
-        # Initialize the form with the user's current email
-        form = UserProfileForm(instance=user_profile, initial={"email": request.user.email})
+        form = UserProfileForm(
+            instance=user_profile,
+            initial={"email": request.user.email},
+        )
 
     return render(request, "profile_edit.html", {"form": form})
 
@@ -207,7 +302,7 @@ def get_github_stats(user_profile):
         reviews__reviewer=user_profile,
     ).count()
 
-    print(f"Total PRs found: {user_prs.count()}")
+    logger.debug(f"Total PRs found: {user_prs.count()}")
 
     # Overall stats
     merged_count = user_prs.filter(is_merged=True).count()
@@ -302,7 +397,7 @@ class UserProfileDetailView(DetailView):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         # Add bacon earning data
         bacon_earning = BaconEarning.objects.filter(user=user).first()
-        print(f"Bacon earning for {user.username}: {bacon_earning}")
+        logger.debug(f"Bacon earning for {user.username}: {bacon_earning}")
         context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
 
         # Get bacon submission stats
@@ -481,9 +576,15 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard
+        # Pull Request Leaderboard - Only show PRs from tracked repositories
         pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            GitHubIssue.objects.filter(
+                type="pull_request",
+                is_merged=True,
+                repo__isnull=False,  # Only include PRs from tracked repositories
+            )
+            .exclude(user_profile__isnull=True)  # Exclude PRs without user profiles
+            .select_related("user_profile__user", "repo")  # Optimize database queries
             .values(
                 "user_profile__user__username",
                 "user_profile__user__email",
@@ -492,11 +593,17 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
+        # Extract GitHub username from URL for avatar
+        for leader in pr_leaderboard:
+            github_username = extract_github_username(leader.get("user_profile__github_url"))
+            if github_username:
+                leader["github_username"] = github_username
         context["pr_leaderboard"] = pr_leaderboard
 
         # Reviewed PR Leaderboard - Fixed query to properly count reviews
         reviewed_pr_leaderboard = (
-            GitHubReview.objects.values(
+            GitHubReview.objects.filter(reviewer__user__isnull=False)
+            .values(
                 "reviewer__user__username",
                 "reviewer__user__email",
                 "reviewer__github_url",
@@ -504,6 +611,11 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
         )
+        # Extract GitHub username from URL for avatar
+        for leader in reviewed_pr_leaderboard:
+            github_username = extract_github_username(leader.get("reviewer__github_url"))
+            if github_username:
+                leader["github_username"] = github_username
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         # Top visitors leaderboard
@@ -925,7 +1037,7 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    print("issue closed")
+    logger.debug("issue closed")
     if payload["action"] == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
@@ -970,7 +1082,7 @@ def assign_github_badge(user, action_title):
             UserBadge.objects.create(user=user, badge=badge)
 
     except Badge.DoesNotExist:
-        print(f"Badge '{action_title}' does not exist.")
+        logger.warning(f"Badge '{action_title}' does not exist.")
 
 
 @method_decorator(login_required, name="dispatch")

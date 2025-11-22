@@ -9,11 +9,13 @@
         <h1 class="text-3xl font-bold mb-8 text-center">Search Banned Apps by Country</h1>
         <!-- Tab Navigation -->
         <div class="max-w-xl mx-auto mb-6">
-            <div class="flex border-b border-gray-200">
+            <div class="flex border-b border-gray-200 dark:border-gray-700">
                 <button id="listViewBtn"
                         class="py-2 px-4 font-medium text-red-600 border-b-2 border-red-600">List View</button>
                 <button id="mapViewBtn"
-                        class="py-2 px-4 font-medium text-gray-500 hover:text-red-600">Map View</button>
+                        class="py-2 px-4 font-medium text-gray-500 dark:text-gray-500 hover:text-red-600">
+                    Map View
+                </button>
             </div>
         </div>
         <!-- Search Bar -->
@@ -21,7 +23,7 @@
             <input type="text"
                    id="countrySearch"
                    placeholder="Enter country name..."
-                   class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                   class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
         </div>
         <!-- List View -->
         <div id="listView">
@@ -35,14 +37,14 @@
             </div>
             <!-- No Results Message -->
             <div id="noResults" class="hidden text-center py-8">
-                <p class="text-gray-600">No banned apps found for this country.</p>
+                <p class="text-gray-600 dark:text-gray-400">No banned apps found for this country.</p>
             </div>
         </div>
         <!-- Map View -->
         <div id="mapView" class="hidden">
             <div id="map" class="h-96 rounded-lg shadow-md"></div>
             <div id="countryInfo"
-                 class="mt-4 p-4 bg-white rounded-lg shadow-md hidden">
+                 class="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md hidden">
                 <h3 id="countryName" class="text-xl font-semibold mb-2"></h3>
                 <p id="bannedAppsCount" class="text-sm text-red-600 mb-2"></p>
                 <div id="bannedAppsList" class="mt-4"></div>
@@ -60,7 +62,7 @@
         let countriesLayer;
         let markersLayer;
         let allCountriesData = {};
-        let currentCountry = '';
+        let geoJSONLoaded = false;
         
         // Initialize tabs
         document.getElementById('listViewBtn').addEventListener('click', function() {
@@ -93,43 +95,26 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-            
+
             // Create layer for markers
             markersLayer = L.layerGroup().addTo(map);
-            
+
             // Load countries GeoJSON
             fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
                 .then(response => response.json())
                 .then(data => {
-                    countriesLayer = L.geoJSON(data, {
-                        style: function(feature) {
-                            return {
-                                fillColor: '#f3f4f6',
-                                weight: 1,
-                                opacity: 1,
-                                color: '#d1d5db',
-                                fillOpacity: 0.7
-                            };
+                    const features = data.features || [];
+                    countriesLayer = L.geoJSON(features, {
+                        style: {
+                            fillColor: "#f3f4f6",
+                            weight: 1,
+                            opacity: 1,
+                            color: "#d1d5db",
+                            fillOpacity: 0.7
                         },
-                        onEachFeature: function(feature, layer) {
-                            const countryName = feature.properties.ADMIN;
-                            layer.on({
-                                mouseover: function(e) {
-                                    layer.setStyle({
-                                        weight: 2,
-                                        color: '#9ca3af'
-                                    });
-                                },
-                                mouseout: function(e) {
-                                    if (countryName.toLowerCase() !== currentCountry) {
-                                        countriesLayer.resetStyle(layer);
-                                    }
-                                },
-                                click: function(e) {
-                                    document.getElementById('countrySearch').value = countryName;
-                                    searchApps(countryName);
-                                }
-                            });
+                        onEachFeature: function (feature, layer) {
+                            const countryName = (feature.properties.name || feature.properties.ADMIN || "").toLowerCase();
+                            if (!countryName) return;
                             
                             // Store country data for later use
                             allCountriesData[countryName.toLowerCase()] = {
@@ -137,40 +122,30 @@
                                 feature: feature,
                                 center: layer.getBounds().getCenter()
                             };
+                            
+                            layer.on({
+                                mouseover: function () {
+                                    layer.setStyle({ weight: 2, color: "#9ca3af" });
+                                },
+                                mouseout: function () {
+                                    countriesLayer.resetStyle(layer);
+                                }
+                            });
                         }
                     }).addTo(map);
-                }) .catch(error => console.error('Error loading GeoJSON:', error));
-        }
-         
-        // Calculate positions for multiple markers
-        function calculateMarkerPositions(center, count) {
-            const positions = [];
-            const radius = 0.5; // Offset from center in degrees
-            
-            if (count === 1) {
-                positions.push(center);
-            } else {
-                for (let i = 0; i < count; i++) {
-                    const angle = (i / count) * 2 * Math.PI;
-                    const x = center.lng + radius * Math.cos(angle);
-                    const y = center.lat + radius * Math.sin(angle);
-                    positions.push(L.latLng(y, x));
-                }
-            }
-            
-            return positions;
+                    geoJSONLoaded = true;
+                })
+                .catch(err => { console.error("Error loading GeoJSON:", err);
+                    geoJSONLoaded = true;
+                });
         }
         
         // Debounce function
         function debounce(func, wait) {
             let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
+            return function (...args) {
                 clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
+                timeout = setTimeout(() => func(...args), wait);
             };
         }
         
@@ -181,6 +156,10 @@
         }, 300));
         
         function searchApps(country) {
+            if (!geoJSONLoaded) {
+                setTimeout(() => searchApps(country), 500);
+                return;
+            }
             if (!country) {
                 hideResults();
                 resetMap();
@@ -190,17 +169,80 @@
             fetch(`/api/banned_apps/search/?country=${encodeURIComponent(country)}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.apps.length === 0) {
+                    if (!data.apps || data.apps.length === 0) {
                         showNoResults();
-                        resetMap();
+                        highlightCountry(country, false);
                     } else {
                         showResults(data.apps);
-                        updateMap(data.apps);
+                        placeCountryMarker(country, data.apps);
+                        highlightCountry(country, true);
                     }
                 })
                 .catch(error => console.error('Error:', error));
         }
         
+        // Highlight country 
+        function highlightCountry(country, hasApps) {
+            if (!map || !countriesLayer) return;
+            resetMap();
+            
+            const lower = country.toLowerCase();
+            const countryData = allCountriesData[lower];
+            if (!countryData) return;
+            
+            countryData.layer.setStyle({
+                fillColor: hasApps ? '#ef4444' : '#a1a1aa',
+                weight: 2,
+                color: hasApps ? '#b91c1c' : '#71717a',
+                fillOpacity: 0.8
+            });
+            
+            map.flyToBounds(countryData.layer.getBounds(), { duration: 1.2 });
+        }
+        
+        // Place marker
+        function placeCountryMarker(country, apps) {
+            if (!markersLayer) return;
+            markersLayer.clearLayers();
+            
+            const lower = country.toLowerCase();
+            const countryData = allCountriesData[lower];
+            if (!countryData) return;
+            
+            const center = countryData.center;
+            const count = apps.length;
+            const displayCount = count;
+            const markerHTML = `
+                <div style="position: relative; width: 42px; height: 42px;">
+                    <div style="width: 42px; height: 42px; border-radius: 50% 50% 50% 0; background: #dc2626; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: 700; box-shadow: 0 0 10px rgba(0,0,0,0.25); ">
+                        <div style="transform: rotate(45deg);">
+                            ${displayCount}
+                        </div>
+                    </div>
+                </div>`;
+            
+            const marker = L.marker(center, {
+                icon: L.divIcon({
+                    className: "map-pin-marker",
+                    html: markerHTML,
+                    iconSize: [42, 42],
+                    iconAnchor: [21, 42]
+                })
+            });
+
+            marker.bindTooltip(
+                `${count} banned ${count === 1 ? "app" : "apps"}`,
+                { permanent: false, direction: "top", offset: [0, -5] }
+            );
+
+            // Banned apps in map
+            marker.on("click", () => {
+                showCountryInfo(country, apps);
+            });
+
+            markersLayer.addLayer(marker);
+        }
+
         function showResults(apps) {
             const grid = document.getElementById('appsGrid');
             grid.innerHTML = '';
@@ -220,9 +262,9 @@
             
             div.innerHTML = `
                 <h3 class="text-xl font-semibold mb-2 text-red-600">${app.app_name}</h3>
-                <p class="text-sm text-gray-600 mb-2">${app.app_type}</p>
-                <p class="text-gray-800 mb-4">${app.ban_reason}</p>
-                <div class="text-sm text-gray-600">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">${app.app_type}</p>
+                <p class="text-gray-800 dark:text-gray-200 mb-4">${app.ban_reason}</p>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
                     <p>Ban Date: ${new Date(app.ban_date).toLocaleDateString()}</p>
                     ${app.source_url ? `<a href="${app.source_url}" target="_blank" class="text-red-600 hover:underline">Source →</a>` : ''}
                 </div>
@@ -230,116 +272,7 @@
             
             return div;
         }
-        
-        function showNoResults() {
-            document.getElementById('resultsSection').classList.add('hidden');
-            document.getElementById('noResults').classList.remove('hidden');
-            document.getElementById('countryInfo').classList.add('hidden');
-        }
-        
-        function hideResults() {
-            document.getElementById('resultsSection').classList.add('hidden');
-            document.getElementById('noResults').classList.add('hidden');
-            document.getElementById('countryInfo').classList.add('hidden');
-        }
-        
-        function updateMap(apps) {
-            if (!map || !countriesLayer) return;
-            
-            resetMap();
-            
-            // Group apps by country
-            const appsByCountry = {};
-            apps.forEach(app => {
-                const country = app.country_name.toLowerCase();
-                if (!appsByCountry[country]) {
-                    appsByCountry[country] = [];
-                }
-                appsByCountry[country].push(app);
-            });
-            
-            // Highlight countries and add app markers
-            Object.keys(appsByCountry).forEach(country => {
-                if (allCountriesData[country]) {
-                    const countryData = allCountriesData[country];
-                    const layer = countryData.layer;
-                    
-                    // Highlight country
-                    layer.setStyle({
-                        fillColor: '#ef4444',
-                        weight: 2,
-                        color: '#b91c1c',
-                        fillOpacity: 0.7
-                    });
-                    currentCountry = country;
-                    
-                    // Add app markers
-                    const countryApps = appsByCountry[country];
-                    const center = countryData.center;
-                    
-                    // If more than 3 apps, show the apps count
-                    if (countryApps.length > 3) {
-                        const appCountMarker = L.marker(center, {
-                            icon: L.divIcon({
-                                className: 'app-count-marker',
-                                html: `<div class="flex items-center justify-center bg-red-600 text-white font-bold rounded-full w-10 h-10 shadow-lg" style="display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background-color: #dc2626; width: 40px; height: 40px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">${countryApps.length}</div>`,
-                                iconSize: [40, 40],
-                                iconAnchor: [20, 20]
-                            })
-                        });
-                        
-                        // Create popup with app names
-                        const appsList = countryApps.map(app => `<div class="py-1"><span class="font-semibold text-red-600">${app.app_name}</span> (${app.app_type})</div>`).join('');
-                        appCountMarker.bindPopup(`
-                            <div class="p-2">
-                                <h3 class="font-bold text-lg mb-2">${country.charAt(0).toUpperCase() + country.slice(1)}</h3>
-                                <p class="mb-2 text-sm text-red-600">${countryApps.length} Banned Apps</p>
-                                <div class="max-h-40 overflow-y-auto">
-                                    ${appsList}
-                                </div>
-                            </div>
-                        `, { maxWidth: 300 });
-                        
-                        markersLayer.addLayer(appCountMarker);
-                    }
-                    // If 3 or fewer apps, show individual app markers
-                    else {
-                        // Calculate positions around the center
-                        const positions = calculateMarkerPositions(center, countryApps.length);
-                        
-                        countryApps.forEach((app, index) => {
-                            const appMarker = L.marker(positions[index], {
-                                icon: L.divIcon({
-                                    className: 'app-marker',
-                                    html: `<div class="flex items-center justify-center bg-red-600 text-white font-bold rounded-full w-8 h-8 shadow-lg" style="display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background-color: #dc2626; width: 32px; height: 32px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">${app.app_name.charAt(0)}</div>`,
-                                    iconSize: [32, 32],
-                                    iconAnchor: [16, 16]
-                                })
-                            });
-                            
-                            // Create popup with app details
-                            appMarker.bindPopup(`
-                                <div class="p-2">
-                                    <h3 class="font-bold text-red-600">${app.app_name}</h3>
-                                    <p class="text-sm text-gray-600">${app.app_type}</p>
-                                    <p class="text-sm mt-2">${app.ban_reason}</p>
-                                    <p class="text-xs mt-2">Ban Date: ${new Date(app.ban_date).toLocaleDateString()}</p>
-                                </div>
-                            `, { maxWidth: 300 });
-                            
-                            markersLayer.addLayer(appMarker);
-                        });
-                    }
-                }
-            });
-            
-            // Show country info in the side panel
-            const countries = Object.keys(appsByCountry);
-            if (countries.length === 1) {
-                showCountryInfo(countries[0], appsByCountry[countries[0]]);
-            }
-        }
-        
+
         function showCountryInfo(country, apps) {
             const countryInfoDiv = document.getElementById('countryInfo');
             const countryNameDiv = document.getElementById('countryName');
@@ -354,9 +287,9 @@
             
             // Update banned apps list
             bannedAppsListDiv.innerHTML = apps.map(app => `
-                <div class="py-2 border-b border-gray-200">
+                <div class="py-2 border-b border-gray-200 dark:border-gray-700">
                     <h4 class="font-semibold text-red-600">${app.app_name}</h4>
-                    <p class="text-sm text-gray-600">${app.app_type}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">${app.app_type}</p>
                     <p class="text-sm mt-1">${app.ban_reason}</p>
                     <p class="text-xs mt-1">Ban Date: ${new Date(app.ban_date).toLocaleDateString()}</p>
                 </div>
@@ -365,29 +298,36 @@
             // Show the country info section
             countryInfoDiv.classList.remove('hidden');
         }
-        
+
+        function showNoResults() {
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('noResults').classList.remove('hidden');
+            document.getElementById('countryInfo').classList.add('hidden');
+        }
+
+        function hideResults() {
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('noResults').classList.add('hidden');
+            document.getElementById('countryInfo').classList.add('hidden');
+        }
+
         function resetMap() {
-            if (!map || !countriesLayer || !markersLayer) return;
-            
+            if (!map || !countriesLayer) return;
+
             // Reset country styles
             countriesLayer.eachLayer(layer => {
                 countriesLayer.resetStyle(layer);
             });
-            
-            // Clear markers
-            markersLayer.clearLayers();
-            
-            // Reset current country
-            currentCountry = '';
-            
+
             // Hide country info
             document.getElementById('countryInfo').classList.add('hidden');
         }
-        
+
         // Initialization
         document.addEventListener('DOMContentLoaded', function() {
             // Set default view to List View
             document.getElementById('listViewBtn').click();
         });
+        
     </script>
 {% endblock %}

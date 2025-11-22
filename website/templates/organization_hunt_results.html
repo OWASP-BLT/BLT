@@ -45,21 +45,21 @@
             </thead>
             <tbody>
                 {% if winner.winner %}
-                    <tr class="hover:bg-gray-100">
-                        <td class="p-2 border">1</td>
-                        <td class="p-2 border">{{ winner.winner }}</td>
+                    <tr class="hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <td class="p-2 border dark:border-gray-700">1</td>
+                        <td class="p-2 border dark:border-gray-700">{{ winner.winner }}</td>
                     </tr>
                 {% endif %}
                 {% if winner.runner %}
-                    <tr class="hover:bg-gray-100">
-                        <td class="p-2 border">2</td>
-                        <td class="p-2 border">{{ winner.runner }}</td>
+                    <tr class="hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <td class="p-2 border dark:border-gray-700">2</td>
+                        <td class="p-2 border dark:border-gray-700">{{ winner.runner }}</td>
                     </tr>
                 {% endif %}
                 {% if winner.second_runner %}
-                    <tr class="hover:bg-gray-100">
-                        <td class="p-2 border">3</td>
-                        <td class="p-2 border">{{ winner.second_runner }}</td>
+                    <tr class="hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <td class="p-2 border dark:border-gray-700">3</td>
+                        <td class="p-2 border dark:border-gray-700">{{ winner.second_runner }}</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -81,21 +81,21 @@
                 </thead>
                 <tbody>
                     {% for issue in issues %}
-                        <tr class="hover:bg-gray-100">
-                            <td class="p-2 border">
+                        <tr class="hover:bg-gray-100 dark:hover:bg-gray-800">
+                            <td class="p-2 border dark:border-gray-700">
                                 <input type="checkbox"
                                        name="item_{{ issue.pk }}"
                                        {% if issue.verified %}checked{% endif %}>
                             </td>
-                            <td class="p-2 border">{{ forloop.counter }}</td>
-                            <td class="p-2 border">
+                            <td class="p-2 border dark:border-gray-700">{{ forloop.counter }}</td>
+                            <td class="p-2 border dark:border-gray-700">
                                 <input type="number"
                                        value="{{ issue.score }}"
                                        name="value_{{ issue.pk }}"
-                                       class="w-full p-1 border rounded">
+                                       class="w-full p-1 border dark:border-gray-700 rounded dark:bg-gray-700 dark:text-gray-100">
                             </td>
-                            <td class="p-2 border">{{ issue.description }}</td>
-                            <td class="p-2 border">{{ issue.get_label_display }}</td>
+                            <td class="p-2 border dark:border-gray-700">{{ issue.description }}</td>
+                            <td class="p-2 border dark:border-gray-700">{{ issue.get_label_display }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
