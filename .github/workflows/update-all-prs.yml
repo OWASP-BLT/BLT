@@ -20,6 +20,7 @@ permissions:
   pull-requests: write
   issues: write
   actions: write
+  workflows: write
 
 jobs:
   update_and_check_prs:
