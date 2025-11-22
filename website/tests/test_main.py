@@ -20,6 +20,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from ..models import (
     Activity,
     ContentType,
+    Contributor,
     Domain,
     GitHubIssue,
     GitHubReview,
@@ -28,6 +29,7 @@ from ..models import (
     Organization,
     Points,
     Project,
+    Repo,
     User,
     UserProfile,
 )
@@ -299,46 +301,77 @@ class LeaderboardTests(TestCase):
         Points.objects.create(user=self.user1, score=30)
         Points.objects.create(user=self.user2, score=40)
 
-        # Create GitHub PRs
+        # Create test repo with OWASP-BLT URL
+        self.repo = Repo.objects.create(
+            name="BLT",
+            repo_url="https://github.com/OWASP-BLT/BLT",
+            description="Test BLT repo",
+        )
+
+        # Create contributors for the users
+        self.contributor1 = Contributor.objects.create(
+            name="user1",
+            github_id=1001,
+            github_url="https://github.com/user1",
+            avatar_url="https://avatars.githubusercontent.com/u/1001",
+            contributor_type="User",
+            contributions=1,
+        )
+        self.contributor2 = Contributor.objects.create(
+            name="user2",
+            github_id=1002,
+            github_url="https://github.com/user2",
+            avatar_url="https://avatars.githubusercontent.com/u/1002",
+            contributor_type="User",
+            contributions=1,
+        )
+
+        # Create GitHub PRs with repo and contributor
         self.pr1 = GitHubIssue.objects.create(
             user_profile=self.profile1,
+            contributor=self.contributor1,
+            repo=self.repo,
             type="pull_request",
             is_merged=True,
             title="Test PR 1",
             state="closed",
             created_at=timezone.now(),
             updated_at=timezone.now(),
-            url="https://github.com/test/test/pull/1",
+            url="https://github.com/OWASP-BLT/BLT/pull/1",
             issue_id=1,
         )
         self.pr2 = GitHubIssue.objects.create(
             user_profile=self.profile2,
+            contributor=self.contributor2,
+            repo=self.repo,
             type="pull_request",
             is_merged=True,
             title="Test PR 2",
             state="closed",
             created_at=timezone.now(),
             updated_at=timezone.now(),
-            url="https://github.com/test/test/pull/2",
+            url="https://github.com/OWASP-BLT/BLT/pull/2",
             issue_id=2,
         )
 
-        # Create GitHub Reviews
+        # Create GitHub Reviews with reviewer_contributor
         self.review1 = GitHubReview.objects.create(
             reviewer=self.profile1,
+            reviewer_contributor=self.contributor1,
             state="APPROVED",
             submitted_at=timezone.now(),
             pull_request=self.pr1,
             review_id=1,
-            url="https://github.com/test/test/pull/1/reviews/1",
+            url="https://github.com/OWASP-BLT/BLT/pull/1/reviews/1",
         )
         self.review2 = GitHubReview.objects.create(
             reviewer=self.profile2,
+            reviewer_contributor=self.contributor2,
             state="CHANGES_REQUESTED",
             submitted_at=timezone.now(),
             pull_request=self.pr2,
             review_id=2,
-            url="https://github.com/test/test/pull/2/reviews/2",
+            url="https://github.com/OWASP-BLT/BLT/pull/2/reviews/2",
         )
 
     def test_global_leaderboard(self):
