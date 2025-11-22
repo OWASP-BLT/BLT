@@ -12,8 +12,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.views.generic import TemplateView
-from django.views.generic.base import RedirectView
+from django.views.generic import RedirectView, TemplateView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
@@ -40,7 +39,6 @@ from website.api.views import (
     UserProfileViewSet,
 )
 from website.feeds import ActivityFeed
-from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -373,8 +371,6 @@ urlpatterns = [
     path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/submit/", submit_answer, name="submit_answer"),
-    path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
-    path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
     path("invite-friend/", invite_friend, name="invite_friend"),
@@ -1125,6 +1121,8 @@ urlpatterns = [
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
+    # banned_apps url
+    path("/api/banned_apps/", include("banned_apps.urls")),
 ]
 
 if settings.DEBUG:
