@@ -925,7 +925,7 @@ def view_forum(request):
 
     posts = (
         ForumPost.objects.select_related("user", "category", "repo", "project", "organization")
-        .prefetch_related("comments")
+        .prefetch_related("comments__user")
         .all()
     )
 
@@ -933,6 +933,7 @@ def view_forum(request):
         posts = posts.filter(category_id=selected_category)
 
     # Limit the number of organizations, projects, and repos to prevent performance issues
+    # Note: Limited to 100 items for performance. Consider adding autocomplete for larger datasets.
     organizations = Organization.objects.all().order_by("name")[0:100]
     projects = Project.objects.all().order_by("name")[0:100]
     repos = Repo.objects.all().order_by("name")[0:100]
