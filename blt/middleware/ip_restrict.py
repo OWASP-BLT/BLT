@@ -209,15 +209,24 @@ class IPRestrictMiddleware:
             # Check if IP is in a blocked network
             if await sync_to_async(self.ip_in_range)(ip, blocked_ip_network):
                 # Find the specific network that caused the block and increment its count
-                for network in blocked_ip_network:
-                    if ipaddress.ip_address(ip) in network:
-                        await self.increment_block_count_async(network=str(network))
-                        break
+                try:
+                    ip_obj = ipaddress.ip_address(ip)
+                    for network in blocked_ip_network:
+                        if ip_obj in network:
+                            await self.increment_block_count_async(network=str(network))
+                            break
+                except ValueError:
+                    pass
                 return HttpResponseForbidden()
 
             # Check if user agent is blocked
             if await sync_to_async(self.is_user_agent_blocked)(agent, blocked_agents):
-                await self.increment_block_count_async(user_agent=agent)
+                # Find the specific blocked agent string that caused the match
+                agent_lower = agent.lower() if agent else ""
+                for blocked_agent in blocked_agents:
+                    if blocked_agent and blocked_agent.lower() in agent_lower:
+                        await self.increment_block_count_async(user_agent=blocked_agent)
+                        break
                 return HttpResponseForbidden()
 
             # Record IP information
@@ -261,15 +270,24 @@ class IPRestrictMiddleware:
             # Check if IP is in a blocked network
             if self.ip_in_range(ip, blocked_ip_network):
                 # Find the specific network that caused the block and increment its count
-                for network in blocked_ip_network:
-                    if ipaddress.ip_address(ip) in network:
-                        self.increment_block_count(network=str(network))
-                        break
+                try:
+                    ip_obj = ipaddress.ip_address(ip)
+                    for network in blocked_ip_network:
+                        if ip_obj in network:
+                            self.increment_block_count(network=str(network))
+                            break
+                except ValueError:
+                    pass
                 return HttpResponseForbidden()
 
             # Check if user agent is blocked
             if self.is_user_agent_blocked(agent, blocked_agents):
-                self.increment_block_count(user_agent=agent)
+                # Find the specific blocked agent string that caused the match
+                agent_lower = agent.lower() if agent else ""
+                for blocked_agent in blocked_agents:
+                    if blocked_agent and blocked_agent.lower() in agent_lower:
+                        self.increment_block_count(user_agent=blocked_agent)
+                        break
                 return HttpResponseForbidden()
 
             # Record IP information
