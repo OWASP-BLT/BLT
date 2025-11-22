@@ -1,0 +1,198 @@
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Manage Jobs{% endblock %}
+
+{% block body %}
+<div class="h-full bg-gray-200 p-8">
+    <!-- Header Card -->
+    <div class="bg-white rounded-lg shadow-xl pb-4">
+        <div class="px-8 pt-6 pb-4 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Manage Jobs</h1>
+                    <p class="mt-1 text-sm text-gray-600">Post and manage job openings for your organization</p>
+                </div>
+                <a href="{% url 'create_job' organization %}" 
+                   class="flex items-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                    <i class="fas fa-plus"></i>
+                    <span>Post New Job</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-8 py-6">
+            <div class="border border-gray-200 rounded-lg p-4">
+                <p class="text-sm font-medium text-gray-600">Total Jobs</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ total_jobs }}</p>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-4">
+                <p class="text-sm font-medium text-gray-600">Active Jobs</p>
+                <p class="text-2xl font-bold text-green-600 mt-1">{{ active_jobs }}</p>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-4">
+                <p class="text-sm font-medium text-gray-600">Draft Jobs</p>
+                <p class="text-2xl font-bold text-gray-600 mt-1">{{ draft_jobs }}</p>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-4">
+                <p class="text-sm font-medium text-gray-600">Total Views</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ total_views }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="bg-white rounded-lg shadow-xl mt-4 p-6">
+        <form method="get" class="flex flex-col md:flex-row gap-4">
+            <input type="text" 
+                   name="q" 
+                   value="{{ search_query }}" 
+                   placeholder="Search by job title..."
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+            
+            <select name="status" 
+                    class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                <option value="">All Status</option>
+                <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="paused" {% if status_filter == 'paused' %}selected{% endif %}>Paused</option>
+                <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+            </select>
+            
+            <select name="type" 
+                    class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                <option value="">All Types</option>
+                <option value="full-time" {% if job_type_filter == 'full-time' %}selected{% endif %}>Full Time</option>
+                <option value="part-time" {% if job_type_filter == 'part-time' %}selected{% endif %}>Part Time</option>
+                <option value="contract" {% if job_type_filter == 'contract' %}selected{% endif %}>Contract</option>
+                <option value="internship" {% if job_type_filter == 'internship' %}selected{% endif %}>Internship</option>
+                <option value="freelance" {% if job_type_filter == 'freelance' %}selected{% endif %}>Freelance</option>
+            </select>
+
+            <select name="visibility" 
+                    class="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                <option value="">All Visibility</option>
+                <option value="public" {% if visibility_filter == 'public' %}selected{% endif %}>Public</option>
+                <option value="private" {% if visibility_filter == 'private' %}selected{% endif %}>Private</option>
+            </select>
+            
+            <button type="submit" 
+                    class="px-6 py-2 bg-[#e74c3c] text-white rounded font-semibold hover:bg-red-700 transition-colors whitespace-nowrap">
+                <i class="fas fa-search mr-2"></i>Search
+            </button>
+            
+            {% if search_query or status_filter or job_type_filter or visibility_filter %}
+                <a href="{% url 'organization_manage_jobs' organization %}" 
+                   class="px-6 py-2 border border-gray-300 text-gray-700 rounded font-semibold hover:bg-gray-50 transition-colors whitespace-nowrap text-center">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Jobs List -->
+    <div class="bg-white rounded-lg shadow-xl mt-4">
+        <div class="px-8 py-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-900">All Job Postings</h2>
+                {% if search_query or status_filter or job_type_filter or visibility_filter %}
+                    <p class="text-sm text-gray-600">
+                        <span class="font-semibold text-gray-900">{{ jobs|length }}</span> result{% if jobs|length != 1 %}s{% endif %} found
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if jobs %}
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Title</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visibility</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posted</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for job in jobs %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ job.title }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-600">{{ job.location|default:"Remote" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-600">{{ job.get_job_type_display }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if job.status == "active" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                    {% elif job.status == "draft" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                    {% elif job.status == "paused" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Paused</span>
+                                    {% elif job.status == "closed" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Closed</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if job.is_public %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Public</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">Private</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-600">{{ job.views_count }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-600">{{ job.created_at|date:"M d, Y" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                    <a href="{% url 'edit_job' id=organization job_id=job.id %}" 
+                                       class="text-blue-600 hover:text-blue-900" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'job_detail' job.id %}" 
+                                       class="text-gray-600 hover:text-gray-900" title="View" target="_blank">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'delete_job' id=organization job_id=job.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this job?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="px-8 py-12 text-center">
+                <i class="fas fa-briefcase text-gray-400 text-5xl mb-4"></i>
+                <h3 class="text-sm font-medium text-gray-900">No job postings yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating your first job posting.</p>
+                <div class="mt-6">
+                    <a href="{% url 'create_job' organization %}" 
+                       class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                        <i class="fas fa-plus"></i>
+                        <span>Post Your First Job</span>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock body %}
