@@ -79,6 +79,7 @@ jobs:
               try {
                 // Try to update the PR branch with the base branch
                 core.info(`Attempting to update PR #${pull_number}...`);
+                let prWasUpdated = false;
                 try {
                   await github.rest.pulls.updateBranch({
                     owner,
@@ -86,6 +87,7 @@ jobs:
                     pull_number,
                   });
                   core.info(`✓ Successfully updated PR #${pull_number}`);
+                  prWasUpdated = true;
                 } catch (updateError) {
                   // PR might already be up to date or have other issues
                   if (updateError.status === 422) {
@@ -104,6 +106,22 @@ jobs:
                   repo,
                   pull_number,
                 });
+                
+                // Trigger CI/CD workflow if the PR was successfully updated
+                if (prWasUpdated) {
+                  try {
+                    core.info(`Triggering CI/CD workflow for PR #${pull_number}...`);
+                    await github.rest.actions.createWorkflowDispatch({
+                      owner,
+                      repo,
+                      workflow_id: 'ci-cd.yml',
+                      ref: prData.head.ref
+                    });
+                    core.info(`✓ Triggered CI/CD workflow for PR #${pull_number}`);
+                  } catch (dispatchError) {
+                    core.warning(`Failed to trigger CI/CD workflow for PR #${pull_number}: ${dispatchError.message}`);
+                  }
+                }
                 
                 const hasConflicts = prData.mergeable === false;
                 const prAuthor = prData.user.login;
