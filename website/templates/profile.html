@@ -257,7 +257,7 @@
                                                     <img src="{{ screenshot.image.url }}"
                                                          loading="lazy"
                                                          class="rounded-lg w-full object-cover lg:max-h-[300px] h-full"
-                                                         alt="screenshot"
+                                                         alt="Bug report screenshot for {{ activity.description|truncatewords:10 }}"
                                                          width="50%"
                                                          height="50%">
                                                 </a>
@@ -268,7 +268,7 @@
                                                 <img src="{{ activity.screenshot.url }}"
                                                      loading="lazy"
                                                      class="rounded-lg w-full object-cover lg:max-h-[300px] h-full"
-                                                     alt="screenshot"
+                                                     alt="Bug report screenshot for {{ activity.description|truncatewords:10 }}"
                                                      width="50%"
                                                      height="50%">
                                             </a>
@@ -772,13 +772,13 @@
                                     {% for screenshot_activity,screenshot in activity_screenshots.items %}
                                         {% if activity == screenshot_activity and screenshot.image.url %}
                                             <a href="{{ activity.get_absolute_url }}">
-                                                <img src="{{ screenshot.image.url }}" loading="lazy" class="ml-3" alt="screenshot" width="50%" height="50%">
+                                                <img src="{{ screenshot.image.url }}" loading="lazy" class="ml-3" alt="Bug report screenshot" width="50%" height="50%">
                                             </a>
                                         {% endif %}
                                     {% endfor %}
                                     {% if activity.screenshot %}
                                         <a href="{{ activity.get_absolute_url }}">
-                                            <img src="{{ activity.screenshot.url }}" loading="lazy" class="ml-3" alt="screenshot" width="50%" height="50%">
+                                            <img src="{{ activity.screenshot.url }}" loading="lazy" class="ml-3" alt="Bug report screenshot" width="50%" height="50%">
                                         </a>
                                     {% endif %}
                                 </div>

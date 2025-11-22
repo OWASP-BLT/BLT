@@ -663,7 +663,7 @@ function showToast(message, type = 'success') {
             // Create and show the hash image
             const container = document.getElementById('screenshot-hash-container');
             container.innerHTML = `
-                <img src="{{ MEDIA_URL }}uploads/${hashValue}.png" class="img-responsive img-thumbnail screenshot-hash" width="100%" height="100%" alt="screenshot">
+                <img src="{{ MEDIA_URL }}uploads/${hashValue}.png" class="img-responsive img-thumbnail screenshot-hash" width="100%" height="100%" alt="Uploaded bug report screenshot">
                 <input type="hidden" required class="required" name="screenshot-hash" value="${hashValue}">
             `;
         } else {

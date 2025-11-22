@@ -93,7 +93,7 @@
                     {% if request.GET.hash %}
                         <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
                              class="w-full h-auto rounded-lg mb-4"
-                             alt="screenshot"
+                             alt="Uploaded bug report screenshot"
                              width="1200"
                              height="630">
                         <input type="hidden" name="screenshot-hash" value="{{ request.GET.hash }}">
