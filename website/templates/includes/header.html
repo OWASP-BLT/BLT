@@ -18,17 +18,19 @@
                             data-drawer-target="logo-sidebar"
                             data-drawer-toggle="logo-sidebar"
                             aria-controls="logo-sidebar"
+                            aria-label="Toggle navigation menu"
                             type="button"
-                            class="inline-flex items-center justify-center p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white">
-                        <i class="fa fa-bars md:text-xl text-lg"></i>
+                            class="inline-flex items-center justify-center p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
+                        <i class="fa fa-bars md:text-xl text-lg" aria-hidden="true"></i>
                     </button>
                     <!-- Mega Menu Toggle -->
                     <button id="mega-menu-button"
                             aria-expanded="false"
                             aria-controls="mega-menu"
-                            class="hidden md:inline-flex group items-center gap-2 rounded-md p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white">
+                            aria-label="Open mega menu"
+                            class="hidden md:inline-flex group items-center gap-2 rounded-md p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
                         <span class="sr-only">Open menu</span>
-                        <i class="fa fa-th-large md:text-xl text-lg"></i>
+                        <i class="fa fa-th-large md:text-xl text-lg" aria-hidden="true"></i>
                     </button>
                 </div>
                 <!-- Logo -->
@@ -883,8 +885,9 @@
                 <input type="hidden" name="type" id="mobile-filter-type" value="all">
             </div>
             <button type="submit"
-                    class="ml-2 py-3 px-4 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600 dark:hover:bg-red-600 transition-colors">
-                <i class="fa fa-search text-xl"></i>
+                    aria-label="Search"
+                    class="ml-2 py-3 px-4 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600 dark:hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
+                <i class="fa fa-search text-xl" aria-hidden="true"></i>
             </button>
         </form>
     </div>
