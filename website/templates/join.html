@@ -22,15 +22,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.1/velocity.min.js"
             integrity="sha384-WT0CC+OrC0vGKpxNQInSyfMeKWFIpgiHtnV9HsqN0g6n9urfDfEUQJZFpT0t9P4U"
             crossorigin="anonymous"></script>
-    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md mx-auto">
             <!-- Header -->
             <div class="text-center mb-8">
-                <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Join Organization</h2>
-                <p class="mt-2 text-sm text-gray-600">Join an organization and collaborate with their team</p>
+                <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Join Organization</h2>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Join an organization and collaborate with their team</p>
             </div>
             <!-- Join Form -->
-            <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div class="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
                 <form class="space-y-6" method="post" action="{% url 'join' %}">
                     {% csrf_token %}
                     {% if messages %}
@@ -52,25 +52,29 @@
                         {% endfor %}
                     {% endif %}
                     <div>
-                        <label for="organization" class="block text-sm font-medium text-gray-700">Organization Name</label>
+                        <label for="organization"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Organization Name
+                        </label>
                         <div class="mt-1">
                             <input type="text"
                                    name="organization"
                                    id="organization"
                                    required
                                    value="{{ organization_name }}"
-                                   class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-[#e74c3c] focus:outline-none focus:ring-[#e74c3c] sm:text-sm"
+                                   class="block w-full appearance-none rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-[#e74c3c] focus:outline-none focus:ring-[#e74c3c] sm:text-sm"
                                    placeholder="Enter organization name">
                         </div>
                     </div>
                     <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Your Email</label>
+                        <label for="email"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Your Email</label>
                         <div class="mt-1">
                             <input type="email"
                                    name="email"
                                    id="email"
                                    required
-                                   class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-[#e74c3c] focus:outline-none focus:ring-[#e74c3c] sm:text-sm"
+                                   class="block w-full appearance-none rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-[#e74c3c] focus:outline-none focus:ring-[#e74c3c] sm:text-sm"
                                    placeholder="Enter your email">
                         </div>
                     </div>

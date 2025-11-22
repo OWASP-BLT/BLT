@@ -40,7 +40,7 @@
                         {% if hackathon.is_ongoing %}
                             <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm">Ongoing</span>
                         {% elif hackathon.has_ended %}
-                            <span class="bg-gray-500 text-white px-3 py-1 rounded-full text-sm">Ended</span>
+                            <span class="bg-gray-500 dark:bg-gray-400 text-white px-3 py-1 rounded-full text-sm">Ended</span>
                         {% else %}
                             <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">Upcoming</span>
                         {% endif %}
@@ -51,30 +51,30 @@
         </div>
         <!-- Quick Stats -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700">Participants</h3>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Participants</h3>
                 <p class="text-3xl font-bold text-[#e74c3c]">{{ participant_count }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700">Pull Requests</h3>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Pull Requests</h3>
                 <p class="text-3xl font-bold text-[#e74c3c]">{{ pr_count }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700">Merged PRs</h3>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Merged PRs</h3>
                 <p class="text-3xl font-bold text-[#e74c3c]">{{ merged_pr_count }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700">Page Views (Hackathon)</h3>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Page Views (Hackathon)</h3>
                 <p class="text-3xl font-bold text-[#e74c3c]">{{ hackathon_views }}</p>
-                <p class="text-sm text-gray-500 mt-1">All-Time: {{ all_time_views }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">All-Time: {{ all_time_views }}</p>
                 <div class="mt-2 h-16">
                     <canvas id="viewsSparkline"></canvas>
                 </div>
             </div>
         </div>
         <!-- Pull Request Activity Chart -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">Pull Request Activity</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Pull Request Activity</h2>
             <div class="h-64">
                 <canvas id="prActivityChart"></canvas>
             </div>
@@ -84,38 +84,38 @@
             <!-- Left Column - Hackathon Info -->
             <div class="lg:col-span-2">
                 <!-- Description -->
-                <div class="bg-white rounded-lg shadow p-6 mb-8">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800">About this Hackathon</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">About this Hackathon</h2>
                     <div class="prose max-w-none">{{ hackathon.description|linebreaks }}</div>
                     {% if hackathon.rules %}
                         <div class="mt-6">
-                            <h3 class="text-xl font-semibold mb-2 text-gray-800">Rules</h3>
+                            <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Rules</h3>
                             <div class="prose max-w-none">{{ hackathon.rules|linebreaks }}</div>
                         </div>
                     {% endif %}
                     <div class="mt-6">
-                        <h3 class="text-xl font-semibold mb-2 text-gray-800">Timeline</h3>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Timeline</h3>
                         <div class="flex flex-col space-y-2">
                             <div class="flex items-center">
-                                <div class="w-24 font-medium text-gray-600">Start:</div>
+                                <div class="w-24 font-medium text-gray-600 dark:text-gray-400">Start:</div>
                                 <div>{{ hackathon.start_time|date:"F j, Y, g:i a T" }}</div>
                             </div>
                             <div class="flex items-center">
-                                <div class="w-24 font-medium text-gray-600">End:</div>
+                                <div class="w-24 font-medium text-gray-600 dark:text-gray-400">End:</div>
                                 <div>{{ hackathon.end_time|date:"F j, Y, g:i a T" }}</div>
                             </div>
                         </div>
                     </div>
                     <!-- Repositories -->
-                    <div class="bg-white rounded-lg shadow p-6 mb-8">
-                        <h2 class="text-2xl font-bold mb-4 text-gray-800">Repositories</h2>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Repositories</h2>
                         {% if repositories %}
                             <div class="space-y-4">
                                 {% for repo_data in repositories %}
-                                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                                         <div class="flex items-center justify-between mb-2">
                                             <div class="flex items-center">
-                                                <svg class="w-5 h-5 text-gray-600 mr-2"
+                                                <svg class="w-5 h-5 text-gray-600 dark:text-gray-400 mr-2"
                                                      fill="currentColor"
                                                      viewBox="0 0 20 20"
                                                      xmlns="http://www.w3.org/2000/svg">
@@ -129,7 +129,7 @@
                                                 </a>
                                             </div>
                                             <div class="flex items-center space-x-2">
-                                                <span class="text-sm text-gray-500">{{ repo_data.merged_pr_count }} merged PRs</span>
+                                                <span class="text-sm text-gray-500 dark:text-gray-500">{{ repo_data.merged_pr_count }} merged PRs</span>
                                                 {% if can_manage %}
                                                     <a href="{% url 'refresh_repository_data' hackathon_slug=hackathon.slug repo_id=repo_data.repo.id %}"
                                                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
@@ -146,12 +146,14 @@
                                                 {% endif %}
                                             </div>
                                         </div>
-                                        {% if repo_data.repo.description %}<p class="text-sm text-gray-600">{{ repo_data.repo.description }}</p>{% endif %}
+                                        {% if repo_data.repo.description %}
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ repo_data.repo.description }}</p>
+                                        {% endif %}
                                         <!-- Repository Action Buttons -->
                                         <div class="mt-3 flex flex-wrap gap-2">
                                             <a href="{{ repo_data.repo.repo_url }}"
                                                target="_blank"
-                                               class="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                               class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                                                 <svg class="w-4 h-4 mr-1"
                                                      fill="currentColor"
                                                      viewBox="0 0 24 24"
@@ -161,7 +163,7 @@
                                                 GitHub
                                             </a>
                                             <a href="{% url 'repo_detail' repo_data.repo.slug %}"
-                                               class="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                               class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                                                 <svg class="w-4 h-4 mr-1"
                                                      fill="none"
                                                      stroke="currentColor"
@@ -175,7 +177,7 @@
                                             {% if request.user.is_superuser %}
                                                 <a href="{% url 'admin:website_githubissue_changelist' %}?repo__id__exact={{ repo_data.repo.id }}"
                                                    target="_blank"
-                                                   class="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                                   class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                                                     <svg class="w-4 h-4 mr-1"
                                                          fill="none"
                                                          stroke="currentColor"
@@ -193,7 +195,7 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            <p class="text-gray-600">No repositories have been added to this hackathon yet.</p>
+                            <p class="text-gray-600 dark:text-gray-400">No repositories have been added to this hackathon yet.</p>
                         {% endif %}
                     </div>
                     {% if can_manage %}
@@ -214,8 +216,8 @@
                     {% endif %}
                 </div>
                 <!-- Prizes -->
-                <div class="bg-white rounded-lg shadow p-6 mb-8">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Prizes</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Prizes</h2>
                     {% if prizes %}
                         <div class="space-y-6">
                             {% for prize in prizes %}
@@ -227,7 +229,7 @@
                                             </div>
                                             <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
                                         {% elif prize.position == 2 %}
-                                            <div class="text-gray-400 mr-2">
+                                            <div class="text-gray-400 dark:text-gray-600 mr-2">
                                                 <i class="fas fa-trophy fa-lg"></i>
                                             </div>
                                             <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
@@ -243,28 +245,28 @@
                                             <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
                                         {% endif %}
                                     </div>
-                                    <p class="text-gray-600 mb-2">{{ prize.description }}</p>
+                                    <p class="text-gray-600 dark:text-gray-400 mb-2">{{ prize.description }}</p>
                                     {% if prize.value %}<p class="font-medium text-[#e74c3c]">${{ prize.value }}</p>{% endif %}
                                     {% if prize.sponsor %}
-                                        <div class="mt-2 text-sm text-gray-500">Sponsored by: {{ prize.sponsor.organization.name }}</div>
+                                        <div class="mt-2 text-sm text-gray-500 dark:text-gray-500">Sponsored by: {{ prize.sponsor.organization.name }}</div>
                                     {% endif %}
                                 </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-gray-500 italic">No prizes have been announced yet.</p>
+                        <p class="text-gray-500 dark:text-gray-500 italic">No prizes have been announced yet.</p>
                     {% endif %}
                 </div>
             </div>
             <!-- Right Column - Leaderboard and Sponsors -->
             <div class="lg:col-span-1">
                 <!-- Leaderboard -->
-                <div class="bg-white rounded-lg shadow p-6 mb-8">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Leaderboard</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Leaderboard</h2>
                     {% if leaderboard %}
                         <div class="space-y-6">
                             {% for entry in leaderboard %}
-                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50{% endif %} rounded-lg border border-gray-200">
+                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg border border-gray-200 dark:border-gray-700">
                                     <div class="flex items-center mb-3">
                                         <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
                                             {{ forloop.counter }}
@@ -278,8 +280,8 @@
                                                          width="32"
                                                          height="32">
                                                 {% else %}
-                                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                                                        <i class="fab fa-github text-gray-600"></i>
+                                                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                                        <i class="fab fa-github text-gray-600 dark:text-gray-400"></i>
                                                     </div>
                                                 {% endif %}
                                             {% else %}
@@ -298,20 +300,20 @@
                                         </div>
                                         <div class="flex-grow">
                                             <div class="font-medium">{{ entry.user.username }}</div>
-                                            <div class="text-sm text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
                                         </div>
                                     </div>
                                     <!-- Pull Requests List -->
                                     <div class="mt-2 pl-11">
-                                        <div class="text-sm font-medium text-gray-700 mb-2">Contributions:</div>
+                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contributions:</div>
                                         <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
                                             {% for pr in entry.prs %}
                                                 <a href="{{ pr.url }}"
                                                    target="_blank"
                                                    rel="noopener noreferrer"
-                                                   class="block p-2 bg-gray-50 hover:bg-gray-100 rounded border-l-4 border-[#e74c3c] transition">
+                                                   class="block p-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 rounded border-l-4 border-[#e74c3c] transition">
                                                     <div class="font-medium text-sm truncate">{{ pr.title }}</div>
-                                                    <div class="flex items-center text-xs text-gray-500 mt-1">
+                                                    <div class="flex items-center text-xs text-gray-500 dark:text-gray-500 mt-1">
                                                         <span class="flex items-center">
                                                             <i class="fas fa-code-branch mr-1"></i>
                                                             {{ pr.repo.name }}
@@ -334,12 +336,12 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-gray-500 italic">No contributions yet. Be the first to contribute!</p>
+                        <p class="text-gray-500 dark:text-gray-500 italic">No contributions yet. Be the first to contribute!</p>
                     {% endif %}
                 </div>
                 <!-- Sponsors -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Sponsors</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Sponsors</h2>
                     {% for level, sponsors in sponsors_by_level.items %}
                         {% if sponsors %}
                             <div class="mb-6 last:mb-0">
@@ -357,8 +359,8 @@
                                                      height="48"
                                                      class="h-12 object-contain mb-2">
                                             {% else %}
-                                                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-2">
-                                                    <span class="text-gray-500 font-bold">{{ sponsor.organization.name|slice:":1" }}</span>
+                                                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mb-2">
+                                                    <span class="text-gray-500 dark:text-gray-500 font-bold">{{ sponsor.organization.name|slice:":1" }}</span>
                                                 </div>
                                             {% endif %}
                                             <div class="text-center">
@@ -371,14 +373,14 @@
                         {% endif %}
                     {% endfor %}
                     {% if not sponsors_by_level.platinum and not sponsors_by_level.gold and not sponsors_by_level.silver and not sponsors_by_level.bronze and not sponsors_by_level.partner %}
-                        <p class="text-gray-500 italic">No sponsors yet.</p>
+                        <p class="text-gray-500 dark:text-gray-500 italic">No sponsors yet.</p>
                     {% endif %}
                     {% if hackathon.sponsor_note or hackathon.sponsor_link %}
-                        <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                             {% if hackathon.sponsor_note %}
                                 <div class="mb-4">
-                                    <h3 class="text-lg font-semibold mb-2 text-gray-800">Sponsorship Information</h3>
-                                    <div class="prose max-w-none text-gray-600">{{ hackathon.sponsor_note|linebreaks }}</div>
+                                    <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Sponsorship Information</h3>
+                                    <div class="prose max-w-none text-gray-600 dark:text-gray-400">{{ hackathon.sponsor_note|linebreaks }}</div>
                                 </div>
                             {% endif %}
                             {% if hackathon.sponsor_link %}
