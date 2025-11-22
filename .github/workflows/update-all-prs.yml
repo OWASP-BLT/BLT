@@ -110,9 +110,10 @@ jobs:
                 });
                 
                 // Trigger CI/CD workflow if the PR was successfully updated
-                if (prWasUpdated) {
+                // Note: We can only trigger workflows for branches in this repository, not forks
+                if (prWasUpdated && !prData.head.repo.fork) {
                   try {
-                    core.info(`Triggering CI/CD workflow for PR #${pull_number}...`);
+                    core.info(`Triggering CI/CD workflow for PR #${pull_number} on branch ${prData.head.ref}...`);
                     await github.rest.actions.createWorkflowDispatch({
                       owner,
                       repo,
@@ -123,6 +124,8 @@ jobs:
                   } catch (dispatchError) {
                     core.warning(`Failed to trigger CI/CD workflow for PR #${pull_number}: ${dispatchError.message}`);
                   }
+                } else if (prWasUpdated && prData.head.repo.fork) {
+                  core.info(`Skipping workflow trigger for PR #${pull_number} (from fork: ${prData.head.repo.full_name})`);
                 }
                 
                 const hasConflicts = prData.mergeable === false;
