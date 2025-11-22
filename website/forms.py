@@ -11,6 +11,7 @@ from website.models import (
     HackathonPrize,
     HackathonSponsor,
     IpReport,
+    Job,
     Monitor,
     Organization,
     ReminderSettings,
@@ -173,7 +174,7 @@ class GitHubIssueForm(forms.Form):
         label="GitHub Issue URL",
         widget=forms.URLInput(
             attrs={
-                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
                 "placeholder": "https://github.com/owner/repo/issues/123",
             }
         ),
@@ -482,4 +483,134 @@ class ReminderSettingsForm(forms.ModelForm):
             "is_active": forms.CheckboxInput(
                 attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
             )
+        }
+
+
+class JobForm(forms.ModelForm):
+    """Form for creating and editing job postings"""
+
+    def clean(self):
+        """Validate that at least one application method is provided"""
+        cleaned_data = super().clean()
+        application_email = cleaned_data.get("application_email")
+        application_url = cleaned_data.get("application_url")
+        application_instructions = cleaned_data.get("application_instructions")
+
+        if not any([application_email, application_url, application_instructions]):
+            raise forms.ValidationError(
+                "Please provide at least one way for candidates to apply " "(email, URL, or instructions)."
+            )
+
+        return cleaned_data
+
+    class Meta:
+        model = Job
+        fields = [
+            "title",
+            "description",
+            "requirements",
+            "location",
+            "job_type",
+            "salary_range",
+            "is_public",
+            "status",
+            "expires_at",
+            "application_email",
+            "application_url",
+            "application_instructions",
+        ]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "e.g., Senior Software Engineer",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 6,
+                    "placeholder": "Describe the job role and responsibilities...",
+                }
+            ),
+            "requirements": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 5,
+                    "placeholder": "List required skills, experience, and qualifications...",
+                }
+            ),
+            "location": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "e.g., Remote, New York, or Hybrid",
+                }
+            ),
+            "job_type": forms.Select(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                }
+            ),
+            "salary_range": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "e.g., $80k-$120k, Competitive",
+                }
+            ),
+            "application_email": forms.EmailInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "careers@company.com",
+                }
+            ),
+            "application_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://company.com/apply",
+                }
+            ),
+            "application_instructions": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 3,
+                    "placeholder": "How should candidates apply? Any special instructions...",
+                }
+            ),
+            "is_public": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
+            ),
+            "status": forms.Select(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                }
+            ),
+            "expires_at": forms.DateTimeInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "type": "datetime-local",
+                    "placeholder": "YYYY-MM-DD HH:MM",
+                }
+            ),
+        }
+        labels = {
+            "title": "Job Title",
+            "description": "Job Description",
+            "requirements": "Requirements",
+            "location": "Location",
+            "job_type": "Job Type",
+            "salary_range": "Salary Range",
+            "is_public": "Make this job posting public",
+            "status": "Job Status",
+            "expires_at": "Expiration Date",
+            "application_email": "Application Email",
+            "application_url": "Application URL",
+            "application_instructions": "Application Instructions",
+        }
+        help_texts = {
+            "is_public": "Public jobs can be seen by anyone, even if your organization is private",
+            "status": "Draft jobs are not visible to anyone. Active jobs can receive applications. Paused jobs are visible but cannot receive applications.",
+            "expires_at": "Optional: Date and time when this job posting will automatically expire",
+            "application_email": "Optional: Email address where applications should be sent",
+            "application_url": "Optional: Link to external application page",
+            "application_instructions": "Optional: Custom instructions for applicants",
         }
