@@ -158,8 +158,7 @@ class IPRestrictMiddleware:
 
                 ip_record.agent = agent
                 ip_record.count = new_count
-                if ip_record.pk:
-                    ip_record.save(update_fields=["agent", "count"])
+                ip_record.save(update_fields=["agent", "count"])
 
                 # Delete duplicate records if in a transaction (autocommit is False)
                 if not transaction.get_autocommit():
@@ -167,6 +166,38 @@ class IPRestrictMiddleware:
             else:
                 # If no record exists, create a new one
                 IP.objects.create(address=ip, agent=agent, count=1, path=path)
+
+    def _get_client_ip(self, request):
+        """
+        Extract client IP address from request.
+        Checks X-Forwarded-For header first, then falls back to REMOTE_ADDR.
+        """
+        return request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
+
+    def _find_matching_network(self, ip, blocked_networks):
+        """
+        Find the specific network that contains the given IP.
+        Returns the network as a string if found, None otherwise.
+        """
+        try:
+            ip_obj = ipaddress.ip_address(ip)
+            for network in blocked_networks:
+                if ip_obj in network:
+                    return str(network)
+        except ValueError:
+            pass
+        return None
+
+    def _find_matching_agent(self, agent, blocked_agents):
+        """
+        Find the specific blocked agent pattern that matches the user agent.
+        Returns the blocked pattern if found, None otherwise.
+        """
+        agent_lower = agent.lower() if agent else ""
+        for blocked_agent in blocked_agents:
+            if blocked_agent and blocked_agent.lower() in agent_lower:
+                return blocked_agent
+        return None
 
     def __call__(self, request):
         return self.process_request_sync(request)
@@ -179,9 +210,7 @@ class IPRestrictMiddleware:
         """
         try:
             # Get client information
-            ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
-                "REMOTE_ADDR", ""
-            )
+            ip = self._get_client_ip(request)
             agent = request.META.get("HTTP_USER_AGENT", "").strip()
 
             try:
@@ -202,24 +231,17 @@ class IPRestrictMiddleware:
             # Check if IP is in a blocked network
             if await sync_to_async(self.ip_in_range)(ip, blocked_ip_network):
                 # Find the specific network that caused the block and increment its count
-                try:
-                    ip_obj = ipaddress.ip_address(ip)
-                    for network in blocked_ip_network:
-                        if ip_obj in network:
-                            await self.increment_block_count_async(network=str(network))
-                            break
-                except ValueError:
-                    pass
+                matching_network = self._find_matching_network(ip, blocked_ip_network)
+                if matching_network:
+                    await self.increment_block_count_async(network=matching_network)
                 return HttpResponseForbidden()
 
             # Check if user agent is blocked
             if await sync_to_async(self.is_user_agent_blocked)(agent, blocked_agents):
                 # Find the specific blocked agent string that caused the match
-                agent_lower = agent.lower() if agent else ""
-                for blocked_agent in blocked_agents:
-                    if blocked_agent and blocked_agent.lower() in agent_lower:
-                        await self.increment_block_count_async(user_agent=blocked_agent)
-                        break
+                matching_agent = self._find_matching_agent(agent, blocked_agents)
+                if matching_agent:
+                    await self.increment_block_count_async(user_agent=matching_agent)
                 return HttpResponseForbidden()
 
             # Record IP information
@@ -240,9 +262,7 @@ class IPRestrictMiddleware:
         """
         try:
             # Get client information
-            ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
-                "REMOTE_ADDR", ""
-            )
+            ip = self._get_client_ip(request)
             agent = request.META.get("HTTP_USER_AGENT", "").strip()
 
             try:
@@ -263,24 +283,17 @@ class IPRestrictMiddleware:
             # Check if IP is in a blocked network
             if self.ip_in_range(ip, blocked_ip_network):
                 # Find the specific network that caused the block and increment its count
-                try:
-                    ip_obj = ipaddress.ip_address(ip)
-                    for network in blocked_ip_network:
-                        if ip_obj in network:
-                            self.increment_block_count(network=str(network))
-                            break
-                except ValueError:
-                    pass
+                matching_network = self._find_matching_network(ip, blocked_ip_network)
+                if matching_network:
+                    self.increment_block_count(network=matching_network)
                 return HttpResponseForbidden()
 
             # Check if user agent is blocked
             if self.is_user_agent_blocked(agent, blocked_agents):
                 # Find the specific blocked agent string that caused the match
-                agent_lower = agent.lower() if agent else ""
-                for blocked_agent in blocked_agents:
-                    if blocked_agent and blocked_agent.lower() in agent_lower:
-                        self.increment_block_count(user_agent=blocked_agent)
-                        break
+                matching_agent = self._find_matching_agent(agent, blocked_agents)
+                if matching_agent:
+                    self.increment_block_count(user_agent=matching_agent)
                 return HttpResponseForbidden()
 
             # Record IP information
