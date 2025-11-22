@@ -910,7 +910,12 @@ def view_forum(request):
     # Get total posts count before filtering
     total_posts_count = ForumPost.objects.count()
 
-    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+    posts = (
+        ForumPost.objects.select_related("user", "category")
+        .prefetch_related("comments")
+        .annotate(comment_count=Count("comments"))
+        .all()
+    )
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
