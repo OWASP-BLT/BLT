@@ -28,10 +28,13 @@ from website.api.views import (
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
+    JobViewSet,
     LeaderboardApiViewSet,
     LikeIssueApiView,
+    OrganizationJobStatsViewSet,
     OrganizationViewSet,
     ProjectViewSet,
+    PublicJobListViewSet,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -64,6 +67,7 @@ from website.views.company import (
     OrganizationDashboardManageBughuntView,
     OrganizationDashboardManageBugsView,
     OrganizationDashboardManageDomainsView,
+    OrganizationDashboardManageJobsView,
     OrganizationDashboardManageRolesView,
     OrganizationDashboardTeamOverviewView,
     RegisterOrganizationView,
@@ -71,10 +75,16 @@ from website.views.company import (
     SlackCallbackView,
     accept_bug,
     check_domain_security_txt,
+    create_job,
     dashboard_view,
+    delete_job,
     delete_manager,
     delete_prize,
+    edit_job,
     edit_prize,
+    job_detail,
+    public_job_list,
+    toggle_job_status,
 )
 from website.views.core import (
     CustomSocialAccountDisconnectView,
@@ -101,6 +111,7 @@ from website.views.core import (
     robots_txt,
     run_management_command,
     search,
+    set_theme,
     set_vote_status,
     sitemap,
     sponsor_view,
@@ -148,6 +159,7 @@ from website.views.hackathon import (
     HackathonPrizeCreateView,
     HackathonSponsorCreateView,
     HackathonUpdateView,
+    add_org_repos_to_hackathon,
     refresh_repository_data,
 )
 from website.views.issue import (
@@ -373,6 +385,7 @@ router.register(r"domain", DomainViewSet, basename="domain")
 router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
+router.register(r"jobs", JobViewSet, basename="jobs")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -390,6 +403,7 @@ urlpatterns = [
     path("referral/", referral_signup, name="referral_signup"),
     path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
+    path("set-theme/", set_theme, name="set_theme"),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
         "rest-auth/password/reset/confirm/<str:uidb64>/<str:token>",
@@ -755,6 +769,13 @@ urlpatterns = [
     re_path(r"^api/v1/hunt/$", BugHuntApiViewset.as_view(), name="hunt_details"),
     re_path(r"^api/v2/hunts/$", BugHuntApiViewsetV2.as_view(), name="hunts_detail_v2"),
     re_path(r"^api/v1/userscore/$", get_score, name="get_score"),
+    # Job Board API URLs
+    path("api/v1/jobs/public/", PublicJobListViewSet.as_view(), name="api_public_jobs"),
+    path(
+        "api/v1/organization/<int:org_id>/jobs/stats/",
+        OrganizationJobStatsViewSet.as_view(),
+        name="api_organization_job_stats",
+    ),
     re_path(r"^authenticate/", CustomObtainAuthToken.as_view()),
     re_path(r"^api/v1/createwallet/$", create_wallet, name="create_wallet"),
     re_path(r"^api/v1/count/$", issue_count, name="api_count"),
@@ -927,6 +948,34 @@ urlpatterns = [
         delete_manager,
         name="delete_manager",
     ),
+    # Job Board URLs
+    path(
+        "organization/<int:id>/dashboard/jobs/",
+        OrganizationDashboardManageJobsView.as_view(),
+        name="organization_manage_jobs",
+    ),
+    path(
+        "organization/<int:id>/jobs/create/",
+        create_job,
+        name="create_job",
+    ),
+    path(
+        "organization/<int:id>/jobs/<int:job_id>/edit/",
+        edit_job,
+        name="edit_job",
+    ),
+    path(
+        "organization/<int:id>/jobs/<int:job_id>/delete/",
+        delete_job,
+        name="delete_job",
+    ),
+    path(
+        "organization/<int:id>/jobs/<int:job_id>/toggle/",
+        toggle_job_status,
+        name="toggle_job_status",
+    ),
+    path("jobs/", public_job_list, name="public_job_list"),
+    path("jobs/<int:pk>/", job_detail, name="job_detail"),
     path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
@@ -1108,6 +1157,12 @@ urlpatterns = [
                     "<slug:hackathon_slug>/refresh-repo/<int:repo_id>/",
                     refresh_repository_data,
                     name="refresh_repository_data",
+                ),
+                # Add the new URL pattern for adding all org repos to hackathon
+                path(
+                    "<slug:slug>/add-org-repos/",
+                    add_org_repos_to_hackathon,
+                    name="add_org_repos_to_hackathon",
                 ),
             ]
         ),
