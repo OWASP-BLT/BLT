@@ -21,10 +21,15 @@ RUN apt-get update && \
 #     ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
 
 # Install Chromium (works on all architectures)
-# Retry logic with --fix-missing for transient network errors
+# Robust retry logic with dependency fixing for transient network errors
 RUN apt-get update \
-    && apt-get install -y --fix-missing chromium \
-    || (apt-get update && apt-get install -y --fix-missing chromium) \
+    && for i in 1 2 3 4 5; do \
+         apt-get install -y --fix-missing chromium && break || \
+         (sleep 10 && apt-get update); \
+       done \
+    && apt-get install -y -f \
+    && apt-get install -y libz3-4 || true \
+    && apt-get install -y -f \
     && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome \
     && rm -rf /var/lib/apt/lists/*
 
