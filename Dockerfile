@@ -29,7 +29,6 @@ RUN apt-get update \
        done \
     && apt-get install -y -f \
     && apt-get install -y libz3-4 || true \
-    && apt-get install -y -f \
     && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome \
     && rm -rf /var/lib/apt/lists/*
 
