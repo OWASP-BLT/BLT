@@ -11,7 +11,6 @@ name: CI/CD Optimized
 
 on:
   #merge_group:
-  pull_request:
   pull_request_target:
     types:
       - opened
@@ -30,6 +29,10 @@ on:
 env:
   FORCE_COLOR: 1
   POETRY_CACHE_DIR: ~/.cache/pypoetry
+
+# Default permissions for the workflow
+permissions:
+  contents: read
 
 concurrency:
   cancel-in-progress: true
@@ -80,8 +83,7 @@ jobs:
 
   pre-commit:
     name: Run pre-commit
-    # Run on pull_request_target (for forked PRs with write permissions), pull_request (for same-repo PRs),
-    # push to main, or manual trigger. The concurrency group prevents duplicate runs.
+    # Run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -111,9 +113,10 @@ jobs:
           set -e
         continue-on-error: true
       - name: Comment on PR if pre-commit fails
-        if: (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && steps.pre-commit.outputs.exit_code != '0'
+        if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
@@ -157,17 +160,24 @@ jobs:
             
             For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
             
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: message
-            });
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message
+              });
+            } catch (error) {
+              if (error.status === 403) {
+                core.warning('Permission denied: Cannot comment on PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.');
+              } else {
+                throw error;
+              }
+            }
       - name: Add pre-commit status label
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -230,13 +240,21 @@ jobs:
             
             // Add the label if it isn't already present
             if (!currentNames.has(newLabel)) {
-              await github.rest.issues.addLabels({ 
-                owner, 
-                repo, 
-                issue_number: pull_number, 
-                labels: [newLabel] 
-              });
-              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              try {
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [newLabel] 
+                });
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                } else {
+                  throw error;
+                }
+              }
             } else {
               core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }
@@ -254,10 +272,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     permissions:
-      issues: write
-      pull-requests: write
-      contents: write
-      actions: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -276,6 +291,8 @@ jobs:
 
   docker-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
