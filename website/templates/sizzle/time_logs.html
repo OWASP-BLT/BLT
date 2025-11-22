@@ -19,7 +19,7 @@
 {% endblock og_description %}
 {% block content %}
     <script src="https://cdn.tailwindcss.com" defer></script>
-    <div class="container mx-auto mt-12 p-6 bg-white rounded-lg shadow-md">
+    <div class="container mx-auto mt-12 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <!-- Left Navigation -->
         {% include "includes/sidenav.html" %}
         <!-- Message Container -->
@@ -28,33 +28,37 @@
         {% if not active_time_log %}
             <form id="start-time-log-form"
                   novalidate
-                  class="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                  class="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-800">
                 {% csrf_token %}
                 <!-- GitHub Issue URL -->
                 <div class="space-y-2">
                     <label for="github_issue_url"
-                           class="block text-sm font-medium text-gray-700">GitHub Issue URL*</label>
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">GitHub Issue URL*</label>
                     <input type="url"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                            id="github_issue_url"
                            name="github_issue_url"
                            required
                            pattern="https?://.+"
                            placeholder="https://github.com/user/repo/issues/1">
-                    <p class="text-xs text-gray-500">Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1)</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">
+                        Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1)
+                    </p>
                     <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                 </div>
                 <!-- Organization Search -->
                 <div class="space-y-2 relative">
                     <label for="organization_search_input"
-                           class="block text-sm font-medium text-gray-700">Organization (optional)</label>
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Organization (optional)
+                    </label>
                     <input type="url"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                            id="organization_search_input"
                            name="organization_search_input"
                            placeholder="Search organizations">
                     <ul id="search_results"
-                        class="absolute z-10 w-full max-h-60 overflow-y-auto mt-1 bg-white border border-gray-200 rounded-md shadow-lg hidden">
+                        class="absolute z-10 w-full max-h-60 overflow-y-auto mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg hidden">
                     </ul>
                 </div>
                 <button type="submit"
@@ -66,11 +70,11 @@
         <!-- Active Time Log Section -->
         {% if active_time_log %}
             <div id="active-time-log"
-                 class="mt-8 p-6 bg-white rounded-lg shadow-md border border-gray-100">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Active Time Log</h2>
+                 class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-100 dark:border-gray-800">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Active Time Log</h2>
                 <div class="space-y-4">
                     <div class="flex items-center">
-                        <svg class="h-5 w-5 text-gray-400 mr-2"
+                        <svg class="h-5 w-5 text-gray-400 dark:text-gray-600 mr-2"
                              fill="none"
                              viewBox="0 0 24 24"
                              stroke="currentColor">
@@ -83,7 +87,7 @@
                         </a>
                     </div>
                     <div class="flex items-center">
-                        <svg class="h-5 w-5 text-gray-400 mr-2"
+                        <svg class="h-5 w-5 text-gray-400 dark:text-gray-600 mr-2"
                              fill="none"
                              viewBox="0 0 24 24"
                              stroke="currentColor">
@@ -94,13 +98,14 @@
                            class="text-blue-600 hover:text-blue-800 hover:underline">{{ organization_url }}</a>
                     </div>
                     <div class="flex items-center">
-                        <svg class="h-5 w-5 text-gray-400 mr-2"
+                        <svg class="h-5 w-5 text-gray-400 dark:text-gray-600 mr-2"
                              fill="none"
                              viewBox="0 0 24 24"
                              stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span class="text-lg font-semibold text-gray-700" id="elapsed-time">00:00:00</span>
+                        <span class="text-lg font-semibold text-gray-700 dark:text-gray-300"
+                              id="elapsed-time">00:00:00</span>
                     </div>
                     <button id="stop-button"
                             class="mt-4 w-full flex justify-center py-3 px-6 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">
@@ -111,41 +116,46 @@
         {% endif %}
         <!-- Existing Time Logs -->
         <div class="mt-12">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Existing Time Logs</h2>
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Existing Time Logs</h2>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <caption class="sr-only">List of all time logs with their details</caption>
-                    <thead class="bg-gray-50">
+                    <thead class="bg-gray-50 dark:bg-gray-900">
                         <tr>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 Start Time
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 End Time
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 Duration
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 GitHub Issue
                             </th>
                             <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 Organization
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200" id="time-logs-table-body">
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                           id="time-logs-table-body">
                         {% for log in time_logs %}
                             {% if log.end_time %}
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.start_time|date:"DATETIME_FORMAT" }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.end_time|date:"DATETIME_FORMAT" }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.duration|before_dot }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                        {{ log.start_time|date:"DATETIME_FORMAT" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                        {{ log.end_time|date:"DATETIME_FORMAT" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ log.duration|before_dot }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                                         <a href="{{ log.github_issue_url }}"
                                            target="_blank"
@@ -159,7 +169,7 @@
                                                target="_blank"
                                                class="text-blue-600 hover:underline">{{ log.organization }}</a>
                                         {% else %}
-                                            <span class="text-gray-400">-</span>
+                                            <span class="text-gray-400 dark:text-gray-600">-</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -167,7 +177,7 @@
                         {% empty %}
                             <tr>
                                 <td colspan="5"
-                                    class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                    class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-500">
                                     No time logs available
                                 </td>
                             </tr>
