@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.http import HttpResponseForbidden
 from django.test import RequestFactory, TestCase
 
-from blt.middleware.ip_restrict import IPRestrictMiddleware
+from blt.middleware.ip_restrict import BLOCKED_AGENTS_CACHE_KEY, MAX_COUNT, IPRestrictMiddleware
 from website.models import Blocked, IP
 
 
@@ -169,8 +169,6 @@ class IPRestrictMiddlewareTestCase(TestCase):
         self.assertIn("BadBot", blocked_agents)
 
         # Verify cache was set
-        from blt.middleware.ip_restrict import BLOCKED_AGENTS_CACHE_KEY
-
         cached_agents = cache.get(BLOCKED_AGENTS_CACHE_KEY)
         self.assertIsNotNone(cached_agents)
         self.assertIn("BadBot", cached_agents)
@@ -267,8 +265,6 @@ class IPRestrictMiddlewareTestCase(TestCase):
 
     def test_ip_count_max_limit(self):
         """Test that IP count doesn't exceed MAX_COUNT"""
-        from blt.middleware.ip_restrict import MAX_COUNT
-
         # Create an IP record with count near max
         ip_record = IP.objects.create(address="192.168.1.1", agent="Mozilla/5.0", count=MAX_COUNT - 1, path="/test/")
 

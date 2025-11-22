@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class IPRestrictMiddleware:
     """
-    Middleware to restrict access based on client IP addresses and user agent.
+    Middleware to restrict access based on client IP addresses and user agents.
     """
 
     def __init__(self, get_response):
@@ -176,9 +176,6 @@ class IPRestrictMiddleware:
         Asynchronous version of the middleware call method.
         Handles async requests by checking blocked IPs, networks, and user agents,
         then recording IP information for allowed requests.
-        """
-        """
-        Asynchronous version of the middleware call method
         """
         try:
             # Get client information
