@@ -7,7 +7,6 @@ and manage reward distributions.
 """
 
 import logging
-import os
 from decimal import Decimal
 from typing import Optional, Tuple
 

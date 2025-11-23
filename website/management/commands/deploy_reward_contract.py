@@ -53,7 +53,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR("Failed to connect to Ethereum node"))
                 return
 
-            self.stdout.write(self.style.SUCCESS(f"Connected to Ethereum node"))
+            self.stdout.write(self.style.SUCCESS("Connected to Ethereum node"))
 
             # Load account
             account = w3.eth.account.from_key(settings.ETHEREUM_PRIVATE_KEY)
@@ -150,7 +150,7 @@ class Command(BaseCommand):
 
             if tx_receipt["status"] == 1:
                 contract_address = tx_receipt["contractAddress"]
-                self.stdout.write(self.style.SUCCESS(f"\n✓ Contract deployed successfully!"))
+                self.stdout.write(self.style.SUCCESS("\n✓ Contract deployed successfully!"))
                 self.stdout.write(self.style.SUCCESS(f"Contract address: {contract_address}"))
                 self.stdout.write(
                     self.style.SUCCESS(f"Transaction hash: {tx_hash.hex()}")
@@ -158,7 +158,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"Gas used: {tx_receipt['gasUsed']}")
 
                 self.stdout.write(self.style.WARNING("\nNext steps:"))
-                self.stdout.write(f"1. Add to your .env file:")
+                self.stdout.write("1. Add to your .env file:")
                 self.stdout.write(f"   CONTRACT_ADDRESS={contract_address}")
                 self.stdout.write("2. Restart your application")
                 self.stdout.write("3. Test the reward distribution functionality")

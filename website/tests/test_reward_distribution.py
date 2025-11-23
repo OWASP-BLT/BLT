@@ -3,9 +3,8 @@ Tests for the automatic reward distribution system
 """
 
 from decimal import Decimal
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 from django.utils import timezone
