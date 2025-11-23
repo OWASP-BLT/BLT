@@ -372,6 +372,118 @@
             </div>
         </div>
     </div>
+    <!-- Social Media Stats Section -->
+    <div id="social-stats" class="w-full px-8 mt-8 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Social Media Presence</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Twitter Card -->
+                {% if social_stats.has_twitter %}
+                    <a href="{% url 'organization_social_redirect' org_id=organization platform='twitter' %}"
+                       target="_blank"
+                       class="block bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
+                    {% else %}
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50">
+                        {% endif %}
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fab fa-twitter fa-2x text-blue-500"></i>
+                            <span class="text-sm {% if social_stats.has_twitter %}text-green-600{% else %}text-gray-400{% endif %}">
+                                {% if social_stats.has_twitter %}
+                                    ●
+                                {% else %}
+                                    ○
+                                {% endif %}
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Twitter</h3>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ social_stats.twitter_clicks }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Profile Visits</p>
+                        {% if social_stats.has_twitter %}
+                        </a>
+                    {% else %}
+                    </div>
+                {% endif %}
+                <!-- GitHub Card -->
+                {% if social_stats.has_github %}
+                    <a href="{% url 'organization_social_redirect' org_id=organization platform='github' %}"
+                       target="_blank"
+                       class="block bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
+                    {% else %}
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50">
+                        {% endif %}
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fab fa-github fa-2x text-gray-700 dark:text-gray-300"></i>
+                            <span class="text-sm {% if social_stats.has_github %}text-green-600{% else %}text-gray-400{% endif %}">
+                                {% if social_stats.has_github %}
+                                    ●
+                                {% else %}
+                                    ○
+                                {% endif %}
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">GitHub</h3>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ social_stats.github_clicks }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Profile Visits</p>
+                        {% if social_stats.has_github %}
+                        </a>
+                    {% else %}
+                    </div>
+                {% endif %}
+                <!-- LinkedIn Card -->
+                {% if social_stats.has_linkedin %}
+                    <a href="{% url 'organization_social_redirect' org_id=organization platform='linkedin' %}"
+                       target="_blank"
+                       class="block bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
+                    {% else %}
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50">
+                        {% endif %}
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fab fa-linkedin fa-2x text-blue-700"></i>
+                            <span class="text-sm {% if social_stats.has_linkedin %}text-green-600{% else %}text-gray-400{% endif %}">
+                                {% if social_stats.has_linkedin %}
+                                    ●
+                                {% else %}
+                                    ○
+                                {% endif %}
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">LinkedIn</h3>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ social_stats.linkedin_clicks }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Profile Visits</p>
+                        {% if social_stats.has_linkedin %}
+                        </a>
+                    {% else %}
+                    </div>
+                {% endif %}
+                <!-- Facebook Card -->
+                {% if social_stats.has_facebook %}
+                    <a href="{% url 'organization_social_redirect' org_id=organization platform='facebook' %}"
+                       target="_blank"
+                       class="block bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
+                    {% else %}
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50">
+                        {% endif %}
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fab fa-facebook fa-2x text-blue-600"></i>
+                            <span class="text-sm {% if social_stats.has_facebook %}text-green-600{% else %}text-gray-400{% endif %}">
+                                {% if social_stats.has_facebook %}
+                                    ●
+                                {% else %}
+                                    ○
+                                {% endif %}
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Facebook</h3>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ social_stats.facebook_clicks }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Profile Visits</p>
+                        {% if social_stats.has_facebook %}
+                        </a>
+                    {% else %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock body %}
 {% block js %}

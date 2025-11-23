@@ -295,6 +295,39 @@ class OrganizationDashboardAnalyticsView(View):
         """Convert label ID to human-readable name."""
         return self.labels.get(label_id, "Other")
 
+    def get_social_stats(self, organization_id):
+        """Get social media stats for the organization."""
+        try:
+            org = Organization.objects.get(id=organization_id)
+        except Organization.DoesNotExist:
+            return {
+                "has_twitter": False,
+                "has_facebook": False,
+                "has_github": False,
+                "has_linkedin": False,
+                "twitter_clicks": 0,
+                "facebook_clicks": 0,
+                "github_clicks": 0,
+                "linkedin_clicks": 0,
+                "total_clicks": 0,
+            }
+
+        social_clicks = org.social_clicks or {}
+
+        stats = {
+            "has_twitter": bool(org.twitter),
+            "has_facebook": bool(org.facebook),
+            "has_github": bool(org.github_org),
+            "has_linkedin": bool(org.linkedin),
+            "twitter_clicks": social_clicks.get("twitter", 0),
+            "facebook_clicks": social_clicks.get("facebook", 0),
+            "github_clicks": social_clicks.get("github", 0),
+            "linkedin_clicks": social_clicks.get("linkedin", 0),
+            "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
+        }
+
+        return stats
+
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
@@ -482,9 +515,66 @@ class OrganizationDashboardAnalyticsView(View):
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
             "security_incidents_summary": self.get_security_incidents_summary(id),
+            "social_stats": self.get_social_stats(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
+
+
+class OrganizationSocialRedirectView(View):
+    """
+    Tracks social media clicks and redirects to the actual social media URL.
+    Usage: /organization/<org_id>/social/<platform>/
+    """
+
+    def get(self, request, org_id, platform):
+        # Validate platform
+        valid_platforms = ["twitter", "facebook", "github", "linkedin"]
+        if platform not in valid_platforms:
+            return HttpResponseBadRequest("Invalid social platform")
+
+        # Get organization
+        try:
+            organization = Organization.objects.get(id=org_id)
+        except Organization.DoesNotExist:
+            raise Http404("Organization not found")
+
+        # Get the actual URL based on platform
+        url_mapping = {
+            "twitter": organization.twitter,
+            "facebook": organization.facebook,
+            "github": f"https://github.com/{organization.github_org}" if organization.github_org else None,
+            "linkedin": organization.linkedin,
+        }
+
+        target_url = url_mapping.get(platform)
+
+        if not target_url:
+            messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
+            return redirect("organization_dashboard", id=org_id)
+
+        # Atomically increment the click counter using raw SQL for JSONField
+        from django.db import connection
+
+        # Initialize social_clicks if None
+        if organization.social_clicks is None:
+            organization.social_clicks = {}
+            organization.save(update_fields=["social_clicks"])
+
+        # Increment counter atomically
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE website_organization
+                SET social_clicks = COALESCE(social_clicks, '{}'::jsonb) ||
+                    jsonb_build_object(%s, COALESCE((social_clicks->>%s)::int, 0) + 1)
+                WHERE id = %s
+            """,
+                [platform, platform, org_id],
+            )
+
+        # Redirect to the actual social media URL
+        return redirect(target_url)
 
 
 class OrganizationDashboardIntegrations(View):
