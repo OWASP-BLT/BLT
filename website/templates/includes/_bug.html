@@ -157,12 +157,14 @@
                                          height="600">
                                     <!-- Navigation Buttons -->
                                     <button onclick="prevImage({{ bug.id }})"
-                                            class="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors">
-                                        <i class="fas fa-chevron-left"></i>
+                                            aria-label="View previous screenshot"
+                                            class="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2">
+                                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
                                     </button>
                                     <button onclick="nextImage({{ bug.id }})"
-                                            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors">
-                                        <i class="fas fa-chevron-right"></i>
+                                            aria-label="View next screenshot"
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2">
+                                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             {% endif %}
@@ -179,39 +181,45 @@
             <div class="flex items-center space-x-4">
                 <!-- Like -->
                 <button onclick="like_unlike_handler(event, {{ bug.id }})"
-                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        aria-label="Like this bug report"
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded">
                     <svg id="likeSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
-                         stroke-width="2">
+                         stroke-width="2"
+                         aria-hidden="true">
                         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3">
                         </path>
                     </svg>
                 </button>
                 <!-- Dislike -->
                 <button onclick="dislike_handler(event, {{ bug.id }})"
-                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        aria-label="Dislike this bug report"
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded">
                     <svg id="dislikeSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
-                         stroke-width="2">
+                         stroke-width="2"
+                         aria-hidden="true">
                         <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3">
                         </path>
                     </svg>
                 </button>
                 <!-- Flag -->
                 <button onclick="flag_unflag_handler(event, {{ bug.id }})"
-                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        aria-label="Flag this bug report"
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded">
                     <svg id="flagSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
-                         stroke-width="2">
+                         stroke-width="2"
+                         aria-hidden="true">
                         <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                         <line x1="4" y1="22" x2="4" y2="15"></line>
                     </svg>
