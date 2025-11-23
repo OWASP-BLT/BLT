@@ -1096,7 +1096,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 domain.save()
 
             # Don't save issue if security vulnerability or private report
-            if form.instance.label == "4" or form.instance.label == 4 or report_private:
+            if form.instance.label == 4 or report_private:
                 dest_email = getattr(domain, "email", None)
                 if not dest_email and domain.organization:
                     dest_email = getattr(domain.organization, "email", None)
@@ -1154,7 +1154,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         screenshot_paths.append(dest_path)
 
                             # Determine report type for email content
-                            is_security = form.instance.label == "4" or form.instance.label == 4
+                            is_security = form.instance.label == 4
                             report_type = "Security Vulnerability Report" if is_security else "Private Bug Report"
 
                             details_md_path = os.path.join(temp_dir, "vulnerability_details.md")
@@ -1235,9 +1235,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                                 # Increment private reports count if this is a private report
                                 if report_private and self.request.user.is_authenticated and not report_anonymous:
-                                    user_prof = UserProfile.objects.get(user=self.request.user)
-                                    user_prof.private_reports_count += 1
-                                    user_prof.save()
+                                    try:
+                                        user_prof = UserProfile.objects.get(user=self.request.user)
+                                        user_prof.private_reports_count += 1
+                                        user_prof.save()
+                                    except UserProfile.DoesNotExist:
+                                        logger.warning(
+                                            f"UserProfile does not exist for user {self.request.user.id}, skipping private_reports_count increment"
+                                        )
 
                                 success_msg = (
                                     "Private bug report" if report_private else "Security vulnerability report"
