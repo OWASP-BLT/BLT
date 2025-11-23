@@ -724,7 +724,7 @@ def slack_commands(request):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats\n`/apps` - List installed apps",
+                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats\n`/apps` - List installed apps\n`/sweep` - Post project status to #project-sweeper",
                             },
                             {
                                 "type": "mrkdwn",
@@ -929,6 +929,18 @@ def slack_commands(request):
                 activity.error_message = f"Error creating issue: {str(e)}"
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error reporting bug. Please try again."})
+
+        elif command == "/sweep":
+            try:
+                # Post project status update to #project-sweeper channel
+                return post_project_sweep_update(workspace_client, user_id, activity, team_id)
+            except Exception as e:
+                activity.success = False
+                activity.error_message = f"Error processing sweep command: {str(e)}"
+                activity.save()
+                return JsonResponse(
+                    {"response_type": "ephemeral", "text": "Error processing sweep command. Please try again later."}
+                )
 
     return HttpResponse(status=405)
 
@@ -2595,6 +2607,161 @@ def get_committee_details(repo_name, headers, workspace_client, user_id):
         logger.error(f"Error getting committee details: {str(e)}")
         return JsonResponse(
             {"response_type": "ephemeral", "text": "❌ An error occurred while fetching committee details."}
+        )
+
+
+def post_project_sweep_update(workspace_client, user_id, activity, team_id):
+    """
+    Post a sweep update about projects needing attention to the #project-sweeper channel.
+    This includes projects without Slack channels, inactive projects, and projects without descriptions.
+    """
+    try:
+        # Get the project-sweeper channel ID
+        sweeper_channel_id = "C0607RP8MS8"  # from project_channels.csv
+
+        # Gather project statistics
+        total_projects = Project.objects.count()
+        inactive_projects = Project.objects.filter(status="inactive").count()
+        projects_without_slack = Project.objects.filter(slack_channel__isnull=True).count()
+        projects_without_description = Project.objects.filter(description="").count()
+
+        # Get some example projects needing attention
+        inactive_list = Project.objects.filter(status="inactive")[:5]
+        no_slack_list = Project.objects.filter(slack_channel__isnull=True).exclude(status="inactive")[:5]
+
+        # Build the message blocks
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": "🧹 Project Sweep Report", "emoji": True},
+            },
+            {
+                "type": "context",
+                "elements": [{"type": "mrkdwn", "text": f"Generated at {time.strftime('%Y-%m-%d %H:%M UTC')}"}],
+            },
+            {"type": "divider"},
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*📊 Project Statistics*\n"
+                    f"• Total Projects: *{total_projects}*\n"
+                    f"• Inactive Projects: *{inactive_projects}*\n"
+                    f"• Projects without Slack: *{projects_without_slack}*\n"
+                    f"• Projects without Description: *{projects_without_description}*",
+                },
+            },
+        ]
+
+        # Add inactive projects section
+        if inactive_list:
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": "*🔴 Inactive Projects*"},
+                    },
+                ]
+            )
+            for proj in inactive_list:
+                proj_text = f"• *{proj.name}*"
+                if proj.url:
+                    proj_text += f" - <{proj.url}|View>"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": proj_text},
+                    }
+                )
+
+        # Add projects without Slack channels section
+        if no_slack_list:
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": "*📢 Projects Without Slack Channels*"},
+                    },
+                ]
+            )
+            for proj in no_slack_list:
+                proj_text = f"• *{proj.name}* (Status: {proj.status})"
+                if proj.url:
+                    proj_text += f" - <{proj.url}|View>"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": proj_text},
+                    }
+                )
+
+        # Add footer
+        blocks.extend(
+            [
+                {"type": "divider"},
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "💡 Use `/sweep` to generate this report. Contact project leaders to update inactive projects or add Slack channels.",
+                        }
+                    ],
+                },
+            ]
+        )
+
+        # Post to the project-sweeper channel
+        try:
+            # Join the channel first (in case bot is not a member)
+            workspace_client.conversations_join(channel=sweeper_channel_id)
+        except Exception:
+            # Ignore if already a member or no permission
+            pass
+
+        # Post the message
+        response = workspace_client.chat_postMessage(
+            channel=sweeper_channel_id,
+            blocks=blocks,
+            text="Project Sweep Report",  # Fallback text
+        )
+
+        if response["ok"]:
+            activity.success = True
+            activity.save()
+
+            # Send confirmation to user
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"✅ Project sweep report posted to <#{sweeper_channel_id}>!",
+                }
+            )
+        else:
+            activity.success = False
+            activity.error_message = f"Failed to post message: {response.get('error', 'Unknown error')}"
+            activity.save()
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ Failed to post sweep report to the channel."}
+            )
+
+    except SlackApiError as e:
+        logger.error(f"Slack API error in sweep command: {str(e)}")
+        activity.success = False
+        activity.error_message = f"Slack API error: {str(e)}"
+        activity.save()
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ Error posting to Slack. Please try again later."}
+        )
+    except Exception as e:
+        logger.error(f"Error in post_project_sweep_update: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while generating the sweep report."}
         )
 
 
