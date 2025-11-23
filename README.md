@@ -67,6 +67,7 @@
 - 🎮 **Gamification** - Leaderboards, challenges, and competitions to make security research engaging
 - 💰 **Staking System** - Innovative blockchain-based reward system for contributors
 - 📊 **Comprehensive Dashboard** - Track your progress, statistics, and impact
+- ™️ **Trademark Search** - Fast local database search through 3M+ trademark records with USPTO API fallback
 - 🌐 **Open Source** - Built with transparency and collaboration at its core
 - 🛡️ **OWASP Project** - Part of the Open Worldwide Application Security Project family
 
