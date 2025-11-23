@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("website", "0246_add_user_progress_models"),
+        ("website", "0251_add_fields_to_management_command_log"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
