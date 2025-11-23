@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import logging
 import smtplib
@@ -19,11 +20,10 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
+from PIL import Image, ImageDraw, ImageFont
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import NotFound, ParseError
-from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -1057,22 +1057,51 @@ def get_client_ip(request):
     return request.META.get("REMOTE_ADDR", "")
 
 
-def generate_issue_badge_svg(view_count, bounty_amount):
-    """Generate SVG badge with view count and bounty information."""
-    svg_template = f"""<svg xmlns="http://www.w3.org/2000/svg" width="300" height="24">
-        <defs>
-            <style>
-                .badge-text {{ font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #fff; font-weight: 600; }}
-            </style>
-            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#e74c3c;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#c0392b;stop-opacity:1" />
-            </linearGradient>
-        </defs>
-        <rect width="300" height="24" fill="url(#grad)" rx="4"/>
-        <text x="150" y="16" text-anchor="middle" class="badge-text">👁 {view_count} views | 💰 {bounty_amount}</text>
-    </svg>"""
-    return svg_template.strip()
+def generate_issue_badge_image(view_count, bounty_amount):
+    """Generate PNG badge image with view count and bounty information."""
+    # Image dimensions
+    width, height = 300, 30
+
+    # Create image with gradient background (BLT brand colors)
+    img = Image.new("RGB", (width, height), color="#e74c3c")
+    draw = ImageDraw.Draw(img)
+
+    # Create gradient effect from #e74c3c to #c0392b
+    for x in range(width):
+        # Interpolate between #e74c3c (231,76,60) and #c0392b (192,57,43)
+        r = int(231 - (231 - 192) * x / width)
+        g = int(76 - (76 - 57) * x / width)
+        b = int(60 - (60 - 43) * x / width)
+        draw.line([(x, 0), (x, height)], fill=(r, g, b))
+
+    # Add text
+    text = f"👁 {view_count} views | 💰 {bounty_amount}"
+
+    try:
+        # Try to use a nice font if available
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 14)
+    except IOError:
+        # Fallback to default font
+        font = ImageFont.load_default()
+
+    # Get text bounding box for centering
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+
+    # Center the text
+    x = (width - text_width) // 2
+    y = (height - text_height) // 2
+
+    # Draw text in white
+    draw.text((x, y), text, fill="white", font=font)
+
+    # Save to bytes
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+
+    return img_bytes.getvalue()
 
 
 @api_view(["GET"])
@@ -1128,8 +1157,8 @@ def github_issue_badge(request, issue_number):
 
             # Return cached badge with headers
             return HttpResponse(
-                cached_data["svg"],
-                content_type="image/svg+xml",
+                cached_data["image"],
+                content_type="image/png",
                 headers=headers,
             )
 
@@ -1153,22 +1182,22 @@ def github_issue_badge(request, issue_number):
             or 0
         )
 
-        # Generate SVG badge
-        svg_content = generate_issue_badge_svg(view_count, bounty_amount)
+        # Generate PNG badge image
+        image_content = generate_issue_badge_image(view_count, bounty_amount)
 
         # Generate ETag with secure hash (SHA-256 instead of MD5)
-        etag = hashlib.sha256(svg_content.encode()).hexdigest()[:32]  # Use first 32 chars
+        etag = hashlib.sha256(image_content).hexdigest()[:32]  # Use first 32 chars
 
         # Cache for 5 minutes (300 seconds)
         cache.set(
             cache_key,
-            {"svg": svg_content, "etag": etag},
+            {"image": image_content, "etag": etag},
             timeout=300,
         )
 
         return HttpResponse(
-            svg_content,
-            content_type="image/svg+xml",
+            image_content,
+            content_type="image/png",
             headers={
                 "ETag": etag,
                 "Cache-Control": "public, max-age=300",
@@ -1182,16 +1211,36 @@ def github_issue_badge(request, issue_number):
             str(e),
             exc_info=True,
         )
-        # Return a simple error badge
-        error_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="300" height="24">
-            <rect width="300" height="24" fill="#555" rx="4"/>
-            <text x="150" y="16" text-anchor="middle" style="font-size: 12px; fill: #fff; font-family: Arial;">Badge unavailable</text>
-        </svg>"""
+        # Return a simple error badge image
+        error_img = Image.new("RGB", (300, 30), color="#555555")
+        error_draw = ImageDraw.Draw(error_img)
+        error_text = "Badge unavailable"
+
+        try:
+            error_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+        except IOError:
+            error_font = ImageFont.load_default()
+
+        # Center the error text
+        bbox = error_draw.textbbox((0, 0), error_text, font=error_font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = (300 - text_width) // 2
+        y = (30 - text_height) // 2
+        error_draw.text((x, y), error_text, fill="white", font=error_font)
+
+        # Convert to bytes
+        error_bytes = io.BytesIO()
+        error_img.save(error_bytes, format="PNG")
+        error_bytes.seek(0)
+
         return HttpResponse(
-            error_svg,
-            content_type="image/svg+xml",
+            error_bytes.getvalue(),
+            content_type="image/png",
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
 class JobViewSet(viewsets.ModelViewSet):
     """
     API ViewSet for Job CRUD operations

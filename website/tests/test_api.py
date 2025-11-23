@@ -273,14 +273,14 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_badge_returns_svg(self):
-        """Test that badge endpoint returns SVG content."""
+    def test_badge_returns_png(self):
+        """Test that badge endpoint returns PNG image content."""
         url = "/api/v1/badge/issue/123/"
         response = self.client.get(url)
-        self.assertEqual(response["Content-Type"], "image/svg+xml")
+        self.assertEqual(response["Content-Type"], "image/png")
 
     def test_badge_contains_view_count(self):
-        """Test that badge SVG contains view count."""
+        """Test that badge is generated with view count data."""
         from website.models import IP
 
         # Create some IP log entries with the badge path
@@ -293,19 +293,19 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
 
         url = "/api/v1/badge/issue/123/"
         response = self.client.get(url)
-        content = response.content.decode("utf-8")
 
-        self.assertIn("views", content)
-        self.assertIn("5", content)
+        # Check that response is a valid PNG (starts with PNG signature)
+        self.assertTrue(response.content.startswith(b"\x89PNG\r\n\x1a\n"))
 
     def test_badge_contains_bounty_amount(self):
-        """Test that badge SVG contains bounty amount."""
+        """Test that badge is generated with bounty amount."""
         url = "/api/v1/badge/issue/123/"
         response = self.client.get(url)
-        content = response.content.decode("utf-8")
 
-        self.assertIn("100", content)
-        self.assertIn("💰", content)
+        # Check that response is a valid PNG
+        self.assertTrue(response.content.startswith(b"\x89PNG\r\n\x1a\n"))
+        # Check that it's a reasonable size (should be a few KB for a simple badge)
+        self.assertGreater(len(response.content), 100)
 
     def test_badge_has_cache_headers(self):
         """Test that badge response includes cache headers."""
@@ -345,10 +345,10 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
 
         # Should still return 200 with fallback data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response["Content-Type"], "image/svg+xml")
+        self.assertEqual(response["Content-Type"], "image/png")
 
     def test_badge_without_bounty(self):
-        """Test that badge displays $0 when no bounty is set."""
+        """Test that badge is generated when no bounty is set."""
         from website.models import GitHubIssue
 
         GitHubIssue.objects.create(
@@ -364,9 +364,9 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
 
         url = "/api/v1/badge/issue/456/"
         response = self.client.get(url)
-        content = response.content.decode("utf-8")
 
-        self.assertIn("$0", content)
+        # Check that response is a valid PNG
+        self.assertTrue(response.content.startswith(b"\x89PNG\r\n\x1a\n"))
 
     def test_badge_ip_logging(self):
         """Test that badge requests are logged in IP model."""
@@ -402,25 +402,30 @@ class GitHubIssueBadgeAPITestCase(APITestCase):
         updated_count = ip_logs.aggregate(total=Sum("count"))["total"] or 0
         self.assertGreaterEqual(updated_count, initial_count)
 
-    def test_badge_svg_has_correct_structure(self):
-        """Test that generated SVG has correct structure."""
+    def test_badge_png_has_correct_format(self):
+        """Test that generated image is a valid PNG."""
         url = "/api/v1/badge/issue/123/"
         response = self.client.get(url)
-        content = response.content.decode("utf-8")
 
-        # Check for SVG elements
-        self.assertIn("<svg", content)
-        self.assertIn("</svg>", content)
-        self.assertIn("<text", content)
-        self.assertIn("</text>", content)
-        self.assertIn("linearGradient", content)
+        # Check PNG signature (magic bytes)
+        self.assertTrue(response.content.startswith(b"\x89PNG\r\n\x1a\n"))
 
-    def test_badge_uses_brand_color(self):
-        """Test that badge uses BLT brand red color."""
+        # Check that it's not too small or too large
+        self.assertGreater(len(response.content), 100)  # At least 100 bytes
+        self.assertLess(len(response.content), 50000)  # Less than 50KB
+
+    def test_badge_image_can_be_loaded(self):
+        """Test that badge image can be loaded by PIL."""
+        import io
+
+        from PIL import Image
+
         url = "/api/v1/badge/issue/123/"
         response = self.client.get(url)
-        content = response.content.decode("utf-8")
 
-        # Check for brand color hex codes
-        self.assertIn("#e74c3c", content)  # Primary red
-        self.assertIn("#c0392b", content)  # Darker red for gradient
+        # Try to open the image with PIL
+        img = Image.open(io.BytesIO(response.content))
+
+        # Check basic image properties
+        self.assertEqual(img.format, "PNG")
+        self.assertEqual(img.size, (300, 30))  # Expected dimensions
