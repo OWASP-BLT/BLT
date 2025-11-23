@@ -765,60 +765,73 @@ def slack_commands(request):
                 try:
                     apps_response = workspace_client.api_call("admin.apps.approved.list", params={"limit": 100})
 
-                    if apps_response.get("ok") and apps_response.get("approved_apps"):
-                        apps = apps_response["approved_apps"]
+                    if apps_response.get("ok"):
+                        # If approved_apps is present (even if empty), show the installed apps
+                        if "approved_apps" in apps_response:
+                            apps = apps_response["approved_apps"]
 
-                        apps_blocks.append(
-                            {
-                                "type": "section",
-                                "text": {"type": "mrkdwn", "text": f"*Total Apps Installed:* {len(apps)}"},
-                            }
-                        )
-
-                        # List each app (limit to first 20 to avoid message size limits)
-                        for app in apps[:20]:
-                            app_info = app.get("app", {})
-                            app_name = app_info.get("name", "Unknown App")
-                            app_id = app_info.get("id", "N/A")
-
-                            apps_blocks.append(
-                                {"type": "section", "text": {"type": "mrkdwn", "text": f"• *{app_name}* (`{app_id}`)"}}
-                            )
-
-                        if len(apps) > 20:
                             apps_blocks.append(
                                 {
-                                    "type": "context",
-                                    "elements": [{"type": "mrkdwn", "text": f"_Showing 20 of {len(apps)} apps_"}],
+                                    "type": "section",
+                                    "text": {"type": "mrkdwn", "text": f"*Total Apps Installed:* {len(apps)}"},
                                 }
                             )
-                    else:
-                        # Fallback: Show guidance when admin permissions aren't available
-                        apps_blocks.extend(
-                            [
-                                {
-                                    "type": "section",
-                                    "text": {
-                                        "type": "mrkdwn",
-                                        "text": "⚠️ *Limited Access*\n\n"
-                                        "This bot doesn't have admin permissions to list all workspace apps.",
+
+                            if len(apps) == 0:
+                                apps_blocks.append(
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "No apps are currently installed on this workspace.",
+                                        },
+                                    }
+                                )
+                            else:
+                                # List each app (limit to first 20 to avoid message size limits)
+                                for app in apps[:20]:
+                                    app_info = app.get("app", {})
+                                    app_name = app_info.get("name", "Unknown App")
+                                    app_id = app_info.get("id", "N/A")
+
+                                    apps_blocks.append(
+                                        {"type": "section", "text": {"type": "mrkdwn", "text": f"• *{app_name}* (`{app_id}`)"}}
+                                    )
+
+                                if len(apps) > 20:
+                                    apps_blocks.append(
+                                        {
+                                            "type": "context",
+                                            "elements": [{"type": "mrkdwn", "text": f"_Showing 20 of {len(apps)} apps_"}],
+                                        }
+                                    )
+                        else:
+                            # Fallback: Show guidance when admin permissions aren't available
+                            apps_blocks.extend(
+                                [
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "⚠️ *Limited Access*\n\n"
+                                            "This bot doesn't have admin permissions to list all workspace apps.",
+                                        },
                                     },
-                                },
-                                {"type": "divider"},
-                                {
-                                    "type": "section",
-                                    "text": {
-                                        "type": "mrkdwn",
-                                        "text": "*Alternative ways to view installed apps:*\n\n"
-                                        "1️⃣ Click on your workspace name (top left)\n"
-                                        "2️⃣ Select *Settings & administration*\n"
-                                        "3️⃣ Choose *Manage apps*\n"
-                                        "4️⃣ You'll see all installed and available apps\n\n"
-                                        "Or visit: https://slack.com/apps/manage",
+                                    {"type": "divider"},
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "*Alternative ways to view installed apps:*\n\n"
+                                            "1️⃣ Click on your workspace name (top left)\n"
+                                            "2️⃣ Select *Settings & administration*\n"
+                                            "3️⃣ Choose *Manage apps*\n"
+                                            "4️⃣ You'll see all installed and available apps\n\n"
+                                            "Or visit: https://slack.com/apps/manage",
+                                        },
                                     },
-                                },
-                            ]
-                        )
+                                ]
+                            )
 
                 except SlackApiError:
                     # If admin API not available, provide helpful information
