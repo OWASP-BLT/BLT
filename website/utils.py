@@ -1117,3 +1117,82 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
+
+
+def check_for_spam(text, user=None, request=None):
+    """
+    Check if the provided text appears to be spam.
+
+    Returns:
+        tuple: (is_spam, reason) where is_spam is a boolean and reason is a string
+    """
+    if not text or not isinstance(text, str):
+        return False, None
+
+    text_lower = text.lower()
+    text_stripped = text.strip()
+
+    # List of spam indicators
+    spam_keywords = [
+        "viagra",
+        "cialis",
+        "pharmacy",
+        "casino",
+        "poker",
+        "lottery",
+        "bitcoin investment",
+        "crypto investment",
+        "get rich quick",
+        "work from home",
+        "make money fast",
+        "free money",
+        "cash prize",
+        "congratulations you won",
+        "claim your prize",
+        "click here now",
+        "limited time offer",
+        "act now",
+        "buy now",
+        "order now",
+        "discount price",
+        "lowest price",
+        "best price",
+        "call now",
+        "weight loss",
+        "lose weight fast",
+        "miracle cure",
+    ]
+
+    # Check for spam keywords
+    for keyword in spam_keywords:
+        if keyword in text_lower:
+            return True, f"Contains spam keyword: {keyword}"
+
+    # Check for excessive URLs (more than 5 URLs in content)
+    url_pattern = r"https?://[^\s]+"
+    urls = re.findall(url_pattern, text)
+    if len(urls) > 5:
+        return True, "Contains excessive URLs"
+
+    # Check for excessive capitalization (more than 50% caps in text longer than 20 chars)
+    if len(text_stripped) > 20:
+        caps_count = sum(1 for c in text_stripped if c.isupper())
+        if caps_count / len(text_stripped) > 0.5:
+            return True, "Excessive capitalization"
+
+    # Check for repeated characters (e.g., "!!!!!!!" or "????")
+    # Ignore whitespace-only repetitions (spaces, tabs, newlines are normal in formatted text)
+    if re.search(r"([^\s])\1{5,}", text):
+        return True, "Excessive repeated characters"
+
+    # Check for suspicious patterns like all links and no real content
+    words = text_stripped.split()
+    if len(words) > 0 and len(urls) > 0:
+        if len(urls) / len(words) > 0.3:
+            return True, "High URL-to-text ratio"
+
+    # Check for very short content with URLs (likely spam)
+    if len(words) < 5 and len(urls) > 0:
+        return True, "Very short content with URLs"
+
+    return False, None

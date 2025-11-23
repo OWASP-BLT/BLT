@@ -75,6 +75,7 @@ from website.models import (
     Wallet,
 )
 from website.utils import (
+    check_for_spam,
     get_client_ip,
     get_email_from_domain,
     get_page_votes,
@@ -1039,6 +1040,21 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     self.request,
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
+                )
+
+            # Check for spam in description and markdown_description
+            combined_text = f"{obj.description or ''} {obj.markdown_description or ''}"
+            is_spam, spam_reason = check_for_spam(combined_text, user=obj.user, request=self.request)
+            if is_spam:
+                logger.warning(f"Spam detected in issue creation: {spam_reason}")
+                messages.error(
+                    self.request,
+                    "Your submission appears to contain spam content. Please check your input and try again.",
+                )
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
                 )
 
             parsed_url = urlparse(obj.url)

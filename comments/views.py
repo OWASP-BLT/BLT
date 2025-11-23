@@ -1,7 +1,9 @@
 import json
+import logging
 import os
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
@@ -10,8 +12,11 @@ from django.template.loader import render_to_string
 from django.utils.html import escape
 
 from website.models import Issue
+from website.utils import check_for_spam
 
 from .models import Comment
+
+logger = logging.getLogger(__name__)
 
 
 @login_required(login_url="/accounts/login/")
@@ -24,6 +29,22 @@ def add_comment(request):
         issue = issue
         text = request.POST.get("text_comment")
         text = escape(text)
+
+        # Check for spam in comment text
+        is_spam, spam_reason = check_for_spam(text, user=request.user, request=request)
+        if is_spam:
+            logger.warning(f"Spam detected in comment by {request.user.username}: {spam_reason}")
+            messages.error(
+                request,
+                "Your comment appears to contain spam content. Please check your input and try again.",
+            )
+            all_comment = Comment.objects.filter(issue=issue)
+            return render(
+                request,
+                "comments.html",
+                {"all_comment": all_comment, "user": request.user},
+            )
+
         user_list = []
         temp_text = text.split()
         new_text = ""
@@ -106,9 +127,21 @@ def edit_comment(request, pk):
     if request.method == "GET":
         issue = Issue.objects.get(pk=request.GET["issue_pk"])
         comment = Comment.objects.get(pk=request.GET["comment_pk"])
-        comment.text = request.GET.get("text_comment")
-        comment.text = escape(comment.text)
-        comment.save()
+        new_text = request.GET.get("text_comment")
+        new_text = escape(new_text)
+
+        # Check for spam in edited comment text
+        is_spam, spam_reason = check_for_spam(new_text, user=request.user, request=request)
+        if is_spam:
+            logger.warning(f"Spam detected in comment edit by {request.user.username}: {spam_reason}")
+            messages.error(
+                request,
+                "Your comment appears to contain spam content. Please check your input and try again.",
+            )
+        else:
+            comment.text = new_text
+            comment.save()
+
         all_comment = Comment.objects.filter(issue=issue)
     return render(
         request,
@@ -128,8 +161,18 @@ def reply_comment(request, pk):
         issue = Issue.objects.get(pk=request.GET["issue_pk"])
         reply_text = request.GET.get("text_comment")
         reply_text = escape(reply_text)
-        comment = Comment(author=author, author_url=author_url, issue=issue, text=reply_text, parent=parent_obj)
-        comment.save()
+
+        # Check for spam in reply text
+        is_spam, spam_reason = check_for_spam(reply_text, user=request.user, request=request)
+        if is_spam:
+            logger.warning(f"Spam detected in comment reply by {request.user.username}: {spam_reason}")
+            messages.error(
+                request,
+                "Your comment appears to contain spam content. Please check your input and try again.",
+            )
+        else:
+            comment = Comment(author=author, author_url=author_url, issue=issue, text=reply_text, parent=parent_obj)
+            comment.save()
         all_comment = Comment.objects.filter(issue=issue)
     return render(
         request,
