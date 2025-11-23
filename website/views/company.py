@@ -2100,6 +2100,128 @@ def edit_prize(request, prize_id, organization_id):
     return JsonResponse({"success": True})
 
 
+class AnonymousHuntView(View):
+    """View for creating bug hunts anonymously with upfront payment"""
+
+    def get(self, request, *args, **kwargs):
+        """Display form for anonymous bug hunt creation"""
+        # Get all active organizations for dropdown
+        organizations = Organization.objects.filter(is_active=True).values("id", "name", "slug")
+
+        context = {
+            "organizations": organizations,
+        }
+
+        return render(request, "anonymous_hunt.html", context)
+
+    def post(self, request, *args, **kwargs):
+        """Handle anonymous bug hunt creation with payment"""
+        data = request.POST
+
+        # Get organization and domain info
+        organization_id = data.get("organization")
+        domain_name = data.get("domain_name", "").strip()
+        domain_url = data.get("domain_url", "").strip()
+
+        if not organization_id or not domain_name or not domain_url:
+            messages.error(request, "Please provide all required fields.")
+            return redirect("anonymous_hunt")
+
+        try:
+            organization = Organization.objects.get(id=organization_id, is_active=True)
+        except Organization.DoesNotExist:
+            messages.error(request, "Selected organization does not exist.")
+            return redirect("anonymous_hunt")
+
+        # Get or create domain for this organization
+        domain, created = Domain.objects.get_or_create(
+            name=domain_name,
+            defaults={
+                "organization": organization,
+                "url": domain_url,
+            },
+        )
+
+        # If domain exists but belongs to different organization, show error
+        if not created and domain.organization != organization:
+            messages.error(request, "This domain belongs to a different organization.")
+            return redirect("anonymous_hunt")
+
+        # Parse dates
+        start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
+        end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
+
+        try:
+            start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            messages.error(request, "Please enter dates in MM/DD/YYYY format (e.g., 12/25/2024)")
+            return redirect("anonymous_hunt")
+
+        # Validate dates
+        if start_date > end_date:
+            messages.error(request, "Start date should be less than end date")
+            return redirect("anonymous_hunt")
+
+        # Calculate total payment amount from prizes
+        prizes = json.loads(data.get("prizes", "[]"))
+        total_payment = sum(int(prize.get("cash_value", 0)) for prize in prizes if prize.get("prize_name", "").strip())
+
+        # Validate payment amount
+        if total_payment <= 0:
+            messages.error(request, "Please add at least one prize with a value greater than 0.")
+            return redirect("anonymous_hunt")
+
+        # Get anonymous creator email for notifications
+        creator_email = data.get("email", "").strip()
+        if not creator_email:
+            messages.error(request, "Please provide an email address for notifications.")
+            return redirect("anonymous_hunt")
+
+        # Create the hunt
+        hunt = Hunt.objects.create(
+            name=data.get("bughunt_name", ""),
+            domain=domain,
+            url=domain_url,
+            description=data.get("markdown-description", ""),
+            starts_on=start_date,
+            end_on=end_date,
+            is_published=False,  # Require manual approval for anonymous hunts
+            is_anonymous=True,
+            anonymous_creator_email=creator_email,
+            payment_status="pending",
+            payment_amount=total_payment,
+            requires_bug_verification=True,
+        )
+
+        # Create prizes
+        for prize in prizes:
+            if prize.get("prize_name", "").strip() == "":
+                continue
+
+            HuntPrize.objects.create(
+                hunt=hunt,
+                name=prize["prize_name"],
+                value=prize.get("cash_value", 0),
+                no_of_eligible_projects=prize.get("number_of_winning_projects", 1),
+                valid_submissions_eligible=prize.get("every_valid_submissions", False),
+                prize_in_crypto=prize.get("paid_in_cryptocurrency", False),
+                description=prize.get("prize_description", ""),
+            )
+
+        # In a real implementation, you would redirect to a payment gateway here
+        # For now, we'll just show a success message
+        messages.success(
+            request,
+            f"Bug hunt '{hunt.name}' created successfully! "
+            f"Total payment amount: ${total_payment}. "
+            f"You will receive payment instructions at {creator_email}. "
+            f"The hunt will be published after payment is confirmed and approved by the organization.",
+        )
+
+        return redirect("anonymous_hunt")
+
+
 def accept_bug(request, issue_id, reward_id=None):
     with transaction.atomic():
         issue = get_object_or_404(Issue, id=issue_id)

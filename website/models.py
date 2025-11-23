@@ -515,6 +515,28 @@ class Hunt(models.Model):
     result_published = models.BooleanField(default=False)
     modified = models.DateTimeField(auto_now=True)
 
+    # Anonymous bug hunt fields
+    is_anonymous = models.BooleanField(default=False, help_text="Whether this hunt was created anonymously")
+    anonymous_creator_email = models.EmailField(
+        null=True, blank=True, help_text="Email of anonymous creator for notifications"
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        default="pending",
+        choices=[
+            ("pending", "Pending"),
+            ("completed", "Completed"),
+            ("refunded", "Refunded"),
+        ],
+        help_text="Status of upfront payment for anonymous hunts",
+    )
+    payment_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, help_text="Total amount paid upfront for anonymous hunt"
+    )
+    requires_bug_verification = models.BooleanField(
+        default=True, help_text="Whether bugs need verification before payout"
+    )
+
     @property
     def domain_title(self):
         parsed_url = urlparse(self.url)

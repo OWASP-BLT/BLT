@@ -61,6 +61,7 @@ from website.views.company import (
     AddDomainView,
     AddHuntView,
     AddSlackIntegrationView,
+    AnonymousHuntView,
     DomainView,
     EndBughuntView,
     Organization_view,
@@ -902,6 +903,11 @@ urlpatterns = [
         "organization/<int:id>/dashboard/add_bughunt/",
         AddHuntView.as_view(),
         name="add_bughunt",
+    ),
+    path(
+        "anonymous-hunt/",
+        AnonymousHuntView.as_view(),
+        name="anonymous_hunt",
     ),
     path(
         "organization/<int:id>/dashboard/add_domain/",
