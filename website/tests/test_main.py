@@ -165,7 +165,7 @@ class MySeleniumTests(LiveServerTestCase):
         # Check for current header format: @username and separate Points display
         self.assertIn(f"@{self.user.username.split('_')[0]}", body.text)
         self.assertIn("0 Points", body.text)
-        
+
     @override_settings(DEBUG=True)
     def test_login_username(self):
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
