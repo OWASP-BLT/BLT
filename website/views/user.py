@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
@@ -139,32 +140,91 @@ def update_bch_address(request):
 
 @login_required
 def profile_edit(request):
+    from allauth.account.models import EmailAddress
+
     Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
+    # Get the user's current email BEFORE changes
+    original_email = request.user.email
+
     if request.method == "POST":
         form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+
         if form.is_valid():
-            # Check if email is unique
             new_email = form.cleaned_data["email"]
+
+            # Check email uniqueness
             if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
                 form.add_error("email", "This email is already in use")
                 return render(request, "profile_edit.html", {"form": form})
 
-            # Save the form
+            # Check if the user already has this email
+            existing_email = EmailAddress.objects.filter(user=request.user, email=new_email).first()
+            if existing_email:
+                if existing_email.verified:
+                    form.add_error("email", "You already have this email verified. Please set it as primary instead.")
+                    return render(request, "profile_edit.html", {"form": form})
+
+            if EmailAddress.objects.exclude(user=request.user).filter(email=new_email).exists():
+                form.add_error("email", "This email is already registered or pending verification")
+                return render(request, "profile_edit.html", {"form": form})
+
+            # Detect email change before saving profile fields
+            email_changed = new_email != original_email
+
+            # Save profile form (does "not" touch email in user model)
             form.save()
 
-            # Update the User model's email
-            request.user.email = new_email
-            request.user.save()
+            if email_changed:
+                # Remove any pending unverified emails
+                EmailAddress.objects.filter(user=request.user, verified=False).delete()
 
+                # Create new unverified email entry
+                # Create or update email entry as unverified
+                email_address, created = EmailAddress.objects.update_or_create(
+                    user=request.user,
+                    email=new_email,
+                    defaults={"verified": False, "primary": False},
+                )
+
+                # Rate limit: atomic check-and-set to prevent race conditions
+                rate_key = f"email_verification_rate_{request.user.id}"
+
+                # add() only sets if key doesn't exist (atomic operation)
+                if not cache.add(rate_key, True, timeout=60):
+                    messages.warning(
+                        request,
+                        "Too many requests. Please wait a minute before trying again.",
+                    )
+                    return redirect("profile", slug=request.user.username)
+
+                # Send verification email
+                try:
+                    email_address.send_confirmation(request, signup=False)
+                except Exception as e:
+                    logger.exception(f"Failed to send email confirmation to {new_email}: {e}")
+                    messages.error(request, "Failed to send verification email. Please try again later.")
+                    return redirect("profile", slug=request.user.username)
+
+                messages.info(
+                    request,
+                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
+                )
+                return redirect("profile", slug=request.user.username)
+
+            # No email change=normal success
             messages.success(request, "Profile updated successfully!")
             return redirect("profile", slug=request.user.username)
+
         else:
             messages.error(request, "Please correct the errors below.")
+
     else:
-        # Initialize the form with the user's current email
-        form = UserProfileForm(instance=user_profile, initial={"email": request.user.email})
+        form = UserProfileForm(
+            instance=user_profile,
+            initial={"email": request.user.email},
+        )
 
     return render(request, "profile_edit.html", {"form": form})
 
@@ -242,7 +302,7 @@ def get_github_stats(user_profile):
         reviews__reviewer=user_profile,
     ).count()
 
-    print(f"Total PRs found: {user_prs.count()}")
+    logger.debug(f"Total PRs found: {user_prs.count()}")
 
     # Overall stats
     merged_count = user_prs.filter(is_merged=True).count()
@@ -337,7 +397,7 @@ class UserProfileDetailView(DetailView):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         # Add bacon earning data
         bacon_earning = BaconEarning.objects.filter(user=user).first()
-        print(f"Bacon earning for {user.username}: {bacon_earning}")
+        logger.debug(f"Bacon earning for {user.username}: {bacon_earning}")
         context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
 
         # Get bacon submission stats
@@ -989,7 +1049,7 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    print("issue closed")
+    logger.debug("issue closed")
     if payload["action"] == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
@@ -1034,7 +1094,7 @@ def assign_github_badge(user, action_title):
             UserBadge.objects.create(user=user, badge=badge)
 
     except Badge.DoesNotExist:
-        print(f"Badge '{action_title}' does not exist.")
+        logger.warning(f"Badge '{action_title}' does not exist.")
 
 
 @method_decorator(login_required, name="dispatch")

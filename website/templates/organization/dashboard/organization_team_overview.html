@@ -17,7 +17,7 @@
 {% endblock og_description %}
 {% block body %}
     {% comment %} <div class="fixed bottom-6 right-6 z-50 flex gap-3">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html" class="bg-gray-800 hover:bg-gray-900 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html" class="bg-gray-800 dark:bg-gray-100 hover:bg-gray-900 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
             <i class="fab fa-github text-xl"></i>
         </a>
         <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1" class="bg-[#e74c3c] hover:bg-[#c0392b] text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
@@ -26,12 +26,14 @@
     </div> {% endcomment %}
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <!-- Header Section -->
-        <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Team Overview</h1>
-                        <p class="mt-1 text-sm text-gray-500">Manage your organization's team members and their status reports</p>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Team Overview</h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">
+                            Manage your organization's team members and their status reports
+                        </p>
                     </div>
                     <a href="/teams/overview"
                        class="inline-flex items-center px-4 py-2.5 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 select-none">
@@ -49,10 +51,10 @@
         <!-- Main Content -->
         <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
             <!-- Team Members Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-                <div class="px-6 py-4 border-b border-gray-200">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900">Organization Members</h2>
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Organization Members</h2>
                         <span class="px-3 py-1 bg-[#e74c3c]/10 text-[#e74c3c] rounded-full text-sm font-semibold">
                             {{ team_members|length }} member{{ team_members|length|pluralize }}
                         </span>
@@ -60,16 +62,16 @@
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+                        <thead class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Member</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Email</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Role</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                                <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Member</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Email</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Role</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Status</th>
+                                <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
                             {% if team_members %}
                                 {% for member in team_members %}
                                     <tr class="hover:bg-gray-50 transition-colors duration-150">
@@ -86,12 +88,12 @@
                                                          alt="{{ member.user.username }}"
                                                          width="40"
                                                          height="40"
-                                                         class="w-10 h-10 rounded-full mr-3 border-2 border-gray-200 object-cover">
+                                                         class="w-10 h-10 rounded-full mr-3 border-2 border-gray-200 dark:border-gray-700 object-cover">
                                                 {% endif %}
-                                                <span class="text-sm font-semibold text-gray-900">{{ member.user.username }}</span>
+                                                <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ member.user.username }}</span>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">{{ member.user.email }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ member.user.email }}</td>
                                         <td class="px-6 py-4">
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#e74c3c]/10 text-[#e74c3c]">
                                                 <i class="fas fa-shield-alt mr-1"></i>
@@ -105,7 +107,7 @@
                                                     Active
                                                 </span>
                                             {% else %}
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
                                                     <i class="fas fa-times-circle mr-1"></i>
                                                     Inactive
                                                 </span>
@@ -113,7 +115,7 @@
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <a href="/profile/{{ member.user.username }}"
-                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
+                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
                                                title="View Profile">
                                                 <svg class="w-4 h-4 mr-1.5"
                                                      fill="none"
@@ -132,11 +134,11 @@
                                 <tr>
                                     <td colspan="5" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
-                                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                                <i class="fas fa-users text-gray-400 text-2xl"></i>
+                                            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                                                <i class="fas fa-users text-gray-400 dark:text-gray-600 text-2xl"></i>
                                             </div>
-                                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No Members Found</h3>
-                                            <p class="text-gray-500 mb-4">Start building your team by adding members</p>
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Members Found</h3>
+                                            <p class="text-gray-500 dark:text-gray-500 mb-4">Start building your team by adding members</p>
                                             <a href="/teams/overview"
                                                class="inline-flex items-center gap-2 px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white font-medium rounded-lg transition-all duration-200">
                                                 <i class="fas fa-plus"></i>
@@ -155,90 +157,90 @@
             DEBUG: Team Members: {{ team_members|length }}
             DEBUG: Daily Reports: {{ daily_status_reports|length }}
             {% endcomment %}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-lg font-semibold text-gray-900">Daily Status Reports</h2>
-                        <p class="text-xs text-gray-500 mt-1">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Status Reports</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
                             Showing {{ daily_status_reports|length }} report{{ daily_status_reports|length|pluralize }} from {{ team_members|length }} member{{ team_members|length|pluralize }}
                         </p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 text-gray-700 transition-all duration-200 hover:border-[#e74c3c]/30"
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:border-[#e74c3c]/30"
                                 data-tab="user">
                             <i class="fas fa-user mr-2"></i>By User
                         </button>
-                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 text-gray-700 transition-all duration-200 hover:border-[#e74c3c]/30"
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:border-[#e74c3c]/30"
                                 data-tab="date">
                             <i class="fas fa-calendar mr-2"></i>By Date
                         </button>
-                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 text-gray-700 transition-all duration-200 hover:border-[#e74c3c]/30"
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:border-[#e74c3c]/30"
                                 data-tab="goal">
                             <i class="fas fa-bullseye mr-2"></i>By Goal
                         </button>
-                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 text-gray-700 transition-all duration-200 hover:border-[#e74c3c]/30"
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 transition-all duration-200 hover:border-[#e74c3c]/30"
                                 data-tab="task">
                             <i class="fas fa-search mr-2"></i>By Task
                         </button>
                     </div>
                 </div>
                 <!-- Filter Panels -->
-                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                     <div id="user-panel" class="filter-panel hidden">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             <i class="fas fa-user-circle text-[#e74c3c] mr-2"></i>Select Team Member
                         </label>
                         <select id="user-filter"
-                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                             <option value="">All Members</option>
                             {% for member in team_members %}<option value="{{ member.user.id }}">{{ member.user.username }}</option>{% endfor %}
                         </select>
                     </div>
                     <div id="date-panel" class="filter-panel hidden">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             <i class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>Select Date
                         </label>
                         <input type="date"
                                id="date-filter"
-                               class="w-full md:w-96 px-4 py-2.5 border border-gray-300 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                               class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                     </div>
                     <div id="goal-panel" class="filter-panel hidden">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             <i class="fas fa-flag-checkered text-[#e74c3c] mr-2"></i>Goal Status
                         </label>
                         <select id="goal-filter"
-                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                             <option value="">All Goals</option>
                             <option value="true">✅ Accomplished</option>
                             <option value="false">❌ Not Accomplished</option>
                         </select>
                     </div>
                     <div id="task-panel" class="filter-panel hidden">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             <i class="fas fa-search text-[#e74c3c] mr-2"></i>Search Tasks
                         </label>
                         <input type="text"
                                id="task-filter"
                                placeholder="Type to search in previous work..."
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                               class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                     </div>
                 </div>
                 <!-- Reports Table -->
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+                        <thead class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">User</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Previous Work</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Next Plan</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Blockers</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Goal</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Mood</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">User</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Previous Work</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Next Plan</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Blockers</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Goal</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Mood</th>
                             </tr>
                         </thead>
                         <tbody id="statusTableBody"
-                               class="divide-y divide-gray-200 bg-white"
+                               class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800"
                                data-initial-count="{{ daily_status_reports|length }}">
                             {% if daily_status_reports %}
                                 {% for report in daily_status_reports %}
@@ -261,26 +263,26 @@
                                                              class="w-8 h-8 rounded-full mr-3 object-cover">
                                                     {% endif %}
                                                 {% endwith %}
-                                                <span class="text-sm font-medium text-gray-900">{{ report.user.username }}</span>
+                                                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ report.user.username }}</span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-600">{{ report.date|date:"M j, Y" }}</div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">{{ report.date|date:"M j, Y" }}</div>
                                         </td>
                                         <td class="px-6 py-4 expandable-content max-w-xs">
-                                            <div class="text-sm text-gray-600">
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">
                                                 <span class="short-text">{{ report.previous_work|slice:":50" }}...</span>
                                                 <span class="full-text hidden">{{ report.previous_work }}</span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 expandable-content max-w-xs">
-                                            <div class="text-sm text-gray-600">
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">
                                                 <span class="short-text">{{ report.next_plan|slice:":50" }}...</span>
                                                 <span class="full-text hidden">{{ report.next_plan }}</span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 expandable-content max-w-xs">
-                                            <div class="text-sm text-gray-600">
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">
                                                 <span class="short-text">{{ report.blockers|slice:":50" }}...</span>
                                                 <span class="full-text hidden">{{ report.blockers }}</span>
                                             </div>
@@ -289,7 +291,7 @@
                                             {% if report.goal_accomplished %}
                                                 <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Yes</span>
                                             {% else %}
-                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">No</span>
+                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full">No</span>
                                             {% endif %}
                                         </td>
                                         <td class="px-6 py-4">
@@ -301,8 +303,8 @@
                                 <tr>
                                     <td colspan="7" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
-                                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                                <svg class="w-8 h-8 text-gray-400"
+                                            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                                                <svg class="w-8 h-8 text-gray-400 dark:text-gray-600"
                                                      fill="none"
                                                      stroke="currentColor"
                                                      viewBox="0 0 24 24">
@@ -310,8 +312,8 @@
                                                     </path>
                                                 </svg>
                                             </div>
-                                            <h3 class="text-sm font-medium text-gray-900 mb-1">No Reports Found</h3>
-                                            <p class="text-sm text-gray-500">Daily status reports will appear here when submitted</p>
+                                            <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No Reports Found</h3>
+                                            <p class="text-sm text-gray-500 dark:text-gray-500">Daily status reports will appear here when submitted</p>
                                         </div>
                                     </td>
                                 </tr>

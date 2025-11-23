@@ -1,0 +1,161 @@
+name: Remind Authors About Unresolved Conversations
+
+# Runs daily to remind PR authors about unresolved conversations
+# if the PR hasn't been updated in 24 hours
+on:
+  schedule:
+    # Run daily at midnight UTC (00:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual triggering for testing
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  remind_unresolved_conversations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remind Authors About Unresolved Conversations
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Get all open PRs
+            const { data: openPRs } = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+            
+            core.info(`Found ${openPRs.length} open PRs to check`);
+            
+            // Calculate the 24-hour threshold
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            
+            // Process each PR
+            for (const pr of openPRs) {
+              const pull_number = pr.number;
+              const prAuthor = pr.user.login;
+              const prUpdatedAt = new Date(pr.updated_at);
+              
+              core.info(`\nChecking PR #${pull_number} by @${prAuthor}`);
+              core.info(`  Last updated: ${pr.updated_at}`);
+              
+              // Check if PR was updated in the last 24 hours
+              if (prUpdatedAt > twentyFourHoursAgo) {
+                core.info(`  Skipping - PR was updated within the last 24 hours`);
+                continue;
+              }
+              
+              // Get unresolved conversations count using GraphQL
+              const query = `
+                query($owner: String!, $repo: String!, $pull_number: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $pull_number) {
+                      reviewThreads(first: 100) {
+                        nodes {
+                          isResolved
+                          isOutdated
+                        }
+                        pageInfo {
+                          hasNextPage
+                          endCursor
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              
+              try {
+                let allThreads = [];
+                let hasNextPage = true;
+                let cursor = null;
+                
+                // Paginate through all review threads
+                while (hasNextPage) {
+                  const variables = {
+                    owner,
+                    repo,
+                    pull_number,
+                    ...(cursor && { after: cursor })
+                  };
+                  
+                  const result = await github.graphql(
+                    cursor ? query.replace('first: 100', 'first: 100, after: $after') : query,
+                    variables
+                  );
+                  
+                  const threads = result.repository.pullRequest.reviewThreads;
+                  allThreads = allThreads.concat(threads.nodes);
+                  hasNextPage = threads.pageInfo.hasNextPage;
+                  cursor = threads.pageInfo.endCursor;
+                }
+                
+                // Count unresolved conversations (excluding outdated ones)
+                const unresolvedThreads = allThreads.filter(thread => !thread.isResolved && !thread.isOutdated);
+                const unresolvedCount = unresolvedThreads.length;
+                
+                core.info(`  Unresolved conversations: ${unresolvedCount}`);
+                
+                // Skip if no unresolved conversations
+                if (unresolvedCount === 0) {
+                  core.info(`  Skipping - No unresolved conversations`);
+                  continue;
+                }
+                
+                // Check if we already posted a reminder recently
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  per_page: 100,
+                });
+                
+                // Find our reminder comment (using a unique marker)
+                const reminderMarker = '<!-- unresolved-conversations-reminder -->';
+                const existingReminders = comments.filter(comment => 
+                  comment.body && comment.body.includes(reminderMarker)
+                );
+                
+                // Check if we already reminded in the last 7 days
+                const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                const recentReminder = existingReminders.find(comment => 
+                  new Date(comment.created_at) > sevenDaysAgo
+                );
+                
+                if (recentReminder) {
+                  core.info(`  Skipping - Reminder already posted within last 7 days`);
+                  continue;
+                }
+                
+                // Post a reminder comment
+                const conversationWord = unresolvedCount === 1 ? 'conversation' : 'conversations';
+                const commentBody = reminderMarker + '\n' +
+                  '💬 **Reminder: Unresolved Conversations**\n\n' +
+                  `Hi @${prAuthor}!\n\n` +
+                  `This pull request has **${unresolvedCount} unresolved ${conversationWord}** that need to be addressed.\n\n` +
+                  'Please review and resolve the pending discussions so we can move forward with merging this PR.\n\n' +
+                  'Thank you! 🙏';
+                
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  body: commentBody,
+                });
+                
+                core.info(`  ✓ Posted reminder for ${unresolvedCount} unresolved ${conversationWord}`);
+                
+              } catch (error) {
+                core.warning(`  Failed to process PR #${pull_number}: ${error.message}`);
+              }
+            }
+            
+            core.info('\n✓ Finished checking all open PRs');
