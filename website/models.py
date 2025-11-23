@@ -21,7 +21,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count
+from django.db.models import Count, F
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -198,6 +198,15 @@ class Organization(models.Model):
         max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
     )
 
+    # GitHub and GSOC fields
+    github_org = models.CharField(max_length=255, blank=True, null=True, help_text="GitHub organization name")
+    gsoc_years = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Comma-separated list of years participated in Google Summer of Code (e.g., '2024,2023,2022')",
+    )
+
     def is_admin(self, user):
         """Check if the user is an admin of the organization."""
         return self.admin == user
@@ -215,6 +224,9 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse("organization_detail", kwargs={"slug": self.slug})
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -236,6 +248,93 @@ class JoinRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
+
+
+class Job(models.Model):
+    """Job posting model for organizations"""
+
+    JOB_TYPE_CHOICES = [
+        ("full-time", "Full Time"),
+        ("part-time", "Part Time"),
+        ("contract", "Contract"),
+        ("internship", "Internship"),
+        ("freelance", "Freelance"),
+    ]
+
+    JOB_STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("active", "Active"),
+        ("paused", "Paused"),
+        ("closed", "Closed"),
+    ]
+
+    # Basic Information
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="jobs", help_text="Organization posting the job"
+    )
+    title = models.CharField(max_length=255, help_text="Job title")
+    description = models.TextField(help_text="Detailed job description with responsibilities")
+    requirements = models.TextField(blank=True, null=True, help_text="Job requirements or qualifications")
+    location = models.CharField(max_length=255, blank=True, null=True, help_text="Job location (city, remote, hybrid)")
+    job_type = models.CharField(
+        max_length=20, choices=JOB_TYPE_CHOICES, default="full-time", help_text="Type of employment"
+    )
+    salary_range = models.CharField(
+        max_length=100, blank=True, null=True, help_text="Salary range (e.g., $50k-$70k, Competitive)"
+    )
+
+    # Visibility and Status
+    is_public = models.BooleanField(default=True, help_text="Whether this job is publicly visible")
+    status = models.CharField(
+        max_length=20, choices=JOB_STATUS_CHOICES, default="draft", help_text="Current status of the job posting"
+    )
+    expires_at = models.DateTimeField(blank=True, null=True, help_text="Date and time when this job posting expires")
+
+    # Application Methods
+    application_email = models.EmailField(blank=True, null=True, help_text="Email to receive applications")
+    application_url = models.URLField(blank=True, null=True, help_text="URL to external application page")
+    application_instructions = models.TextField(blank=True, null=True, help_text="Custom instructions for how to apply")
+
+    # Metadata
+    posted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, help_text="User who created this job posting"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    views_count = models.IntegerField(default=0, help_text="Number of times this job has been viewed")
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["organization", "is_public", "status"], name="job_org_pub_status_idx"),
+            models.Index(fields=["is_public", "status"], name="job_public_status_idx"),
+            models.Index(fields=["-created_at"], name="job_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.title} at {self.organization.name}"
+
+    def get_absolute_url(self):
+        return reverse("job_detail", kwargs={"pk": self.pk})
+
+    def has_application_method(self):
+        """Check if at least one application method is provided"""
+        return bool(self.application_email or self.application_url or self.application_instructions)
+
+    def increment_views(self):
+        """Increment the view count for this job atomically"""
+        Job.objects.filter(pk=self.pk).update(views_count=F("views_count") + 1)
+        self.refresh_from_db(fields=["views_count"])
+
+    def is_expired(self):
+        """Check if the job posting has expired"""
+        if self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+
+    def can_apply(self):
+        """Check if users can currently apply to this job"""
+        return self.status == "active" and not self.is_expired()
 
 
 class Domain(models.Model):
@@ -538,7 +637,7 @@ class Issue(models.Model):
                     cvss_metric_v = next(iter(metrics))
                     return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
-            print(e)
+            logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
 
     class Meta:
@@ -1043,6 +1142,11 @@ class ForumPost(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     is_pinned = models.BooleanField(default=False)
+    repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
+    project = models.ForeignKey("Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts"
+    )
 
     def __str__(self):
         return f"{self.title} by {self.user}"
@@ -1115,6 +1219,9 @@ class Project(models.Model):
     url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
+    slack = models.URLField(null=True, blank=True)
+    slack_channel = models.CharField(max_length=255, blank=True, null=True)
+    slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
@@ -1374,7 +1481,7 @@ class Activity(models.Model):
             self.save()
             return True
         except Exception as e:
-            print(e)
+            logger.error(f"Error posting activity to BlueSky: {e}")
 
 
 class Badge(models.Model):
@@ -2343,7 +2450,9 @@ class Hackathon(models.Model):
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
             elif pr.contributor and pr.contributor.github_id:
-                # Skip bot accounts
+                # Skip bot accounts - check contributor_type field (primary) and name patterns (fallback)
+                if pr.contributor.contributor_type == "Bot":
+                    continue
                 github_username = pr.contributor.name
                 if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
                     continue

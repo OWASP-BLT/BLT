@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from datetime import timedelta
 
@@ -8,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -27,6 +28,9 @@ from website.models import (
     Repo,
     UserProfile,
 )
+
+logger = logging.getLogger(__name__)
+REPO_REFRESH_DELAY_SECONDS = getattr(settings, "HACKATHON_REPO_REFRESH_DELAY", 1.0)
 
 
 class HackathonListView(ListView):
@@ -115,6 +119,14 @@ class HackathonDetailView(DetailView):
                 created_at__lte=hackathon.end_time,
             )
 
+        # Exclude bot accounts from contributors
+        # Filter by contributor_type field (primary check) and name patterns (fallback)
+        query = query.exclude(
+            Q(contributor__contributor_type="Bot")
+            | Q(contributor__name__endswith="[bot]")
+            | Q(contributor__name__icontains="bot")
+        )
+
         return query
 
     def _get_date_range_data(self, start_date, end_date, data_dict, default_value=0):
@@ -136,11 +148,15 @@ class HackathonDetailView(DetailView):
         user_profile_count = prs.exclude(user_profile=None).values("user_profile").distinct().count()
 
         # Count unique contributors (GitHub users not registered on the platform)
-        # Exclude bot accounts
+        # Exclude bot accounts using contributor_type field (primary) and name patterns (fallback)
         contributor_count = (
             prs.filter(user_profile=None)
             .exclude(contributor=None)
-            .exclude(contributor__name__endswith="[bot]")
+            .exclude(
+                Q(contributor__contributor_type="Bot")
+                | Q(contributor__name__endswith="[bot]")
+                | Q(contributor__name__icontains="bot")
+            )
             .values("contributor")
             .distinct()
             .count()
@@ -168,14 +184,22 @@ class HackathonDetailView(DetailView):
         repos_with_pr_counts = []
 
         for repo in repositories:
-            # Count merged PRs for this repository
-            merged_pr_count = GitHubIssue.objects.filter(
-                repo=repo,
-                type="pull_request",
-                is_merged=True,
-                merged_at__gte=hackathon.start_time,
-                merged_at__lte=hackathon.end_time,
-            ).count()
+            # Count merged PRs for this repository (excluding bots)
+            merged_pr_count = (
+                GitHubIssue.objects.filter(
+                    repo=repo,
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=hackathon.start_time,
+                    merged_at__lte=hackathon.end_time,
+                )
+                .exclude(
+                    Q(contributor__contributor_type="Bot")
+                    | Q(contributor__name__endswith="[bot]")
+                    | Q(contributor__name__icontains="bot")
+                )
+                .count()
+            )
 
             repos_with_pr_counts.append({"repo": repo, "merged_pr_count": merged_pr_count})
 
@@ -194,7 +218,7 @@ class HackathonDetailView(DetailView):
         # Get merged PR data
         merged_pr_data = (
             self._get_base_pr_query(hackathon, repo_ids, is_merged=True)
-            .annotate(date=TruncDate("created_at"))
+            .annotate(date=TruncDate("merged_at"))
             .values("date")
             .annotate(count=Count("id"))
             .order_by("date")
@@ -417,6 +441,67 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
     return redirect("hackathon_detail", slug=hackathon_slug)
 
 
+@login_required
+def refresh_all_hackathon_repositories(request, slug):
+    """Refresh pull request data for all repositories linked to a hackathon."""
+    hackathon = get_object_or_404(Hackathon, slug=slug)
+
+    user = request.user
+    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+        messages.error(request, "You don't have permission to refresh repository data.")
+        return redirect("hackathon_detail", slug=slug)
+
+    repositories = list(hackathon.repositories.all())
+    if not repositories:
+        messages.info(request, f"No repositories are linked to {hackathon.name}.")
+        return redirect("hackathon_detail", slug=slug)
+
+    refreshed_count = 0
+    total_new_prs = 0
+    failed_repos = []
+
+    for index, repo in enumerate(repositories, start=1):
+        try:
+            new_prs = _refresh_repository_pull_requests(hackathon, repo)
+            total_new_prs += new_prs
+            refreshed_count += 1
+        except requests.exceptions.RequestException as exc:
+            failed_repos.append(repo.name)
+            logger.warning(
+                "GitHub API request failed while refreshing repo '%s' for hackathon '%s': %s",
+                repo.name,
+                hackathon.slug,
+                exc,
+                exc_info=True,
+            )
+        except Exception:
+            failed_repos.append(repo.name)
+            logger.exception(
+                "Unexpected error while refreshing repo '%s' for hackathon '%s'",
+                repo.name,
+                hackathon.slug,
+            )
+
+        if index < len(repositories) and REPO_REFRESH_DELAY_SECONDS > 0:
+            # Sleep briefly to avoid tripping GitHub's secondary rate limits across repositories.
+            time.sleep(REPO_REFRESH_DELAY_SECONDS)
+
+    if refreshed_count:
+        messages.success(
+            request,
+            f"Successfully refreshed {refreshed_count} repositories. Found {total_new_prs} new pull requests.",
+        )
+
+    if failed_repos:
+        repo_list = ", ".join(failed_repos)
+        messages.error(
+            request,
+            f"Unable to refresh the following repositories: {repo_list}. Please try again later.",
+        )
+
+    return redirect("hackathon_detail", slug=slug)
+
+
 def _refresh_repository_pull_requests(hackathon, repo):
     """Helper function to refresh pull request data from GitHub API."""
     # Extract owner and repo name from repo URL
@@ -580,3 +665,55 @@ def _process_pull_request(pr_data, hackathon, repo):
 
         new_pr.save()
         return True  # New PR added
+
+
+@login_required
+def add_org_repos_to_hackathon(request, slug):
+    """View to add all organization repositories to a hackathon."""
+    hackathon = get_object_or_404(Hackathon, slug=slug)
+
+    # Check if user has permission to manage this hackathon
+    user = request.user
+    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+        messages.error(request, "You don't have permission to manage this hackathon.")
+        return redirect("hackathons")
+
+    try:
+        # Get all repos from the hackathon's organization
+        org_repos = Repo.objects.filter(organization=hackathon.organization)
+
+        if not org_repos.exists():
+            messages.warning(
+                request,
+                f"No repositories found for organization {hackathon.organization.name}. "
+                "Please sync the organization's repositories first.",
+            )
+            return redirect("hackathons")
+
+        # Add all org repos to the hackathon
+        added_count = 0
+        already_added_count = 0
+
+        for repo in org_repos:
+            if hackathon.repositories.filter(id=repo.id).exists():
+                already_added_count += 1
+            else:
+                hackathon.repositories.add(repo)
+                added_count += 1
+
+        if added_count > 0:
+            messages.success(
+                request,
+                f"Successfully added {added_count} repositories to {hackathon.name}. "
+                f"({already_added_count} were already added)",
+            )
+        else:
+            messages.info(
+                request,
+                f"All {already_added_count} repositories from {hackathon.organization.name} "
+                "are already part of this hackathon.",
+            )
+    except Exception:
+        messages.error(request, "An error occurred while adding repositories to the hackathon.")
+
+    return redirect("hackathons")

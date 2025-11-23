@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
@@ -37,6 +38,7 @@ from website.models import (
     Badge,
     Challenge,
     Contributor,
+    ContributorStats,
     Domain,
     GitHubComment,
     GitHubIssue,
@@ -141,7 +143,6 @@ def update_bch_address(request):
 @login_required
 def profile_edit(request):
     from allauth.account.models import EmailAddress
-    from allauth.account.utils import send_email_confirmation
 
     Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
@@ -183,15 +184,26 @@ def profile_edit(request):
 
                 # Create new unverified email entry
                 # Create or update email entry as unverified
-                EmailAddress.objects.update_or_create(
+                email_address, created = EmailAddress.objects.update_or_create(
                     user=request.user,
                     email=new_email,
                     defaults={"verified": False, "primary": False},
                 )
 
+                # Rate limit: atomic check-and-set to prevent race conditions
+                rate_key = f"email_verification_rate_{request.user.id}"
+
+                # add() only sets if key doesn't exist (atomic operation)
+                if not cache.add(rate_key, True, timeout=60):
+                    messages.warning(
+                        request,
+                        "Too many requests. Please wait a minute before trying again.",
+                    )
+                    return redirect("profile", slug=request.user.username)
+
                 # Send verification email
                 try:
-                    send_email_confirmation(request, request.user, email=new_email)
+                    email_address.send_confirmation(request, signup=False)
                 except Exception as e:
                     logger.exception(f"Failed to send email confirmation to {new_email}: {e}")
                     messages.error(request, "Failed to send verification email. Please try again later.")
@@ -292,7 +304,7 @@ def get_github_stats(user_profile):
         reviews__reviewer=user_profile,
     ).count()
 
-    print(f"Total PRs found: {user_prs.count()}")
+    logger.debug(f"Total PRs found: {user_prs.count()}")
 
     # Overall stats
     merged_count = user_prs.filter(is_merged=True).count()
@@ -387,7 +399,7 @@ class UserProfileDetailView(DetailView):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         # Add bacon earning data
         bacon_earning = BaconEarning.objects.filter(user=user).first()
-        print(f"Bacon earning for {user.username}: {bacon_earning}")
+        logger.debug(f"Bacon earning for {user.username}: {bacon_earning}")
         context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
 
         # Get bacon submission stats
@@ -854,6 +866,190 @@ def contributors(request):
     return JsonResponse({"contributors": contributors_data})
 
 
+def contributor_stats_view(request):
+    """
+    Weekly Activity view that highlights streak and challenge completions.
+    This view displays contributor statistics with enhanced highlights for user achievements.
+    """
+    from datetime import datetime, timedelta
+
+    from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+    from django.db.models import Q
+
+    # Calculate the date range for the current week
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=7)
+    
+    # Get time period from request (defaulting to current week)
+    time_period = request.GET.get("period", "current_week")
+    page_number = request.GET.get("page", 1)
+    
+    # Define time periods
+    if time_period == "today":
+        start_date = end_date
+    elif time_period == "current_week":
+        start_date = end_date - timedelta(days=7)
+    elif time_period == "current_month":
+        start_date = end_date.replace(day=1)
+    elif time_period == "last_month":
+        if end_date.month == 1:
+            start_date = end_date.replace(year=end_date.year - 1, month=12, day=1)
+        else:
+            start_date = end_date.replace(month=end_date.month - 1, day=1)
+    
+    # Get user profiles with recent activity and streak/challenge data
+    user_profiles = UserProfile.objects.select_related('user').filter(
+        user__is_active=True
+    ).prefetch_related(
+        'user__user_challenges',
+        'user__points_set'
+    )
+    
+    # Get recent streak achievements (users who reached milestone streaks this week)
+    streak_highlights = []
+    for profile in user_profiles:
+        if profile.current_streak > 0:
+            # Check if they reached a milestone streak recently
+            milestone_achieved = None
+            if profile.current_streak == 7:
+                milestone_achieved = "7-day streak achieved!"
+            elif profile.current_streak == 15:
+                milestone_achieved = "15-day streak achieved!"
+            elif profile.current_streak == 30:
+                milestone_achieved = "30-day streak achieved!"
+            elif profile.current_streak == 100:
+                milestone_achieved = "100-day streak achieved!"
+            elif profile.current_streak == 180:
+                milestone_achieved = "180-day streak achieved!"
+            elif profile.current_streak == 365:
+                milestone_achieved = "365-day streak achieved!"
+            
+            if milestone_achieved:
+                streak_highlights.append({
+                    'user': profile.user,
+                    'current_streak': profile.current_streak,
+                    'longest_streak': profile.longest_streak,
+                    'milestone': milestone_achieved,
+                    'user_profile': profile
+                })
+    
+    # Get recent challenge completions from the past week
+    completed_challenges = Challenge.objects.filter(
+        completed=True,
+        completed_at__gte=start_date,
+        completed_at__lte=end_date
+    ).select_related().prefetch_related('participants')
+    
+    challenge_highlights = []
+    for challenge in completed_challenges:
+        for participant in challenge.participants.all():
+            challenge_highlights.append({
+                'user': participant,
+                'challenge': challenge,
+                'completed_at': challenge.completed_at,
+                'points_earned': challenge.points
+            })
+    
+    # Get contributor stats for the time period
+    contributor_stats = []
+    try:
+        # Get aggregated stats for the time period
+        stats_query = ContributorStats.objects.filter(
+            date__gte=start_date,
+            date__lte=end_date
+        ).values(
+            'contributor'
+        ).annotate(
+            total_commits=Sum('commits'),
+            total_issues_opened=Sum('issues_opened'),
+            total_issues_closed=Sum('issues_closed'),
+            total_prs=Sum('pull_requests'),
+            total_comments=Sum('comments')
+        ).order_by('-total_commits')
+        
+        for stat in stats_query:
+            try:
+                contributor = Contributor.objects.get(id=stat['contributor'])
+                
+                # Calculate impact score
+                impact_score = (
+                    stat['total_commits'] * 5 +
+                    stat['total_prs'] * 3 +
+                    stat['total_issues_opened'] * 2 +
+                    stat['total_issues_closed'] * 2 +
+                    stat['total_comments']
+                )
+                
+                # Determine impact level
+                if impact_score > 200:
+                    impact_level = {
+                        'class': 'bg-green-100 text-green-800',
+                        'text': 'High Impact'
+                    }
+                elif impact_score > 100:
+                    impact_level = {
+                        'class': 'bg-yellow-100 text-yellow-800',
+                        'text': 'Medium Impact'
+                    }
+                else:
+                    impact_level = {
+                        'class': 'bg-blue-100 text-blue-800',
+                        'text': 'Growing Impact'
+                    }
+                
+                contributor_stats.append({
+                    'contributor': contributor,
+                    'commits': stat['total_commits'] or 0,
+                    'issues_opened': stat['total_issues_opened'] or 0,
+                    'issues_closed': stat['total_issues_closed'] or 0,
+                    'pull_requests': stat['total_prs'] or 0,
+                    'comments': stat['total_comments'] or 0,
+                    'impact_score': impact_score,
+                    'impact_level': impact_level
+                })
+            except Contributor.DoesNotExist:
+                continue
+    except Exception as e:
+        logger.error(f"Error fetching contributor stats: {e}")
+    
+    # Sort by impact score
+    contributor_stats.sort(key=lambda x: x['impact_score'], reverse=True)
+    
+    # Paginate contributor stats
+    paginator = Paginator(contributor_stats, 10)
+    try:
+        paginated_stats = paginator.page(page_number)
+    except PageNotAnInteger:
+        paginated_stats = paginator.page(1)
+    except EmptyPage:
+        paginated_stats = paginator.page(paginator.num_pages)
+    
+    # Prepare time period options
+    time_period_options = [
+        ('today', "Today's Data"),
+        ('current_week', 'Current Week'),
+        ('current_month', 'Current Month'),
+        ('last_month', 'Last Month'),
+    ]
+    
+    context = {
+        'contributor_stats': paginated_stats,
+        'page_obj': paginated_stats,
+        'paginator': paginator,
+        'is_paginated': paginator.num_pages > 1,
+        'time_period': time_period,
+        'time_period_options': time_period_options,
+        'start_date': start_date,
+        'end_date': end_date,
+        'streak_highlights': streak_highlights,
+        'challenge_highlights': challenge_highlights,
+        'total_streak_achievements': len(streak_highlights),
+        'total_challenge_completions': len(challenge_highlights),
+    }
+    
+    return render(request, 'weekly_activity.html', context)
+
+
 def create_wallet(request):
     for user in User.objects.all():
         Wallet.objects.get_or_create(user=user)
@@ -1161,7 +1357,7 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    print("issue closed")
+    logger.debug("issue closed")
     if payload["action"] == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
@@ -1206,7 +1402,7 @@ def assign_github_badge(user, action_title):
             UserBadge.objects.create(user=user, badge=badge)
 
     except Badge.DoesNotExist:
-        print(f"Badge '{action_title}' does not exist.")
+        logger.warning(f"Badge '{action_title}' does not exist.")
 
 
 @method_decorator(login_required, name="dispatch")

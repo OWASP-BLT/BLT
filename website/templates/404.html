@@ -9,8 +9,10 @@
         <!-- 404 Error Section -->
         <div class="text-center mb-12">
             <h1 class="text-9xl font-bold text-[#e74c3c] mb-4">404</h1>
-            <h2 class="text-3xl font-semibold text-gray-900 mb-4">Page Not Found</h2>
-            <p class="text-lg text-gray-600 mb-4">The page you are looking for doesn't exist or has been moved.</p>
+            <h2 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Page Not Found</h2>
+            <p class="text-lg text-gray-600 dark:text-gray-400 mb-4">
+                The page you are looking for doesn't exist or has been moved.
+            </p>
             <a href="{% url 'home' %}"
                class="inline-flex items-center px-6 py-3 border-2 border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-colors duration-200">
                 <i class="fas fa-home mr-2"></i>
@@ -22,32 +24,32 @@
             <h2 class="text-3xl font-bold text-center mb-8">Tools for Organizations</h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
                 <a href="{% url 'organizations' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-building text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Organizations</span>
                 </a>
                 <a href="{% url 'domains' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-globe text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Domains</span>
                 </a>
                 <a href="{% url 'issues' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-bug text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Bugs</span>
                 </a>
                 <a href="{% url 'github_issues' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-exclamation-circle text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Issues</span>
                 </a>
                 <a href="{% url 'hunts' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-dollar-sign text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Bounties</span>
                 </a>
                 <a href="{% url 'checkIN' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-calendar-check text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Check-ins</span>
                 </a>
@@ -58,34 +60,34 @@
             <h2 class="text-3xl font-bold text-center mb-8">Tools for Projects</h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 <a href="{% url 'project_list' %}"
-                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-project-diagram text-2xl text-[#e74c3c] mb-2"></i>
                     <span class="text-base font-medium text-center">Projects</span>
-                    <p class="text-xs text-gray-600 text-center mt-1">Manage your security projects</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Manage your security projects</p>
                 </a>
                 <a href="{% url 'repo_list' %}"
-                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-code-branch text-2xl text-[#e74c3c] mb-2"></i>
                     <span class="text-base font-medium text-center">Repositories</span>
-                    <p class="text-xs text-gray-600 text-center mt-1">Connect and monitor GitHub repos</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Connect and monitor GitHub repos</p>
                 </a>
                 <a href="{% url 'BiddingData' %}"
-                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-gavel text-2xl text-[#e74c3c] mb-2"></i>
                     <span class="text-base font-medium text-center">Bid on Issues</span>
-                    <p class="text-xs text-gray-600 text-center mt-1">Place bids on open issues</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Place bids on open issues</p>
                 </a>
                 <a href="{% url 'sponsor' %}"
-                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-hand-holding-usd text-2xl text-[#e74c3c] mb-2"></i>
                     <span class="text-base font-medium text-center">Funding</span>
-                    <p class="text-xs text-gray-600 text-center mt-1">Manage project funding & rewards</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Manage project funding & rewards</p>
                 </a>
                 <a href="{% url 'bacon' %}"
-                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-bacon text-2xl text-[#e74c3c] mb-2"></i>
                     <span class="text-base font-medium text-center">Bacon</span>
-                    <p class="text-xs text-gray-600 text-center mt-1">Earn & manage Bacon tokens</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Earn & manage Bacon tokens</p>
                 </a>
             </div>
         </section>
@@ -94,40 +96,40 @@
             <h2 class="text-3xl font-bold text-center mb-8">Tools for Users & Teams</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 <a href="{% url 'users' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-users text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Users</span>
-                    <p class="text-sm text-gray-600 text-center mt-2">Manage team members</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Manage team members</p>
                 </a>
                 <a href="{% url 'team_overview' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-user-friends text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Teams</span>
-                    <p class="text-sm text-gray-600 text-center mt-2">Create & manage teams</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Create & manage teams</p>
                 </a>
                 <a href="{% url 'team_challenges' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-flag text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Challenges</span>
-                    <p class="text-sm text-gray-600 text-center mt-2">Security challenges</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Security challenges</p>
                 </a>
                 <a href="{% url 'team_leaderboard' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-trophy text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Leaderboards</span>
-                    <p class="text-sm text-gray-600 text-center mt-2">Track achievements</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Track achievements</p>
                 </a>
                 <a href="{% url 'badges' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-medal text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Badges</span>
-                    <p class="text-sm text-gray-600 text-center mt-2">Earn achievements</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Earn achievements</p>
                 </a>
                 <a href="{% url 'team_leaderboard' %}"
-                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
                     <i class="fas fa-chart-line text-3xl text-[#e74c3c] mb-3"></i>
                     <span class="text-lg font-medium text-center">Analytics</span>
-                    <p class="text-sm text-gray-600 text-center mt-2">Team performance</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">Team performance</p>
                 </a>
             </div>
         </section>
@@ -142,67 +144,72 @@
             <div class="flex flex-col md:flex-row gap-8">
                 <!-- BACON Overview -->
                 <div class="md:w-1/2">
-                    <div class="bg-white rounded-xl shadow-sm p-8 mb-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 mb-8">
                         <div class="flex items-center gap-3 mb-6">
                             <i class="fas fa-bacon text-2xl text-[#e74c3c]"></i>
                             <h2 class="text-2xl font-bold">What is BACON?</h2>
                         </div>
-                        <p class="text-gray-700 leading-relaxed mb-4">
+                        <p class="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
                             BACON (Blockchain Assisted Contribution Network) is an innovative project within the OWASP BLT platform that integrates Bitcoin Core technology and the Runes protocol to reward contributors with blockchain-based incentives.
                         </p>
-                        <p class="text-gray-700 leading-relaxed">
+                        <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
                             By leveraging the power of blockchain, BACON ensures transparency, security, and fairness in the distribution of rewards, ultimately enhancing the quality and security of open-source software.
                         </p>
                     </div>
                     <!-- Key Features -->
-                    <div class="bg-white rounded-xl shadow-sm p-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8">
                         <div class="flex items-center gap-3 mb-6">
                             <i class="fas fa-star text-2xl text-[#e74c3c]"></i>
                             <h2 class="text-2xl font-bold">Key Features</h2>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="p-4 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-colors duration-200">
+                            <div class="p-4 rounded-lg border-2 border-gray-100 dark:border-gray-800 hover:border-[#e74c3c] transition-colors duration-200">
                                 <div class="flex items-center gap-2 mb-2">
                                     <i class="fas fa-coins text-[#e74c3c]"></i>
                                     <h3 class="font-semibold">Incentivized Contributions</h3>
                                 </div>
-                                <p class="text-sm text-gray-600">Earn BACON tokens for reporting issues and resolving bugs.</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Earn BACON tokens for reporting issues and resolving bugs.</p>
                             </div>
-                            <div class="p-4 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-colors duration-200">
+                            <div class="p-4 rounded-lg border-2 border-gray-100 dark:border-gray-800 hover:border-[#e74c3c] transition-colors duration-200">
                                 <div class="flex items-center gap-2 mb-2">
                                     <i class="fas fa-link text-[#e74c3c]"></i>
                                     <h3 class="font-semibold">Blockchain Transparency</h3>
                                 </div>
-                                <p class="text-sm text-gray-600">All transactions are securely logged on the Bitcoin blockchain.</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">All transactions are securely logged on the Bitcoin blockchain.</p>
                             </div>
-                            <div class="p-4 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-colors duration-200">
+                            <div class="p-4 rounded-lg border-2 border-gray-100 dark:border-gray-800 hover:border-[#e74c3c] transition-colors duration-200">
                                 <div class="flex items-center gap-2 mb-2">
                                     <i class="fas fa-puzzle-piece text-[#e74c3c]"></i>
                                     <h3 class="font-semibold">Seamless Integration</h3>
                                 </div>
-                                <p class="text-sm text-gray-600">BACON tokens are fully integrated within the BLT ecosystem.</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">BACON tokens are fully integrated within the BLT ecosystem.</p>
                             </div>
-                            <div class="p-4 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-colors duration-200">
+                            <div class="p-4 rounded-lg border-2 border-gray-100 dark:border-gray-800 hover:border-[#e74c3c] transition-colors duration-200">
                                 <div class="flex items-center gap-2 mb-2">
                                     <i class="fas fa-shield-alt text-[#e74c3c]"></i>
                                     <h3 class="font-semibold">Secure Transactions</h3>
                                 </div>
-                                <p class="text-sm text-gray-600">Leverage the Runes protocol for safe and immutable transactions.</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    Leverage the Runes protocol for safe and immutable transactions.
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- Submit BACON Request Form -->
                 <div class="md:w-1/2">
-                    <div class="bg-white rounded-xl shadow-sm p-8 border-2 border-[#e74c3c]">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border-2 border-[#e74c3c]">
                         <div class="flex items-center gap-3 mb-6">
                             <i class="fas fa-bacon text-2xl text-[#e74c3c]"></i>
                             <h3 class="text-2xl font-bold">Submit BACON Request</h3>
                         </div>
-                        <p class="text-gray-600 mb-6">Found this page but still want to claim your BACON tokens? Submit your PR link below:</p>
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">
+                            Found this page but still want to claim your BACON tokens? Submit your PR link below:
+                        </p>
                         <form id="baconForm" class="space-y-6">
                             <div class="space-y-2">
-                                <label for="github_url" class="block text-sm font-semibold text-gray-700">
+                                <label for="github_url"
+                                       class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                     <i class="fab fa-github mr-2"></i>GitHub Pull Request URL
                                 </label>
                                 <div class="relative">
@@ -210,34 +217,35 @@
                                            id="github_url"
                                            name="github_url"
                                            placeholder="https://github.com/owner/repo/pull/123"
-                                           class="pl-10 block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                           class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200 bg-white dark:bg-gray-900"
                                            required>
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-link text-gray-400"></i>
+                                        <i class="fas fa-link text-gray-400 dark:text-gray-600"></i>
                                     </div>
                                 </div>
                             </div>
                             <div class="space-y-2">
                                 <label for="contribution_type"
-                                       class="block text-sm font-semibold text-gray-700">
+                                       class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                     <i class="fas fa-code-branch mr-2"></i>Contribution Type
                                 </label>
                                 <div class="relative">
                                     <select id="contribution_type"
                                             name="contribution_type"
-                                            class="pl-10 block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                            class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200 bg-white dark:bg-gray-900"
                                             required>
                                         <option value="" disabled selected>Select contribution type...</option>
                                         <option value="security">Security Related</option>
                                         <option value="non-security">Non-Security Related</option>
                                     </select>
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-shield-alt text-gray-400"></i>
+                                        <i class="fas fa-shield-alt text-gray-400 dark:text-gray-600"></i>
                                     </div>
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <label for="description" class="block text-sm font-semibold text-gray-700">
+                                <label for="description"
+                                       class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                     <i class="fas fa-align-left mr-2"></i>Description
                                 </label>
                                 <div class="relative">
@@ -245,10 +253,10 @@
                                               name="description"
                                               rows="4"
                                               placeholder="Describe your contribution..."
-                                              class="pl-10 block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                              class="pl-10 block w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200 bg-white dark:bg-gray-900"
                                               required></textarea>
                                     <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                        <i class="fas fa-pen text-gray-400"></i>
+                                        <i class="fas fa-pen text-gray-400 dark:text-gray-600"></i>
                                     </div>
                                 </div>
                             </div>
@@ -264,12 +272,12 @@
                 </div>
             </div>
             <!-- Get Involved -->
-            <div class="bg-white rounded-xl shadow-sm p-8 mt-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 mt-8">
                 <div class="flex items-center gap-3 mb-6">
                     <i class="fas fa-users text-2xl text-[#e74c3c]"></i>
                     <h2 class="text-2xl font-bold">Get Involved</h2>
                 </div>
-                <p class="text-gray-700 leading-relaxed mb-6">
+                <p class="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
                     We're excited to have the community involved in bringing BACON to life. Whether you're a developer, blockchain expert, or just passionate about open-source, there's a place for you in this project.
                 </p>
                 <div class="flex flex-wrap gap-4">
@@ -284,7 +292,7 @@
                         View on GitHub
                     </a>
                 </div>
-                <p class="text-gray-700 leading-relaxed mt-6">
+                <p class="text-gray-700 dark:text-gray-300 leading-relaxed mt-6">
                     For more details, <a href="/bacon" class="text-[#e74c3c] hover:underline">click here</a>.
                 </p>
             </div>
