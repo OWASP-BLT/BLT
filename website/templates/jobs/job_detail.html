@@ -154,14 +154,18 @@
                 {% if job.requirements %}
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
                         <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Requirements</h3>
-                        <div class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">{{ job.requirements|linebreaks }}</div>
+                        <div class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                            {{ job.requirements|linebreaks }}
+                        </div>
                     </div>
                 {% endif %}
                 <!-- Application Instructions -->
                 {% if job.application_instructions %}
                     <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-8">
                         <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">How to Apply</h3>
-                        <div class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">{{ job.application_instructions|linebreaks }}</div>
+                        <div class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                            {{ job.application_instructions|linebreaks }}
+                        </div>
                     </div>
                 {% endif %}
                 <!-- Back to Jobs Button -->

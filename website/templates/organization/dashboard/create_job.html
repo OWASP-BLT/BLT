@@ -50,7 +50,8 @@
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Basic Information</h3>
                                 <!-- Title -->
                                 <div class="mb-6">
-                                    <label for="id_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <label for="id_title"
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Job Title <span class="text-red-500">*</span>
                                     </label>
                                     {{ form.title }}
@@ -70,7 +71,9 @@
                                 <!-- Requirements -->
                                 <div class="mb-6">
                                     <label for="id_requirements"
-                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Requirements</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Requirements
+                                    </label>
                                     {{ form.requirements }}
                                     {% if form.requirements.errors %}<p class="mt-1 text-sm text-red-600">{{ form.requirements.errors.0 }}</p>{% endif %}
                                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.requirements.help_text }}</p>
@@ -83,7 +86,9 @@
                                     <!-- Location -->
                                     <div>
                                         <label for="id_location"
-                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</label>
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Location
+                                        </label>
                                         {{ form.location }}
                                         {% if form.location.errors %}<p class="mt-1 text-sm text-red-600">{{ form.location.errors.0 }}</p>{% endif %}
                                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.location.help_text }}</p>
@@ -91,7 +96,9 @@
                                     <!-- Job Type -->
                                     <div>
                                         <label for="id_job_type"
-                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Type</label>
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Job Type
+                                        </label>
                                         {{ form.job_type }}
                                         {% if form.job_type.errors %}<p class="mt-1 text-sm text-red-600">{{ form.job_type.errors.0 }}</p>{% endif %}
                                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.job_type.help_text }}</p>
@@ -108,7 +115,10 @@
                                     </div>
                                     <!-- Status -->
                                     <div>
-                                        <label for="id_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                                        <label for="id_status"
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Status
+                                        </label>
                                         {{ form.status }}
                                         {% if form.status.errors %}<p class="mt-1 text-sm text-red-600">{{ form.status.errors.0 }}</p>{% endif %}
                                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.status.help_text }}</p>
@@ -117,7 +127,9 @@
                                 <!-- Expiration Date -->
                                 <div class="mt-6">
                                     <label for="id_expires_at"
-                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiration Date</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Expiration Date
+                                    </label>
                                     {{ form.expires_at }}
                                     {% if form.expires_at.errors %}<p class="mt-1 text-sm text-red-600">{{ form.expires_at.errors.0 }}</p>{% endif %}
                                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.expires_at.help_text }}</p>
@@ -172,7 +184,10 @@
                                 <div class="flex items-start">
                                     <div class="flex items-center h-5">{{ form.is_public }}</div>
                                     <div class="ml-3">
-                                        <label for="id_is_public" class="font-medium text-gray-700 dark:text-gray-300">{{ form.is_public.label }}</label>
+                                        <label for="id_is_public"
+                                               class="font-medium text-gray-700 dark:text-gray-300">
+                                            {{ form.is_public.label }}
+                                        </label>
                                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ form.is_public.help_text }}</p>
                                     </div>
                                 </div>
