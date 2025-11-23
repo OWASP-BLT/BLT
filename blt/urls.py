@@ -87,6 +87,7 @@ from website.views.company import (
     job_detail,
     public_job_list,
     toggle_job_status,
+    verify_issue,
 )
 from website.views.core import (
     CustomSocialAccountDisconnectView,
@@ -942,6 +943,11 @@ urlpatterns = [
         "organization/accept_bug/<int:issue_id>/<str:no_reward>/",
         accept_bug,
         name="accept_bug_no_reward",
+    ),
+    path(
+        "organization/verify_issue/<int:issue_id>/",
+        verify_issue,
+        name="verify_issue",
     ),
     path(
         "organization/delete_manager/<int:manager_id>/<int:domain_id>/",

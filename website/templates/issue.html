@@ -183,6 +183,18 @@
                                 {% endif %}
                             </button>
                         {% endif %}
+                        {% if is_domain_manager and object.user %}
+                            <button type="button"
+                                    id="verify-issue-btn"
+                                    onclick="toggleIssueVerification()"
+                                    class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white {% if object.verified %}bg-orange-500 hover:bg-orange-600{% else %}bg-green-500 hover:bg-green-600{% endif %} transition-all duration-200 border-gray-300 dark:border-gray-600 px-4 py-3">
+                                {% if object.verified %}
+                                    Unverify Issue
+                                {% else %}
+                                    Verify Issue
+                                {% endif %}
+                            </button>
+                        {% endif %}
                     </div>
                 {% endif %}
                 <div class="border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4">

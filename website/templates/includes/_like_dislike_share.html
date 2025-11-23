@@ -208,6 +208,47 @@
             });
         }
     }
+
+    async function toggleIssueVerification(){
+        var id = {{object.pk}};
+        
+        const response = await fetch(`/organization/verify_issue/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                $.notify(data.message, {
+                    style: "custom",
+                    className: "success"
+                });
+                // Update button text and style
+                const button = document.getElementById('verify-issue-btn');
+                if (data.verified) {
+                    button.textContent = 'Unverify Issue';
+                    button.className = 'rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-orange-500 hover:bg-orange-600 transition-all duration-200 border-gray-300 dark:border-gray-600 px-4 py-3';
+                } else {
+                    button.textContent = 'Verify Issue';
+                    button.className = 'rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-green-500 hover:bg-green-600 transition-all duration-200 border-gray-300 dark:border-gray-600 px-4 py-3';
+                }
+            } else {
+                $.notify("Error: " + data.error, {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        } else {
+            $.notify("Permission Denied", {
+                style: "custom",
+                className: "danger"
+            });
+        }
+    }
 </script>
 <script>
     function createIssue(){

@@ -1638,6 +1638,18 @@ class IssueView(DetailView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
+            # Check if user is a domain manager or organization admin
+            if self.object.domain:
+                is_domain_manager = self.object.domain.managers.filter(id=self.request.user.id).exists()
+                is_org_admin = (
+                    self.object.domain.organization and self.object.domain.organization.admin == self.request.user
+                )
+                context["is_domain_manager"] = is_domain_manager or is_org_admin
+            else:
+                context["is_domain_manager"] = False
+        else:
+            context["is_domain_manager"] = False
+
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
