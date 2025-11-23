@@ -1632,9 +1632,17 @@ class IssueView(DetailView):
             context["os_version"] = user_agent.os.version_string
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
-        context["total_score"] = list(
-            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
-        )[0]
+        
+        # Calculate user's total score
+        if self.object.user:
+            total_score = Points.objects.filter(user=self.object.user).aggregate(
+                total_score=Sum("score")
+            )["total_score"] or 0
+            context["total_score"] = total_score
+            context["users_score"] = total_score
+        else:
+            context["total_score"] = 0
+            context["users_score"] = 0
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1651,12 +1659,6 @@ class IssueView(DetailView):
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
-
-        # Add user's total score
-        if self.object.user:
-            context["users_score"] = Points.objects.filter(user=self.object.user).aggregate(
-                total=Sum("score")
-            )["total"] or 0
 
         # Add email-related data from domain
         if self.object.domain:
