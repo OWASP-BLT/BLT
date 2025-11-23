@@ -3219,3 +3219,40 @@ class StakingTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
+
+
+class SpamDetection(models.Model):
+    """Model to track spam-flagged content for moderation review"""
+
+    CONTENT_TYPES = [
+        ("issue", "Issue"),
+        ("comment", "Comment"),
+    ]
+
+    STATUS_CHOICES = [
+        ("pending", "Pending Review"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected as Spam"),
+    ]
+
+    content_type = models.CharField(max_length=20, choices=CONTENT_TYPES)
+    content_id = models.PositiveIntegerField(null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="spam_flagged_content")
+    text_content = models.TextField(help_text="The content that was flagged as spam")
+    detection_reason = models.TextField(help_text="LLM reasoning for spam detection")
+    confidence_score = models.FloatField(help_text="Confidence score from 0 to 1", null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="spam_reviews")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Spam Detection"
+        verbose_name_plural = "Spam Detections"
+        indexes = [
+            models.Index(fields=["status", "created_at"], name="spam_status_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.content_type} by {self.user.username} - {self.status}"

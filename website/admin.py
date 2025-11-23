@@ -78,6 +78,7 @@ from website.models import (
     Section,
     SlackBotActivity,
     SlackIntegration,
+    SpamDetection,
     StakingEntry,
     StakingPool,
     StakingTransaction,
@@ -1196,3 +1197,35 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
+
+
+@admin.register(SpamDetection)
+class SpamDetectionAdmin(admin.ModelAdmin):
+    list_display = ("id", "content_type", "user", "status", "confidence_score", "created_at", "reviewed_at")
+    list_filter = ("status", "content_type", "created_at")
+    search_fields = ("user__username", "text_content", "detection_reason")
+    readonly_fields = ("created_at", "text_content", "detection_reason", "confidence_score")
+    fieldsets = (
+        (
+            "Content Information",
+            {"fields": ("content_type", "content_id", "user", "text_content", "detection_reason", "confidence_score")},
+        ),
+        ("Review Information", {"fields": ("status", "reviewed_by", "reviewed_at", "created_at")}),
+    )
+    actions = ["approve_content", "reject_as_spam"]
+
+    def approve_content(self, request, queryset):
+        from django.utils import timezone
+
+        count = queryset.update(status="approved", reviewed_by=request.user, reviewed_at=timezone.now())
+        self.message_user(request, f"{count} item(s) approved.")
+
+    approve_content.short_description = "Approve selected items"
+
+    def reject_as_spam(self, request, queryset):
+        from django.utils import timezone
+
+        count = queryset.update(status="rejected", reviewed_by=request.user, reviewed_at=timezone.now())
+        self.message_user(request, f"{count} item(s) rejected as spam.")
+
+    reject_as_spam.short_description = "Reject selected items as spam"

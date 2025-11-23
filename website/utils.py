@@ -1119,84 +1119,86 @@ def get_default_bacon_score(model_name, is_security=False):
     return score
 
 
-def check_for_spam(text, user=None, request=None):
+def check_for_spam_llm(text, user=None, request=None):
     """
-    Check if the provided text appears to be spam.
+    Check if the provided text appears to be spam using LLM (OpenAI).
 
     Returns:
-        tuple: (is_spam, reason) where is_spam is a boolean and reason is a string
+        tuple: (is_spam, reason, confidence) where is_spam is a boolean,
+               reason is a string, and confidence is a float (0-1)
     """
     if not text or not isinstance(text, str):
-        return False, None
+        return False, None, 0.0
 
-    text_lower = text.lower()
-    text_stripped = text.strip()
+    # If OpenAI client is not available, fall back to not flagging as spam
+    if client is None:
+        logging.warning("OpenAI client not available, skipping spam check")
+        return False, "OpenAI client not available", 0.0
 
-    # List of spam indicators
-    spam_keywords = [
-        "viagra",
-        "cialis",
-        "pharmacy",
-        "casino",
-        "poker",
-        "lottery",
-        "bitcoin investment",
-        "crypto investment",
-        "get rich quick",
-        "work from home",
-        "make money fast",
-        "free money",
-        "cash prize",
-        "congratulations you won",
-        "claim your prize",
-        "click here now",
-        "limited time offer",
-        "act now",
-        "buy now",
-        "order now",
-        "discount price",
-        "lowest price",
-        "best price",
-        "call now",
-        "weight loss",
-        "lose weight fast",
-        "miracle cure",
-    ]
+    try:
+        # Prepare the prompt for spam detection
+        prompt = f"""Analyze the following text and determine if it is spam. 
+Consider the following as spam indicators:
+- Unsolicited commercial content
+- Phishing attempts
+- Scam messages
+- Irrelevant promotional content
+- Malicious links or suspicious URLs
+- Get-rich-quick schemes
+- Fake prizes or lottery wins
 
-    # Check for spam keywords
-    for keyword in spam_keywords:
-        if keyword in text_lower:
-            return True, f"Contains spam keyword: {keyword}"
+Legitimate content includes:
+- Bug reports and security vulnerability reports
+- Technical discussions
+- Questions and answers about software issues
+- Comments on open source projects
 
-    # Check for excessive URLs (more than 5 URLs in content)
-    url_pattern = r"https?://[^\s]+"
-    urls = re.findall(url_pattern, text)
-    if len(urls) > 5:
-        return True, "Contains excessive URLs"
+Text to analyze:
+{text}
 
-    # Check for excessive capitalization (more than 50% caps in text longer than 20 chars)
-    if len(text_stripped) > 20:
-        caps_count = sum(1 for c in text_stripped if c.isupper())
-        if caps_count / len(text_stripped) > 0.5:
-            return True, "Excessive capitalization"
+Respond with a JSON object containing:
+- "is_spam": true or false
+- "reason": brief explanation (max 200 chars)
+- "confidence": float between 0 and 1
 
-    # Check for repeated characters (e.g., "!!!!!!!" or "????")
-    # Ignore whitespace-only repetitions (spaces, tabs, newlines are normal in formatted text)
-    if re.search(r"([^\s])\1{5,}", text):
-        return True, "Excessive repeated characters"
+Example response format:
+{{"is_spam": false, "reason": "Legitimate bug report about a security issue", "confidence": 0.15}}
+"""
 
-    # Check for suspicious patterns like all links and no real content
-    # Remove URLs from text before counting words to avoid double-counting
-    text_without_urls = re.sub(url_pattern, "", text_stripped)
-    words = text_without_urls.split()
-    non_empty_words = [w for w in words if w.strip()]
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a spam detection expert for a bug bounty platform. Be conservative - only flag obvious spam.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=150,
+        )
 
-    if len(non_empty_words) > 0 and len(urls) > 0:
-        if len(urls) / len(non_empty_words) > 0.5:
-            return True, "High URL-to-text ratio"
+        # Parse the response
+        result_text = response.choices[0].message.content.strip()
 
-    # Check for very short content with URLs (likely spam)
-    if len(non_empty_words) < 5 and len(urls) > 0:
-        return True, "Very short content with URLs"
+        # Try to extract JSON from the response
+        import json
 
-    return False, None
+        # Remove markdown code blocks if present
+        if "```json" in result_text:
+            result_text = result_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in result_text:
+            result_text = result_text.split("```")[1].split("```")[0].strip()
+
+        result = json.loads(result_text)
+
+        is_spam = result.get("is_spam", False)
+        reason = result.get("reason", "No reason provided")
+        confidence = float(result.get("confidence", 0.5))
+
+        return is_spam, reason, confidence
+
+    except Exception as e:
+        logging.error(f"Error in LLM spam detection: {str(e)}")
+        # On error, don't flag as spam to avoid false positives
+        return False, f"Error in spam detection: {str(e)}", 0.0
