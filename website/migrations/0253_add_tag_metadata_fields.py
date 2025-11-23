@@ -28,7 +28,10 @@ class Migration(migrations.Migration):
             model_name="tag",
             name="color",
             field=models.CharField(
-                blank=True, help_text="Hex color code for tag display (e.g., '#e74c3c')", max_length=7, null=True
+                blank=True,
+                help_text="Hex color code for tag display (e.g., '#e74c3c')",
+                max_length=7,
+                null=True,
             ),
         ),
     ]
