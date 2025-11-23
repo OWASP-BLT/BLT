@@ -9,24 +9,24 @@
 {% endblock %}
 {% block body %}
     {# djlint:off H025 #}
-    <div class="h-full bg-gray-200 p-8">
+    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
         <!-- Form Card -->
-        <div class="bg-white rounded-lg shadow-xl">
-            <div class="px-8 pt-6 pb-4 border-b border-gray-200">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+            <div class="px-8 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center gap-4">
                     <a href="{% url 'organization_manage_jobs' organization %}"
-                       class="text-gray-600 hover:text-gray-900">
+                       class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                         <i class="fas fa-arrow-left"></i>
                     </a>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
                             {% if job %}
                                 Edit Job
                             {% else %}
                                 Post New Job
                             {% endif %}
                         </h1>
-                        <p class="mt-1 text-sm text-gray-600">
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                             {% if job %}
                                 Update the job posting details
                             {% else %}
@@ -39,7 +39,7 @@
             <!-- Form Content -->
             <div class="px-8 py-6">
                 <div class="max-w-4xl mx-auto">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <form method="post" class="p-8 space-y-6">
                             {% csrf_token %}
                             {% if form.non_field_errors %}
@@ -47,141 +47,141 @@
                             {% endif %}
                             <!-- Basic Information Section -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Basic Information</h3>
                                 <!-- Title -->
                                 <div class="mb-6">
-                                    <label for="id_title" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <label for="id_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Job Title <span class="text-red-500">*</span>
                                     </label>
                                     {{ form.title }}
                                     {% if form.title.errors %}<p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>{% endif %}
-                                    <p class="mt-1 text-sm text-gray-500">{{ form.title.help_text }}</p>
+                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.title.help_text }}</p>
                                 </div>
                                 <!-- Description -->
                                 <div class="mb-6">
                                     <label for="id_description"
-                                           class="block text-sm font-medium text-gray-700 mb-2">
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Job Description <span class="text-red-500">*</span>
                                     </label>
                                     {{ form.description }}
                                     {% if form.description.errors %}<p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>{% endif %}
-                                    <p class="mt-1 text-sm text-gray-500">{{ form.description.help_text }}</p>
+                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.description.help_text }}</p>
                                 </div>
                                 <!-- Requirements -->
                                 <div class="mb-6">
                                     <label for="id_requirements"
-                                           class="block text-sm font-medium text-gray-700 mb-2">Requirements</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Requirements</label>
                                     {{ form.requirements }}
                                     {% if form.requirements.errors %}<p class="mt-1 text-sm text-red-600">{{ form.requirements.errors.0 }}</p>{% endif %}
-                                    <p class="mt-1 text-sm text-gray-500">{{ form.requirements.help_text }}</p>
+                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.requirements.help_text }}</p>
                                 </div>
                             </div>
                             <!-- Job Details Section -->
-                            <div class="border-t border-gray-200 pt-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Job Details</h3>
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Job Details</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <!-- Location -->
                                     <div>
                                         <label for="id_location"
-                                               class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</label>
                                         {{ form.location }}
                                         {% if form.location.errors %}<p class="mt-1 text-sm text-red-600">{{ form.location.errors.0 }}</p>{% endif %}
-                                        <p class="mt-1 text-sm text-gray-500">{{ form.location.help_text }}</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.location.help_text }}</p>
                                     </div>
                                     <!-- Job Type -->
                                     <div>
                                         <label for="id_job_type"
-                                               class="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Type</label>
                                         {{ form.job_type }}
                                         {% if form.job_type.errors %}<p class="mt-1 text-sm text-red-600">{{ form.job_type.errors.0 }}</p>{% endif %}
-                                        <p class="mt-1 text-sm text-gray-500">{{ form.job_type.help_text }}</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.job_type.help_text }}</p>
                                     </div>
                                     <!-- Salary Range -->
                                     <div>
                                         <label for="id_salary_range"
-                                               class="block text-sm font-medium text-gray-700 mb-2">
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Salary Range
                                         </label>
                                         {{ form.salary_range }}
                                         {% if form.salary_range.errors %}<p class="mt-1 text-sm text-red-600">{{ form.salary_range.errors.0 }}</p>{% endif %}
-                                        <p class="mt-1 text-sm text-gray-500">{{ form.salary_range.help_text }}</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.salary_range.help_text }}</p>
                                     </div>
                                     <!-- Status -->
                                     <div>
-                                        <label for="id_status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                        <label for="id_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
                                         {{ form.status }}
                                         {% if form.status.errors %}<p class="mt-1 text-sm text-red-600">{{ form.status.errors.0 }}</p>{% endif %}
-                                        <p class="mt-1 text-sm text-gray-500">{{ form.status.help_text }}</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.status.help_text }}</p>
                                     </div>
                                 </div>
                                 <!-- Expiration Date -->
                                 <div class="mt-6">
                                     <label for="id_expires_at"
-                                           class="block text-sm font-medium text-gray-700 mb-2">Expiration Date</label>
+                                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiration Date</label>
                                     {{ form.expires_at }}
                                     {% if form.expires_at.errors %}<p class="mt-1 text-sm text-red-600">{{ form.expires_at.errors.0 }}</p>{% endif %}
-                                    <p class="mt-1 text-sm text-gray-500">{{ form.expires_at.help_text }}</p>
+                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.expires_at.help_text }}</p>
                                 </div>
                             </div>
                             <!-- Application Methods Section -->
-                            <div class="border-t border-gray-200 pt-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Application Methods</h3>
-                                <p class="text-sm text-gray-600 mb-4">Provide at least one way for candidates to apply</p>
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Application Methods</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Provide at least one way for candidates to apply</p>
                                 <div class="space-y-6">
                                     <!-- Application Email -->
                                     <div>
                                         <label for="id_application_email"
-                                               class="block text-sm font-medium text-gray-700 mb-2">
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Application Email
                                         </label>
                                         {{ form.application_email }}
                                         {% if form.application_email.errors %}
                                             <p class="mt-1 text-sm text-red-600">{{ form.application_email.errors.0 }}</p>
                                         {% endif %}
-                                        <p class="mt-1 text-sm text-gray-500">{{ form.application_email.help_text }}</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.application_email.help_text }}</p>
                                     </div>
                                     <!-- Application URL -->
                                     <div>
                                         <label for="id_application_url"
-                                               class="block text-sm font-medium text-gray-700 mb-2">
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Application URL
                                         </label>
                                         {{ form.application_url }}
                                         {% if form.application_url.errors %}
                                             <p class="mt-1 text-sm text-red-600">{{ form.application_url.errors.0 }}</p>
                                         {% endif %}
-                                        <p class="mt-1 text-sm text-gray-500">{{ form.application_url.help_text }}</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.application_url.help_text }}</p>
                                     </div>
                                     <!-- Application Instructions -->
                                     <div>
                                         <label for="id_application_instructions"
-                                               class="block text-sm font-medium text-gray-700 mb-2">
+                                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Application Instructions
                                         </label>
                                         {{ form.application_instructions }}
                                         {% if form.application_instructions.errors %}
                                             <p class="mt-1 text-sm text-red-600">{{ form.application_instructions.errors.0 }}</p>
                                         {% endif %}
-                                        <p class="mt-1 text-sm text-gray-500">{{ form.application_instructions.help_text }}</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.application_instructions.help_text }}</p>
                                     </div>
                                 </div>
                             </div>
                             <!-- Visibility Section -->
-                            <div class="border-t border-gray-200 pt-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Visibility Settings</h3>
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Visibility Settings</h3>
                                 <div class="flex items-start">
                                     <div class="flex items-center h-5">{{ form.is_public }}</div>
                                     <div class="ml-3">
-                                        <label for="id_is_public" class="font-medium text-gray-700">{{ form.is_public.label }}</label>
-                                        <p class="text-sm text-gray-500">{{ form.is_public.help_text }}</p>
+                                        <label for="id_is_public" class="font-medium text-gray-700 dark:text-gray-300">{{ form.is_public.label }}</label>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ form.is_public.help_text }}</p>
                                     </div>
                                 </div>
                                 {% if form.is_public.errors %}<p class="mt-1 text-sm text-red-600">{{ form.is_public.errors.0 }}</p>{% endif %}
                             </div>
                             <!-- Form Actions -->
-                            <div class="border-t border-gray-200 pt-6 mt-6 flex justify-end gap-3">
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6 flex justify-end gap-3">
                                 <a href="{% url 'organization_manage_jobs' organization %}"
-                                   class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition duration-100">
+                                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-100">
                                     Cancel
                                 </a>
                                 <button type="submit"
