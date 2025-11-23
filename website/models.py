@@ -1122,6 +1122,7 @@ class Bid(models.Model):
     def generate_escrow_address(self):
         """Generate a unique BCH address for escrow (placeholder implementation)"""
         import uuid
+
         # In production, this would generate a real BCH address
         self.escrow_address = f"bitcoincash:q{uuid.uuid4().hex[:32]}"
         return self.escrow_address

@@ -44,6 +44,17 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.banned_apps import BannedAppsView, search_banned_apps
+from website.views.bidding import (
+    accept_bid,
+    bid_api_status,
+    bid_detail,
+    check_current_bid,
+    complete_bid,
+    dynamic_bid_image,
+    enhanced_bidding_view,
+    fund_bid,
+)
+from website.views.bidding import github_webhook as bidding_github_webhook
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -201,17 +212,6 @@ from website.views.issue import (
     unsave_issue,
     update_content_comment,
     vote_count,
-)
-from website.views.bidding import (
-    enhanced_bidding_view,
-    dynamic_bid_image,
-    accept_bid,
-    fund_bid,
-    bid_detail,
-    complete_bid,
-    bid_api_status,
-    check_current_bid,
-    github_webhook as bidding_github_webhook,
 )
 from website.views.organization import (
     BountyPayoutsView,
