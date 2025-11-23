@@ -27,17 +27,10 @@ class Migration(migrations.Migration):
             name="serial_number",
             field=models.CharField(max_length=50, blank=True, null=True, db_index=True),
         ),
-        # Add composite indexes for better search performance
+        # Add composite index for better search performance
+        # Note: Single-field indexes are created by db_index=True above
         migrations.AddIndex(
             model_name="trademark",
             index=models.Index(fields=["keyword", "status_label"], name="website_tra_keyword_idx"),
-        ),
-        migrations.AddIndex(
-            model_name="trademark",
-            index=models.Index(fields=["registration_number"], name="website_tra_reg_num_idx"),
-        ),
-        migrations.AddIndex(
-            model_name="trademark",
-            index=models.Index(fields=["serial_number"], name="website_tra_ser_num_idx"),
         ),
     ]

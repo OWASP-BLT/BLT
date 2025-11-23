@@ -85,25 +85,30 @@ class Command(BaseCommand):
                     owner = None
                     owner_name = row.get("owner_name", "").strip()
                     if owner_name:
-                        # Use cache to avoid duplicate owner creation
+                        # Use cache to avoid duplicate owner lookups
+                        # Cache key includes all identifying fields to prevent false matches
                         cache_key = (
                             owner_name,
                             row.get("owner_address1", ""),
                             row.get("owner_city", ""),
+                            row.get("owner_state", ""),
+                            row.get("owner_country", ""),
                         )
                         if cache_key not in owners_cache:
                             owner, _ = TrademarkOwner.objects.get_or_create(
                                 name=owner_name,
                                 address1=row.get("owner_address1", ""),
-                                address2=row.get("owner_address2", ""),
                                 city=row.get("owner_city", ""),
                                 state=row.get("owner_state", ""),
                                 country=row.get("owner_country", ""),
-                                postcode=row.get("owner_postcode", ""),
-                                owner_type=row.get("owner_type", ""),
-                                owner_label=row.get("owner_label", ""),
-                                legal_entity_type=row.get("legal_entity_type", ""),
-                                legal_entity_type_label=row.get("legal_entity_type_label", ""),
+                                defaults={
+                                    "address2": row.get("owner_address2", ""),
+                                    "postcode": row.get("owner_postcode", ""),
+                                    "owner_type": row.get("owner_type", ""),
+                                    "owner_label": row.get("owner_label", ""),
+                                    "legal_entity_type": row.get("legal_entity_type", ""),
+                                    "legal_entity_type_label": row.get("legal_entity_type_label", ""),
+                                },
                             )
                             owners_cache[cache_key] = owner
                         else:
@@ -165,24 +170,29 @@ class Command(BaseCommand):
                 owner = None
                 owner_data = item.get("owner")
                 if owner_data and owner_data.get("name"):
+                    # Cache key includes all identifying fields to prevent false matches
                     cache_key = (
                         owner_data["name"],
                         owner_data.get("address1", ""),
                         owner_data.get("city", ""),
+                        owner_data.get("state", ""),
+                        owner_data.get("country", ""),
                     )
                     if cache_key not in owners_cache:
                         owner, _ = TrademarkOwner.objects.get_or_create(
                             name=owner_data["name"],
                             address1=owner_data.get("address1", ""),
-                            address2=owner_data.get("address2", ""),
                             city=owner_data.get("city", ""),
                             state=owner_data.get("state", ""),
                             country=owner_data.get("country", ""),
-                            postcode=owner_data.get("postcode", ""),
-                            owner_type=owner_data.get("owner_type", ""),
-                            owner_label=owner_data.get("owner_label", ""),
-                            legal_entity_type=owner_data.get("legal_entity_type", ""),
-                            legal_entity_type_label=owner_data.get("legal_entity_type_label", ""),
+                            defaults={
+                                "address2": owner_data.get("address2", ""),
+                                "postcode": owner_data.get("postcode", ""),
+                                "owner_type": owner_data.get("owner_type", ""),
+                                "owner_label": owner_data.get("owner_label", ""),
+                                "legal_entity_type": owner_data.get("legal_entity_type", ""),
+                                "legal_entity_type_label": owner_data.get("legal_entity_type_label", ""),
+                            },
                         )
                         owners_cache[cache_key] = owner
                     else:
@@ -229,17 +239,19 @@ class Command(BaseCommand):
     @transaction.atomic
     def _bulk_insert(self, trademarks_batch):
         """Bulk insert trademarks and associate owners."""
-        # Extract trademarks and owners
-        trademarks = [tm for tm, _ in trademarks_batch]
-        owners = [owner for _, owner in trademarks_batch]
+        # Create trademarks without ignore_conflicts to ensure we get all instances back
+        trademarks_to_create = [tm for tm, _ in trademarks_batch]
+        owners_to_associate = [owner for _, owner in trademarks_batch]
 
         # Bulk create trademarks
-        created_trademarks = Trademark.objects.bulk_create(trademarks, ignore_conflicts=True)
+        created_trademarks = Trademark.objects.bulk_create(trademarks_to_create, ignore_conflicts=False)
 
         # Associate owners with trademarks
-        for trademark, owner in zip(created_trademarks, owners):
-            if owner:
-                trademark.owners.add(owner)
+        # Only process if we successfully created the trademarks
+        if created_trademarks:
+            for trademark, owner in zip(created_trademarks, owners_to_associate):
+                if owner:
+                    trademark.owners.add(owner)
 
     def handle(self, *args, **options):
         file_path = options["file_path"]
