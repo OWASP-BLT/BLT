@@ -22,7 +22,7 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_team_join_with_custom_message(self, mock_webclient, mock_verify):
-        # Mock the Slack client
+        # Mock the Slack client here
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
