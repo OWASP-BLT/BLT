@@ -101,6 +101,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "django_celery_beat",
 )
 
 if DEBUG:
@@ -621,6 +622,25 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
+
+# Celery Configuration
+CELERY_BROKER_URL = os.environ.get("REDISCLOUD_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("REDISCLOUD_URL", "redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# Celery Beat Schedule for weekly stats delivery
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "send-weekly-stats": {
+        "task": "website.tasks.send_weekly_stats",
+        "schedule": crontab(hour=9, minute=0, day_of_week=1),  # Every Monday at 9 AM UTC
+    },
+}
 
 # Throttling Middleware Configuration
 THROTTLE_LIMITS = {

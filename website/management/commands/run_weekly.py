@@ -1,9 +1,9 @@
 import logging
 
 from django.core.management.base import BaseCommand
-
-# from django.core import management
 from django.utils import timezone
+
+from website.tasks import send_weekly_stats
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +15,13 @@ class Command(BaseCommand):
         try:
             logger.info(f"Starting weekly scheduled tasks at {timezone.now()}")
 
-            # Add commands to be executed weekly
-            # management.call_command('weekly_command1')
-            # management.call_command('weekly_command2')
+            # Trigger the weekly stats delivery task
+            self.stdout.write("Triggering weekly stats delivery...")
+            result = send_weekly_stats.delay()
+            self.stdout.write(self.style.SUCCESS(f"Weekly stats task queued with ID: {result.id}"))
+
+            logger.info("Weekly scheduled tasks completed successfully")
         except Exception as e:
             logger.error(f"Error in weekly tasks: {str(e)}")
+            self.stdout.write(self.style.ERROR(f"Error: {str(e)}"))
             raise
