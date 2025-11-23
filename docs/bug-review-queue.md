@@ -2,12 +2,25 @@
 
 ## Overview
 
-The Bug Review Queue is a moderation system that automatically flags bug reports from new users (accounts less than 7 days old) for review before they are publicly visible. This helps maintain quality and prevent spam.
+The Bug Review Queue is a moderation system that automatically flags bug reports from new users for review before they are publicly visible. This helps maintain quality and prevent spam.
+
+By default, accounts less than 7 days old have their bug reports auto-hidden, but this threshold is configurable.
+
+## Configuration
+
+### Environment Variables
+
+Add to your `.env` file:
+
+```bash
+# Number of days after account creation during which bug reports are auto-hidden
+BUG_REVIEW_QUEUE_NEW_USER_DAYS=7  # Default is 7 days
+```
 
 ## How It Works
 
-### For New Users (< 7 days old)
-When a user who joined less than 7 days ago submits a bug report:
+### For New Users
+When a user who joined within the configured threshold (default: 7 days) submits a bug report:
 1. The bug is automatically marked as `is_hidden=True`
 2. The bug is not visible to the public
 3. The bug appears in the Review Queue for verification

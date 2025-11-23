@@ -1270,10 +1270,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
 
-            # Auto-hide issues from new users (within 7 days) for review
-            if obj.user and obj.user.date_joined:
+            # Auto-hide issues from new users for review
+            if obj.user and hasattr(obj.user, "date_joined") and obj.user.date_joined:
                 user_age = timezone.now() - obj.user.date_joined
-                if user_age.days < 7:
+                if user_age.days < settings.BUG_REVIEW_QUEUE_NEW_USER_DAYS:
                     obj.is_hidden = True
 
             obj.save()
@@ -2482,8 +2482,14 @@ def bug_review_queue(request):
         messages.error(request, "You don't have permission to access the bug review queue.")
         return redirect("/")
 
-    # Get all hidden issues that need review
-    hidden_issues = Issue.objects.filter(is_hidden=True).select_related("user", "domain").order_by("-created")
+    # Get hidden issues from new users that need review
+    # Filter for issues from users within the configured threshold
+    new_user_threshold = timezone.now() - timedelta(days=settings.BUG_REVIEW_QUEUE_NEW_USER_DAYS)
+    hidden_issues = (
+        Issue.objects.filter(is_hidden=True, user__date_joined__gte=new_user_threshold)
+        .select_related("user", "domain")
+        .order_by("-created")
+    )
 
     # Pagination
     paginator = Paginator(hidden_issues, 20)
