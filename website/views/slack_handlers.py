@@ -746,7 +746,7 @@ def slack_commands(request):
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error sending help message."})
 
-        elif command == "/installed_apps":
+        elif command == "/apps" or command == "/installed_apps":
             try:
                 # Get basic workspace info
                 team_info = workspace_client.team_info()
