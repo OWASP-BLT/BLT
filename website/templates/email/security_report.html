@@ -4,23 +4,35 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description"
-              content="Security Vulnerability Report for {{ clean_domain }} - Please review the attached report for details.">
+              content="{{ report_type|default:'Security Vulnerability Report' }} for {{ clean_domain }} - Please review the attached report for details.">
         <meta name="keywords"
               content="security, vulnerability, report, website security, cyber threats">
-        <title>Security Vulnerability Report</title>
+        <title>{{ report_type|default:"Security Vulnerability Report" }}</title>
         <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
               rel="stylesheet">
     </head>
     <body class="font-sans text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 p-6">
         <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
             <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-                Security Vulnerability Report for {{ clean_domain }}
+                {{ report_type|default:"Security Vulnerability Report" }} for {{ clean_domain }}
             </h1>
             <p class="text-base text-gray-600 dark:text-gray-400 mb-4">
-                A security vulnerability has been reported for your domain.
+                A
+                {% if report_type == "Private Bug Report" %}
+                    private bug report
+                {% else %}
+                    security vulnerability
+                {% endif %}
+                has been submitted for your domain.
             </p>
             <p class="text-base text-gray-600 dark:text-gray-400 mb-4">
-                The attached zip file contains screenshots and details of the vulnerability.
+                The attached zip file contains screenshots and details of the
+                {% if report_type == "Private Bug Report" %}
+                    bug report
+                {% else %}
+                    vulnerability
+                {% endif %}
+                .
                 <br>
                 For security reasons, the zip file is password-protected.
             </p>
