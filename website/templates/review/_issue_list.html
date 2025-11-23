@@ -2,7 +2,10 @@
     <form id="issue-list-form" action="{% url 'review_queue' %}" method="post">
         {% csrf_token %}
         <div class="flex justify-end mb-4">
-            <button type="submit" name="action" value="delete_selected" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            <button type="submit"
+                    name="action"
+                    value="delete_selected"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                 <i class="fas fa-trash mr-2"></i> Delete Selected
             </button>
         </div>
@@ -11,43 +14,65 @@
                 <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left">
-                            <input type="checkbox" id="select-all-{{ tab_id }}" class="select-all rounded border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                            <input type="checkbox"
+                                   id="select-all-{{ tab_id }}"
+                                   class="select-all rounded border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Issue</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">URL</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Spam Score</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Submitter</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Spam Reason</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Issue
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            URL
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Spam Score
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Submitter
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Spam Reason
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Actions
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                     {% for issue in issues %}
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="checkbox" name="issue_ids" value="{{ issue.id }}" class="issue-checkbox rounded border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                <input type="checkbox"
+                                       name="issue_ids"
+                                       value="{{ issue.id }}"
+                                       class="issue-checkbox rounded border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <a href="{% url 'issue_view' issue.id %}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">#{{ issue.id }}</a>
+                                <a href="{% url 'issue_view' issue.id %}"
+                                   class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">#{{ issue.id }}</a>
                                 <p class="text-sm text-gray-900 dark:text-gray-100 truncate max-w-xs">{{ issue.description }}</p>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                  <a href="{{ issue.url }}" target="_blank" rel="noopener noreferrer" class="text-sm text-gray-500 dark:text-gray-400 hover:underline truncate max-w-xs">{{ issue.url }}</a>
+                                <a href="{{ issue.url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-sm text-gray-500 dark:text-gray-400 hover:underline truncate max-w-xs">{{ issue.url }}</a>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {% if issue.spam_score is None or issue.spam_score == '' %}
-                                    bg-gray-100 text-gray-800
-                                {% elif issue.spam_score >= 6 %}
-                                    bg-red-100 text-red-800
-                                {% else %}
-                                    bg-green-100 text-green-800
-                                {% endif %}">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if issue.spam_score is None or issue.spam_score == '' %} bg-gray-100 text-gray-800 {% elif issue.spam_score >= 6 %} bg-red-100 text-red-800 {% else %} bg-green-100 text-green-800 {% endif %}">
                                     {{ issue.spam_score|default:"N/A" }}
-                                </span>                            </td>
+                                </span>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                 {% if issue.user %}
-                                    <a href="{% url 'profile' issue.user.username %}" class="hover:underline">{{ issue.user.username }}</a>
+                                    <a href="{% url 'profile' issue.user.username %}"
+                                       class="hover:underline">{{ issue.user.username }}</a>
                                 {% else %}
                                     Anonymous
                                 {% endif %}
@@ -61,14 +86,22 @@
                                     <form action="{% url 'review_queue' %}" method="post" class="inline-block">
                                         {% csrf_token %}
                                         <input type="hidden" name="issue_id" value="{{ issue.id }}">
-                                        <button type="submit" name="action" value="approve" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" title="Approve">
+                                        <button type="submit"
+                                                name="action"
+                                                value="approve"
+                                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                                title="Approve">
                                             <i class="fas fa-check"></i>
                                         </button>
                                     </form>
                                     <form action="{% url 'review_queue' %}" method="post" class="inline-block">
                                         {% csrf_token %}
                                         <input type="hidden" name="issue_id" value="{{ issue.id }}">
-                                        <button type="submit" name="action" value="spam" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" title="Mark as Spam">
+                                        <button type="submit"
+                                                name="action"
+                                                value="spam"
+                                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                                title="Mark as Spam">
                                             <i class="fas fa-ban"></i>
                                         </button>
                                     </form>
