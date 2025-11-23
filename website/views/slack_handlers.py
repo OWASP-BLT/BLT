@@ -47,6 +47,10 @@ client = WebClient(token=SLACK_TOKEN)
 # Add at the top with other environment variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
+# Poll configuration constants
+MAX_POLL_OPTIONS = 10
+BAR_SCALE_FACTOR = 5  # Each progress bar character represents 5%
+
 # Replace GSoC cache with hardcoded project data
 GSOC_PROJECTS = [
     {
@@ -2681,8 +2685,10 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
                 }
             )
 
-        if len(parts) > 11:  # 1 question + max 10 options
-            return JsonResponse({"response_type": "ephemeral", "text": "❌ Too many options. Maximum is 10 options."})
+        if len(parts) > (MAX_POLL_OPTIONS + 1):  # 1 question + max options
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": f"❌ Too many options. Maximum is {MAX_POLL_OPTIONS} options."}
+            )
 
         question = parts[0]
         options = parts[1:]
@@ -2742,7 +2748,7 @@ def build_poll_blocks(poll):
         percentage = (vote_count / total_votes * 100) if total_votes > 0 else 0
 
         # Create a simple bar chart using blocks
-        bar = "█" * int(percentage / 5)  # Each █ represents 5%
+        bar = "█" * int(percentage / BAR_SCALE_FACTOR)
         blocks.append(
             {
                 "type": "section",
@@ -3244,7 +3250,7 @@ def handle_poll_vote(payload, workspace_client):
         action = payload["actions"][0]
         option_id = int(action["action_id"].replace("poll_vote_", ""))
 
-        # Get the option and poll
+        # Get the option and poll (use select_related to avoid N+1 queries)
         option = SlackPollOption.objects.select_related("poll").get(id=option_id)
         poll = option.poll
 

@@ -3441,9 +3441,12 @@ class SlackHuddleParticipant(models.Model):
     def __str__(self):
         return f"{self.user_id} - {self.huddle.title} ({self.response})"
 
+    # Valid responses for efficient membership testing
+    VALID_RESPONSES = {choice[0] for choice in RESPONSE_CHOICES}
+
     def update_response(self, response):
         """Update participant response"""
-        if response in dict(self.RESPONSE_CHOICES):
+        if response in self.VALID_RESPONSES:
             self.response = response
             self.responded_at = timezone.now()
             self.save()
