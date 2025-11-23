@@ -8,7 +8,7 @@
     service_name: blt-uvicorn
     django_settings: blt.settings
     listen_interface: 127.0.0.1
-    enable_remote_postgres: "{{ enable_remote_postgres | default(true) }}"
+    enable_remote_postgres: "{{ enable_remote_postgres | default(false) }}"
   pre_tasks:
     - name: Update apt cache
       apt:
