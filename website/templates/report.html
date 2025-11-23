@@ -110,7 +110,7 @@
                                            value="{{ request.GET.url }}{{ form.url.value|default:'' }}"
                                            placeholder="https://example.com/report"
                                            required
-                                           class="placeholder:text-base flex-1 text-lg placeholder:text-gray-400 rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200" />
+                                           class="placeholder:text-base flex-1 text-lg placeholder:text-gray-400 rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200 bg-white dark:bg-gray-900" />
                                 </div>
                                 {% if top_domains %}
                                     <div class="mt-4 space-y-3">
@@ -158,7 +158,7 @@
                                            value="{{ request.GET.description }}{{ form.description.value|default:'' }}"
                                            placeholder="XSS Vulnerability in Bug Report Editor"
                                            required
-                                           class="w-full text-lg placeholder:text-gray-400 placeholder:text-base rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200" />
+                                           class="w-full text-lg placeholder:text-gray-400 placeholder:text-base rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200 bg-white dark:bg-gray-900" />
                                 </div>
                                 <div>
                                     <label for="label"
@@ -216,7 +216,7 @@
                                 </div>
                                 <textarea id="markdownInput"
                                           name="markdown_description"
-                                          class="w-full placeholder:text-base h-[300px] p-4 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg"
+                                          class="w-full placeholder:text-base h-[300px] p-4 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
                                           placeholder="Enter your markdown here..."></textarea>
                                 <div id="preview-area"
                                      class="hidden w-full h-[300px] p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-y-auto prose prose-sm max-w-none">
@@ -245,7 +245,7 @@
                                 {% trans "CVE ID" %}
                             </label>
                             <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full">
-                                <input class="flex-1 placeholder:text-base text-lg sm:text-base md:text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 transition-shadow duration-200 min-w-0"
+                                <input class="flex-1 placeholder:text-base text-lg sm:text-base md:text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 transition-shadow duration-200 min-w-0 bg-white dark:bg-gray-900"
                                        type="text"
                                        placeholder="CVE-XXXX-XXXX"
                                        id="cve_id_input"
@@ -264,6 +264,7 @@
                             <div id="screenshot-container"
                                  onclick="document.getElementById('screenshots').click()"
                                  class="relative group border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#e74c3c] rounded-xl p-6 transition-all duration-200 cursor-pointer">
+                                <div id="screenshot-hash-container" class="mt-4"></div>
                                 <div class="text-center">
                                     <div class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600 group-hover:text-[#e74c3c] transition-colors duration-200">
                                         <i class="fas fa-cloud-upload-alt text-4xl"></i>
@@ -304,7 +305,7 @@
                             </div>
                             <p class="text-sm text-gray-500 dark:text-gray-500 mb-4">{% trans "Team members should be Bug Bounty users" %}.</p>
                             <div class="space-y-3" id="email-container">
-                                <label class="block font-medium text-gray-700 dark:text-gray-300">{% trans "Email address:" %}</label>
+                                <label class="block font-medium text-gray-700 dark:text-gray-300 ">{% trans "Email address:" %}</label>
                             </div>
                         </div>
                     </div>
@@ -315,14 +316,14 @@
                             <input id="report_anonymous"
                                    type="checkbox"
                                    name="report_anonymous"
-                                   class="w-5 h-5 rounded-lg text-[#e74c3c] cursor-pointer">
+                                   class="w-5 h-5 rounded-lg text-[#e74c3c] cursor-pointer ">
                             <p for="report_anonymous"
                                class="font-medium text-gray-900 dark:text-gray-100 cursor-pointer select-none">
                                 {% trans "Report Anonymously" %}
                             </p>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-4 md:flex-row items-center justify-center [&>img]:w-[150px] md:[&>input]:w-[30%] [&>input]:w-[50%] [&>input]:border [&>input]:border-black [&>input]:p-[10px] [&>input]:text-[1.4rem] [&>input]:ml-2 [&>input]:rounded">
+                    <div class="flex flex-col gap-4 md:flex-row items-center justify-center [&>img]:w-[150px] md:[&>input]:w-[30%] [&>input]:w-[50%] [&>input]:border [&>input]:border-gray-800 dark:[&>input]:border-gray-400 [&>input]:p-[10px] [&>input]:text-[1.4rem] [&>input]:ml-2 [&>input]:rounded [&>input]:bg-white dark:[&>input]:bg-gray-900 ">
                         {{ captcha_form.captcha }}
                     </div>
                     <div class="flex gap-4 justify-center">
@@ -506,7 +507,7 @@
         const email_container_child_html = document.createElement('div');
         email_container_child_html.innerHTML = `
             <div class="mt-2 flex flex-row items-center w-[70%]">
-                <input name="team_members" type="email" autocomplete="email" required class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 dark:text-gray-100 shadow-sm placeholder:text-gray-400 ring-1 ring-gray-300" />
+                <input name="team_members" type="email" autocomplete="email" required class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 dark:text-gray-100 shadow-sm placeholder:text-gray-400 ring-1 ring-gray-300 bg-white dark:bg-gray-900" />
                 <button type="button" onclick="remove_email_container()">
                     <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>
                 </button>
@@ -655,7 +656,7 @@ function showToast(message, type = 'success') {
         
         if (hashValue) {
             // Hide the upload container
-            document.getElementById('screenshot-upload-container').style.display = 'none';
+            document.getElementById('screenshot-container').style.display = 'none';
             
             // Remove required attribute from screenshots input when we have a hash
             screenshotsInput.removeAttribute('required');
