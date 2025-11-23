@@ -1,6 +1,8 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
+from django.db.models import Sum
+from django.utils import timezone
 from slack_bolt import App
 
 from website.management.base import LoggedBaseCommand
@@ -35,7 +37,7 @@ class Command(LoggedBaseCommand):
 
     def generate_weekly_report(self, organization):
         """Generate a comprehensive weekly report for the organization's projects."""
-        one_week_ago = datetime.now() - timedelta(days=7)
+        one_week_ago = timezone.now() - timedelta(days=7)
 
         # Get all projects for this organization
         projects = Project.objects.filter(organization=organization)
@@ -55,16 +57,22 @@ class Command(LoggedBaseCommand):
         )[:10]
 
         # Aggregate statistics
-        total_stars = sum(repo.stars for repo in repos)
-        total_forks = sum(repo.forks for repo in repos)
-        total_open_issues = sum(repo.open_issues for repo in repos)
-        total_contributors = sum(repo.contributor_count for repo in repos)
+        aggregates = repos.aggregate(
+            total_stars=Sum("stars"),
+            total_forks=Sum("forks"),
+            total_open_issues=Sum("open_issues"),
+            total_contributors=Sum("contributor_count"),
+        )
+        total_stars = aggregates["total_stars"] or 0
+        total_forks = aggregates["total_forks"] or 0
+        total_open_issues = aggregates["total_open_issues"] or 0
+        total_contributors = aggregates["total_contributors"] or 0
 
         # Build the report message
         report_lines = [
             "📊 *Weekly Organization Report*",
             f"Organization: *{organization.name}*",
-            f"Report Date: {datetime.now().strftime('%B %d, %Y')}",
+            f"Report Date: {timezone.now().strftime('%B %d, %Y')}",
             "",
             "=" * 50,
             "",

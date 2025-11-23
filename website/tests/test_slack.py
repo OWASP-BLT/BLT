@@ -196,7 +196,7 @@ class SlackWeeklyReportTests(TestCase):
             default_channel_name="general",
         )
 
-    @patch("website.management.commands.slack_weekly_report.App")
+    @patch("slack_bolt.App")
     def test_weekly_report_generation(self, mock_app):
         """Test that weekly report is generated and sent successfully."""
         from website.management.commands.slack_weekly_report import Command
@@ -223,7 +223,7 @@ class SlackWeeklyReportTests(TestCase):
         self.assertIn("Test Org", message)
         self.assertIn("Overview Statistics", message)
 
-    @patch("website.management.commands.slack_weekly_report.App")
+    @patch("slack_bolt.App")
     def test_weekly_report_with_projects(self, mock_app):
         """Test weekly report includes project information."""
         from website.management.commands.slack_weekly_report import Command
