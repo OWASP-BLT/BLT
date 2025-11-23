@@ -15,6 +15,8 @@ from website.models import (
     IP,
     Activity,
     ActivityLog,
+    Adventure,
+    AdventureTask,
     BaconEarning,
     BaconSubmission,
     BaconToken,
@@ -88,10 +90,12 @@ from website.models import (
     Trademark,
     TrademarkOwner,
     Transaction,
+    UserAdventureProgress,
     UserBadge,
     UserLabProgress,
     UserProfile,
     UserTaskProgress,
+    UserTaskSubmission,
     Wallet,
     Winner,
 )
@@ -1106,4 +1110,76 @@ class BannedAppAdmin(admin.ModelAdmin):
         ("App Information", {"fields": ("app_name", "app_type")}),
         ("Country Information", {"fields": ("country_name", "country_code")}),
         ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
+    )
+
+
+class AdventureTaskInline(admin.TabularInline):
+    model = AdventureTask
+    extra = 1
+    fields = ("order", "title", "description", "is_required")
+    ordering = ["order"]
+
+
+@admin.register(Adventure)
+class AdventureAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "difficulty", "badge_emoji", "badge_title", "is_active", "total_tasks", "completion_count", "created_at")
+    list_filter = ("category", "difficulty", "is_active", "created_at")
+    search_fields = ("title", "description", "badge_title")
+    prepopulated_fields = {"slug": ("title",)}
+    inlines = [AdventureTaskInline]
+    fieldsets = (
+        ("Basic Information", {"fields": ("title", "slug", "description", "category", "difficulty", "estimated_time", "is_active")}),
+        ("Badge Information", {"fields": ("badge", "badge_emoji", "badge_title")}),
+    )
+
+    def total_tasks(self, obj):
+        return obj.total_tasks
+
+    total_tasks.short_description = "Total Tasks"
+
+    def completion_count(self, obj):
+        return obj.completion_count
+
+    completion_count.short_description = "Completions"
+
+
+@admin.register(AdventureTask)
+class AdventureTaskAdmin(admin.ModelAdmin):
+    list_display = ("adventure", "order", "title", "is_required", "created_at")
+    list_filter = ("adventure", "is_required", "created_at")
+    search_fields = ("title", "description", "adventure__title")
+    ordering = ["adventure", "order"]
+
+
+class UserTaskSubmissionInline(admin.TabularInline):
+    model = UserTaskSubmission
+    extra = 0
+    fields = ("task", "status", "proof_url", "submitted_at", "reviewed_by")
+    readonly_fields = ("submitted_at",)
+    can_delete = False
+
+
+@admin.register(UserAdventureProgress)
+class UserAdventureProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "adventure", "progress_percentage", "completed", "started_at", "completed_at")
+    list_filter = ("completed", "adventure", "started_at", "completed_at")
+    search_fields = ("user__username", "adventure__title")
+    readonly_fields = ("started_at", "completed_at", "progress_percentage")
+    inlines = [UserTaskSubmissionInline]
+
+    def progress_percentage(self, obj):
+        return f"{obj.progress_percentage}%"
+
+    progress_percentage.short_description = "Progress"
+
+
+@admin.register(UserTaskSubmission)
+class UserTaskSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("progress", "task", "status", "submitted_at", "reviewed_by", "reviewed_at")
+    list_filter = ("status", "approved", "submitted_at", "reviewed_at")
+    search_fields = ("progress__user__username", "task__title", "notes", "reviewer_notes")
+    readonly_fields = ("submitted_at",)
+    fieldsets = (
+        ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
+        ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
