@@ -181,3 +181,74 @@ class SlackHandlerTests(TestCase):
         activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
         self.assertIsNotNone(activity)
         self.assertEqual(activity.details["command"], "/apps")
+
+
+class SlackWeeklyReportTests(TestCase):
+    def setUp(self):
+        # Create test organization and integration
+        self.organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        self.integration = Integration.objects.create(organization=self.organization, service_name="slack")
+        self.slack_integration = SlackIntegration.objects.create(
+            integration=self.integration,
+            bot_access_token="xoxb-test-token",
+            workspace_name="Test Workspace",
+            default_channel_id="C123456",
+            default_channel_name="general",
+        )
+
+    @patch("website.management.commands.slack_weekly_report.App")
+    def test_weekly_report_generation(self, mock_app):
+        """Test that weekly report is generated and sent successfully."""
+        from website.management.commands.slack_weekly_report import Command
+
+        # Mock the Slack app and client
+        mock_client = MagicMock()
+        mock_app.return_value.client = mock_client
+        mock_client.conversations_join.return_value = None
+        mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
+
+        # Run the command
+        command = Command()
+        command.handle()
+
+        # Verify that the Slack client was called
+        mock_app.assert_called_once_with(token="xoxb-test-token")
+        mock_client.conversations_join.assert_called_once_with(channel="C123456")
+        mock_client.chat_postMessage.assert_called_once()
+
+        # Verify the message content contains expected sections
+        call_args = mock_client.chat_postMessage.call_args
+        message = call_args.kwargs["text"]
+        self.assertIn("Weekly Organization Report", message)
+        self.assertIn("Test Org", message)
+        self.assertIn("Overview Statistics", message)
+
+    @patch("website.management.commands.slack_weekly_report.App")
+    def test_weekly_report_with_projects(self, mock_app):
+        """Test weekly report includes project information."""
+        from website.management.commands.slack_weekly_report import Command
+        from website.models import Project
+
+        # Create a test project
+        Project.objects.create(
+            organization=self.organization,
+            name="Test Project",
+            description="A test project",
+            status="production",
+        )
+
+        # Mock the Slack app and client
+        mock_client = MagicMock()
+        mock_app.return_value.client = mock_client
+        mock_client.conversations_join.return_value = None
+        mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
+
+        # Run the command
+        command = Command()
+        command.handle()
+
+        # Verify the message content includes project info
+        call_args = mock_client.chat_postMessage.call_args
+        message = call_args.kwargs["text"]
+        self.assertIn("Test Project", message)
+        self.assertIn("Projects Overview", message)
