@@ -113,7 +113,7 @@ print(response.status_code)
 print(response.json())
 ```
 
-**Using cURL:**
+**Using curl:**
 
 ```bash
 #!/bin/bash

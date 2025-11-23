@@ -2113,7 +2113,7 @@ def project_webhook(request, slug):
     - Body: JSON payload (can be empty or contain metadata)
     
     Example:
-        curl -X POST https://blt.owasp.org/api/project/my-project/webhook \
+        curl -X POST https://blt.owasp.org/project/my-project/webhook/ \
              -H "Content-Type: application/json" \
              -H "X-Webhook-Signature: sha256=<signature>" \
              -d '{"event": "project_updated", "timestamp": "2024-01-01T00:00:00Z"}'
@@ -2190,7 +2190,7 @@ def project_webhook(request, slug):
 
         return JsonResponse(response_data, status=200)
 
-    except (Project.DoesNotExist, Http404):
+    except Http404:
         logger.warning(f"Webhook called for non-existent project: {slug}")
         return JsonResponse({"status": "error", "message": "Project not found"}, status=404)
     except Exception as e:
