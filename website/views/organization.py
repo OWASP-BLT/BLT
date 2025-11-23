@@ -1510,6 +1510,55 @@ def trademark_search(request, **kwargs):
     return render(request, "trademark_search.html")
 
 
+def trademark_local_search(request):
+    """
+    Search trademarks in the local database for fast lookups.
+    """
+    query = request.GET.get("q", "").strip()
+    page_number = request.GET.get("page", 1)
+
+    if not query:
+        return render(
+            request,
+            "trademark_local_search.html",
+            {
+                "query": query,
+                "trademarks": [],
+                "total_count": 0,
+                "page_obj": None,
+            },
+        )
+
+    # Search in local database using case-insensitive matching
+    trademarks = Trademark.objects.filter(
+        Q(keyword__icontains=query)
+        | Q(registration_number__icontains=query)
+        | Q(serial_number__icontains=query)
+        | Q(description__icontains=query)
+    ).select_related("organization")
+
+    # Get total count before pagination
+    total_count = trademarks.count()
+
+    # Paginate results - 50 per page
+    paginator = Paginator(trademarks, 50)
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    context = {
+        "query": query,
+        "trademarks": page_obj,
+        "total_count": total_count,
+        "page_obj": page_obj,
+    }
+
+    return render(request, "trademark_local_search.html", context)
+
+
 @login_required(login_url="/accounts/login")
 def view_hunt(request, pk, template="view_hunt.html"):
     hunt = get_object_or_404(Hunt, pk=pk)

@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Trademark Database Search
+{% endblock title %}
+{% block description %}
+    Search through 3 million trademarks in our local database for fast and efficient trademark lookups.
+{% endblock description %}
+{% block keywords %}
+    Trademark Database, Fast Search, USPTO, Patent and Trademark, Local Database, Trademark Lookup
+{% endblock keywords %}
+{% block og_title %}
+    Trademark Database Search - Fast Local Trademark Lookups
+{% endblock og_title %}
+{% block og_description %}
+    Search through millions of trademarks in our local database. Get instant results with registration details, owner information, and status.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+        <!-- Search Form -->
+        <div class="max-w-[95%] mx-auto mb-6">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden p-6">
+                <div class="flex flex-col md:flex-row items-center gap-4 mb-4">
+                    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Trademark Database Search</h1>
+                    <div class="flex-grow"></div>
+                    <a href="{% url 'trademark_search' %}"
+                       class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <svg class="w-5 h-5 mr-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        API Search
+                    </a>
+                </div>
+                <form method="get" class="flex gap-4" role="search">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-500 dark:text-gray-500"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <input class="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent text-base shadow-sm transition-all duration-300"
+                               type="search"
+                               name="q"
+                               value="{{ query }}"
+                               placeholder="Search by keyword, registration number, serial number, or description...">
+                    </div>
+                    <button class="px-6 py-3 bg-[#e74c3c] hover:bg-red-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transform transition-all duration-300 ease-in-out hover:-translate-y-1 flex items-center gap-2"
+                            type="submit">
+                        <svg class="w-5 h-5"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Search
+                    </button>
+                </form>
+                <p class="mt-4 text-sm text-gray-500 dark:text-gray-500 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-[#e74c3c]"
+                         fill="currentColor"
+                         viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    Searching local database for fast results
+                </p>
+            </div>
+        </div>
+        {% if query %}
+            <!-- Results Section -->
+            <div class="max-w-[95%] mx-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+                        Search Results
+                        <span class="ml-2 text-base text-gray-500 dark:text-gray-500">{{ total_count }} results found for "{{ query }}"</span>
+                    </h2>
+                </div>
+                {% if trademarks %}
+                    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Keyword</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Registration Info</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Dates</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for trademark in trademarks %}
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {% if trademark.serial_number %} cursor-pointer {% endif %}"
+                                        {% if trademark.serial_number %}onclick="window.open('https://tsdr.uspto.gov/#caseNumber={{ trademark.serial_number }}&caseType=SERIAL_NO&searchType=statusSearch', '_blank')"{% endif %}>
+                                        <td class="px-6 py-4">
+                                            <div class="text-base font-semibold text-[#e74c3c]">{{ trademark.keyword }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm">
+                                                {% if trademark.registration_number %}
+                                                    <div class="font-medium text-gray-900 dark:text-gray-100">Reg #: {{ trademark.registration_number }}</div>
+                                                {% endif %}
+                                                {% if trademark.serial_number %}
+                                                    <div class="text-gray-500 dark:text-gray-400">Serial #: {{ trademark.serial_number }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm">
+                                                {% if trademark.filing_date %}
+                                                    <div class="text-gray-900 dark:text-gray-100">Filed: {{ trademark.filing_date|date:"Y-m-d" }}</div>
+                                                {% endif %}
+                                                {% if trademark.registration_date %}
+                                                    <div class="text-gray-500 dark:text-gray-400">Registered: {{ trademark.registration_date|date:"Y-m-d" }}</div>
+                                                {% endif %}
+                                                {% if trademark.expiration_date %}
+                                                    <div class="text-gray-500 dark:text-gray-400">Expires: {{ trademark.expiration_date|date:"Y-m-d" }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {% if trademark.status_label %}
+                                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {% if 'Pending' in trademark.status_label or 'Application' in trademark.status_label %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% elif 'Registered' in trademark.status_label or 'Live' in trademark.status_label %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% elif 'Abandoned' in trademark.status_label or 'Dead' in trademark.status_label %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% else %} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200{% endif %}">
+                                                    {{ trademark.status_label }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-600 dark:text-gray-400 max-w-md truncate">
+                                                {{ trademark.description|default:"N/A" }}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                        <div class="mt-6 flex justify-center">
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                {% if page_obj.has_previous %}
+                                    <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}"
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-l-md">
+                                        Previous
+                                    </a>
+                                {% endif %}
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                                {% if page_obj.has_next %}
+                                    <a href="?q={{ query }}&page={{ page_obj.next_page_number }}"
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-r-md">
+                                        Next
+                                    </a>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
+                        <svg class="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Results Found</h3>
+                        <p class="text-gray-500 dark:text-gray-400">No trademarks found matching "{{ query }}". Try a different search term.</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- Empty state -->
+            <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
+                <img class="mx-auto h-32 w-32 mb-6"
+                     height="128"
+                     width="128"
+                     alt="Search Icon"
+                     src="{% static 'img/tm-search.png' %}">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Search Local Trademark Database</h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Enter a search term above to find trademarks in our local database</p>
+                <div class="text-sm text-gray-500 dark:text-gray-500">
+                    <p>Search by:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>Trademark keyword or name</li>
+                        <li>Registration number</li>
+                        <li>Serial number</li>
+                        <li>Description content</li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock content %}

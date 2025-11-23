@@ -261,6 +261,7 @@ from website.views.organization import (
     sizzle_docs,
     subscribe_to_domains,
     trademark_detailview,
+    trademark_local_search,
     trademark_search,
     update_organization_repos,
     update_role,
@@ -983,6 +984,7 @@ urlpatterns = [
     path("map/", MapView.as_view(), name="map"),
     path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
+    path("trademarks/search/", trademark_local_search, name="trademark_local_search"),
     path(
         "generate_bid_image/<int:bid_amount>/",
         generate_bid_image,
