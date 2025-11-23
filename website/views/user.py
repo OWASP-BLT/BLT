@@ -1398,6 +1398,7 @@ def messaging_home(request):
     return render(request, "messaging.html", {"threads": threads})
 
 
+@login_required
 def start_thread(request, user_id):
     if request.method == "POST":
         other_user = get_object_or_404(User, id=user_id)
