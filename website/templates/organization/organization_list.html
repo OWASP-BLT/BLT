@@ -55,7 +55,16 @@
                                             </div>
                                         {% endif %}
                                         <div>
-                                            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ org.name }}</h2>
+                                            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                                                {{ org.name }}
+                                                {% if org.trademark_count > 0 %}
+                                                    <span class="ml-2 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                                                          title="{{ org.trademark_count }} trademark{{ org.trademark_count|pluralize }} registered">
+                                                        <i class="fas fa-trademark mr-1"></i>
+                                                        {{ org.trademark_count }}
+                                                    </span>
+                                                {% endif %}
+                                            </h2>
                                             {% if org.url %}
                                                 <a href="{{ org.url }}"
                                                    target="_blank"
@@ -97,7 +106,7 @@
                                     <div class="flex items-center justify-between mb-2">
                                         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Stats</h3>
                                     </div>
-                                    <div class="grid grid-cols-4 gap-4">
+                                    <div class="grid grid-cols-5 gap-4">
                                         <div class="text-center">
                                             <span class="block text-lg font-bold text-[#e74c3c]">{{ org.domain_count }}</span>
                                             <span class="text-xs text-gray-600 dark:text-gray-400">Domains</span>
@@ -113,6 +122,12 @@
                                         <div class="text-center">
                                             <span class="block text-lg font-bold text-[#e74c3c]">{{ org.repos.count }}</span>
                                             <span class="text-xs text-gray-600 dark:text-gray-400">Repos</span>
+                                        </div>
+                                        <div class="text-center">
+                                            <span class="block text-lg font-bold text-[#e74c3c] flex items-center justify-center">
+                                                <i class="fas fa-trademark text-sm mr-1"></i>{{ org.trademark_count|default:"0" }}
+                                            </span>
+                                            <span class="text-xs text-gray-600 dark:text-gray-400">Trademarks</span>
                                         </div>
                                     </div>
                                 </div>
