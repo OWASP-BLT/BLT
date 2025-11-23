@@ -124,9 +124,9 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8">
             <form method="get" class="flex flex-wrap gap-4">
                 <div class="flex-1 min-w-[200px]">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ">Type</label>
                     <select name="type"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900">
                         <option value="all" {% if current_type == 'all' %}selected{% endif %}>All Types</option>
                         <option value="issue" {% if current_type == 'issue' %}selected{% endif %}>Issues Only</option>
                         <option value="pull_request"
@@ -136,7 +136,7 @@
                 <div class="flex-1 min-w-[200px]">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">State</label>
                     <select name="state"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900">
                         <option value="all" {% if current_state == 'all' %}selected{% endif %}>All States</option>
                         <option value="open" {% if current_state == 'open' %}selected{% endif %}>Open</option>
                         <option value="closed" {% if current_state == 'closed' %}selected{% endif %}>Closed</option>
