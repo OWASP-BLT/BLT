@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.utils import timezone
 from slack_bolt import App
 
@@ -39,8 +39,8 @@ class Command(LoggedBaseCommand):
         """Generate a comprehensive weekly report for the organization's projects."""
         one_week_ago = timezone.now() - timedelta(days=7)
 
-        # Get all projects for this organization
-        projects = Project.objects.filter(organization=organization)
+        # Get all projects for this organization with repo count annotation
+        projects = Project.objects.filter(organization=organization).annotate(repo_count=Count("repos"))
         project_count = projects.count()
 
         # Get all repos for this organization
@@ -113,7 +113,8 @@ class Command(LoggedBaseCommand):
                 ]
             )
             for project in projects[:10]:  # Limit to 10 projects
-                project_repos = repos.filter(project=project).count()
+                # Use annotated repo_count to avoid N+1 queries
+                project_repos = project.repo_count
                 report_lines.append(f"• *{project.name}*")
                 if project.description:
                     # Truncate description if too long
