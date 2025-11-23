@@ -95,19 +95,15 @@ class Tag(models.Model):
     @staticmethod
     def normalize_tag_name(name):
         """
-        Normalize tag name to prevent duplicates (e.g., 'bug' vs 'bugs').
-        Returns the normalized name in lowercase, singular form where applicable.
+        Normalize tag name to prevent duplicates.
+        Returns the normalized name in lowercase, trimmed.
+        Note: Does not handle pluralization to avoid incorrect transformations
+        (e.g., 'status' → 'statu'). For proper singularization, consider using
+        a library like 'inflect' in the future.
         """
         if not name:
             return ""
-        normalized = name.strip().lower()
-        # Basic pluralization handling - can be expanded
-        # Remove trailing 's' for common cases (can be made more sophisticated)
-        if normalized.endswith("s") and len(normalized) > 3:
-            # Don't remove 's' from words like 'css', 'js', etc.
-            if normalized not in ["css", "js", "apis", "os"]:
-                normalized = normalized[:-1]
-        return normalized
+        return name.strip().lower()
 
 
 class IntegrationServices(Enum):
