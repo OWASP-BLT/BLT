@@ -24,10 +24,14 @@ all:
     postgres_db_name: blt
     postgres_db_user: blt_user
     postgres_db_password: changeme_secure_password
+    postgres_host: 127.0.0.1  # Override if using external PostgreSQL server
+    postgres_port: 5432       # Override if using non-standard port
     
     # Enable remote PostgreSQL access (true/false)
     # When false, PostgreSQL will only accept local connections
     # When true, PostgreSQL will listen on all interfaces and port 5432 will be opened in firewall
+    # WARNING: Setting this to true exposes PostgreSQL to the internet with 0.0.0.0/0 access.
+    # For better security, restrict access to specific IP addresses in playbook.yml pg_hba.conf settings.
     enable_remote_postgres: false
     
     # Uvicorn workers

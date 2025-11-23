@@ -1122,13 +1122,26 @@ class AdventureTaskInline(admin.TabularInline):
 
 @admin.register(Adventure)
 class AdventureAdmin(admin.ModelAdmin):
-    list_display = ("title", "category", "difficulty", "badge_emoji", "badge_title", "is_active", "total_tasks", "completion_count", "created_at")
+    list_display = (
+        "title",
+        "category",
+        "difficulty",
+        "badge_emoji",
+        "badge_title",
+        "is_active",
+        "total_tasks",
+        "completion_count",
+        "created_at",
+    )
     list_filter = ("category", "difficulty", "is_active", "created_at")
     search_fields = ("title", "description", "badge_title")
     prepopulated_fields = {"slug": ("title",)}
     inlines = [AdventureTaskInline]
     fieldsets = (
-        ("Basic Information", {"fields": ("title", "slug", "description", "category", "difficulty", "estimated_time", "is_active")}),
+        (
+            "Basic Information",
+            {"fields": ("title", "slug", "description", "category", "difficulty", "estimated_time", "is_active")},
+        ),
         ("Badge Information", {"fields": ("badge", "badge_emoji", "badge_title")}),
     )
 

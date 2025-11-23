@@ -69,9 +69,7 @@ class AdventureDetailView(DetailView):
 
         # Get user progress if authenticated
         if self.request.user.is_authenticated:
-            progress, created = UserAdventureProgress.objects.get_or_create(
-                user=self.request.user, adventure=adventure
-            )
+            progress, created = UserAdventureProgress.objects.get_or_create(user=self.request.user, adventure=adventure)
             context["progress"] = progress
 
             # Get task submissions
