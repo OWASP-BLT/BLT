@@ -1534,6 +1534,177 @@ class UserBadge(models.Model):
         return f"{self.user.username} - {self.badge.title}"
 
 
+class Adventure(models.Model):
+    """
+    Represents a gamified security adventure with multiple tasks.
+    Adventures encourage users to explore and learn OWASP security concepts.
+    """
+
+    DIFFICULTY_CHOICES = [
+        ("beginner", "Beginner"),
+        ("intermediate", "Intermediate"),
+        ("advanced", "Advanced"),
+    ]
+
+    CATEGORY_CHOICES = [
+        ("owasp_security", "OWASP Security"),
+        ("open_source", "Open Source Contribution"),
+    ]
+
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True, max_length=250)
+    description = models.TextField()
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="owasp_security")
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default="beginner")
+    badge = models.ForeignKey(Badge, on_delete=models.SET_NULL, null=True, blank=True, related_name="adventures")
+    badge_emoji = models.CharField(max_length=10, default="🏆", help_text="Emoji icon for the badge")
+    badge_title = models.CharField(max_length=100, help_text="Badge title to be awarded")
+    estimated_time = models.CharField(max_length=50, blank=True, help_text="e.g., '2-3 hours'")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["category", "difficulty", "title"]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("adventure_detail", kwargs={"slug": self.slug})
+
+    @property
+    def total_tasks(self):
+        return self.tasks.count()
+
+    @property
+    def completion_count(self):
+        return UserAdventureProgress.objects.filter(adventure=self, completed=True).count()
+
+
+class AdventureTask(models.Model):
+    """
+    Represents an individual task/action within an adventure.
+    """
+
+    adventure = models.ForeignKey(Adventure, on_delete=models.CASCADE, related_name="tasks")
+    title = models.CharField(max_length=300)
+    description = models.TextField()
+    order = models.PositiveIntegerField(default=0, help_text="Order in which the task appears")
+    is_required = models.BooleanField(default=True, help_text="Whether this task is required to complete the adventure")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["adventure", "order"]
+        unique_together = ["adventure", "order"]
+
+    def __str__(self):
+        return f"{self.adventure.title} - Task {self.order}: {self.title}"
+
+
+class UserAdventureProgress(models.Model):
+    """
+    Tracks a user's progress on an adventure.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="adventure_progress")
+    adventure = models.ForeignKey(Adventure, on_delete=models.CASCADE, related_name="user_progress")
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    completed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ["user", "adventure"]
+        verbose_name_plural = "User adventure progress"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.adventure.title} ({'Completed' if self.completed else 'In Progress'})"
+
+    @property
+    def progress_percentage(self):
+        total_tasks = self.adventure.tasks.filter(is_required=True).count()
+        if total_tasks == 0:
+            return 0
+        completed_tasks = self.task_submissions.filter(task__is_required=True, approved=True).count()
+        return int((completed_tasks / total_tasks) * 100)
+
+    def check_completion(self):
+        """Check if all required tasks are completed and mark adventure as complete."""
+        required_tasks = self.adventure.tasks.filter(is_required=True)
+        completed_required_tasks = self.task_submissions.filter(
+            task__is_required=True, task__in=required_tasks, approved=True
+        ).count()
+
+        if required_tasks.count() > 0 and completed_required_tasks == required_tasks.count():
+            if not self.completed:
+                self.completed = True
+                self.completed_at = timezone.now()
+                self.save()
+
+                # Award the badge if it exists
+                if self.adventure.badge:
+                    UserBadge.objects.get_or_create(
+                        user=self.user,
+                        badge=self.adventure.badge,
+                        defaults={"reason": f"Completed {self.adventure.title}"},
+                    )
+                return True
+        return False
+
+
+class UserTaskSubmission(models.Model):
+    """
+    Stores a user's submission/evidence for completing a task.
+    """
+
+    STATUS_CHOICES = [
+        ("pending", "Pending Review"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
+    progress = models.ForeignKey(UserAdventureProgress, on_delete=models.CASCADE, related_name="task_submissions")
+    task = models.ForeignKey(AdventureTask, on_delete=models.CASCADE, related_name="submissions")
+    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, blog post, or other evidence")
+    notes = models.TextField(blank=True, help_text="Additional notes or explanation")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviewed_task_submissions"
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    approved = models.BooleanField(default=False)
+    reviewer_notes = models.TextField(blank=True, help_text="Feedback from reviewer")
+
+    class Meta:
+        unique_together = ["progress", "task"]
+        ordering = ["-submitted_at"]
+
+    def __str__(self):
+        return f"{self.progress.user.username} - {self.task.title} ({self.get_status_display()})"
+
+    def save(self, *args, **kwargs):
+        # Auto-set approved based on status
+        if self.status == "approved":
+            self.approved = True
+            if not self.reviewed_at:
+                self.reviewed_at = timezone.now()
+        elif self.status == "rejected":
+            self.approved = False
+            if not self.reviewed_at:
+                self.reviewed_at = timezone.now()
+        super().save(*args, **kwargs)
+
+        # Check if adventure is completed after saving
+        if self.approved:
+            self.progress.check_completion()
+
+
 class Post(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, max_length=255)
