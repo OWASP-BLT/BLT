@@ -1652,6 +1652,17 @@ class IssueView(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
+        # Add CVE severity and suggested tip amount
+        if self.object.cve_id and self.object.cve_score:
+            context["cve_severity"] = self.object.get_cve_severity()
+            context["suggested_tip_amount"] = self.object.get_suggested_tip_amount()
+
+        # Add user score for the issue reporter
+        if self.object.user:
+            context["users_score"] = list(
+                Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
+            )[0] or 0
+
         return context
 
 

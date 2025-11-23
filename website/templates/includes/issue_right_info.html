@@ -25,6 +25,28 @@
             </div>
         </div>
     </div>
+    {% if cve_severity and suggested_tip_amount and object.user.username %}
+        <div class="w-full bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border-l-4 border-[#e74c3c] rounded-lg p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0">
+                    <svg class="w-6 h-6 text-[#e74c3c]"
+                         fill="currentColor"
+                         viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h5 class="font-bold text-gray-900 dark:text-gray-100 mb-1">
+                        <span class="text-[#e74c3c]">{{ cve_severity }}</span> Severity CVE
+                    </h5>
+                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                        This CVE is rated <strong>{{ cve_severity }}</strong> severity. We suggest tipping <strong>${{ suggested_tip_amount }}</strong> to <a href="{% url 'profile' slug=object.user.username %}"
+   class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-semibold">@{{ object.user.username }}</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="w-full my-2">{% include "./crypto_donation.html" with included_in_issue_page=True %}</div>
     <div class="flex flex-col gap-4 w-full">
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 dark:border-gray-700 w-full">
