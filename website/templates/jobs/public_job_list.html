@@ -1,27 +1,30 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 {% block title %}Job Board - Find Your Next Opportunity{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="p-6 lg:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div class="max-w-7xl mx-auto">
             <!-- Header -->
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">Find Your Next Opportunity</h1>
-                <p class="text-xl text-gray-600">
-                    Explore exciting job opportunities from leading organizations in cybersecurity and technology
-                </p>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">Find Your Next Opportunity</h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-400">
+                        Explore exciting job opportunities from leading organizations in cybersecurity and technology
+                    </p>
+                </div>
             </div>
             <!-- Search Bar -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
                 <form method="get" class="flex gap-4">
                     <input type="text"
                            name="q"
                            value="{{ search_query }}"
                            placeholder="Search by job title, skills, or company..."
-                           class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                           class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400">
                     <select name="type"
-                            class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                            class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                         <option value="">All Types</option>
                         <option value="full-time"
                                 {% if job_type_filter == 'full-time' %}selected{% endif %}>Full Time</option>
@@ -38,7 +41,7 @@
                            name="location"
                            value="{{ location_filter }}"
                            placeholder="Location..."
-                           class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent w-48">
+                           class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent w-48 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400">
                     <button type="submit"
                             class="px-6 py-3 bg-[#e74c3c] text-white rounded-lg font-semibold hover:bg-red-700 transition-colors">
                         Search
@@ -48,8 +51,8 @@
             {% if jobs %}
                 <!-- Results Count -->
                 <div class="mb-6">
-                    <p class="text-sm text-gray-600">
-                        <span class="font-semibold text-gray-900">{{ jobs|length }}</span> job
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        <span class="font-semibold text-gray-900 dark:text-gray-100">{{ jobs|length }}</span> job
                         {% if jobs|length != 1 %}s{% endif %}
                         found
                     </p>
@@ -57,7 +60,7 @@
                 <!-- Job Listings -->
                 <div class="space-y-4">
                     {% for job in jobs %}
-                        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6">
                             <div class="flex justify-between items-start gap-6">
                                 <div class="flex-1">
                                     <!-- Company Info -->
@@ -74,22 +77,22 @@
                                             </div>
                                         {% endif %}
                                         <div>
-                                            <p class="text-sm text-gray-600">{{ job.organization.name }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ job.organization.name }}</p>
                                         </div>
                                     </div>
                                     <!-- Job Title -->
-                                    <h2 class="text-xl font-bold text-gray-900 mb-2">
+                                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                                         <a href="{% url 'job_detail' job.id %}" class="hover:text-[#e74c3c]">{{ job.title }}</a>
                                     </h2>
                                     <!-- Job Meta -->
-                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 mb-3">
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
                                         {% if job.location %}<span><i class="fas fa-map-marker-alt mr-1"></i> {{ job.location }}</span>{% endif %}
                                         <span><i class="fas fa-briefcase mr-1"></i> {{ job.get_job_type_display }}</span>
                                         {% if job.salary_range %}<span><i class="fas fa-dollar-sign mr-1"></i> {{ job.salary_range }}</span>{% endif %}
-                                        <span class="text-gray-500"><i class="fas fa-clock mr-1"></i> Posted {{ job.created_at|timesince }} ago</span>
+                                        <span class="text-gray-500 dark:text-gray-500"><i class="fas fa-clock mr-1"></i> Posted {{ job.created_at|timesince }} ago</span>
                                     </div>
                                     <!-- Description -->
-                                    <p class="text-gray-700 line-clamp-2">{{ job.description|truncatewords:25 }}</p>
+                                    <p class="text-gray-700 dark:text-gray-300 line-clamp-2">{{ job.description|truncatewords:25 }}</p>
                                 </div>
                                 <!-- View Button -->
                                 <div class="flex-shrink-0">
@@ -104,10 +107,10 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="bg-white rounded-lg shadow-md p-12 text-center">
-                    <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
-                    <p class="text-gray-600">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center">
+                    <i class="fas fa-search text-gray-400 dark:text-gray-500 text-5xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No jobs found</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
                         {% if search_query %}
                             Try adjusting your search terms or filters
                         {% else %}
