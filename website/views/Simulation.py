@@ -1,6 +1,7 @@
 # website/views/Simulation.py
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -43,7 +44,43 @@ def dashboard(request):
             }
         )
 
-    return render(request, "Simulation.html", {"labs": labs_data})
+    # Calculate statistics
+    total_labs = labs.count()
+    total_questions = Tasks.objects.filter(lab__is_active=True, is_active=True).count()
+
+    # Count unique users who have completed at least one lab
+    completed_labs_count = UserLabProgress.objects.filter(lab__is_active=True, completed_at__isnull=False).count()
+
+    # Calculate average completion percentage across all user lab progress
+    user_lab_progresses = UserLabProgress.objects.filter(lab__is_active=True)
+    if user_lab_progresses.exists():
+        total_progress = sum(ulp.calculate_progress_percentage() for ulp in user_lab_progresses)
+        avg_score = total_progress / user_lab_progresses.count()
+    else:
+        avg_score = 0
+
+    # Calculate total estimated time for all labs
+    total_estimated_time = labs.aggregate(total_time=Sum("estimated_time"))["total_time"] or 0
+
+    # Count total task completions
+    total_completions = UserTaskProgress.objects.filter(
+        task__is_active=True, task__lab__is_active=True, completed=True
+    ).count()
+
+    # Count unique users who have started labs
+    active_users = UserLabProgress.objects.filter(lab__is_active=True).values("user").distinct().count()
+
+    stats = {
+        "total_labs": total_labs,
+        "total_questions": total_questions,
+        "completed_labs_count": completed_labs_count,
+        "avg_score": round(avg_score, 1),
+        "total_estimated_time": total_estimated_time,
+        "total_completions": total_completions,
+        "active_users": active_users,
+    }
+
+    return render(request, "Simulation.html", {"labs": labs_data, "stats": stats})
 
 
 @login_required
