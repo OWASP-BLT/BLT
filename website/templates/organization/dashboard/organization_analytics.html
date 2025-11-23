@@ -450,6 +450,111 @@
             </div>
         </div>
     </div>
+    <!-- Compliance Monitoring Section -->
+    <div id="compliance-monitoring" class="w-full px-8 mt-8 pb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Compliance Monitoring</h2>
+            <!-- Overall Compliance Score -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Overall Compliance</h3>
+                    <div class="relative pt-1">
+                        <div class="flex mb-2 items-center justify-between">
+                            <div>
+                                <span class="text-3xl font-bold inline-block py-1 px-2 rounded-full {% if compliance_monitoring.overall_compliance >= 80 %}text-green-600{% elif compliance_monitoring.overall_compliance >= 60 %}text-yellow-600{% else %}text-[#e74c3c]{% endif %}">
+                                    {{ compliance_monitoring.overall_compliance }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+                            <div style="width:{{ compliance_monitoring.overall_compliance }}%"
+                                 class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center {% if compliance_monitoring.overall_compliance >= 80 %}bg-green-500{% elif compliance_monitoring.overall_compliance >= 60 %}bg-yellow-500{% else %}bg-[#e74c3c]{% endif %}"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Security.txt Compliance</h3>
+                    <p class="text-3xl font-bold text-gray-700 dark:text-gray-300">{{ compliance_monitoring.security_txt_compliance }}%</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{{ compliance_monitoring.domains_with_security_txt }}/{{ compliance_monitoring.total_domains }} domains</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Resolution Compliance</h3>
+                    <p class="text-3xl font-bold text-gray-700 dark:text-gray-300">{{ compliance_monitoring.resolution_compliance }}%</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{{ compliance_monitoring.compliant_resolutions }}/{{ compliance_monitoring.total_resolved }} within SLA</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Overdue Security Issues</h3>
+                    <p class="text-3xl font-bold {% if compliance_monitoring.overdue_security_issues > 5 %}text-[#e74c3c]{% elif compliance_monitoring.overdue_security_issues > 0 %}text-yellow-600{% else %}text-green-600{% endif %}">
+                        {{ compliance_monitoring.overdue_security_issues }}
+                    </p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{{ compliance_monitoring.total_security_issues }} total security issues</p>
+                </div>
+            </div>
+            <!-- Compliance Trend Chart -->
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 mb-6">
+                <div class="header-container mb-4">
+                    <h3 class="section-header text-lg font-semibold">Compliance Trend (6 Months)</h3>
+                </div>
+                <div class="relative h-[300px]">
+                    <canvas id="complianceTrendChart"></canvas>
+                </div>
+            </div>
+            <!-- Domain Compliance Status -->
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Domain Compliance Status</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white dark:bg-gray-900 rounded-lg overflow-hidden">
+                        <thead class="bg-gray-100 dark:bg-gray-800">
+                            <tr>
+                                <th class="py-3 px-4 text-left">Domain</th>
+                                <th class="py-3 px-4 text-left">Security.txt</th>
+                                <th class="py-3 px-4 text-left">Overdue Issues</th>
+                                <th class="py-3 px-4 text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for domain in compliance_monitoring.domain_compliance %}
+                                <tr class="border-t border-gray-200 dark:border-gray-700">
+                                    <td class="py-3 px-4">{{ domain.name }}</td>
+                                    <td class="py-3 px-4">
+                                        {% if domain.has_security_txt %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check mr-1"></i> Yes
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                <i class="fas fa-times mr-1"></i> No
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-4">{{ domain.overdue_issues }}</td>
+                                    <td class="py-3 px-4">
+                                        {% if domain.status == "compliant" %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i> Compliant
+                                            </span>
+                                        {% elif domain.status == "warning" %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i> Warning
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                <i class="fas fa-times-circle mr-1"></i> Critical
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr class="border-t border-gray-200 dark:border-gray-700">
+                                    <td class="py-3 px-4 text-center" colspan="4">No domain compliance data available</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock body %}
 {% block js %}
@@ -730,5 +835,74 @@
   // Initialize network traffic charts
   populateTrafficVolumeChart();
   populateHourlyDistributionChart();
+
+  // Compliance Trend Chart
+  function populateComplianceTrendChart() {
+    const complianceCtx = document.getElementById("complianceTrendChart").getContext("2d");
+
+    const complianceData = {
+      labels: JSON.parse('{{ compliance_monitoring.monthly_compliance_labels|safe }}'),
+      datasets: [{
+        label: 'Compliance Rate (%)',
+        data: JSON.parse('{{ compliance_monitoring.monthly_compliance_data|safe }}'),
+        backgroundColor: 'rgba(127, 181, 25, 0.2)',
+        borderColor: 'rgb(127, 181, 25)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: 'rgb(127, 181, 25)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7
+      }]
+    };
+
+    new Chart(complianceCtx, {
+      type: 'line',
+      data: complianceData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: {
+              display: true,
+              text: 'Compliance Rate (%)'
+            },
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Month'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y + '%';
+              }
+            }
+          },
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        }
+      }
+    });
+  }
+
+  // Initialize compliance monitoring chart
+  populateComplianceTrendChart();
     </script>
 {% endblock js %}
