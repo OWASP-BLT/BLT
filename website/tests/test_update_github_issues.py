@@ -117,7 +117,26 @@ class UpdateGitHubIssuesCommandTest(TestCase):
         mock_pr_response.raise_for_status.return_value = None
         mock_pr_response.links = {}
 
-        mock_get.return_value = mock_pr_response
+        # Mock the user API response (not needed but set up for consistency)
+        mock_user_response = MagicMock()
+        mock_user_response.json.return_value = {
+            "id": 12345,
+            "login": "testuser",
+            "html_url": "https://github.com/testuser",
+            "avatar_url": "https://avatars.githubusercontent.com/u/12345",
+            "type": "User",
+        }
+        mock_user_response.raise_for_status.return_value = None
+
+        # Set up the mock to return different responses based on URL
+        def get_side_effect(url, headers=None):
+            if "search/issues" in url:
+                return mock_pr_response
+            elif "/users/" in url:
+                return mock_user_response
+            return MagicMock()
+
+        mock_get.side_effect = get_side_effect
 
         # Run the command - should handle missing repo gracefully
         try:

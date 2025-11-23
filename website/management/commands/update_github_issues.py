@@ -188,11 +188,6 @@ class Command(LoggedBaseCommand):
                             )
                         )
                         continue
-                    except Repo.MultipleObjectsReturned:
-                        self.stdout.write(
-                            self.style.ERROR(f"Multiple repos found with URL: {github_repo_url}. Skipping this PR.")
-                        )
-                        continue
 
             self.stdout.write(self.style.SUCCESS(f"Successfully updated PRs and reviews for {github_username}"))
 
