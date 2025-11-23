@@ -7,7 +7,7 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<nav class="fixed top-0 z-[9999] w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-zinc-200 dark:border-gray-700 border-b md:px-4 md:py-1.5 py-2 px-1 transition-colors duration-300">
+<nav class="fixed top-0 z-[10100] w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-zinc-200 dark:border-gray-700 border-b md:px-4 md:py-1.5 py-2 px-1 transition-colors duration-300">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
@@ -18,17 +18,19 @@
                             data-drawer-target="logo-sidebar"
                             data-drawer-toggle="logo-sidebar"
                             aria-controls="logo-sidebar"
+                            aria-label="Toggle navigation menu"
                             type="button"
-                            class="inline-flex items-center justify-center p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white">
-                        <i class="fa fa-bars md:text-xl text-lg"></i>
+                            class="inline-flex items-center justify-center p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
+                        <i class="fa fa-bars md:text-xl text-lg" aria-hidden="true"></i>
                     </button>
                     <!-- Mega Menu Toggle -->
                     <button id="mega-menu-button"
                             aria-expanded="false"
                             aria-controls="mega-menu"
-                            class="hidden md:inline-flex group items-center gap-2 rounded-md p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white">
+                            aria-label="Open mega menu"
+                            class="hidden md:inline-flex group items-center gap-2 rounded-md p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
                         <span class="sr-only">Open menu</span>
-                        <i class="fa fa-th-large md:text-xl text-lg"></i>
+                        <i class="fa fa-th-large md:text-xl text-lg" aria-hidden="true"></i>
                     </button>
                 </div>
                 <!-- Logo -->
@@ -702,8 +704,11 @@
                 </div>
             </div>
             <!-- Mobile Search Button -->
-            <button class="p-2 text-red-500 sm:hidden" onclick="toggleMobileSearch()">
-                <i class="fa fa-search text-3xl"></i>
+            <button class="p-2 text-red-500 sm:hidden"
+                    onclick="toggleMobileSearch()"
+                    aria-label="Toggle mobile search"
+                    type="button">
+                <i class="fa fa-search text-3xl" aria-hidden="true"></i>
             </button>
             <!-- User Menu -->
             {% if request.user.is_authenticated %}
@@ -839,7 +844,7 @@
                 <!-- Sign up and Log in Buttons -->
                 <div class="flex items-center gap-4">
                     <!-- Dark Mode Toggle -->
-                    {% include "dark_mode_toggle.html" %}
+                    <div class="hidden ml-4 md:block">{% include 'dark_mode_toggle.html' %}</div>
                     <div class="hidden lg:flex justify-center items-center gap-4">
                         <a href="{% url 'account_signup' %}"
                            class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -873,8 +878,9 @@
                 <input type="hidden" name="type" id="mobile-filter-type" value="all">
             </div>
             <button type="submit"
-                    class="ml-2 py-3 px-4 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600 dark:hover:bg-red-600 transition-colors">
-                <i class="fa fa-search text-xl"></i>
+                    aria-label="Search"
+                    class="ml-2 py-3 px-4 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600 dark:hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
+                <i class="fa fa-search text-xl" aria-hidden="true"></i>
             </button>
         </form>
     </div>

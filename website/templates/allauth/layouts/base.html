@@ -2,30 +2,33 @@
 {% load static %}
 {% load custom_tags %}
 {% load i18n %}
-
 {% block title %}
-    {% block head_title %}{% endblock head_title %} | {% env 'PROJECT_NAME' %}
+    {% block head_title %}
+    {% endblock head_title %}
+    | {% env 'PROJECT_NAME' %}
 {% endblock title %}
-
 {% block description %}
-    {% block head_description %}Access your account and manage your profile on {% env 'PROJECT_NAME' %}, the bug logging tool where you can report issues and get points.{% endblock head_description %}
+    {% block head_description %}
+        Access your account and manage your profile on {% env 'PROJECT_NAME' %}, the bug logging tool where you can report issues and get points.
+    {% endblock head_description %}
 {% endblock description %}
-
 {% block keywords %}
-    {% block head_keywords %}{% env 'PROJECT_NAME' %}, Account, Profile, Bug Logging, Security{% endblock head_keywords %}
+    {% block head_keywords %}
+        {% env 'PROJECT_NAME' %}, Account, Profile, Bug Logging, Security
+    {% endblock head_keywords %}
 {% endblock keywords %}
-
 {% block og_title %}
-    {% block head_title %}{% endblock head_title %} - {% env 'PROJECT_NAME' %}
+    {% block head_title %}
+    {% endblock head_title %}
+    - {% env 'PROJECT_NAME' %}
 {% endblock og_title %}
-
 {% block og_description %}
-    {% block head_description %}Access your account and manage your profile on {% env 'PROJECT_NAME' %}, the bug logging tool where you can report issues and get points.{% endblock head_description %}
+    {% block head_description %}
+        Access your account and manage your profile on {% env 'PROJECT_NAME' %}, the bug logging tool where you can report issues and get points.
+    {% endblock head_description %}
 {% endblock og_description %}
-
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
-    
     {% block body %}
         <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100">
             <div class="flex flex-col w-full max-w-md bg-white rounded-md shadow-lg md:flex-row md:max-w-2xl lg:max-w-4xl">
@@ -38,9 +41,9 @@
                     <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
                         {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, Organizations are held accountable" %}.
                     </p>
-                    {% block extra_left_content %}{% endblock extra_left_content %}
+                    {% block extra_left_content %}
+                    {% endblock extra_left_content %}
                 </div>
-                
                 <!-- Right Section - Content -->
                 <div class="p-5 bg-white md:flex-1">
                     {% if messages %}
@@ -52,12 +55,12 @@
                             {% endfor %}
                         </div>
                     {% endif %}
-                    
-                    {% block content %}{% endblock content %}
+                    {% block content %}
+                    {% endblock content %}
                 </div>
             </div>
         </div>
     {% endblock body %}
-    
-    {% block extra_body %}{% endblock extra_body %}
+    {% block extra_body %}
+    {% endblock extra_body %}
 {% endblock natural_content %}
