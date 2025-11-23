@@ -2301,24 +2301,24 @@ class OrganizationDetailView(DetailView):
         """
         # Fixed start date: 2024-11-11
         since_date = timezone.make_aware(datetime(2024, 11, 11))
-        
+
         # Get all repos for this organization
         repos = organization.repos.all()
-        
+
         if not repos.exists():
             return []
-        
+
         # Get all contributors who have merged PRs in these repos
         contributors_with_prs = []
         processed_contributors = set()
-        
+
         for repo in repos:
             # Get contributors for this repo with merged PRs
             for contributor in repo.contributor.all():
                 # Skip if we've already processed this contributor
                 if contributor.id in processed_contributors:
                     continue
-                    
+
                 # Count PRs for this contributor across all organization repos
                 pr_count = GitHubIssue.objects.filter(
                     contributor=contributor,
@@ -2327,7 +2327,7 @@ class OrganizationDetailView(DetailView):
                     is_merged=True,
                     merged_at__gte=since_date,
                 ).count()
-                
+
                 if pr_count > 0:
                     contributors_with_prs.append(
                         {
@@ -2339,7 +2339,7 @@ class OrganizationDetailView(DetailView):
                         }
                     )
                     processed_contributors.add(contributor.id)
-        
+
         # Sort by PR count (descending) and return top 10
         contributors_with_prs.sort(key=lambda x: x["pr_count"], reverse=True)
         return contributors_with_prs[:10]

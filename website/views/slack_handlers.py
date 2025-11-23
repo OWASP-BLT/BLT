@@ -795,14 +795,19 @@ def slack_commands(request):
                                     app_id = app_info.get("id", "N/A")
 
                                     apps_blocks.append(
-                                        {"type": "section", "text": {"type": "mrkdwn", "text": f"• *{app_name}* (`{app_id}`)"}}
+                                        {
+                                            "type": "section",
+                                            "text": {"type": "mrkdwn", "text": f"• *{app_name}* (`{app_id}`)"},
+                                        }
                                     )
 
                                 if len(apps) > 20:
                                     apps_blocks.append(
                                         {
                                             "type": "context",
-                                            "elements": [{"type": "mrkdwn", "text": f"_Showing 20 of {len(apps)} apps_"}],
+                                            "elements": [
+                                                {"type": "mrkdwn", "text": f"_Showing 20 of {len(apps)} apps_"}
+                                            ],
                                         }
                                     )
                         else:
