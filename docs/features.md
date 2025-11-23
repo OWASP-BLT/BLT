@@ -79,6 +79,7 @@
   - Progress monitoring
   - Project analytics
   - Custom project settings
+  - Webhook integration for automated contributor stats updates
 
 ### Educational Resources
 - **Learning Platform**
