@@ -3988,7 +3988,7 @@ def process_bounty_payout(request):
             return JsonResponse({"success": False, "error": "Invalid issue number"}, status=400)
 
         # SECURITY: Ensure the target repo is authorized for bounty payouts
-        allowed_repos = getattr(settings, "BLT_ALLOWED_BOUNTY_REPOS", {"OWASP-BLT/BLT"})
+        allowed_repos = getattr(settings, "BLT_ALLOWED_BOUNTY_REPOS", frozenset(["OWASP-BLT/BLT"]))
         repo_key = f"{owner}/{repo_name}"
         if repo_key not in allowed_repos:
             logger.warning(f"Attempted bounty payout for unauthorized repository: {repo_key}")
@@ -4084,9 +4084,14 @@ def process_bounty_payout(request):
             f"Creating GitHub Sponsors payment: {sponsor_username} -> {assignee_username}, Amount: ${bounty_amount}"
         )
 
-        # For minimal implementation, we'll create a placeholder transaction ID
-        # Full GitHub Sponsors GraphQL API integration would go here
-        sponsorship_id = f"minimal_payout_{issue_number}_{int(time.time())}"
+        # MINIMAL IMPLEMENTATION: Using placeholder transaction ID
+        # This is a simplified version that records the payment intent without actual GitHub Sponsors API calls
+        # For full production implementation:
+        # 1. Use GitHub GraphQL API with authentication token that has 'user:sponsors' scope
+        # 2. Create sponsorship using createSponsorship mutation
+        # 3. Immediately cancel the sponsorship to create one-time payment effect
+        # 4. Handle cancellation failures and send admin alerts
+        sponsorship_id = f"MINIMAL_PAYOUT_{issue_number}_{int(time.time())}"
 
         # Create/update the GitHubIssue record
         github_issue, _created = GitHubIssue.objects.update_or_create(
