@@ -687,13 +687,14 @@ class IssueBaseCreate(object):
                 # Validate the original user input first
                 validate_screenshot_hash(original_hash)
 
-                # Extract extension and generate unique hash
-                extension = original_hash.split(".")[-1] if "." in original_hash else "png"
-                unique_hash = original_hash[:99] + str(uuid.uuid4()) + "." + extension
+                # Generate unique hash by appending UUID
+                # The hash is stored without extension, so we add .png
+                unique_hash = original_hash[:99] + str(uuid.uuid4()) + ".png"
                 self.request.POST["screenshot-hash"] = unique_hash
 
                 # Open file using original_hash (the actual uploaded filename)
-                screenshot_path = os.path.join("uploads", original_hash)
+                # Add .png extension since the hash is stored without extension
+                screenshot_path = os.path.join("uploads", f"{original_hash}.png")
                 try:
                     reopen = default_storage.open(screenshot_path, "rb")
                     django_file = File(reopen)
