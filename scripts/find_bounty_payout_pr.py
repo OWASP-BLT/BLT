@@ -12,7 +12,7 @@ import os
 import re
 import subprocess
 import sys
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 class BountyPayoutPRFinder:
@@ -134,7 +134,7 @@ class BountyPayoutPRFinder:
 
         return found_commits
 
-    def validate_pr_implementation(self, pr_number: int) -> Dict[str, any]:
+    def validate_pr_implementation(self, pr_number: int) -> Dict[str, Any]:
         """
         Validate a PR's bounty payout implementation.
 
@@ -180,7 +180,7 @@ class BountyPayoutPRFinder:
         # Validate workflow file
         if ".github/workflows/auto-bounty-payout.yml" in pr_diff:
             validation_results["has_workflow"] = True
-            if "merged == true" in pr_diff or "merged == 'true'" in pr_diff:
+            if not ("merged == true" in pr_diff or "merged == 'true'" in pr_diff):
                 validation_results["warnings"].append("Workflow should check merged status")
 
         # Validate API endpoint
@@ -223,7 +223,7 @@ class BountyPayoutPRFinder:
 
         return validation_results
 
-    def print_validation_report(self, results: Dict[str, any]):
+    def print_validation_report(self, results: Dict[str, Any]):
         """Print a formatted validation report."""
         print(f"\n{'=' * 80}")
         print(f"BOUNTY PAYOUT PR VALIDATION REPORT - PR #{results['pr_number']}")
