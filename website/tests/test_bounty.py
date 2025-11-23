@@ -20,7 +20,7 @@ class BountyPayoutTestCase(TestCase):
 
         # Create repository
         self.repo = Repo.objects.create(
-            name="TestRepo", organization=self.org, url="https://github.com/TestOrg/TestRepo"
+            name="TestRepo", organization=self.org, repo_url="https://github.com/TestOrg/TestRepo"
         )
 
         # Create GitHub issue with bounty
