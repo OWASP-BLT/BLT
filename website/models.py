@@ -19,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, URLValidator
 from django.db import models, transaction
 from django.db.models import Count, F
 from django.db.models.signals import post_delete, post_save
@@ -81,6 +81,12 @@ class Tag(models.Model):
         blank=True,
         null=True,
         help_text="Hex color code for tag display (e.g., '#e74c3c')",
+        validators=[
+            RegexValidator(
+                regex=r"^#[0-9A-Fa-f]{6}$",
+                message="Color must be a valid hex color code (e.g., '#e74c3c')",
+            )
+        ],
     )
     created = models.DateTimeField(auto_now_add=True)
 
