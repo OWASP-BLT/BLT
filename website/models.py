@@ -829,6 +829,14 @@ class UserProfile(models.Model):
     btc_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_btc_address])
     bch_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_bch_address])
     eth_address = models.CharField(max_length=100, blank=True, null=True)
+    preferred_payment_method = models.CharField(
+        max_length=20,
+        choices=[("sponsors", "GitHub Sponsors"), ("bch", "Bitcoin Cash")],
+        default="sponsors",
+        blank=True,
+        null=True,
+        help_text="Preferred payment method for bounty payouts",
+    )
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
     x_username = models.CharField(max_length=50, blank=True, null=True)
@@ -1798,6 +1806,10 @@ class GitHubIssue(models.Model):
         related_name="github_issue_p2p_payments",
     )
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
+    # Sponsors cancellation tracking (observability for immediate-cancel flow)
+    sponsors_cancellation_failed = models.BooleanField(default=False)
+    sponsors_cancellation_attempts = models.IntegerField(default=0)
+    sponsors_cancellation_last_attempt = models.DateTimeField(null=True, blank=True)
     # Related pull requests
     linked_pull_requests = models.ManyToManyField(
         "self",

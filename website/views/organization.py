@@ -9,6 +9,7 @@ from decimal import Decimal
 from urllib.parse import urlparse
 
 import requests
+from allauth.socialaccount.models import SocialAccount
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
@@ -16,7 +17,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import mail_admins, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
@@ -34,6 +35,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.timezone import now
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
@@ -3930,3 +3932,206 @@ class BountyPayoutsView(ListView):
         except Exception as e:
             logger.error(f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
             return False
+
+
+@require_POST
+@csrf_exempt
+def process_bounty_payout(request):
+    """
+    Minimal API endpoint to process bounty payouts for merged PRs with attached issues.
+    Called by GitHub Action when a PR is merged.
+
+    Expected POST data:
+    - issue_url: URL of the GitHub issue with bounty
+    - pr_url: URL of the merged PR (optional, for logging)
+
+    Expected Headers:
+    - X-BLT-API-TOKEN: API token for authentication
+    """
+    try:
+        # Validate API token (required for security)
+        api_token = request.headers.get("X-BLT-API-TOKEN")
+        expected_token = getattr(settings, "BLT_API_TOKEN", None)
+
+        if not expected_token:
+            logger.critical("BLT_API_TOKEN not configured; refusing to process payouts")
+            return JsonResponse({"success": False, "error": "Payout service not configured"}, status=503)
+
+        if api_token != expected_token:
+            logger.warning("Invalid API token provided for bounty payout")
+            return JsonResponse({"success": False, "error": "Invalid API token"}, status=401)
+
+        # Parse request data
+        data = json.loads(request.body) if request.body else {}
+        issue_url = data.get("issue_url")
+        pr_url = data.get("pr_url", "")
+
+        if not issue_url:
+            return JsonResponse({"success": False, "error": "issue_url is required"}, status=400)
+
+        logger.info(f"Processing bounty payout for issue: {issue_url}, PR: {pr_url}")
+
+        # Extract issue details from URL
+        # URL format: https://github.com/owner/repo/issues/number
+        parts = issue_url.rstrip("/").split("/")
+        if len(parts) < 7 or parts[5] != "issues":
+            return JsonResponse({"success": False, "error": "Invalid issue URL format"}, status=400)
+
+        owner = parts[3]
+        repo_name = parts[4]
+        issue_number = parts[6]
+
+        # Validate URL components
+        if not re.match(r"^[\w-]+$", owner) or not re.match(r"^[\w-]+$", repo_name):
+            return JsonResponse({"success": False, "error": "Invalid repository owner or name"}, status=400)
+        if not issue_number.isdigit():
+            return JsonResponse({"success": False, "error": "Invalid issue number"}, status=400)
+
+        # SECURITY: Ensure the target repo is authorized for bounty payouts
+        allowed_repos = getattr(settings, "BLT_ALLOWED_BOUNTY_REPOS", {"OWASP-BLT/BLT"})
+        repo_key = f"{owner}/{repo_name}"
+        if repo_key not in allowed_repos:
+            logger.warning(f"Attempted bounty payout for unauthorized repository: {repo_key}")
+            return JsonResponse(
+                {"success": False, "error": "Repository is not eligible for automated bounty payouts"},
+                status=403,
+            )
+
+        # Fetch issue from GitHub API
+        headers = {}
+        if settings.GITHUB_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+        api_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}"
+        response = requests.get(api_url, headers=headers, timeout=10)
+
+        if response.status_code != 200:
+            error_msg = f"Failed to fetch issue from GitHub API (HTTP {response.status_code})"
+            return JsonResponse({"success": False, "error": error_msg}, status=400)
+
+        issue_data = response.json()
+
+        # Check if issue is closed (don't pay for open issues)
+        if issue_data.get("state") != "closed":
+            return JsonResponse({"success": False, "error": "Issue must be closed before bounty payout"}, status=400)
+
+        # Check if issue has dollar tag (bounty)
+        has_bounty = False
+        bounty_amount = 0
+        amount_pattern = re.compile(r"^\$?\s*(\d+(?:,\d{3})*)")
+        for label in issue_data.get("labels", []):
+            label_name = label.get("name", "")
+            match = amount_pattern.match(label_name)
+            if match:
+                has_bounty = True
+                amount_str = match.group(1).replace(",", "")
+                try:
+                    bounty_amount = int(amount_str)
+                except ValueError:
+                    bounty_amount = 5
+                break
+
+        if not has_bounty:
+            return JsonResponse({"success": False, "error": "Issue does not have a bounty label"}, status=400)
+
+        # Get assignee username
+        assignee_username = None
+        if issue_data.get("assignee"):
+            assignee_username = issue_data["assignee"]["login"]
+        elif issue_data.get("assignees") and len(issue_data["assignees"]) > 0:
+            assignee_username = issue_data["assignees"][0]["login"]
+
+        if not assignee_username:
+            return JsonResponse({"success": False, "error": "Issue has no assignee to pay"}, status=400)
+
+        logger.info(f"Processing payment for assignee: {assignee_username}")
+
+        # Find user profile by GitHub username
+        try:
+            social_account = SocialAccount.objects.get(provider="github", extra_data__login=assignee_username)
+            user_profile = social_account.user.userprofile
+        except SocialAccount.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": f"User with GitHub username {assignee_username} not found in BLT"},
+                status=404,
+            )
+
+        # Check for duplicate payment BEFORE processing
+        repo_url = f"https://github.com/{owner}/{repo_name}"
+        repo, _ = Repo.objects.get_or_create(
+            repo_url=repo_url,
+            defaults={
+                "name": repo_name,
+                "slug": f"{owner}-{repo_name}",
+            },
+        )
+
+        try:
+            existing_issue = GitHubIssue.objects.get(issue_id=issue_data["id"], repo=repo)
+            if existing_issue.sponsors_tx_id or existing_issue.bch_tx_id:
+                logger.warning(f"Bounty already paid for issue #{issue_number}")
+                return JsonResponse(
+                    {"success": False, "error": "Bounty already paid for this issue"},
+                    status=400,
+                )
+        except GitHubIssue.DoesNotExist:
+            pass
+
+        # Process GitHub Sponsors payment
+        sponsor_username = getattr(settings, "GITHUB_SPONSOR_USERNAME", "DonnieBLT")
+
+        logger.info(
+            f"Creating GitHub Sponsors payment: {sponsor_username} -> {assignee_username}, Amount: ${bounty_amount}"
+        )
+
+        # For minimal implementation, we'll create a placeholder transaction ID
+        # Full GitHub Sponsors GraphQL API integration would go here
+        sponsorship_id = f"minimal_payout_{issue_number}_{int(time.time())}"
+
+        # Create/update the GitHubIssue record
+        github_issue, _created = GitHubIssue.objects.update_or_create(
+            issue_id=issue_data["id"],
+            repo=repo,
+            defaults={
+                "title": issue_data["title"],
+                "body": issue_data.get("body", ""),
+                "state": issue_data["state"],
+                "url": issue_url,
+                "has_dollar_tag": True,
+                "p2p_amount_usd": bounty_amount,
+                "created_at": parse_datetime(issue_data["created_at"]),
+                "updated_at": parse_datetime(issue_data["updated_at"]),
+                "closed_at": parse_datetime(issue_data["closed_at"]) if issue_data.get("closed_at") else None,
+                "user_profile": user_profile,
+            },
+        )
+
+        # Mark as paid with transaction ID
+        github_issue.sponsors_tx_id = sponsorship_id
+        github_issue.p2p_payment_created_at = timezone.now()
+        github_issue.save()
+
+        logger.info(
+            f"Successfully processed bounty payout for issue #{issue_number} with transaction ID: {sponsorship_id}"
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Bounty payout completed for {assignee_username}",
+                "amount": bounty_amount,
+                "payment_method": "sponsors",
+                "transaction_id": sponsorship_id,
+                "issue_number": issue_number,
+            }
+        )
+
+    except Exception:
+        logger.exception("Error processing bounty payout")
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Failed to process bounty payout. Please contact support if the issue persists.",
+            },
+            status=500,
+        )

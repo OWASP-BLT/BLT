@@ -637,11 +637,15 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "merged_at",
         "updated_at",
         "url",
+        "sponsors_tx_id",
         "p2p_amount_usd",
         "p2p_amount_bch",
         "sent_by_user",
         "p2p_payment_created_at",
         "bch_tx_id",
+        "sponsors_cancellation_failed",
+        "sponsors_cancellation_attempts",
+        "sponsors_cancellation_last_attempt",
     )
     list_filter = [
         "type",
@@ -651,12 +655,14 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "contributor",
         "sent_by_user",
         "repo",
+        "sponsors_cancellation_failed",
     ]
     search_fields = [
         "title",
         "url",
         "user_profile__user__username",
         "contributor__name",
+        "sponsors_tx_id",
         "bch_tx_id",
     ]
     date_hierarchy = "created_at"

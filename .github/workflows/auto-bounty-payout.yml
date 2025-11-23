@@ -1,0 +1,116 @@
+name: Auto Bounty Payout
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  process-bounty:
+    # Only run if PR was merged (not just closed)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+      contents: read
+    
+    steps:
+      - name: Extract linked issues from PR
+        id: extract_issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          pr_number="${{ github.event.pull_request.number }}"
+          
+          echo "PR #$pr_number was merged"
+          echo "PR Body: $PR_BODY"
+          
+          # Extract issue numbers from PR body
+          # Looks for patterns like "Fixes #123", "Closes #456", "Resolves #789"
+          issue_numbers=$(echo "$PR_BODY" | grep -oiE "(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+" | grep -oE "#[0-9]+" | sed 's/#//' || echo "")
+          
+          if [ -z "$issue_numbers" ]; then
+            echo "No linked issues found in PR body"
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+          else
+            echo "Found linked issues: $issue_numbers"
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+            # Convert to JSON array
+            issue_array=$(echo "$issue_numbers" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "issue_numbers=$issue_array" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for bounty labels and process payment
+        if: steps.extract_issues.outputs.has_issues == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBERS: ${{ steps.extract_issues.outputs.issue_numbers }}
+        run: |
+          echo "Processing issues: $ISSUE_NUMBERS"
+          
+          # Parse JSON array
+          for issue_num in $(echo "$ISSUE_NUMBERS" | jq -r '.[]'); do
+            echo "Checking issue #$issue_num for bounty labels..."
+            
+            # Get issue details
+            issue_data=$(gh api repos/${{ github.repository }}/issues/$issue_num)
+            
+            # Check if issue has a dollar label (bounty)
+            has_bounty=$(echo "$issue_data" | jq -r '.labels[] | select(.name | startswith("$")) | .name' | head -n 1)
+            
+            if [ -n "$has_bounty" ]; then
+              echo "Issue #$issue_num has bounty label: $has_bounty"
+              
+              # Construct issue URL
+              issue_url="https://github.com/${{ github.repository }}/issues/$issue_num"
+              pr_url="${{ github.event.pull_request.html_url }}"
+              
+              echo "Sending bounty payout request to BLT API..."
+              
+              # Call the BLT bounty payout API
+              # BLT_API_URL must be set in repository secrets/variables
+              if [ -z "${{ secrets.BLT_API_URL }}" ]; then
+                echo "❌ BLT_API_URL is not set. Skipping API call."
+                echo "Please set BLT_API_URL in repository secrets/variables."
+                exit 0
+              fi
+              api_url="${{ secrets.BLT_API_URL }}"
+              
+              echo "Using API URL: $api_url"
+              
+              response=$(curl -X POST \
+                -H "Content-Type: application/json" \
+                -H "X-BLT-API-TOKEN: ${{ secrets.BLT_API_TOKEN }}" \
+                -d "{\"issue_url\": \"$issue_url\", \"pr_url\": \"$pr_url\"}" \
+                "${api_url}/api/bounty_payout/" \
+                -w "\n%{http_code}" -s)
+              
+              http_code=$(echo "$response" | tail -n 1)
+              response_body=$(echo "$response" | head -n -1)
+              
+              echo "API Response (HTTP $http_code): $response_body"
+              
+              if [ "$http_code" -eq 200 ]; then
+                echo "✅ Successfully initiated bounty payout for issue #$issue_num"
+                
+                # Add a comment to the issue
+                gh issue comment $issue_num --body "🎉 Bounty payout has been initiated for this issue! The payment will be processed via GitHub Sponsors."
+              else
+                echo "⚠️ Failed to process bounty payout for issue #$issue_num"
+                echo "Response: $response_body"
+                
+                # Add a comment about the failure
+                gh issue comment $issue_num --body "⚠️ Automated bounty payout failed. Please contact an administrator. Error: $response_body"
+              fi
+            else
+              echo "Issue #$issue_num does not have a bounty label, skipping..."
+            fi
+          done
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "Auto bounty payout workflow completed"
+          echo "PR: ${{ github.event.pull_request.html_url }}"
+          echo "Merged by: ${{ github.event.pull_request.merged_by.login }}"

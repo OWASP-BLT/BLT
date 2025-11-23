@@ -630,3 +630,19 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+# Bounty Payout Configuration
+# API token for authenticating bounty payout requests
+BLT_API_TOKEN = os.environ.get("BLT_API_TOKEN")
+# GitHub username that sponsors will be created from (default: DonnieBLT)
+GITHUB_SPONSOR_USERNAME = os.environ.get("GITHUB_SPONSOR_USERNAME", "DonnieBLT")
+# Allowlist of repositories eligible for automated bounty payouts (prevents budget drain attacks)
+# Format: {"owner/repo", "another-org/another-repo"}
+BLT_ALLOWED_BOUNTY_REPOS = {
+    os.environ.get("BLT_ALLOWED_BOUNTY_REPO_1", "OWASP-BLT/BLT"),
+}
+# Add additional repos from environment if configured
+if os.environ.get("BLT_ALLOWED_BOUNTY_REPO_2"):
+    BLT_ALLOWED_BOUNTY_REPOS.add(os.environ.get("BLT_ALLOWED_BOUNTY_REPO_2"))
+if os.environ.get("BLT_ALLOWED_BOUNTY_REPO_3"):
+    BLT_ALLOWED_BOUNTY_REPOS.add(os.environ.get("BLT_ALLOWED_BOUNTY_REPO_3"))
