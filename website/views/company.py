@@ -149,51 +149,142 @@ class RegisterOrganizationView(View):
             messages.error(request, "Login to create organization")
             return redirect("/accounts/login/")
 
-        organization_name = data.get("organization_name", "")
-        organization_url = data.get("organization_url", "")
+        # Sanitize and normalize inputs to prevent injection attacks
+        organization_name = data.get("organization_name", "").strip()[:255]  # Max length from model
+        organization_url = data.get("organization_url", "").strip()[:200]  # URLField default max_length
+        support_email = data.get("support_email", "").strip()[:254]  # EmailField default max_length
+        twitter_url = data.get("twitter_url", "").strip()[:200]
+        facebook_url = data.get("facebook_url", "").strip()[:200]
 
-        if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
-            messages.error(request, "organization name is invalid or already exists.")
+        # Validate organization name
+        if not organization_name:
+            messages.error(request, "Organization name is required.")
             return redirect("register_organization")
 
-        if organization_url == "" or Organization.objects.filter(url=organization_url).exists():
-            messages.error(request, "organization URL is invalid or already exists.")
+        # Validate organization URL
+        if not organization_url:
+            messages.error(request, "Organization URL is required.")
             return redirect("register_organization")
 
+        # Validate URL format (removed synchronous HTTP call per security recommendation)
+        if not is_valid_https_url(organization_url):
+            messages.error(request, "The provided URL format is invalid. Please enter a valid HTTPS URL.")
+            return redirect("register_organization")
+
+        # Check for SSRF vulnerabilities using existing safe URL builder
+        safe_url = rebuild_safe_url(organization_url)
+        if not safe_url:
+            messages.error(request, "The provided URL is not allowed. Please use a public domain.")
+            return redirect("register_organization")
+
+        # Validate logo (required)
         organization_logo = request.FILES.get("logo")
-        if organization_logo:
-            organization_logo_file = organization_logo.name.split(".")[0]
-            extension = organization_logo.name.split(".")[-1]
-            organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
-            logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
-        else:
-            logo_path = None
+        if not organization_logo:
+            messages.error(request, "Organization logo is required.")
+            return redirect("register_organization")
 
+        # Harden file upload validation
+        MAX_LOGO_SIZE = 2 * 1024 * 1024  # 2MB
+        ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif"]
+        ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif"]
+
+        # Check file size
+        if organization_logo.size > MAX_LOGO_SIZE:
+            messages.error(request, "Logo file size must be less than 2MB.")
+            return redirect("register_organization")
+
+        # Check file extension
+        file_extension = organization_logo.name.split(".")[-1].lower() if "." in organization_logo.name else ""
+        if file_extension not in ALLOWED_EXTENSIONS:
+            messages.error(request, f"Invalid file type. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}")
+            return redirect("register_organization")
+
+        # Check MIME type
+        if organization_logo.content_type not in ALLOWED_MIME_TYPES:
+            messages.error(request, "Invalid file format detected.")
+            return redirect("register_organization")
+
+        # Validate image using PIL to prevent malicious files
+        try:
+            from PIL import Image
+
+            img = Image.open(organization_logo)
+            img.verify()  # Verify it's a valid image
+            organization_logo.seek(0)  # Reset file pointer after verify
+        except Exception:
+            messages.error(request, "The uploaded file is not a valid image.")
+            return redirect("register_organization")
+
+        # Use atomic transaction to prevent race conditions
+        logo_path = None
         try:
             with transaction.atomic():
+                # Double-check uniqueness within transaction to prevent race conditions
+                if Organization.objects.filter(name=organization_name).exists():
+                    messages.error(request, "An organization with this name already exists.")
+                    return redirect("register_organization")
+
+                if Organization.objects.filter(url=organization_url).exists():
+                    messages.error(request, "An organization with this URL already exists.")
+                    return redirect("register_organization")
+
+                # Generate safe filename (no user input in filename)
+                safe_filename = f"{uuid.uuid4()}.{file_extension}"
+                logo_path = default_storage.save(f"organization_logos/{safe_filename}", organization_logo)
+
+                # Create organization
                 organization = Organization.objects.create(
                     admin=user,
                     name=organization_name,
-                    url=data["organization_url"],
-                    email=data["support_email"],
-                    twitter=data.get("twitter_url", ""),
-                    facebook=data.get("facebook_url", ""),
+                    url=organization_url,
+                    email=support_email,
+                    twitter=twitter_url,
+                    facebook=facebook_url,
                     logo=logo_path,
                     is_active=True,
                 )
 
-                manager_emails = data.get("email", "").split(",")
-                managers = User.objects.filter(email__in=manager_emails)
-                organization.managers.set(managers)
-                organization.save()
+                # Process manager emails if provided (with sanitization)
+                manager_emails_str = data.get("email", "").strip()
+                if manager_emails_str:
+                    # Sanitize email list and limit to prevent abuse
+                    manager_emails = [
+                        email.strip()[:254] for email in manager_emails_str.split(",") if email.strip()
+                    ][:10]  # Limit to 10 emails
+                    if manager_emails:
+                        managers = User.objects.filter(email__in=manager_emails, is_active=True)
+                        organization.managers.set(managers)
 
-        except ValidationError as e:
-            messages.error(request, f"Error saving organization: {e}")
+        except IntegrityError as e:
+            # Handle database constraint violations (e.g., unique constraint)
+            logger.error(f"IntegrityError creating organization: {str(e)}")
             if logo_path:
-                default_storage.delete(logo_path)
-            return render(request, "organization/register_organization.html")
+                try:
+                    default_storage.delete(logo_path)
+                except Exception:
+                    pass
+            messages.error(request, "An organization with this name or URL already exists.")
+            return redirect("register_organization")
+        except ValidationError as e:
+            logger.error(f"ValidationError creating organization: {str(e)}")
+            if logo_path:
+                try:
+                    default_storage.delete(logo_path)
+                except Exception:
+                    pass
+            messages.error(request, "There was an error saving the organization. Please check all fields and try again.")
+            return redirect("register_organization")
+        except Exception as e:
+            logger.error(f"Unexpected error creating organization: {str(e)}")
+            if logo_path:
+                try:
+                    default_storage.delete(logo_path)
+                except Exception:
+                    pass
+            messages.error(request, "An unexpected error occurred. Please try again later.")
+            return redirect("register_organization")
 
-        messages.success(request, "organization registered successfully.")
+        messages.success(request, "Organization registered successfully.")
         return redirect("organization_detail", slug=organization.slug)
 
 
