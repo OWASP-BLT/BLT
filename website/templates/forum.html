@@ -57,12 +57,12 @@
             {% endif %}
             <!-- Filters -->
             <div class="flex gap-4 mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="categoryFilter">
                     <option value="">All Categories</option>
                     {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
                 </select>
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="statusFilter">
                     <option value="">All Status</option>
                     <option value="open">Open</option>
@@ -70,7 +70,7 @@
                     <option value="completed">Completed</option>
                     <option value="declined">Declined</option>
                 </select>
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="sortFilter">
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
@@ -128,9 +128,21 @@
                                     <span class="font-medium">{{ post.down_votes }}</span>
                                 </button>
                             </div>
-                            <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                <i class="fas fa-comments"></i>
-                                <span>{{ post.comment_count }} Comments</span>
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2 text-gray-600">
+                                    <i class="fas fa-comments"></i>
+                                    {{ post.comments.count }} Comments
+                                </div>
+                                {% if request.user.is_superuser %}
+                                    <button type="button"
+                                            class="flex items-center gap-2 px-4 py-2 rounded-md bg-red-100 text-[#e74c3c] hover:bg-red-200 transition-colors duration-200"
+                                            onclick="deletePost({{ post.id }})"
+                                            aria-label="Delete post: {{ post.title }}"
+                                            title="Delete this post">
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
+                                        Delete
+                                    </button>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="border-t border-gray-100 dark:border-gray-800 p-6"
@@ -494,6 +506,35 @@
         .catch(error => {
             console.error('Error:', error);
             showErrorMessage('An error occurred. Please try again.');
+        });
+    }
+
+    function deletePost(postId) {
+        if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+            return;
+        }
+
+        fetch('/forum/delete/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                post_id: postId
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error deleting post: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to delete post. Please try again.');
         });
     }
 
