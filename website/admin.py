@@ -15,6 +15,8 @@ from website.models import (
     IP,
     Activity,
     ActivityLog,
+    Adventure,
+    AdventureTask,
     BaconEarning,
     BaconSubmission,
     BaconToken,
@@ -48,6 +50,7 @@ from website.models import (
     IpReport,
     Issue,
     IssueScreenshot,
+    Job,
     JoinRequest,
     Kudos,
     Labs,
@@ -87,10 +90,12 @@ from website.models import (
     Trademark,
     TrademarkOwner,
     Transaction,
+    UserAdventureProgress,
     UserBadge,
     UserLabProgress,
     UserProfile,
     UserTaskProgress,
+    UserTaskSubmission,
     Wallet,
     Winner,
 )
@@ -280,6 +285,39 @@ class OrganizationAdmins(ImportExportModelAdmin):
 
     get_url_icon.short_description = " "
     get_url_icon.allow_tags = True
+
+
+class JobAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "organization",
+        "location",
+        "job_type",
+        "status",
+        "is_public",
+        "expires_at",
+        "views_count",
+        "created_at",
+    )
+    list_display_links = ("id", "title")
+    list_editable = ("status", "is_public")
+    list_filter = ("job_type", "status", "is_public", "created_at", "organization")
+    search_fields = ("title", "description", "location", "organization__name")
+    readonly_fields = ("views_count", "created_at", "updated_at")
+    ordering = ("-created_at",)
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        ("Basic Information", {"fields": ("organization", "title", "description", "requirements")}),
+        ("Job Details", {"fields": ("location", "job_type", "salary_range")}),
+        ("Visibility & Status", {"fields": ("is_public", "status", "expires_at")}),
+        (
+            "Application Methods",
+            {"fields": ("application_email", "application_url", "application_instructions"), "classes": ("collapse",)},
+        ),
+        ("Metadata", {"fields": ("posted_by", "views_count", "created_at", "updated_at"), "classes": ("collapse",)}),
+    )
 
 
 class PointsAdmin(admin.ModelAdmin):
@@ -494,9 +532,22 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class ForumPostAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "title", "description", "up_votes", "down_votes", "status", "created")
-    list_filter = ("status", "category")
+    list_display = (
+        "id",
+        "user",
+        "title",
+        "description",
+        "up_votes",
+        "down_votes",
+        "status",
+        "created",
+        "repo",
+        "project",
+        "organization",
+    )
+    list_filter = ("status", "category", "repo", "project", "organization")
     search_fields = ("title", "description", "user__username")
+    autocomplete_fields = ["repo", "project", "organization"]
 
 
 class ForumVoteAdmin(admin.ModelAdmin):
@@ -828,6 +879,7 @@ admin.site.register(Points, PointsAdmin)
 admin.site.register(Hunt, HuntAdmin)
 admin.site.register(OrganizationAdmin, OrganizationUserAdmin)
 admin.site.register(Organization, OrganizationAdmins)
+admin.site.register(Job, JobAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
@@ -1058,4 +1110,89 @@ class BannedAppAdmin(admin.ModelAdmin):
         ("App Information", {"fields": ("app_name", "app_type")}),
         ("Country Information", {"fields": ("country_name", "country_code")}),
         ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
+    )
+
+
+class AdventureTaskInline(admin.TabularInline):
+    model = AdventureTask
+    extra = 1
+    fields = ("order", "title", "description", "is_required")
+    ordering = ["order"]
+
+
+@admin.register(Adventure)
+class AdventureAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "category",
+        "difficulty",
+        "badge_emoji",
+        "badge_title",
+        "is_active",
+        "total_tasks",
+        "completion_count",
+        "created_at",
+    )
+    list_filter = ("category", "difficulty", "is_active", "created_at")
+    search_fields = ("title", "description", "badge_title")
+    prepopulated_fields = {"slug": ("title",)}
+    inlines = [AdventureTaskInline]
+    fieldsets = (
+        (
+            "Basic Information",
+            {"fields": ("title", "slug", "description", "category", "difficulty", "estimated_time", "is_active")},
+        ),
+        ("Badge Information", {"fields": ("badge", "badge_emoji", "badge_title")}),
+    )
+
+    def total_tasks(self, obj):
+        return obj.total_tasks
+
+    total_tasks.short_description = "Total Tasks"
+
+    def completion_count(self, obj):
+        return obj.completion_count
+
+    completion_count.short_description = "Completions"
+
+
+@admin.register(AdventureTask)
+class AdventureTaskAdmin(admin.ModelAdmin):
+    list_display = ("adventure", "order", "title", "is_required", "created_at")
+    list_filter = ("adventure", "is_required", "created_at")
+    search_fields = ("title", "description", "adventure__title")
+    ordering = ["adventure", "order"]
+
+
+class UserTaskSubmissionInline(admin.TabularInline):
+    model = UserTaskSubmission
+    extra = 0
+    fields = ("task", "status", "proof_url", "submitted_at", "reviewed_by")
+    readonly_fields = ("submitted_at",)
+    can_delete = False
+
+
+@admin.register(UserAdventureProgress)
+class UserAdventureProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "adventure", "progress_percentage", "completed", "started_at", "completed_at")
+    list_filter = ("completed", "adventure", "started_at", "completed_at")
+    search_fields = ("user__username", "adventure__title")
+    readonly_fields = ("started_at", "completed_at", "progress_percentage")
+    inlines = [UserTaskSubmissionInline]
+
+    def progress_percentage(self, obj):
+        return f"{obj.progress_percentage}%"
+
+    progress_percentage.short_description = "Progress"
+
+
+@admin.register(UserTaskSubmission)
+class UserTaskSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("progress", "task", "status", "submitted_at", "reviewed_by", "reviewed_at")
+    list_filter = ("status", "approved", "submitted_at", "reviewed_at")
+    search_fields = ("progress__user__username", "task__title", "notes", "reviewer_notes")
+    readonly_fields = ("submitted_at",)
+    fieldsets = (
+        ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
+        ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )

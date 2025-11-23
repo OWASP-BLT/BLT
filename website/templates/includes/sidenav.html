@@ -10,7 +10,7 @@
         -ms-overflow-style: none;
     }
 </style>
-<div class="sidebar fixed left-0 top-18 h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 transform -translate-x-full transition-all duration-300 ease-in-out z-[8888] w-[380px] shadow-md">
+<div class="sidebar fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 transform -translate-x-full transition-all duration-300 ease-in-out z-[10000] w-full max-w-[350px] min-w-[280px] max-[360px]:max-w-[90vw] max-[360px]:min-w-[240px] shadow-lg dark:shadow-gray-800">
     <div class="h-full flex flex-col justify-between overflow-hidden">
         <div class="overflow-y-auto flex-grow py-2 scrollbar-none">
             <!-- Main Navigation -->
@@ -71,6 +71,13 @@
                                 </div>
                                 <span class="truncate">{% trans "Integrations" %}</span>
                             </a>
+                            <a href="{% url 'organization_manage_jobs' request.resolver_match.kwargs.id %}"
+                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_manage_jobs' or request.resolver_match.url_name == 'create_job' or request.resolver_match.url_name == 'edit_job' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'organization_manage_jobs' or request.resolver_match.url_name == 'create_job' or request.resolver_match.url_name == 'edit_job' %}bg-[#fde0dd] text-[#e74c3c]{% else %}bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                    <i class="fas fa-briefcase"></i>
+                                </div>
+                                <span class="truncate">{% trans "Manage Jobs" %}</span>
+                            </a>
                         {% endif %}
                     </div>
                 {% endif %}
@@ -122,6 +129,13 @@
                                 <i class="fas fa-trophy"></i>
                             </div>
                             <span class="truncate">{% trans "Hackathons" %}</span>
+                        </a>
+                        <a href="{% url 'public_job_list' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'public_job_list' or request.resolver_match.url_name == 'job_detail' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'public_job_list' or request.resolver_match.url_name == 'job_detail' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <span class="truncate">{% trans "Jobs" %}</span>
                         </a>
                         <a href="{% url 'issues' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'issues' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -184,7 +198,7 @@
                 <!-- Projects Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Projects" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Projects" %}</span>
                     </div>
                     <a href="{% url 'project_list' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'project_list' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -235,7 +249,7 @@
                 <!-- Users Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Users" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Users" %}</span>
                     </div>
                     <a href="{% url 'users' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'users' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -295,6 +309,13 @@
                             </div>
                             <span class="truncate">{% trans "Badges" %}</span>
                         </a>
+                        <a href="{% url 'adventure_list' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'adventure_list' or request.resolver_match.url_name == 'adventure_detail' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'adventure_list' or request.resolver_match.url_name == 'adventure_detail' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                <i class="fas fa-rocket"></i>
+                            </div>
+                            <span class="truncate">{% trans "Adventures" %} 🚀</span>
+                        </a>
                         <a href="{% url 'reminder_settings' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'reminder_settings' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                             <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'reminder_settings' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -307,7 +328,7 @@
                 <!-- Teams Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Teams" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Teams" %}</span>
                     </div>
                     <a href="{% url 'team_overview' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'team_overview' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -318,13 +339,6 @@
                     </a>
                     <!-- Submenu -->
                     <div class="ml-8 mt-1 space-y-1">
-                        <a href="{% url 'team_overview' %}"
-                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'team_overview' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'team_overview' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <span class="truncate">{% trans "Your Team" %}</span>
-                        </a>
                         <a href="{% url 'team_challenges' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'team_challenges' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                             <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'team_challenges' %}text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -344,7 +358,7 @@
                 <!-- About Us Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "About Us" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "About Us" %}</span>
                     </div>
                     <a href="{% url 'about' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'about' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -397,7 +411,7 @@
                 <!-- Contribute Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Contribute" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Contribute" %}</span>
                     </div>
                     <a href="{% url 'contribution_guidelines' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'contribution_guidelines' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -478,7 +492,7 @@
                 <!-- GitHub Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "GitHub" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "GitHub" %}</span>
                     </div>
                     <a href="https://github.com/OWASP/BLT"
                        target="_blank"
@@ -550,7 +564,7 @@
                 <!-- Communication Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Communication" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Communication" %}</span>
                     </div>
                     <a href="{% url 'similarity_scan' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'similarity_scan' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -584,7 +598,7 @@
                 <!-- Apps Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Apps" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Apps" %}</span>
                     </div>
                     <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
                        target="_blank"
@@ -606,7 +620,7 @@
                 <!-- Social Links Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Social Links" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Social Links" %}</span>
                     </div>
                     <a href="https://twitter.com/owasp_blt"
                        target="_blank"
@@ -646,7 +660,7 @@
                 <!-- Footer Links Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Site Info" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Site Info" %}</span>
                     </div>
                     <a href="{% url 'sitemap' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if '/sitemap' in request.path %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -654,13 +668,6 @@
                             <i class="fas fa-sitemap"></i>
                         </div>
                         <span class="truncate">{% trans "Sitemap" %}</span>
-                    </a>
-                    <a href="{% url 'roadmap' %}"
-                       class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if '/roadmap' in request.path %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                        <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if '/roadmap' in request.path %}bg-[#fde0dd] text-[#e74c3c] dark:bg-red-900/50 dark:text-[#e74c3c]{% else %}bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-[#fde0dd] dark:group-hover:bg-red-900/50 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <i class="fas fa-road"></i>
-                        </div>
-                        <span class="truncate">{% trans "Roadmap" %}</span>
                     </a>
                     <a href="{% url 'status_page' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if '/status' in request.path %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -701,7 +708,7 @@
                 <!-- Terms Section -->
                 <div>
                     <div class="px-2 py-2">
-                        <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Legal" %}</span>
+                        <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Legal" %}</span>
                     </div>
                     <a href="{% url 'terms' %}"
                        class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if '/terms/' in request.path %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -713,7 +720,7 @@
                 </div>
                 <!-- Language selector -->
                 <div class="px-2 py-2">
-                    <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Language" %}</span>
+                    <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Language" %}</span>
                 </div>
                 <form action="{% url 'set_language' %}" method="post" class="px-2">
                     {% csrf_token %}
@@ -740,7 +747,7 @@
                 </form>
                 <!-- Design Link -->
                 <div class="px-2 py-2">
-                    <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Resources" %}</span>
+                    <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Resources" %}</span>
                 </div>
                 <a href="https://www.figma.com/file/2lfEZKvqcb4WxRPYEwJqeE/OWASP-BLT?type=design&node-id=0%3A1&mode=design&t=Hy0GZXlVxBPHQMxr-1"
                    class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-all duration-200"
@@ -771,6 +778,12 @@
                     <span class="truncate">{% trans "Edit this page" %}</span>
                 </a>
             </nav>
+        </div>
+        <div class="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-300 dark:border-gray-700 p-4 w-full z-[10001] md:hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-lg font-medium text-gray-700 dark:text-gray-200">Theme</span>
+                {% include 'dark_mode_toggle.html' %}
+            </div>
         </div>
     </div>
 </div>
