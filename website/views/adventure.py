@@ -7,12 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
 
-from website.models import (
-    Adventure,
-    AdventureTask,
-    UserAdventureProgress,
-    UserTaskSubmission,
-)
+from website.models import Adventure, AdventureTask, UserAdventureProgress, UserTaskSubmission
 
 
 class AdventureListView(ListView):

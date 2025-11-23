@@ -42,8 +42,8 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.feeds import ActivityFeed
+from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -324,9 +324,9 @@ from website.views.user import (
     UserProfileDetailView,
     assign_badge,
     badge_user_list,
+    contributor_stats_view,
     contributors,
     contributors_view,
-    contributor_stats_view,
     create_wallet,
     delete_notification,
     delete_thread,
