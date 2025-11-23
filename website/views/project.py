@@ -27,7 +27,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -2121,63 +2121,49 @@ def project_webhook(request, slug):
     try:
         # Get the project
         project = get_object_or_404(Project, slug=slug)
-        
+
         # Check if webhook is configured for this project
         if not project.webhook_url or not project.webhook_secret:
             logger.warning(f"Webhook called for project {slug} but webhook is not configured")
-            return JsonResponse(
-                {"status": "error", "message": "Webhook not configured for this project"},
-                status=400
-            )
-        
+            return JsonResponse({"status": "error", "message": "Webhook not configured for this project"}, status=400)
+
         # Verify webhook signature
         signature = request.headers.get("X-Webhook-Signature", "")
         if not signature:
             logger.warning(f"Webhook called for project {slug} without signature")
-            return JsonResponse(
-                {"status": "error", "message": "Missing webhook signature"},
-                status=401
-            )
-        
+            return JsonResponse({"status": "error", "message": "Missing webhook signature"}, status=401)
+
         # Validate signature
-        expected_signature = "sha256=" + hmac.new(
-            project.webhook_secret.encode("utf-8"),
-            request.body,
-            hashlib.sha256
-        ).hexdigest()
-        
+        expected_signature = (
+            "sha256=" + hmac.new(project.webhook_secret.encode("utf-8"), request.body, hashlib.sha256).hexdigest()
+        )
+
         if not hmac.compare_digest(signature, expected_signature):
             logger.warning(f"Invalid webhook signature for project {slug}")
-            return JsonResponse(
-                {"status": "error", "message": "Invalid webhook signature"},
-                status=403
-            )
-        
+            return JsonResponse({"status": "error", "message": "Invalid webhook signature"}, status=403)
+
         # Parse the payload (optional, for logging purposes)
         try:
             payload = json.loads(request.body) if request.body else {}
         except json.JSONDecodeError:
             payload = {}
-        
+
         logger.info(f"Webhook received for project {slug}: {payload}")
-        
+
         # Get all repositories for this project
         repos = project.repos.all()
-        
+
         if not repos.exists():
             logger.info(f"No repositories found for project {slug}")
             return JsonResponse(
-                {
-                    "status": "success",
-                    "message": "Webhook received but no repositories found for this project"
-                },
-                status=200
+                {"status": "success", "message": "Webhook received but no repositories found for this project"},
+                status=200,
             )
-        
+
         # Trigger contributor stats recalculation for each repository
         updated_repos = []
         errors = []
-        
+
         for repo in repos:
             try:
                 logger.info(f"Updating contributor stats for repo {repo.id}: {repo.name}")
@@ -2187,7 +2173,7 @@ def project_webhook(request, slug):
                 error_msg = f"Failed to update stats for {repo.name}: {str(e)}"
                 logger.error(error_msg, exc_info=True)
                 errors.append(error_msg)
-        
+
         # Return response
         response_data = {
             "status": "success",
@@ -2195,24 +2181,18 @@ def project_webhook(request, slug):
             "project": project.name,
             "repositories_updated": updated_repos,
         }
-        
+
         if errors:
             response_data["errors"] = errors
             response_data["status"] = "partial_success"
-        
+
         logger.info(f"Webhook processing completed for project {slug}: {len(updated_repos)} repos updated")
-        
+
         return JsonResponse(response_data, status=200)
-        
-    except Project.DoesNotExist:
+
+    except (Project.DoesNotExist, Http404):
         logger.warning(f"Webhook called for non-existent project: {slug}")
-        return JsonResponse(
-            {"status": "error", "message": "Project not found"},
-            status=404
-        )
+        return JsonResponse({"status": "error", "message": "Project not found"}, status=404)
     except Exception as e:
         logger.error(f"Unexpected error processing webhook for project {slug}: {str(e)}", exc_info=True)
-        return JsonResponse(
-            {"status": "error", "message": "An unexpected error occurred"},
-            status=500
-        )
+        return JsonResponse({"status": "error", "message": "An unexpected error occurred"}, status=500)
