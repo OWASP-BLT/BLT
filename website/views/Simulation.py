@@ -52,7 +52,13 @@ def dashboard(request):
     completed_labs_count = UserLabProgress.objects.filter(lab__is_active=True, completed_at__isnull=False).count()
 
     # Calculate average completion percentage across all user lab progress
-    user_lab_progresses = UserLabProgress.objects.filter(lab__is_active=True)
+    # Using database aggregation to avoid N+1 query problem
+    user_lab_progresses = (
+        UserLabProgress.objects.filter(lab__is_active=True)
+        .select_related("lab")
+        .prefetch_related("user__task_progress__task")
+    )
+
     if user_lab_progresses.exists():
         total_progress = sum(ulp.calculate_progress_percentage() for ulp in user_lab_progresses)
         avg_score = total_progress / user_lab_progresses.count()
@@ -61,11 +67,6 @@ def dashboard(request):
 
     # Calculate total estimated time for all labs
     total_estimated_time = labs.aggregate(total_time=Sum("estimated_time"))["total_time"] or 0
-
-    # Count total task completions
-    total_completions = UserTaskProgress.objects.filter(
-        task__is_active=True, task__lab__is_active=True, completed=True
-    ).count()
 
     # Count unique users who have started labs
     active_users = UserLabProgress.objects.filter(lab__is_active=True).values("user").distinct().count()
@@ -76,7 +77,6 @@ def dashboard(request):
         "completed_labs_count": completed_labs_count,
         "avg_score": round(avg_score, 1),
         "total_estimated_time": total_estimated_time,
-        "total_completions": total_completions,
         "active_users": active_users,
     }
 
