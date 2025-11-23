@@ -468,26 +468,33 @@
                         </div>
                         <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
                             <div style="width:{{ compliance_monitoring.overall_compliance }}%"
-                                 class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center {% if compliance_monitoring.overall_compliance >= 80 %}bg-green-500{% elif compliance_monitoring.overall_compliance >= 60 %}bg-yellow-500{% else %}bg-[#e74c3c]{% endif %}"></div>
+                                 class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center {% if compliance_monitoring.overall_compliance >= 80 %}bg-green-500{% elif compliance_monitoring.overall_compliance >= 60 %}bg-yellow-500{% else %}bg-[#e74c3c]{% endif %}">
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Security.txt Compliance</h3>
                     <p class="text-3xl font-bold text-gray-700 dark:text-gray-300">{{ compliance_monitoring.security_txt_compliance }}%</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{{ compliance_monitoring.domains_with_security_txt }}/{{ compliance_monitoring.total_domains }} domains</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        {{ compliance_monitoring.domains_with_security_txt }}/{{ compliance_monitoring.total_domains }} domains
+                    </p>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Resolution Compliance</h3>
                     <p class="text-3xl font-bold text-gray-700 dark:text-gray-300">{{ compliance_monitoring.resolution_compliance }}%</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{{ compliance_monitoring.compliant_resolutions }}/{{ compliance_monitoring.total_resolved }} within SLA</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        {{ compliance_monitoring.compliant_resolutions }}/{{ compliance_monitoring.total_resolved }} within SLA
+                    </p>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Overdue Security Issues</h3>
                     <p class="text-3xl font-bold {% if compliance_monitoring.overdue_security_issues > 5 %}text-[#e74c3c]{% elif compliance_monitoring.overdue_security_issues > 0 %}text-yellow-600{% else %}text-green-600{% endif %}">
                         {{ compliance_monitoring.overdue_security_issues }}
                     </p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{{ compliance_monitoring.total_security_issues }} total security issues</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        {{ compliance_monitoring.total_security_issues }} total security issues
+                    </p>
                 </div>
             </div>
             <!-- Compliance Trend Chart -->

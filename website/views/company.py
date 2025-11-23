@@ -553,21 +553,16 @@ class OrganizationDashboardAnalyticsView(View):
 
         # Security.txt compliance
         domains_with_security_txt = domains.filter(has_security_txt=True).count()
-        security_txt_compliance = (
-            (domains_with_security_txt / total_domains * 100) if total_domains > 0 else 0
-        )
+        security_txt_compliance = (domains_with_security_txt / total_domains * 100) if total_domains > 0 else 0
 
         # Issue resolution compliance (SLA: resolve security issues within 30 days)
         security_issues = Issue.objects.filter(
             domain__organization__id=organization,
             label=4,  # Security label
         )
-        
-        resolved_security_issues = security_issues.filter(
-            status="closed",
-            closed_date__isnull=False
-        )
-        
+
+        resolved_security_issues = security_issues.filter(status="closed", closed_date__isnull=False)
+
         # Calculate issues resolved within 30 days
         compliant_resolutions = 0
         for issue in resolved_security_issues:
@@ -575,37 +570,29 @@ class OrganizationDashboardAnalyticsView(View):
                 resolution_time = (issue.closed_date - issue.created).days
                 if resolution_time <= 30:
                     compliant_resolutions += 1
-        
+
         total_resolved = resolved_security_issues.count()
-        resolution_compliance = (
-            (compliant_resolutions / total_resolved * 100) if total_resolved > 0 else 0
-        )
+        resolution_compliance = (compliant_resolutions / total_resolved * 100) if total_resolved > 0 else 0
 
         # Open security issues older than 30 days (compliance risk)
         thirty_days_ago = timezone.now() - timedelta(days=30)
         overdue_security_issues = security_issues.filter(
-            created__lt=thirty_days_ago,
-            status__in=["open", "in_progress"]
+            created__lt=thirty_days_ago, status__in=["open", "in_progress"]
         ).count()
 
         # Overall compliance score (weighted average)
         # 40% security.txt, 40% resolution compliance, 20% no overdue issues
         overdue_compliance = 100 if overdue_security_issues == 0 else max(0, 100 - (overdue_security_issues * 10))
-        overall_compliance = (
-            security_txt_compliance * 0.4 +
-            resolution_compliance * 0.4 +
-            overdue_compliance * 0.2
-        )
+        overall_compliance = security_txt_compliance * 0.4 + resolution_compliance * 0.4 + overdue_compliance * 0.2
 
         # Domain-level compliance status
         domain_compliance = []
         for domain in domains[:10]:  # Top 10 domains
             domain_security_issues = security_issues.filter(domain=domain)
             domain_overdue = domain_security_issues.filter(
-                created__lt=thirty_days_ago,
-                status__in=["open", "in_progress"]
+                created__lt=thirty_days_ago, status__in=["open", "in_progress"]
             ).count()
-            
+
             domain_status = "compliant"
             if domain_overdue > 5:
                 domain_status = "critical"
@@ -613,37 +600,38 @@ class OrganizationDashboardAnalyticsView(View):
                 domain_status = "warning"
             elif not domain.has_security_txt:
                 domain_status = "warning"
-            
-            domain_compliance.append({
-                "name": domain.name,
-                "has_security_txt": domain.has_security_txt,
-                "overdue_issues": domain_overdue,
-                "status": domain_status,
-            })
+
+            domain_compliance.append(
+                {
+                    "name": domain.name,
+                    "has_security_txt": domain.has_security_txt,
+                    "overdue_issues": domain_overdue,
+                    "status": domain_status,
+                }
+            )
 
         # Compliance metrics over time (last 6 months)
         monthly_compliance = []
         for i in range(6):
             month_start = timezone.now() - timedelta(days=30 * (i + 1))
             month_end = timezone.now() - timedelta(days=30 * i)
-            
+
             month_issues = security_issues.filter(created__gte=month_start, created__lt=month_end)
             month_resolved = month_issues.filter(status="closed", closed_date__isnull=False)
-            
+
             month_compliant = 0
             for issue in month_resolved:
                 if issue.closed_date and issue.created:
                     resolution_time = (issue.closed_date - issue.created).days
                     if resolution_time <= 30:
                         month_compliant += 1
-            
+
             month_total = month_resolved.count()
             month_compliance_rate = (month_compliant / month_total * 100) if month_total > 0 else 100
-            
-            monthly_compliance.insert(0, {
-                "month": month_start.strftime("%b"),
-                "compliance_rate": round(month_compliance_rate, 1)
-            })
+
+            monthly_compliance.insert(
+                0, {"month": month_start.strftime("%b"), "compliance_rate": round(month_compliance_rate, 1)}
+            )
 
         return {
             "overall_compliance": round(overall_compliance, 1),
