@@ -42,6 +42,10 @@ class Migration(migrations.Migration):
                 "verbose_name": "Domain Verification Code",
                 "verbose_name_plural": "Domain Verification Codes",
                 "ordering": ["-created_at"],
+                "indexes": [
+                    models.Index(fields=["domain", "user", "is_used"], name="domain_verify_lookup_idx"),
+                    models.Index(fields=["expires_at"], name="domain_verify_expires_idx"),
+                ],
             },
         ),
     ]

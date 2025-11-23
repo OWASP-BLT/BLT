@@ -2566,9 +2566,11 @@ def request_domain_access(request, pk):
             f"A verification code has been sent to {domain.email}. Please check your email and enter the code.",
         )
     except Exception as e:
-        logger.error(f"Failed to send verification email: {e}")
+        logger.error(f"Failed to send verification email for domain {domain.id} to user {request.user.id}: {e}")
         messages.error(request, "Failed to send verification email. Please try again later.")
-        verification.delete()
+        # Keep the record for audit trail but mark it as failed by setting expiration to past
+        verification.expires_at = timezone.now() - timedelta(minutes=1)
+        verification.save()
 
     return redirect("verify_domain_access", pk=pk)
 

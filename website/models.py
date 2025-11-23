@@ -3236,6 +3236,10 @@ class DomainVerificationCode(models.Model):
         ordering = ["-created_at"]
         verbose_name = "Domain Verification Code"
         verbose_name_plural = "Domain Verification Codes"
+        indexes = [
+            models.Index(fields=["domain", "user", "is_used"], name="domain_verify_lookup_idx"),
+            models.Index(fields=["expires_at"], name="domain_verify_expires_idx"),
+        ]
 
     def __str__(self):
         return f"{self.domain.name} - {self.user.username} - {self.code}"
