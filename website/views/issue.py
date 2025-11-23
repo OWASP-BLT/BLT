@@ -1700,11 +1700,17 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 # If NLP suggests a different category and user selected "General", use the suggestion
                 if label == "0" and nlp_analysis.get("suggested_category"):
                     try:
-                        suggested_label = int(nlp_analysis["suggested_category"])
-                        if 0 <= suggested_label <= 8:
-                            label = str(suggested_label)
+                        suggested_category = nlp_analysis["suggested_category"]
+                        # Validate it's a string representation of an integer
+                        if isinstance(suggested_category, str) and suggested_category.isdigit():
+                            suggested_label = int(suggested_category)
+                            if 0 <= suggested_label <= 8:
+                                label = str(suggested_label)
+                                logger.info(f"NLP suggested category {label} for bug report")
+                        elif isinstance(suggested_category, int) and 0 <= suggested_category <= 8:
+                            label = str(suggested_category)
                             logger.info(f"NLP suggested category {label} for bug report")
-                    except (ValueError, TypeError):
+                    except (ValueError, TypeError, KeyError):
                         pass
 
             if request.POST.get("file"):
@@ -1751,18 +1757,22 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
             # Process screenshot with vision API to extract text and analysis
             if issue.screenshot:
                 try:
-                    screenshot_path = issue.screenshot.path
-                    vision_analysis = process_screenshot_with_vision(screenshot_path)
-                    if vision_analysis:
-                        # Store extracted text in OCR field
-                        extracted_text = vision_analysis.get("extracted_text", "")
-                        visual_analysis = vision_analysis.get("visual_analysis", "")
+                    # Check if screenshot file exists before processing
+                    if hasattr(issue.screenshot, "path") and os.path.exists(issue.screenshot.path):
+                        screenshot_path = issue.screenshot.path
+                        vision_analysis = process_screenshot_with_vision(screenshot_path)
+                        if vision_analysis:
+                            # Store extracted text in OCR field
+                            extracted_text = vision_analysis.get("extracted_text", "")
+                            visual_analysis = vision_analysis.get("visual_analysis", "")
 
-                        # Combine OCR text and visual analysis
-                        ocr_content = f"Extracted Text:\n{extracted_text}\n\nVisual Analysis:\n{visual_analysis}"
-                        issue.ocr = ocr_content
-                        issue.save()
-                        logger.info(f"Successfully processed screenshot with vision API for issue {issue.id}")
+                            # Combine OCR text and visual analysis
+                            ocr_content = f"Extracted Text:\n{extracted_text}\n\nVisual Analysis:\n{visual_analysis}"
+                            issue.ocr = ocr_content
+                            issue.save()
+                            logger.info(f"Successfully processed screenshot with vision API for issue {issue.id}")
+                    else:
+                        logger.warning(f"Screenshot file not accessible for issue {issue.id}")
                 except Exception as e:
                     # Log error but don't fail the bug submission
                     logger.error(f"Error processing screenshot with vision API: {str(e)}")
@@ -2085,7 +2095,10 @@ def get_bug_analysis(request):
 
 def generate_github_issue(description):
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return {"error": "OpenAI API key not configured"}
+        client = OpenAI(api_key=api_key)
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
@@ -2136,7 +2149,11 @@ def analyze_bug_with_nlp(description, url=""):
     Returns a dictionary with suggested_category, tags, severity, and enhanced_description.
     """
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            logger.error("OPENAI_API_KEY environment variable not set")
+            return None
+        client = OpenAI(api_key=api_key)
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -2184,7 +2201,11 @@ def process_screenshot_with_vision(screenshot_path):
     Returns a dictionary with extracted_text and visual_analysis.
     """
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            logger.error("OPENAI_API_KEY environment variable not set")
+            return None
+        client = OpenAI(api_key=api_key)
 
         # Read and encode the image
         with Image.open(screenshot_path) as img:
