@@ -55,10 +55,13 @@ class Command(LoggedBaseCommand):
                 for pr in all_prs:
                     repo_full_name = pr["repository_url"].split("repos/")[-1]
                     repo_name = repo_full_name.split("/")[-1].lower()
+                    # Construct the full GitHub repo URL to uniquely identify the repository
+                    github_repo_url = f"https://github.com/{repo_full_name}"
 
                     try:
                         merged = True if pr["pull_request"].get("merged_at") else False
-                        repo = Repo.objects.get(name__iexact=repo_name)
+                        # Use repo_url (which is unique) instead of name (which can have duplicates)
+                        repo = Repo.objects.get(repo_url=github_repo_url)
 
                         # Get or create contributor record
                         try:
@@ -181,7 +184,7 @@ class Command(LoggedBaseCommand):
                     except Repo.DoesNotExist:
                         self.stdout.write(
                             self.style.WARNING(
-                                f"Repo not found in database: {repo_name}. Not storing this issue in database."
+                                f"Repo not found in database: {github_repo_url}. Not storing this issue in database."
                             )
                         )
                         continue

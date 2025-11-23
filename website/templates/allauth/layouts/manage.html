@@ -1,6 +1,5 @@
 {% extends "allauth/layouts/base.html" %}
 {% load i18n %}
-
 {% block extra_left_content %}
     <div class="flex flex-col items-center justify-center text-sm mt-10 text-center">
         <span>{% trans "Manage your account" %}</span>
@@ -8,25 +7,22 @@
             {% url 'account_email' as email_url %}
             {% if email_url %}
                 <div>
-                    <a href="{{ email_url }}" class="underline text-white hover:text-gray-200">
-                        {% trans "Change Email" %}
-                    </a>
+                    <a href="{{ email_url }}"
+                       class="underline text-white hover:text-gray-200">{% trans "Change Email" %}</a>
                 </div>
             {% endif %}
             {% url 'account_change_password' as change_password_url %}
             {% if change_password_url %}
                 <div>
-                    <a href="{{ change_password_url }}" class="underline text-white hover:text-gray-200">
-                        {% trans "Change Password" %}
-                    </a>
+                    <a href="{{ change_password_url }}"
+                       class="underline text-white hover:text-gray-200">{% trans "Change Password" %}</a>
                 </div>
             {% endif %}
             {% url 'socialaccount_connections' as connections_url %}
             {% if connections_url %}
                 <div>
-                    <a href="{{ connections_url }}" class="underline text-white hover:text-gray-200">
-                        {% trans "Account Connections" %}
-                    </a>
+                    <a href="{{ connections_url }}"
+                       class="underline text-white hover:text-gray-200">{% trans "Account Connections" %}</a>
                 </div>
             {% endif %}
         </div>
