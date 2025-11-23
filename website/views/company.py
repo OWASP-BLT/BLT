@@ -36,6 +36,7 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
+from website.services.reward_distribution import get_reward_service
 from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
@@ -2125,6 +2126,65 @@ def accept_bug(request, issue_id, reward_id=None):
                 winner_id=issue.user.id,
                 prize_amount=reward.value,
             ).save()
+
+            # Attempt automatic reward distribution via smart contract
+            if issue.user and hasattr(issue.user, "userprofile"):
+                user_profile = issue.user.userprofile
+                
+                # Get the appropriate crypto address based on user preference
+                crypto_address = None
+                if user_profile.preferred_cryptocurrency == "ETH" and user_profile.eth_address:
+                    crypto_address = user_profile.eth_address
+                elif user_profile.preferred_cryptocurrency == "BTC" and user_profile.btc_address:
+                    crypto_address = user_profile.btc_address
+                elif user_profile.preferred_cryptocurrency == "BCH" and user_profile.bch_address:
+                    crypto_address = user_profile.bch_address
+                # Fallback to ETH address if preferred crypto not available
+                elif user_profile.eth_address:
+                    crypto_address = user_profile.eth_address
+                
+                if crypto_address and user_profile.preferred_cryptocurrency == "ETH":
+                    try:
+                        reward_service = get_reward_service()
+                        success, tx_hash, error_msg = reward_service.distribute_reward(
+                            hunt_id=issue.hunt.id,
+                            issue_id=issue.id,
+                            hunter_address=crypto_address,
+                            amount_usd=reward.value,
+                        )
+                        
+                        if success:
+                            issue.blockchain_tx_hash = tx_hash
+                            issue.reward_distributed_at = timezone.now()
+                            issue.save()
+                            logger.info(
+                                f"Reward distributed automatically to {issue.user.username} "
+                                f"for issue {issue.id}, TX: {tx_hash}"
+                            )
+                            messages.success(
+                                request,
+                                f"Bug accepted and reward automatically distributed! Transaction: {tx_hash[:10]}...",
+                            )
+                        else:
+                            logger.warning(
+                                f"Automatic reward distribution failed for issue {issue.id}: {error_msg}"
+                            )
+                            messages.warning(
+                                request,
+                                "Bug accepted. Automatic reward distribution failed - please distribute manually.",
+                            )
+                    except Exception as e:
+                        logger.error(f"Error in automatic reward distribution: {str(e)}", exc_info=True)
+                        messages.warning(
+                            request,
+                            "Bug accepted. Reward distribution will need to be done manually.",
+                        )
+                else:
+                    if not crypto_address:
+                        logger.info(
+                            f"No crypto address configured for user {issue.user.username}, "
+                            f"skipping automatic distribution"
+                        )
 
         return redirect("show_bughunt", pk=issue.hunt.id)
 
