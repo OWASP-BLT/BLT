@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from slack_bolt import App
 
@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 
 class Command(LoggedBaseCommand):
     help = "Sends weekly project report to organizations with Slack integration"
+
+    # Configuration constants
+    MAX_RECENT_REPOS = 10
+    MAX_PROJECTS_IN_REPORT = 10
 
     def handle(self, *args, **kwargs):
         logger.info("Starting weekly Slack report generation")
@@ -45,16 +49,21 @@ class Command(LoggedBaseCommand):
 
         # Get all repos for this organization
         repos = Repo.objects.filter(organization=organization)
-        total_repos = repos.count()
 
-        # Count repos by different criteria
-        active_repos = repos.filter(is_archived=False).count()
-        archived_repos = repos.filter(is_archived=True).count()
+        # Count repos by different criteria in a single query
+        repo_counts = repos.aggregate(
+            total=Count("id"),
+            active=Count("id", filter=Q(is_archived=False)),
+            archived=Count("id", filter=Q(is_archived=True)),
+        )
+        total_repos = repo_counts["total"]
+        active_repos = repo_counts["active"]
+        archived_repos = repo_counts["archived"]
 
         # Get repos updated in the last week
         recently_updated_repos = repos.filter(last_updated__gte=one_week_ago, is_archived=False).order_by(
             "-last_updated"
-        )[:10]
+        )[: self.MAX_RECENT_REPOS]
 
         # Aggregate statistics
         aggregates = repos.aggregate(
@@ -112,7 +121,7 @@ class Command(LoggedBaseCommand):
                     "📦 *Projects Overview*",
                 ]
             )
-            for project in projects[:10]:  # Limit to 10 projects
+            for project in projects[: self.MAX_PROJECTS_IN_REPORT]:
                 # Use annotated repo_count to avoid N+1 queries
                 project_repos = project.repo_count
                 report_lines.append(f"• *{project.name}*")
