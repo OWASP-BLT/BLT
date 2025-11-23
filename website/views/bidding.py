@@ -23,7 +23,7 @@ def enhanced_bidding_view(request):
     if request.method == "POST":
         return submit_enhanced_bid(request)
     
-    # Get recent bids for display
+    # Get recent bids for display here
     bids = Bid.objects.select_related('user', 'accepted_by').order_by('-created')[:20]
     
     # Get bid statistics
