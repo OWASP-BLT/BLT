@@ -2,8 +2,6 @@ import json
 import logging
 import os
 import secrets
-import uuid
-from datetime import datetime
 
 import requests
 from django.http import JsonResponse
@@ -82,14 +80,19 @@ def bounty_payout(request):
                 }
             )
 
-        # Process payment (simplified - just generate a transaction ID for now)
-        # In production, this would call GitHub Sponsors API
-        # Generate unique transaction ID with timestamp and UUID to prevent collisions
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        unique_id = uuid.uuid4().hex[:8]
-        transaction_id = f"TXN-{issue_number}-{pr_number}-{timestamp}-{unique_id}"
+        # Process payment via GitHub Sponsors API
+        transaction_id = process_github_sponsors_payment(
+            username=contributor_username,
+            amount=bounty_amount,
+            note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}",
+        )
+
+        if not transaction_id:
+            logger.error(f"Failed to process GitHub Sponsors payment for issue #{issue_number}")
+            return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
+
         logger.info(
-            f"Processing bounty payment: ${bounty_amount / 100:.2f} to {contributor_username} "
+            f"Successfully processed bounty payment: ${bounty_amount / 100:.2f} to {contributor_username} "
             f"for PR #{pr_number} (Issue #{issue_number})"
         )
 
@@ -178,3 +181,200 @@ Thank you for your contribution to this project!"""
         logger.error(f"Failed to add labels to GitHub issue: {e}")
 
     return comment_success and labels_success
+
+
+def get_sponsor_tiers(sponsor_login):
+    """
+    Fetch available sponsor tiers using GitHub GraphQL API.
+    Returns a dict mapping amount (in cents) to tier node IDs.
+    """
+    github_token = os.environ.get("GITHUB_TOKEN")
+    if not github_token:
+        logger.error("Missing GITHUB_TOKEN for GraphQL API")
+        return {}
+
+    query = """
+    query($login: String!) {
+        user(login: $login) {
+            sponsorsListing {
+                tiers(first: 10) {
+                    nodes {
+                        id
+                        monthlyPriceInCents
+                        isOneTime
+                    }
+                }
+            }
+        }
+    }
+    """
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=headers,
+            json={"query": query, "variables": {"login": sponsor_login}},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "errors" in data:
+            logger.error(f"GraphQL error: {data['errors']}")
+            return {}
+
+        if not data.get("data", {}).get("user", {}).get("sponsorsListing"):
+            logger.error(f"No sponsors listing found for user: {sponsor_login}")
+            return {}
+
+        tiers = data["data"]["user"]["sponsorsListing"]["tiers"]["nodes"]
+        tier_mapping = {}
+
+        for tier in tiers:
+            amount = tier.get("monthlyPriceInCents", 0)
+            tier_id = tier.get("id")
+            if amount > 0 and tier_id:
+                tier_mapping[amount] = tier_id
+
+        logger.info(f"Fetched {len(tier_mapping)} sponsor tiers for {sponsor_login}")
+        return tier_mapping
+
+    except requests.RequestException as e:
+        logger.error(f"Failed to fetch sponsor tiers: {e}")
+        return {}
+    except Exception as e:
+        logger.exception("Unexpected error fetching sponsor tiers")
+        return {}
+
+
+def create_sponsorship_mutation(sponsor_login, tier_id):
+    """
+    Create a sponsorship using GitHub GraphQL API.
+    Returns the sponsorship ID if successful, None otherwise.
+    """
+    github_token = os.environ.get("GITHUB_TOKEN")
+    if not github_token:
+        logger.error("Missing GITHUB_TOKEN for GraphQL API")
+        return None
+
+    mutation = """
+    mutation($input: CreateSponsorshipInput!) {
+        createSponsorship(input: $input) {
+            sponsorship {
+                id
+                createdAt
+                tier {
+                    id
+                    monthlyPriceInCents
+                }
+                sponsor {
+                    login
+                }
+                sponsorable {
+                    login
+                }
+            }
+        }
+    }
+    """
+    mutation_input = {
+        "sponsorableLogin": sponsor_login,
+        "tierId": tier_id,
+        "privacyLevel": "PUBLIC",
+    }
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=headers,
+            json={"query": mutation, "variables": {"input": mutation_input}},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "errors" in data:
+            logger.error(f"GraphQL mutation errors: {data['errors']}")
+            return None
+
+        sponsorship = data.get("data", {}).get("createSponsorship", {}).get("sponsorship")
+        if sponsorship:
+            sponsorship_id = sponsorship.get("id")
+            logger.info(f"Created sponsorship {sponsorship_id} for {sponsor_login}")
+            return sponsorship_id
+
+        logger.error("No sponsorship created in GraphQL response")
+        return None
+
+    except requests.RequestException as e:
+        logger.error(f"Failed to create sponsorship: {e}")
+        return None
+    except Exception as e:
+        logger.exception("Unexpected error creating sponsorship")
+        return None
+
+
+def process_github_sponsors_payment(username, amount, note=""):
+    """
+    Process GitHub Sponsors payment using the GitHub GraphQL API.
+    Payment comes from DonnieBLT's GitHub Sponsors account.
+
+    Args:
+        username: GitHub username of the recipient
+        amount: Amount in cents (e.g., 5000 = $50.00)
+        note: Optional note for the payment
+
+    Returns:
+        str: Sponsorship transaction ID if successful, None otherwise
+    """
+    try:
+        # The sponsor recipient is DonnieBLT
+        sponsor_recipient = os.environ.get("GITHUB_SPONSORS_RECIPIENT", "DonnieBLT")
+        logger.info(f"Processing payment of ${amount / 100:.2f} from {sponsor_recipient} to {username}")
+
+        # Check if tier mapping is provided via environment variable
+        tier_mapping_env = os.environ.get("GITHUB_SPONSORS_TIER_MAPPING")
+        if tier_mapping_env:
+            try:
+                tier_mapping = json.loads(tier_mapping_env)
+                # Try to get tier ID from mapping (supports both int and string keys)
+                tier_id = tier_mapping.get(amount) or tier_mapping.get(str(amount))
+                if not tier_id:
+                    logger.error(f"No tier mapping found for amount: {amount} cents")
+                    return None
+            except json.JSONDecodeError:
+                logger.error("Invalid JSON in GITHUB_SPONSORS_TIER_MAPPING")
+                return None
+        else:
+            # Fetch tier mapping dynamically from GitHub
+            tier_mapping = get_sponsor_tiers(username)
+            if not tier_mapping:
+                logger.error("Failed to fetch sponsor tiers")
+                return None
+
+            tier_id = tier_mapping.get(amount)
+            if not tier_id:
+                logger.error(f"No tier found for amount: {amount} cents. Available tiers: {list(tier_mapping.keys())}")
+                return None
+
+        # Create the sponsorship
+        transaction_id = create_sponsorship_mutation(username, tier_id)
+
+        if transaction_id:
+            logger.info(f"Successfully created sponsorship {transaction_id} for {username} - ${amount / 100:.2f}")
+            return transaction_id
+
+        logger.error("Failed to create sponsorship")
+        return None
+
+    except Exception as e:
+        logger.exception("Exception during GitHub Sponsors payment processing")
+        return None

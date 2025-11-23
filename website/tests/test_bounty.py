@@ -40,9 +40,13 @@ class BountyPayoutTestCase(TestCase):
         self.api_token = "test_token_12345"
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
-    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
-    def test_bounty_payout_success(self):
-        """Test successful bounty payout."""
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch("website.views.bounty.process_github_sponsors_payment")
+    def test_bounty_payout_success(self, mock_payment):
+        """Test successful bounty payout with mocked GitHub Sponsors API."""
+        # Mock successful payment
+        mock_payment.return_value = "SPONSORSHIP_ID_12345"
+
         payload = {
             "issue_number": 123,
             "repo": "TestRepo",
@@ -65,10 +69,17 @@ class BountyPayoutTestCase(TestCase):
         self.assertEqual(response_data["amount"], 5000)
         self.assertEqual(response_data["recipient"], "testuser")
         self.assertIn("transaction_id", response_data)
+        self.assertEqual(response_data["transaction_id"], "SPONSORSHIP_ID_12345")
 
         # Verify database was updated
         self.issue.refresh_from_db()
-        self.assertIsNotNone(self.issue.sponsors_tx_id)
+        self.assertEqual(self.issue.sponsors_tx_id, "SPONSORSHIP_ID_12345")
+
+        # Verify payment function was called with correct parameters
+        mock_payment.assert_called_once()
+        call_args = mock_payment.call_args
+        self.assertEqual(call_args[1]["username"], "testuser")
+        self.assertEqual(call_args[1]["amount"], 5000)
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
     @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
@@ -193,3 +204,36 @@ class BountyPayoutTestCase(TestCase):
         response_data = response.json()
         self.assertEqual(response_data["status"], "error")
         self.assertIn("Issue not found", response_data["message"])
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch("website.views.bounty.process_github_sponsors_payment")
+    def test_bounty_payout_payment_failure(self, mock_payment):
+        """Test that payment processing failure is handled correctly."""
+        # Mock failed payment (returns None)
+        mock_payment.return_value = None
+
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 500)
+        response_data = response.json()
+        self.assertEqual(response_data["status"], "error")
+        self.assertIn("Payment processing failed", response_data["message"])
+
+        # Verify database was NOT updated
+        self.issue.refresh_from_db()
+        self.assertIsNone(self.issue.sponsors_tx_id)
