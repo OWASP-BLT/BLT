@@ -390,17 +390,17 @@ class OrganizationTests(TestCase):
         self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
         self.client.login(username="testuser", password="testpass123")
 
-    @patch("website.views.company.requests.get")
-    def test_create_and_list_organization(self, mock_requests_get):
-        # Mock the URL validation request
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_requests_get.return_value = mock_response
+    @patch("website.views.company.Image")
+    def test_create_and_list_organization(self, mock_image):
+        # Mock PIL Image validation
+        mock_img = Mock()
+        mock_image.open.return_value = mock_img
 
-        # Create a test logo file
+        # Create a test logo file (with valid image header)
+        # PNG header: \x89PNG\r\n\x1a\n
         test_logo = SimpleUploadedFile(
             name="test_logo.png",
-            content=b"fake image content",
+            content=b"\x89PNG\r\n\x1a\n" + b"fake image content",
             content_type="image/png",
         )
 

@@ -219,8 +219,12 @@ class Organization(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["created"], name="org_created_idx"),
+            models.Index(fields=["name"], name="org_name_idx"),
         ]
-        constraints = [models.UniqueConstraint(fields=["slug"], name="unique_organization_slug")]
+        constraints = [
+            models.UniqueConstraint(fields=["slug"], name="unique_organization_slug"),
+            models.UniqueConstraint(fields=["name"], name="unique_organization_name"),
+        ]
 
     def __str__(self):
         return self.name
