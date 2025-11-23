@@ -77,7 +77,13 @@ from website.models import (
     Room,
     Section,
     SlackBotActivity,
+    SlackHuddle,
+    SlackHuddleParticipant,
     SlackIntegration,
+    SlackPoll,
+    SlackPollOption,
+    SlackPollVote,
+    SlackReminder,
     StakingEntry,
     StakingPool,
     StakingTransaction,
@@ -917,6 +923,12 @@ admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
+admin.site.register(SlackPoll)
+admin.site.register(SlackPollOption)
+admin.site.register(SlackPollVote)
+admin.site.register(SlackReminder)
+admin.site.register(SlackHuddle)
+admin.site.register(SlackHuddleParticipant)
 admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)

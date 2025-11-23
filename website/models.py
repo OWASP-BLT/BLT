@@ -3219,3 +3219,235 @@ class StakingTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
+
+
+class SlackPoll(models.Model):
+    """Model to track Slack polls created by users"""
+
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("closed", "Closed"),
+    ]
+
+    creator_id = models.CharField(max_length=255)  # Slack user ID
+    workspace_id = models.CharField(max_length=255)  # Slack workspace/team ID
+    channel_id = models.CharField(max_length=255)  # Slack channel ID
+    message_ts = models.CharField(max_length=255, null=True, blank=True)  # Message timestamp for updates
+    question = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+    allow_multiple_votes = models.BooleanField(default=False)
+    anonymous = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Slack Poll"
+        verbose_name_plural = "Slack Polls"
+        indexes = [
+            models.Index(fields=["workspace_id", "status"]),
+            models.Index(fields=["creator_id"]),
+        ]
+
+    def __str__(self):
+        return f"Poll: {self.question[:50]} - {self.status}"
+
+    def close_poll(self):
+        """Close the poll"""
+        self.status = "closed"
+        self.closed_at = timezone.now()
+        self.save()
+
+
+class SlackPollOption(models.Model):
+    """Model to track poll options"""
+
+    poll = models.ForeignKey(SlackPoll, on_delete=models.CASCADE, related_name="options")
+    option_text = models.CharField(max_length=255)
+    option_number = models.IntegerField()  # For ordering (0, 1, 2, etc.)
+
+    class Meta:
+        ordering = ["option_number"]
+        unique_together = ["poll", "option_number"]
+        verbose_name = "Slack Poll Option"
+        verbose_name_plural = "Slack Poll Options"
+
+    def __str__(self):
+        return f"{self.poll.question[:30]} - Option {self.option_number}: {self.option_text}"
+
+    @property
+    def vote_count(self):
+        """Get total votes for this option"""
+        return self.votes.count()
+
+
+class SlackPollVote(models.Model):
+    """Model to track individual votes on poll options"""
+
+    poll = models.ForeignKey(SlackPoll, on_delete=models.CASCADE, related_name="votes")
+    option = models.ForeignKey(SlackPollOption, on_delete=models.CASCADE, related_name="votes")
+    voter_id = models.CharField(max_length=255)  # Slack user ID
+    voted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["poll", "voter_id", "option"]  # Prevent duplicate votes if not allowing multiple
+        verbose_name = "Slack Poll Vote"
+        verbose_name_plural = "Slack Poll Votes"
+        indexes = [
+            models.Index(fields=["poll", "voter_id"]),
+        ]
+
+    def __str__(self):
+        return f"Vote by {self.voter_id} on {self.option.option_text}"
+
+
+class SlackReminder(models.Model):
+    """Model to track Slack reminders"""
+
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("sent", "Sent"),
+        ("cancelled", "Cancelled"),
+        ("failed", "Failed"),
+    ]
+
+    creator_id = models.CharField(max_length=255)  # Slack user ID
+    workspace_id = models.CharField(max_length=255)  # Slack workspace/team ID
+    target_type = models.CharField(
+        max_length=20, choices=[("user", "User"), ("channel", "Channel")], default="user"
+    )
+    target_id = models.CharField(max_length=255)  # User ID or Channel ID
+    message = models.TextField()
+    remind_at = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["remind_at"]
+        verbose_name = "Slack Reminder"
+        verbose_name_plural = "Slack Reminders"
+        indexes = [
+            models.Index(fields=["workspace_id", "status", "remind_at"]),
+            models.Index(fields=["creator_id"]),
+            models.Index(fields=["target_id"]),
+        ]
+
+    def __str__(self):
+        return f"Reminder for {self.target_id} at {self.remind_at} - {self.status}"
+
+    def mark_as_sent(self):
+        """Mark reminder as sent"""
+        self.status = "sent"
+        self.sent_at = timezone.now()
+        self.save()
+
+    def mark_as_failed(self, error_msg):
+        """Mark reminder as failed with error message"""
+        self.status = "failed"
+        self.error_message = error_msg
+        self.save()
+
+    def cancel(self):
+        """Cancel the reminder"""
+        if self.status == "pending":
+            self.status = "cancelled"
+            self.save()
+            return True
+        return False
+
+
+class SlackHuddle(models.Model):
+    """Model to track scheduled huddles/meetings"""
+
+    STATUS_CHOICES = [
+        ("scheduled", "Scheduled"),
+        ("started", "Started"),
+        ("completed", "Completed"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    creator_id = models.CharField(max_length=255)  # Slack user ID
+    workspace_id = models.CharField(max_length=255)  # Slack workspace/team ID
+    channel_id = models.CharField(max_length=255)  # Slack channel ID
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    scheduled_at = models.DateTimeField()
+    duration_minutes = models.IntegerField(default=30)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="scheduled")
+    reminder_sent = models.BooleanField(default=False)
+    message_ts = models.CharField(max_length=255, null=True, blank=True)  # Message timestamp for updates
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["scheduled_at"]
+        verbose_name = "Slack Huddle"
+        verbose_name_plural = "Slack Huddles"
+        indexes = [
+            models.Index(fields=["workspace_id", "status"]),
+            models.Index(fields=["channel_id", "scheduled_at"]),
+            models.Index(fields=["creator_id"]),
+        ]
+
+    def __str__(self):
+        return f"Huddle: {self.title} at {self.scheduled_at} - {self.status}"
+
+    def cancel(self):
+        """Cancel the huddle"""
+        if self.status == "scheduled":
+            self.status = "cancelled"
+            self.save()
+            return True
+        return False
+
+    def start(self):
+        """Mark huddle as started"""
+        if self.status == "scheduled":
+            self.status = "started"
+            self.save()
+            return True
+        return False
+
+    def complete(self):
+        """Mark huddle as completed"""
+        if self.status in ["scheduled", "started"]:
+            self.status = "completed"
+            self.save()
+            return True
+        return False
+
+
+class SlackHuddleParticipant(models.Model):
+    """Model to track huddle participants"""
+
+    RESPONSE_CHOICES = [
+        ("invited", "Invited"),
+        ("accepted", "Accepted"),
+        ("declined", "Declined"),
+        ("maybe", "Maybe"),
+    ]
+
+    huddle = models.ForeignKey(SlackHuddle, on_delete=models.CASCADE, related_name="participants")
+    user_id = models.CharField(max_length=255)  # Slack user ID
+    response = models.CharField(max_length=20, choices=RESPONSE_CHOICES, default="invited")
+    responded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["huddle", "user_id"]
+        verbose_name = "Slack Huddle Participant"
+        verbose_name_plural = "Slack Huddle Participants"
+
+    def __str__(self):
+        return f"{self.user_id} - {self.huddle.title} ({self.response})"
+
+    def update_response(self, response):
+        """Update participant response"""
+        if response in dict(self.RESPONSE_CHOICES):
+            self.response = response
+            self.responded_at = timezone.now()
+            self.save()
+            return True
+        return False
