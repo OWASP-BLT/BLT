@@ -1,12 +1,13 @@
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
 from website.models import Contributor, GitHubComment, GitHubIssue, Repo, UserProfile
@@ -114,8 +115,6 @@ class Command(LoggedBaseCommand):
         """Fetch comments for a specific repository from GitHub API"""
         self.stdout.write(f"Processing repository: {repo.name}")
 
-        owner, repo_name = self.parse_github_url(repo.repo_url)
-
         # Get all GitHub issues/PRs for this repo
         github_issues = GitHubIssue.objects.filter(repo=repo).select_related("repo")
 
@@ -131,11 +130,11 @@ class Command(LoggedBaseCommand):
         }
 
         for issue in github_issues:
-            self.fetch_comments_for_issue(issue, headers)
+            self.fetch_comments_for_issue(issue, headers, days)
             time.sleep(0.2)  # Rate limiting
 
-    def fetch_comments_for_issue(self, issue, headers):
-        """Fetch comments for a specific GitHub issue"""
+    def fetch_comments_for_issue(self, issue, headers, days=30):
+        """Fetch comments for a specific GitHub issue with pagination"""
         try:
             # Extract owner and repo from issue URL
             parts = issue.url.split("/")
@@ -146,27 +145,39 @@ class Command(LoggedBaseCommand):
             # GitHub API endpoint for comments
             api_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}/comments"
 
-            response = requests.get(api_url, headers=headers, params={"per_page": 100})
+            # Calculate the date since which to fetch comments
+            since_date = (datetime.utcnow() - timedelta(days=days)).isoformat() + "Z"
 
-            if response.status_code == 403:
-                reset_timestamp = int(response.headers.get("X-RateLimit-Reset", 0))
-                sleep_time = max(reset_timestamp - time.time(), 0) + 1
-                logger.warning(f"Rate limit exceeded. Waiting {sleep_time} seconds...")
-                time.sleep(sleep_time)
-                response = requests.get(api_url, headers=headers, params={"per_page": 100})
+            page = 1
+            while True:
+                params = {"per_page": 100, "since": since_date, "page": page}
+                response = requests.get(api_url, headers=headers, params=params, timeout=30)
 
-            if response.status_code != 200:
-                logger.warning(f"Failed to fetch comments for issue {issue.issue_id}: {response.status_code}")
-                return
+                if response.status_code == 403:
+                    reset_timestamp = int(response.headers.get("X-RateLimit-Reset", 0))
+                    sleep_time = max(reset_timestamp - time.time(), 0) + 1
+                    logger.warning(f"Rate limit exceeded. Waiting {sleep_time} seconds...")
+                    time.sleep(sleep_time)
+                    response = requests.get(api_url, headers=headers, params=params, timeout=30)
 
-            comments = response.json()
+                if response.status_code != 200:
+                    logger.warning(f"Failed to fetch comments for issue {issue.issue_id}: {response.status_code}")
+                    break
 
-            if not comments:
-                return
+                comments = response.json()
 
-            # Process each comment
-            for comment in comments:
-                self.save_comment(issue, comment)
+                if not comments:
+                    break
+
+                # Process each comment
+                for comment in comments:
+                    self.save_comment(issue, comment)
+
+                # Check if there are more pages
+                if len(comments) < 100:
+                    break
+
+                page += 1
 
         except Exception as e:
             logger.error(f"Error fetching comments for issue {issue.issue_id}: {str(e)}")
@@ -204,17 +215,24 @@ class Command(LoggedBaseCommand):
 
                 # Try to link to UserProfile
                 try:
-                    commenter_profile = UserProfile.objects.get(
-                        github_url=comment_data["user"]["html_url"]
-                    )
+                    commenter_profile = UserProfile.objects.get(github_url=comment_data["user"]["html_url"])
                 except UserProfile.DoesNotExist:
                     # Try matching by GitHub username
                     try:
-                        commenter_profile = UserProfile.objects.filter(
-                            user__username__iexact=commenter_login
-                        ).first()
-                    except Exception:
-                        pass
+                        commenter_profile = UserProfile.objects.filter(user__username__iexact=commenter_login).first()
+                    except Exception as e:
+                        logger.warning(
+                            f"Could not match UserProfile by username '{commenter_login}' for GitHub user '{comment_data['user'].get('html_url', '')}': {str(e)}"
+                        )
+
+                # Parse datetime fields with error handling
+                try:
+                    created_at = datetime.fromisoformat(comment_data.get("created_at", "").replace("Z", "+00:00"))
+                    updated_at = datetime.fromisoformat(comment_data.get("updated_at", "").replace("Z", "+00:00"))
+                except (ValueError, AttributeError):
+                    created_at = timezone.now()
+                    updated_at = timezone.now()
+                    logger.warning(f"Invalid datetime in comment {comment_data.get('id')}, using current time")
 
                 # Create the comment record
                 GitHubComment.objects.create(
@@ -226,8 +244,8 @@ class Command(LoggedBaseCommand):
                     commenter_profile=commenter_profile,
                     body=comment_data.get("body", ""),
                     comment_url=comment_data.get("html_url", ""),
-                    created_at=datetime.fromisoformat(comment_data.get("created_at", "").replace("Z", "+00:00")),
-                    updated_at=datetime.fromisoformat(comment_data.get("updated_at", "").replace("Z", "+00:00")),
+                    created_at=created_at,
+                    updated_at=updated_at,
                 )
 
                 # Atomically increment the issue's comment count
@@ -240,4 +258,6 @@ class Command(LoggedBaseCommand):
         """Extract owner and repo name from GitHub URL"""
         url = url.rstrip("/")
         parts = url.split("/")
+        if len(parts) < 2:
+            raise ValueError(f"Invalid GitHub URL format: {url}")
         return parts[-2], parts[-1]

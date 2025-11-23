@@ -2024,7 +2024,8 @@ class GitHubComment(models.Model):
         ]
 
     def __str__(self):
-        return f"Comment on {self.github_issue.title} by {self.commenter_login}"
+        issue_title = getattr(self.github_issue, 'title', 'Unknown Issue') if self.github_issue else 'Unknown Issue'
+        return f"Comment on {issue_title} by {self.commenter_login}"
 
 
 class Kudos(models.Model):

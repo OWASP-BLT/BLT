@@ -13,6 +13,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -633,27 +634,33 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         github_comments_data = []
         try:
             github_comments_leaderboard = (
-                GitHubComment.objects.values("commenter_login", "commenter__github_url", "commenter__avatar_url")
+                GitHubComment.objects.values("commenter_login")
                 .annotate(total_comments=Count("id"))
                 .order_by("-total_comments")[:10]
             )
-            
+
             # Build leaderboard data with rank and formatted info
             for rank, item in enumerate(github_comments_leaderboard, start=1):
                 commenter_login = item.get("commenter_login", "Unknown")
-                github_url = item.get("commenter__github_url", "")
-                avatar_url = item.get("commenter__avatar_url", "")
                 total_comments = item.get("total_comments", 0)
-                
-                # If avatar URL is empty, try to construct it from GitHub username
-                if not avatar_url and commenter_login:
+
+                # Fetch the most recent comment for this user to get their current GitHub URL and avatar
+                recent_comment = (
+                    GitHubComment.objects.filter(commenter_login=commenter_login).select_related("commenter").first()
+                )
+                github_url = recent_comment.commenter.github_url if recent_comment and recent_comment.commenter else ""
+                avatar_url = recent_comment.commenter.avatar_url if recent_comment and recent_comment.commenter else ""
+
+                # Fallback to constructed URLs if not available
+                if not avatar_url:
                     avatar_url = f"https://github.com/{commenter_login}.png"
-                
+                if not github_url:
+                    github_url = f"https://github.com/{commenter_login}"
+
                 github_comments_data.append(
                     {
-                        "rank": rank,
                         "username": commenter_login,
-                        "github_url": github_url or f"https://github.com/{commenter_login}",
+                        "github_url": github_url,
                         "avatar_url": avatar_url,
                         "total_comments": total_comments,
                     }
@@ -1273,29 +1280,45 @@ def handle_issue_comment_event(payload):
             except Exception:
                 pass
 
-        # Create the comment record
-        GitHubComment.objects.create(
-            comment_id=comment_id,
-            github_issue=github_issue,
-            repo=repo,
-            commenter_login=commenter_login,
-            commenter=commenter,
-            commenter_profile=commenter_profile,
-            body=comment_data.get("body", ""),
-            comment_url=comment_data.get("html_url", ""),
-            created_at=datetime.fromisoformat(comment_data.get("created_at", "").replace("Z", "+00:00")),
-            updated_at=datetime.fromisoformat(comment_data.get("updated_at", "").replace("Z", "+00:00")),
-        )
+        # Create the comment record and update count atomically
+        with transaction.atomic():
+            # Parse datetime fields with error handling
+            try:
+                created_at = datetime.fromisoformat(
+                    comment_data.get("created_at", "").replace("Z", "+00:00")
+                )
+                updated_at = datetime.fromisoformat(
+                    comment_data.get("updated_at", "").replace("Z", "+00:00")
+                )
+            except (ValueError, AttributeError):
+                created_at = timezone.now()
+                updated_at = timezone.now()
+                logger.warning(
+                    f"Invalid datetime in comment {comment_id}, using current time"
+                )
 
-        # Atomically increment the issue's comment count
-        GitHubIssue.objects.filter(pk=github_issue.pk).update(comments_count=F("comments_count") + 1)
+            GitHubComment.objects.create(
+                comment_id=comment_id,
+                github_issue=github_issue,
+                repo=repo,
+                commenter_login=commenter_login,
+                commenter=commenter,
+                commenter_profile=commenter_profile,
+                body=comment_data.get("body", ""),
+                comment_url=comment_data.get("html_url", ""),
+                created_at=created_at,
+                updated_at=updated_at,
+            )
+
+            # Atomically increment the issue's comment count
+            GitHubIssue.objects.filter(pk=github_issue.pk).update(comments_count=F("comments_count") + 1)
 
         logger.info(f"Tracked comment {comment_id} by {commenter_login} on issue {issue_number}")
         return JsonResponse({"status": "success", "message": "Comment tracked"}, status=200)
 
     except Exception as e:
-        logger.error(f"Error handling issue comment event: {str(e)}")
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        logger.error(f"Error handling issue comment event: {str(e)}", exc_info=True)
+        return JsonResponse({"status": "error", "message": "Unable to process comment event"}, status=500)
 
 
 @csrf_exempt
