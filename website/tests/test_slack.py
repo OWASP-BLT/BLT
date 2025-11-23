@@ -181,3 +181,150 @@ class SlackHandlerTests(TestCase):
         activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
         self.assertIsNotNone(activity)
         self.assertEqual(activity.details["command"], "/apps")
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    @patch("website.views.slack_handlers.requests.get")
+    def test_slack_command_contributors_all(self, mock_requests_get, mock_webclient, mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+
+        # Mock GitHub API response for repositories
+        mock_repos_response = MagicMock()
+        mock_repos_response.status_code = 200
+        mock_repos_response.json.return_value = [
+            {
+                "name": "test-repo",
+                "full_name": "OWASP/test-repo",
+                "html_url": "https://github.com/OWASP/test-repo",
+                "stargazers_count": 100,
+            }
+        ]
+
+        # Mock GitHub API response for contributors
+        mock_contributors_response = MagicMock()
+        mock_contributors_response.status_code = 200
+        mock_contributors_response.json.return_value = [
+            {
+                "login": "testuser",
+                "type": "User",
+                "avatar_url": "https://avatars.githubusercontent.com/u/123",
+                "html_url": "https://github.com/testuser",
+                "contributions": 50,
+            }
+        ]
+
+        # Setup mock to return different responses based on URL
+        def mock_get_side_effect(url, **kwargs):
+            if "repos?page=" in url or "repos" in url:
+                return mock_repos_response
+            elif "contributors" in url:
+                return mock_contributors_response
+            return MagicMock(status_code=404)
+
+        mock_requests_get.side_effect = mock_get_side_effect
+
+        # Create test request for /contributors (no project specified)
+        request = MagicMock()
+        request.method = "POST"
+        request.POST = {
+            "command": "/contributors",
+            "text": "",  # No project specified - should show all contributors
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test",
+            "channel_id": "C123",
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+
+        # Verify response
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertIn("contributor", response_data["text"].lower())
+
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details["command"], "/contributors")
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    @patch("website.views.slack_handlers.requests.get")
+    def test_slack_command_contributors_specific_project(self, mock_requests_get, mock_webclient, mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+
+        # Mock GitHub API search response for a specific project
+        mock_search_response = MagicMock()
+        mock_search_response.status_code = 200
+        mock_search_response.json.return_value = {
+            "items": [
+                {
+                    "name": "amass",
+                    "full_name": "OWASP/Amass",
+                    "html_url": "https://github.com/OWASP/Amass",
+                }
+            ]
+        }
+
+        # Mock GitHub API response for contributors
+        mock_contributors_response = MagicMock()
+        mock_contributors_response.status_code = 200
+        mock_contributors_response.json.return_value = [
+            {
+                "login": "caffix",
+                "type": "User",
+                "avatar_url": "https://avatars.githubusercontent.com/u/123",
+                "html_url": "https://github.com/caffix",
+                "contributions": 500,
+            }
+        ]
+
+        # Setup mock to return different responses based on URL
+        def mock_get_side_effect(url, **kwargs):
+            if "search/repositories" in url:
+                return mock_search_response
+            elif "contributors" in url:
+                return mock_contributors_response
+            return MagicMock(status_code=404)
+
+        mock_requests_get.side_effect = mock_get_side_effect
+
+        # Create test request for /contributors amass
+        request = MagicMock()
+        request.method = "POST"
+        request.POST = {
+            "command": "/contributors",
+            "text": "amass",  # Specific project
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test",
+            "channel_id": "C123",
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+
+        # Verify response
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertIn("contributor", response_data["text"].lower())
+
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details["command"], "/contributors")

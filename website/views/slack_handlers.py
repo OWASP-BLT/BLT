@@ -2635,7 +2635,10 @@ def get_contributors_info(workspace_client, user_id, project_name, activity):
     try:
         # Send immediate response
         response = JsonResponse(
-            {"response_type": "ephemeral", "text": "🔍 Fetching contributor information... I'll send you the results in a DM shortly!"}
+            {
+                "response_type": "ephemeral",
+                "text": "🔍 Fetching contributor information... I'll send you the results in a DM shortly!",
+            }
         )
 
         # Process the request in a background thread
@@ -2678,7 +2681,10 @@ def get_contributors_info(workspace_client, user_id, project_name, activity):
                     [
                         {
                             "type": "section",
-                            "text": {"type": "mrkdwn", "text": "❌ An error occurred while fetching contributor information."},
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "❌ An error occurred while fetching contributor information.",
+                            },
                         }
                     ],
                 )
@@ -2703,12 +2709,7 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
     try:
         # Search for the project in OWASP organization
         search_url = "https://api.github.com/search/repositories"
-        params = {
-            "q": f"{project_name} org:OWASP",
-            "sort": "stars",
-            "order": "desc",
-            "per_page": 1
-        }
+        params = {"q": f"{project_name} org:OWASP", "sort": "stars", "order": "desc", "per_page": 1}
 
         response = requests.get(search_url, headers=headers, params=params, timeout=10)
 
@@ -2717,7 +2718,12 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
                 workspace_client,
                 user_id,
                 "Error",
-                [{"type": "section", "text": {"type": "mrkdwn", "text": f"❌ Failed to find project '{project_name}'."}}],
+                [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"❌ Failed to find project '{project_name}'."},
+                    }
+                ],
             )
             return
 
@@ -2727,7 +2733,12 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
                 workspace_client,
                 user_id,
                 "Error",
-                [{"type": "section", "text": {"type": "mrkdwn", "text": f"❌ No project found matching '{project_name}'."}}],
+                [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"❌ No project found matching '{project_name}'."},
+                    }
+                ],
             )
             return
 
@@ -2766,7 +2777,10 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
             {
                 "type": "context",
                 "elements": [
-                    {"type": "mrkdwn", "text": f"Total Contributors: {len(human_contributors)} | Repository: <{repo['html_url']}|{repo['full_name']}>"}
+                    {
+                        "type": "mrkdwn",
+                        "text": f"Total Contributors: {len(human_contributors)} | Repository: <{repo['html_url']}|{repo['full_name']}>",
+                    }
                 ],
             },
             {"type": "divider"},
@@ -2788,7 +2802,9 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
                         "type": "image",
                         "image_url": contributor["avatar_url"],
                         "alt_text": f"Avatar for {contributor['login']}",
-                    } if contributor.get("avatar_url") else None,
+                    }
+                    if contributor.get("avatar_url")
+                    else None,
                 }
             )
 
@@ -2796,7 +2812,9 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
             blocks.append(
                 {
                     "type": "context",
-                    "elements": [{"type": "mrkdwn", "text": f"_Showing top 20 of {len(human_contributors)} contributors_"}],
+                    "elements": [
+                        {"type": "mrkdwn", "text": f"_Showing top 20 of {len(human_contributors)} contributors_"}
+                    ],
                 }
             )
 
@@ -2836,7 +2854,9 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
             try:
                 contributors_url = f"https://api.github.com/repos/{repo['full_name']}/contributors"
                 contributors_params = {"per_page": 30}  # Get top 30 from each repo
-                contributors_response = requests.get(contributors_url, headers=headers, params=contributors_params, timeout=10)
+                contributors_response = requests.get(
+                    contributors_url, headers=headers, params=contributors_params, timeout=10
+                )
 
                 if contributors_response.status_code == 200:
                     contributors = contributors_response.json()
@@ -2864,9 +2884,7 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
                 continue
 
         # Sort contributors by total contributions
-        sorted_contributors = sorted(
-            all_contributors.values(), key=lambda x: x["total_contributions"], reverse=True
-        )
+        sorted_contributors = sorted(all_contributors.values(), key=lambda x: x["total_contributions"], reverse=True)
 
         blocks = [
             {
@@ -2906,7 +2924,9 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
                         "type": "image",
                         "image_url": contributor["avatar_url"],
                         "alt_text": f"Avatar for {contributor['login']}",
-                    } if contributor.get("avatar_url") else None,
+                    }
+                    if contributor.get("avatar_url")
+                    else None,
                 }
             )
 
