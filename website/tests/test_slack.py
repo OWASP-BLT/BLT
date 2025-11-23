@@ -3,7 +3,8 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from website.models import Integration, Organization, SlackBotActivity, SlackIntegration
+from website.management.commands.slack_weekly_report import Command
+from website.models import Integration, Organization, Project, SlackBotActivity, SlackIntegration
 from website.views.slack_handlers import slack_commands, slack_events
 
 
@@ -199,8 +200,6 @@ class SlackWeeklyReportTests(TestCase):
     @patch("slack_bolt.App")
     def test_weekly_report_generation(self, mock_app):
         """Test that weekly report is generated and sent successfully."""
-        from website.management.commands.slack_weekly_report import Command
-
         # Mock the Slack app and client
         mock_client = MagicMock()
         mock_app.return_value.client = mock_client
@@ -226,9 +225,6 @@ class SlackWeeklyReportTests(TestCase):
     @patch("slack_bolt.App")
     def test_weekly_report_with_projects(self, mock_app):
         """Test weekly report includes project information."""
-        from website.management.commands.slack_weekly_report import Command
-        from website.models import Project
-
         # Create a test project
         Project.objects.create(
             organization=self.organization,

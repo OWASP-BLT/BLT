@@ -17,6 +17,7 @@ class Command(LoggedBaseCommand):
     # Configuration constants
     MAX_RECENT_REPOS = 10
     MAX_PROJECTS_IN_REPORT = 10
+    MAX_DESCRIPTION_LENGTH = 100
 
     def handle(self, *args, **kwargs):
         logger.info("Starting weekly Slack report generation")
@@ -127,7 +128,11 @@ class Command(LoggedBaseCommand):
                 report_lines.append(f"• *{project.name}*")
                 if project.description:
                     # Truncate description if too long
-                    desc = project.description[:100] + "..." if len(project.description) > 100 else project.description
+                    desc = (
+                        project.description[: self.MAX_DESCRIPTION_LENGTH] + "..."
+                        if len(project.description) > self.MAX_DESCRIPTION_LENGTH
+                        else project.description
+                    )
                     report_lines.append(f"  └─ {desc}")
                 report_lines.append(f"  └─ Repositories: {project_repos} | Status: {project.status}")
 
