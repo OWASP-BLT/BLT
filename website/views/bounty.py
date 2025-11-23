@@ -193,11 +193,14 @@ def get_sponsor_tiers(sponsor_login):
         logger.error("Missing GITHUB_TOKEN for GraphQL API")
         return {}
 
+    # Fetch up to 50 sponsor tiers (configurable via environment variable)
+    max_tiers = int(os.environ.get("GITHUB_SPONSORS_MAX_TIERS", "50"))
+
     query = """
-    query($login: String!) {
+    query($login: String!, $maxTiers: Int!) {
         user(login: $login) {
             sponsorsListing {
-                tiers(first: 10) {
+                tiers(first: $maxTiers) {
                     nodes {
                         id
                         monthlyPriceInCents
@@ -217,7 +220,7 @@ def get_sponsor_tiers(sponsor_login):
         response = requests.post(
             "https://api.github.com/graphql",
             headers=headers,
-            json={"query": query, "variables": {"login": sponsor_login}},
+            json={"query": query, "variables": {"login": sponsor_login, "maxTiers": max_tiers}},
             timeout=10,
         )
         response.raise_for_status()
@@ -336,9 +339,9 @@ def process_github_sponsors_payment(username, amount, note=""):
         str: Sponsorship transaction ID if successful, None otherwise
     """
     try:
-        # The sponsor recipient is DonnieBLT
-        sponsor_recipient = os.environ.get("GITHUB_SPONSORS_RECIPIENT", "DonnieBLT")
-        logger.info(f"Processing payment of ${amount / 100:.2f} from {sponsor_recipient} to {username}")
+        # The sponsor payer is DonnieBLT (who pays the bounty)
+        sponsor_payer = os.environ.get("GITHUB_SPONSORS_RECIPIENT", "DonnieBLT")
+        logger.info(f"Processing payment of ${amount / 100:.2f} from {sponsor_payer} to {username}")
 
         # Check if tier mapping is provided via environment variable
         tier_mapping_env = os.environ.get("GITHUB_SPONSORS_TIER_MAPPING")
