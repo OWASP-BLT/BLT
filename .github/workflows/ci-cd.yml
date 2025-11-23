@@ -401,10 +401,8 @@ jobs:
       - name: Set up Docker
         run: |
           docker --version
-          # Install docker-compose
-          curl -sSL https://github.com/docker/compose/releases/download/v2.17.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-          chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
+          # Use Docker Compose v2 (built-in Docker CLI plugin, no manual installation needed)
+          docker compose version
 
       - name: Build Docker image
         run: |
