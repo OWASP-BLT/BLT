@@ -1866,6 +1866,25 @@ def management_commands(request):
                 "help_text": help_text,
             }
 
+            # Get command file path and metadata
+            try:
+                command_file = command_class.__module__.replace(".", os.sep) + ".py"
+                command_path = os.path.join(settings.BASE_DIR, command_file)
+
+                if os.path.exists(command_path):
+                    command_info["file_path"] = command_path
+                    # Get file modification time
+                    mtime = os.path.getmtime(command_path)
+                    command_info["file_modified"] = datetime.fromtimestamp(mtime, tz=pytz.UTC)
+
+                    # Generate GitHub URL
+                    # Assuming the repo is OWASP-BLT/BLT
+                    relative_path = os.path.relpath(command_path, settings.BASE_DIR)
+                    github_url = f"https://github.com/OWASP-BLT/BLT/blob/main/{relative_path}"
+                    command_info["github_url"] = github_url
+            except Exception as e:
+                logging.error(f"Error getting file info for command {name}: {e}")
+
             # Get command arguments if they exist
             command_args = []
             if hasattr(command_class, "add_arguments"):
@@ -1899,6 +1918,8 @@ def management_commands(request):
                         "last_run": log.last_run,
                         "last_success": log.success,
                         "run_count": log.run_count,
+                        "execution_time": log.execution_time,
+                        "output": log.output,
                     }
                 )
 
@@ -2051,19 +2072,26 @@ def run_management_command(request):
             try:
                 # Capture command output
                 import sys
+                import time
                 from io import StringIO
 
                 # Redirect stdout to capture output
                 old_stdout = sys.stdout
                 sys.stdout = mystdout = StringIO()
 
+                # Track execution time
+                start_time = time.time()
                 call_command(command, *command_args, **command_kwargs)
+                end_time = time.time()
+                execution_time = end_time - start_time
 
                 # Get the output and restore stdout
                 output = mystdout.getvalue()
                 sys.stdout = old_stdout
 
                 log_entry.success = True
+                log_entry.execution_time = execution_time
+                log_entry.output = output[:10000] if output else ""  # Limit output to 10000 chars
                 log_entry.save()
 
                 # Record execution in DailyStats
@@ -2096,6 +2124,14 @@ def run_management_command(request):
 
                 messages.success(request, f"Command '{command}' executed successfully.")
             except Exception as e:
+                # Try to capture execution time even on failure
+                try:
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                    log_entry.execution_time = execution_time
+                except Exception:
+                    pass
+
                 log_entry.success = False
                 log_entry.save()
 
