@@ -622,6 +622,14 @@ class OrganizationSocialRedirectView(View):
     Usage: /organization/<org_id>/social/<platform>/
     """
 
+    # Allowed domains for each platform to prevent open redirect attacks
+    ALLOWED_DOMAINS = {
+        "twitter": ["twitter.com", "x.com"],
+        "facebook": ["facebook.com", "fb.com"],
+        "linkedin": ["linkedin.com"],
+        "github": ["github.com"],
+    }
+
     def get(self, request, org_id, platform):
         # Validate platform
         valid_platforms = ["twitter", "facebook", "github", "linkedin"]
@@ -646,6 +654,15 @@ class OrganizationSocialRedirectView(View):
 
         if not target_url:
             messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
+            return redirect("organization_analytics", id=org_id)
+
+        # Validate target URL domain to prevent open redirect attacks
+        from urllib.parse import urlparse
+
+        parsed = urlparse(target_url)
+        allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
+        if not any(parsed.netloc == domain or parsed.netloc.endswith(f".{domain}") for domain in allowed_domains):
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
         # Atomically increment the click counter using raw SQL for JSONField
