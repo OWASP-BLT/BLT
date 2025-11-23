@@ -1224,6 +1224,8 @@ class Project(models.Model):
     slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    webhook_url = models.URLField(null=True, blank=True, help_text="Webhook URL to trigger contributor stats recalculation")
+    webhook_secret = models.CharField(max_length=255, null=True, blank=True, help_text="Secret key for webhook authentication")
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 

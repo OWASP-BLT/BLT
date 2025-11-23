@@ -1,6 +1,9 @@
 import concurrent.futures
+import hashlib
+import hmac
 import ipaddress
 import json
+import logging
 import re
 import socket
 import time
@@ -19,6 +22,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
 from django.db.models import Count, F, Q, Sum
@@ -29,6 +33,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView
 from django_filters.views import FilterView
@@ -50,6 +55,8 @@ from website.models import (
     UserProfile,
 )
 from website.utils import admin_required
+
+logger = logging.getLogger(__name__)
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
@@ -2086,3 +2093,126 @@ class RepoBadgeView(APIView):
         response["Expires"] = "0"
 
         return response
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def project_webhook(request, slug):
+    """
+    Webhook endpoint for projects to trigger contributor stats recalculation.
+    
+    When a project is updated, external systems can call this webhook to 
+    trigger recalculation of contributor statistics for all repositories 
+    associated with the project.
+    
+    Security: Uses HMAC-SHA256 signature verification with the project's webhook_secret.
+    
+    Request format:
+    - Method: POST
+    - Header: X-Webhook-Signature (HMAC-SHA256 signature of request body)
+    - Body: JSON payload (can be empty or contain metadata)
+    
+    Example:
+        curl -X POST https://blt.owasp.org/api/project/my-project/webhook \
+             -H "Content-Type: application/json" \
+             -H "X-Webhook-Signature: sha256=<signature>" \
+             -d '{"event": "project_updated", "timestamp": "2024-01-01T00:00:00Z"}'
+    """
+    try:
+        # Get the project
+        project = get_object_or_404(Project, slug=slug)
+        
+        # Check if webhook is configured for this project
+        if not project.webhook_url or not project.webhook_secret:
+            logger.warning(f"Webhook called for project {slug} but webhook is not configured")
+            return JsonResponse(
+                {"status": "error", "message": "Webhook not configured for this project"},
+                status=400
+            )
+        
+        # Verify webhook signature
+        signature = request.headers.get("X-Webhook-Signature", "")
+        if not signature:
+            logger.warning(f"Webhook called for project {slug} without signature")
+            return JsonResponse(
+                {"status": "error", "message": "Missing webhook signature"},
+                status=401
+            )
+        
+        # Validate signature
+        expected_signature = "sha256=" + hmac.new(
+            project.webhook_secret.encode("utf-8"),
+            request.body,
+            hashlib.sha256
+        ).hexdigest()
+        
+        if not hmac.compare_digest(signature, expected_signature):
+            logger.warning(f"Invalid webhook signature for project {slug}")
+            return JsonResponse(
+                {"status": "error", "message": "Invalid webhook signature"},
+                status=403
+            )
+        
+        # Parse the payload (optional, for logging purposes)
+        try:
+            payload = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            payload = {}
+        
+        logger.info(f"Webhook received for project {slug}: {payload}")
+        
+        # Get all repositories for this project
+        repos = project.repos.all()
+        
+        if not repos.exists():
+            logger.info(f"No repositories found for project {slug}")
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Webhook received but no repositories found for this project"
+                },
+                status=200
+            )
+        
+        # Trigger contributor stats recalculation for each repository
+        updated_repos = []
+        errors = []
+        
+        for repo in repos:
+            try:
+                logger.info(f"Updating contributor stats for repo {repo.id}: {repo.name}")
+                call_command("update_contributor_stats", "--repo_id", repo.id)
+                updated_repos.append(repo.name)
+            except Exception as e:
+                error_msg = f"Failed to update stats for {repo.name}: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                errors.append(error_msg)
+        
+        # Return response
+        response_data = {
+            "status": "success",
+            "message": "Contributor stats recalculation triggered",
+            "project": project.name,
+            "repositories_updated": updated_repos,
+        }
+        
+        if errors:
+            response_data["errors"] = errors
+            response_data["status"] = "partial_success"
+        
+        logger.info(f"Webhook processing completed for project {slug}: {len(updated_repos)} repos updated")
+        
+        return JsonResponse(response_data, status=200)
+        
+    except Project.DoesNotExist:
+        logger.warning(f"Webhook called for non-existent project: {slug}")
+        return JsonResponse(
+            {"status": "error", "message": "Project not found"},
+            status=404
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error processing webhook for project {slug}: {str(e)}", exc_info=True)
+        return JsonResponse(
+            {"status": "error", "message": "An unexpected error occurred"},
+            status=500
+        )
