@@ -1553,7 +1553,7 @@ def trademark_local_search(request):
         "query": query,
         "trademarks": page_obj,
         "total_count": total_count,
-        "page_obj": page_obj,
+        "page_obj": page_obj,  # For pagination controls
     }
 
     return render(request, "trademark_local_search.html", context)

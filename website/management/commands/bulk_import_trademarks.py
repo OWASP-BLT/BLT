@@ -5,7 +5,7 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from website.models import Trademark, TrademarkOwner
+from website.models import Trademark
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +84,7 @@ class Command(BaseCommand):
                         if len(batch) >= batch_size:
                             imported = self._bulk_insert_batch(batch)
                             total_imported += imported
-                            self.stdout.write(
-                                self.style.SUCCESS(f"Imported {total_imported} trademarks so far...")
-                            )
+                            self.stdout.write(self.style.SUCCESS(f"Imported {total_imported} trademarks so far..."))
                             batch = []
 
                     except Exception as e:
@@ -100,9 +98,7 @@ class Command(BaseCommand):
                     total_imported += imported
 
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"Bulk import completed. Imported: {total_imported}, Skipped: {total_skipped}"
-                    )
+                    self.style.SUCCESS(f"Bulk import completed. Imported: {total_imported}, Skipped: {total_skipped}")
                 )
 
         except FileNotFoundError:
@@ -134,7 +130,22 @@ class Command(BaseCommand):
         """Insert a batch of trademarks using bulk_create."""
         try:
             with transaction.atomic():
-                Trademark.objects.bulk_create(batch, ignore_conflicts=True)
+                # Use bulk_create with update_conflicts to update existing records
+                Trademark.objects.bulk_create(
+                    batch,
+                    update_conflicts=True,
+                    update_fields=[
+                        "status_label",
+                        "status_code",
+                        "status_date",
+                        "status_definition",
+                        "registration_date",
+                        "abandonment_date",
+                        "expiration_date",
+                        "description",
+                    ],
+                    unique_fields=["registration_number", "serial_number"],
+                )
                 return len(batch)
         except Exception as e:
             logger.error(f"Error inserting batch: {str(e)}", exc_info=True)
