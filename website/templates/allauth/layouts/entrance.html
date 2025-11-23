@@ -1,0 +1,16 @@
+{% extends "allauth/layouts/base.html" %}
+{% load i18n %}
+
+{% block extra_left_content %}
+    <div class="flex flex-col items-center justify-center text-sm mt-10 text-center">
+        {% if user.is_authenticated %}
+            <span>{% trans "Welcome back" %}, {{ user.username }}!</span>
+        {% else %}
+            <span>{% trans "Join our community" %}</span>
+        {% endif %}
+        
+        {% comment %}
+        Navigation links can be added here if needed for specific entrance pages
+        {% endcomment %}
+    </div>
+{% endblock extra_left_content %}
