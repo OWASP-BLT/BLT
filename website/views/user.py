@@ -1284,18 +1284,12 @@ def handle_issue_comment_event(payload):
         with transaction.atomic():
             # Parse datetime fields with error handling
             try:
-                created_at = datetime.fromisoformat(
-                    comment_data.get("created_at", "").replace("Z", "+00:00")
-                )
-                updated_at = datetime.fromisoformat(
-                    comment_data.get("updated_at", "").replace("Z", "+00:00")
-                )
+                created_at = datetime.fromisoformat(comment_data.get("created_at", "").replace("Z", "+00:00"))
+                updated_at = datetime.fromisoformat(comment_data.get("updated_at", "").replace("Z", "+00:00"))
             except (ValueError, AttributeError):
                 created_at = timezone.now()
                 updated_at = timezone.now()
-                logger.warning(
-                    f"Invalid datetime in comment {comment_id}, using current time"
-                )
+                logger.warning(f"Invalid datetime in comment {comment_id}, using current time")
 
             GitHubComment.objects.create(
                 comment_id=comment_id,
