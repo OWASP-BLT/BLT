@@ -67,9 +67,15 @@ jobs:
             }
 
             // Find the bounty amount from the label
+            // Support both integer ($50) and decimal ($25.50) amounts
             const bountyLabel = bountyIssue.labels.find(label => label.name.includes('$'));
-            const bountyMatch = bountyLabel ? bountyLabel.name.match(/\$(\d+)/) : null;
-            const bountyAmount = bountyMatch ? bountyMatch[1] : null;
+            const bountyMatch = bountyLabel ? bountyLabel.name.match(/\$(\d+(?:\.\d{2})?)/) : null;
+            let bountyAmount = bountyMatch ? bountyMatch[1] : null;
+
+            // Convert to cents for API (e.g., "25.50" -> 2550, "50" -> 5000)
+            if (bountyAmount) {
+              bountyAmount = Math.round(parseFloat(bountyAmount) * 100).toString();
+            }
 
             if (!bountyAmount) {
               console.log('Could not extract bounty amount from label');

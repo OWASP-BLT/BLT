@@ -1,6 +1,9 @@
 import json
 import logging
 import os
+import secrets
+import uuid
+from datetime import datetime
 
 import requests
 from django.http import JsonResponse
@@ -20,14 +23,14 @@ def bounty_payout(request):
     Processes payment and updates issue with comment and labels.
     """
     try:
-        # Validate API token
+        # Validate API token using constant-time comparison
         expected_token = os.environ.get("BLT_API_TOKEN")
         if not expected_token:
             logger.error("BLT_API_TOKEN environment variable is missing")
             return JsonResponse({"status": "error", "message": "Server configuration error"}, status=500)
 
         received_token = request.headers.get("X-BLT-API-TOKEN")
-        if received_token != expected_token:
+        if not received_token or not secrets.compare_digest(received_token, expected_token):
             logger.warning("Invalid or missing API token")
             return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
 
@@ -81,7 +84,10 @@ def bounty_payout(request):
 
         # Process payment (simplified - just generate a transaction ID for now)
         # In production, this would call GitHub Sponsors API
-        transaction_id = f"TXN-{issue_number}-{pr_number}"
+        # Generate unique transaction ID with timestamp and UUID to prevent collisions
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_id = uuid.uuid4().hex[:8]
+        transaction_id = f"TXN-{issue_number}-{pr_number}-{timestamp}-{unique_id}"
         logger.info(
             f"Processing bounty payment: ${bounty_amount / 100:.2f} to {contributor_username} "
             f"for PR #{pr_number} (Issue #{issue_number})"
@@ -93,8 +99,9 @@ def bounty_payout(request):
 
         # Add comment and labels to GitHub issue
         github_token = os.environ.get("GITHUB_TOKEN")
+        github_updated = False
         if github_token:
-            add_github_comment_and_labels(
+            github_updated = add_github_comment_and_labels(
                 owner_name,
                 repo_name,
                 issue_number,
@@ -114,6 +121,7 @@ def bounty_payout(request):
                 "transaction_id": transaction_id,
                 "amount": bounty_amount,
                 "recipient": contributor_username,
+                "github_updated": github_updated,
             }
         )
 
@@ -127,6 +135,7 @@ def add_github_comment_and_labels(
 ):
     """
     Add a comment to the GitHub issue with payment details and add appropriate labels.
+    Returns True if both comment and labels were added successfully, False otherwise.
     """
     # Create comment with payment details
     comment_body = f"""🎉 **Bounty Paid!** 🎉
@@ -146,10 +155,12 @@ Thank you for your contribution to this project!"""
         "Content-Type": "application/json",
     }
 
+    comment_success = False
     try:
         response = requests.post(comment_url, headers=headers, json={"body": comment_body}, timeout=10)
         response.raise_for_status()
         logger.info(f"Successfully added payment comment to issue #{issue_number}")
+        comment_success = True
     except requests.RequestException as e:
         logger.error(f"Failed to add comment to GitHub issue: {e}")
 
@@ -157,9 +168,13 @@ Thank you for your contribution to this project!"""
     labels_url = f"https://api.github.com/repos/{owner_name}/{repo_name}/issues/{issue_number}/labels"
     labels = ["paid", "sponsors"]
 
+    labels_success = False
     try:
         response = requests.post(labels_url, headers=headers, json={"labels": labels}, timeout=10)
         response.raise_for_status()
         logger.info(f"Successfully added labels {labels} to issue #{issue_number}")
+        labels_success = True
     except requests.RequestException as e:
         logger.error(f"Failed to add labels to GitHub issue: {e}")
+
+    return comment_success and labels_success
