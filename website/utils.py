@@ -1186,13 +1186,17 @@ def check_for_spam(text, user=None, request=None):
         return True, "Excessive repeated characters"
 
     # Check for suspicious patterns like all links and no real content
-    words = text_stripped.split()
-    if len(words) > 0 and len(urls) > 0:
-        if len(urls) / len(words) > 0.3:
+    # Remove URLs from text before counting words to avoid double-counting
+    text_without_urls = re.sub(url_pattern, "", text_stripped)
+    words = text_without_urls.split()
+    non_empty_words = [w for w in words if w.strip()]
+
+    if len(non_empty_words) > 0 and len(urls) > 0:
+        if len(urls) / len(non_empty_words) > 0.5:
             return True, "High URL-to-text ratio"
 
     # Check for very short content with URLs (likely spam)
-    if len(words) < 5 and len(urls) > 0:
+    if len(non_empty_words) < 5 and len(urls) > 0:
         return True, "Very short content with URLs"
 
     return False, None
