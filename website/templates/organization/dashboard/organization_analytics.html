@@ -17,7 +17,7 @@
     {% endblock edit_link %}
     <div class="bg-[#F3F5F7] pb-10">
         <div class="w-full mt-5">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Dashboard</p>
+            <p class="text-[#e74c3c] font-satoshi font-bold text-[35px] px-8">Dashboard</p>
         </div>
         <div class="flex flex-col lg:flex-row gap-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
             <div class="flex justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
@@ -338,7 +338,7 @@
                     <div class="relative pt-1">
                         <div class="flex mb-2 items-center justify-between">
                             <div>
-                                <span class="text-3xl font-bold inline-block py-1 px-2 rounded-full {% if threat_intelligence.risk_score >= 75 %}text-red-600 {% elif threat_intelligence.risk_score >= 50 %}text-yellow-600 {% else %}text-green-600{% endif %}">
+                                <span class="text-3xl font-bold inline-block py-1 px-2 rounded-full {% if threat_intelligence.risk_score >= 75 %}text-[#e74c3c] {% elif threat_intelligence.risk_score >= 50 %}text-yellow-600 {% else %}text-green-600{% endif %}">
                                     {{ threat_intelligence.risk_score }}/100
                                 </span>
                             </div>
@@ -372,13 +372,90 @@
             </div>
         </div>
     </div>
+    <!-- Network Traffic Analysis Section -->
+    <div id="network-traffic" class="w-full px-8 mt-8">
+        <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Network Traffic Analysis</h2>
+            <!-- Traffic Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Daily Traffic</h3>
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-blue-200 rounded-[50px] mb-2">
+                        <i class="fa-solid fa-chart-line fa-2x text-black"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.day_count }}</p>
+                    <p class="text-sm text-gray-500">Last 24 hours</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Weekly Traffic</h3>
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-purple-200 rounded-[50px] mb-2">
+                        <i class="fa-solid fa-calendar-week fa-2x text-black"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.week_count }}</p>
+                    <p class="text-sm text-gray-500">Last 7 days</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Peak Hour</h3>
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-yellow-200 rounded-[50px] mb-2">
+                        <i class="fa-solid fa-bolt fa-2x text-black"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.peak_hour }}:00</p>
+                    <p class="text-sm text-gray-500">{{ network_traffic_data.peak_count }} requests</p>
+                </div>
+            </div>
+            <!-- Traffic Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-xl border border-gray-200">
+                    <div class="header-container mb-4">
+                        <h3 class="section-header text-lg font-semibold">Daily Traffic Volume (30 Days)</h3>
+                    </div>
+                    <div class="relative h-[300px]">
+                        <canvas id="trafficVolumeChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-gray-200">
+                    <div class="header-container mb-4">
+                        <h3 class="section-header text-lg font-semibold">Hourly Distribution</h3>
+                    </div>
+                    <div class="relative h-[300px]">
+                        <canvas id="hourlyDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Domain Error Rates -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Domains with Errors</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="py-3 px-4 text-left">Domain</th>
+                                <th class="py-3 px-4 text-left">Error Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for domain in network_traffic_data.domain_error_rates %}
+                                <tr class="border-t border-gray-200">
+                                    <td class="py-3 px-4">{{ domain.domain__name }}</td>
+                                    <td class="py-3 px-4">{{ domain.error_count }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr class="border-t border-gray-200">
+                                    <td class="py-3 px-4 text-center" colspan="2">No domain error data available</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock body %}
 {% block js %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.min.js"
             integrity="sha384-+94tm/qgImqyuSRr1vU2PjQIoot8h3qdaFB/xTawzWLRkcCWPricrBj5Xr45hCP1"
             crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'organization/js/index.js' %}"></script>
     <script>
   // populate Chart (PIE): Bug Report  Type
@@ -548,5 +625,110 @@
   populateMonthlyReportBarChart();
   populateReportOnDomainsPie();
   populateBugTypePie();
+
+  // Network Traffic Analysis Charts
+  function populateTrafficVolumeChart() {
+    const trafficCtx = document.getElementById("trafficVolumeChart").getContext("2d");
+
+    // Use data from the backend
+    const trafficData = {
+      labels: JSON.parse('{{ network_traffic_data.traffic_dates|safe }}'),
+      datasets: [{
+        label: 'Requests',
+        data: JSON.parse('{{ network_traffic_data.traffic_counts|safe }}'),
+        borderColor: 'rgb(54, 162, 235)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true
+      }]
+    };
+
+    new Chart(trafficCtx, {
+      type: 'line',
+      data: trafficData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Requests'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Date'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y + ' requests';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function populateHourlyDistributionChart() {
+    const hourlyCtx = document.getElementById("hourlyDistributionChart").getContext("2d");
+
+    // Use data from the backend
+    const hourlyData = {
+      labels: JSON.parse('{{ network_traffic_data.hours|safe }}'),
+      datasets: [{
+        label: 'Requests by Hour',
+        data: JSON.parse('{{ network_traffic_data.hourly_counts|safe }}'),
+        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+        borderColor: 'rgb(153, 102, 255)',
+        borderWidth: 1
+      }]
+    };
+
+    new Chart(hourlyCtx, {
+      type: 'bar',
+      data: hourlyData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Requests'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Hour of Day (24h format)'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Initialize network traffic charts
+  populateTrafficVolumeChart();
+  populateHourlyDistributionChart();
     </script>
 {% endblock js %}
