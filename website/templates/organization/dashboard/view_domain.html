@@ -49,6 +49,16 @@
                             <i class="fa-sharp fa-solid fa-cog fa-lg text-white"></i>
                             <span>Back</span>
                         </a>
+                        {% if user.is_authenticated and not is_domain_manager and email %}
+                            <form method="POST" action="{% url 'request_domain_access' id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                                    <i class="fa-sharp fa-solid fa-shield-check fa-lg text-white"></i>
+                                    <span>Manage this Domain</span>
+                                </button>
+                            </form>
+                        {% endif %}
                         <a href="{% url 'report' %}"
                            class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 dark:text-gray-900 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                             <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>

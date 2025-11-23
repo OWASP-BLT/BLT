@@ -25,6 +25,7 @@ from slack_bolt import App
 from website.models import (
     DailyStatusReport,
     Domain,
+    DomainVerificationCode,
     Hunt,
     HuntPrize,
     Integration,
@@ -1442,6 +1443,7 @@ class DomainView(View):
             "first_bug": first_bug,
             "last_bug": last_bug,
             "ongoing_bughunts": ongoing_bughunts,
+            "is_domain_manager": is_domain_manager,
         }
 
         return render(request, "organization/dashboard/view_domain.html", context)
@@ -2503,3 +2505,116 @@ def job_detail(request, pk):
     }
 
     return render(request, "jobs/job_detail.html", context)
+
+
+# Domain Management Verification Views
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_domain_access(request, pk):
+    """Request access to manage a domain by sending verification code to domain email"""
+    import random
+    import string
+
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+
+    domain = get_object_or_404(Domain, pk=pk)
+
+    # Check if domain has an email configured
+    if not domain.email:
+        messages.error(request, "This domain does not have an email configured for verification.")
+        return redirect("view_domain", pk=pk)
+
+    # Check if user is already a manager
+    if domain.managers.filter(id=request.user.id).exists():
+        messages.info(request, "You are already a manager of this domain.")
+        return redirect("view_domain", pk=pk)
+
+    # Generate 6-digit verification code
+    code = "".join(random.choices(string.digits, k=6))
+
+    # Set expiration to 15 minutes from now
+    expires_at = timezone.now() + timedelta(minutes=15)
+
+    # Create verification code record
+    verification = DomainVerificationCode.objects.create(
+        domain=domain, user=request.user, code=code, expires_at=expires_at
+    )
+
+    # Send verification email
+    try:
+        email_context = {
+            "domain_name": domain.name,
+            "username": request.user.username,
+            "verification_code": code,
+        }
+        email_html = render_to_string("email/domain_verification_code.html", email_context)
+
+        send_mail(
+            subject=f"Domain Management Verification - {domain.name}",
+            message=f"Your verification code is: {code}. This code will expire in 15 minutes.",
+            html_message=email_html,
+            from_email=None,  # Uses DEFAULT_FROM_EMAIL from settings
+            recipient_list=[domain.email],
+            fail_silently=False,
+        )
+
+        messages.success(
+            request,
+            f"A verification code has been sent to {domain.email}. Please check your email and enter the code.",
+        )
+    except Exception as e:
+        logger.error(f"Failed to send verification email: {e}")
+        messages.error(request, "Failed to send verification email. Please try again later.")
+        verification.delete()
+
+    return redirect("verify_domain_access", pk=pk)
+
+
+@login_required
+def verify_domain_access(request, pk):
+    """View for entering and verifying the domain access code"""
+    domain = get_object_or_404(Domain, pk=pk)
+
+    # Check if user is already a manager
+    if domain.managers.filter(id=request.user.id).exists():
+        messages.info(request, "You are already a manager of this domain.")
+        return redirect("view_domain", pk=pk)
+
+    if request.method == "POST":
+        code = request.POST.get("verification_code", "").strip()
+
+        if not code:
+            messages.error(request, "Please enter the verification code.")
+            return render(request, "organization/verify_domain_access.html", {"domain": domain})
+
+        # Find the most recent unused verification code for this user and domain
+        verification = (
+            DomainVerificationCode.objects.filter(domain=domain, user=request.user, code=code, is_used=False)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not verification:
+            messages.error(request, "Invalid verification code. Please check and try again.")
+            return render(request, "organization/verify_domain_access.html", {"domain": domain})
+
+        if not verification.is_valid():
+            if verification.is_used:
+                messages.error(request, "This verification code has already been used.")
+            else:
+                messages.error(request, "This verification code has expired. Please request a new one.")
+            return render(request, "organization/verify_domain_access.html", {"domain": domain})
+
+        # Mark code as used and add user as domain manager
+        verification.mark_as_used()
+        domain.managers.add(request.user)
+
+        messages.success(
+            request, f"Success! You are now a manager of {domain.name}. You can now manage this domain."
+        )
+        return redirect("view_domain", pk=pk)
+
+    return render(request, "organization/verify_domain_access.html", {"domain": domain})

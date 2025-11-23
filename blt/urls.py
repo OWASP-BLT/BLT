@@ -78,6 +78,8 @@ from website.views.company import (
     accept_bug,
     check_domain_security_txt,
     create_job,
+    request_domain_access,
+    verify_domain_access,
     dashboard_view,
     delete_job,
     delete_manager,
@@ -922,6 +924,16 @@ urlpatterns = [
         "organization/domain/<int:pk>/",
         login_required(DomainView.as_view()),
         name="view_domain",
+    ),
+    path(
+        "organization/domain/<int:pk>/request-access/",
+        request_domain_access,
+        name="request_domain_access",
+    ),
+    path(
+        "organization/domain/<int:pk>/verify-access/",
+        verify_domain_access,
+        name="verify_domain_access",
     ),
     path(
         "organization/delete_prize/<int:prize_id>/<int:organization_id>",
