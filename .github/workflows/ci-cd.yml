@@ -320,8 +320,18 @@ jobs:
             const repo = context.repo.repo;
             const pull_number = context.issue.number;
             
+            // Validate PR context exists
+            if (!pull_number) {
+              core.warning('No pull request number found in context. Skipping label.');
+              return;
+            }
+            
+            core.info(`Processing test result label for PR #${pull_number}`);
+            
             // Determine label based on test exit code
             const testExitCode = '${{ needs.test.outputs.test_result }}';
+            core.info(`Test exit code from job output: ${testExitCode}`);
+            
             const newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
             const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
             const description = testExitCode === '0' ? 'Django tests passed' : 'Django tests failed';
