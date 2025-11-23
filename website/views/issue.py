@@ -336,7 +336,7 @@ def newhome(request, template="bugs_list.html"):
         else:
             messages.error(request, "No email associated with your account. Please add an email.")
 
-    issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    issues_queryset = Issue.objects.exclude((Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True))
     paginator = Paginator(issues_queryset, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -438,10 +438,12 @@ def search_issues(request, template="search.html"):
         query = query[6:]
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
-            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
+            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) | Q(is_private=True)
+            )[0:20]
         else:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True)
             )[0:20]
 
         context = {
@@ -454,7 +456,7 @@ def search_issues(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True)
             )[0:20],
         }
     if stype == "user" or stype is None:
@@ -462,7 +464,7 @@ def search_issues(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True)
             )[0:20],
         }
 
@@ -471,7 +473,7 @@ def search_issues(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True)
             )[0:20],
         }
 
@@ -1021,6 +1023,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             tokenauth = False
             obj = form.save(commit=False)
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
+            report_private = self.request.POST.get("report_private", "off") == "on"
 
             if report_anonymous:
                 obj.user = None
@@ -1092,8 +1095,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
                 domain.save()
 
-            # Don't save issue if security vulnerability
-            if form.instance.label == "4" or form.instance.label == 4:
+            # Don't save issue if security vulnerability or private report
+            if form.instance.label == "4" or form.instance.label == 4 or report_private:
                 dest_email = getattr(domain, "email", None)
                 if not dest_email and domain.organization:
                     dest_email = getattr(domain.organization, "email", None)
@@ -1150,14 +1153,21 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         shutil.copy(orig_path, dest_path)
                                         screenshot_paths.append(dest_path)
 
+                            # Determine report type for email content
+                            is_security = form.instance.label == "4" or form.instance.label == 4
+                            report_type = "Security Vulnerability Report" if is_security else "Private Bug Report"
+
                             details_md_path = os.path.join(temp_dir, "vulnerability_details.md")
                             with open(details_md_path, "w", encoding="utf-8") as f:
-                                f.write("# Security Vulnerability Report\n\n")
+                                f.write(f"# {report_type}\n\n")
                                 f.write(f"**URL:** {obj.url}\n")
                                 f.write(f"**Domain:** {clean_domain}\n")
 
                                 if obj.cve_id:
                                     f.write(f"**CVE ID:** {obj.cve_id}\n")
+
+                                if report_private:
+                                    f.write("**Report Type:** Private\n")
 
                                 f.write("\n**Description:**\n")
                                 f.write(f"{obj.description}\n\n")
@@ -1203,10 +1213,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                 for file in screenshot_paths:
                                     zipf.write(file, arcname=os.path.basename(file))
 
-                            email_subject = f"Security Vulnerability Report for {clean_domain}"
+                            email_subject = f"{report_type} for {clean_domain}"
                             html_body = render_to_string(
                                 "email/security_report.html",
-                                {"clean_domain": clean_domain, "password": password},
+                                {"clean_domain": clean_domain, "password": password, "report_type": report_type},
                             )
 
                             try:
@@ -1223,16 +1233,26 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                                 email.send(fail_silently=False)
 
+                                # Increment private reports count if this is a private report
+                                if report_private and self.request.user.is_authenticated and not report_anonymous:
+                                    user_prof = UserProfile.objects.get(user=self.request.user)
+                                    user_prof.private_reports_count += 1
+                                    user_prof.save()
+
+                                success_msg = (
+                                    "Private bug report" if report_private else "Security vulnerability report"
+                                )
                                 messages.success(
                                     self.request,
-                                    "Security vulnerability report sent securely to the organization. Thank you for your report.",
+                                    f"{success_msg} sent securely to the organization. Thank you for your report.",
                                 )
                                 return HttpResponseRedirect("/")
                             except Exception as e:
                                 logger.error(f"Error while sending email: {e}")
+                                error_msg = "private bug report" if report_private else "security report"
                                 messages.error(
                                     self.request,
-                                    "Could not mail security report. Please try again later.",
+                                    f"Could not mail {error_msg}. Please try again later.",
                                 )
                                 return HttpResponseRedirect("/")
 
@@ -1242,9 +1262,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         return HttpResponseRedirect("/")
 
                 else:
+                    report_msg = "private bug report" if report_private else "security vulnerability report"
                     messages.warning(
                         self.request,
-                        "Could not send security vulnerability report as no contact email is available for this domain.",
+                        f"Could not send {report_msg} as no contact email is available for this domain.",
                     )
                     return HttpResponseRedirect("/")
 
@@ -1428,7 +1449,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.GET = {}
 
         context = super(IssueCreate, self).get_context_data(**kwargs)
-        context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
+        context["activities"] = Issue.objects.exclude(
+            (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
+        )[0:10]
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1453,7 +1476,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
             context["report_on_hunt"] = False
 
         context["top_domains"] = (
-            Issue.objects.values("domain__name").annotate(count=Count("domain__name")).order_by("-count")[:30]
+            Issue.objects.exclude(Q(is_private=True))
+            .values("domain__name")
+            .annotate(count=Count("domain__name"))
+            .order_by("-count")[:30]
         )
 
         # Add top users data
@@ -1477,11 +1503,11 @@ class AllIssuesView(ListView):
         username = self.request.GET.get("user")
         if username is None:
             self.activities = Issue.objects.filter(hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
             )
         else:
             self.activities = Issue.objects.filter(user__username=username, hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
             )
         return self.activities
 
@@ -1508,7 +1534,9 @@ class AllIssuesView(ListView):
         # Add top users data
         top_users = (
             User.objects.annotate(
-                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
+                issue_count=Count(
+                    "issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True) & ~Q(issue__is_private=True)
+                )
             )
             .filter(issue_count__gt=0)
             .order_by("-issue_count")[:10]
@@ -1549,15 +1577,15 @@ class SpecificIssuesView(ListView):
 
         if username is None:
             self.activities = Issue.objects.filter(hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
             )
         elif statu != "none":
             self.activities = Issue.objects.filter(user__username=username, status=statu, hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
             )
         else:
             self.activities = Issue.objects.filter(user__username=username, label=query, hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
             )
         return self.activities
 

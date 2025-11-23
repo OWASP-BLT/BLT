@@ -311,7 +311,7 @@
                     </div>
                 </div>
                 <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex md:flex-row flex-col items-center justify-between gap-8 px-6 py-5">
-                    <div class="flex flex-col items-start gap-2">
+                    <div class="flex flex-col items-start gap-4">
                         <div class="flex items-center gap-2">
                             <input id="report_anonymous"
                                    type="checkbox"
@@ -321,6 +321,17 @@
                                class="font-medium text-gray-900 dark:text-gray-100 cursor-pointer select-none">
                                 {% trans "Report Anonymously" %}
                             </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input id="report_private"
+                                   type="checkbox"
+                                   name="report_private"
+                                   class="w-5 h-5 rounded-lg text-[#e74c3c] cursor-pointer ">
+                            <label for="report_private"
+                                   class="font-medium text-gray-900 dark:text-gray-100 cursor-pointer select-none">
+                                {% trans "Report as Private" %}
+                                <span class="text-sm text-gray-500 dark:text-gray-400">(Encrypted & emailed directly to organization)</span>
+                            </label>
                         </div>
                     </div>
                     <div class="flex flex-col gap-4 md:flex-row items-center justify-center [&>img]:w-[150px] md:[&>input]:w-[30%] [&>input]:w-[50%] [&>input]:border [&>input]:border-gray-800 dark:[&>input]:border-gray-400 [&>input]:p-[10px] [&>input]:text-[1.4rem] [&>input]:ml-2 [&>input]:rounded [&>input]:bg-white dark:[&>input]:bg-gray-900 ">
