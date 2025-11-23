@@ -15,9 +15,14 @@
             </a>
         </div>
     {% endblock edit_link %}
-    <div class="bg-[#F3F5F7] pb-10">
-        <div class="w-full mt-5">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Dashboard</p>
+    <div class="bg-[#F3F5F7] dark:bg-gray-900 pb-10">
+        <div class="w-full mt-5 px-8 flex justify-between items-center">
+            <p class="text-red-700 font-satoshi font-bold text-[35px]">Dashboard</p>
+            <a href="{% url 'organization_profile_edit' id=organization %}"
+               class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors flex items-center gap-2">
+                <i class="fas fa-edit"></i>
+                <span>Edit Profile</span>
+            </a>
         </div>
         <div class="flex flex-col lg:flex-row gap-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
             <div class="flex justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">

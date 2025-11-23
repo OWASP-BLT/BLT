@@ -603,3 +603,132 @@ class JobForm(forms.ModelForm):
             "application_url": "Optional: Link to external application page",
             "application_instructions": "Optional: Custom instructions for applicants",
         }
+
+
+class OrganizationProfileForm(forms.ModelForm):
+    """Form for editing organization profile and social media links"""
+
+    class Meta:
+        model = Organization
+        fields = [
+            "name",
+            "description",
+            "tagline",
+            "logo",
+            "url",
+            "email",
+            "twitter",
+            "facebook",
+            "linkedin",
+            "github_org",
+            "discord_url",
+            "slack_url",
+            "matrix_url",
+        ]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "Organization Name",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 4,
+                    "placeholder": "Describe your organization...",
+                }
+            ),
+            "tagline": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "A brief tagline for your organization",
+                }
+            ),
+            "logo": forms.ClearableFileInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                }
+            ),
+            "url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://example.com",
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "contact@example.com",
+                }
+            ),
+            "twitter": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://twitter.com/yourorg",
+                }
+            ),
+            "facebook": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://facebook.com/yourorg",
+                }
+            ),
+            "linkedin": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://linkedin.com/company/yourorg",
+                }
+            ),
+            "github_org": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://github.com/yourorg",
+                }
+            ),
+            "discord_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://discord.gg/yourinvite",
+                }
+            ),
+            "slack_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://yourorg.slack.com",
+                }
+            ),
+            "matrix_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://matrix.to/#/@yourorg:matrix.org",
+                }
+            ),
+        }
+        labels = {
+            "name": "Organization Name",
+            "description": "Description",
+            "tagline": "Tagline",
+            "logo": "Logo",
+            "url": "Website URL",
+            "email": "Contact Email",
+            "twitter": "Twitter Profile",
+            "facebook": "Facebook Page",
+            "linkedin": "LinkedIn Company Page",
+            "github_org": "GitHub Organization",
+            "discord_url": "Discord Server",
+            "slack_url": "Slack Workspace",
+            "matrix_url": "Matrix Channel",
+        }
+        help_texts = {
+            "description": "Describe what your organization does",
+            "tagline": "A short, catchy phrase that describes your organization",
+            "logo": "Upload a logo for your organization (recommended size: 200x200px)",
+            "twitter": "Full URL to your Twitter/X profile",
+            "facebook": "Full URL to your Facebook page",
+            "linkedin": "Full URL to your LinkedIn company page",
+            "github_org": "Full URL to your GitHub organization",
+            "discord_url": "Full URL to your Discord server invite",
+            "slack_url": "Full URL to your Slack workspace",
+            "matrix_url": "Full URL to your Matrix channel",
+        }

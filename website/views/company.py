@@ -577,6 +577,70 @@ class OrganizationSocialRedirectView(View):
         return redirect(target_url)
 
 
+class OrganizationProfileEditView(View):
+    """
+    View for editing organization profile information and social media links.
+    """
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        from website.forms import OrganizationProfileForm
+
+        organization = get_object_or_404(Organization, id=id)
+
+        # Get list of organizations for dropdown
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+        else:
+            organizations = []
+
+        form = OrganizationProfileForm(instance=organization)
+
+        context = {
+            "organization": organization,
+            "organizations": organizations,
+            "form": form,
+        }
+
+        return render(request, "organization/dashboard/edit_organization_profile.html", context)
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        from website.forms import OrganizationProfileForm
+
+        organization = get_object_or_404(Organization, id=id)
+
+        form = OrganizationProfileForm(request.POST, request.FILES, instance=organization)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Organization profile updated successfully!")
+            return redirect("organization_analytics", id=id)
+        else:
+            # Get list of organizations for dropdown
+            if request.user.is_authenticated:
+                organizations = (
+                    Organization.objects.values("name", "id")
+                    .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                    .distinct()
+                )
+            else:
+                organizations = []
+
+            context = {
+                "organization": organization,
+                "organizations": organizations,
+                "form": form,
+            }
+
+            messages.error(request, "Please correct the errors below.")
+            return render(request, "organization/dashboard/edit_organization_profile.html", context)
+
+
 class OrganizationDashboardIntegrations(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):

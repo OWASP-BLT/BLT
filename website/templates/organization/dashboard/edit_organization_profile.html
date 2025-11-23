@@ -1,0 +1,235 @@
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    Edit Organization Profile | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block body %}
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Edit Organization Profile</h1>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Update your organization's information and social media links</p>
+            </div>
+            <!-- Form -->
+            <form method="post" enctype="multipart/form-data" class="space-y-8">
+                {% csrf_token %}
+                <!-- Basic Information Section -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-building mr-2 text-[#e74c3c]"></i>Basic Information
+                        </h2>
+                    </div>
+                    <div class="px-6 py-6 space-y-6">
+                        <!-- Name -->
+                        <div>
+                            <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                {{ form.name.label }}
+                                {% if form.name.field.required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Tagline -->
+                        <div>
+                            <label for="{{ form.tagline.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                {{ form.tagline.label }}
+                                {% if form.tagline.field.required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            {{ form.tagline }}
+                            {% if form.tagline.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.tagline.help_text }}</p>
+                            {% endif %}
+                            {% if form.tagline.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.tagline.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Description -->
+                        <div>
+                            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                {{ form.description.label }}
+                                {% if form.description.field.required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.description.help_text }}</p>
+                            {% endif %}
+                            {% if form.description.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.description.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Logo -->
+                        <div>
+                            <label for="{{ form.logo.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                {{ form.logo.label }}
+                                {% if form.logo.field.required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            {% if organization.logo %}
+                                <div class="mb-3">
+                                    <img src="{{ organization.logo.url }}"
+                                         alt="Current logo"
+                                         class="h-20 w-20 rounded-lg object-cover">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Current logo</p>
+                                </div>
+                            {% endif %}
+                            {{ form.logo }}
+                            {% if form.logo.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.logo.help_text }}</p>
+                            {% endif %}
+                            {% if form.logo.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.logo.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <!-- Contact Information Section -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-envelope mr-2 text-[#e74c3c]"></i>Contact Information
+                        </h2>
+                    </div>
+                    <div class="px-6 py-6 space-y-6">
+                        <!-- Website URL -->
+                        <div>
+                            <label for="{{ form.url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                {{ form.url.label }}
+                                {% if form.url.field.required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            {{ form.url }}
+                            {% if form.url.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.url.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Email -->
+                        <div>
+                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                {{ form.email.label }}
+                                {% if form.email.field.required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <!-- Social Media Links Section -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-share-nodes mr-2 text-[#e74c3c]"></i>Social Media Links
+                        </h2>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add your organization's social media profiles to display on your dashboard</p>
+                    </div>
+                    <div class="px-6 py-6 space-y-6">
+                        <!-- Twitter -->
+                        <div>
+                            <label for="{{ form.twitter.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fab fa-twitter text-[#1DA1F2] mr-1"></i>{{ form.twitter.label }}
+                            </label>
+                            {{ form.twitter }}
+                            {% if form.twitter.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.twitter.help_text }}</p>
+                            {% endif %}
+                            {% if form.twitter.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.twitter.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Facebook -->
+                        <div>
+                            <label for="{{ form.facebook.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fab fa-facebook text-[#1877F2] mr-1"></i>{{ form.facebook.label }}
+                            </label>
+                            {{ form.facebook }}
+                            {% if form.facebook.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.facebook.help_text }}</p>
+                            {% endif %}
+                            {% if form.facebook.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.facebook.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- LinkedIn -->
+                        <div>
+                            <label for="{{ form.linkedin.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fab fa-linkedin text-[#0A66C2] mr-1"></i>{{ form.linkedin.label }}
+                            </label>
+                            {{ form.linkedin }}
+                            {% if form.linkedin.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.linkedin.help_text }}</p>
+                            {% endif %}
+                            {% if form.linkedin.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.linkedin.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- GitHub -->
+                        <div>
+                            <label for="{{ form.github_org.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fab fa-github mr-1"></i>{{ form.github_org.label }}
+                            </label>
+                            {{ form.github_org }}
+                            {% if form.github_org.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.github_org.help_text }}</p>
+                            {% endif %}
+                            {% if form.github_org.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.github_org.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Discord -->
+                        <div>
+                            <label for="{{ form.discord_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fab fa-discord text-[#5865F2] mr-1"></i>{{ form.discord_url.label }}
+                            </label>
+                            {{ form.discord_url }}
+                            {% if form.discord_url.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.discord_url.help_text }}</p>
+                            {% endif %}
+                            {% if form.discord_url.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.discord_url.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Slack -->
+                        <div>
+                            <label for="{{ form.slack_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fab fa-slack text-[#4A154B] mr-1"></i>{{ form.slack_url.label }}
+                            </label>
+                            {{ form.slack_url }}
+                            {% if form.slack_url.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.slack_url.help_text }}</p>
+                            {% endif %}
+                            {% if form.slack_url.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.slack_url.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Matrix -->
+                        <div>
+                            <label for="{{ form.matrix_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-hashtag mr-1"></i>{{ form.matrix_url.label }}
+                            </label>
+                            {{ form.matrix_url }}
+                            {% if form.matrix_url.help_text %}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.matrix_url.help_text }}</p>
+                            {% endif %}
+                            {% if form.matrix_url.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.matrix_url.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <!-- Form Actions -->
+                <div class="flex justify-end gap-4">
+                    <a href="{% url 'organization_analytics' id=organization.id %}"
+                       class="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</a>
+                    <button type="submit"
+                            class="px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors">
+                        <i class="fas fa-save mr-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock body %}
