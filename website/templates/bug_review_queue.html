@@ -89,11 +89,9 @@
                                                         {{ issue.user.username }}
                                                     </a>
                                                     {% if issue.user.date_joined %}
-                                                        {% with days_since_joined=(now|timeuntil:issue.user.date_joined)|slice:":2" %}
-                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                                                New User ({{ issue.user.date_joined|timesince }} old)
-                                                            </span>
-                                                        {% endwith %}
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                                            New User ({{ issue.user.date_joined|timesince }} old)
+                                                        </span>
                                                     {% endif %}
                                                 </div>
                                             {% else %}
@@ -126,9 +124,7 @@
                                                class="text-sm font-medium text-[#e74c3c] hover:underline break-all">
                                                 {{ issue.url }}
                                             </a>
-                                            {% if issue.domain %}
-                                                <p class="text-xs text-gray-500 mt-1">Domain: {{ issue.domain.name }}</p>
-                                            {% endif %}
+                                            {% if issue.domain %}<p class="text-xs text-gray-500 mt-1">Domain: {{ issue.domain.name }}</p>{% endif %}
                                         </div>
                                     </div>
                                     <!-- Description -->
@@ -143,6 +139,8 @@
                                             <img src="{{ issue.screenshot.url }}"
                                                  class="rounded-lg border border-gray-200 dark:border-gray-700 max-w-full h-auto"
                                                  alt="Bug screenshot"
+                                                 width="800"
+                                                 height="600"
                                                  loading="lazy">
                                         </div>
                                     {% endif %}
@@ -155,6 +153,8 @@
                                                     <img src="{{ screenshot.image.url }}"
                                                          class="rounded-lg border border-gray-200 dark:border-gray-700 max-w-full h-auto"
                                                          alt="Additional bug screenshot"
+                                                         width="400"
+                                                         height="300"
                                                          loading="lazy">
                                                 {% endfor %}
                                             </div>
