@@ -81,7 +81,8 @@ def submit_enhanced_bid(request):
             ).first()
             if user_profile:
                 user = user_profile.user
-        except:
+        except Exception:
+            # If UserProfile lookup fails, continue without associated user
             pass
     
     # Create the bid
@@ -130,7 +131,8 @@ def dynamic_bid_image(request, token):
             # Try to load a better font
             font_large = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 16)
             font_small = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 12)
-        except:
+        except (OSError, IOError):
+            # If custom font not available, use default font
             font_large = ImageFont.load_default()
             font_small = ImageFont.load_default()
         
@@ -171,11 +173,11 @@ def dynamic_bid_image(request, token):
         
         return HttpResponse(buffer.getvalue(), content_type='image/png')
         
-    except Exception as e:
-        # Return error image
+    except Exception:
+        # Return error image without exposing exception details
         img = Image.new('RGB', (400, 100), color='#ff0000')
         draw = ImageDraw.Draw(img)
-        draw.text((10, 10), f"Error: {str(e)}", fill='white')
+        draw.text((10, 10), "Error generating bid image", fill='white')
         buffer = BytesIO()
         img.save(buffer, format='PNG')
         buffer.seek(0)
@@ -303,8 +305,10 @@ def github_webhook(request):
                             break
             
             return JsonResponse({'status': 'ok'})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+        except Exception:
+            return JsonResponse({'error': 'Unable to process webhook'}, status=400)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
@@ -391,8 +395,8 @@ def check_current_bid(request):
                 
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+        except Exception:
+            return JsonResponse({'error': 'Unable to process request'}, status=500)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
@@ -415,5 +419,5 @@ def bid_api_status(request, bid_id):
         }
         
         return JsonResponse(data)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=404)
+    except Exception:
+        return JsonResponse({'error': 'Bid not found or unable to retrieve status'}, status=404)
