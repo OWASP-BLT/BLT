@@ -7,11 +7,11 @@
 {% block body %}
     {% block edit_link %}
         <div class="bg-gray-50 dark:bg-gray-900 flex float-end gap-4 mr-10">
-            <a class="text-white"
+            <a class="text-black dark:text-white"
                href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_analytics.html">
                 <i class="fab fa-github fa-2x"></i>
             </a>
-            <a class="text-white"
+            <a class="text-black dark:text-white"
                href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
                 <i class="fab fa-figma fa-2x"></i>
             </a>
@@ -271,10 +271,10 @@
                 </div>
                 <div class="pie-chart__labels">
                     {% for bugtype, money_spent in spent_on_bugtypes.zipped_data %}
-                        <div class="pie-chart__labels-item">
+                        <div class="pie-chart__labels-item flex gap-1 dark:text-white">
                             <div class="label">
                                 <div class="label__color first"></div>
-                                {{ bugtype }}
+                                {{ bugtype }} :
                             </div>
                             ${{ money_spent }}
                         </div>
