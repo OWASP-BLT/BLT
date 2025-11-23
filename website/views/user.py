@@ -833,9 +833,10 @@ def contributor_stats_view(request):
     Weekly Activity view that highlights streak and challenge completions.
     This view displays contributor statistics with enhanced highlights for user achievements.
     """
-    from datetime import timedelta
+    from datetime import datetime, timedelta
 
     from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+    from django.db.models import Q
 
     # Calculate the date range for the current week
     end_date = timezone.now().date()
