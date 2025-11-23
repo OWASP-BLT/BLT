@@ -43,6 +43,7 @@ from website.api.views import (
     UserProfileViewSet,
 )
 from website.feeds import ActivityFeed
+from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -103,6 +104,7 @@ from website.views.core import (
     add_forum_post,
     badge_list,
     check_owasp_compliance,
+    delete_forum_post,
     donate_view,
     features_view,
     find_key,
@@ -160,6 +162,7 @@ from website.views.hackathon import (
     HackathonSponsorCreateView,
     HackathonUpdateView,
     add_org_repos_to_hackathon,
+    refresh_all_hackathon_repositories,
     refresh_repository_data,
 )
 from website.views.issue import (
@@ -322,6 +325,7 @@ from website.views.user import (
     UserProfileDetailView,
     assign_badge,
     badge_user_list,
+    contributor_stats_view,
     contributors,
     contributors_view,
     create_wallet,
@@ -651,6 +655,11 @@ urlpatterns = [
         badge_user_list,
         name="badge_user_list",
     ),
+    # Adventure URLs
+    path("adventures/", AdventureListView.as_view(), name="adventure_list"),
+    path("adventures/<slug:slug>/", AdventureDetailView.as_view(), name="adventure_detail"),
+    path("adventures/<slug:slug>/start/", start_adventure, name="start_adventure"),
+    path("adventures/<slug:slug>/task/<int:task_id>/submit/", submit_task, name="submit_task"),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
@@ -837,6 +846,7 @@ urlpatterns = [
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
+    path("contributor-stats/", contributor_stats_view, name="contributor_stats"),
     # users
     path("users/", users_view, name="users"),
     # company specific urls :
@@ -989,6 +999,7 @@ urlpatterns = [
     path("forum/vote/", vote_forum_post, name="vote_forum_post"),
     path("forum/set-vote-status/", set_vote_status, name="set_vote_status"),
     path("forum/comment/", add_forum_comment, name="add_forum_comment"),
+    path("forum/delete/", delete_forum_post, name="delete_forum_post"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s\W]+)$",
         trademark_detailview,
@@ -1137,6 +1148,11 @@ urlpatterns = [
                     "<slug:hackathon_slug>/refresh-repo/<int:repo_id>/",
                     refresh_repository_data,
                     name="refresh_repository_data",
+                ),
+                path(
+                    "<slug:slug>/refresh-all-repos/",
+                    refresh_all_hackathon_repositories,
+                    name="refresh_all_hackathon_repositories",
                 ),
                 # Add the new URL pattern for adding all org repos to hackathon
                 path(
