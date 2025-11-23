@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% load gravatar %}
+{% block title %}
+    Bug Review Queue
+{% endblock title %}
+{% block description %}
+    Review and approve bug reports submitted by new users awaiting verification.
+{% endblock description %}
+{% block keywords %}
+    Bug Review Queue, Bug Verification, Review Bugs, Approve Bugs
+{% endblock keywords %}
+{% block og_title %}
+    Bug Review Queue - Verify Pending Bug Reports
+{% endblock og_title %}
+{% block og_description %}
+    Review and approve bug reports from new users awaiting verification.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="p-6 lg:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <!-- Header -->
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">Bug Review Queue</h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-400">
+                        Review and approve {{ total_pending }} pending bug report{{ total_pending|pluralize }} from new users
+                    </p>
+                </div>
+            </div>
+            <!-- Main Content -->
+            <div class="flex flex-col space-y-6">
+                {% if issues %}
+                    <div class="grid grid-cols-1 gap-6">
+                        {% for issue in issues %}
+                            <div class="flex flex-col bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
+                                <!-- Header with user info and label -->
+                                <div class="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                                    <div class="flex items-center gap-3">
+                                        <!-- User Avatar -->
+                                        <div class="flex-shrink-0">
+                                            {% if issue.user %}
+                                                {% if issue.user.userprofile.avatar %}
+                                                    <img src="{{ issue.user.userprofile.avatar }}"
+                                                         class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                                                         loading="lazy"
+                                                         alt="{{ issue.user.username }}'s avatar"
+                                                         width="40"
+                                                         height="40">
+                                                {% elif issue.user.socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ issue.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                         class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                                                         loading="lazy"
+                                                         alt="{{ issue.user.username }}'s avatar"
+                                                         width="40"
+                                                         height="40">
+                                                {% elif issue.user.email %}
+                                                    <img src="{% gravatar_url issue.user.email 40 %}"
+                                                         class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                                                         loading="lazy"
+                                                         alt="{{ issue.user.username }}'s avatar"
+                                                         width="40"
+                                                         height="40">
+                                                {% else %}
+                                                    <img src="{% static 'images/dummy-user.png' %}"
+                                                         class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                                                         loading="lazy"
+                                                         alt="Default avatar"
+                                                         width="40"
+                                                         height="40">
+                                                {% endif %}
+                                            {% else %}
+                                                <img src="{% static 'images/dummy-user.png' %}"
+                                                     class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                                                     loading="lazy"
+                                                     alt="Anonymous user"
+                                                     width="40"
+                                                     height="40">
+                                            {% endif %}
+                                        </div>
+                                        <!-- User Info -->
+                                        <div class="flex-1 min-w-0">
+                                            {% if issue.user %}
+                                                <div class="flex items-center gap-2">
+                                                    <a href="{% url 'profile' slug=issue.user.username %}"
+                                                       class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors truncate">
+                                                        {{ issue.user.username }}
+                                                    </a>
+                                                    {% if issue.user.date_joined %}
+                                                        {% with days_since_joined=(now|timeuntil:issue.user.date_joined)|slice:":2" %}
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                                                New User ({{ issue.user.date_joined|timesince }} old)
+                                                            </span>
+                                                        {% endwith %}
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Anonymous</span>
+                                            {% endif %}
+                                            <p class="text-xs text-gray-500 dark:text-gray-500">Submitted {{ issue.created|timesince }} ago</p>
+                                        </div>
+                                        <!-- Label -->
+                                        <div class="flex-shrink-0">
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#e74c3c] bg-opacity-10 text-[#e74c3c] border border-[#e74c3c] border-opacity-20">
+                                                {{ issue.get_label_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Content -->
+                                <div class="p-6 space-y-4">
+                                    <!-- Domain/URL -->
+                                    <div class="flex items-start gap-2">
+                                        <svg class="w-5 h-5 text-gray-400 mt-0.5"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                        </svg>
+                                        <div class="flex-1 min-w-0">
+                                            <a href="{{ issue.url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="text-sm font-medium text-[#e74c3c] hover:underline break-all">
+                                                {{ issue.url }}
+                                            </a>
+                                            {% if issue.domain %}
+                                                <p class="text-xs text-gray-500 mt-1">Domain: {{ issue.domain.name }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <!-- Description -->
+                                    <div class="prose dark:prose-invert max-w-none">
+                                        <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Description</h3>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ issue.description }}</p>
+                                    </div>
+                                    <!-- Screenshot -->
+                                    {% if issue.screenshot %}
+                                        <div class="mt-4">
+                                            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Screenshot</h4>
+                                            <img src="{{ issue.screenshot.url }}"
+                                                 class="rounded-lg border border-gray-200 dark:border-gray-700 max-w-full h-auto"
+                                                 alt="Bug screenshot"
+                                                 loading="lazy">
+                                        </div>
+                                    {% endif %}
+                                    <!-- Additional screenshots -->
+                                    {% if issue.issuescreenshot_set.all %}
+                                        <div class="mt-4">
+                                            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Additional Screenshots</h4>
+                                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                {% for screenshot in issue.issuescreenshot_set.all %}
+                                                    <img src="{{ screenshot.image.url }}"
+                                                         class="rounded-lg border border-gray-200 dark:border-gray-700 max-w-full h-auto"
+                                                         alt="Additional bug screenshot"
+                                                         loading="lazy">
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <!-- Action Buttons -->
+                                <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-4">
+                                    <a href="{% url 'issue_view' slug=issue.id %}"
+                                       target="_blank"
+                                       class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <svg class="w-4 h-4 mr-2"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        View Details
+                                    </a>
+                                    <div class="flex items-center gap-2">
+                                        <form method="post"
+                                              action="{% url 'reject_bug' issue.id %}"
+                                              class="inline"
+                                              onsubmit="return confirm('Are you sure you want to reject and delete this bug report?');">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm">
+                                                <svg class="w-4 h-4 mr-2"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                                Reject
+                                            </button>
+                                        </form>
+                                        <form method="post"
+                                              action="{% url 'approve_bug' issue.id %}"
+                                              class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="inline-flex items-center px-6 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors shadow-sm">
+                                                <svg class="w-4 h-4 mr-2"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Approve & Publish
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Pagination -->
+                    {% if issues.has_other_pages %}
+                        <div class="flex items-center justify-center space-x-2 mt-8">
+                            {% if issues.has_previous %}
+                                <a href="?page={{ issues.previous_page_number }}"
+                                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    Previous
+                                </a>
+                            {% endif %}
+                            <span class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">Page {{ issues.number }} of {{ issues.paginator.num_pages }}</span>
+                            {% if issues.has_next %}
+                                <a href="?page={{ issues.next_page_number }}"
+                                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    Next
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="flex flex-col items-center justify-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <svg class="w-16 h-16 text-gray-400 mb-4"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">All Clear!</h3>
+                        <p class="text-gray-600 dark:text-gray-400">No pending bug reports to review at this time.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}

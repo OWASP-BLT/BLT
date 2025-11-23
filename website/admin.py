@@ -189,6 +189,7 @@ class IssueAdmin(admin.ModelAdmin):
         "url",
         "domain",
         "description",
+        "is_hidden",
         "closed_by",
         "closed_date",
         "screenshot",
@@ -197,7 +198,15 @@ class IssueAdmin(admin.ModelAdmin):
     )
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
-    list_filter = ["domain", "user"]
+    list_filter = ["domain", "user", "is_hidden"]
+    actions = ["approve_hidden_issues"]
+
+    def approve_hidden_issues(self, request, queryset):
+        """Admin action to approve and publish hidden bug reports"""
+        updated = queryset.filter(is_hidden=True).update(is_hidden=False)
+        self.message_user(request, f"{updated} bug report(s) have been approved and published.")
+
+    approve_hidden_issues.short_description = "Approve and publish selected hidden bugs"
 
 
 class HuntAdmin(admin.ModelAdmin):
