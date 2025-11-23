@@ -1549,7 +1549,7 @@ def fetch_organization_trademarks(request, slug):
         scroll_id = response_json.get("scroll_id")
         results = []
         
-        if scroll_id:
+        if scroll_id and scroll_id.strip():
             pagination_payload = {
                 "keywords": f'["{organization.name}"]',
                 "start_index": "0",
@@ -1569,8 +1569,17 @@ def fetch_organization_trademarks(request, slug):
         
         if results:
             for item in results:
+                # Skip items without a valid serial number
+                serial_number = item.get("serial_number")
+                if not serial_number or not str(serial_number).strip():
+                    logger.warning(
+                        "Skipping trademark without valid serial number",
+                        extra={"keyword": item.get("keyword"), "organization_id": organization.id}
+                    )
+                    continue
+                
                 trademark, created = Trademark.objects.update_or_create(
-                    serial_number=item.get("serial_number"),
+                    serial_number=serial_number,
                     defaults={
                         "keyword": item.get("keyword", ""),
                         "registration_number": item.get("registration_number"),
