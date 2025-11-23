@@ -20,7 +20,7 @@
                     onclick="filterByCategory('')">
                     <span>All Categories</span>
                     <span class="px-3 py-1 rounded-full text-sm font-medium {% if not selected_category %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
-                        {{ posts.count }}
+                        {{ total_posts_count }}
                     </span>
                 </li>
                 {% for category in categories %}
@@ -46,12 +46,12 @@
             </div>
             <!-- Filters -->
             <div class="flex gap-4 mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="categoryFilter">
                     <option value="">All Categories</option>
                     {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
                 </select>
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="statusFilter">
                     <option value="">All Status</option>
                     <option value="open">Open</option>
@@ -59,7 +59,7 @@
                     <option value="completed">Completed</option>
                     <option value="declined">Declined</option>
                 </select>
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900"
                         id="sortFilter">
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
@@ -95,6 +95,24 @@
                                         {{ post.category.name }}
                                     </span>
                                 {% endif %}
+                                {% if post.organization %}
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-building"></i>
+                                        {{ post.organization.name }}
+                                    </span>
+                                {% endif %}
+                                {% if post.project %}
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-project-diagram"></i>
+                                        {{ post.project.name }}
+                                    </span>
+                                {% endif %}
+                                {% if post.repo %}
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-code-branch"></i>
+                                        {{ post.repo.name }}
+                                    </span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="p-6 text-gray-700 dark:text-gray-300">
@@ -117,16 +135,28 @@
                                     <span class="font-medium">{{ post.down_votes }}</span>
                                 </button>
                             </div>
-                            <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                <i class="fas fa-comments"></i>
-                                {{ post.comments.count }} Comments
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2 text-gray-600">
+                                    <i class="fas fa-comments"></i>
+                                    {{ post.comments.count }} Comments
+                                </div>
+                                {% if request.user.is_superuser %}
+                                    <button type="button"
+                                            class="flex items-center gap-2 px-4 py-2 rounded-md bg-red-100 text-[#e74c3c] hover:bg-red-200 transition-colors duration-200"
+                                            onclick="deletePost({{ post.id }})"
+                                            aria-label="Delete post: {{ post.title }}"
+                                            title="Delete this post">
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
+                                        Delete
+                                    </button>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="border-t border-gray-100 dark:border-gray-800 p-6"
                              id="comments-{{ post.id }}">
                             <form class="mb-6" onsubmit="submitComment(event, {{ post.id }})">
                                 {% csrf_token %}
-                                <textarea class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                <textarea class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white"
                                           placeholder="Add a comment..."
                                           required></textarea>
                                 <button type="submit"
@@ -171,7 +201,7 @@
                         <input type="text"
                                id="title"
                                name="title"
-                               class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                               class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white"
                                placeholder="Enter your discussion title"
                                required>
                     </div>
@@ -194,9 +224,37 @@
                         <textarea id="description"
                                   name="description"
                                   rows="4"
-                                  class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                  class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white"
                                   placeholder="Write your discussion post"
                                   required></textarea>
+                    </div>
+                    <div>
+                        <label for="organization"
+                               class="block text-sm font-medium text-gray-700 mb-2">Organization (Optional)</label>
+                        <select id="organization"
+                                name="organization"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                            <option value="">None</option>
+                            {% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="project" class="block text-sm font-medium text-gray-700 mb-2">Project (Optional)</label>
+                        <select id="project"
+                                name="project"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                            <option value="">None</option>
+                            {% for proj in projects %}<option value="{{ proj.id }}">{{ proj.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="repo" class="block text-sm font-medium text-gray-700 mb-2">Repository (Optional)</label>
+                        <select id="repo"
+                                name="repo"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                            <option value="">None</option>
+                            {% for repository in repos %}<option value="{{ repository.id }}">{{ repository.name }}</option>{% endfor %}
+                        </select>
                     </div>
                     <button type="submit"
                             class="w-full bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#c0392b] transition-colors duration-200">
@@ -317,7 +375,10 @@
             body: JSON.stringify({
                 title: formData.get('title'),
                 category: formData.get('category'),
-                description: formData.get('description')
+                description: formData.get('description'),
+                repo: formData.get('repo') || null,
+                project: formData.get('project') || null,
+                organization: formData.get('organization') || null
             }),
         })
         .then(response => response.json())
@@ -359,6 +420,35 @@
             }
         })
         .catch(error => console.error('Error:', error));
+    }
+
+    function deletePost(postId) {
+        if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+            return;
+        }
+
+        fetch('/forum/delete/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                post_id: postId
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error deleting post: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to delete post. Please try again.');
+        });
     }
 
     function filterByCategory(categoryId) {
