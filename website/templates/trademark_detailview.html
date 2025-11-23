@@ -18,7 +18,35 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
-        {% if available %}
+        {% if error_message %}
+            <div class="max-w-lg mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                <div class="relative p-8 text-center">
+                    <svg class="mx-auto h-16 w-16 text-red-500 mb-4"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Error</h2>
+                    <p class="text-gray-600 dark:text-gray-400 mb-8">{{ error_message }}</p>
+                    <div class="flex gap-4 justify-center">
+                        <a href="{% url 'trademark_search' %}"
+                           class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors">
+                            <svg class="w-5 h-5 mr-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            Try Another Search
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% elif available %}
             <div class="max-w-lg mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
                 <div class="relative p-8 text-center">
                     <img class="mx-auto h-32 w-32 mb-6"
@@ -135,6 +163,49 @@
                         </tbody>
                     </table>
                 </div>
+                {% if page_obj %}
+                    <!-- Pagination -->
+                    <div class="mt-6 flex items-center justify-between">
+                        <div class="text-sm text-gray-700 dark:text-gray-300">
+                            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} results
+                            {% if from_local_db %}
+                                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <svg class="w-3 h-3 mr-1"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    </svg>
+                                    Local Database
+                                </span>
+                            {% endif %}
+                        </div>
+                        <nav class="flex items-center space-x-2">
+                            {% if page_obj.has_previous %}
+                                <a href="?page=1"
+                                   class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+                                    First
+                                </a>
+                                <a href="?page={{ page_obj.previous_page_number }}"
+                                   class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+                                    Previous
+                                </a>
+                            {% endif %}
+                            <span class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                            </span>
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}"
+                                   class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+                                    Next
+                                </a>
+                                <a href="?page={{ page_obj.paginator.num_pages }}"
+                                   class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+                                    Last
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                {% endif %}
             </div>
         {% endif %}
     </div>

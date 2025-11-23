@@ -1,0 +1,6 @@
+keyword,registration_number,serial_number,status_label,status_code,status_date,status_definition,filing_date,registration_date,abandonment_date,expiration_date,description,owner_name,owner_address1,owner_address2,owner_city,owner_state,owner_country,owner_postcode,owner_type,owner_label,legal_entity_type,legal_entity_type_label
+APPLE,1234567,87654321,Live/Registered,6,2023-01-15,Registered,2020-05-10,2021-08-20,,,Computer hardware and software,Apple Inc.,One Apple Park Way,,Cupertino,CA,US,95014,03,Owner,03,Corporation
+GOOGLE,2345678,87654322,Live/Registered,6,2023-02-20,Registered,2019-03-15,2020-09-10,,,Search engine services,Google LLC,1600 Amphitheatre Parkway,,Mountain View,CA,US,94043,03,Owner,03,Limited Liability Company
+MICROSOFT,3456789,87654323,Live/Registered,6,2023-03-25,Registered,2018-07-20,2019-12-15,,,Software and cloud services,Microsoft Corporation,One Microsoft Way,,Redmond,WA,US,98052,03,Owner,03,Corporation
+AMAZON,4567890,87654324,Live/Registered,6,2023-04-30,Registered,2017-11-05,2019-01-25,,,Online retail services,Amazon.com Inc.,410 Terry Avenue North,,Seattle,WA,US,98109,03,Owner,03,Corporation
+FACEBOOK,5678901,87654325,Dead/Abandoned,8,2023-05-15,Abandoned,2016-09-10,,,2022-03-20,,Social networking services,Meta Platforms Inc.,1 Hacker Way,,Menlo Park,CA,US,94025,03,Owner,03,Corporation

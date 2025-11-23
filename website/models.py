@@ -456,9 +456,9 @@ class TrademarkOwner(models.Model):
 
 
 class Trademark(models.Model):
-    keyword = models.CharField(max_length=255)
-    registration_number = models.CharField(max_length=50, blank=True, null=True)
-    serial_number = models.CharField(max_length=50, blank=True, null=True)
+    keyword = models.CharField(max_length=255, db_index=True)
+    registration_number = models.CharField(max_length=50, blank=True, null=True, db_index=True)
+    serial_number = models.CharField(max_length=50, blank=True, null=True, db_index=True)
     status_label = models.CharField(max_length=50, blank=True, null=True)
     status_code = models.CharField(max_length=20, blank=True, null=True)
     status_date = models.DateField(blank=True, null=True)
@@ -476,6 +476,13 @@ class Trademark(models.Model):
         on_delete=models.CASCADE,
         related_name="trademarks",
     )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["keyword", "status_label"]),
+            models.Index(fields=["registration_number"]),
+            models.Index(fields=["serial_number"]),
+        ]
 
     def __str__(self):
         return self.keyword
