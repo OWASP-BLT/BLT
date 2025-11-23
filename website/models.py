@@ -1284,6 +1284,11 @@ class ForumPost(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     is_pinned = models.BooleanField(default=False)
+    repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
+    project = models.ForeignKey("Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts"
+    )
 
     def __str__(self):
         return f"{self.title} by {self.user}"
@@ -2198,6 +2203,11 @@ class ManagementCommandLog(models.Model):
     success = models.BooleanField(default=True)
     error_message = models.TextField(blank=True, null=True)
     run_count = models.IntegerField(default=0)
+    file_path = models.CharField(max_length=512, blank=True, null=True)
+    file_modified = models.DateTimeField(blank=True, null=True)
+    github_url = models.URLField(max_length=512, blank=True, null=True)
+    execution_time = models.FloatField(blank=True, null=True, help_text="Execution time in seconds")
+    output = models.TextField(blank=True, null=True, help_text="Command execution output")
 
     class Meta:
         get_latest_by = "last_run"
