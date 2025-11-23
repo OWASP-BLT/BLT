@@ -14,7 +14,7 @@
                 <h1 class="text-[#e74c3c] font-satoshi font-bold text-[35px]">Create Anonymous Bug Hunt</h1>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mt-2">
                     Create a bug hunt for any company without requiring authentication.
-                    Payment will be made upfront and bugs will need to be verified before payouts occur.
+                    Provide your BCH address and send tips directly to bug hunters when bugs are verified.
                 </p>
             </div>
             <!-- Info Box -->
@@ -27,8 +27,9 @@
                     </div>
                     <div class="ml-3">
                         <p class="text-sm text-blue-700">
-                            <strong>How it works:</strong> You create the bug hunt with prize details and pay the total amount upfront.
-                            The hunt will be reviewed and published by the organization. All reported bugs must be verified before payouts occur.
+                            <strong>How it works:</strong> Create a bug hunt with prize details and provide your BCH address as proof of payment availability.
+                            When bugs are verified, hunters provide their BCH addresses and you send tips directly from your wallet.
+                            Money never touches BLT systems - payments are direct peer-to-peer tips. The hunt will be reviewed and published by the organization.
                         </p>
                     </div>
                 </div>
@@ -70,7 +71,26 @@
                                            required
                                            class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6" />
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500">You'll receive payment instructions and hunt updates here</p>
+                                <p class="mt-1 text-xs text-gray-500">You'll receive hunt updates and verification notifications here</p>
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label for="bch_address"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Your BCH Address (CashAddr Format) <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2">
+                                    <input type="text"
+                                           name="bch_address"
+                                           id="bch_address"
+                                           placeholder="bitcoincash:qp..."
+                                           required
+                                           pattern="bitcoincash:.*"
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6" />
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    This address proves you have funds available. You'll send tips directly to bug hunters' BCH addresses when bugs are verified.
+                                    Must start with "bitcoincash:"
+                                </p>
                             </div>
                             <div class="sm:col-span-3">
                                 <label for="organization"
@@ -162,7 +182,7 @@
                     <div class="border-t border-gray-200 pt-12">
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Prizes</h2>
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            Add prizes for this bug hunt. The total prize amount will be charged upfront.
+                            Add prizes for this bug hunt. You'll send BCH tips directly to verified bug hunters.
                         </p>
                         <div id="prizes-container" class="mt-6 space-y-4">
                             <!-- Prizes will be added here dynamically -->
@@ -181,15 +201,16 @@
                         <input type="hidden" id="prizes" name="prizes" value="[]">
                         <div class="mt-6 p-4 bg-gray-50 rounded-md">
                             <p class="text-sm font-medium text-gray-900">
-                                Total Payment: <span id="total-payment" class="text-[#e74c3c] font-bold">$0</span>
+                                Total Prize Value: <span id="total-payment" class="text-[#e74c3c] font-bold">$0</span>
                             </p>
+                            <p class="text-xs text-gray-600 mt-1">This is for informational purposes. You'll pay hunters directly via BCH.</p>
                         </div>
                     </div>
                     <!-- Submit Button -->
                     <div class="mt-8 flex items-center justify-end gap-x-6">
                         <button type="submit"
                                 class="rounded-md bg-[#e74c3c] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#c0392b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e74c3c]">
-                            Create Hunt & Proceed to Payment
+                            Create Anonymous Bug Hunt
                         </button>
                     </div>
                 </div>

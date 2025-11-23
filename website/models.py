@@ -492,17 +492,6 @@ def validate_image(fieldfile_obj):
 
 
 class Hunt(models.Model):
-    # Payment status constants
-    PAYMENT_PENDING = "pending"
-    PAYMENT_COMPLETED = "completed"
-    PAYMENT_REFUNDED = "refunded"
-
-    PAYMENT_STATUS_CHOICES = [
-        (PAYMENT_PENDING, "Pending"),
-        (PAYMENT_COMPLETED, "Completed"),
-        (PAYMENT_REFUNDED, "Refunded"),
-    ]
-
     class Meta:
         ordering = ["-id"]
 
@@ -531,14 +520,12 @@ class Hunt(models.Model):
     anonymous_creator_email = models.EmailField(
         null=True, blank=True, help_text="Email of anonymous creator for notifications"
     )
-    payment_status = models.CharField(
-        max_length=20,
-        default=PAYMENT_PENDING,
-        choices=PAYMENT_STATUS_CHOICES,
-        help_text="Status of upfront payment for anonymous hunts",
-    )
-    payment_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True, help_text="Total amount paid upfront for anonymous hunt"
+    anonymous_payer_bch_address = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        validators=[validate_bch_address],
+        help_text="BCH address of anonymous payer as proof of payment availability for bug bounties",
     )
     requires_bug_verification = models.BooleanField(
         default=True, help_text="Whether bugs need verification before payout"

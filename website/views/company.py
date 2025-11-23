@@ -2171,7 +2171,26 @@ class AnonymousHuntView(View):
             messages.error(request, "Start date must be before end date")
             return redirect("anonymous_hunt")
 
-        # Calculate total payment amount from prizes
+        # Get anonymous creator email for notifications
+        creator_email = data.get("email", "").strip()
+        if not creator_email:
+            messages.error(request, "Please provide an email address for notifications.")
+            return redirect("anonymous_hunt")
+
+        # Get and validate BCH address as proof of payment availability
+        bch_address = data.get("bch_address", "").strip()
+        if not bch_address:
+            messages.error(request, "Please provide your BCH address as proof of payment availability.")
+            return redirect("anonymous_hunt")
+
+        # Validate BCH address format
+        try:
+            validate_bch_address(bch_address)
+        except ValidationError as e:
+            messages.error(request, f"Invalid BCH address: {e.message}")
+            return redirect("anonymous_hunt")
+
+        # Parse prizes data
         try:
             prizes_data = json.loads(data.get("prizes", "[]"))
             if not isinstance(prizes_data, list):
@@ -2180,24 +2199,10 @@ class AnonymousHuntView(View):
             messages.error(request, "Invalid prize data. Please try again.")
             return redirect("anonymous_hunt")
 
-        total_payment = 0
-        for prize in prizes_data:
-            if prize.get("prize_name", "").strip():
-                try:
-                    total_payment += int(prize.get("cash_value", 0))
-                except (ValueError, TypeError):
-                    messages.error(request, "Invalid prize value. Please enter valid numbers.")
-                    return redirect("anonymous_hunt")
-
-        # Validate payment amount
-        if total_payment <= 0:
-            messages.error(request, "Please add at least one prize with a value greater than 0.")
-            return redirect("anonymous_hunt")
-
-        # Get anonymous creator email for notifications
-        creator_email = data.get("email", "").strip()
-        if not creator_email:
-            messages.error(request, "Please provide an email address for notifications.")
+        # Validate that at least one prize exists
+        valid_prizes = [p for p in prizes_data if p.get("prize_name", "").strip()]
+        if not valid_prizes:
+            messages.error(request, "Please add at least one prize.")
             return redirect("anonymous_hunt")
 
         # Create the hunt
@@ -2211,8 +2216,7 @@ class AnonymousHuntView(View):
             is_published=False,  # Require manual approval for anonymous hunts
             is_anonymous=True,
             anonymous_creator_email=creator_email,
-            payment_status=Hunt.PAYMENT_PENDING,
-            payment_amount=total_payment,
+            anonymous_payer_bch_address=bch_address,
             requires_bug_verification=True,
         )
 
@@ -2229,14 +2233,14 @@ class AnonymousHuntView(View):
                 description=prize.get("prize_description", ""),
             )
 
-        # In a real implementation, you would redirect to a payment gateway here
-        # For now, we'll just show a success message
+        # Success message with BCH payment workflow
         messages.success(
             request,
             f"Bug hunt '{hunt.name}' created successfully! "
-            f"Total payment amount: ${total_payment}. "
-            f"You will receive payment instructions at {creator_email}. "
-            f"The hunt will be published after payment is confirmed and approved by the organization.",
+            f"Your BCH address ({bch_address}) has been recorded. "
+            f"When bugs are verified, hunters will provide their BCH addresses and you'll send tips directly. "
+            f"The hunt will be published after approval by the organization. "
+            f"Updates will be sent to {creator_email}.",
         )
 
         return redirect("anonymous_hunt")
