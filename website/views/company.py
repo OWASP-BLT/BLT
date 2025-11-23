@@ -13,7 +13,7 @@ from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
-from django.db.models.functions import ExtractMonth
+from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -484,6 +484,100 @@ class OrganizationDashboardAnalyticsView(View):
             "zipped_data": zip(labels, data),
         }
 
+    def get_network_traffic_data(self, organization):
+        """Collects and analyzes network traffic data for the organization."""
+        # Get current date for time-based analysis
+        current_date = timezone.now().date()
+
+        # Define time periods for analysis
+        last_day = current_date - timedelta(days=1)
+        last_week = current_date - timedelta(days=7)
+        last_month = current_date - timedelta(days=30)
+
+        # Get server-related issues (focusing on performance and server down issues)
+        server_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label__in=[3, 7],  # Performance (3) and Server Down (7) labels
+        )
+
+        # Calculate daily traffic patterns (last 30 days)
+        daily_traffic = (
+            server_issues.filter(created__gte=last_month)
+            .annotate(day=TruncDay("created"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+
+        # Format data for Chart.js
+        traffic_dates = []
+        traffic_counts = []
+        for entry in daily_traffic:
+            traffic_dates.append(entry["day"].strftime("%Y-%m-%d"))
+            traffic_counts.append(entry["count"])
+
+        # Calculate response time metrics (using closed_date - created as proxy for response time)
+        resolved_issues = server_issues.filter(status="closed", closed_date__isnull=False)
+
+        avg_response_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+
+        # Calculate error rates by domain
+        domain_error_rates = (
+            server_issues.values("domain__name").annotate(error_count=Count("id")).order_by("-error_count")
+        )
+
+        # Get hourly distribution of issues
+        hourly_distribution = (
+            server_issues.annotate(hour=ExtractHour("created"))
+            .values("hour")
+            .annotate(count=Count("id"))
+            .order_by("hour")
+        )
+
+        hours = []
+        hourly_counts = []
+        for entry in hourly_distribution:
+            hours.append(entry["hour"])
+            hourly_counts.append(entry["count"])
+
+        # Calculate peak traffic times
+        peak_hour = 0
+        peak_count = 0
+        if hourly_counts:
+            peak_hour = hours[hourly_counts.index(max(hourly_counts))]
+            peak_count = max(hourly_counts)
+
+        # Calculate recent traffic metrics
+        day_count = server_issues.filter(created__gte=last_day).count()
+        week_count = server_issues.filter(created__gte=last_week).count()
+        month_count = server_issues.filter(created__gte=last_month).count()
+
+        # Calculate week-over-week change
+        prev_week_count = server_issues.filter(
+            created__gte=last_week - timedelta(days=7), created__lt=last_week
+        ).count()
+
+        if prev_week_count == 0:
+            week_over_week_change = 100 if week_count > 0 else 0
+        else:
+            week_over_week_change = ((week_count - prev_week_count) / prev_week_count) * 100
+
+        return {
+            "traffic_dates": json.dumps(traffic_dates),
+            "traffic_counts": json.dumps(traffic_counts),
+            "avg_response_time": avg_response_time,
+            "domain_error_rates": domain_error_rates[:5],  # Top 5 domains with errors
+            "hours": json.dumps(hours),
+            "hourly_counts": json.dumps(hourly_counts),
+            "peak_hour": peak_hour,
+            "peak_count": peak_count,
+            "day_count": day_count,
+            "week_count": week_count,
+            "month_count": month_count,
+            "week_over_week_change": week_over_week_change,
+            "is_traffic_increasing": week_over_week_change >= 0,
+        }
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # For authenticated users, show all organizations they have access to
@@ -516,6 +610,7 @@ class OrganizationDashboardAnalyticsView(View):
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
             "security_incidents_summary": self.get_security_incidents_summary(id),
             "social_stats": self.get_social_stats(id),
+            "network_traffic_data": self.get_network_traffic_data(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
