@@ -344,7 +344,7 @@
                                                 <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#Accepted</a>
                                                 <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.rewarded }}</a>
                                             {% endif %}
-                                            {% if is_domain_manager and issue.user__id %}
+                                            {% if is_domain_manager and issue.user__username %}
                                                 <button onclick="toggleVerification({{ issue.id }}, {{ issue.verified|yesno:'true,false' }})"
                                                         id="verify-btn-{{ issue.id }}"
                                                         class="px-2 py-1 mx-2 {% if issue.verified %}bg-orange-600 hover:bg-orange-500{% else %}bg-green-600 hover:bg-green-500{% endif %} text-white font-bold rounded">
@@ -467,25 +467,26 @@
                         
                         // Add verification badge if not exists
                         const statusDiv = button.parentElement;
-                        if (!statusDiv.querySelector('.verified-badge')) {
-                            const badge = document.createElement('a');
-                            badge.className = 'verified-badge px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500';
-                            badge.textContent = '#Accepted';
-                            button.before(badge);
+                        const existingBadges = statusDiv.querySelectorAll('.verified-badge');
+                        if (existingBadges.length === 0) {
+                            const acceptedBadge = document.createElement('a');
+                            acceptedBadge.className = 'verified-badge px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500';
+                            acceptedBadge.textContent = '#Accepted';
+                            button.before(acceptedBadge);
+                            
+                            const rewardBadge = document.createElement('a');
+                            rewardBadge.className = 'verified-badge px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500';
+                            rewardBadge.textContent = '#0';
+                            button.before(rewardBadge);
                         }
                     } else {
                         button.textContent = 'Verify';
                         button.className = 'px-2 py-1 mx-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded';
                         
-                        // Remove verification badge
-                        const badge = button.parentElement.querySelector('.verified-badge');
-                        if (badge) {
-                            badge.remove();
-                        }
+                        // Remove verification badges
+                        const badges = button.parentElement.querySelectorAll('.verified-badge');
+                        badges.forEach(badge => badge.remove());
                     }
-                    
-                    // Reload page to update statistics
-                    setTimeout(() => location.reload(), 500);
                 } else {
                     alert('Error: ' + data.error);
                 }
