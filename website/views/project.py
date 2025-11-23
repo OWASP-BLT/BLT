@@ -37,7 +37,7 @@ from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.filters import ProjectRepoFilter
-from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
+from website.models import IP, BaconToken, Challenge, Contribution, Contributor, ContributorStats, Organization, Project, Repo, UserProfile
 from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -1189,6 +1189,62 @@ class RepoDetailView(DetailView):
         # Sort processed stats by impact score
         processed_stats.sort(key=lambda x: x["impact_score"], reverse=True)
 
+        # Get streak highlights and challenge completions for the time period
+        streak_highlights = []
+        challenge_highlights = []
+        
+        try:
+            # Get user profiles with recent streak achievements
+            user_profiles = UserProfile.objects.select_related('user').filter(
+                user__is_active=True
+            ).prefetch_related('user__user_challenges', 'user__points_set')
+            
+            for profile in user_profiles:
+                if profile.current_streak > 0:
+                    # Check if they reached a milestone streak recently
+                    milestone_achieved = None
+                    if profile.current_streak == 7:
+                        milestone_achieved = "7-day streak achieved!"
+                    elif profile.current_streak == 15:
+                        milestone_achieved = "15-day streak achieved!"
+                    elif profile.current_streak == 30:
+                        milestone_achieved = "30-day streak achieved!"
+                    elif profile.current_streak == 100:
+                        milestone_achieved = "100-day streak achieved!"
+                    elif profile.current_streak == 180:
+                        milestone_achieved = "180-day streak achieved!"
+                    elif profile.current_streak == 365:
+                        milestone_achieved = "365-day streak achieved!"
+                    
+                    if milestone_achieved:
+                        streak_highlights.append({
+                            'user': profile.user,
+                            'current_streak': profile.current_streak,
+                            'longest_streak': profile.longest_streak,
+                            'milestone': milestone_achieved,
+                            'user_profile': profile
+                        })
+            
+            # Get recent challenge completions from the time period
+            completed_challenges = Challenge.objects.filter(
+                completed=True,
+                completed_at__gte=start_date,
+                completed_at__lte=end_date
+            ).select_related().prefetch_related('participants')
+            
+            for challenge in completed_challenges:
+                for participant in challenge.participants.all():
+                    challenge_highlights.append({
+                        'user': participant,
+                        'challenge': challenge,
+                        'completed_at': challenge.completed_at,
+                        'points_earned': challenge.points
+                    })
+                    
+        except Exception as e:
+            logger.error(f"Error fetching streak and challenge highlights: {e}")
+            # Continue without highlights if there's an error
+
         # Set up pagination
         paginator = Paginator(processed_stats, 10)  # Changed from 2 to 10 entries per page
         try:
@@ -1219,6 +1275,10 @@ class RepoDetailView(DetailView):
                 "start_date": start_date,
                 "end_date": end_date,
                 "is_paginated": paginator.num_pages > 1,  # Add this
+                "streak_highlights": streak_highlights,
+                "challenge_highlights": challenge_highlights,
+                "total_streak_achievements": len(streak_highlights),
+                "total_challenge_completions": len(challenge_highlights),
                 "issues_labels": activity_data["issues_labels"],
                 "issues_opened": activity_data["issues_opened"],
                 "issues_closed": activity_data["issues_closed"],
