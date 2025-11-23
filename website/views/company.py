@@ -177,10 +177,14 @@ class RegisterOrganizationView(View):
                 try:
                     response = requests.get(safe_url, timeout=5)
                     if response.status_code != 200:
-                        messages.error(request, "The provided URL could not be accessed. Please verify the URL is correct.")
+                        messages.error(
+                            request, "The provided URL could not be accessed. Please verify the URL is correct."
+                        )
                         return redirect("register_organization")
                 except requests.exceptions.RequestException:
-                    messages.error(request, "Unable to verify the organization URL. Please check that the URL is accessible.")
+                    messages.error(
+                        request, "Unable to verify the organization URL. Please check that the URL is accessible."
+                    )
                     return redirect("register_organization")
         except ValueError:
             messages.error(request, "The provided URL format is invalid. Please enter a valid URL.")
@@ -220,7 +224,9 @@ class RegisterOrganizationView(View):
                 organization.save()
 
         except ValidationError:
-            messages.error(request, "There was an error saving the organization. Please check all fields and try again.")
+            messages.error(
+                request, "There was an error saving the organization. Please check all fields and try again."
+            )
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
