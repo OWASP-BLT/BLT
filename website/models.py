@@ -1633,7 +1633,9 @@ class UserAdventureProgress(models.Model):
                 # Award the badge if it exists
                 if self.adventure.badge:
                     UserBadge.objects.get_or_create(
-                        user=self.user, badge=self.adventure.badge, defaults={"reason": f"Completed {self.adventure.title}"}
+                        user=self.user,
+                        badge=self.adventure.badge,
+                        defaults={"reason": f"Completed {self.adventure.title}"},
                     )
                 return True
         return False
@@ -1652,9 +1654,7 @@ class UserTaskSubmission(models.Model):
 
     progress = models.ForeignKey(UserAdventureProgress, on_delete=models.CASCADE, related_name="task_submissions")
     task = models.ForeignKey(AdventureTask, on_delete=models.CASCADE, related_name="submissions")
-    proof_url = models.URLField(
-        blank=True, help_text="Link to pull request, issue, blog post, or other evidence"
-    )
+    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, blog post, or other evidence")
     notes = models.TextField(blank=True, help_text="Additional notes or explanation")
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
