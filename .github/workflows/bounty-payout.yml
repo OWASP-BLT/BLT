@@ -1,0 +1,119 @@
+name: Bounty Payout
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  process-bounty:
+    permissions:
+      contents: read
+      issues: read
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for linked issues with bounties
+        id: check-issues
+        uses: actions/github-script@v6.1.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const core = require('@actions/core');
+            const pr = context.payload.pull_request;
+            const prBody = pr.body || '';
+
+            // Look for issue closing keywords in PR body
+            const issueRefs = prBody.match(/(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi);
+
+            if (!issueRefs) {
+              console.log('No issue references found in PR');
+              return;
+            }
+
+            // Extract issue numbers
+            const issueNumbers = issueRefs.map(ref => {
+              const match = ref.match(/#(\d+)/);
+              return match ? match[1] : null;
+            }).filter(Boolean);
+
+            if (issueNumbers.length === 0) {
+              console.log('No valid issue numbers found');
+              return;
+            }
+
+            // Check each issue for bounty labels
+            let bountyIssue = null;
+            for (const issueNumber of issueNumbers) {
+              const issue = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(issueNumber)
+              });
+
+              // Check for dollar sign labels
+              const hasBountyLabel = issue.data.labels.some(label => {
+                return label.name.includes('$');
+              });
+
+              if (hasBountyLabel) {
+                bountyIssue = issue.data;
+                break;
+              }
+            }
+
+            if (!bountyIssue) {
+              console.log('No issues with bounty labels found');
+              return;
+            }
+
+            // Find the bounty amount from the label
+            const bountyLabel = bountyIssue.labels.find(label => label.name.includes('$'));
+            const bountyMatch = bountyLabel ? bountyLabel.name.match(/\$(\d+)/) : null;
+            const bountyAmount = bountyMatch ? bountyMatch[1] : null;
+
+            if (!bountyAmount) {
+              console.log('Could not extract bounty amount from label');
+              return;
+            }
+
+            core.setOutput('has-bounty', 'true');
+            core.setOutput('issue-number', bountyIssue.number.toString());
+            core.setOutput('bounty-amount', bountyAmount);
+            core.setOutput('contributor-username', pr.user.login);
+
+      - name: Send bounty data to BLT
+        if: steps.check-issues.outputs['has-bounty'] == 'true'
+        env:
+          ISSUE_NUMBER: ${{ steps.check-issues.outputs.issue-number }}
+          BOUNTY_AMOUNT: ${{ steps.check-issues.outputs.bounty-amount }}
+          CONTRIBUTOR_USERNAME: ${{ steps.check-issues.outputs.contributor-username }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BLT_API_TOKEN: ${{ secrets.BLT_API_TOKEN }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owasp.org' }}
+        uses: actions/github-script@v6.1.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const response = await fetch(`${process.env.API_BASE_URL}/bounty_payout/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
+              },
+              body: JSON.stringify({
+                issue_number: parseInt(process.env.ISSUE_NUMBER),
+                repo: context.repo.repo,
+                owner: context.repo.owner,
+                bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
+                contributor_username: process.env.CONTRIBUTOR_USERNAME,
+                pr_number: parseInt(process.env.PR_NUMBER)
+              })
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Bounty payout request failed: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Bounty payout request successful:', result);

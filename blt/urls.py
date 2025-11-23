@@ -55,6 +55,7 @@ from website.views.bitcoin import (
     update_submission_status,
 )
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
+from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -1171,6 +1172,7 @@ urlpatterns = [
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
+    path("bounty_payout/", bounty_payout, name="bounty_payout"),
 ]
 
 if settings.DEBUG:
