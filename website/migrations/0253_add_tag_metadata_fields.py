@@ -12,7 +12,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="tag",
             name="description",
-            field=models.TextField(blank=True, help_text="Optional description of what this tag represents", null=True),
+            field=models.TextField(
+                blank=True, help_text="Optional description of what this tag represents", null=True
+            ),
         ),
         migrations.AddField(
             model_name="tag",
