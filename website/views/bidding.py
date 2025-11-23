@@ -2,6 +2,7 @@ import json
 import uuid
 from decimal import Decimal
 from io import BytesIO
+from urllib.parse import urlparse
 
 import requests
 from django.contrib import messages
@@ -343,12 +344,25 @@ def github_webhook(request):
 
 
 def is_valid_github_issue_url(url):
-    """Validate GitHub issue URL format"""
-    return (
-        url.startswith('https://github.com/') and 
-        '/issues/' in url and
-        url.count('/') >= 6
-    )
+    """Validate GitHub issue URL format with proper hostname verification"""
+    try:
+        parsed = urlparse(url)
+        # Check scheme is https
+        if parsed.scheme != 'https':
+            return False
+        # Check hostname is exactly github.com (not a subdomain or lookalike)
+        if parsed.netloc.lower() != 'github.com':
+            return False
+        # Check path contains /issues/
+        if '/issues/' not in parsed.path:
+            return False
+        # Check path has enough components (owner/repo/issues/number)
+        path_parts = [p for p in parsed.path.split('/') if p]
+        if len(path_parts) < 4:
+            return False
+        return True
+    except Exception:
+        return False
 
 
 def verify_bch_transaction(tx_hash, address, expected_amount):
