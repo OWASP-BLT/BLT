@@ -84,6 +84,7 @@ from website.utils import (
     is_valid_https_url,
     rebuild_safe_url,
     safe_redirect_request,
+    send_spam_notification_email,
     validate_screenshot_hash,
 )
 
@@ -1336,48 +1337,33 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             # Handle spam detection - create record and notify admins if flagged
             if is_spam and confidence > 0.6:
-                spam_detection = SpamDetection.objects.create(
-                    content_type="issue",
-                    content_id=obj.id,
-                    user=obj.user if obj.user else self.request.user,
-                    text_content=combined_text[:5000],  # Truncate if too long
-                    detection_reason=spam_reason,
-                    confidence_score=confidence,
-                    status="pending",
+                # Determine the user for spam detection record
+                spam_user = (
+                    obj.user if obj.user else (self.request.user if self.request.user.is_authenticated else None)
                 )
 
-                # Send email to admins
-                try:
-                    admin_emails = [admin[1] for admin in settings.ADMINS]
-                    issue_url = f"https://{settings.FQDN}/issue/{obj.id}"
-                    admin_panel_url = f"https://{settings.FQDN}/admin/website/spamdetection/{spam_detection.id}/change/"
-
-                    email_subject = f"Spam Detected - Issue #{obj.id} needs review"
-                    email_body = f"""A potential spam issue has been detected and flagged for review.
-
-Issue ID: {obj.id}
-Issue URL: {issue_url}
-Admin Panel: {admin_panel_url}
-User: {obj.user.username if obj.user else 'Anonymous'}
-Confidence: {confidence:.2%}
-Reason: {spam_reason}
-
-Content preview:
-{combined_text[:500]}...
-
-Please review this content in the admin panel.
-"""
-
-                    send_mail(
-                        email_subject,
-                        email_body,
-                        settings.DEFAULT_FROM_EMAIL,
-                        admin_emails,
-                        fail_silently=False,
+                # Only create spam detection if we have a valid user
+                if spam_user:
+                    spam_detection = SpamDetection.objects.create(
+                        content_type="issue",
+                        content_id=obj.id,
+                        user=spam_user,
+                        text_content=combined_text[:5000],  # Truncate if too long
+                        detection_reason=spam_reason,
+                        confidence_score=confidence,
+                        status="pending",
                     )
-                    logger.info(f"Spam notification email sent to admins for issue #{obj.id}")
-                except Exception as e:
-                    logger.error(f"Failed to send spam notification email: {str(e)}")
+
+                    # Send email to admins using helper function
+                    send_spam_notification_email(
+                        spam_detection=spam_detection,
+                        content_type="issue",
+                        content_id=obj.id,
+                        user=spam_user,
+                        text_preview=combined_text,
+                        confidence=confidence,
+                        reason=spam_reason,
+                    )
 
                 # Show user a message that their submission is under review
                 messages.success(

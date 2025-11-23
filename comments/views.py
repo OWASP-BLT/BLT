@@ -12,7 +12,7 @@ from django.template.loader import render_to_string
 from django.utils.html import escape
 
 from website.models import Issue, SpamDetection
-from website.utils import check_for_spam_llm
+from website.utils import check_for_spam_llm, send_spam_notification_email
 
 from .models import Comment
 
@@ -91,38 +91,16 @@ def add_comment(request):
                 status="pending",
             )
 
-            # Send email to admins
-            try:
-                admin_emails = [admin[1] for admin in settings.ADMINS]
-                comment_url = f"https://{settings.FQDN}/issue/{pk}#comment-{comment.id}"
-                admin_panel_url = f"https://{settings.FQDN}/admin/website/spamdetection/{spam_detection.id}/change/"
-
-                email_subject = f"Spam Detected - Comment #{comment.id} needs review"
-                email_body = f"""A potential spam comment has been detected and flagged for review.
-
-Comment ID: {comment.id}
-Comment URL: {comment_url}
-Admin Panel: {admin_panel_url}
-User: {request.user.username}
-Confidence: {confidence:.2%}
-Reason: {spam_reason}
-
-Content preview:
-{text[:500]}...
-
-Please review this content in the admin panel.
-"""
-
-                send_mail(
-                    email_subject,
-                    email_body,
-                    settings.DEFAULT_FROM_EMAIL,
-                    admin_emails,
-                    fail_silently=False,
-                )
-                logger.info(f"Spam notification email sent to admins for comment #{comment.id}")
-            except Exception as e:
-                logger.error(f"Failed to send spam notification email: {str(e)}")
+            # Send email to admins using helper function
+            send_spam_notification_email(
+                spam_detection=spam_detection,
+                content_type="comment",
+                content_id=comment.id,
+                user=request.user,
+                text_preview=text,
+                confidence=confidence,
+                reason=spam_reason,
+            )
 
             # Show user a message that their comment is under review
             messages.info(request, "Your comment has been submitted and is under review. It will appear once approved.")
@@ -185,38 +163,16 @@ def edit_comment(request, pk):
                 status="pending",
             )
 
-            # Send email to admins
-            try:
-                admin_emails = [admin[1] for admin in settings.ADMINS]
-                comment_url = f"https://{settings.FQDN}/issue/{issue.id}#comment-{comment.id}"
-                admin_panel_url = f"https://{settings.FQDN}/admin/website/spamdetection/{spam_detection.id}/change/"
-
-                email_subject = f"Spam Detected - Edited Comment #{comment.id} needs review"
-                email_body = f"""A potential spam edit has been detected and flagged for review.
-
-Comment ID: {comment.id}
-Comment URL: {comment_url}
-Admin Panel: {admin_panel_url}
-User: {request.user.username}
-Confidence: {confidence:.2%}
-Reason: {spam_reason}
-
-Content preview:
-{new_text[:500]}...
-
-Please review this content in the admin panel.
-"""
-
-                send_mail(
-                    email_subject,
-                    email_body,
-                    settings.DEFAULT_FROM_EMAIL,
-                    admin_emails,
-                    fail_silently=False,
-                )
-                logger.info(f"Spam notification email sent to admins for edited comment #{comment.id}")
-            except Exception as e:
-                logger.error(f"Failed to send spam notification email: {str(e)}")
+            # Send email to admins using helper function
+            send_spam_notification_email(
+                spam_detection=spam_detection,
+                content_type="comment",
+                content_id=comment.id,
+                user=request.user,
+                text_preview=new_text,
+                confidence=confidence,
+                reason=spam_reason,
+            )
 
             messages.info(
                 request, "Your comment edit has been submitted and is under review. It will appear once approved."
@@ -260,38 +216,16 @@ def reply_comment(request, pk):
                 status="pending",
             )
 
-            # Send email to admins
-            try:
-                admin_emails = [admin[1] for admin in settings.ADMINS]
-                comment_url = f"https://{settings.FQDN}/issue/{issue.id}#comment-{comment.id}"
-                admin_panel_url = f"https://{settings.FQDN}/admin/website/spamdetection/{spam_detection.id}/change/"
-
-                email_subject = f"Spam Detected - Reply Comment #{comment.id} needs review"
-                email_body = f"""A potential spam reply has been detected and flagged for review.
-
-Comment ID: {comment.id}
-Comment URL: {comment_url}
-Admin Panel: {admin_panel_url}
-User: {request.user.username}
-Confidence: {confidence:.2%}
-Reason: {spam_reason}
-
-Content preview:
-{reply_text[:500]}...
-
-Please review this content in the admin panel.
-"""
-
-                send_mail(
-                    email_subject,
-                    email_body,
-                    settings.DEFAULT_FROM_EMAIL,
-                    admin_emails,
-                    fail_silently=False,
-                )
-                logger.info(f"Spam notification email sent to admins for reply comment #{comment.id}")
-            except Exception as e:
-                logger.error(f"Failed to send spam notification email: {str(e)}")
+            # Send email to admins using helper function
+            send_spam_notification_email(
+                spam_detection=spam_detection,
+                content_type="comment",
+                content_id=comment.id,
+                user=request.user,
+                text_preview=reply_text,
+                confidence=confidence,
+                reason=spam_reason,
+            )
 
             messages.info(request, "Your reply has been submitted and is under review. It will appear once approved.")
 
