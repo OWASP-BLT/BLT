@@ -24,7 +24,7 @@ class RewardDistributionServiceTestCase(TestCase):
 
         # Create user profile with ETH address
         self.user_profile = UserProfile.objects.get(user=self.user)
-        self.user_profile.eth_address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+        self.user_profile.eth_address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0"
         self.user_profile.preferred_cryptocurrency = "ETH"
         self.user_profile.save()
 

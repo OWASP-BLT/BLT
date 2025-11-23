@@ -11,6 +11,7 @@ contract BugBountyReward {
     // State variables
     address public owner;
     uint256 public totalRewardsDistributed;
+    bool private locked;
     
     // Structs
     struct Hunt {
@@ -49,6 +50,13 @@ contract BugBountyReward {
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
         _;
+    }
+    
+    modifier noReentrancy() {
+        require(!locked, "No reentrancy");
+        locked = true;
+        _;
+        locked = false;
     }
     
     modifier huntExists(uint256 _huntId) {
@@ -105,7 +113,7 @@ contract BugBountyReward {
         uint256 _issueId,
         address payable _hunter,
         uint256 _amount
-    ) external onlyOwner huntExists(_huntId) {
+    ) external onlyOwner huntExists(_huntId) noReentrancy {
         require(_hunter != address(0), "Invalid hunter address");
         require(_amount > 0, "Reward amount must be greater than 0");
         require(hunts[_huntId].active, "Hunt is not active");
@@ -172,7 +180,8 @@ contract BugBountyReward {
      */
     function withdrawFunds(uint256 _huntId, uint256 _amount) 
         external 
-        huntExists(_huntId) 
+        huntExists(_huntId)
+        noReentrancy
     {
         require(msg.sender == hunts[_huntId].organization, "Only organization can withdraw");
         require(_amount > 0, "Amount must be greater than 0");

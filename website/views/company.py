@@ -2132,6 +2132,8 @@ def accept_bug(request, issue_id, reward_id=None):
                 user_profile = issue.user.userprofile
                 
                 # Get the appropriate crypto address based on user preference
+                # Note: Currently only ETH distribution is implemented via smart contract
+                # BTC and BCH distribution can use existing systems or be implemented separately
                 crypto_address = None
                 if user_profile.preferred_cryptocurrency == "ETH" and user_profile.eth_address:
                     crypto_address = user_profile.eth_address
@@ -2143,6 +2145,7 @@ def accept_bug(request, issue_id, reward_id=None):
                 elif user_profile.eth_address:
                     crypto_address = user_profile.eth_address
                 
+                # Currently only ETH distribution is automated via smart contract
                 if crypto_address and user_profile.preferred_cryptocurrency == "ETH":
                     try:
                         reward_service = get_reward_service()

@@ -163,7 +163,9 @@ class RewardDistributionService:
             tx_hash = self.w3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
             # Wait for transaction receipt (with timeout)
-            tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+            # Configurable timeout for different network conditions
+            timeout = getattr(settings, "BLOCKCHAIN_TX_TIMEOUT", 120)
+            tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
 
             if tx_receipt["status"] == 1:
                 tx_hash_hex = tx_hash.hex()
@@ -234,9 +236,10 @@ class RewardDistributionService:
         Returns:
             Amount in Wei
         """
-        # Placeholder: Assume 1 ETH = $2000 USD
-        # In production, fetch real-time price from oracle
-        eth_price_usd = Decimal("2000")
+        # TODO: Replace with real-time price from oracle (e.g., Chainlink)
+        # This is a PLACEHOLDER conversion rate and should be updated regularly
+        # or replaced with a price oracle before production use
+        eth_price_usd = Decimal(getattr(settings, "ETH_PRICE_USD", "2000"))
         amount_eth = amount_usd / eth_price_usd
         amount_wei = int(amount_eth * Decimal("1000000000000000000"))  # 1 ETH = 10^18 Wei
         return amount_wei
@@ -278,7 +281,8 @@ class RewardDistributionService:
             tx_hash = self.w3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
             # Wait for receipt
-            tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+            timeout = getattr(settings, "BLOCKCHAIN_TX_TIMEOUT", 120)
+            tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
 
             if tx_receipt["status"] == 1:
                 tx_hash_hex = tx_hash.hex()
