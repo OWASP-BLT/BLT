@@ -81,22 +81,22 @@ jobs:
               try {
                 // Check if PR contains workflow file changes
                 // GITHUB_TOKEN cannot update PRs with workflow changes (requires PAT with workflow scope)
-                const { data: files } = await github.rest.pulls.listFiles({
+                const files = await github.paginate(github.rest.pulls.listFiles, {
                   owner,
                   repo,
                   pull_number,
                   per_page: 100,
                 });
                 
-                const hasWorkflowChanges = files.some(file => 
+                const workflowFiles = files.filter(file => 
                   file.filename.startsWith('.github/workflows/')
                 );
                 
                 // Try to update the PR branch with the base branch
                 let prWasUpdated = false;
-                if (hasWorkflowChanges) {
+                if (workflowFiles.length > 0) {
                   core.warning(`Skipping update for PR #${pull_number}: Contains workflow file changes (GITHUB_TOKEN limitation)`);
-                  core.info(`Workflow files changed: ${files.filter(f => f.filename.startsWith('.github/workflows/')).map(f => f.filename).join(', ')}`);
+                  core.info(`Workflow files changed: ${workflowFiles.map(f => f.filename).join(', ')}`);
                 } else {
                   core.info(`Attempting to update PR #${pull_number}...`);
                   try {
