@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("website", "0246_add_user_progress_models"),
+        ("website", "0249_merge_0247_job_0248_add_slack_fields_to_project"),
     ]
 
     operations = [
