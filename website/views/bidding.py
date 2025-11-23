@@ -196,6 +196,24 @@ def accept_bid(request, bid_id):
             defaults={'github_username': request.user.username}
         )
         
+        # Check if repo owner has a BCH address configured
+        if not repo_owner.bch_address:
+            messages.error(
+                request,
+                'You must configure a BCH address in your repository owner profile before accepting bids.'
+            )
+            return redirect('bid_detail', bid_id=bid.id)
+        
+        # Check if repo owner has sufficient balance
+        if not repo_owner.has_sufficient_balance(bid.amount_bch):
+            balance = repo_owner.get_bch_balance()
+            messages.error(
+                request,
+                f'Insufficient BCH balance. You have {balance} BCH but need {bid.amount_bch} BCH to accept this bid. '
+                f'Please add funds to your address: {repo_owner.bch_address}'
+            )
+            return redirect('bid_detail', bid_id=bid.id)
+        
         # In production, verify repo access via GitHub API
         # For now, allow any authenticated user to accept bids
         
@@ -212,13 +230,24 @@ def accept_bid(request, bid_id):
         
         messages.success(
             request, 
-            f'Bid accepted! Please send {bid.amount_bch} BCH to {bid.escrow_address} '
-            f'to fund this bid.'
+            f'Bid accepted! Please send {bid.amount_bch} BCH from your address ({repo_owner.bch_address}) '
+            f'to escrow address {bid.escrow_address} to fund this bid.'
         )
         
         return redirect('bid_detail', bid_id=bid.id)
     
-    return render(request, 'bidding/accept_bid.html', {'bid': bid})
+    # Get repo owner for display
+    repo_owner = None
+    try:
+        repo_owner = RepoOwner.objects.get(user=request.user)
+    except RepoOwner.DoesNotExist:
+        pass
+    
+    context = {
+        'bid': bid,
+        'repo_owner': repo_owner,
+    }
+    return render(request, 'bidding/accept_bid.html', context)
 
 
 @login_required

@@ -1183,6 +1183,13 @@ class RepoOwner(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     github_username = models.CharField(max_length=100)
     verified_repos = models.JSONField(default=list, help_text="List of repository URLs this owner has access to")
+    bch_address = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        validators=[validate_bch_address],
+        help_text="Public BCH address for funding accepted bids"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -1195,6 +1202,29 @@ class RepoOwner(models.Model):
             if repo in repo_url or repo_url in repo:
                 return True
         return False
+    
+    def get_bch_balance(self):
+        """Get BCH balance for the repository owner's address"""
+        if not self.bch_address:
+            return Decimal('0')
+        
+        try:
+            from bitcash.network import NetworkAPI
+            # Get balance in satoshis and convert to BCH
+            balance_satoshis = NetworkAPI.get_balance(self.bch_address)
+            balance_bch = Decimal(balance_satoshis) / Decimal('100000000')
+            return balance_bch
+        except Exception:
+            # If we can't fetch balance, return 0
+            return Decimal('0')
+    
+    def has_sufficient_balance(self, required_amount):
+        """Check if repo owner has sufficient BCH balance to cover the bid"""
+        if not self.bch_address:
+            return False
+        
+        balance = self.get_bch_balance()
+        return balance >= Decimal(str(required_amount))
 
     # def save(self, *args, **kwargs):
     #     if (
