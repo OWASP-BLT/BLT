@@ -473,11 +473,6 @@
                             acceptedBadge.className = 'verified-badge px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500';
                             acceptedBadge.textContent = '#Accepted';
                             button.before(acceptedBadge);
-                            
-                            const rewardBadge = document.createElement('a');
-                            rewardBadge.className = 'verified-badge px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500';
-                            rewardBadge.textContent = '#0';
-                            button.before(rewardBadge);
                         }
                     } else {
                         button.textContent = 'Verify';

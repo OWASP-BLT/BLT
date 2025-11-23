@@ -2127,10 +2127,9 @@ def verify_issue(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id)
     
     # Check if user has permission to verify the issue
-    if not issue.domain:
-        return JsonResponse({"success": False, "error": "This issue is not associated with a domain."}, status=400)
-    
     if not can_verify_issue(request.user, issue):
+        if not issue.domain:
+            return JsonResponse({"success": False, "error": "This issue is not associated with a domain."}, status=400)
         return JsonResponse({"success": False, "error": "You do not have permission to verify this issue."}, status=403)
     
     # Toggle verification status
