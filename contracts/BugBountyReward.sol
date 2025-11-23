@@ -239,5 +239,7 @@ contract BugBountyReward {
     }
     
     // Fallback function to receive ETH
-    receive() external payable {}
+    receive() external payable {
+        emit RewardPoolFunded(0, msg.value);  // Log received ETH with huntId 0 for general funding
+    }
 }

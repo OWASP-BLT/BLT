@@ -582,7 +582,10 @@ class Issue(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
     blockchain_tx_hash = models.CharField(
-        max_length=66, blank=True, null=True, help_text="Blockchain transaction hash for reward distribution"
+        max_length=66,
+        blank=True,
+        null=True,
+        help_text="Ethereum transaction hash for reward distribution (0x + 64 hex chars)",
     )
     reward_distributed_at = models.DateTimeField(
         blank=True, null=True, help_text="Timestamp when reward was distributed via blockchain"

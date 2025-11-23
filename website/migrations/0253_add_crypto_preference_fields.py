@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 max_length=66,
                 blank=True,
                 null=True,
-                help_text="Blockchain transaction hash for reward distribution",
+                help_text="Ethereum transaction hash for reward distribution (0x + 64 hex chars)",
             ),
         ),
         migrations.AddField(

@@ -236,9 +236,10 @@ class RewardDistributionService:
         Returns:
             Amount in Wei
         """
-        # TODO: Replace with real-time price from oracle (e.g., Chainlink)
-        # This is a PLACEHOLDER conversion rate and should be updated regularly
-        # or replaced with a price oracle before production use
+        # WARNING: This uses a static ETH price which can lead to incorrect reward amounts!
+        # TODO: Replace with real-time price from oracle (e.g., Chainlink) before production
+        # For testing: Update ETH_PRICE_USD in settings regularly to match market price
+        # For production: Integrate Chainlink or similar price oracle
         eth_price_usd = Decimal(getattr(settings, "ETH_PRICE_USD", "2000"))
         amount_eth = amount_usd / eth_price_usd
         amount_wei = int(amount_eth * Decimal("1000000000000000000"))  # 1 ETH = 10^18 Wei
