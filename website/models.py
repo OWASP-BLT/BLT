@@ -492,6 +492,17 @@ def validate_image(fieldfile_obj):
 
 
 class Hunt(models.Model):
+    # Payment status constants
+    PAYMENT_PENDING = "pending"
+    PAYMENT_COMPLETED = "completed"
+    PAYMENT_REFUNDED = "refunded"
+
+    PAYMENT_STATUS_CHOICES = [
+        (PAYMENT_PENDING, "Pending"),
+        (PAYMENT_COMPLETED, "Completed"),
+        (PAYMENT_REFUNDED, "Refunded"),
+    ]
+
     class Meta:
         ordering = ["-id"]
 
@@ -522,12 +533,8 @@ class Hunt(models.Model):
     )
     payment_status = models.CharField(
         max_length=20,
-        default="pending",
-        choices=[
-            ("pending", "Pending"),
-            ("completed", "Completed"),
-            ("refunded", "Refunded"),
-        ],
+        default=PAYMENT_PENDING,
+        choices=PAYMENT_STATUS_CHOICES,
         help_text="Status of upfront payment for anonymous hunts",
     )
     payment_amount = models.DecimalField(

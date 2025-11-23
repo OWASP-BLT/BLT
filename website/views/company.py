@@ -2156,8 +2156,12 @@ class AnonymousHuntView(View):
             return redirect("anonymous_hunt")
 
         try:
+            # Parse dates and make them timezone-aware
             start_date = datetime.strptime(start_date_str, "%m/%d/%Y")
             end_date = datetime.strptime(end_date_str, "%m/%d/%Y")
+            # Make dates timezone-aware using Django's default timezone
+            start_date = timezone.make_aware(start_date, timezone.get_current_timezone())
+            end_date = timezone.make_aware(end_date, timezone.get_current_timezone())
         except ValueError:
             messages.error(request, "Please enter dates in MM/DD/YYYY format (e.g., 12/25/2024)")
             return redirect("anonymous_hunt")
@@ -2207,16 +2211,14 @@ class AnonymousHuntView(View):
             is_published=False,  # Require manual approval for anonymous hunts
             is_anonymous=True,
             anonymous_creator_email=creator_email,
-            payment_status="pending",
+            payment_status=Hunt.PAYMENT_PENDING,
             payment_amount=total_payment,
             requires_bug_verification=True,
         )
 
-        # Create prizes
+        # Create prizes (already filtered in prizes_data above)
         for prize in prizes_data:
-            if prize.get("prize_name", "").strip() == "":
-                continue
-
+            # Prize names already validated above, no need to check again
             HuntPrize.objects.create(
                 hunt=hunt,
                 name=prize["prize_name"],
