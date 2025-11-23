@@ -396,6 +396,14 @@
                             </a>
                         </div>
                     </div>
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                <i class="fas fa-trademark mr-2 text-[#e74c3c]"></i>Trademarks
+                            </h3>
+                            <span class="text-2xl font-bold text-[#e74c3c]">{{ trademark_count|default:"0" }}</span>
+                        </div>
+                    </div>
                 </div>
                 <!-- Tags -->
                 {% if organization.tags.all %}
@@ -410,6 +418,107 @@
                         </div>
                     </div>
                 {% endif %}
+                <!-- Trademark Information -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                            <i class="fas fa-trademark text-[#e74c3c] mr-2"></i>
+                            Trademark Information
+                        </h2>
+                        <a href="{% url 'trademark_search' %}"
+                           class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                            <i class="fas fa-search mr-2"></i>
+                            Search Trademarks
+                        </a>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-certificate text-[#e74c3c]"></i>
+                                <div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Total Trademarks</p>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ trademark_count|default:"0" }}</p>
+                                </div>
+                            </div>
+                            {% if trademark_check_date %}
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-clock text-[#e74c3c]"></i>
+                                    <div>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Last Checked</p>
+                                        <p class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ trademark_check_date|date:"M d, Y" }}</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-info-circle text-gray-400"></i>
+                                    <div>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Status</p>
+                                        <p class="text-lg font-medium text-gray-900 dark:text-gray-100">Not yet checked</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if trademarks %}
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Recent Trademarks</h3>
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    {% for trademark in trademarks %}
+                                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex-1">
+                                                    <h4 class="font-semibold text-gray-900 dark:text-gray-100">{{ trademark.keyword }}</h4>
+                                                    {% if trademark.description %}
+                                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ trademark.description|truncatewords:20 }}</p>
+                                                    {% endif %}
+                                                    <div class="flex flex-wrap gap-2 mt-2">
+                                                        {% if trademark.status_label %}
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium
+                                                                {% if 'LIVE' in trademark.status_label or 'REGISTERED' in trademark.status_label %}
+                                                                    bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                                                {% elif 'DEAD' in trademark.status_label or 'ABANDONED' in trademark.status_label %}
+                                                                    bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                                                                {% else %}
+                                                                    bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
+                                                                {% endif %}">
+                                                                {{ trademark.status_label }}
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if trademark.registration_number %}
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                                                Reg: {{ trademark.registration_number }}
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if trademark.serial_number %}
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+                                                                Serial: {{ trademark.serial_number }}
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500 dark:text-gray-500">
+                                                        {% if trademark.filing_date %}
+                                                            <span><i class="fas fa-calendar mr-1"></i>Filed: {{ trademark.filing_date|date:"M d, Y" }}</span>
+                                                        {% endif %}
+                                                        {% if trademark.registration_date %}
+                                                            <span><i class="fas fa-check-circle mr-1"></i>Registered: {{ trademark.registration_date|date:"M d, Y" }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                <div class="text-center py-8">
+                                    <i class="fas fa-info-circle text-gray-400 text-4xl mb-3"></i>
+                                    <p class="text-gray-600 dark:text-gray-400">No trademark data available for this organization.</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">Trademark checks can be run periodically to match this organization with USPTO trademark data.</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
                 <!-- Organization Leadership -->
                 <div class="mb-8">
                     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Leadership</h2>

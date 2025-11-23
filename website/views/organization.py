@@ -2385,6 +2385,11 @@ class OrganizationDetailView(DetailView):
         # Get leaderboard data for all organizations
         leaderboard = self.get_leaderboard_data(organization)
 
+        # Get trademark information
+        trademarks = Trademark.objects.filter(organization=organization).order_by("-filing_date")[:10]
+        trademark_count = organization.trademark_count or 0
+        trademark_check_date = organization.trademark_check_date
+
         context.update(
             {
                 "total_domains": domains.count(),
@@ -2395,6 +2400,9 @@ class OrganizationDetailView(DetailView):
                 "total_repos": total_repos,
                 "github_url": github_url,
                 "leaderboard": leaderboard,
+                "trademarks": trademarks,
+                "trademark_count": trademark_count,
+                "trademark_check_date": trademark_check_date,
             }
         )
 
