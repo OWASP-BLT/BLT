@@ -530,9 +530,22 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class ForumPostAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "title", "description", "up_votes", "down_votes", "status", "created")
-    list_filter = ("status", "category")
+    list_display = (
+        "id",
+        "user",
+        "title",
+        "description",
+        "up_votes",
+        "down_votes",
+        "status",
+        "created",
+        "repo",
+        "project",
+        "organization",
+    )
+    list_filter = ("status", "category", "repo", "project", "organization")
     search_fields = ("title", "description", "user__username")
+    autocomplete_fields = ["repo", "project", "organization"]
 
 
 class ForumVoteAdmin(admin.ModelAdmin):
