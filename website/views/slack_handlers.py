@@ -2788,25 +2788,23 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
 
         # Show top contributors (limit to 20 for readability)
         for idx, contributor in enumerate(human_contributors[:20], start=1):
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": (
-                            f"*{idx}. <{contributor['html_url']}|{contributor['login']}>*\n"
-                            f"📊 Contributions: {contributor['contributions']}"
-                        ),
-                    },
-                    "accessory": {
-                        "type": "image",
-                        "image_url": contributor["avatar_url"],
-                        "alt_text": f"Avatar for {contributor['login']}",
-                    }
-                    if contributor.get("avatar_url")
-                    else None,
+            block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*{idx}. <{contributor['html_url']}|{contributor['login']}>*\n"
+                        f"📊 Contributions: {contributor['contributions']}"
+                    ),
+                },
+            }
+            if contributor.get("avatar_url"):
+                block["accessory"] = {
+                    "type": "image",
+                    "image_url": contributor["avatar_url"],
+                    "alt_text": f"Avatar for {contributor['login']}",
                 }
-            )
+            blocks.append(block)
 
         if len(human_contributors) > 20:
             blocks.append(
@@ -2909,26 +2907,24 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
             if len(contributor["projects"]) > 3:
                 project_list += f" and {len(contributor['projects']) - 3} more"
 
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": (
-                            f"*{idx}. <{contributor['html_url']}|{contributor['login']}>*\n"
-                            f"📊 Total Contributions: {contributor['total_contributions']}\n"
-                            f"🔨 Projects: {project_list}"
-                        ),
-                    },
-                    "accessory": {
-                        "type": "image",
-                        "image_url": contributor["avatar_url"],
-                        "alt_text": f"Avatar for {contributor['login']}",
-                    }
-                    if contributor.get("avatar_url")
-                    else None,
+            block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*{idx}. <{contributor['html_url']}|{contributor['login']}>*\n"
+                        f"📊 Total Contributions: {contributor['total_contributions']}\n"
+                        f"🔨 Projects: {project_list}"
+                    ),
+                },
+            }
+            if contributor.get("avatar_url"):
+                block["accessory"] = {
+                    "type": "image",
+                    "image_url": contributor["avatar_url"],
+                    "alt_text": f"Avatar for {contributor['login']}",
                 }
-            )
+            blocks.append(block)
 
         blocks.extend(
             [
