@@ -115,6 +115,11 @@ python manage.py runserver
 
 For detailed setup instructions, see our [Contributing Guide](https://github.com/OWASP-BLT/BLT/blob/main/CONTRIBUTING.md).
 
+### 📚 Additional Documentation
+
+- 💰 **Bounty Payout System**: See [docs/BOUNTY_PAYOUT_PR_VALIDATION.md](docs/BOUNTY_PAYOUT_PR_VALIDATION.md) for information about automatic bounty payouts
+- 🔧 **Utility Scripts**: Check [scripts/README.md](scripts/README.md) for helpful development scripts
+
 ---
 
 ## 🤝 Contributing
