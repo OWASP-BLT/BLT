@@ -2148,24 +2148,42 @@ class AnonymousHuntView(View):
             return redirect("anonymous_hunt")
 
         # Parse dates
-        start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
-        end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
+        start_date_str = data.get("start_date", "")
+        end_date_str = data.get("end_date", "")
+
+        if not start_date_str or not end_date_str:
+            messages.error(request, "Please provide both start and end dates.")
+            return redirect("anonymous_hunt")
 
         try:
-            start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
-            end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            start_date = datetime.strptime(start_date_str, "%m/%d/%Y")
+            end_date = datetime.strptime(end_date_str, "%m/%d/%Y")
         except ValueError:
             messages.error(request, "Please enter dates in MM/DD/YYYY format (e.g., 12/25/2024)")
             return redirect("anonymous_hunt")
 
         # Validate dates
-        if start_date > end_date:
-            messages.error(request, "Start date should be less than end date")
+        if start_date >= end_date:
+            messages.error(request, "Start date must be before end date")
             return redirect("anonymous_hunt")
 
         # Calculate total payment amount from prizes
-        prizes = json.loads(data.get("prizes", "[]"))
-        total_payment = sum(int(prize.get("cash_value", 0)) for prize in prizes if prize.get("prize_name", "").strip())
+        try:
+            prizes_data = json.loads(data.get("prizes", "[]"))
+            if not isinstance(prizes_data, list):
+                raise ValueError("Invalid prizes format")
+        except (json.JSONDecodeError, ValueError):
+            messages.error(request, "Invalid prize data. Please try again.")
+            return redirect("anonymous_hunt")
+
+        total_payment = 0
+        for prize in prizes_data:
+            if prize.get("prize_name", "").strip():
+                try:
+                    total_payment += int(prize.get("cash_value", 0))
+                except (ValueError, TypeError):
+                    messages.error(request, "Invalid prize value. Please enter valid numbers.")
+                    return redirect("anonymous_hunt")
 
         # Validate payment amount
         if total_payment <= 0:
@@ -2195,7 +2213,7 @@ class AnonymousHuntView(View):
         )
 
         # Create prizes
-        for prize in prizes:
+        for prize in prizes_data:
             if prize.get("prize_name", "").strip() == "":
                 continue
 
