@@ -325,6 +325,7 @@ from website.views.user import (
     badge_user_list,
     contributors,
     contributors_view,
+    contributor_stats_view,
     create_wallet,
     delete_notification,
     delete_thread,
@@ -838,6 +839,7 @@ urlpatterns = [
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
+    path("contributor-stats/", contributor_stats_view, name="contributor_stats"),
     # users
     path("users/", users_view, name="users"),
     # company specific urls :
