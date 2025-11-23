@@ -103,6 +103,7 @@ from website.views.core import (
     add_forum_post,
     badge_list,
     check_owasp_compliance,
+    delete_forum_post,
     donate_view,
     features_view,
     find_key,
@@ -324,6 +325,7 @@ from website.views.user import (
     badge_user_list,
     contributors,
     contributors_view,
+    contributor_stats_view,
     create_wallet,
     delete_notification,
     delete_thread,
@@ -837,6 +839,7 @@ urlpatterns = [
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
+    path("contributor-stats/", contributor_stats_view, name="contributor_stats"),
     # users
     path("users/", users_view, name="users"),
     # company specific urls :
@@ -989,6 +992,7 @@ urlpatterns = [
     path("forum/vote/", vote_forum_post, name="vote_forum_post"),
     path("forum/set-vote-status/", set_vote_status, name="set_vote_status"),
     path("forum/comment/", add_forum_comment, name="add_forum_comment"),
+    path("forum/delete/", delete_forum_post, name="delete_forum_post"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s\W]+)$",
         trademark_detailview,
