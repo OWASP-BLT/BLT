@@ -264,9 +264,8 @@
       loop: "{{ ['22', '80', '443'] + (enable_remote_postgres | bool | ternary(['5432'], [])) }}"
 
     - name: Enable UFW if not enabled
-      command: ufw --force enable
-      register: ufw_enable
-      changed_when: ufw_enable.rc == 0
+      ufw:
+        state: enabled
 
   handlers:
     - name: Restart app
