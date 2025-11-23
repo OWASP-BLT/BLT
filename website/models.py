@@ -69,6 +69,19 @@ class Subscription(models.Model):
 class Tag(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True, null=True, help_text="Optional description of what this tag represents")
+    category = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Optional category to group related tags (e.g., 'security', 'feature', 'bug')",
+    )
+    color = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        help_text="Hex color code for tag display (e.g., '#e74c3c')",
+    )
     created = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -78,6 +91,23 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+    @staticmethod
+    def normalize_tag_name(name):
+        """
+        Normalize tag name to prevent duplicates (e.g., 'bug' vs 'bugs').
+        Returns the normalized name in lowercase, singular form where applicable.
+        """
+        if not name:
+            return ""
+        normalized = name.strip().lower()
+        # Basic pluralization handling - can be expanded
+        # Remove trailing 's' for common cases (can be made more sophisticated)
+        if normalized.endswith("s") and len(normalized) > 3:
+            # Don't remove 's' from words like 'css', 'js', etc.
+            if normalized not in ["css", "js", "apis", "os"]:
+                normalized = normalized[:-1]
+        return normalized
 
 
 class IntegrationServices(Enum):

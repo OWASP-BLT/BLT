@@ -613,8 +613,15 @@ class ContributorStatsAdmin(admin.ModelAdmin):
 
 
 class TagAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "created")
+    list_display = ("name", "slug", "category", "color", "created")
+    list_filter = ("category", "created")
+    search_fields = ("name", "description", "category")
     prepopulated_fields = {"slug": ("name",)}
+    fieldsets = (
+        ("Basic Information", {"fields": ("name", "slug")}),
+        ("Metadata", {"fields": ("description", "category", "color")}),
+        ("Timestamps", {"fields": ("created",), "classes": ("collapse",)}),
+    )
 
 
 class TimeLogAdmin(admin.ModelAdmin):
