@@ -30,7 +30,9 @@ def send_weekly_stats():
             open_issues = domain.open_issues
             closed_issues = domain.closed_issues
             total_issues = open_issues.count() + closed_issues.count()
-            issues = Issue.objects.filter(domain=domain)
+
+            # Get most recent issues ordered by creation date, optimized to avoid N+1 queries
+            issues = Issue.objects.filter(domain=domain).order_by("-created")[:10]
 
             # Build the report
             report_lines = [
@@ -42,7 +44,7 @@ def send_weekly_stats():
                 "Recent Issues:\n",
             ]
 
-            for issue in issues[:10]:  # Limit to 10 most recent issues
+            for issue in issues:  # Already limited to 10 most recent
                 description = issue.description[:100] if issue.description else "No description"
                 label = issue.get_label_display()
                 report_lines.append(f"- Description: {description}...\n  Views: {issue.views} | Label: {label}\n")

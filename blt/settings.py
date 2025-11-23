@@ -7,6 +7,7 @@ import environ
 
 # Initialize Sentry
 import sentry_sdk
+from celery.schedules import crontab
 from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -633,8 +634,6 @@ CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # Celery Beat Schedule for weekly stats delivery
-from celery.schedules import crontab
-
 CELERY_BEAT_SCHEDULE = {
     "send-weekly-stats": {
         "task": "website.tasks.send_weekly_stats",
