@@ -260,6 +260,7 @@ from website.views.organization import (
     sizzle_daily_log,
     sizzle_docs,
     subscribe_to_domains,
+    fetch_organization_trademarks,
     trademark_detailview,
     trademark_search,
     update_organization_repos,
@@ -1123,6 +1124,7 @@ urlpatterns = [
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
     path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
+    path("organization/<slug:slug>/fetch-trademarks/", fetch_organization_trademarks, name="fetch_organization_trademarks"),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),

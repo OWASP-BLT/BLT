@@ -1510,6 +1510,132 @@ def trademark_search(request, **kwargs):
     return render(request, "trademark_search.html")
 
 
+@login_required
+def fetch_organization_trademarks(request, slug):
+    """
+    Fetch and store trademark information for a specific organization from USPTO API.
+    """
+    organization = get_object_or_404(Organization, slug=slug)
+    
+    # Check if user has permission to trigger trademark search
+    if not (request.user.is_staff or organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()):
+        messages.error(request, "You don't have permission to fetch trademarks for this organization.")
+        return redirect("organization_detail", slug=slug)
+    
+    # Check if API key is configured
+    if not settings.USPTO_API:
+        messages.error(request, "USPTO API key is not configured. Please contact an administrator.")
+        return redirect("organization_detail", slug=slug)
+    
+    try:
+        # Fetch trademark data from USPTO API
+        url = "https://uspto-trademark.p.rapidapi.com/v1/batchTrademarkSearch/"
+        initial_payload = {
+            "keywords": f'["{organization.name}"]',
+            "start_index": "0",
+        }
+        headers = {
+            "x-rapidapi-key": settings.USPTO_API,
+            "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        
+        response = requests.post(url, data=initial_payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        response_json = response.json()
+        
+        # The initial call returns a scroll_id for pagination
+        scroll_id = response_json.get("scroll_id")
+        pagination_payload = {
+            "keywords": f'["{organization.name}"]',
+            "start_index": "0",
+            "scroll_id": scroll_id,
+        }
+        
+        response = requests.post(url, data=pagination_payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        results = response.json().get("results", [])
+        
+        # Store trademark data in the database
+        trademarks_created = 0
+        trademarks_updated = 0
+        
+        if results:
+            from website.models import TrademarkOwner
+            
+            for item in results:
+                trademark, created = Trademark.objects.update_or_create(
+                    serial_number=item.get("serial_number"),
+                    defaults={
+                        "keyword": item.get("keyword", ""),
+                        "registration_number": item.get("registration_number"),
+                        "status_label": item.get("status_label"),
+                        "status_code": item.get("status_code"),
+                        "status_date": item.get("status_date"),
+                        "status_definition": item.get("status_definition"),
+                        "filing_date": item.get("filing_date"),
+                        "registration_date": item.get("registration_date"),
+                        "abandonment_date": item.get("abandonment_date"),
+                        "expiration_date": item.get("expiration_date"),
+                        "description": item.get("description"),
+                        "organization": organization,
+                    }
+                )
+                
+                if created:
+                    trademarks_created += 1
+                else:
+                    trademarks_updated += 1
+                
+                # Update or create trademark owners
+                if item.get("owners"):
+                    trademark.owners.clear()
+                    for owner_data in item["owners"]:
+                        owner, _ = TrademarkOwner.objects.get_or_create(
+                            name=owner_data.get("name", ""),
+                            defaults={
+                                "address1": owner_data.get("address1"),
+                                "address2": owner_data.get("address2"),
+                                "city": owner_data.get("city"),
+                                "state": owner_data.get("state"),
+                                "country": owner_data.get("country"),
+                                "postcode": owner_data.get("postcode"),
+                                "owner_type": owner_data.get("owner_type"),
+                                "owner_label": owner_data.get("owner_label"),
+                                "legal_entity_type": owner_data.get("legal_entity_type"),
+                                "legal_entity_type_label": owner_data.get("legal_entity_type_label"),
+                            }
+                        )
+                        trademark.owners.add(owner)
+        
+        # Update organization trademark metadata
+        organization.trademark_check_date = timezone.now()
+        organization.trademark_count = len(results)
+        organization.save()
+        
+        if results:
+            messages.success(
+                request,
+                f"Successfully fetched {len(results)} trademarks for {organization.name} "
+                f"({trademarks_created} new, {trademarks_updated} updated)."
+            )
+        else:
+            messages.info(request, f"No trademarks found for {organization.name} in the USPTO database.")
+    
+    except requests.exceptions.Timeout:
+        messages.error(request, "Request timed out while fetching trademark data. Please try again later.")
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            messages.error(request, "Rate limit exceeded for USPTO API. Please try again later.")
+        else:
+            messages.error(request, f"HTTP error occurred: {e.response.status_code}")
+    except Exception as e:
+        logger.exception(f"Error fetching trademarks for organization {slug}")
+        messages.error(request, "An error occurred while fetching trademark data. Please try again later.")
+    
+    return redirect("organization_detail", slug=slug)
+
+
 @login_required(login_url="/accounts/login")
 def view_hunt(request, pk, template="view_hunt.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
