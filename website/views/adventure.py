@@ -1,9 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
+from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
 
@@ -135,6 +133,6 @@ def start_adventure(request, slug):
     if created:
         messages.success(request, f"Started adventure: {adventure.title}")
     else:
-        messages.info(request, f"You've already started this adventure.")
+        messages.info(request, "You've already started this adventure.")
 
     return redirect("adventure_detail", slug=slug)
