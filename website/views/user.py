@@ -844,11 +844,11 @@ def contributor_stats_view(request):
     # Calculate the date range for the current week
     end_date = timezone.now().date()
     start_date = end_date - timedelta(days=7)
-    
+
     # Get time period from request (defaulting to current week)
     time_period = request.GET.get("period", "current_week")
     page_number = request.GET.get("page", 1)
-    
+
     # Define time periods
     if time_period == "today":
         start_date = end_date
@@ -861,15 +861,14 @@ def contributor_stats_view(request):
             start_date = end_date.replace(year=end_date.year - 1, month=12, day=1)
         else:
             start_date = end_date.replace(month=end_date.month - 1, day=1)
-    
+
     # Get user profiles with recent activity and streak/challenge data
-    user_profiles = UserProfile.objects.select_related('user').filter(
-        user__is_active=True
-    ).prefetch_related(
-        'user__user_challenges',
-        'user__points_set'
+    user_profiles = (
+        UserProfile.objects.select_related("user")
+        .filter(user__is_active=True)
+        .prefetch_related("user__user_challenges", "user__points_set")
     )
-    
+
     # Get recent streak achievements (users who reached milestone streaks this week)
     streak_highlights = []
     for profile in user_profiles:
@@ -888,98 +887,95 @@ def contributor_stats_view(request):
                 milestone_achieved = "180-day streak achieved!"
             elif profile.current_streak == 365:
                 milestone_achieved = "365-day streak achieved!"
-            
+
             if milestone_achieved:
-                streak_highlights.append({
-                    'user': profile.user,
-                    'current_streak': profile.current_streak,
-                    'longest_streak': profile.longest_streak,
-                    'milestone': milestone_achieved,
-                    'user_profile': profile
-                })
-    
+                streak_highlights.append(
+                    {
+                        "user": profile.user,
+                        "current_streak": profile.current_streak,
+                        "longest_streak": profile.longest_streak,
+                        "milestone": milestone_achieved,
+                        "user_profile": profile,
+                    }
+                )
+
     # Get recent challenge completions from the past week
-    completed_challenges = Challenge.objects.filter(
-        completed=True,
-        completed_at__gte=start_date,
-        completed_at__lte=end_date
-    ).select_related().prefetch_related('participants')
-    
+    completed_challenges = (
+        Challenge.objects.filter(completed=True, completed_at__gte=start_date, completed_at__lte=end_date)
+        .select_related()
+        .prefetch_related("participants")
+    )
+
     challenge_highlights = []
     for challenge in completed_challenges:
         for participant in challenge.participants.all():
-            challenge_highlights.append({
-                'user': participant,
-                'challenge': challenge,
-                'completed_at': challenge.completed_at,
-                'points_earned': challenge.points
-            })
-    
+            challenge_highlights.append(
+                {
+                    "user": participant,
+                    "challenge": challenge,
+                    "completed_at": challenge.completed_at,
+                    "points_earned": challenge.points,
+                }
+            )
+
     # Get contributor stats for the time period
     contributor_stats = []
     try:
         # Get aggregated stats for the time period
-        stats_query = ContributorStats.objects.filter(
-            date__gte=start_date,
-            date__lte=end_date
-        ).values(
-            'contributor'
-        ).annotate(
-            total_commits=Sum('commits'),
-            total_issues_opened=Sum('issues_opened'),
-            total_issues_closed=Sum('issues_closed'),
-            total_prs=Sum('pull_requests'),
-            total_comments=Sum('comments')
-        ).order_by('-total_commits')
-        
+        stats_query = (
+            ContributorStats.objects.filter(date__gte=start_date, date__lte=end_date)
+            .values("contributor")
+            .annotate(
+                total_commits=Sum("commits"),
+                total_issues_opened=Sum("issues_opened"),
+                total_issues_closed=Sum("issues_closed"),
+                total_prs=Sum("pull_requests"),
+                total_comments=Sum("comments"),
+            )
+            .order_by("-total_commits")
+        )
+
         for stat in stats_query:
             try:
-                contributor = Contributor.objects.get(id=stat['contributor'])
-                
+                contributor = Contributor.objects.get(id=stat["contributor"])
+
                 # Calculate impact score
                 impact_score = (
-                    stat['total_commits'] * 5 +
-                    stat['total_prs'] * 3 +
-                    stat['total_issues_opened'] * 2 +
-                    stat['total_issues_closed'] * 2 +
-                    stat['total_comments']
+                    stat["total_commits"] * 5
+                    + stat["total_prs"] * 3
+                    + stat["total_issues_opened"] * 2
+                    + stat["total_issues_closed"] * 2
+                    + stat["total_comments"]
                 )
-                
+
                 # Determine impact level
                 if impact_score > 200:
-                    impact_level = {
-                        'class': 'bg-green-100 text-green-800',
-                        'text': 'High Impact'
-                    }
+                    impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
                 elif impact_score > 100:
-                    impact_level = {
-                        'class': 'bg-yellow-100 text-yellow-800',
-                        'text': 'Medium Impact'
-                    }
+                    impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
                 else:
-                    impact_level = {
-                        'class': 'bg-blue-100 text-blue-800',
-                        'text': 'Growing Impact'
+                    impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
+
+                contributor_stats.append(
+                    {
+                        "contributor": contributor,
+                        "commits": stat["total_commits"] or 0,
+                        "issues_opened": stat["total_issues_opened"] or 0,
+                        "issues_closed": stat["total_issues_closed"] or 0,
+                        "pull_requests": stat["total_prs"] or 0,
+                        "comments": stat["total_comments"] or 0,
+                        "impact_score": impact_score,
+                        "impact_level": impact_level,
                     }
-                
-                contributor_stats.append({
-                    'contributor': contributor,
-                    'commits': stat['total_commits'] or 0,
-                    'issues_opened': stat['total_issues_opened'] or 0,
-                    'issues_closed': stat['total_issues_closed'] or 0,
-                    'pull_requests': stat['total_prs'] or 0,
-                    'comments': stat['total_comments'] or 0,
-                    'impact_score': impact_score,
-                    'impact_level': impact_level
-                })
+                )
             except Contributor.DoesNotExist:
                 continue
     except Exception as e:
         logger.error(f"Error fetching contributor stats: {e}")
-    
+
     # Sort by impact score
-    contributor_stats.sort(key=lambda x: x['impact_score'], reverse=True)
-    
+    contributor_stats.sort(key=lambda x: x["impact_score"], reverse=True)
+
     # Paginate contributor stats
     paginator = Paginator(contributor_stats, 10)
     try:
@@ -988,31 +984,31 @@ def contributor_stats_view(request):
         paginated_stats = paginator.page(1)
     except EmptyPage:
         paginated_stats = paginator.page(paginator.num_pages)
-    
+
     # Prepare time period options
     time_period_options = [
-        ('today', "Today's Data"),
-        ('current_week', 'Current Week'),
-        ('current_month', 'Current Month'),
-        ('last_month', 'Last Month'),
+        ("today", "Today's Data"),
+        ("current_week", "Current Week"),
+        ("current_month", "Current Month"),
+        ("last_month", "Last Month"),
     ]
-    
+
     context = {
-        'contributor_stats': paginated_stats,
-        'page_obj': paginated_stats,
-        'paginator': paginator,
-        'is_paginated': paginator.num_pages > 1,
-        'time_period': time_period,
-        'time_period_options': time_period_options,
-        'start_date': start_date,
-        'end_date': end_date,
-        'streak_highlights': streak_highlights,
-        'challenge_highlights': challenge_highlights,
-        'total_streak_achievements': len(streak_highlights),
-        'total_challenge_completions': len(challenge_highlights),
+        "contributor_stats": paginated_stats,
+        "page_obj": paginated_stats,
+        "paginator": paginator,
+        "is_paginated": paginator.num_pages > 1,
+        "time_period": time_period,
+        "time_period_options": time_period_options,
+        "start_date": start_date,
+        "end_date": end_date,
+        "streak_highlights": streak_highlights,
+        "challenge_highlights": challenge_highlights,
+        "total_streak_achievements": len(streak_highlights),
+        "total_challenge_completions": len(challenge_highlights),
     }
-    
-    return render(request, 'weekly_activity.html', context)
+
+    return render(request, "weekly_activity.html", context)
 
 
 def create_wallet(request):
