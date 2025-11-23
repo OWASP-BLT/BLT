@@ -1,168 +1,174 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block title %}OWASP BLT Adventures{% endblock %}
-
 {% block content %}
-{% include "includes/sidenav.html" %}
-
-<div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="text-center mb-12 mt-6">
-        <h1 class="text-5xl font-bold mb-4">🚀 OWASP BLT Adventures</h1>
-        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Gamify your security journey! Complete interactive adventures across OWASP projects, 
-            learn security concepts, and earn exclusive badges.
-        </p>
-    </div>
-
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <form method="get" class="flex flex-wrap gap-4 items-end">
-            <div class="flex-1 min-w-[200px]">
-                <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select name="category" id="category" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
-                    <option value="">All Categories</option>
-                    {% for value, label in categories %}
-                    <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="flex-1 min-w-[200px]">
-                <label for="difficulty" class="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
-                <select name="difficulty" id="difficulty" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
-                    <option value="">All Levels</option>
-                    {% for value, label in difficulties %}
-                    <option value="{{ value }}" {% if selected_difficulty == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <button type="submit" class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200">
-                    Apply Filters
-                </button>
-            </div>
-
-            {% if selected_category or selected_difficulty %}
-            <div>
-                <a href="{% url 'adventure_list' %}" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 inline-block">
-                    Clear Filters
-                </a>
-            </div>
-            {% endif %}
-        </form>
-    </div>
-
-    <!-- Adventures Grid -->
-    {% if adventures %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {% for adventure in adventures %}
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-            <!-- Header with Category Color -->
-            <div class="{% if adventure.category == 'owasp_security' %}bg-[#e74c3c]{% else %}bg-blue-600{% endif %} text-white px-6 py-4">
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-4xl">{{ adventure.badge_emoji }}</span>
-                    <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-xs font-semibold uppercase">
-                        {{ adventure.get_difficulty_display }}
-                    </span>
-                </div>
-                <h2 class="text-xl font-bold">{{ adventure.title }}</h2>
-            </div>
-
-            <!-- Content -->
-            <div class="p-6">
-                <p class="text-gray-600 mb-4 line-clamp-3">{{ adventure.description|truncatewords:25 }}</p>
-                
-                <!-- Stats -->
-                <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        {{ adventure.total_tasks }} tasks
-                    </div>
-                    {% if adventure.estimated_time %}
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        {{ adventure.estimated_time }}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Badge Reward -->
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                    <p class="text-sm font-semibold text-yellow-800">
-                        🏆 Earn: {{ adventure.badge_title }}
-                    </p>
-                </div>
-
-                <!-- Progress Bar (if user is logged in and started) -->
-                {% if user.is_authenticated and adventure.user_progress %}
-                <div class="mb-4">
-                    <div class="flex justify-between text-sm text-gray-600 mb-1">
-                        <span>Progress</span>
-                        <span>{{ adventure.user_progress.progress_percentage }}%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-[#e74c3c] h-2 rounded-full transition-all duration-300" style="width: {{ adventure.user_progress.progress_percentage }}%"></div>
-                    </div>
-                    {% if adventure.user_progress.completed %}
-                    <p class="text-green-600 text-sm mt-2 font-semibold">✓ Completed!</p>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Action Button -->
-                <a href="{% url 'adventure_detail' slug=adventure.slug %}" class="block w-full text-center px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-semibold">
-                    {% if user.is_authenticated and adventure.user_progress %}
-                        {% if adventure.user_progress.completed %}
-                            View Details
-                        {% else %}
-                            Continue
-                        {% endif %}
-                    {% else %}
-                        Start Adventure
-                    {% endif %}
-                </a>
-            </div>
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12 mt-6">
+            <h1 class="text-5xl font-bold mb-4">🚀 OWASP BLT Adventures</h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Gamify your security journey! Complete interactive adventures across OWASP projects,
+                learn security concepts, and earn exclusive badges.
+            </p>
         </div>
-        {% endfor %}
-    </div>
-
-    <!-- Pagination -->
-    {% if is_paginated %}
-    <div class="flex justify-center mt-8">
-        <nav class="flex items-center space-x-2">
-            {% if page_obj.has_previous %}
-            <a href="?page=1{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">First</a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <form method="get" class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select name="category"
+                            id="category"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        <option value="">All Categories</option>
+                        {% for value, label in categories %}
+                            <option value="{{ value }}"
+                                    {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label for="difficulty" class="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+                    <select name="difficulty"
+                            id="difficulty"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
+                        <option value="">All Levels</option>
+                        {% for value, label in difficulties %}
+                            <option value="{{ value }}"
+                                    {% if selected_difficulty == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button type="submit"
+                            class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200">
+                        Apply Filters
+                    </button>
+                </div>
+                {% if selected_category or selected_difficulty %}
+                    <div>
+                        <a href="{% url 'adventure_list' %}"
+                           class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 inline-block">
+                            Clear Filters
+                        </a>
+                    </div>
+                {% endif %}
+            </form>
+        </div>
+        <!-- Adventures Grid -->
+        {% if adventures %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {% for adventure in adventures %}
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                        <!-- Header with Category Color -->
+                        <div class="{% if adventure.category == 'owasp_security' %}bg-[#e74c3c]{% else %}bg-blue-600{% endif %} text-white px-6 py-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-4xl">{{ adventure.badge_emoji }}</span>
+                                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-xs font-semibold uppercase">
+                                    {{ adventure.get_difficulty_display }}
+                                </span>
+                            </div>
+                            <h2 class="text-xl font-bold">{{ adventure.title }}</h2>
+                        </div>
+                        <!-- Content -->
+                        <div class="p-6">
+                            <p class="text-gray-600 mb-4 line-clamp-3">{{ adventure.description|truncatewords:25 }}</p>
+                            <!-- Stats -->
+                            <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 mr-1"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                        </path>
+                                    </svg>
+                                    {{ adventure.total_tasks }} tasks
+                                </div>
+                                {% if adventure.estimated_time %}
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-1"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+                                            </path>
+                                        </svg>
+                                        {{ adventure.estimated_time }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!-- Badge Reward -->
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                                <p class="text-sm font-semibold text-yellow-800">🏆 Earn: {{ adventure.badge_title }}</p>
+                            </div>
+                            <!-- Progress Bar (if user is logged in and started) -->
+                            {% if user.is_authenticated and adventure.current_user_progress %}
+                                <div class="mb-4">
+                                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                        <span>Progress</span>
+                                        <span>{{ adventure.current_user_progress.progress_percentage }}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-[#e74c3c] h-2 rounded-full transition-all duration-300"
+                                             style="width: {{ adventure.current_user_progress.progress_percentage }}%">
+                                        </div>
+                                    </div>
+                                    {% if adventure.current_user_progress.completed %}
+                                        <p class="text-green-600 text-sm mt-2 font-semibold">✓ Completed!</p>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            <!-- Action Button -->
+                            <a href="{% url 'adventure_detail' slug=adventure.slug %}"
+                               class="block w-full text-center px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-semibold">
+                                {% if user.is_authenticated and adventure.current_user_progress %}
+                                    {% if adventure.current_user_progress.completed %}
+                                        View Details
+                                    {% else %}
+                                        Continue
+                                    {% endif %}
+                                {% else %}
+                                    Start Adventure
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="flex justify-center mt-8">
+                    <nav class="flex items-center space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}"
+                               class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">First</a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}"
+                               class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
+                        {% endif %}
+                        <span class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}"
+                               class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}"
+                               class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Last</a>
+                        {% endif %}
+                    </nav>
+                </div>
             {% endif %}
-
-            <span class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-
-            {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Last</a>
-            {% endif %}
-        </nav>
+        {% else %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-24 w-24 text-gray-400"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <h3 class="mt-4 text-2xl font-semibold text-gray-900">No adventures found</h3>
+                <p class="mt-2 text-gray-500">Try adjusting your filters or check back later for new adventures!</p>
+            </div>
+        {% endif %}
     </div>
-    {% endif %}
-
-    {% else %}
-    <div class="text-center py-12">
-        <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-        <h3 class="mt-4 text-2xl font-semibold text-gray-900">No adventures found</h3>
-        <p class="mt-2 text-gray-500">Try adjusting your filters or check back later for new adventures!</p>
-    </div>
-    {% endif %}
-</div>
-
 {% endblock %}
