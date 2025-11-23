@@ -60,6 +60,7 @@ from website.models import (
     Tag,
     TimeLog,
     Trademark,
+    TrademarkOwner,
     UserBadge,
     Wallet,
     Winner,
@@ -1546,23 +1547,27 @@ def fetch_organization_trademarks(request, slug):
         
         # The initial call returns a scroll_id for pagination
         scroll_id = response_json.get("scroll_id")
-        pagination_payload = {
-            "keywords": f'["{organization.name}"]',
-            "start_index": "0",
-            "scroll_id": scroll_id,
-        }
+        results = []
         
-        response = requests.post(url, data=pagination_payload, headers=headers, timeout=10)
-        response.raise_for_status()
-        results = response.json().get("results", [])
+        if scroll_id:
+            pagination_payload = {
+                "keywords": f'["{organization.name}"]',
+                "start_index": "0",
+                "scroll_id": scroll_id,
+            }
+            
+            response = requests.post(url, data=pagination_payload, headers=headers, timeout=10)
+            response.raise_for_status()
+            results = response.json().get("results", [])
+        else:
+            # If no scroll_id, check if results are in the initial response
+            results = response_json.get("results", [])
         
         # Store trademark data in the database
         trademarks_created = 0
         trademarks_updated = 0
         
         if results:
-            from website.models import TrademarkOwner
-            
             for item in results:
                 trademark, created = Trademark.objects.update_or_create(
                     serial_number=item.get("serial_number"),
@@ -1589,7 +1594,7 @@ def fetch_organization_trademarks(request, slug):
                 
                 # Update or create trademark owners
                 if item.get("owners"):
-                    trademark.owners.clear()
+                    owner_objects = []
                     for owner_data in item["owners"]:
                         owner, _ = TrademarkOwner.objects.get_or_create(
                             name=owner_data.get("name", ""),
@@ -1606,7 +1611,8 @@ def fetch_organization_trademarks(request, slug):
                                 "legal_entity_type_label": owner_data.get("legal_entity_type_label"),
                             }
                         )
-                        trademark.owners.add(owner)
+                        owner_objects.append(owner)
+                    trademark.owners.set(owner_objects)
         
         # Update organization trademark metadata
         organization.trademark_check_date = timezone.now()
@@ -1630,7 +1636,7 @@ def fetch_organization_trademarks(request, slug):
         else:
             messages.error(request, f"HTTP error occurred: {e.response.status_code}")
     except Exception as e:
-        logger.exception(f"Error fetching trademarks for organization {slug}")
+        logger.exception("Error fetching trademarks for organization", extra={"organization_slug": slug})
         messages.error(request, "An error occurred while fetching trademark data. Please try again later.")
     
     return redirect("organization_detail", slug=slug)

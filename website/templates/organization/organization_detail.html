@@ -426,7 +426,7 @@
                             Trademark Information
                         </h2>
                         <div class="flex items-center space-x-2">
-                            {% if user.is_authenticated and user.is_staff or user == organization.admin or user in organization.managers.all %}
+                            {% if user.is_authenticated and (user.is_staff or user == organization.admin or user in organization.managers.all) %}
                                 <form method="post" action="{% url 'fetch_organization_trademarks' organization.slug %}" class="inline">
                                     {% csrf_token %}
                                     <button type="submit"
