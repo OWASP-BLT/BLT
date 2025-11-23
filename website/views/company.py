@@ -631,8 +631,8 @@ class OrganizationSocialRedirectView(View):
         # Get organization
         try:
             organization = Organization.objects.get(id=org_id)
-        except Organization.DoesNotExist:
-            raise Http404("Organization not found")
+        except Organization.DoesNotExist as exc:
+            raise Http404("Organization not found") from exc
 
         # Get the actual URL based on platform
         url_mapping = {
@@ -646,7 +646,7 @@ class OrganizationSocialRedirectView(View):
 
         if not target_url:
             messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
-            return redirect("organization_dashboard", id=org_id)
+            return redirect("organization_analytics", id=org_id)
 
         # Atomically increment the click counter using raw SQL for JSONField
         from django.db import connection

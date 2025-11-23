@@ -680,10 +680,10 @@ class OrganizationProfileForm(forms.ModelForm):
                     "placeholder": "https://linkedin.com/company/yourorg",
                 }
             ),
-            "github_org": forms.URLInput(
+            "github_org": forms.TextInput(
                 attrs={
                     "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
-                    "placeholder": "https://github.com/yourorg",
+                    "placeholder": "yourorg",
                 }
             ),
             "discord_url": forms.URLInput(
@@ -715,7 +715,7 @@ class OrganizationProfileForm(forms.ModelForm):
             "twitter": "Twitter Profile",
             "facebook": "Facebook Page",
             "linkedin": "LinkedIn Company Page",
-            "github_org": "GitHub Organization",
+            "github_org": "GitHub Organization Handle",
             "discord_url": "Discord Server",
             "slack_url": "Slack Workspace",
             "matrix_url": "Matrix Channel",
@@ -727,7 +727,7 @@ class OrganizationProfileForm(forms.ModelForm):
             "twitter": "Full URL to your Twitter/X profile",
             "facebook": "Full URL to your Facebook page",
             "linkedin": "Full URL to your LinkedIn company page",
-            "github_org": "Full URL to your GitHub organization",
+            "github_org": "GitHub organization name/handle (without https://github.com/ prefix)",
             "discord_url": "Full URL to your Discord server invite",
             "slack_url": "Full URL to your Slack workspace",
             "matrix_url": "Full URL to your Matrix channel",

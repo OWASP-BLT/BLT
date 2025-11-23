@@ -10,7 +10,9 @@
             <!-- Header -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Edit Organization Profile</h1>
-                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Update your organization's information and social media links</p>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Update your organization's information and social media links
+                </p>
             </div>
             <!-- Form -->
             <form method="post" enctype="multipart/form-data" class="space-y-8">
@@ -25,7 +27,8 @@
                     <div class="px-6 py-6 space-y-6">
                         <!-- Name -->
                         <div>
-                            <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.name.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {{ form.name.label }}
                                 {% if form.name.field.required %}<span class="text-red-500">*</span>{% endif %}
                             </label>
@@ -36,7 +39,8 @@
                         </div>
                         <!-- Tagline -->
                         <div>
-                            <label for="{{ form.tagline.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.tagline.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {{ form.tagline.label }}
                                 {% if form.tagline.field.required %}<span class="text-red-500">*</span>{% endif %}
                             </label>
@@ -50,7 +54,8 @@
                         </div>
                         <!-- Description -->
                         <div>
-                            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.description.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {{ form.description.label }}
                                 {% if form.description.field.required %}<span class="text-red-500">*</span>{% endif %}
                             </label>
@@ -64,7 +69,8 @@
                         </div>
                         <!-- Logo -->
                         <div>
-                            <label for="{{ form.logo.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.logo.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {{ form.logo.label }}
                                 {% if form.logo.field.required %}<span class="text-red-500">*</span>{% endif %}
                             </label>
@@ -96,18 +102,18 @@
                     <div class="px-6 py-6 space-y-6">
                         <!-- Website URL -->
                         <div>
-                            <label for="{{ form.url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.url.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {{ form.url.label }}
                                 {% if form.url.field.required %}<span class="text-red-500">*</span>{% endif %}
                             </label>
                             {{ form.url }}
-                            {% if form.url.errors %}
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.url.errors.0 }}</p>
-                            {% endif %}
+                            {% if form.url.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.url.errors.0 }}</p>{% endif %}
                         </div>
                         <!-- Email -->
                         <div>
-                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.email.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {{ form.email.label }}
                                 {% if form.email.field.required %}<span class="text-red-500">*</span>{% endif %}
                             </label>
@@ -124,12 +130,15 @@
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
                             <i class="fas fa-share-nodes mr-2 text-[#e74c3c]"></i>Social Media Links
                         </h2>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add your organization's social media profiles to display on your dashboard</p>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Add your organization's social media profiles to display on your dashboard
+                        </p>
                     </div>
                     <div class="px-6 py-6 space-y-6">
                         <!-- Twitter -->
                         <div>
-                            <label for="{{ form.twitter.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.twitter.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fab fa-twitter text-[#1DA1F2] mr-1"></i>{{ form.twitter.label }}
                             </label>
                             {{ form.twitter }}
@@ -142,7 +151,8 @@
                         </div>
                         <!-- Facebook -->
                         <div>
-                            <label for="{{ form.facebook.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.facebook.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fab fa-facebook text-[#1877F2] mr-1"></i>{{ form.facebook.label }}
                             </label>
                             {{ form.facebook }}
@@ -155,7 +165,8 @@
                         </div>
                         <!-- LinkedIn -->
                         <div>
-                            <label for="{{ form.linkedin.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.linkedin.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fab fa-linkedin text-[#0A66C2] mr-1"></i>{{ form.linkedin.label }}
                             </label>
                             {{ form.linkedin }}
@@ -168,7 +179,8 @@
                         </div>
                         <!-- GitHub -->
                         <div>
-                            <label for="{{ form.github_org.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.github_org.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fab fa-github mr-1"></i>{{ form.github_org.label }}
                             </label>
                             {{ form.github_org }}
@@ -181,7 +193,8 @@
                         </div>
                         <!-- Discord -->
                         <div>
-                            <label for="{{ form.discord_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.discord_url.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fab fa-discord text-[#5865F2] mr-1"></i>{{ form.discord_url.label }}
                             </label>
                             {{ form.discord_url }}
@@ -194,7 +207,8 @@
                         </div>
                         <!-- Slack -->
                         <div>
-                            <label for="{{ form.slack_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.slack_url.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fab fa-slack text-[#4A154B] mr-1"></i>{{ form.slack_url.label }}
                             </label>
                             {{ form.slack_url }}
@@ -207,7 +221,8 @@
                         </div>
                         <!-- Matrix -->
                         <div>
-                            <label for="{{ form.matrix_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="{{ form.matrix_url.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fas fa-hashtag mr-1"></i>{{ form.matrix_url.label }}
                             </label>
                             {{ form.matrix_url }}
