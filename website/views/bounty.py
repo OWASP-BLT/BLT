@@ -75,9 +75,10 @@ def bounty_payout(request):
             return JsonResponse(
                 {
                     "status": "warning",
-                    "message": "Payment already processed",
+                    "message": "Bounty payment already processed for this issue.",
                     "transaction_id": github_issue.sponsors_tx_id,
-                }
+                },
+                status=200,
             )
 
         # Process payment via GitHub Sponsors API
