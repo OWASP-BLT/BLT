@@ -47,7 +47,7 @@ jobs:
         run: |
           poetry install --no-interaction --no-ansi
 
-      - name: Run weekly Slack report
+      - name: Run weekly scheduled tasks
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -55,4 +55,4 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
         run: |
-          poetry run python manage.py slack_weekly_report
+          poetry run python manage.py run_weekly
