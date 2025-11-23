@@ -48,6 +48,7 @@ from website.models import (
     IpReport,
     Issue,
     IssueScreenshot,
+    Job,
     JoinRequest,
     Kudos,
     Labs,
@@ -282,6 +283,39 @@ class OrganizationAdmins(ImportExportModelAdmin):
     get_url_icon.allow_tags = True
 
 
+class JobAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "organization",
+        "location",
+        "job_type",
+        "status",
+        "is_public",
+        "expires_at",
+        "views_count",
+        "created_at",
+    )
+    list_display_links = ("id", "title")
+    list_editable = ("status", "is_public")
+    list_filter = ("job_type", "status", "is_public", "created_at", "organization")
+    search_fields = ("title", "description", "location", "organization__name")
+    readonly_fields = ("views_count", "created_at", "updated_at")
+    ordering = ("-created_at",)
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        ("Basic Information", {"fields": ("organization", "title", "description", "requirements")}),
+        ("Job Details", {"fields": ("location", "job_type", "salary_range")}),
+        ("Visibility & Status", {"fields": ("is_public", "status", "expires_at")}),
+        (
+            "Application Methods",
+            {"fields": ("application_email", "application_url", "application_instructions"), "classes": ("collapse",)},
+        ),
+        ("Metadata", {"fields": ("posted_by", "views_count", "created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+
 class PointsAdmin(admin.ModelAdmin):
     list_display = (
         "user",
@@ -494,9 +528,22 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class ForumPostAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "title", "description", "up_votes", "down_votes", "status", "created")
-    list_filter = ("status", "category")
+    list_display = (
+        "id",
+        "user",
+        "title",
+        "description",
+        "up_votes",
+        "down_votes",
+        "status",
+        "created",
+        "repo",
+        "project",
+        "organization",
+    )
+    list_filter = ("status", "category", "repo", "project", "organization")
     search_fields = ("title", "description", "user__username")
+    autocomplete_fields = ["repo", "project", "organization"]
 
 
 class ForumVoteAdmin(admin.ModelAdmin):
@@ -828,6 +875,7 @@ admin.site.register(Points, PointsAdmin)
 admin.site.register(Hunt, HuntAdmin)
 admin.site.register(OrganizationAdmin, OrganizationUserAdmin)
 admin.site.register(Organization, OrganizationAdmins)
+admin.site.register(Job, JobAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
