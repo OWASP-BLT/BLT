@@ -203,6 +203,7 @@ class IssueAdmin(admin.ModelAdmin):
     inlines = [ImageInline]
     list_filter = ("domain", "user", "verified", "is_hidden", "created")
     actions = ("approve_issues", "mark_as_spam", "unmark_as_spam")
+
     def approve_issues(self, request, queryset):
         queryset.update(verified=True, is_hidden=False)
         self.message_user(request, f"{queryset.count()} issues approved.")

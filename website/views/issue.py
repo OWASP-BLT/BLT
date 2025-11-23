@@ -405,7 +405,7 @@ def review_queue(request):
                 issue.status = "spam"
                 issue.save()
                 messages.success(request, f"Issue #{issue.id} has been marked as spam.")
-            
+
             else:
                 messages.error(request, "Invalid review action specified.")
 
@@ -418,7 +418,7 @@ def review_queue(request):
 
     # Handle GET requests: Display the list of issues for review
     pending_issues = Issue.objects.filter(~Q(status="spam") & Q(is_hidden=True)).order_by("-spam_score", "-created")
-    spam_issues = Issue.objects.filter(Q(status="spam") & Q(is_hidden=True)).order_by("-created")   
+    spam_issues = Issue.objects.filter(Q(status="spam") & Q(is_hidden=True)).order_by("-created")
 
     context = {
         "pending_issues": pending_issues,
@@ -1119,7 +1119,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     if self.request.POST.get("token") == token.key:
                         obj.user = User.objects.get(id=token.user_id)
                         tokenauth = True
-            
+
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
 
             captcha_form = CaptchaForm(self.request.POST)
@@ -1179,7 +1179,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 logger.warning(f"Domain not found, creating new: name={clean_domain_no_www}, url={clean_domain}")
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
                 domain.save()
-            
+
             obj.domain = domain
 
             if spam_score >= 6:
@@ -1373,8 +1373,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     self.request, "Could not fetch CVE score at this time. Issue will be created without it."
                 )
 
-
-            
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):

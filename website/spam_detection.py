@@ -4,7 +4,8 @@ import os
 from google import genai
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__) 
+logger = logging.getLogger(__name__)
+
 
 class SpamDetection:
     """
@@ -15,7 +16,7 @@ class SpamDetection:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
         if not self.api_key:
-            logger.warning("GEMINI_API_KEY not set. Spam detection will be disabled.")  
+            logger.warning("GEMINI_API_KEY not set. Spam detection will be disabled.")
             self.client = None
             return
         self.client = genai.Client(api_key=self.api_key)
@@ -37,13 +38,13 @@ class SpamDetection:
         """
         if not self.client:
             return {"is_spam": False, "spam_score": 0, "reason": "Spam detection not available"}
-        
+
         try:
             prompt = self._get_system_prompt(title, description, url)
             response = self.get_gemini_response(prompt)
-        except Exception as e:  
-            logger.error("Error in spam detection: %s", e, exc_info=True)  
-            return {"is_spam": False, "spam_score": 0, "reason": "Error parsing spam detection response"}  
+        except Exception as e:
+            logger.error("Error in spam detection: %s", e, exc_info=True)
+            return {"is_spam": False, "spam_score": 0, "reason": "Error parsing spam detection response"}
         else:
             if response.get("spam_score") is None:
                 return {"is_spam": False, "spam_score": 0, "reason": "Invalid spam detection response"}
@@ -80,7 +81,6 @@ class SpamDetection:
             """
 
     def get_gemini_response(self, prompt: str) -> str:
-
         response = self.client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt,
