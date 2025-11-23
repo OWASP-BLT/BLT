@@ -85,6 +85,25 @@
       args:
         executable: /bin/bash
 
+    - name: Check if SECRET_KEY file exists
+      stat:
+        path: "{{ app_dir }}/shared/secret_key"
+      register: secret_key_file
+
+    - name: Generate and persist SECRET_KEY if absent
+      copy:
+        dest: "{{ app_dir }}/shared/secret_key"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0600'
+        content: "{{ lookup('password', '/dev/null', length=64, chars='ascii_letters,digits') }}"
+      when: not secret_key_file.stat.exists or secret_key_file.stat.size == 0
+
+    - name: Read persisted SECRET_KEY
+      slurp:
+        src: "{{ app_dir }}/shared/secret_key"
+      register: secret_key_content
+
     - name: Create production env file (.env.production)
       copy:
         dest: "{{ app_dir }}/current/{{ env_file }}"
@@ -94,7 +113,7 @@
         content: |
           DEBUG=False
           ALLOWED_HOSTS=.{{ domain }},{{ domain }},127.0.0.1,localhost
-          SECRET_KEY={{ lookup('password', '{{ app_dir }}/shared/secret_key', length=64, chars='ascii_letters,digits') }}
+          SECRET_KEY={{ secret_key_content['content'] | b64decode | trim }}
           DATABASE_URL=postgres://{{ postgres_db_user }}:{{ postgres_db_password }}@127.0.0.1:5432/{{ postgres_db_name }}
           PORT=8000
           # Add any extra environment variables below
