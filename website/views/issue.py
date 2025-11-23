@@ -1693,6 +1693,20 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 )
                 return render(request, template, {"hunt": hunt, "issue_list": issue_list})
             label = request.POST["label"]
+
+            # Use NLP to analyze bug description and suggest improvements
+            nlp_analysis = analyze_bug_with_nlp(description, url)
+            if nlp_analysis:
+                # If NLP suggests a different category and user selected "General", use the suggestion
+                if label == "0" and nlp_analysis.get("suggested_category"):
+                    try:
+                        suggested_label = int(nlp_analysis["suggested_category"])
+                        if 0 <= suggested_label <= 8:
+                            label = str(suggested_label)
+                            logger.info(f"NLP suggested category {label} for bug report")
+                    except (ValueError, TypeError):
+                        pass
+
             if request.POST.get("file"):
                 if isinstance(request.POST.get("file"), six.string_types):
                     import imghdr
@@ -1733,6 +1747,26 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 return render(request, template, {"hunt": hunt, "issue_list": issue_list})
             issue.hunt = hunt
             issue.save()
+
+            # Process screenshot with vision API to extract text and analysis
+            if issue.screenshot:
+                try:
+                    screenshot_path = issue.screenshot.path
+                    vision_analysis = process_screenshot_with_vision(screenshot_path)
+                    if vision_analysis:
+                        # Store extracted text in OCR field
+                        extracted_text = vision_analysis.get("extracted_text", "")
+                        visual_analysis = vision_analysis.get("visual_analysis", "")
+
+                        # Combine OCR text and visual analysis
+                        ocr_content = f"Extracted Text:\n{extracted_text}\n\nVisual Analysis:\n{visual_analysis}"
+                        issue.ocr = ocr_content
+                        issue.save()
+                        logger.info(f"Successfully processed screenshot with vision API for issue {issue.id}")
+                except Exception as e:
+                    # Log error but don't fail the bug submission
+                    logger.error(f"Error processing screenshot with vision API: {str(e)}")
+
             issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )
@@ -2013,6 +2047,38 @@ def get_github_issue(request):
                 "repository_url": repository_url,
             },
         )
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+@login_required(login_url="/accounts/login")
+def get_bug_analysis(request):
+    """
+    API endpoint to get NLP analysis for bug description.
+    Returns suggested category, tags, and severity.
+    """
+    if request.method == "POST":
+        description = request.POST.get("description", "")
+        url = request.POST.get("url", "")
+
+        if not description:
+            return JsonResponse({"error": "Description is required"}, status=400)
+
+        # Call the NLP analysis function
+        analysis = analyze_bug_with_nlp(description, url)
+
+        if analysis:
+            return JsonResponse(
+                {
+                    "success": True,
+                    "suggested_category": analysis.get("suggested_category", "0"),
+                    "tags": analysis.get("tags", []),
+                    "severity": analysis.get("severity", "medium"),
+                    "enhanced_description": analysis.get("enhanced_description", ""),
+                }
+            )
+        else:
+            return JsonResponse({"error": "Unable to analyze bug report"}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 

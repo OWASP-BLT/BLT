@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -95,3 +97,70 @@ class GitHubIssueImageURLTests(TestCase):
             formatted_url = http_url
 
         self.assertEqual(formatted_url, http_url)
+
+
+@override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
+class NLPIntegrationTests(TestCase):
+    """Test NLP integration for bug analysis and image processing"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="12345")
+        self.user_profile, created = UserProfile.objects.get_or_create(user=self.user)
+        self.client.login(username="testuser", password="12345")
+
+    @patch("website.views.issue.analyze_bug_with_nlp")
+    def test_get_bug_analysis_endpoint(self, mock_analyze):
+        """Test the bug analysis API endpoint"""
+        mock_analyze.return_value = {
+            "suggested_category": "4",
+            "tags": ["security", "xss", "web"],
+            "severity": "high",
+            "enhanced_description": "This is a cross-site scripting vulnerability",
+        }
+
+        url = reverse("get_bug_analysis")
+        data = {
+            "description": "Found XSS vulnerability",
+            "url": "https://example.com/vulnerable",
+        }
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 200)
+        json_data = response.json()
+        self.assertTrue(json_data.get("success"))
+        self.assertEqual(json_data.get("suggested_category"), "4")
+        self.assertIn("security", json_data.get("tags"))
+        self.assertEqual(json_data.get("severity"), "high")
+
+    def test_get_bug_analysis_requires_login(self):
+        """Test that the bug analysis endpoint requires authentication"""
+        self.client.logout()
+        url = reverse("get_bug_analysis")
+        data = {"description": "Test description"}
+        response = self.client.post(url, data)
+
+        # Should redirect to login
+        self.assertEqual(response.status_code, 302)
+
+    def test_get_bug_analysis_requires_description(self):
+        """Test that description is required for bug analysis"""
+        url = reverse("get_bug_analysis")
+        data = {"url": "https://example.com"}
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 400)
+        json_data = response.json()
+        self.assertIn("error", json_data)
+
+    @patch("website.views.issue.analyze_bug_with_nlp")
+    def test_get_bug_analysis_handles_failure(self, mock_analyze):
+        """Test handling when NLP analysis fails"""
+        mock_analyze.return_value = None
+
+        url = reverse("get_bug_analysis")
+        data = {"description": "Test description"}
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 500)
+        json_data = response.json()
+        self.assertIn("error", json_data)
