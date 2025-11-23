@@ -2064,6 +2064,125 @@ def generate_github_issue(description):
         return {"error": "There's a problem with OpenAI", "details": str(e)}
 
 
+def analyze_bug_with_nlp(description, url=""):
+    """
+    Analyze bug description using NLP to extract insights, suggest category, and provide tags.
+    Returns a dictionary with suggested_category, tags, severity, and enhanced_description.
+    """
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are a security expert analyzing bug reports. 
+                    Analyze the bug description and respond with a valid JSON object in this exact format:
+                    {
+                        "suggested_category": "number (0-8, where 0=General, 1=Number Error, 2=Functional, 3=Performance, 4=Security, 5=Typo, 6=Design, 7=Server Down, 8=Trademark Squatting)",
+                        "tags": ["tag1", "tag2", "tag3"],
+                        "severity": "low|medium|high|critical",
+                        "enhanced_description": "Enhanced description with technical details"
+                    }""",
+                },
+                {
+                    "role": "user",
+                    "content": f"Analyze this bug report. URL: {url}\nDescription: {description}",
+                },
+            ],
+            temperature=0.7,
+            max_tokens=1000,
+        )
+
+        if response.choices and response.choices[0].message:
+            analysis_str = response.choices[0].message.content
+            analysis = json.loads(analysis_str)
+
+            # Validate the response
+            if not all(k in analysis for k in ["suggested_category", "tags", "severity"]):
+                return None
+
+            return analysis
+
+        return None
+
+    except Exception as e:
+        logger.error(f"Error in NLP analysis: {str(e)}")
+        return None
+
+
+def process_screenshot_with_vision(screenshot_path):
+    """
+    Process screenshot using OpenAI Vision API to extract text and identify issues.
+    Returns a dictionary with extracted_text and visual_analysis.
+    """
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+
+        # Read and encode the image
+        with Image.open(screenshot_path) as img:
+            # Convert to RGB if necessary
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+
+            # Resize if too large
+            max_size = (1024, 1024)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+            # Convert to bytes
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format="JPEG")
+            img_byte_arr = img_byte_arr.getvalue()
+
+            # Encode to base64
+            img_base64 = base64.b64encode(img_byte_arr).decode("utf-8")
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are analyzing a bug report screenshot. 
+                    Extract any visible text (OCR) and describe what you see that might be relevant to the bug.
+                    Respond with a valid JSON object in this exact format:
+                    {
+                        "extracted_text": "All visible text from the image",
+                        "visual_analysis": "Description of visual elements, errors, UI issues etc.",
+                        "error_messages": ["any error messages visible"],
+                        "ui_elements": ["notable UI elements or issues"]
+                    }""",
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Analyze this bug screenshot and extract all relevant information:"},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
+                        },
+                    ],
+                },
+            ],
+            temperature=0.7,
+            max_tokens=1500,
+        )
+
+        if response.choices and response.choices[0].message:
+            analysis_str = response.choices[0].message.content
+            analysis = json.loads(analysis_str)
+
+            # Validate the response
+            if "extracted_text" in analysis and "visual_analysis" in analysis:
+                return analysis
+
+        return None
+
+    except Exception as e:
+        logger.error(f"Error processing screenshot with vision API: {str(e)}")
+        return None
+
+
 class ContributeView(TemplateView):
     template_name = "contribute.html"
 
