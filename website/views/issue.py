@@ -1634,6 +1634,7 @@ class IssueView(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
         
         # Calculate user's total score
+        # Both total_score and users_score are set for backward compatibility
         if self.object.user:
             total_score = Points.objects.filter(user=self.object.user).aggregate(
                 total_score=Sum("score")
