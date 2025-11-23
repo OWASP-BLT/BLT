@@ -4,7 +4,18 @@
         {% for repo in repos %}
             <div class="bg-black bg-opacity-50 p-6 rounded-lg shadow-inner hover:shadow-lg transition-shadow">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-2xl font-semibold text-indigo-300">{{ repo.repo.name }}</h3>
+                    <div>
+                        <h3 class="text-2xl font-semibold text-indigo-300">{{ repo.repo.name }}</h3>
+                        {% if repo.repo.project %}
+                            <p class="text-sm text-gray-400 dark:text-gray-600 mt-1">
+                                Part of project: 
+                                <a href="{% url 'project_detail' repo.repo.project.slug %}" 
+                                   class="text-indigo-400 hover:text-indigo-300 hover:underline">
+                                    {{ repo.repo.project.name }}
+                                </a>
+                            </p>
+                        {% endif %}
+                    </div>
                     <span class="bg-green-600 text-white text-sm font-medium px-3 py-1 rounded-full">
                         Score: {{ repo.relevance_score }}
                     </span>
@@ -43,13 +54,38 @@
                         <span class="font-semibold text-white">{{ repo.repo.last_updated|date:"M d, Y" }}</span>
                     </p>
                 </div>
-                <div class="mt-6 text-center">
-                    <a href="{{ repo.repo.repo_url }}"
-                       target="_blank"
-                       class="inline-flex items-center text-blue-400 hover:text-blue-300 hover:underline">
-                        <span class="mr-2">🌐</span>
-                        Visit Repository
-                    </a>
+                <div class="mt-6 border-t border-gray-700 pt-4">
+                    <h4 class="text-lg font-semibold text-white mb-3">Repository Links</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <span class="mr-3 text-gray-400">🔗 Repository:</span>
+                            <a href="{{ repo.repo.repo_url }}"
+                               target="_blank"
+                               class="text-blue-400 hover:text-blue-300 hover:underline break-all">
+                                {{ repo.repo.repo_url }}
+                            </a>
+                        </div>
+                        {% if repo.repo.homepage_url %}
+                            <div class="flex items-center">
+                                <span class="mr-3 text-gray-400">🏠 Homepage:</span>
+                                <a href="{{ repo.repo.homepage_url }}"
+                                   target="_blank"
+                                   class="text-blue-400 hover:text-blue-300 hover:underline break-all">
+                                    {{ repo.repo.homepage_url }}
+                                </a>
+                            </div>
+                        {% endif %}
+                        {% if repo.repo.project and repo.repo.project.url %}
+                            <div class="flex items-center">
+                                <span class="mr-3 text-gray-400">📦 Project Page:</span>
+                                <a href="{{ repo.repo.project.url }}"
+                                   target="_blank"
+                                   class="text-blue-400 hover:text-blue-300 hover:underline break-all">
+                                    {{ repo.repo.project.url }}
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         {% endfor %}

@@ -131,6 +131,7 @@ def repo_recommender(user_tags, language_weights):
         Repo.objects.filter(Q(primary_language__in=language_list) | Q(tags__name__in=tag_names))
         .distinct()
         .prefetch_related("tags")
+        .select_related("project")
     )
 
     repos = repos.annotate(
