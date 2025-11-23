@@ -87,12 +87,28 @@
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
         <link href="{% static 'css/checkInModal.css' %}" rel="stylesheet">
+        <link href="{% static 'css/custom-scrollbar.css' %}" rel="stylesheet">
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"
                 integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
                 crossorigin="anonymous"></script>
         <script src="{% static 'js/notify.js' %}"></script>
         <script src="{% static 'js/text-slider.js' %}"></script>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+            }
+        </script>
+        <!-- Apply dark mode immediately to prevent white flash -->
+        <script>
+            (function() {
+                const savedTheme = localStorage.getItem("theme");
+                if (savedTheme === "dark") {
+                    document.documentElement.classList.add("dark");
+                }
+            })();
+        </script>
+        <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
         <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
@@ -108,7 +124,7 @@
         {% block style %}
         {% endblock style %}
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
+    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
@@ -130,7 +146,7 @@
                 {% for message in messages %}
                     <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500{% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500{% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
                         <div class="flex-grow mr-3">{{ message }}</div>
-                        <button class="text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
+                        <button class="text-gray-500 dark:text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
                     </div>
                 {% endfor %}
             {% endif %}

@@ -1,19 +1,114 @@
 {% load humanize %}
-<!-- Add this line at the top -->
+
+<!-- Achievement Highlights Section -->
+{% if streak_highlights or challenge_highlights %}
+<div class="mb-6 p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-[#e74c3c]/20">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <i class="fa fa-trophy mr-2 text-[#e74c3c]"></i>
+        Achievement Highlights
+    </h3>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Streak Achievements -->
+        {% if streak_highlights %}
+        <div>
+            <h4 class="text-md font-medium text-gray-800 mb-3 flex items-center">
+                <i class="fa fa-fire mr-2 text-[#e74c3c]"></i>
+                Streak Milestones ({{ total_streak_achievements }})
+            </h4>
+            <div class="space-y-2 max-h-48 overflow-y-auto">
+                {% for highlight in streak_highlights|slice:":5" %}
+                <div class="flex items-center p-2 bg-white rounded border border-gray-200">
+                    <div class="flex-shrink-0 mr-3">
+                        <div class="h-8 w-8 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                            <i class="fa fa-fire text-white text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-gray-900">{{ highlight.user.username }}</div>
+                        <div class="text-xs text-gray-600">{{ highlight.milestone }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-bold text-[#e74c3c]">{{ highlight.current_streak }}</div>
+                        <div class="text-xs text-gray-500">days</div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if streak_highlights|length > 5 %}
+                <div class="text-center text-sm text-gray-500">
+                    and {{ streak_highlights|length|add:"-5" }} more...
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Challenge Completions -->
+        {% if challenge_highlights %}
+        <div>
+            <h4 class="text-md font-medium text-gray-800 mb-3 flex items-center">
+                <i class="fa fa-check-circle mr-2 text-[#e74c3c]"></i>
+                Challenge Completions ({{ total_challenge_completions }})
+            </h4>
+            <div class="space-y-2 max-h-48 overflow-y-auto">
+                {% for highlight in challenge_highlights|slice:":5" %}
+                <div class="flex items-center p-2 bg-white rounded border border-gray-200">
+                    <div class="flex-shrink-0 mr-3">
+                        <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center">
+                            <i class="fa fa-check text-white text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-gray-900">{{ highlight.user.username }}</div>
+                        <div class="text-xs text-gray-600">{{ highlight.challenge.title|truncatewords:4 }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-medium text-[#e74c3c]">+{{ highlight.points_earned }}</div>
+                        <div class="text-xs text-gray-500">points</div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if challenge_highlights|length > 5 %}
+                <div class="text-center text-sm text-gray-500">
+                    and {{ challenge_highlights|length|add:"-5" }} more...
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Contributor Statistics Table -->
 <div class="overflow-x-auto contributor-stats-table">
-    <table class="min-w-full divide-y divide-gray-200">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead>
-            <tr class="bg-gray-50">
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contributor</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Commits</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Issues Opened</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Issues Closed</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pull Requests</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Comments</th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Impact</th>
+            <tr class="bg-gray-50 dark:bg-gray-900">
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                    Contributor
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                    Commits
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                    Issues Opened
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                    Issues Closed
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                    Pull Requests
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                    Comments
+                </th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                    Total Impact
+                </th>
             </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {% for stat in contributor_stats %}
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="px-4 py-4 whitespace-nowrap">
@@ -24,8 +119,8 @@
                                  src="{{ stat.contributor.avatar_url }}"
                                  alt="{{ stat.contributor.name }}">
                             <div class="ml-3">
-                                <div class="text-sm font-medium text-gray-900">{{ stat.contributor.name }}</div>
-                                <div class="text-sm text-gray-500">@{{ stat.contributor.github_id }}</div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ stat.contributor.name }}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-500">@{{ stat.contributor.github_id }}</div>
                             </div>
                         </div>
                     </td>
@@ -52,16 +147,19 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">No contributor statistics available for this period</td>
+                    <td colspan="7"
+                        class="px-4 py-8 text-center text-gray-500 dark:text-gray-500">
+                        No contributor statistics available for this period
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
     {% if is_paginated %}
-        <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 sm:px-6">
+        <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
             <div class="flex-1 flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-700">
+                    <p class="text-sm text-gray-700 dark:text-gray-300">
                         Showing
                         <span class="font-medium">{{ page_obj.start_index }}</span>
                         to
@@ -75,23 +173,23 @@
                     <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                         {% if page_obj.has_previous %}
                             <button type="button"
-                                    class="pagination-link relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                    class="pagination-link relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50"
                                     data-page="{{ page_obj.previous_page_number }}">Previous</button>
                         {% endif %}
                         {% for i in page_obj.paginator.page_range %}
                             {% if page_obj.number == i %}
-                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-red-50 text-sm font-medium text-red-600">
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-red-50 text-sm font-medium text-red-600">
                                     {{ i }}
                                 </span>
                             {% else %}
                                 <button type="button"
-                                        class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                        class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50"
                                         data-page="{{ i }}">{{ i }}</button>
                             {% endif %}
                         {% endfor %}
                         {% if page_obj.has_next %}
                             <button type="button"
-                                    class="pagination-link relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                    class="pagination-link relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50"
                                     data-page="{{ page_obj.next_page_number }}">Next</button>
                         {% endif %}
                     </nav>
@@ -100,3 +198,36 @@
         </div>
     {% endif %}
 </div>
+
+<!-- Achievement Summary Stats -->
+{% if streak_highlights or challenge_highlights %}
+<div class="mt-6 grid grid-cols-2 gap-4">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="h-8 w-8 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                    <i class="fa fa-fire text-white"></i>
+                </div>
+            </div>
+            <div class="ml-4">
+                <div class="text-sm font-medium text-gray-500">Streak Achievements</div>
+                <div class="text-2xl font-bold text-gray-900">{{ total_streak_achievements }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="h-8 w-8 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                    <i class="fa fa-check-circle text-white"></i>
+                </div>
+            </div>
+            <div class="ml-4">
+                <div class="text-sm font-medium text-gray-500">Challenge Completions</div>
+                <div class="text-2xl font-bold text-gray-900">{{ total_challenge_completions }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

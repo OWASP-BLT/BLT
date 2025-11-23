@@ -11,7 +11,7 @@
     <div id="lock-overlay"
          class="fixed top-0 left-0 w-full h-full bg-[rgba(0,0,0,0.8)] z-[1000] flex justify-center items-center">
         <div id="lock-message"
-             class="bg-white p-[20px] rounded-[8px] text-center text-[#333]">
+             class="bg-white dark:bg-gray-800 p-[20px] rounded-[8px] text-center text-[#333]">
             <p>Your messaging is locked. Please unlock to continue.</p>
             <button id="unlock-button"
                     class="mt-[15px] py-[10px] px-[20px] text-[16px] cursor-pointer bg-[#e74c3c] text-white border-0 rounded-[4px] hover:bg-[#e74c3c]">
@@ -36,7 +36,7 @@
         </div>
         <!-- Right Side: Chat Window -->
         <div id="chat-window"
-             class="w-[70%] bg-white text-black p-[10px] flex flex-col">
+             class="w-[70%] bg-white dark:bg-gray-800 text-black dark:text-white p-[10px] flex flex-col">
             <div id="message-list"
                  class="flex-1 overflow-y-auto p-[10px] border-b-2 border-[#e74c3c] h-[300px]">
                 <p id="welcome-message">Welcome to BLT DMs, search a user to start chatting.</p>
