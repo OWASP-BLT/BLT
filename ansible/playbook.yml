@@ -58,6 +58,8 @@
         dest: "{{ app_dir }}/current"
         version: "{{ branch }}"
         force: yes
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
       register: git_result
 
     - name: Ensure virtualenv
