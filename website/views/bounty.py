@@ -83,7 +83,7 @@ def bounty_payout(request):
         # In production, this would call GitHub Sponsors API
         transaction_id = f"TXN-{issue_number}-{pr_number}"
         logger.info(
-            f"Processing bounty payment: ${bounty_amount/100:.2f} to {contributor_username} "
+            f"Processing bounty payment: ${bounty_amount / 100:.2f} to {contributor_username} "
             f"for PR #{pr_number} (Issue #{issue_number})"
         )
 
@@ -95,7 +95,14 @@ def bounty_payout(request):
         github_token = os.environ.get("GITHUB_TOKEN")
         if github_token:
             add_github_comment_and_labels(
-                owner_name, repo_name, issue_number, contributor_username, bounty_amount, pr_number, transaction_id, github_token
+                owner_name,
+                repo_name,
+                issue_number,
+                contributor_username,
+                bounty_amount,
+                pr_number,
+                transaction_id,
+                github_token,
             )
         else:
             logger.warning("GITHUB_TOKEN not available - skipping GitHub comment/labels")
