@@ -981,6 +981,32 @@ def contributor_stats_view(request):
     except EmptyPage:
         paginated_stats = paginator.page(paginator.num_pages)
 
+    # Get weekly leaderboard - top users by points earned in the time period
+    leaderboard = []
+    try:
+        leaderboard_query = (
+            Points.objects.filter(created__gte=start_date, created__lte=end_date)
+            .values("user")
+            .annotate(total_points=Sum("score"))
+            .order_by("-total_points")[:10]  # Top 10 contributors
+        )
+
+        for entry in leaderboard_query:
+            try:
+                user = User.objects.get(id=entry["user"])
+                user_profile = UserProfile.objects.get(user=user)
+                leaderboard.append(
+                    {
+                        "user": user,
+                        "user_profile": user_profile,
+                        "total_points": entry["total_points"],
+                    }
+                )
+            except (User.DoesNotExist, UserProfile.DoesNotExist):
+                continue
+    except Exception as e:
+        logger.error(f"Error fetching leaderboard: {e}")
+
     # Prepare time period options
     time_period_options = [
         ("today", "Today's Data"),
@@ -1002,6 +1028,7 @@ def contributor_stats_view(request):
         "challenge_highlights": challenge_highlights,
         "total_streak_achievements": len(streak_highlights),
         "total_challenge_completions": len(challenge_highlights),
+        "leaderboard": leaderboard,
     }
 
     return render(request, "weekly_activity.html", context)
