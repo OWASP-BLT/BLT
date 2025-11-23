@@ -46,7 +46,7 @@ class AdventureListView(ListView):
 
             progress_dict = {progress.adventure_id: progress for progress in user_progress}
             for adventure in context["adventures"]:
-                adventure.user_progress = progress_dict.get(adventure.id)
+                adventure.current_user_progress = progress_dict.get(adventure.id)
 
         return context
 
@@ -69,9 +69,7 @@ class AdventureDetailView(DetailView):
 
         # Get user progress if authenticated
         if self.request.user.is_authenticated:
-            progress, created = UserAdventureProgress.objects.get_or_create(
-                user=self.request.user, adventure=adventure
-            )
+            progress, created = UserAdventureProgress.objects.get_or_create(user=self.request.user, adventure=adventure)
             context["progress"] = progress
 
             # Get task submissions

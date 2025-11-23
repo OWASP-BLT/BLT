@@ -1,225 +1,229 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block title %}{{ adventure.title }} - OWASP BLT Adventures{% endblock %}
-
 {% block content %}
-{% include "includes/sidenav.html" %}
-
-<div class="container mx-auto px-4 py-8">
-    <!-- Back Button -->
-    <div class="mb-6">
-        <a href="{% url 'adventure_list' %}" class="inline-flex items-center text-[#e74c3c] hover:text-[#c0392b]">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            Back to Adventures
-        </a>
-    </div>
-
-    <!-- Adventure Header -->
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-        <div class="{% if adventure.category == 'owasp_security' %}bg-[#e74c3c]{% else %}bg-blue-600{% endif %} text-white px-8 py-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div class="flex-1">
-                    <div class="flex items-center mb-3">
-                        <span class="text-6xl mr-4">{{ adventure.badge_emoji }}</span>
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Back Button -->
+        <div class="mb-6">
+            <a href="{% url 'adventure_list' %}"
+               class="inline-flex items-center text-[#e74c3c] hover:text-[#c0392b]">
+                <svg class="w-5 h-5 mr-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Adventures
+            </a>
+        </div>
+        <!-- Adventure Header -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+            <div class="{% if adventure.category == 'owasp_security' %}bg-[#e74c3c]{% else %}bg-blue-600{% endif %} text-white px-8 py-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-3">
+                            <span class="text-6xl mr-4">{{ adventure.badge_emoji }}</span>
+                            <div>
+                                <h1 class="text-4xl font-bold mb-2">{{ adventure.title }}</h1>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-semibold">
+                                        {{ adventure.get_category_display }}
+                                    </span>
+                                    <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-semibold">
+                                        {{ adventure.get_difficulty_display }}
+                                    </span>
+                                    {% if adventure.estimated_time %}
+                                        <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-semibold">
+                                            ⏱️ {{ adventure.estimated_time }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-8">
+                <!-- Description -->
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold mb-3">About This Adventure</h2>
+                    <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ adventure.description }}</p>
+                </div>
+                <!-- Badge Reward -->
+                <div class="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6 mb-6">
+                    <div class="flex items-center">
+                        <span class="text-5xl mr-4">🏆</span>
                         <div>
-                            <h1 class="text-4xl font-bold mb-2">{{ adventure.title }}</h1>
-                            <div class="flex flex-wrap gap-2">
-                                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-semibold">
-                                    {{ adventure.get_category_display }}
-                                </span>
-                                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-semibold">
-                                    {{ adventure.get_difficulty_display }}
-                                </span>
-                                {% if adventure.estimated_time %}
-                                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-semibold">
-                                    ⏱️ {{ adventure.estimated_time }}
-                                </span>
-                                {% endif %}
-                            </div>
+                            <h3 class="text-xl font-bold text-yellow-800 mb-1">Badge Reward</h3>
+                            <p class="text-yellow-700 text-lg font-semibold">{{ adventure.badge_title }}</p>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="p-8">
-            <!-- Description -->
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold mb-3">About This Adventure</h2>
-                <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ adventure.description }}</p>
-            </div>
-
-            <!-- Badge Reward -->
-            <div class="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6 mb-6">
-                <div class="flex items-center">
-                    <span class="text-5xl mr-4">🏆</span>
-                    <div>
-                        <h3 class="text-xl font-bold text-yellow-800 mb-1">Badge Reward</h3>
-                        <p class="text-yellow-700 text-lg font-semibold">{{ adventure.badge_title }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Progress Section (for authenticated users) -->
-            {% if user.is_authenticated %}
-            <div class="bg-gray-50 rounded-lg p-6 mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">Your Progress</h3>
-                    {% if progress %}
-                    <span class="text-2xl font-bold text-[#e74c3c]">{{ progress.progress_percentage }}%</span>
-                    {% endif %}
-                </div>
-
-                {% if progress %}
-                <div class="w-full bg-gray-300 rounded-full h-4 mb-4">
-                    <div class="bg-[#e74c3c] h-4 rounded-full transition-all duration-300" style="width: {{ progress.progress_percentage }}%"></div>
-                </div>
-
-                {% if progress.completed %}
-                <div class="bg-green-100 border border-green-300 rounded-lg p-4 flex items-center">
-                    <svg class="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span class="text-green-800 font-semibold">Congratulations! You completed this adventure on {{ progress.completed_at|date:"F d, Y" }}</span>
-                </div>
-                {% else %}
-                <p class="text-gray-600">Started on {{ progress.started_at|date:"F d, Y" }}</p>
-                {% endif %}
-                {% else %}
-                <a href="{% url 'start_adventure' slug=adventure.slug %}" class="inline-block px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-semibold">
-                    Start This Adventure
-                </a>
-                {% endif %}
-            </div>
-            {% else %}
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-                <p class="text-blue-800">
-                    <a href="{% url 'account_login' %}" class="text-[#e74c3c] hover:underline font-semibold">Log in</a> 
-                    to track your progress and earn badges!
-                </p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Tasks Section -->
-    <div class="bg-white rounded-lg shadow-lg p-8">
-        <h2 class="text-3xl font-bold mb-6">Tasks</h2>
-
-        <div class="space-y-6">
-            {% for task in tasks %}
-            <div class="border-2 {% if task.submission and task.submission.approved %}border-green-500{% elif task.submission and task.submission.status == 'pending' %}border-yellow-500{% elif task.submission and task.submission.status == 'rejected' %}border-red-500{% else %}border-gray-200{% endif %} rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-start justify-between mb-4">
-                    <div class="flex items-start flex-1">
-                        <span class="flex-shrink-0 w-10 h-10 bg-[#e74c3c] text-white rounded-full flex items-center justify-center font-bold mr-4">
-                            {{ task.order }}
-                        </span>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold mb-2">
-                                {{ task.title }}
-                                {% if not task.is_required %}
-                                <span class="text-sm font-normal text-gray-500">(Optional)</span>
-                                {% endif %}
-                            </h3>
-                            <p class="text-gray-700 mb-4 whitespace-pre-line">{{ task.description }}</p>
-
-                            <!-- Submission Status -->
-                            {% if task.submission %}
-                            <div class="mb-4">
-                                {% if task.submission.approved %}
-                                <div class="flex items-center text-green-600 mb-2">
-                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    <span class="font-semibold">Approved</span>
-                                </div>
-                                {% elif task.submission.status == 'pending' %}
-                                <div class="flex items-center text-yellow-600 mb-2">
-                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    <span class="font-semibold">Pending Review</span>
-                                </div>
-                                {% elif task.submission.status == 'rejected' %}
-                                <div class="flex items-center text-red-600 mb-2">
-                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    <span class="font-semibold">Rejected</span>
-                                </div>
-                                {% if task.submission.reviewer_notes %}
-                                <div class="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
-                                    <p class="font-semibold mb-1">Feedback:</p>
-                                    <p>{{ task.submission.reviewer_notes }}</p>
-                                </div>
-                                {% endif %}
-                                {% endif %}
-
-                                {% if task.submission.proof_url %}
-                                <p class="text-sm text-gray-600 mb-1">
-                                    <span class="font-semibold">Proof URL:</span> 
-                                    <a href="{{ task.submission.proof_url }}" target="_blank" rel="noopener noreferrer" class="text-[#e74c3c] hover:underline break-all">
-                                        {{ task.submission.proof_url }}
-                                    </a>
-                                </p>
-                                {% endif %}
-
-                                {% if task.submission.notes %}
-                                <p class="text-sm text-gray-600">
-                                    <span class="font-semibold">Notes:</span> {{ task.submission.notes }}
-                                </p>
-                                {% endif %}
-                            </div>
-                            {% endif %}
-
-                            <!-- Submission Form -->
-                            {% if user.is_authenticated and progress and not task.submission.approved %}
-                            <form method="post" action="{% url 'submit_task' slug=adventure.slug task_id=task.id %}" class="mt-4">
-                                {% csrf_token %}
-                                <div class="space-y-3">
-                                    <div>
-                                        <label for="proof_url_{{ task.id }}" class="block text-sm font-semibold text-gray-700 mb-1">
-                                            Proof URL (Pull Request, Issue, Blog Post, etc.)
-                                        </label>
-                                        <input 
-                                            type="url" 
-                                            id="proof_url_{{ task.id }}" 
-                                            name="proof_url" 
-                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
-                                            placeholder="https://github.com/..."
-                                            {% if task.submission %}value="{{ task.submission.proof_url }}"{% endif %}
-                                        >
-                                    </div>
-                                    <div>
-                                        <label for="notes_{{ task.id }}" class="block text-sm font-semibold text-gray-700 mb-1">
-                                            Additional Notes
-                                        </label>
-                                        <textarea 
-                                            id="notes_{{ task.id }}" 
-                                            name="notes" 
-                                            rows="3" 
-                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
-                                            placeholder="Describe what you did..."
-                                        >{% if task.submission %}{{ task.submission.notes }}{% endif %}</textarea>
-                                    </div>
-                                    <button type="submit" class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-semibold">
-                                        {% if task.submission %}Resubmit{% else %}Submit Task{% endif %}
-                                    </button>
-                                </div>
-                            </form>
+                <!-- Progress Section (for authenticated users) -->
+                {% if user.is_authenticated %}
+                    <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">Your Progress</h3>
+                            {% if progress %}
+                                <span class="text-2xl font-bold text-[#e74c3c]">{{ progress.progress_percentage }}%</span>
                             {% endif %}
                         </div>
+                        {% if progress %}
+                            <div class="w-full bg-gray-300 rounded-full h-4 mb-4">
+                                <div class="bg-[#e74c3c] h-4 rounded-full transition-all duration-300"
+                                     style="width: {{ progress.progress_percentage }}%"></div>
+                            </div>
+                            {% if progress.completed %}
+                                <div class="bg-green-100 border border-green-300 rounded-lg p-4 flex items-center">
+                                    <svg class="w-6 h-6 text-green-600 mr-3"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                    <span class="text-green-800 font-semibold">Congratulations! You completed this adventure on {{ progress.completed_at|date:"F d, Y" }}</span>
+                                </div>
+                            {% else %}
+                                <p class="text-gray-600">Started on {{ progress.started_at|date:"F d, Y" }}</p>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'start_adventure' slug=adventure.slug %}"
+                               class="inline-block px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-semibold">
+                                Start This Adventure
+                            </a>
+                        {% endif %}
                     </div>
-                </div>
+                {% else %}
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                        <p class="text-blue-800">
+                            <a href="{% url 'account_login' %}"
+                               class="text-[#e74c3c] hover:underline font-semibold">Log in</a>
+                            to track your progress and earn badges!
+                        </p>
+                    </div>
+                {% endif %}
             </div>
-            {% empty %}
-            <p class="text-gray-500 text-center py-8">No tasks available yet.</p>
-            {% endfor %}
+        </div>
+        <!-- Tasks Section -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h2 class="text-3xl font-bold mb-6">Tasks</h2>
+            <div class="space-y-6">
+                {% for task in tasks %}
+                    <div class="border-2 {% if task.submission and task.submission.approved %}border-green-500{% elif task.submission and task.submission.status == 'pending' %}border-yellow-500{% elif task.submission and task.submission.status == 'rejected' %}border-red-500{% else %}border-gray-200{% endif %} rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-start flex-1">
+                                <span class="flex-shrink-0 w-10 h-10 bg-[#e74c3c] text-white rounded-full flex items-center justify-center font-bold mr-4">
+                                    {{ task.order }}
+                                </span>
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-bold mb-2">
+                                        {{ task.title }}
+                                        {% if not task.is_required %}<span class="text-sm font-normal text-gray-500">(Optional)</span>{% endif %}
+                                    </h3>
+                                    <p class="text-gray-700 mb-4 whitespace-pre-line">{{ task.description }}</p>
+                                    <!-- Submission Status -->
+                                    {% if task.submission %}
+                                        <div class="mb-4">
+                                            {% if task.submission.approved %}
+                                                <div class="flex items-center text-green-600 mb-2">
+                                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd">
+                                                        </path>
+                                                    </svg>
+                                                    <span class="font-semibold">Approved</span>
+                                                </div>
+                                            {% elif task.submission.status == 'pending' %}
+                                                <div class="flex items-center text-yellow-600 mb-2">
+                                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd">
+                                                        </path>
+                                                    </svg>
+                                                    <span class="font-semibold">Pending Review</span>
+                                                </div>
+                                            {% elif task.submission.status == 'rejected' %}
+                                                <div class="flex items-center text-red-600 mb-2">
+                                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd">
+                                                        </path>
+                                                    </svg>
+                                                    <span class="font-semibold">Rejected</span>
+                                                </div>
+                                                {% if task.submission.reviewer_notes %}
+                                                    <div class="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
+                                                        <p class="font-semibold mb-1">Feedback:</p>
+                                                        <p>{{ task.submission.reviewer_notes }}</p>
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if task.submission.proof_url %}
+                                                <p class="text-sm text-gray-600 mb-1">
+                                                    <span class="font-semibold">Proof URL:</span>
+                                                    <a href="{{ task.submission.proof_url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="text-[#e74c3c] hover:underline break-all">
+                                                        {{ task.submission.proof_url }}
+                                                    </a>
+                                                </p>
+                                            {% endif %}
+                                            {% if task.submission.notes %}
+                                                <p class="text-sm text-gray-600">
+                                                    <span class="font-semibold">Notes:</span> {{ task.submission.notes }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    <!-- Submission Form -->
+                                    {% if user.is_authenticated and progress and not task.submission.approved %}
+                                        <form method="post"
+                                              action="{% url 'submit_task' slug=adventure.slug task_id=task.id %}"
+                                              class="mt-4">
+                                            {% csrf_token %}
+                                            <div class="space-y-3">
+                                                <div>
+                                                    <label for="proof_url_{{ task.id }}"
+                                                           class="block text-sm font-semibold text-gray-700 mb-1">
+                                                        Proof URL (Pull Request, Issue, Blog Post, etc.)
+                                                    </label>
+                                                    <input type="url"
+                                                           id="proof_url_{{ task.id }}"
+                                                           name="proof_url"
+                                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                                           placeholder="https://github.com/..."
+                                                           {% if task.submission %}value="{{ task.submission.proof_url }}"{% endif %}>
+                                                </div>
+                                                <div>
+                                                    <label for="notes_{{ task.id }}"
+                                                           class="block text-sm font-semibold text-gray-700 mb-1">
+                                                        Additional Notes
+                                                    </label>
+                                                    <textarea id="notes_{{ task.id }}"
+                                                              name="notes"
+                                                              rows="3"
+                                                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                                              placeholder="Describe what you did...">{% if task.submission %}{{ task.submission.notes }}{% endif %}</textarea>
+                                                </div>
+                                                <button type="submit"
+                                                        class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-semibold">
+                                                    {% if task.submission %}
+                                                        Resubmit
+                                                    {% else %}
+                                                        Submit Task
+                                                    {% endif %}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500 text-center py-8">No tasks available yet.</p>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
-
 {% endblock %}
