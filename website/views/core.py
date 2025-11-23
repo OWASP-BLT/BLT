@@ -39,7 +39,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -831,13 +831,28 @@ def add_forum_post(request):
             title = data.get("title")
             category = data.get("category")
             description = data.get("description")
+            repo_id = data.get("repo")
+            project_id = data.get("project")
+            organization_id = data.get("organization")
 
             if not all([title, category, description]):
                 return JsonResponse({"status": "error", "message": "Missing required fields"})
 
-            post = ForumPost.objects.create(
-                user=request.user, title=title, category_id=category, description=description
-            )
+            post_data = {
+                "user": request.user,
+                "title": title,
+                "category_id": category,
+                "description": description,
+            }
+
+            if repo_id:
+                post_data["repo_id"] = repo_id
+            if project_id:
+                post_data["project_id"] = project_id
+            if organization_id:
+                post_data["organization_id"] = organization_id
+
+            post = ForumPost.objects.create(**post_data)
 
             return JsonResponse({"status": "success", "post_id": post.id})
         except json.JSONDecodeError:
@@ -873,17 +888,69 @@ def add_forum_comment(request):
     return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
+@login_required
+@require_POST
+def delete_forum_post(request):
+    if not request.user.is_superuser:
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        post_id = data.get("post_id")
+
+        if not post_id:
+            return JsonResponse({"status": "error", "message": "Post ID is required"})
+
+        # Validate post_id is an integer
+        try:
+            post_id = int(post_id)
+        except (ValueError, TypeError):
+            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
+
+        post = ForumPost.objects.get(id=post_id)
+        post.delete()
+
+        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
+    except ForumPost.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Post not found"})
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+    except Exception as e:
+        logging.exception("Unexpected error deleting forum post")
+        return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+
 def view_forum(request):
     categories = ForumCategory.objects.all()
     selected_category = request.GET.get("category")
 
-    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+    posts = (
+        ForumPost.objects.select_related("user", "category", "repo", "project", "organization")
+        .prefetch_related("comments")
+        .all()
+    )
+
+    total_posts_count = posts.count()
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
+    organizations = Organization.objects.all().order_by("name")
+    projects = Project.objects.all().order_by("name")
+    repos = Repo.objects.all().order_by("name")
+
     return render(
-        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+        request,
+        "forum.html",
+        {
+            "categories": categories,
+            "posts": posts,
+            "selected_category": selected_category,
+            "organizations": organizations,
+            "projects": projects,
+            "repos": repos,
+            "total_posts_count": total_posts_count,
+        },
     )
 
 
