@@ -37,7 +37,7 @@
                     </p>
                     <div class="flex flex-wrap justify-center gap-4">
                         {% if slack_client_id %}
-                            <a href="https://slack.com/oauth/v2/authorize?client_id={{ slack_client_id }}&scope=channels:read,channels:join,chat:write,commands,users:read,im:write,team:read&user_scope="
+                            <a href="https://slack.com/oauth/v2/authorize?client_id={{ slack_client_id }}&scope=channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands&user_scope="
                                class="inline-flex items-center px-8 py-4 bg-white hover:bg-gray-100 text-gray-900 font-bold rounded-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105">
                                 <svg class="h-6 w-6 mr-3"
                                      fill="currentColor"
@@ -368,7 +368,7 @@
                         Connect the OWASP BLT Slack Bot to your workspace in seconds and bring the power of OWASP to your team.
                     </p>
                     {% if slack_client_id %}
-                        <a href="https://slack.com/oauth/v2/authorize?client_id={{ slack_client_id }}&scope=channels:read,channels:join,chat:write,commands,users:read,im:write,team:read&user_scope="
+                        <a href="https://slack.com/oauth/v2/authorize?client_id={{ slack_client_id }}&scope=channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands&user_scope="
                            class="inline-flex items-center px-8 py-4 bg-white hover:bg-gray-100 text-[#e74c3c] font-bold rounded-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105">
                             <svg class="h-6 w-6 mr-3"
                                  fill="currentColor"

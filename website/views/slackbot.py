@@ -6,6 +6,7 @@ import time
 
 import requests
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from slack_bolt import App
 from slack_bolt.adapter.django import SlackRequestHandler
@@ -384,8 +385,6 @@ if app:
 
 def slack_landing_page(request):
     """Landing page for Slack bot with features and installation button."""
-    from django.shortcuts import render
-
     slack_client_id = os.environ.get("SLACK_ID_CLIENT")
     context = {
         "slack_client_id": slack_client_id,
