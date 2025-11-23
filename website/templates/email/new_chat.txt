@@ -1,0 +1,15 @@
+Hello {{ recipient_username }},
+
+{{ sender_username }} has started a new encrypted chat with you on OWASP BLT.
+
+Click the link below to view and respond to the conversation:
+{{ chat_url }}
+
+This is a secure chat with end-to-end encryption. Only you and {{ sender_username }} can read the messages.
+
+Regards,
+The OWASP BLT Team
+
+---
+If you're having trouble with the link above, copy and paste this URL into your browser:
+{{ chat_url }}
