@@ -382,6 +382,17 @@ if app:
             logger.error(f"Error sending DM to user {user_id}: {e}")
 
 
+def slack_landing_page(request):
+    """Landing page for Slack bot with features and installation button."""
+    from django.shortcuts import render
+
+    slack_client_id = os.environ.get("SLACK_ID_CLIENT")
+    context = {
+        "slack_client_id": slack_client_id,
+    }
+    return render(request, "slack.html", context)
+
+
 @csrf_exempt
 def slack_commands(request):
     logger.debug(f"Received Slack command with content type: {request.content_type}")
