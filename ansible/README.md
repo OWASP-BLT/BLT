@@ -21,7 +21,7 @@ ansible-playbook -i ansible/inventory.yml ansible/playbook.yml
 ```
 
 ## Notes
-- Installs dependencies using Poetry export to a requirements.txt installed into a virtualenv.
+- Installs dependencies using Poetry export to a requirements.txt, which is then installed into a virtualenv.
 - Creates a systemd service `blt-uvicorn`.
 - Nginx reverse proxies to uvicorn (ASGI) server on port 8000.
 - Opens ports 22, 80, 443 with UFW.
