@@ -3313,9 +3313,7 @@ class SlackReminder(models.Model):
 
     creator_id = models.CharField(max_length=255)  # Slack user ID
     workspace_id = models.CharField(max_length=255)  # Slack workspace/team ID
-    target_type = models.CharField(
-        max_length=20, choices=[("user", "User"), ("channel", "Channel")], default="user"
-    )
+    target_type = models.CharField(max_length=20, choices=[("user", "User"), ("channel", "Channel")], default="user")
     target_id = models.CharField(max_length=255)  # User ID or Channel ID
     message = models.TextField()
     remind_at = models.DateTimeField()

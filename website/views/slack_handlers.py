@@ -7,11 +7,13 @@ import os
 import re
 import threading
 import time
+from datetime import timedelta
 
 import requests
 import yaml
 from django.db.models import Count, Sum
 from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
@@ -2654,7 +2656,7 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
                         "type": "mrkdwn",
                         "text": "*📊 How to use /poll command:*\n\n"
                         "*Create a poll:*\n"
-                        "`/poll \"Question?\" \"Option 1\" \"Option 2\" \"Option 3\"`\n\n"
+                        '`/poll "Question?" "Option 1" "Option 2" "Option 3"`\n\n'
                         "*Example:*\n"
                         '`/poll "What time works best?" "Morning" "Afternoon" "Evening"`\n\n'
                         "*Features:*\n"
@@ -2680,9 +2682,7 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
             )
 
         if len(parts) > 11:  # 1 question + max 10 options
-            return JsonResponse(
-                {"response_type": "ephemeral", "text": "❌ Too many options. Maximum is 10 options."}
-            )
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Too many options. Maximum is 10 options."})
 
         question = parts[0]
         options = parts[1:]
@@ -2806,9 +2806,9 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                         "type": "mrkdwn",
                         "text": "*⏰ How to use /remind command:*\n\n"
                         "*Set a reminder:*\n"
-                        "`/remind \"Message\" in <number> <minutes|hours|days>`\n"
-                        "`/remind me \"Message\" in <number> <minutes|hours|days>`\n"
-                        "`/remind <@user> \"Message\" in <number> <minutes|hours|days>`\n\n"
+                        '`/remind "Message" in <number> <minutes|hours|days>`\n'
+                        '`/remind me "Message" in <number> <minutes|hours|days>`\n'
+                        '`/remind <@user> "Message" in <number> <minutes|hours|days>`\n\n'
                         "*Examples:*\n"
                         '`/remind "Team meeting" in 30 minutes`\n'
                         '`/remind me "Follow up" in 2 hours`\n'
@@ -2861,7 +2861,7 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
-                    "text": '❌ Invalid time format. Use: in <number> <minutes|hours|days>',
+                    "text": "❌ Invalid time format. Use: in <number> <minutes|hours|days>",
                 }
             )
 
@@ -2916,14 +2916,12 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
 def list_user_reminders(workspace_client, user_id, team_id):
     """List all pending reminders for a user"""
     try:
-        reminders = SlackReminder.objects.filter(
-            workspace_id=team_id, creator_id=user_id, status="pending"
-        ).order_by("remind_at")
+        reminders = SlackReminder.objects.filter(workspace_id=team_id, creator_id=user_id, status="pending").order_by(
+            "remind_at"
+        )
 
         if not reminders.exists():
-            return JsonResponse(
-                {"response_type": "ephemeral", "text": "📭 You don't have any pending reminders."}
-            )
+            return JsonResponse({"response_type": "ephemeral", "text": "📭 You don't have any pending reminders."})
 
         blocks = [
             {"type": "header", "text": {"type": "plain_text", "text": "⏰ Your Pending Reminders", "emoji": True}},
@@ -3071,9 +3069,7 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
         blocks = build_huddle_blocks(huddle)
 
         # Post huddle to channel
-        response = workspace_client.chat_postMessage(
-            channel=channel_id, text=f"🎯 Huddle: {title}", blocks=blocks
-        )
+        response = workspace_client.chat_postMessage(channel=channel_id, text=f"🎯 Huddle: {title}", blocks=blocks)
 
         # Store message timestamp
         huddle.message_ts = response["ts"]
@@ -3173,14 +3169,12 @@ def build_huddle_blocks(huddle):
 def list_channel_huddles(workspace_client, user_id, team_id, channel_id):
     """List all scheduled huddles for a channel"""
     try:
-        huddles = SlackHuddle.objects.filter(
-            workspace_id=team_id, channel_id=channel_id, status="scheduled"
-        ).order_by("scheduled_at")
+        huddles = SlackHuddle.objects.filter(workspace_id=team_id, channel_id=channel_id, status="scheduled").order_by(
+            "scheduled_at"
+        )
 
         if not huddles.exists():
-            return JsonResponse(
-                {"response_type": "ephemeral", "text": "📭 No scheduled huddles in this channel."}
-            )
+            return JsonResponse({"response_type": "ephemeral", "text": "📭 No scheduled huddles in this channel."})
 
         blocks = [
             {
@@ -3212,9 +3206,7 @@ def list_channel_huddles(workspace_client, user_id, team_id, channel_id):
 
     except Exception as e:
         logger.error(f"Error listing huddles: {str(e)}")
-        return JsonResponse(
-            {"response_type": "ephemeral", "text": "❌ An error occurred while fetching huddles."}
-        )
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while fetching huddles."})
 
 
 def handle_committee_pagination(action, body, client):
@@ -3279,7 +3271,9 @@ def handle_poll_vote(payload, workspace_client):
 
         # Update the poll message
         blocks = build_poll_blocks(poll)
-        workspace_client.chat_update(channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}")
+        workspace_client.chat_update(
+            channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
+        )
 
         return JsonResponse({"response_type": "ephemeral", "text": message})
 
@@ -3310,7 +3304,9 @@ def handle_poll_close(payload, workspace_client, user_id):
 
         # Update the poll message
         blocks = build_poll_blocks(poll)
-        workspace_client.chat_update(channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question} [CLOSED]")
+        workspace_client.chat_update(
+            channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question} [CLOSED]"
+        )
 
         return JsonResponse({"response_type": "ephemeral", "text": "✅ Poll closed!"})
 
@@ -3345,7 +3341,9 @@ def handle_reminder_cancel(payload, user_id):
         return JsonResponse({"response_type": "ephemeral", "text": "❌ Reminder not found."})
     except Exception as e:
         logger.error(f"Error cancelling reminder: {str(e)}")
-        return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while cancelling the reminder."})
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while cancelling the reminder."}
+        )
 
 
 def handle_huddle_response(payload, workspace_client, user_id, response):
@@ -3366,7 +3364,9 @@ def handle_huddle_response(payload, workspace_client, user_id, response):
 
         # Update the huddle message
         blocks = build_huddle_blocks(huddle)
-        workspace_client.chat_update(channel=huddle.channel_id, ts=huddle.message_ts, blocks=blocks, text=f"🎯 Huddle: {huddle.title}")
+        workspace_client.chat_update(
+            channel=huddle.channel_id, ts=huddle.message_ts, blocks=blocks, text=f"🎯 Huddle: {huddle.title}"
+        )
 
         response_emoji = "✅" if response == "accepted" else "❌"
         return JsonResponse({"response_type": "ephemeral", "text": f"{response_emoji} Response recorded!"})
@@ -3375,7 +3375,9 @@ def handle_huddle_response(payload, workspace_client, user_id, response):
         return JsonResponse({"response_type": "ephemeral", "text": "❌ Huddle not found."})
     except Exception as e:
         logger.error(f"Error handling huddle response: {str(e)}")
-        return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while responding to the huddle."})
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while responding to the huddle."}
+        )
 
 
 def handle_huddle_cancel(payload, workspace_client, user_id):
@@ -3399,7 +3401,10 @@ def handle_huddle_cancel(payload, workspace_client, user_id):
         # Update the huddle message
         blocks = build_huddle_blocks(huddle)
         workspace_client.chat_update(
-            channel=huddle.channel_id, ts=huddle.message_ts, blocks=blocks, text=f"🎯 Huddle: {huddle.title} [CANCELLED]"
+            channel=huddle.channel_id,
+            ts=huddle.message_ts,
+            blocks=blocks,
+            text=f"🎯 Huddle: {huddle.title} [CANCELLED]",
         )
 
         return JsonResponse({"response_type": "ephemeral", "text": "✅ Huddle cancelled!"})
