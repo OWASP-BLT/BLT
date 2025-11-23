@@ -1652,6 +1652,22 @@ class IssueView(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
+        # Add user's total score
+        if self.object.user:
+            context["users_score"] = Points.objects.filter(user=self.object.user).aggregate(
+                total=Sum("score")
+            )["total"] or 0
+
+        # Add email-related data from domain
+        if self.object.domain:
+            context["email_clicks"] = self.object.domain.clicks
+            context["email_events"] = self.object.domain.email_event
+            
+            # Generate GitHub issues URL from the domain's github field
+            if self.object.domain.github:
+                github_url = self.object.domain.github.rstrip('/')
+                context["github_issues_url"] = f"{github_url}/issues"
+
         return context
 
 
