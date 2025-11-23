@@ -579,6 +579,95 @@
                         </div>
                     </div>
                 {% endif %}
+                <!-- Leaderboard Section -->
+                {% if leaderboard %}
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                            <i class="fa-solid fa-trophy text-[#e74c3c] mr-2"></i>Contributor Leaderboard
+                        </h2>
+                        <p class="text-sm text-gray-600 mb-4">Top contributors since November 11, 2024</p>
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Rank
+                                            </th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Contributor
+                                            </th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Merged PRs
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for item in leaderboard %}
+                                            <tr class="hover:bg-gray-50 transition-colors">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        {% if forloop.counter == 1 %}
+                                                            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100">
+                                                                <i class="fas fa-trophy text-yellow-600"></i>
+                                                            </span>
+                                                        {% elif forloop.counter == 2 %}
+                                                            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100">
+                                                                <i class="fas fa-medal text-gray-600"></i>
+                                                            </span>
+                                                        {% elif forloop.counter == 3 %}
+                                                            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100">
+                                                                <i class="fas fa-award text-orange-600"></i>
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="text-sm font-medium text-gray-900">{{ forloop.counter }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        {% if item.avatar_url %}
+                                                            <img src="{{ item.avatar_url }}"
+                                                                 alt="{{ item.username }}"
+                                                                 width="40"
+                                                                 height="40"
+                                                                 class="w-10 h-10 rounded-full object-cover">
+                                                        {% else %}
+                                                            <div class="w-10 h-10 rounded-full bg-[#e74c3c] flex items-center justify-center">
+                                                                <i class="fas fa-user text-white"></i>
+                                                            </div>
+                                                        {% endif %}
+                                                        <div class="ml-4">
+                                                            {% if item.url %}
+                                                                <a href="{{ item.url }}"
+                                                                   target="_blank"
+                                                                   rel="noopener noreferrer"
+                                                                   class="text-sm font-medium text-gray-900 hover:text-[#e74c3c]">
+                                                                    {{ item.username }}
+                                                                </a>
+                                                            {% else %}
+                                                                <span class="text-sm font-medium text-gray-900">{{ item.username }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        <span class="text-sm font-bold text-[#e74c3c]">{{ item.pr_count }}</span>
+                                                        <span class="ml-2 text-xs text-gray-500">merged PRs</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <!-- Domains List -->
                 {% if organization.domain_set.all %}
                     <div class="mb-8">
