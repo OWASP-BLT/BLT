@@ -41,7 +41,7 @@ jobs:
             HEAD_SHA="${{ github.event.pull_request.head.sha }}"
             
             # Get changed JS files
-            CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA...$HEAD_SHA | grep '\.js$' || true)
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA..$HEAD_SHA | grep '\.js$' || true)
             
             if [ -z "$CHANGED_FILES" ]; then
               echo "No JavaScript files changed in this PR"
@@ -60,8 +60,9 @@ jobs:
             while IFS= read -r file; do
               if [ -f "$file" ]; then
                 # Search for console.log using word boundaries to avoid false positives
-                # Excludes commented lines (lines with // or /* after line number)
-                MATCHES=$(grep -n '\bconsole\.log\b' "$file" | grep -Ev '^\s*[0-9]+:\s*(//|/\*)' || true)
+                # Excludes lines where content starts with // or /* (commented lines)
+                # grep -n output format is: line_number:content
+                MATCHES=$(grep -n '\bconsole\.log\b' "$file" | grep -Ev '^[0-9]+:\s*(//|/\*)' || true)
                 
                 if [ -n "$MATCHES" ]; then
                   echo "Found console.log in $file:"
