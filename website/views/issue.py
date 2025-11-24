@@ -687,14 +687,15 @@ class IssueBaseCreate(object):
                 # Validate the original user input first
                 validate_screenshot_hash(original_hash)
 
-                # Generate unique hash by appending UUID
-                # The hash is stored without extension, so we add .png
-                unique_hash = original_hash[:99] + str(uuid.uuid4()) + ".png"
+                # Normalize: strip any existing extension before appending .png
+                # This handles cases where validation allows dots
+                hash_without_ext = original_hash.rsplit(".", 1)[0] if "." in original_hash else original_hash
+                unique_hash = hash_without_ext[:99] + str(uuid.uuid4()) + ".png"
                 self.request.POST["screenshot-hash"] = unique_hash
 
-                # Open file using original_hash (the actual uploaded filename)
-                # Add .png extension since the hash is stored without extension
-                screenshot_path = os.path.join("uploads", f"{original_hash}.png")
+                # Open file using normalized hash
+                original_filename = original_hash if "." in original_hash else f"{original_hash}.png"
+                screenshot_path = os.path.join("uploads", original_filename)
                 try:
                     reopen = default_storage.open(screenshot_path, "rb")
                     django_file = File(reopen)
@@ -875,7 +876,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             try:
                 screenshot_hash = self.request.POST.get("screenshot-hash").strip()
                 validate_screenshot_hash(screenshot_hash)
-                screenshot_path = os.path.join("uploads", f"{screenshot_hash}.png")
+                # Normalize: if hash already has extension, use it; otherwise append .png
+                screenshot_filename = screenshot_hash if "." in screenshot_hash else f"{screenshot_hash}.png"
+                screenshot_path = os.path.join("uploads", screenshot_filename)
                 initial["screenshot"] = screenshot_path
             except ValidationError:
                 messages.error(self.request, "Invalid screenshot hash provided")
