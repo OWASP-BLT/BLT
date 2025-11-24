@@ -1220,7 +1220,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             )
 
                             try:
-                                # Send email with encrypted zip file
+                                # Prepare both emails first
                                 email = EmailMessage(
                                     subject=email_subject,
                                     body=html_body,
@@ -1232,9 +1232,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                 with open(zip_path, "rb") as f:
                                     email.attach("security_report.zip", f.read(), "application/zip")
 
-                                email.send(fail_silently=False)
-
-                                # Send password in a separate email for maximum security
+                                # Prepare password email
                                 password_subject = f"Password for {report_type} - {clean_domain}"
                                 password_body = render_to_string(
                                     "email/security_report_password.html",
@@ -1248,7 +1246,19 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                     to=[dest_email],
                                 )
                                 password_email.content_subtype = "html"
-                                password_email.send(fail_silently=False)
+
+                                # Send both emails and track success
+                                try:
+                                    email.send(fail_silently=False)
+                                    password_email.send(fail_silently=False)
+                                except Exception as email_error:
+                                    logger.error(f"Error sending report or password email: {email_error}")
+                                    error_msg = "private bug report" if report_private else "security report"
+                                    messages.error(
+                                        self.request,
+                                        f"Failed to send complete {error_msg}. Please try again or contact support.",
+                                    )
+                                    return HttpResponseRedirect("/")
 
                                 # Increment private reports count if this is a private report
                                 if report_private and self.request.user.is_authenticated and not report_anonymous:
