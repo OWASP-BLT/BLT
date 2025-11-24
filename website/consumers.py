@@ -3,8 +3,8 @@ import difflib
 import json
 import logging
 import os
+import secrets
 import tempfile
-import uuid
 import zipfile
 from pathlib import Path
 
@@ -365,7 +365,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def get_or_create_session_key(self, data):
         """Get existing session key from scope or data, or generate a new one."""
         session_key = (
-            self.scope.get("session", {}).get("session_key") or data.get("session_key") or str(uuid.uuid4())[:8]
+            self.scope.get("session", {}).get("session_key") or data.get("session_key") or secrets.token_urlsafe(8)
         )
 
         # Store session key in scope for future use
@@ -412,17 +412,33 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def add_reaction(self, message_id, emoji, username):
-        """Adds or toggles a reaction on a message.
+        """
+        Adds or toggles a reaction (emoji) on a message.
 
-        1. Multiple emoji reactions per user
-        2. Anonymous users via session keys
-        3. Users can only remove their own reactions
+        If the user has not yet reacted to the message with the given emoji, their reaction is added.
+        If the user has already reacted with the same emoji, their reaction is removed (toggle behavior).
+        Multiple emoji reactions per user are supported. Users can only remove their own reactions.
+
+        Args:
+            message_id (int): The ID of the message to react to.
+            emoji (str): The emoji to add or remove (e.g., "👍", "❤️").
+            username (str): The username of the user adding/removing the reaction. For anonymous users,
+                this should be in the format "anon_{session_key}".
+
+        Returns:
+            dict: The updated reactions dictionary if successful, or None if the operation failed.
+
+        Note:
+            - Anonymous users are identified by usernames starting with "anon_" and are stored in reactions
+              as "session_{session_key}".
+            - The toggle behavior means that if a user has already reacted with the given emoji, their reaction
+              will be removed; otherwise, it will be added.
         """
         try:
             message = Message.objects.get(id=message_id)
             reactions = message.reactions or {}
 
-            # Handle anonymous users
+            # Handle anonymous users - extract session key from anon_ prefix
             is_anonymous = username.startswith("anon_")
             if is_anonymous:
                 # Safely extract session key from username
@@ -477,6 +493,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 message_id = data.get("message_id")
                 emoji = data.get("emoji")
 
+                # Validate emoji input
+                if not emoji or not isinstance(emoji, str):
+                    await self.send(
+                        text_data=json.dumps({"type": "error", "code": "invalid_emoji", "message": "Invalid emoji"})
+                    )
+                    return
+
+                # Limit emoji length to prevent abuse (emojis are typically 1-4 characters)
+                if len(emoji) > 10:
+                    await self.send(
+                        text_data=json.dumps(
+                            {"type": "error", "code": "invalid_emoji", "message": "Emoji too long"}
+                        )
+                    )
+                    return
+
+                if not message_id:
+                    await self.send(
+                        text_data=json.dumps(
+                            {"type": "error", "code": "invalid_reaction", "message": "Message ID required"}
+                        )
+                    )
+                    return
+
                 # Get username or generate anonymous session-based username
                 if self.scope["user"].is_authenticated:
                     username = self.scope["user"].username
@@ -494,14 +534,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                             }
                         )
                     )
-
-                if not message_id or not emoji:
-                    await self.send(
-                        text_data=json.dumps(
-                            {"type": "error", "code": "invalid_reaction", "message": "Message ID and emoji required"}
-                        )
-                    )
-                    return
 
                 reactions = await self.add_reaction(message_id, emoji, username)
                 if reactions is not None:

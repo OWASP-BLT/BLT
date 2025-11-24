@@ -126,11 +126,12 @@ class ChatConsumerTests(TransactionTestCase):
             )
         )
 
-        # Receive session key again
+        # Receive session key again (sent for anonymous users)
         await communicator.receive_from()
         # Receive reaction update
         response = await communicator.receive_from()
         response_data = json.loads(response)
+        self.assertEqual(response_data["type"], "reaction_update")
         self.assertEqual(response_data["reactions"], {})
 
         await self.message.arefresh_from_db()
