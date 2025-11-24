@@ -80,6 +80,7 @@
             <div class="flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
                 <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">
                     Pull Request Leaderboard
+                    <div class="text-sm font-normal text-gray-600 dark:text-gray-400 mt-1">Last 6 months</div>
                 </div>
                 <div class="list-group w-full p-4">
                     {% if pr_leaderboard %}
@@ -125,7 +126,10 @@
                 </div>
             </div>
             <div class="flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">Code Review Leaderboard</div>
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">
+                    Code Review Leaderboard
+                    <div class="text-sm font-normal text-gray-600 dark:text-gray-400 mt-1">Last 6 months</div>
+                </div>
                 <div class="list-group p-4">
                     {% if code_review_leaderboard %}
                         <div class="flex flex-col gap-2">
