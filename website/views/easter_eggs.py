@@ -1,19 +1,16 @@
 import hashlib
 import logging
 import secrets
-from datetime import timedelta
 from decimal import Decimal
 
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from website.models import BaconEarning, EasterEgg, EasterEggDiscovery, User
+from website.models import BaconEarning, EasterEgg, EasterEggDiscovery
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +48,7 @@ def discover_easter_egg(request):
         rate_limit_key = f"easter_egg_attempts:{request.user.id}"
         attempts = cache.get(rate_limit_key, 0)
         if attempts >= 10:
-            return JsonResponse(
-                {"error": "Too many attempts. Please try again later."}, status=429
-            )
+            return JsonResponse({"error": "Too many attempts. Please try again later."}, status=429)
 
         # Increment rate limit counter
         cache.set(rate_limit_key, attempts + 1, 3600)  # 1 hour timeout
@@ -62,22 +57,16 @@ def discover_easter_egg(request):
         try:
             easter_egg = EasterEgg.objects.get(code=egg_code, is_active=True)
         except EasterEgg.DoesNotExist:
-            logger.warning(
-                f"User {request.user.username} attempted to discover non-existent Easter egg: {egg_code}"
-            )
+            logger.warning(f"User {request.user.username} attempted to discover non-existent Easter egg: {egg_code}")
             return JsonResponse({"error": "Easter egg not found"}, status=404)
 
         # Check if user has already discovered this Easter egg
-        existing_discovery = EasterEggDiscovery.objects.filter(
-            user=request.user, easter_egg=easter_egg
-        ).first()
+        existing_discovery = EasterEggDiscovery.objects.filter(user=request.user, easter_egg=easter_egg).first()
 
         if existing_discovery:
             if (
                 easter_egg.max_claims_per_user > 0
-                and EasterEggDiscovery.objects.filter(
-                    user=request.user, easter_egg=easter_egg
-                ).count()
+                and EasterEggDiscovery.objects.filter(user=request.user, easter_egg=easter_egg).count()
                 >= easter_egg.max_claims_per_user
             ):
                 return JsonResponse(
@@ -93,17 +82,13 @@ def discover_easter_egg(request):
             # Verify the request has a valid verification token
             verification_token = request.POST.get("verification")
             if not verification_token:
-                logger.warning(
-                    f"User {request.user.username} attempted bacon Easter egg without verification token"
-                )
+                logger.warning(f"User {request.user.username} attempted bacon Easter egg without verification token")
                 return JsonResponse({"error": "Invalid request"}, status=400)
 
             # Verify the token is valid
             expected_token = generate_verification_token(request.user.id, egg_code)
             if not secrets.compare_digest(verification_token, expected_token):
-                logger.warning(
-                    f"User {request.user.username} provided invalid verification token for bacon Easter egg"
-                )
+                logger.warning(f"User {request.user.username} provided invalid verification token for bacon Easter egg")
                 return JsonResponse({"error": "Invalid verification"}, status=400)
 
             # Check daily bacon limit per user (max 1 bacon token Easter egg per day)

@@ -83,17 +83,9 @@ class Command(BaseCommand):
             )
             if created:
                 created_count += 1
-                self.stdout.write(
-                    self.style.SUCCESS(f"Created Easter egg: {egg.name}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"Created Easter egg: {egg.name}"))
             else:
                 updated_count += 1
-                self.stdout.write(
-                    self.style.WARNING(f"Updated Easter egg: {egg.name}")
-                )
+                self.stdout.write(self.style.WARNING(f"Updated Easter egg: {egg.name}"))
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"\nTotal: {created_count} created, {updated_count} updated"
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"\nTotal: {created_count} created, {updated_count} updated"))
