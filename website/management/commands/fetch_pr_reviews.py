@@ -1,14 +1,14 @@
 import logging
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 
 import pytz
 import requests
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils import timezone
-from dateutil.relativedelta import relativedelta
 
 from website.models import Contributor, GitHubIssue, GitHubReview, UserProfile
 
@@ -67,19 +67,19 @@ class Command(BaseCommand):
         all_reviews_data = []
         all_github_ids = set()
         all_github_urls = set()
-        
+
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_pr = {
                 executor.submit(self.fetch_pr_reviews, pr_id, pr_url, headers): (pr_id, pr_number)
                 for pr_id, pr_number, pr_url, _ in prs
             }
-            
+
             completed = 0
             for future in as_completed(future_to_pr):
                 completed += 1
                 if completed % 20 == 0:
                     self.stdout.write(f"Progress: {completed}/{total_prs} PRs")
-                
+
                 pr_id, pr_number = future_to_pr[future]
                 try:
                     reviews = future.result()
@@ -90,11 +90,11 @@ class Command(BaseCommand):
                                 github_url = review["user"]["html_url"]
                                 reviewer_type = review["user"].get("type", "User")
                                 reviewer_login = review["user"]["login"]
-                                
+
                                 # Skip bots early
                                 if reviewer_type == "Bot" or reviewer_login.endswith("[bot]"):
                                     continue
-                                
+
                                 all_reviews_data.append((pr_id, review))
                                 all_github_ids.add(github_id)
                                 all_github_urls.add(github_url)
@@ -110,15 +110,9 @@ class Command(BaseCommand):
 
         # Bulk fetch contributors and user profiles
         self.stdout.write("Processing contributors...")
-        contributor_map = {
-            c.github_id: c
-            for c in Contributor.objects.filter(github_id__in=all_github_ids)
-        }
-        
-        userprofile_map = {
-            up.github_url: up
-            for up in UserProfile.objects.filter(github_url__in=all_github_urls)
-        }
+        contributor_map = {c.github_id: c for c in Contributor.objects.filter(github_id__in=all_github_ids)}
+
+        userprofile_map = {up.github_url: up for up in UserProfile.objects.filter(github_url__in=all_github_urls)}
 
         # Bulk create missing contributors
         missing_contributors = {}
@@ -137,17 +131,16 @@ class Command(BaseCommand):
         if missing_contributors:
             Contributor.objects.bulk_create(missing_contributors.values(), ignore_conflicts=True)
             # Refresh contributor map
-            contributor_map.update({
-                c.github_id: c
-                for c in Contributor.objects.filter(github_id__in=missing_contributors.keys())
-            })
+            contributor_map.update(
+                {c.github_id: c for c in Contributor.objects.filter(github_id__in=missing_contributors.keys())}
+            )
 
         # Get existing review IDs to determine create vs update
         self.stdout.write("Preparing database operations...")
         existing_review_ids = set(
-            GitHubReview.objects.filter(
-                review_id__in=[review["id"] for _, review in all_reviews_data]
-            ).values_list("review_id", flat=True)
+            GitHubReview.objects.filter(review_id__in=[review["id"] for _, review in all_reviews_data]).values_list(
+                "review_id", flat=True
+            )
         )
 
         # Bulk create/update reviews
@@ -167,18 +160,16 @@ class Command(BaseCommand):
                 "reviewer_contributor": reviewer_contributor,
                 "body": review.get("body", "")[:1000],  # Truncate long bodies
                 "state": review["state"],
-                "submitted_at": datetime.strptime(
-                    review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ"
-                ).replace(tzinfo=pytz.UTC),
+                "submitted_at": datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+                    tzinfo=pytz.UTC
+                ),
                 "url": review["html_url"],
             }
 
             if review["id"] in existing_review_ids:
                 reviews_to_update.append((review["id"], review_data))
             else:
-                reviews_to_create.append(
-                    GitHubReview(review_id=review["id"], **review_data)
-                )
+                reviews_to_create.append(GitHubReview(review_id=review["id"], **review_data))
 
         # Bulk create
         if reviews_to_create:
@@ -198,18 +189,17 @@ class Command(BaseCommand):
                     reviews_to_update_objs.append(review_obj)
                 except GitHubReview.DoesNotExist:
                     pass
-            
+
             if reviews_to_update_objs:
                 GitHubReview.objects.bulk_update(
                     reviews_to_update_objs,
                     ["pull_request", "reviewer", "reviewer_contributor", "body", "state", "submitted_at", "url"],
-                    batch_size=500
+                    batch_size=500,
                 )
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Completed! Added {len(reviews_to_create)} reviews, "
-                f"Updated {len(reviews_to_update)} reviews"
+                f"Completed! Added {len(reviews_to_create)} reviews, " f"Updated {len(reviews_to_update)} reviews"
             )
         )
 
@@ -218,13 +208,13 @@ class Command(BaseCommand):
         pr_url_parts = pr_url.replace("https://github.com/", "").split("/")
         if len(pr_url_parts) < 4:
             return []
-        
+
         owner = pr_url_parts[0]
         repo_name = pr_url_parts[1]
         pr_num = pr_url_parts[3]
-        
+
         reviews_url = f"https://api.github.com/repos/{owner}/{repo_name}/pulls/{pr_num}/reviews"
-        
+
         try:
             response = requests.get(reviews_url, headers=headers, timeout=3)
             if response.status_code == 200:
@@ -233,5 +223,5 @@ class Command(BaseCommand):
                     return reviews_data
         except Exception:
             pass  # Silently fail for speed
-        
+
         return []
