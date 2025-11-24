@@ -287,14 +287,13 @@ files = [
 
 [[package]]
 name = "bitcash"
-version = "1.0.2"
+version = "1.1.1"
 description = "Bitcoin Cash made easier."
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "BitCash-1.0.2-py3-none-any.whl", hash = "sha256:a139003b56b7d954bfe2716653b89180bedf87658d8193efab24fc15f36fbf90"},
-    {file = "bitcash-1.0.2-py2.py3-none-any.whl", hash = "sha256:2f52bf0f73513b82256aad8c9156cc5a8ca74ec9537467b2b3afe3de524d3577"},
+    {file = "bitcash-1.1.1-py3-none-any.whl", hash = "sha256:b11b759f1de81c01bc21f888de6abd2da110bbd3f3bfe1462ce79824e3b5c959"},
 ]
 
 [package.dependencies]
@@ -4080,4 +4079,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "4c3c82aac8f8b9ed98f4881d197e9cfe11569681000c4d437e31e52521a643f2"
+content-hash = "c4de6e1e8ced954db29eaa3eb1eef1bbaebbbda885f98d4935784bcdd09f57cb"
