@@ -75,7 +75,7 @@ pyjwt = {extras = ["crypto"], version = "^2.0.0"}
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
 isort = "^5.13.2"
-ruff = "^0.14.2"
+ruff = "^0.14.6"
 pre-commit = "^3.8.0"
 selenium = "^4.30.0"
 webdriver-manager = "^4.0.2"
