@@ -2641,7 +2641,6 @@ class Hackathon(models.Model):
         Generate a leaderboard of reviewers based on PR reviews
         during the hackathon timeframe.
         """
-        from django.db.models import Q
 
         # Get all merged pull requests from the hackathon's repositories within the timeframe
         pull_requests = GitHubIssue.objects.filter(
@@ -2680,9 +2679,7 @@ class Hackathon(models.Model):
                 if review.reviewer_contributor.contributor_type == "Bot":
                     continue
                 github_username = review.reviewer_contributor.name
-                if github_username and (
-                    github_username.endswith("[bot]") or "bot" in github_username.lower()
-                ):
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
                     continue
 
                 # GitHub contributor reviewer
@@ -2693,8 +2690,7 @@ class Hackathon(models.Model):
                 else:
                     leaderboard[contributor_id] = {
                         "user": {
-                            "username": review.reviewer_contributor.name
-                            or review.reviewer_contributor.github_id,
+                            "username": review.reviewer_contributor.name or review.reviewer_contributor.github_id,
                             "email": "",
                             "id": contributor_id,
                         },

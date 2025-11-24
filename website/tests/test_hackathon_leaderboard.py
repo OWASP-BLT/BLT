@@ -580,7 +580,7 @@ class HackathonLeaderboardTestCase(TestCase):
 
     def test_reviewer_leaderboard(self):
         """Test that the reviewer leaderboard correctly shows reviewers and their reviews."""
-        from website.models import Contributor, GitHubReview
+        from website.models import GitHubReview
 
         # Create a new hackathon for reviewer testing
         now = timezone.now()
@@ -876,12 +876,8 @@ class HackathonLeaderboardTestCase(TestCase):
         self.assertIn("testuser2", all_usernames, "Registered user should be in reviewer leaderboard")
         self.assertIn("human-reviewer", all_usernames, "Human contributor should be in reviewer leaderboard")
         self.assertNotIn("dependabot[bot]", all_usernames, "Bot should be excluded from reviewer leaderboard")
-        self.assertNotIn(
-            "github-actions[bot]", all_usernames, "Bot should be excluded from reviewer leaderboard"
-        )
-        self.assertNotIn(
-            "renovate-bot", all_usernames, "Bot-like name should be excluded from reviewer leaderboard"
-        )
+        self.assertNotIn("github-actions[bot]", all_usernames, "Bot should be excluded from reviewer leaderboard")
+        self.assertNotIn("renovate-bot", all_usernames, "Bot-like name should be excluded from reviewer leaderboard")
 
     def test_reviewer_leaderboard_empty(self):
         """Test that the reviewer leaderboard handles empty data correctly."""
