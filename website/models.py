@@ -2159,16 +2159,38 @@ class GitHubReview(models.Model):
     )
     reviewer = models.ForeignKey(
         UserProfile,
-        on_delete=models.CASCADE,
-        related_name="reviews_made",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviews_made_as_user",
+    )
+    reviewer_contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviews_made_as_contributor",
     )
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)  # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
     submitted_at = models.DateTimeField()
     url = models.URLField()
 
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
+                name="at_least_one_reviewer",
+            ),
+        )
+
     def __str__(self):
-        return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
+        reviewer_name = "Unknown"
+        if self.reviewer:
+            reviewer_name = self.reviewer.user.username
+        elif self.reviewer_contributor:
+            reviewer_name = self.reviewer_contributor.name
+        return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
 
 
 class Kudos(models.Model):
