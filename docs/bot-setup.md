@@ -56,42 +56,42 @@ The bot currently supports the following commands:
   - `committees [search]` - View OWASP committees
 
 ### Poll Commands
-- `/poll` - Create and manage polls
-  - **Create**: `/poll "Question?" "Option 1" "Option 2" "Option 3"`
+- `/blt_poll` - Create and manage polls
+  - **Create**: `/blt_poll "Question?" "Option 1" "Option 2" "Option 3"`
   - **Features**:
     - Supports 2-10 options
     - Real-time vote updates with visual progress bars
     - One vote per person (can change vote)
     - Only poll creator can close
-  - **Example**: `/poll "What time works best?" "Morning" "Afternoon" "Evening"`
+  - **Example**: `/blt_poll "What time works best?" "Morning" "Afternoon" "Evening"`
 
 ### Reminder Commands
-- `/remind` - Set and manage reminders
-  - **Create**: `/remind "Message" in <number> <minutes|hours|days>`
-  - **For others**: `/remind @user "Message" in <number> <minutes|hours|days>`
-  - **List**: `/remind list` - View all pending reminders
+- `/blt_remind` - Set and manage reminders
+  - **Create**: `/blt_remind "Message" in <number> <minutes|hours|days>`
+  - **For others**: `/blt_remind @user "Message" in <number> <minutes|hours|days>`
+  - **List**: `/blt_remind list` - View all pending reminders
   - **Features**:
     - Personal or mention-based reminders
     - Flexible time format (minutes, hours, days)
     - Cancel pending reminders
   - **Examples**:
-    - `/remind "Team meeting" in 30 minutes`
-    - `/remind me "Follow up" in 2 hours`
-    - `/remind @john "Review PR" in 1 day`
+    - `/blt_remind "Team meeting" in 30 minutes`
+    - `/blt_remind me "Follow up" in 2 hours`
+    - `/blt_remind @john "Review PR" in 1 day`
 
 ### Huddle Commands
-- `/huddle` - Schedule and manage huddles/meetings
-  - **Create**: `/huddle "Title" "Description" at/in <time> with @user1 @user2`
-  - **List**: `/huddle list` - View scheduled huddles in channel
+- `/blt_huddle` - Schedule and manage huddles/meetings
+  - **Create**: `/blt_huddle "Title" "Description" at/in <time> with @user1 @user2`
+  - **List**: `/blt_huddle list` - View scheduled huddles in channel
   - **Features**:
     - Schedule with title and description
     - Invite participants with @mentions
     - Accept/decline invitations
     - Only organizer can cancel
   - **Examples**:
-    - `/huddle "Sprint Planning" "Q1 planning" at 2:00 PM with @alice @bob`
-    - `/huddle "Quick Sync" "Daily standup" in 30 minutes`
-    - `/huddle "Design Review" "" at 3:30 PM`
+    - `/blt_huddle "Sprint Planning" "Q1 planning" at 2:00 PM with @alice @bob`
+    - `/blt_huddle "Quick Sync" "Daily standup" in 30 minutes`
+    - `/blt_huddle "Design Review" "" at 3:30 PM`
 
 ### Bug Reporting
 - `/report <description>` - Report a bug or issue

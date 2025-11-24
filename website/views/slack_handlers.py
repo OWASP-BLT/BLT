@@ -933,17 +933,17 @@ def slack_commands(request):
                     }
                 )
 
-        elif command == "/poll":
+        elif command == "/blt_poll":
             text = request.POST.get("text", "").strip()
             channel_id = request.POST.get("channel_id")
             return handle_poll_command(workspace_client, user_id, team_id, channel_id, text, activity)
 
-        elif command == "/remind":
+        elif command == "/blt_remind":
             text = request.POST.get("text", "").strip()
             channel_id = request.POST.get("channel_id")
             return handle_reminder_command(workspace_client, user_id, team_id, channel_id, text, activity)
 
-        elif command == "/huddle":
+        elif command == "/blt_huddle":
             text = request.POST.get("text", "").strip()
             channel_id = request.POST.get("channel_id")
             return handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, activity)
@@ -2658,11 +2658,11 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*📊 How to use /poll command:*\n\n"
+                        "text": "*📊 How to use /blt_poll command:*\n\n"
                         "*Create a poll:*\n"
-                        '`/poll "Question?" "Option 1" "Option 2" "Option 3"`\n\n'
+                        '`/blt_poll "Question?" "Option 1" "Option 2" "Option 3"`\n\n'
                         "*Example:*\n"
-                        '`/poll "What time works best?" "Morning" "Afternoon" "Evening"`\n\n'
+                        '`/blt_poll "What time works best?" "Morning" "Afternoon" "Evening"`\n\n'
                         "*Features:*\n"
                         "• Supports 2-10 options\n"
                         "• Shows real-time results\n"
@@ -2672,7 +2672,7 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
                 }
             ]
             send_dm(workspace_client, user_id, "Poll Command Help", help_blocks)
-            return JsonResponse({"response_type": "ephemeral", "text": "I've sent you help on using /poll in a DM! 📊"})
+            return JsonResponse({"response_type": "ephemeral", "text": "I've sent you help on using /blt_poll in a DM! 📊"})
 
         # Parse the command text to extract question and options
         parts = re.findall(r'"([^"]+)"', text)
@@ -2681,7 +2681,7 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
-                    "text": '❌ Invalid format. Use: `/poll "Question?" "Option 1" "Option 2" "Option 3"`',
+                    "text": '❌ Invalid format. Use: `/blt_poll "Question?" "Option 1" "Option 2" "Option 3"`',
                 }
             )
 
@@ -2810,23 +2810,23 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*⏰ How to use /remind command:*\n\n"
+                        "text": "*⏰ How to use /blt_remind command:*\n\n"
                         "*Set a reminder:*\n"
-                        '`/remind "Message" in <number> <minutes|hours|days>`\n'
-                        '`/remind me "Message" in <number> <minutes|hours|days>`\n'
-                        '`/remind <@user> "Message" in <number> <minutes|hours|days>`\n\n'
+                        '`/blt_remind "Message" in <number> <minutes|hours|days>`\n'
+                        '`/blt_remind me "Message" in <number> <minutes|hours|days>`\n'
+                        '`/blt_remind <@user> "Message" in <number> <minutes|hours|days>`\n\n'
                         "*Examples:*\n"
-                        '`/remind "Team meeting" in 30 minutes`\n'
-                        '`/remind me "Follow up" in 2 hours`\n'
-                        '`/remind @john "Review PR" in 1 day`\n\n'
+                        '`/blt_remind "Team meeting" in 30 minutes`\n'
+                        '`/blt_remind me "Follow up" in 2 hours`\n'
+                        '`/blt_remind @john "Review PR" in 1 day`\n\n'
                         "*List reminders:*\n"
-                        "`/remind list`",
+                        "`/blt_remind list`",
                     },
                 }
             ]
             send_dm(workspace_client, user_id, "Reminder Command Help", help_blocks)
             return JsonResponse(
-                {"response_type": "ephemeral", "text": "I've sent you help on using /remind in a DM! ⏰"}
+                {"response_type": "ephemeral", "text": "I've sent you help on using /blt_remind in a DM! ⏰"}
             )
 
         # Handle "list" subcommand
@@ -2855,7 +2855,7 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
-                    "text": '❌ Invalid format. Use: `/remind "Message" in <number> <minutes|hours|days>`',
+                    "text": '❌ Invalid format. Use: `/blt_remind "Message" in <number> <minutes|hours|days>`',
                 }
             )
 
@@ -2975,21 +2975,21 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*🎯 How to use /huddle command:*\n\n"
+                        "text": "*🎯 How to use /blt_huddle command:*\n\n"
                         "*Schedule a huddle:*\n"
-                        '`/huddle "Title" "Description" at <time> with @user1 @user2`\n\n'
+                        '`/blt_huddle "Title" "Description" at <time> with @user1 @user2`\n\n'
                         "*Examples:*\n"
-                        '`/huddle "Sprint Planning" "Q1 planning" at 2:00 PM with @alice @bob`\n'
-                        '`/huddle "Quick Sync" "Daily standup" in 30 minutes`\n\n'
+                        '`/blt_huddle "Sprint Planning" "Q1 planning" at 2:00 PM with @alice @bob`\n'
+                        '`/blt_huddle "Quick Sync" "Daily standup" in 30 minutes`\n\n'
                         "*List huddles:*\n"
-                        "`/huddle list`\n\n"
+                        "`/blt_huddle list`\n\n"
                         "*Note:* Times are in UTC. Participants will be notified.",
                     },
                 }
             ]
             send_dm(workspace_client, user_id, "Huddle Command Help", help_blocks)
             return JsonResponse(
-                {"response_type": "ephemeral", "text": "I've sent you help on using /huddle in a DM! 🎯"}
+                {"response_type": "ephemeral", "text": "I've sent you help on using /blt_huddle in a DM! 🎯"}
             )
 
         # Handle "list" subcommand
@@ -3002,7 +3002,7 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
-                    "text": '❌ Invalid format. Use: `/huddle "Title" "Description" at/in <time>`',
+                    "text": '❌ Invalid format. Use: `/blt_huddle "Title" "Description" at/in <time>`',
                 }
             )
 

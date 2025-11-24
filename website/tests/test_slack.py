@@ -185,19 +185,19 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_poll_command_help(self, mock_webclient, mock_verify):
-        """Test /poll command with no arguments shows help"""
+        """Test /blt_poll command with no arguments shows help"""
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
 
-        # Create test request for /poll with no text
+        # Create test request for /blt_poll with no text
         request = MagicMock()
-        request.body = b"command=/poll&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
+        request.body = b"command=/blt_poll&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {
-            "command": "/poll",
+            "command": "/blt_poll",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test-workspace",
@@ -220,21 +220,21 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_poll_command_create(self, mock_webclient, mock_verify):
-        """Test creating a poll with /poll command"""
+        """Test creating a poll with /blt_poll command"""
         from website.models import SlackPoll
 
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
 
-        # Create test request for /poll
+        # Create test request for /blt_poll
         request = MagicMock()
         poll_text = '"What time?" "Morning" "Afternoon" "Evening"'
-        request.body = f"command=/poll&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={poll_text}".encode()
+        request.body = f"command=/blt_poll&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={poll_text}".encode()
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {
-            "command": "/poll",
+            "command": "/blt_poll",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test-workspace",
@@ -260,19 +260,19 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_remind_command_help(self, mock_webclient, mock_verify):
-        """Test /remind command with no arguments shows help"""
+        """Test /blt_remind command with no arguments shows help"""
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
 
-        # Create test request for /remind with no text
+        # Create test request for /blt_remind with no text
         request = MagicMock()
-        request.body = b"command=/remind&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
+        request.body = b"command=/blt_remind&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {
-            "command": "/remind",
+            "command": "/blt_remind",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test-workspace",
@@ -295,20 +295,20 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_remind_command_create(self, mock_webclient, mock_verify):
-        """Test creating a reminder with /remind command"""
+        """Test creating a reminder with /blt_remind command"""
         from website.models import SlackReminder
 
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
 
-        # Create test request for /remind
+        # Create test request for /blt_remind
         request = MagicMock()
         remind_text = '"Team meeting" in 30 minutes'
-        request.body = f"command=/remind&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={remind_text}".encode()
+        request.body = f"command=/blt_remind&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={remind_text}".encode()
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {
-            "command": "/remind",
+            "command": "/blt_remind",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test-workspace",
@@ -334,19 +334,19 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_huddle_command_help(self, mock_webclient, mock_verify):
-        """Test /huddle command with no arguments shows help"""
+        """Test /blt_huddle command with no arguments shows help"""
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
 
-        # Create test request for /huddle with no text
+        # Create test request for /blt_huddle with no text
         request = MagicMock()
-        request.body = b"command=/huddle&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
+        request.body = b"command=/blt_huddle&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {
-            "command": "/huddle",
+            "command": "/blt_huddle",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test-workspace",
@@ -369,21 +369,21 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_huddle_command_create(self, mock_webclient, mock_verify):
-        """Test creating a huddle with /huddle command"""
+        """Test creating a huddle with /blt_huddle command"""
         from website.models import SlackHuddle
 
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
 
-        # Create test request for /huddle
+        # Create test request for /blt_huddle
         request = MagicMock()
         huddle_text = '"Sprint Planning" "Q1 planning" in 2 hours with <@U456>'
-        request.body = f"command=/huddle&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={huddle_text}".encode()
+        request.body = f"command=/blt_huddle&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={huddle_text}".encode()
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {
-            "command": "/huddle",
+            "command": "/blt_huddle",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test-workspace",
