@@ -1,9 +1,8 @@
 {% load gravatar %}
 {% load custom_tags %}
-<!-- Modern redesigned like/dislike/share component -->
+<!-- Modern redesigned like/share component -->
 <div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 dark:border-gray-600 py-6 my-3">
-    <!-- We're removing the three-dot dropdown button for mobile -->
-    <!-- Like/dislike widget for all screen sizes -->
+    <!-- Like widget for all screen sizes -->
     {% include "./_like_dislike_widget.html" %}
     <!-- Flag modal -->
     <div id="flag-modal"

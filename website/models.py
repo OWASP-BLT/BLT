@@ -1444,7 +1444,7 @@ class Activity(models.Model):
 
     # Approval and Posting
     like_count = models.PositiveIntegerField(default=0)
-    dislike_count = models.PositiveIntegerField(default=0)
+    dislike_count = models.PositiveIntegerField(default=0)  # DEPRECATED: Kept for data integrity, no longer used
     is_approved = models.BooleanField(default=False)  # Whether activity is approved
     is_posted_to_bluesky = models.BooleanField(default=False)  # Whether posted to BlueSky
 
@@ -1453,9 +1453,11 @@ class Activity(models.Model):
     object_id = models.PositiveIntegerField()
     related_object = GenericForeignKey("content_type", "object_id")
 
-    # New fields for likes and dislikes
+    # Fields for likes (dislikes field is deprecated but kept for data integrity)
     likes = models.ManyToManyField(User, related_name="liked_activities", blank=True)
-    dislikes = models.ManyToManyField(User, related_name="disliked_activities", blank=True)
+    dislikes = models.ManyToManyField(
+        User, related_name="disliked_activities", blank=True
+    )  # DEPRECATED: Kept for data integrity, no longer used
 
     def __str__(self):
         return f"{self.title} by {self.user.username} at {self.timestamp}"
