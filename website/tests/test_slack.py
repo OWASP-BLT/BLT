@@ -152,7 +152,7 @@ class SlackHandlerTests(TestCase):
         request = MagicMock()
         request.method = "POST"
         request.POST = {
-            "command": "/apps",
+            "command": "/installed_apps",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test",
@@ -300,3 +300,4 @@ class SlackWeeklyReportTests(TestCase):
         # Verify the message was sent to the default channel
         call_args = mock_client.chat_postMessage.call_args
         self.assertEqual(call_args.kwargs["channel"], "C123456")
+        self.assertEqual(activity.details["command"], "/installed_apps")
