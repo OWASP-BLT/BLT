@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 import pytz
 import requests
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Fetch closed pull requests from GitHub repositories listed on the GSoC page since 2024-11-11"
+    help = "Fetch closed pull requests from GitHub repositories merged in the last 6 months"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -49,7 +50,11 @@ class Command(BaseCommand):
         repos_arg = options["repos"]
         reset = options["reset"]
 
-        self.stdout.write("Fetching closed PRs since 2024-11-11 for GSoC repositories")
+        # Fetch PRs from the last 6 months
+        since_date = timezone.now() - relativedelta(months=6)
+        since_date_str = since_date.strftime("%Y-%m-%d")
+
+        self.stdout.write(f"Fetching closed PRs merged in the last 6 months (since {since_date_str})")
 
         # Determine which repositories to process
         if repos_arg:
@@ -118,8 +123,10 @@ class Command(BaseCommand):
                     repo.save()
                     self.stdout.write(f"Reset last_pr_page_processed for {repo_full_name}")
 
-                # Fetch closed PRs since 2024-11-11
-                prs_fetched, prs_added, prs_updated = self.fetch_and_save_prs(repo, owner, repo_name, verbose)
+                # Fetch closed PRs since the specified date
+                prs_fetched, prs_added, prs_updated = self.fetch_and_save_prs(
+                    repo, owner, repo_name, since_date, verbose
+                )
 
                 total_prs_fetched += prs_fetched
                 total_prs_added += prs_added
@@ -187,7 +194,7 @@ class Command(BaseCommand):
 
         return repo
 
-    def fetch_and_save_prs(self, repo, owner, repo_name, verbose=False):
+    def fetch_and_save_prs(self, repo, owner, repo_name, since_date, verbose=False):
         """
         Fetch closed pull requests from GitHub API and save them to the database.
         Returns a tuple of (total_prs_fetched, total_prs_added, total_prs_updated).
@@ -196,12 +203,10 @@ class Command(BaseCommand):
         total_prs_added = 0
         total_prs_updated = 0
 
-        # Fixed start date: 2024-11-11
-        since_date = timezone.make_aware(datetime(2024, 11, 11))
-        since_date_str = since_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        since_date_str = since_date.strftime("%Y-%m-%d")
 
-        self.stdout.write(f"Fetching PRs since {since_date_str} for {owner}/{repo_name}")
-        self.stdout.write(f"Current date: {timezone.now().strftime('%Y-%m-%dT%H:%M:%SZ')}")
+        self.stdout.write(f"Fetching closed PRs for {owner}/{repo_name}")
+        self.stdout.write(f"Will filter for PRs merged since {since_date_str}")
         self.stdout.write(f"Starting from page {repo.last_pr_page_processed + 1}")
 
         # Set up headers for GitHub API
@@ -218,10 +223,11 @@ class Command(BaseCommand):
         reached_end = False
 
         while not reached_end:
+            # Note: The /pulls endpoint doesn't support 'since' parameter
+            # We filter by merged_at date locally after fetching
             url = (
                 f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
                 f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
-                f"&since={since_date_str}"
             )
 
             if verbose:
@@ -244,7 +250,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"Found {merged_count} merged PRs on page {page}")
 
                 # Process this page of PRs
-                prs_added, prs_updated = self.save_prs_to_db(repo, data, verbose)
+                prs_added, prs_updated = self.save_prs_to_db(repo, data, since_date, verbose)
                 total_prs_fetched += len(data)
                 total_prs_added += prs_added
                 total_prs_updated += prs_updated
@@ -270,7 +276,7 @@ class Command(BaseCommand):
         if verbose:
             self.stdout.write(f"Fetched {total_prs_fetched} PRs for {owner}/{repo_name}")
             merged_prs_query = GitHubIssue.objects.filter(
-                repo=repo, type="pull_request", is_merged=True, created_at__gte=since_date
+                repo=repo, type="pull_request", is_merged=True, merged_at__gte=since_date
             )
             merged_prs = merged_prs_query.count()
             self.stdout.write(f"Total merged PRs in database: {merged_prs}")
@@ -278,7 +284,7 @@ class Command(BaseCommand):
         return total_prs_fetched, total_prs_added, total_prs_updated
 
     @transaction.atomic
-    def save_prs_to_db(self, repo, prs, verbose=False):
+    def save_prs_to_db(self, repo, prs, since_date, verbose=False):
         """
         Save pull requests to the database.
         Returns the number of new PRs added and updated.
@@ -287,6 +293,7 @@ class Command(BaseCommand):
         updated_count = 0
         skipped_count = 0
         skipped_not_merged = 0
+        skipped_old_prs = 0
 
         self.stdout.write(f"Processing {len(prs)} PRs for {repo.name}")
 
@@ -311,6 +318,13 @@ class Command(BaseCommand):
             if pr["merged_at"]:
                 merged_at = datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
                 is_merged = True
+
+            # Skip PRs that were merged before the since_date
+            if merged_at and merged_at < since_date:
+                skipped_old_prs += 1
+                if verbose:
+                    self.stdout.write(f"PR {pr['number']} was merged before {since_date}, skipping")
+                continue
 
             # Try to find the user profile
             user_profile = None
@@ -418,6 +432,8 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Skipped {skipped_count} PRs due to errors")
         self.stdout.write(f"Skipped {skipped_not_merged} PRs that are not merged")
+        if skipped_old_prs > 0:
+            self.stdout.write(f"Skipped {skipped_old_prs} PRs merged before {since_date.strftime('%Y-%m-%d')}")
         self.stdout.write(f"Added {added_count} new PRs to the database")
         self.stdout.write(f"Updated {updated_count} existing PRs in the database")
 
