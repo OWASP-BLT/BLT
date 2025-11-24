@@ -724,7 +724,7 @@ def slack_commands(request):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats",
+                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats\n`/installed_apps` - List installed apps",
                             },
                             {
                                 "type": "mrkdwn",
@@ -746,7 +746,160 @@ def slack_commands(request):
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error sending help message."})
 
+        elif command == "/installed_apps":
+            try:
+                # Get basic workspace info
+                team_info = workspace_client.team_info()
+                team_name = team_info.get("team", {}).get("name", "Unknown Workspace")
+
+                # Create the message blocks
+                apps_blocks = [
+                    {
+                        "type": "header",
+                        "text": {"type": "plain_text", "text": f"📱 Apps in {team_name}", "emoji": True},
+                    },
+                    {"type": "divider"},
+                ]
+
+                # Try to get app list using admin API (requires elevated permissions)
+                try:
+                    apps_response = workspace_client.api_call("admin.apps.approved.list", params={"limit": 100})
+
+                    if apps_response.get("ok"):
+                        # If approved_apps is present (even if empty), show the installed apps
+                        if "approved_apps" in apps_response:
+                            apps = apps_response["approved_apps"]
+
+                            apps_blocks.append(
+                                {
+                                    "type": "section",
+                                    "text": {"type": "mrkdwn", "text": f"*Total Apps Installed:* {len(apps)}"},
+                                }
+                            )
+
+                            if len(apps) == 0:
+                                apps_blocks.append(
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "No apps are currently installed on this workspace.",
+                                        },
+                                    }
+                                )
+                            else:
+                                # List each app (limit to first 20 to avoid message size limits)
+                                for app in apps[:20]:
+                                    app_info = app.get("app", {})
+                                    app_name = app_info.get("name", "Unknown App")
+                                    app_id = app_info.get("id", "N/A")
+
+                                    apps_blocks.append(
+                                        {
+                                            "type": "section",
+                                            "text": {"type": "mrkdwn", "text": f"• *{app_name}* (`{app_id}`)"},
+                                        }
+                                    )
+
+                                if len(apps) > 20:
+                                    apps_blocks.append(
+                                        {
+                                            "type": "context",
+                                            "elements": [
+                                                {"type": "mrkdwn", "text": f"_Showing 20 of {len(apps)} apps_"}
+                                            ],
+                                        }
+                                    )
+                        else:
+                            # Fallback: Show guidance when admin permissions aren't available
+                            apps_blocks.extend(
+                                [
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "⚠️ *Limited Access*\n\n"
+                                            "This bot doesn't have admin permissions to list all workspace apps.",
+                                        },
+                                    },
+                                    {"type": "divider"},
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "*Alternative ways to view installed apps:*\n\n"
+                                            "1️⃣ Click on your workspace name (top left)\n"
+                                            "2️⃣ Select *Settings & administration*\n"
+                                            "3️⃣ Choose *Manage apps*\n"
+                                            "4️⃣ You'll see all installed and available apps\n\n"
+                                            "Or visit: https://slack.com/apps/manage",
+                                        },
+                                    },
+                                ]
+                            )
+
+                except SlackApiError:
+                    # If admin API not available, provide helpful information
+                    apps_blocks.extend(
+                        [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "⚠️ *Unable to retrieve app list*\n\n"
+                                    "The bot needs additional permissions to list installed apps.",
+                                },
+                            },
+                            {"type": "divider"},
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "*How to view apps manually:*\n\n"
+                                    "• Visit your Slack workspace settings\n"
+                                    "• Go to *Apps* in the left sidebar\n"
+                                    "• Or visit: https://slack.com/apps/manage",
+                                },
+                            },
+                        ]
+                    )
+
+                # Send the response as a DM
+                dm_response = workspace_client.conversations_open(users=[user_id])
+                if dm_response["ok"]:
+                    dm_channel = dm_response["channel"]["id"]
+                    workspace_client.chat_postMessage(
+                        channel=dm_channel, blocks=apps_blocks, text=f"Apps installed in {team_name}"
+                    )
+
+                    activity.success = True
+                    activity.save()
+
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "I've sent you information about installed apps in a DM! 📱",
+                        }
+                    )
+                else:
+                    activity.success = False
+                    activity.error_message = "Could not open DM channel"
+                    activity.save()
+                    return JsonResponse({"response_type": "ephemeral", "text": "Sorry, I couldn't open a DM channel."})
+
+            except (SlackApiError, KeyError, ValueError) as e:
+                activity.success = False
+                activity.error_message = str(e)
+                activity.save()
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "Sorry, there was an error retrieving the apps list. Please try again later.",
+                    }
+                )
+
         elif command == "/report":
+            text = request.POST.get("text", "").strip()
             if not text:
                 return JsonResponse(
                     {
@@ -1570,13 +1723,15 @@ def get_user_profile(username, workspace_client, user_id):
                         f"*Bio:* {profile.get('bio', 'No bio provided')}"
                     ),
                 },
-                "accessory": {
-                    "type": "image",
-                    "image_url": profile["avatar_url"],
-                    "alt_text": f"GitHub avatar for {username}",
-                }
-                if profile.get("avatar_url")
-                else None,
+                "accessory": (
+                    {
+                        "type": "image",
+                        "image_url": profile["avatar_url"],
+                        "alt_text": f"GitHub avatar for {username}",
+                    }
+                    if profile.get("avatar_url")
+                    else None
+                ),
             },
         ]
 

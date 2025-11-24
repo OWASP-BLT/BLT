@@ -43,6 +43,7 @@ from website.api.views import (
     UserProfileViewSet,
 )
 from website.feeds import ActivityFeed
+from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -55,6 +56,7 @@ from website.views.bitcoin import (
     update_submission_status,
 )
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
+from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -654,6 +656,11 @@ urlpatterns = [
         badge_user_list,
         name="badge_user_list",
     ),
+    # Adventure URLs
+    path("adventures/", AdventureListView.as_view(), name="adventure_list"),
+    path("adventures/<slug:slug>/", AdventureDetailView.as_view(), name="adventure_detail"),
+    path("adventures/<slug:slug>/start/", start_adventure, name="start_adventure"),
+    path("adventures/<slug:slug>/task/<int:task_id>/submit/", submit_task, name="submit_task"),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
@@ -1181,6 +1188,7 @@ urlpatterns = [
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
+    path("bounty_payout/", bounty_payout, name="bounty_payout"),
 ]
 
 if settings.DEBUG:
