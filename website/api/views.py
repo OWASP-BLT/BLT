@@ -1090,15 +1090,29 @@ def generate_issue_badge_image(view_count, bounty_amount):
         b = int(60 - (60 - 43) * x / width)
         draw.line([(x, 0), (x, height)], fill=(r, g, b))
 
-    # Add text
+    # Add text - use ASCII-friendly labels as fallback for emoji compatibility
     text = f"👁 {view_count} views | 💰 {bounty_amount}"
+    text_fallback = f"Views: {view_count} | Bounty: {bounty_amount}"
 
-    try:
-        # Try to use a nice font if available
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 14)
-    except IOError:
-        # Fallback to default font
+    # Try multiple font paths for better Unicode/emoji support
+    font = None
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",  # macOS
+    ]
+
+    for font_path in font_paths:
+        try:
+            font = ImageFont.truetype(font_path, 14)
+            break
+        except (IOError, OSError):
+            continue
+
+    # If no TrueType font available, use default and switch to ASCII text
+    if font is None:
         font = ImageFont.load_default()
+        text = text_fallback  # Use ASCII-friendly text with default font
 
     # Get text bounding box for centering
     bbox = draw.textbbox((0, 0), text, font=font)
@@ -1197,7 +1211,12 @@ def github_issue_badge(request, issue_number):
             github_issue = GitHubIssue.objects.get(issue_id=issue_number)
             bounty_amount = "$0"
             if github_issue.p2p_amount_usd:
-                bounty_amount = f"${int(github_issue.p2p_amount_usd)}"
+                try:
+                    # Handle numeric strings and float values defensively
+                    bounty_amount = f"${int(float(github_issue.p2p_amount_usd))}"
+                except (ValueError, TypeError):
+                    # Invalid or non-numeric value, default to $0
+                    bounty_amount = "$0"
         except GitHubIssue.DoesNotExist:
             # Issue doesn't exist - return default badge without creating record
             bounty_amount = "$0"
