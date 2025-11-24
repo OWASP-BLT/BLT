@@ -713,7 +713,8 @@ class OrganizationProfileEditView(View):
         form = OrganizationProfileForm(instance=organization)
 
         context = {
-            "organization": organization,
+            "organization": id,
+            "organization_obj": organization,
             "organizations": organizations,
             "form": form,
         }
@@ -744,7 +745,8 @@ class OrganizationProfileEditView(View):
                 organizations = []
 
             context = {
-                "organization": organization,
+                "organization": id,
+                "organization_obj": organization,
                 "organizations": organizations,
                 "form": form,
             }
