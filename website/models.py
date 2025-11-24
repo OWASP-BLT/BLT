@@ -138,8 +138,8 @@ class Organization(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
-    url = models.URLField(unique=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True, max_length=255)
+    url = models.URLField(unique=True, max_length=255)
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
     matrix_url = models.URLField(null=True, blank=True)
@@ -813,6 +813,7 @@ class UserProfile(models.Model):
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
+    is_verifier = models.BooleanField(default=False, help_text="Whether the user has verifier permissions")
 
     #  fields for visit tracking
     daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
@@ -859,6 +860,10 @@ class UserProfile(models.Model):
 
     def check_team_membership(self):
         return self.team is not None
+
+    def check_verifier_permission(self):
+        """Check if user has verifier permission"""
+        return self.is_verifier
 
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
@@ -1224,14 +1229,16 @@ class Project(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
+    url = models.URLField(
+        unique=True, null=True, blank=True, max_length=255
+    )  # Made url nullable in case of no website also made the max_length as 255 because the default is 100
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     slack = models.URLField(null=True, blank=True)
     slack_channel = models.CharField(max_length=255, blank=True, null=True)
     slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     facebook = models.URLField(null=True, blank=True)
-    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
