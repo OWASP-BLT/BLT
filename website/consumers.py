@@ -362,6 +362,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except:
             return False
 
+    def get_or_create_session_key(self, data):
+        """Get existing session key from scope or data, or generate a new one."""
+        session_key = (
+            self.scope.get("session", {}).get("session_key") or data.get("session_key") or str(uuid.uuid4())[:8]
+        )
+
+        # Store session key in scope for future use
+        if "session" not in self.scope:
+            self.scope["session"] = {}
+        self.scope["session"]["session_key"] = session_key
+
+        return session_key
+
     @database_sync_to_async
     def save_message(self, message, username):
         """Saves a message in the database."""
@@ -408,7 +421,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             # Handle anonymous users
             is_anonymous = username.startswith("anon_")
-            user_id = username if not is_anonymous else f"session_{username.split('_')[1]}"
+            if is_anonymous:
+                # Safely extract session key from username
+                parts = username.split("_", 1)
+                if len(parts) > 1:
+                    user_id = f"session_{parts[1]}"
+                else:
+                    # Fallback for malformed anonymous username
+                    user_id = username
+            else:
+                user_id = username
 
             # Check if user already has this emoji reaction
             if emoji in reactions:
@@ -456,18 +478,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 if self.scope["user"].is_authenticated:
                     username = self.scope["user"].username
                 else:
-                    # Try to get existing session key or generate new one
-                    session_key = (
-                        self.scope.get("session", {}).get("session_key")
-                        or data.get("session_key")
-                        or str(uuid.uuid4())[:8]  # Generate new session key if none exists
-                    )
-
-                    # Store session key in scope for future use
-                    if "session" not in self.scope:
-                        self.scope["session"] = {}
-                    self.scope["session"]["session_key"] = session_key
-
+                    session_key = self.get_or_create_session_key(data)
                     username = f"anon_{session_key}"
 
                     # Send the session key back to the client
@@ -509,18 +520,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 if self.scope["user"].is_authenticated:
                     username = self.scope["user"].username
                 else:
-                    # Try to get existing session key or generate new one
-                    session_key = (
-                        self.scope.get("session", {}).get("session_key")
-                        or data.get("session_key")
-                        or str(uuid.uuid4())[:8]  # Generate new session key if none exists
-                    )
-
-                    # Store session key in scope for future use
-                    if "session" not in self.scope:
-                        self.scope["session"] = {}
-                    self.scope["session"]["session_key"] = session_key
-
+                    session_key = self.get_or_create_session_key(data)
                     username = f"anon_{session_key}"
 
                 if not message:
