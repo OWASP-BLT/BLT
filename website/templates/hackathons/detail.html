@@ -343,6 +343,93 @@
                         <p class="text-gray-500 dark:text-gray-500 italic">No contributions yet. Be the first to contribute!</p>
                     {% endif %}
                 </div>
+                <!-- Reviewer Leaderboard -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">PR Reviewer Leaderboard</h2>
+                    {% if reviewer_leaderboard %}
+                        <div class="space-y-6">
+                            {% for entry in reviewer_leaderboard %}
+                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
+                                            {{ forloop.counter }}
+                                        </div>
+                                        <div class="w-8 h-8 mr-3">
+                                            {% if entry.is_contributor %}
+                                                {% if entry.contributor.avatar_url %}
+                                                    <img src="{{ entry.contributor.avatar_url }}"
+                                                         alt="{{ entry.user.username }}"
+                                                         class="w-8 h-8 rounded-full object-cover"
+                                                         width="32"
+                                                         height="32">
+                                                {% else %}
+                                                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                                        <i class="fab fa-github text-gray-600 dark:text-gray-400"></i>
+                                                    </div>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if entry.user.userprofile.user_avatar %}
+                                                    <img src="{{ entry.user.userprofile.user_avatar.url }}"
+                                                         alt="{{ entry.user.username }}"
+                                                         class="w-8 h-8 rounded-full object-cover"
+                                                         width="32"
+                                                         height="32">
+                                                {% else %}
+                                                    <div class="w-8 h-8 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                                                        <span class="text-white font-medium text-sm">{{ entry.user.username|slice:":1"|upper }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="font-medium">{{ entry.user.username }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-500">{{ entry.count }} review{{ entry.count|pluralize }}</div>
+                                        </div>
+                                    </div>
+                                    <!-- Reviews List -->
+                                    <div class="mt-2 pl-11">
+                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reviews:</div>
+                                        <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                            {% for review in entry.reviews %}
+                                                <a href="{{ review.url }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="block p-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 rounded border-l-4 {% if review.state == 'APPROVED' %}border-green-500{% elif review.state == 'CHANGES_REQUESTED' %}border-red-500{% else %}border-blue-500{% endif %} transition">
+                                                    <div class="font-medium text-sm truncate">{{ review.pull_request.title }}</div>
+                                                    <div class="flex items-center text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                                        <span class="flex items-center">
+                                                            <i class="fas fa-code-branch mr-1"></i>
+                                                            {{ review.pull_request.repo.name }}
+                                                        </span>
+                                                        <span class="mx-2">•</span>
+                                                        <span class="flex items-center {% if review.state == 'APPROVED' %}text-green-600{% elif review.state == 'CHANGES_REQUESTED' %}text-red-600{% else %}text-blue-600{% endif %}">
+                                                            {% if review.state == 'APPROVED' %}
+                                                                <i class="fas fa-check-circle mr-1"></i> Approved
+                                                            {% elif review.state == 'CHANGES_REQUESTED' %}
+                                                                <i class="fas fa-times-circle mr-1"></i> Changes Requested
+                                                            {% elif review.state == 'COMMENTED' %}
+                                                                <i class="fas fa-comment mr-1"></i> Commented
+                                                            {% else %}
+                                                                <i class="fas fa-eye mr-1"></i> {{ review.state }}
+                                                            {% endif %}
+                                                        </span>
+                                                        <span class="mx-2">•</span>
+                                                        <span>
+                                                            <i class="far fa-calendar-alt mr-1"></i>
+                                                            {{ review.submitted_at|date:"M d, Y" }}
+                                                        </span>
+                                                    </div>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 dark:text-gray-500 italic">No reviews yet. Be the first to review a PR!</p>
+                    {% endif %}
+                </div>
                 <!-- Sponsors -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Sponsors</h2>
