@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
+from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
@@ -35,6 +36,7 @@ from website.models import (
     OrganizationAdmin,
     SlackIntegration,
     Winner,
+    validate_bch_address,
 )
 from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
 
@@ -2127,6 +2129,19 @@ class AnonymousHuntView(View):
             messages.error(request, "Please provide all required fields.")
             return redirect("anonymous_hunt")
 
+        # Validate domain URL
+        try:
+            parsed_url = urlparse(domain_url)
+            if not parsed_url.scheme or not parsed_url.netloc:
+                messages.error(
+                    request,
+                    "Invalid domain URL. Please provide a complete URL with protocol (e.g., https://example.com)",
+                )
+                return redirect("anonymous_hunt")
+        except Exception:
+            messages.error(request, "Invalid domain URL format")
+            return redirect("anonymous_hunt")
+
         try:
             organization = Organization.objects.get(id=organization_id, is_active=True)
         except Organization.DoesNotExist:
@@ -2177,6 +2192,13 @@ class AnonymousHuntView(View):
             messages.error(request, "Please provide an email address for notifications.")
             return redirect("anonymous_hunt")
 
+        # Validate email format
+        try:
+            validate_email(creator_email)
+        except ValidationError:
+            messages.error(request, "Please provide a valid email address.")
+            return redirect("anonymous_hunt")
+
         # Get and validate BCH address as proof of payment availability
         bch_address = data.get("bch_address", "").strip()
         if not bch_address:
@@ -2187,7 +2209,7 @@ class AnonymousHuntView(View):
         try:
             validate_bch_address(bch_address)
         except ValidationError as e:
-            messages.error(request, f"Invalid BCH address: {e.message}")
+            messages.error(request, f"Invalid BCH address: {str(e)}")
             return redirect("anonymous_hunt")
 
         # Parse prizes data
@@ -2205,14 +2227,21 @@ class AnonymousHuntView(View):
             messages.error(request, "Please add at least one prize.")
             return redirect("anonymous_hunt")
 
+        # Validate bughunt name length
+        bughunt_name = data.get("bughunt_name", "").strip()
+        if len(bughunt_name) > 25:
+            messages.error(request, "Bug hunt name must be 25 characters or less.")
+            return redirect("anonymous_hunt")
+
         # Create the hunt
         hunt = Hunt.objects.create(
-            name=data.get("bughunt_name", ""),
+            name=bughunt_name,
             domain=domain,
             url=domain_url,
             description=data.get("markdown-description", ""),
             starts_on=start_date,
             end_on=end_date,
+            plan="free",
             is_published=False,  # Require manual approval for anonymous hunts
             is_anonymous=True,
             anonymous_creator_email=creator_email,
@@ -2220,8 +2249,8 @@ class AnonymousHuntView(View):
             requires_bug_verification=True,
         )
 
-        # Create prizes (already filtered in prizes_data above)
-        for prize in prizes_data:
+        # Create prizes using validated list
+        for prize in valid_prizes:
             # Prize names already validated above, no need to check again
             HuntPrize.objects.create(
                 hunt=hunt,
