@@ -91,9 +91,13 @@ class Command(BaseCommand):
         # Build URL scheme based on settings
         scheme = "https" if not settings.DEBUG else "http"
 
+        # Format newsletter content for email (converts markdown to sanitized HTML)
+        formatted_content = newsletter.format_for_email()
+        
         # Newsletter context
         context = {
             "newsletter": newsletter,
+            "newsletter_html_content": formatted_content["content"],
             "subscriber": subscriber,
             "unsubscribe_url": f"{scheme}://{settings.DOMAIN_NAME}"
             + reverse("newsletter_unsubscribe", args=[subscriber.confirmation_token])

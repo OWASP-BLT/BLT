@@ -3139,16 +3139,43 @@ class Newsletter(models.Model):
         self.save(update_fields=["email_sent", "email_sent_at"])
 
     def format_for_email(self):
-        """Format newsletter content for sending via email, converting Markdown to HTML."""
+        """Format newsletter content for sending via email, converting Markdown to HTML with XSS protection."""
+        import bleach
         import markdown
+
+        # Allowed tags and attributes for email HTML
+        allowed_tags = [
+            'p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'blockquote',
+            'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'table',
+            'thead', 'tbody', 'tr', 'th', 'td', 'img', 'div', 'span'
+        ]
+        
+        allowed_attributes = {
+            'a': ['href', 'title', 'rel'],
+            'img': ['src', 'alt', 'title', 'width', 'height'],
+            'code': ['class'],
+            'div': ['class'],
+            'span': ['class'],
+            'th': ['align'],
+            'td': ['align'],
+        }
 
         # Convert Markdown content to HTML
         html_content = markdown.markdown(self.content, extensions=["extra", "codehilite"])
+        
+        # Sanitize HTML to prevent XSS
+        sanitized_content = bleach.clean(
+            html_content,
+            tags=allowed_tags,
+            attributes=allowed_attributes,
+            protocols=['http', 'https', 'mailto'],
+            strip=True
+        )
 
         # Return formatted content for email
         return {
             "title": self.title,
-            "content": html_content,
+            "content": sanitized_content,
             "published_at": self.published_at,
         }
 
