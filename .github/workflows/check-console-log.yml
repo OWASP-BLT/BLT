@@ -40,8 +40,8 @@ jobs:
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
             HEAD_SHA="${{ github.event.pull_request.head.sha }}"
             
-            # Get changed JS files
-            CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA..$HEAD_SHA | grep '\.js$' || true)
+            # Get changed JS files using three-dot syntax to show only PR changes
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA...$HEAD_SHA | grep '\.js$' || true)
             
             if [ -z "$CHANGED_FILES" ]; then
               echo "No JavaScript files changed in this PR"
@@ -60,7 +60,8 @@ jobs:
             while IFS= read -r file; do
               if [ -f "$file" ]; then
                 # Search for console.log using word boundaries to avoid false positives
-                # Excludes lines where content starts with // or /* (commented lines)
+                # Excludes lines where content starts with // or /* (single-line comments)
+                # Note: Multi-line comment blocks are not fully handled and may cause false positives
                 # grep -n output format is: line_number:content
                 MATCHES=$(grep -n '\bconsole\.log\b' "$file" | grep -Ev '^[0-9]+:\s*(//|/\*)' || true)
                 
@@ -68,7 +69,7 @@ jobs:
                   echo "Found console.log in $file:"
                   echo "$MATCHES"
                   echo ""
-                  VIOLATIONS="${VIOLATIONS}**$file**:\n\`\`\`\n${MATCHES}\n\`\`\`\n\n"
+                  VIOLATIONS="${VIOLATIONS}**$file**:\n\`\`\`javascript\n${MATCHES}\n\`\`\`\n\n"
                   VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
                 fi
               fi
@@ -125,7 +126,9 @@ jobs:
               '   - `console.warn()` for warnings (allowed)\n' +
               '   - A proper logging library for production code\n\n' +
               '3. For temporary debugging, you can use `// console.log()` to comment it out\n\n' +
-              '**Note:** `console.error` and `console.warn` are allowed for debugging purposes.\n\n' +
+              '**Note:** \n' +
+              '- `console.error` and `console.warn` are allowed for debugging purposes.\n' +
+              '- If console.log is inside a multi-line comment block (`/* ... */`), it may still be flagged. Please manually verify.\n\n' +
               'Please remove the console.log statements and push your changes.';
             
             // Check if we already commented
