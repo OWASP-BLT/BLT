@@ -338,7 +338,6 @@ class LeaderboardTests(TestCase):
             state="closed",
             created_at=timezone.now(),
             updated_at=timezone.now(),
-            merged_at=timezone.now(),
             url="https://github.com/OWASP-BLT/BLT/pull/1",
             issue_id=1,
         )
@@ -353,7 +352,6 @@ class LeaderboardTests(TestCase):
             state="closed",
             created_at=timezone.now(),
             updated_at=timezone.now(),
-            merged_at=timezone.now(),
             url="https://github.com/OWASP-BLT/BLT/pull/2",
             issue_id=2,
         )
