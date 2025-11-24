@@ -242,7 +242,9 @@
         <!-- GitHub Comments Leaderboard -->
         <div class="flex justify-center gap-6 flex-wrap">
             <div class=" flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg min-w-[300px] max-w-[550px]">
-                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">GitHub Comments Leaderboard</div>
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">
+                    GitHub Comments Leaderboard
+                </div>
                 <div class="list-group p-4">
                     {% if github_comments_leaderboard %}
                         <div class="flex flex-col gap-2">
@@ -250,10 +252,17 @@
                                 <div class="flex justify-between items-center">
                                     <div class="flex gap-2 items-center truncate flex-1">
                                         <!-- Avatar and User Info -->
-                                        <img src="{{ item.avatar_url }}" class="size-9 select-none border border-gray-200 rounded-full flex-shrink-0" alt="{{ item.username }}" width="50px" height="50px">
+                                        <img src="{{ item.avatar_url }}"
+                                             class="size-9 select-none border border-gray-200 rounded-full flex-shrink-0"
+                                             alt="{{ item.username }}"
+                                             width="50px"
+                                             height="50px">
                                         <div class="truncate flex-1">
                                             {% if item.github_url %}
-                                                <a href="{{ item.github_url }}" target="_blank" rel="noopener noreferrer" class="text-base font-medium text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                                                <a href="{{ item.github_url }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="text-base font-medium text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
                                                     {{ item.username }}
                                                     <i class="fab fa-github ml-1 text-gray-500 text-xs"></i>
                                                 </a>
