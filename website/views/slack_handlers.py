@@ -725,7 +725,7 @@ def slack_commands(request):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats\n`/apps` - List installed apps",
+                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats\n`/installed_apps` - List installed apps",
                             },
                             {
                                 "type": "mrkdwn",
@@ -747,7 +747,7 @@ def slack_commands(request):
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error sending help message."})
 
-        elif command == "/apps":
+        elif command == "/installed_apps":
             try:
                 # Get basic workspace info
                 team_info = workspace_client.team_info()
