@@ -78,8 +78,6 @@ from website.views.company import (
     accept_bug,
     check_domain_security_txt,
     create_job,
-    request_domain_access,
-    verify_domain_access,
     dashboard_view,
     delete_job,
     delete_manager,
@@ -88,7 +86,9 @@ from website.views.company import (
     edit_prize,
     job_detail,
     public_job_list,
+    request_domain_access,
     toggle_job_status,
+    verify_domain_access,
 )
 from website.views.core import (
     CustomSocialAccountDisconnectView,
