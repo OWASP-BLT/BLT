@@ -146,19 +146,17 @@
       notify: Restart app
 
     - name: Collect static files
-      shell: "source {{ venv_dir }}/bin/activate && python manage.py collectstatic --noinput"
+      shell: "{{ venv_dir }}/bin/python manage.py collectstatic --noinput"
       args:
         chdir: "{{ app_dir }}/current"
-        executable: /bin/bash
       environment:
         DJANGO_SETTINGS_MODULE: blt.settings
       become_user: "{{ app_user }}"
 
     - name: Apply migrations
-      shell: "source {{ venv_dir }}/bin/activate && python manage.py migrate --noinput"
+      shell: "{{ venv_dir }}/bin/python manage.py migrate --noinput"
       args:
         chdir: "{{ app_dir }}/current"
-        executable: /bin/bash
       environment:
         DJANGO_SETTINGS_MODULE: blt.settings
       become_user: "{{ app_user }}"
