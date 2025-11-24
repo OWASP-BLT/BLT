@@ -148,7 +148,7 @@
         <!-- Features Section -->
         <section class="py-1">
             <div class="max-w-7xl mx-auto">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <!-- Feature 1 -->
                     <div class="text-center">
                         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
@@ -180,15 +180,30 @@
                         <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Automate Security</h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Streamline your security workflows.</p>
                     </div>
-                    <!-- New Education Feature -->
+                    <!-- Zero Trust Feature -->
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                            <i class="fas fa-user-shield fa-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute -top-1 right-0 inline-flex items-center px-2 py-0.5 text-xs font-medium bg-[#e74c3c] text-white rounded-full animate-pulse">NEW</span>
+                            <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Zero Trust Disclosure</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Private reports with no data stored.</p>
+                        <a href="{% url 'report' %}"
+                           class="inline-block mt-3 text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm">
+                            <span class="flex items-center gap-1">
+                                Report Privately
+                                <i class="fas fa-lock transition-transform group-hover:scale-110"></i>
+                            </span>
+                        </a>
+                    </div>
+                    <!-- Education Feature -->
                     <div class="text-center">
                         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
                             <i class="fas fa-graduation-cap fa-2xl text-[#e74c3c]"></i>
                         </div>
-                        <div class="relative">
-                            <span class="absolute -top-1 right-0 inline-flex items-center px-2 py-0.5 text-xs font-medium bg-[#e74c3c] text-white rounded-full animate-pulse">NEW</span>
-                            <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Learn & Grow</h3>
-                        </div>
+                        <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Learn & Grow</h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Access expert-led security courses.</p>
                         <a href="{% url 'education' %}"
                            class="inline-block mt-3 text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm">

@@ -1216,10 +1216,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             email_subject = f"{report_type} for {clean_domain}"
                             html_body = render_to_string(
                                 "email/security_report.html",
-                                {"clean_domain": clean_domain, "password": password, "report_type": report_type},
+                                {"clean_domain": clean_domain, "report_type": report_type},
                             )
 
                             try:
+                                # Send email with encrypted zip file
                                 email = EmailMessage(
                                     subject=email_subject,
                                     body=html_body,
@@ -1232,6 +1233,22 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                     email.attach("security_report.zip", f.read(), "application/zip")
 
                                 email.send(fail_silently=False)
+
+                                # Send password in a separate email for maximum security
+                                password_subject = f"Password for {report_type} - {clean_domain}"
+                                password_body = render_to_string(
+                                    "email/security_report_password.html",
+                                    {"clean_domain": clean_domain, "password": password, "report_type": report_type},
+                                )
+
+                                password_email = EmailMessage(
+                                    subject=password_subject,
+                                    body=password_body,
+                                    from_email=settings.DEFAULT_FROM_EMAIL,
+                                    to=[dest_email],
+                                )
+                                password_email.content_subtype = "html"
+                                password_email.send(fail_silently=False)
 
                                 # Increment private reports count if this is a private report
                                 if report_private and self.request.user.is_authenticated and not report_anonymous:
