@@ -668,22 +668,18 @@ class OrganizationSocialRedirectView(View):
         # Atomically increment the click counter using raw SQL for JSONField
         from django.db import connection
 
-        # Initialize social_clicks if None
-        if organization.social_clicks is None:
-            organization.social_clicks = {}
-            organization.save(update_fields=["social_clicks"])
-
-        # Increment counter atomically
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                UPDATE website_organization
-                SET social_clicks = COALESCE(social_clicks, '{}'::jsonb) ||
-                    jsonb_build_object(%s, COALESCE((social_clicks->>%s)::int, 0) + 1)
-                WHERE id = %s
-            """,
-                [platform, platform, org_id],
-            )
+        # Increment counter atomically (COALESCE handles NULL case)
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE website_organization
+                    SET social_clicks = COALESCE(social_clicks, '{}'::jsonb) ||
+                        jsonb_build_object(%s, COALESCE((social_clicks->>%s)::int, 0) + 1)
+                    WHERE id = %s
+                """,
+                    [platform, platform, org_id],
+                )
 
         # Redirect to the actual social media URL
         return redirect(target_url)
