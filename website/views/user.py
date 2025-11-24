@@ -1224,22 +1224,22 @@ def handle_issue_event(payload):
     action = payload.get("action")
     issue_data = payload.get("issue", {})
     repo_data = payload.get("repository", {})
-    
+
     logger.debug(f"GitHub issue event: {action}")
-    
+
     # Extract issue details
     issue_id = issue_data.get("number")
     issue_state = issue_data.get("state")
     issue_html_url = issue_data.get("html_url")
-    
+
     # Extract repository details
     repo_full_name = repo_data.get("full_name")  # e.g., "owner/repo"
     repo_html_url = repo_data.get("html_url")
-    
+
     if not issue_id or not repo_html_url:
         logger.warning("Issue event missing required data")
         return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
-    
+
     # Find the Repo in BLT database
     try:
         repo = Repo.objects.get(repo_url=repo_html_url)
@@ -1252,20 +1252,22 @@ def handle_issue_event(payload):
         # Find and update the GitHubIssue record
         try:
             github_issue = GitHubIssue.objects.get(issue_id=issue_id, repo=repo, type="issue")
-            
+
             # Update the issue state
             github_issue.state = issue_state
-            
+
             # Update closed_at timestamp if the issue was closed
             if action == "closed" and issue_data.get("closed_at"):
                 from dateutil import parser
+
                 github_issue.closed_at = parser.parse(issue_data["closed_at"])
-            
+
             # Update updated_at timestamp
             if issue_data.get("updated_at"):
                 from dateutil import parser
+
                 github_issue.updated_at = parser.parse(issue_data["updated_at"])
-            
+
             github_issue.save()
             logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
         except GitHubIssue.DoesNotExist:
@@ -1273,14 +1275,14 @@ def handle_issue_event(payload):
             # Not an error - we may not have all issues in our database
         except Exception as e:
             logger.error(f"Error updating GitHubIssue: {e}")
-    
+
     # Assign badge for first issue closed (existing functionality)
     if action == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
             closer_user = closer_profile.user
             assign_github_badge(closer_user, "First Issue Closed")
-    
+
     return JsonResponse({"status": "success"}, status=200)
 
 

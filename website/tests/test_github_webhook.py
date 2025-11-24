@@ -16,20 +16,20 @@ class GitHubWebhookTestCase(TestCase):
         """Set up test data"""
         self.client = Client()
         self.webhook_url = reverse("github-webhook")
-        
+
         # Create test user with GitHub profile
         self.user = User.objects.create_user(username="testuser", password="testpass")
         self.user_profile = UserProfile.objects.get(user=self.user)
         self.user_profile.github_url = "https://github.com/testuser"
         self.user_profile.save()
-        
+
         # Create test repository
         self.repo = Repo.objects.create(
             name="test-repo",
             repo_url="https://github.com/testorg/test-repo",
             slug="testorg-test-repo",
         )
-        
+
         # Create test GitHub issue
         self.github_issue = GitHubIssue.objects.create(
             issue_id=123,
@@ -63,7 +63,7 @@ class GitHubWebhookTestCase(TestCase):
                 "html_url": "https://github.com/testuser",
             },
         }
-        
+
         # Send webhook request
         response = self.client.post(
             self.webhook_url,
@@ -71,11 +71,11 @@ class GitHubWebhookTestCase(TestCase):
             content_type="application/json",
             HTTP_X_GITHUB_EVENT="issues",
         )
-        
+
         # Check response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "success")
-        
+
         # Verify GitHubIssue was updated
         self.github_issue.refresh_from_db()
         self.assertEqual(self.github_issue.state, "closed")
@@ -86,7 +86,7 @@ class GitHubWebhookTestCase(TestCase):
         # First close the issue
         self.github_issue.state = "closed"
         self.github_issue.save()
-        
+
         # Create webhook payload for issue opened/reopened event
         payload = {
             "action": "reopened",
@@ -104,7 +104,7 @@ class GitHubWebhookTestCase(TestCase):
                 "html_url": "https://github.com/testuser",
             },
         }
-        
+
         # Send webhook request
         response = self.client.post(
             self.webhook_url,
@@ -112,11 +112,11 @@ class GitHubWebhookTestCase(TestCase):
             content_type="application/json",
             HTTP_X_GITHUB_EVENT="issues",
         )
-        
+
         # Check response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "success")
-        
+
         # Verify GitHubIssue was updated
         self.github_issue.refresh_from_db()
         self.assertEqual(self.github_issue.state, "open")
@@ -140,7 +140,7 @@ class GitHubWebhookTestCase(TestCase):
                 "html_url": "https://github.com/testuser",
             },
         }
-        
+
         # Send webhook request
         response = self.client.post(
             self.webhook_url,
@@ -148,7 +148,7 @@ class GitHubWebhookTestCase(TestCase):
             content_type="application/json",
             HTTP_X_GITHUB_EVENT="issues",
         )
-        
+
         # Should still return success even if issue not found
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "success")
@@ -172,7 +172,7 @@ class GitHubWebhookTestCase(TestCase):
                 "html_url": "https://github.com/testuser",
             },
         }
-        
+
         # Send webhook request
         response = self.client.post(
             self.webhook_url,
@@ -180,7 +180,7 @@ class GitHubWebhookTestCase(TestCase):
             content_type="application/json",
             HTTP_X_GITHUB_EVENT="issues",
         )
-        
+
         # Should still return success even if repo not found
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "success")
@@ -204,7 +204,7 @@ class GitHubWebhookTestCase(TestCase):
                 # Missing html_url
             },
         }
-        
+
         # Send webhook request
         response = self.client.post(
             self.webhook_url,
@@ -212,7 +212,7 @@ class GitHubWebhookTestCase(TestCase):
             content_type="application/json",
             HTTP_X_GITHUB_EVENT="issues",
         )
-        
+
         # Should handle gracefully
         self.assertEqual(response.status_code, 400)
 
@@ -236,7 +236,7 @@ class GitHubWebhookTestCase(TestCase):
                 "html_url": "https://github.com/testuser",
             },
         }
-        
+
         # Send webhook request
         response = self.client.post(
             self.webhook_url,
@@ -244,10 +244,10 @@ class GitHubWebhookTestCase(TestCase):
             content_type="application/json",
             HTTP_X_GITHUB_EVENT="issues",
         )
-        
+
         # Check response
         self.assertEqual(response.status_code, 200)
-        
+
         # Verify badge assignment was called
         mock_assign_badge.assert_called_once_with(self.user, "First Issue Closed")
 
@@ -270,7 +270,7 @@ class GitHubWebhookTestCase(TestCase):
                 "html_url": "https://github.com/testuser",
             },
         }
-        
+
         # Send webhook request
         response = self.client.post(
             self.webhook_url,
@@ -278,10 +278,10 @@ class GitHubWebhookTestCase(TestCase):
             content_type="application/json",
             HTTP_X_GITHUB_EVENT="issues",
         )
-        
+
         # Check response
         self.assertEqual(response.status_code, 200)
-        
+
         # Verify timestamps were updated
         self.github_issue.refresh_from_db()
         self.assertIsNotNone(self.github_issue.closed_at)
