@@ -11,7 +11,6 @@ from django.core.management import call_command
 from django.db import connection
 from django.db.models import Count, Q
 from django.http import JsonResponse, StreamingHttpResponse
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -647,24 +646,43 @@ def update_repo_data_stream(request, slug):
     """
     Update repository data with real-time SSE (Server-Sent Events) feedback.
     Similar to organization repo updates but for a single repository.
+
+    Args:
+        request: HttpRequest object (requires authenticated user)
+        slug (str): Repository slug identifier
+
+    Returns:
+        StreamingHttpResponse: SSE stream with progress updates
+
+    Rate Limiting:
+        Maximum 1 update per hour per repository
+
+    Limitations:
+        Fetches up to 1000 issues/PRs (10 pages × 100 items)
     """
     try:
-        repo = get_object_or_404(Repo, slug=slug)
+        from datetime import datetime
 
-        # Check if repository was updated in the last hour to prevent abuse
-        one_hour_ago = timezone.timedelta(hours=1)
-        if repo.last_updated and timezone.now() < repo.last_updated + one_hour_ago:
-            time_since_update = timezone.now() - repo.last_updated
-            minutes_remaining = 60 - int(time_since_update.total_seconds() / 60)
+        from django.db import transaction
 
-            def rate_limit_stream():
-                yield (
-                    f"data: $ Error: Repository was updated recently. "
-                    f"Please wait {minutes_remaining} minutes before updating again.\n\n"
-                )
-                yield "data: DONE\n\n"
+        # Use select_for_update to prevent race conditions
+        with transaction.atomic():
+            repo = Repo.objects.select_for_update().get(slug=slug)
 
-            return StreamingHttpResponse(rate_limit_stream(), content_type="text/event-stream")
+            # Check if repository was updated in the last hour to prevent abuse
+            one_hour_ago = timezone.timedelta(hours=1)
+            if repo.last_updated and timezone.now() < repo.last_updated + one_hour_ago:
+                time_since_update = timezone.now() - repo.last_updated
+                minutes_remaining = 60 - int(time_since_update.total_seconds() / 60)
+
+                def rate_limit_stream():
+                    yield (
+                        f"data: $ Error: Repository was updated recently. "
+                        f"Please wait {minutes_remaining} minutes before updating again.\n\n"
+                    )
+                    yield "data: DONE\n\n"
+
+                return StreamingHttpResponse(rate_limit_stream(), content_type="text/event-stream")
 
         def event_stream():
             # Initialize counters for tracking
@@ -705,17 +723,25 @@ def update_repo_data_stream(request, slug):
                         core_rate = rate_data.get("resources", {}).get("core", {})
                         remaining = core_rate.get("remaining", 0)
                         limit = core_rate.get("limit", 0)
+                        reset_time = core_rate.get("reset", 0)
+                        reset_datetime = datetime.fromtimestamp(reset_time)
+                        reset_str = reset_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
-                        yield f"data: $ GitHub API token is valid. Rate limit: {remaining}/{limit}\n\n"
+                        yield (
+                            f"data: $ GitHub API token is valid. Rate limit: {remaining}/{limit}, "
+                            f"resets at {reset_str}\n\n"
+                        )
 
                         if remaining < 50:
                             yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
                     else:
-                        yield f"data: $ Error: GitHub API returned {response.status_code}\n\n"
+                        logger.error(f"GitHub API rate limit check failed with status {response.status_code}")
+                        yield "data: $ Error: Unable to verify GitHub API access. Please try again later.\n\n"
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
-                    yield f"data: $ Error testing GitHub API: {str(e)[:100]}\n\n"
+                    logger.error(f"Error testing GitHub API: {str(e)}", exc_info=True)
+                    yield "data: $ Error: Unable to connect to GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -746,7 +772,8 @@ def update_repo_data_stream(request, slug):
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code != 200:
-                        yield f"data: $ Error: GitHub API returned {response.status_code}\n\n"
+                        logger.error(f"GitHub API returned status {response.status_code} for repo {repo.slug}")
+                        yield "data: $ Error: Unable to fetch repository data. Please try again later.\n\n"
                         yield "data: DONE\n\n"
                         return
 
@@ -773,7 +800,8 @@ def update_repo_data_stream(request, slug):
                     yield "data: $ Repository metadata updated [success]\n\n"
 
                 except requests.exceptions.RequestException as e:
-                    yield f"data: $ Error fetching repository data: {str(e)[:100]}\n\n"
+                    logger.error(f"Error fetching repository data for {repo.slug}: {str(e)}", exc_info=True)
+                    yield "data: $ Error: Unable to fetch repository data. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -815,7 +843,7 @@ def update_repo_data_stream(request, slug):
                                 )
 
                                 # Create or update the issue
-                                issue, created = GitHubIssue.objects.update_or_create(
+                                GitHubIssue.objects.update_or_create(
                                     repo=repo,
                                     issue_id=issue_data["id"],
                                     defaults={
@@ -849,14 +877,26 @@ def update_repo_data_stream(request, slug):
                                     issues_fetched += 1
 
                             except Exception as e:
-                                yield f"data: $ Error processing issue #{issue_data.get('number', 'unknown')}: {str(e)[:50]}\n\n"
+                                logger.error(
+                                    f"Error processing issue #{issue_data.get('number', 'unknown')} "
+                                    f"for repo {repo.slug}: {str(e)}",
+                                    exc_info=True,
+                                )
+                                yield f"data: $ Warning: Skipped issue #{issue_data.get('number', 'unknown')}\n\n"
 
                         yield f"data: $ Processed page {page}: {len(issues)} items\n\n"
                         page += 1
 
                         # Limit to 10 pages to avoid excessive API calls
                         if page > 10:
-                            yield "data: $ Reached page limit (10 pages)\n\n"
+                            # Check if there might be more items
+                            if len(issues) == 100:
+                                yield (
+                                    "data: $ Warning: Reached page limit (10 pages). "
+                                    "Some items may not have been fetched.\n\n"
+                                )
+                            else:
+                                yield "data: $ Reached page limit (10 pages)\n\n"
                             break
 
                         time.sleep(0.5)  # Avoid hitting rate limits
@@ -864,7 +904,8 @@ def update_repo_data_stream(request, slug):
                     yield f"data: $ Issues fetched: {issues_fetched}, Pull requests fetched: {prs_fetched}\n\n"
 
                 except Exception as e:
-                    yield f"data: $ Error fetching issues: {str(e)[:100]}\n\n"
+                    logger.error(f"Error fetching issues for repo {repo.slug}: {str(e)}", exc_info=True)
+                    yield "data: $ Error: Unable to fetch issues and pull requests. Please try again later.\n\n"
 
                 # Mark as successful
                 success = True
@@ -889,21 +930,21 @@ def update_repo_data_stream(request, slug):
                 yield "data: DONE\n\n"
 
             except Exception as e:
-                logger.error(f"Error in event_stream: {str(e)}")
+                logger.error(f"Error in event_stream for repo {repo.slug}: {str(e)}", exc_info=True)
                 # Save activity record for failed attempt
                 RepoRefreshActivity.objects.create(
                     repo=repo, user=request.user, issues_count=issues_fetched, prs_count=prs_fetched, success=False
                 )
-                yield f"data: $ Unexpected error: {str(e)[:100]}\n\n"
+                yield "data: $ Error: An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 
     except Exception as e:
-        logger.error(f"Error in update_repo_data_stream: {str(e)}")
+        logger.error(f"Error in update_repo_data_stream: {str(e)}", exc_info=True)
 
         def error_stream():
-            yield f"data: $ Error: {str(e)[:100]}\n\n"
+            yield "data: $ Error: Unable to update repository. Please try again later.\n\n"
             yield "data: DONE\n\n"
 
         return StreamingHttpResponse(error_stream(), content_type="text/event-stream")
