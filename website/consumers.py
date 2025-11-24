@@ -384,7 +384,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             session_key = None
 
             if username.startswith("anon_"):
-                session_key = username.split("_")[1]
+                # Safely extract session key from username
+                parts = username.split("_", 1)
+                if len(parts) > 1:
+                    session_key = parts[1]
             else:
                 user = User.objects.filter(username=username).first()
 
