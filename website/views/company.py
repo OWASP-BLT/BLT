@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import random
+import string
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -11,11 +13,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
+from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -2514,12 +2518,6 @@ def job_detail(request, pk):
 @require_http_methods(["POST"])
 def request_domain_access(request, pk):
     """Request access to manage a domain by sending verification code to domain email"""
-    import random
-    import string
-
-    from django.core.mail import send_mail
-    from django.template.loader import render_to_string
-
     domain = get_object_or_404(Domain, pk=pk)
 
     # Check if domain has an email configured
