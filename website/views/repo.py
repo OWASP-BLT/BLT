@@ -10,15 +10,17 @@ from django.contrib.auth.decorators import login_required
 from django.core.management import call_command
 from django.db import connection
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
-from website.models import Organization, Repo
+from website.models import GitHubIssue, Organization, Repo
 from website.utils import ai_summary, markdown_to_text
 
 logger = logging.getLogger(__name__)
@@ -632,3 +634,251 @@ def refresh_repo_data(request, repo_id):
             },
             status=500,
         )
+
+
+@login_required
+def update_repo_data_stream(request, slug):
+    """
+    Update repository data with real-time SSE (Server-Sent Events) feedback.
+    Similar to organization repo updates but for a single repository.
+    """
+    try:
+        repo = get_object_or_404(Repo, slug=slug)
+
+        # Check if repository was updated in the last hour to prevent abuse
+        one_hour_ago = timezone.timedelta(hours=1)
+        if repo.last_updated and timezone.now() < repo.last_updated + one_hour_ago:
+            time_since_update = timezone.now() - repo.last_updated
+            minutes_remaining = 60 - int(time_since_update.total_seconds() / 60)
+
+            def rate_limit_stream():
+                yield (
+                    f"data: $ Error: Repository was updated recently. "
+                    f"Please wait {minutes_remaining} minutes before updating again.\n\n"
+                )
+                yield "data: DONE\n\n"
+
+            return StreamingHttpResponse(rate_limit_stream(), content_type="text/event-stream")
+
+        def event_stream():
+            try:
+                yield f"data: $ Starting repository update for: {repo.name}\n\n"
+                yield f"data: $ Repository URL: {repo.repo_url}\n\n"
+
+                # Check if GitHub token is set
+                if not hasattr(settings, "GITHUB_TOKEN") or not settings.GITHUB_TOKEN:
+                    logger.error("GitHub token not set in settings")
+                    yield "data: $ Error: GitHub API token not configured\n\n"
+                    yield "data: DONE\n\n"
+                    return
+
+                # Test GitHub API token validity
+                yield "data: $ Testing GitHub API token...\n\n"
+                try:
+                    rate_limit_url = "https://api.github.com/rate_limit"
+                    response = requests.get(
+                        rate_limit_url,
+                        headers={
+                            "Authorization": f"token {settings.GITHUB_TOKEN}",
+                            "Accept": "application/vnd.github.v3+json",
+                        },
+                        timeout=10,
+                    )
+
+                    if response.status_code == 200:
+                        rate_data = response.json()
+                        core_rate = rate_data.get("resources", {}).get("core", {})
+                        remaining = core_rate.get("remaining", 0)
+                        limit = core_rate.get("limit", 0)
+
+                        yield f"data: $ GitHub API token is valid. Rate limit: {remaining}/{limit}\n\n"
+
+                        if remaining < 50:
+                            yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
+                    else:
+                        yield f"data: $ Error: GitHub API returned {response.status_code}\n\n"
+                        yield "data: DONE\n\n"
+                        return
+                except requests.exceptions.RequestException as e:
+                    yield f"data: $ Error testing GitHub API: {str(e)[:100]}\n\n"
+                    yield "data: DONE\n\n"
+                    return
+
+                # Extract owner and repo name from the repo URL
+                match = re.match(r"^(?:https?://)?github\.com/([^/]+)/([^/]+)/?$", repo.repo_url)
+                if not match:
+                    yield "data: $ Error: Invalid GitHub repository URL format\n\n"
+                    yield "data: DONE\n\n"
+                    return
+
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+                # Fetch repository data
+                yield "data: $ Fetching repository data from GitHub API...\n\n"
+                try:
+                    response = requests.get(
+                        api_url,
+                        headers={
+                            "Authorization": f"token {settings.GITHUB_TOKEN}",
+                            "Accept": "application/vnd.github.v3+json",
+                        },
+                        timeout=10,
+                    )
+
+                    if response.status_code == 404:
+                        yield "data: $ Error: Repository not found on GitHub\n\n"
+                        yield "data: DONE\n\n"
+                        return
+                    elif response.status_code != 200:
+                        yield f"data: $ Error: GitHub API returned {response.status_code}\n\n"
+                        yield "data: DONE\n\n"
+                        return
+
+                    repo_data = response.json()
+                    yield "data: $ Repository data fetched successfully\n\n"
+
+                    # Update basic repository information
+                    yield "data: $ Updating repository metadata...\n\n"
+                    repo.description = repo_data.get("description", "")
+                    repo.stars = repo_data.get("stargazers_count", 0)
+                    repo.forks = repo_data.get("forks_count", 0)
+                    repo.watchers = repo_data.get("watchers_count", 0)
+                    repo.primary_language = repo_data.get("language")
+                    repo.license = repo_data.get("license", {}).get("name") if repo_data.get("license") else None
+                    repo.last_commit_date = (
+                        parse_datetime(repo_data.get("pushed_at")) if repo_data.get("pushed_at") else None
+                    )
+                    repo.network_count = repo_data.get("network_count", 0)
+                    repo.subscribers_count = repo_data.get("subscribers_count", 0)
+                    repo.size = repo_data.get("size", 0)
+                    repo.is_archived = repo_data.get("archived", False)
+                    repo.last_updated = timezone.now()
+                    repo.save()
+                    yield "data: $ Repository metadata updated [success]\n\n"
+
+                except requests.exceptions.RequestException as e:
+                    yield f"data: $ Error fetching repository data: {str(e)[:100]}\n\n"
+                    yield "data: DONE\n\n"
+                    return
+
+                # Fetch issues and pull requests
+                yield "data: $ Fetching issues and pull requests...\n\n"
+                try:
+                    issues_fetched = 0
+                    prs_fetched = 0
+                    page = 1
+
+                    # Fetch issues (both issues and PRs)
+                    while True:
+                        issues_url = f"{api_url}/issues"
+                        response = requests.get(
+                            issues_url,
+                            params={"state": "all", "per_page": 100, "page": page},
+                            headers={
+                                "Authorization": f"token {settings.GITHUB_TOKEN}",
+                                "Accept": "application/vnd.github.v3+json",
+                            },
+                            timeout=10,
+                        )
+
+                        if response.status_code != 200:
+                            yield f"data: $ Warning: Failed to fetch issues (page {page})\n\n"
+                            break
+
+                        issues = response.json()
+                        if not issues:
+                            break
+
+                        for issue_data in issues:
+                            try:
+                                # Determine if it's a PR or issue
+                                is_pr = "pull_request" in issue_data
+                                issue_type = "pull_request" if is_pr else "issue"
+
+                                # Check for dollar tag in labels
+                                has_dollar_tag = any(
+                                    "$" in label.get("name", "") for label in issue_data.get("labels", [])
+                                )
+
+                                # Create or update the issue
+                                issue, created = GitHubIssue.objects.update_or_create(
+                                    repo=repo,
+                                    issue_id=issue_data["id"],
+                                    defaults={
+                                        "number": issue_data["number"],
+                                        "title": issue_data.get("title", ""),
+                                        "state": issue_data.get("state", ""),
+                                        "type": issue_type,
+                                        "url": issue_data.get("html_url", ""),
+                                        "created_at": (
+                                            parse_datetime(issue_data.get("created_at"))
+                                            if issue_data.get("created_at")
+                                            else None
+                                        ),
+                                        "updated_at": (
+                                            parse_datetime(issue_data.get("updated_at"))
+                                            if issue_data.get("updated_at")
+                                            else None
+                                        ),
+                                        "closed_at": (
+                                            parse_datetime(issue_data.get("closed_at"))
+                                            if issue_data.get("closed_at")
+                                            else None
+                                        ),
+                                        "has_dollar_tag": has_dollar_tag,
+                                    },
+                                )
+
+                                if is_pr:
+                                    prs_fetched += 1
+                                else:
+                                    issues_fetched += 1
+
+                            except Exception as e:
+                                yield f"data: $ Error processing issue #{issue_data.get('number', 'unknown')}: {str(e)[:50]}\n\n"
+
+                        yield f"data: $ Processed page {page}: {len(issues)} items\n\n"
+                        page += 1
+
+                        # Limit to 10 pages to avoid excessive API calls
+                        if page > 10:
+                            yield "data: $ Reached page limit (10 pages)\n\n"
+                            break
+
+                        time.sleep(0.5)  # Avoid hitting rate limits
+
+                    yield f"data: $ Issues fetched: {issues_fetched}, Pull requests fetched: {prs_fetched}\n\n"
+
+                except Exception as e:
+                    yield f"data: $ Error fetching issues: {str(e)[:100]}\n\n"
+
+                # Final summary
+                yield "data: $ \n\n"
+                yield "data: $ ========================================\n\n"
+                yield "data: $ Update Summary:\n\n"
+                yield f"data: $ - Repository: {repo.name}\n\n"
+                yield f"data: $ - Stars: {repo.stars}\n\n"
+                yield f"data: $ - Forks: {repo.forks}\n\n"
+                yield f"data: $ - Issues: {issues_fetched}\n\n"
+                yield f"data: $ - Pull Requests: {prs_fetched}\n\n"
+                yield "data: $ ========================================\n\n"
+                yield "data: $ \n\n"
+                yield "data: $ Update completed successfully!\n\n"
+                yield "data: DONE\n\n"
+
+            except Exception as e:
+                logger.error(f"Error in event_stream: {str(e)}")
+                yield f"data: $ Unexpected error: {str(e)[:100]}\n\n"
+                yield "data: DONE\n\n"
+
+        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+
+    except Exception as e:
+        logger.error(f"Error in update_repo_data_stream: {str(e)}")
+
+        def error_stream():
+            yield f"data: $ Error: {str(e)[:100]}\n\n"
+            yield "data: DONE\n\n"
+
+        return StreamingHttpResponse(error_stream(), content_type="text/event-stream")

@@ -1128,8 +1128,8 @@
                 </svg>
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">GitHub Issues & Pull Requests</h2>
             </div>
-            <button id="refresh-github-data"
-                    data-repo-id="{{ repo.id }}"
+            <button id="updateRepoBtn"
+                    onclick="updateRepoData('{{ repo.slug }}')"
                     class="inline-flex items-center px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-lg transition-colors">
                 <svg class="w-5 h-5 mr-2"
                      fill="none"
@@ -1137,8 +1137,20 @@
                      viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Refresh Data
+                Update Repository Data
             </button>
+        </div>
+        <!-- Update Status Area -->
+        <div id="repoUpdateStatus" class="mt-4 hidden">
+            <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-spinner fa-spin text-[#e74c3c] mr-2"></i>
+                    <span class="font-medium text-gray-900 dark:text-gray-100">Updating repository...</span>
+                </div>
+                <div id="statusMessages"
+                     class="text-sm font-mono bg-gray-900 text-green-400 p-3 rounded max-h-96 overflow-y-auto">
+                </div>
+            </div>
         </div>
         <!-- Stats Cards -->
         <div class="grid grid-cols-3 gap-4 mb-6">
@@ -1375,83 +1387,113 @@
 {% block after_js %}
     {{ block.super }}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const refreshButton = document.getElementById('refresh-github-data');
-            const loadingOverlay = document.getElementById('loadingOverlay');
+        function updateRepoData(slug) {
+            const button = document.getElementById('updateRepoBtn');
+            const statusArea = document.getElementById('repoUpdateStatus');
+            const statusMessages = document.getElementById('statusMessages');
             
-            if (refreshButton) {
-                refreshButton.addEventListener('click', function() {
-                    const repoId = this.getAttribute('data-repo-id');
-                    
-                    // Show loading overlay
-                    if (loadingOverlay) {
-                        loadingOverlay.classList.remove('hidden');
-                    }
-                    
-                    // Disable the button to prevent multiple clicks
-                    refreshButton.disabled = true;
-                    refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
-                    
-                    // Get CSRF token
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    
-                    // Make the AJAX request to refresh the data
-                    fetch(`/repository/${repoId}/refresh/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrfToken,
-                            'Content-Type': 'application/json'
-                        },
-                        credentials: 'same-origin'
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`Network response was not ok: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Success:', data);
-                        
-                        // Update the counts
-                        const issuesCount = document.getElementById('issues-count');
-                        const prsCount = document.getElementById('prs-count');
-                        const dollarTagCount = document.getElementById('dollar-tag-count');
-                        
-                        if (issuesCount) issuesCount.textContent = data.data.issues_count;
-                        if (prsCount) prsCount.textContent = data.data.prs_count;
-                        if (dollarTagCount) dollarTagCount.textContent = data.data.dollar_tag_count;
-                        
-                        // Update the last updated text
-                        const lastUpdatedText = document.getElementById('last-updated-text');
-                        if (lastUpdatedText && data.data.last_updated) {
-                            const lastUpdated = new Date(data.data.last_updated);
-                            lastUpdatedText.textContent = `Last updated: ${lastUpdated.toLocaleString()}`;
-                        }
-                        
-                        // Show success message
-                        alert('Repository data refreshed successfully! Reload the page to see the updated issues and PRs.');
-                        
-                        // Optional: Reload the page to show updated data
-                        // window.location.reload();
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('An error occurred while refreshing the repository data. Please try again later.');
-                    })
-                    .finally(() => {
-                        // Hide loading overlay
-                        if (loadingOverlay) {
-                            loadingOverlay.classList.add('hidden');
-                        }
-                        
-                        // Re-enable the button
-                        refreshButton.disabled = false;
-                        refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                    });
-                });
+            // Disable button and show status area
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+            statusArea.classList.remove('hidden');
+            statusMessages.innerHTML = '';
+            
+            // Style the status area to look like a terminal
+            statusMessages.className = 'text-sm font-mono bg-gray-900 text-green-400 p-3 rounded max-h-96 overflow-y-auto';
+            
+            // Connect to the server-sent events endpoint
+            let eventSource;
+            try {
+                eventSource = new EventSource(`/repository/${slug}/update-data/`);
+                console.log('EventSource created:', eventSource);
+            } catch (err) {
+                console.error('Error creating EventSource:', err);
+                statusMessages.innerHTML = `<div class="text-red-500">Error: ${err.message}</div>`;
+                button.disabled = false;
+                button.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>Update Repository Data';
+                return;
             }
-        });
+            
+            // Set a timeout to detect connection issues
+            const connectionTimeout = setTimeout(() => {
+                if (eventSource.readyState !== EventSource.OPEN) {
+                    statusMessages.innerHTML += '<div class="text-red-500">Error: Connection timeout</div>';
+                    eventSource.close();
+                    button.disabled = false;
+                    button.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>Update Repository Data';
+                }
+            }, 10000); // 10 second timeout
+            
+            // Handle connection open
+            eventSource.onopen = function() {
+                clearTimeout(connectionTimeout);
+                console.log('EventSource connection opened');
+            };
+            
+            // Handle incoming messages
+            eventSource.onmessage = function(event) {
+                console.log('EventSource message received:', event.data);
+                const message = event.data;
+                
+                // Check if the update is complete
+                if (message.includes('DONE')) {
+                    clearTimeout(connectionTimeout);
+                    eventSource.close();
+                    button.disabled = false;
+                    button.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>Update Repository Data';
+                    
+                    // Add a refresh button
+                    const refreshBtn = document.createElement('button');
+                    refreshBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
+                    refreshBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Refresh Page';
+                    refreshBtn.onclick = function() { location.reload(); };
+                    statusArea.appendChild(refreshBtn);
+                    
+                    return;
+                }
+                
+                // Add the message to the terminal
+                const line = document.createElement('div');
+                
+                // Style based on message content
+                if (message.includes('Error:') || message.includes('[error]')) {
+                    line.className = 'text-red-500';
+                } else if (message.includes('[created]') || message.includes('[success]')) {
+                    line.className = 'text-blue-400';
+                } else if (message.includes('[updated]') || message.includes('Warning:')) {
+                    line.className = 'text-yellow-400';
+                }
+                
+                line.textContent = message;
+                statusMessages.appendChild(line);
+                
+                // Auto-scroll to the bottom
+                statusMessages.scrollTop = statusMessages.scrollHeight;
+            };
+            
+            // Handle errors
+            eventSource.onerror = function(error) {
+                clearTimeout(connectionTimeout);
+                console.error('EventSource error:', error);
+                
+                eventSource.close();
+                
+                statusMessages.innerHTML += '<div class="text-red-500">Error: Connection to the server was lost</div>';
+                
+                // Add a retry button
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
+                retryBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Retry';
+                retryBtn.onclick = function() { 
+                    statusArea.innerHTML = '<div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg"><div class="flex items-center mb-2"><i class="fas fa-spinner fa-spin text-[#e74c3c] mr-2"></i><span class="font-medium text-gray-900 dark:text-gray-100">Updating repository...</span></div><div id="statusMessages" class="text-sm font-mono bg-gray-900 text-green-400 p-3 rounded max-h-96 overflow-y-auto"></div></div>';
+                    updateRepoData(slug); 
+                };
+                statusArea.appendChild(retryBtn);
+                
+                button.disabled = false;
+                button.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>Update Repository Data';
+            };
+        }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'js/repo_detail.js' %}"></script>

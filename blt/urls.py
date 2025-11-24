@@ -290,7 +290,7 @@ from website.views.project import (
     select_contribution,
 )
 from website.views.queue import queue_list, update_txid
-from website.views.repo import RepoListView, add_repo, refresh_repo_data
+from website.views.repo import RepoListView, add_repo, refresh_repo_data, update_repo_data_stream
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
@@ -783,6 +783,7 @@ urlpatterns = [
     path("repos/<slug:slug>/badge/", RepoBadgeView.as_view(), name="repo-badge"),
     path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
     path("repository/<int:repo_id>/refresh/", refresh_repo_data, name="refresh_repo_data"),
+    path("repository/<slug:slug>/update-data/", update_repo_data_stream, name="update_repo_data_stream"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
