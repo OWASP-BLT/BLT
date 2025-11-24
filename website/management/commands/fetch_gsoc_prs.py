@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 import pytz
 import requests
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -50,8 +51,6 @@ class Command(BaseCommand):
         reset = options["reset"]
 
         # Fetch PRs from the last 6 months
-        from dateutil.relativedelta import relativedelta
-
         since_date = timezone.now() - relativedelta(months=6)
         since_date_str = since_date.strftime("%Y-%m-%d")
 
