@@ -19,6 +19,9 @@
     let konamiPosition = 0;
     let easterEggActivated = false;
 
+    // Touch gesture configuration
+    const SWIPE_THRESHOLD = 30; // Minimum distance in pixels for a swipe to be recognized
+
     // Confetti configuration
     const confettiConfig = {
         particleCount: 100,
@@ -79,6 +82,21 @@
      * Shows the Easter egg message
      */
     function showEasterEggMessage() {
+        // Add animations first before creating modal
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% { transform: translate(-50%, -50%); }
+                40% { transform: translate(-50%, -60%); }
+                60% { transform: translate(-50%, -55%); }
+            }
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
         const modal = document.createElement('div');
         modal.style.position = 'fixed';
         modal.style.top = '50%';
@@ -118,17 +136,6 @@
             ">Awesome!</button>
         `;
 
-        // Add bounce animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes bounce {
-                0%, 20%, 50%, 80%, 100% { transform: translate(-50%, -50%); }
-                40% { transform: translate(-50%, -60%); }
-                60% { transform: translate(-50%, -55%); }
-            }
-        `;
-        document.head.appendChild(style);
-
         document.body.appendChild(modal);
 
         // Add hover effect to button
@@ -150,14 +157,6 @@
                 style.remove();
             }, 300);
         });
-
-        // Add fade out animation
-        style.textContent += `
-            @keyframes fadeOut {
-                from { opacity: 1; }
-                to { opacity: 0; }
-            }
-        `;
     }
 
     /**
@@ -222,16 +221,16 @@
         // Determine swipe direction
         if (Math.abs(diffY) > Math.abs(diffX)) {
             // Vertical swipe
-            if (diffY > 30) {
+            if (diffY > SWIPE_THRESHOLD) {
                 touchSequence.push('up');
-            } else if (diffY < -30) {
+            } else if (diffY < -SWIPE_THRESHOLD) {
                 touchSequence.push('down');
             }
         } else {
             // Horizontal swipe
-            if (diffX > 30) {
+            if (diffX > SWIPE_THRESHOLD) {
                 touchSequence.push('left');
-            } else if (diffX < -30) {
+            } else if (diffX < -SWIPE_THRESHOLD) {
                 touchSequence.push('right');
             }
         }
