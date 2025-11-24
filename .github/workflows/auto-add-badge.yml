@@ -9,6 +9,8 @@ permissions:
 
 jobs:
   add-badge:
+    # Prevent infinite loop - don't run if the actor is the bot itself
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
 
     steps:

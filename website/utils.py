@@ -69,10 +69,23 @@ def validate_file_type(request, file_field_name, allowed_extensions, allowed_mim
 
 
 def get_client_ip(request):
-    """Extract the client's IP address from the request."""
+    """
+    Extract the client's IP address from the request.
+
+    WARNING: X-Forwarded-For header can be spoofed by clients. This function
+    assumes the application is behind a trusted proxy (e.g., Nginx, AWS ALB)
+    that properly sets or sanitizes the X-Forwarded-For header. For production
+    deployments, ensure:
+    1. The application is behind a trusted reverse proxy
+    2. The proxy is configured to overwrite X-Forwarded-For headers
+    3. Direct access to the application server is blocked by firewall rules
+
+    If IP validation is critical for your use case, consider implementing
+    additional verification mechanisms or configuring trusted proxy validation.
+    """
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
     if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
+        ip = x_forwarded_for.split(",")[0].strip()
     else:
         ip = request.META.get("REMOTE_ADDR")
     return ip
