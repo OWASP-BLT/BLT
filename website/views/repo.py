@@ -19,10 +19,20 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
-from website.models import Organization, Repo
+from website.models import GitHubIssue, Organization, Repo
 from website.utils import ai_summary, markdown_to_text
 
 logger = logging.getLogger(__name__)
+
+
+def get_bot_filter_query():
+    """
+    Returns a Q object for filtering out bot contributors.
+    This ensures consistent bot detection across the codebase.
+    """
+    return Q(contributor__contributor_type="Bot") | Q(contributor__name__endswith="[bot]") | Q(
+        contributor__name__icontains="bot"
+    )
 
 
 class RepoListView(ListView):
@@ -363,19 +373,13 @@ class RepoDetailView(DetailView):
             context["active_hackathon"] = active_hackathon
 
             # Calculate hackathon stats for this repo
-            from website.models import GitHubIssue
-
-            # Get all PRs during the hackathon period for this repo
+            # Get all PRs during the hackathon period for this repo (excluding bots)
             hackathon_prs = GitHubIssue.objects.filter(
                 repo=repo,
                 type="pull_request",
                 created_at__gte=active_hackathon.start_time,
                 created_at__lte=active_hackathon.end_time,
-            ).exclude(
-                Q(contributor__contributor_type="Bot")
-                | Q(contributor__name__endswith="[bot]")
-                | Q(contributor__name__icontains="bot")
-            )
+            ).exclude(get_bot_filter_query())
 
             # Get merged PRs
             merged_prs = hackathon_prs.filter(
@@ -384,16 +388,12 @@ class RepoDetailView(DetailView):
                 merged_at__lte=active_hackathon.end_time,
             )
 
-            # Count unique participants
+            # Count unique participants (excluding bots)
             user_profile_count = merged_prs.exclude(user_profile=None).values("user_profile").distinct().count()
             contributor_count = (
                 merged_prs.filter(user_profile=None)
                 .exclude(contributor=None)
-                .exclude(
-                    Q(contributor__contributor_type="Bot")
-                    | Q(contributor__name__endswith="[bot]")
-                    | Q(contributor__name__icontains="bot")
-                )
+                .exclude(get_bot_filter_query())
                 .values("contributor")
                 .distinct()
                 .count()
