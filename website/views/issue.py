@@ -1659,9 +1659,9 @@ class IssueView(DetailView):
 
         # Add user score for the issue reporter
         if self.object.user:
-            context["users_score"] = list(
-                Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
-            )[0] or 0
+            context["users_score"] = (
+                list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
+            )
 
         return context
 
