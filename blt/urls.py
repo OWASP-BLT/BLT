@@ -294,7 +294,6 @@ from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
-
 from website.views.teams import (
     GiveKudosView,
     TeamChallenges,
