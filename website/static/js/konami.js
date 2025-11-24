@@ -82,20 +82,23 @@
      * Shows the Easter egg message
      */
     function showEasterEggMessage() {
-        // Add animations first before creating modal
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes bounce {
-                0%, 20%, 50%, 80%, 100% { transform: translate(-50%, -50%); }
-                40% { transform: translate(-50%, -60%); }
-                60% { transform: translate(-50%, -55%); }
-            }
-            @keyframes fadeOut {
-                from { opacity: 1; }
-                to { opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
+        // Add animations first before creating modal (only if not already present)
+        if (!document.getElementById('konami-animations')) {
+            const style = document.createElement('style');
+            style.id = 'konami-animations';
+            style.textContent = `
+                @keyframes bounce {
+                    0%, 20%, 50%, 80%, 100% { transform: translate(-50%, -50%); }
+                    40% { transform: translate(-50%, -60%); }
+                    60% { transform: translate(-50%, -55%); }
+                }
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
 
         const modal = document.createElement('div');
         modal.style.position = 'fixed';
@@ -154,7 +157,6 @@
             modal.style.animation = 'fadeOut 0.3s ease-out';
             setTimeout(() => {
                 modal.remove();
-                style.remove();
             }, 300);
         });
     }
