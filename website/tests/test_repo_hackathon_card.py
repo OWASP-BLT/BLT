@@ -166,6 +166,6 @@ class RepoHackathonCardTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         stats = response.context["active_hackathon_stats"]
 
-        # Bot PR should be counted in total_prs but bot should not be in participants
-        self.assertEqual(stats["total_prs"], 3)  # Bot PR excluded from total
+        # Bot PRs are excluded from both total_prs count and participant count
+        self.assertEqual(stats["total_prs"], 3)  # Only the 3 non-bot PRs from setUp
         self.assertEqual(stats["participants"], 1)  # Bot not counted as participant
