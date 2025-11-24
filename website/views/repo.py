@@ -25,6 +25,9 @@ from website.utils import ai_summary, markdown_to_text
 
 logger = logging.getLogger(__name__)
 
+# Regex pattern for GitHub repository URLs
+GITHUB_REPO_URL_PATTERN = re.compile(r"^(?:https?://)?github\.com/([^/]+)/([^/]+)/?$")
+
 
 class RepoListView(ListView):
     model = Repo
@@ -372,7 +375,7 @@ def add_repo(request):
             )
 
         # Convert GitHub URL to API URL
-        match = re.match(r"^(?:https?://)?github\.com/([^/]+)/([^/]+)/?$", repo_url)
+        match = GITHUB_REPO_URL_PATTERN.match(repo_url)
         if not match:
             error_msg = (
                 "Invalid GitHub repository URL. " "Please provide a URL in the format: https://github.com/owner/repo"
@@ -705,7 +708,7 @@ def update_repo_data_stream(request, slug):
                     return
 
                 # Extract owner and repo name from the repo URL
-                match = re.match(r"^(?:https?://)?github\.com/([^/]+)/([^/]+)/?$", repo.repo_url)
+                match = GITHUB_REPO_URL_PATTERN.match(repo.repo_url)
                 if not match:
                     yield "data: $ Error: Invalid GitHub repository URL format\n\n"
                     yield "data: DONE\n\n"
