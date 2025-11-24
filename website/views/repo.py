@@ -29,6 +29,10 @@ def get_bot_filter_query():
     """
     Returns a Q object for filtering out bot contributors.
     This ensures consistent bot detection across the codebase.
+    
+    Note: The 'icontains="bot"' check is intentionally broad to catch various
+    bot naming patterns, following the pattern used in hackathon leaderboard views.
+    This matches GitHub's common bot naming conventions like 'dependabot', 'github-bot', etc.
     """
     return Q(contributor__contributor_type="Bot") | Q(contributor__name__endswith="[bot]") | Q(
         contributor__name__icontains="bot"
@@ -373,7 +377,8 @@ class RepoDetailView(DetailView):
             context["active_hackathon"] = active_hackathon
 
             # Calculate hackathon stats for this repo
-            # Get all PRs during the hackathon period for this repo (excluding bots)
+            # Get all PRs created during the hackathon period (excluding bots)
+            # Note: We filter by created_at to count all PRs submitted during the event
             hackathon_prs = GitHubIssue.objects.filter(
                 repo=repo,
                 type="pull_request",
@@ -381,7 +386,8 @@ class RepoDetailView(DetailView):
                 created_at__lte=active_hackathon.end_time,
             ).exclude(get_bot_filter_query())
 
-            # Get merged PRs
+            # Get merged PRs (must be both created AND merged during the hackathon)
+            # This ensures we only count PRs that completed the full lifecycle during the event
             merged_prs = hackathon_prs.filter(
                 is_merged=True,
                 merged_at__gte=active_hackathon.start_time,
