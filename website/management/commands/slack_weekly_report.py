@@ -27,12 +27,19 @@ class Command(LoggedBaseCommand):
 
         for integration in slack_integrations:
             current_org = integration.integration.organization
-            if integration.default_channel_id and current_org:
-                logger.info(f"Processing weekly report for organization: {current_org.name}")
+            # Use weekly report channel if configured, otherwise use default channel
+            channel_id = integration.weekly_report_channel_id or integration.default_channel_id
+            channel_name = integration.weekly_report_channel_name or integration.default_channel_name
+
+            if channel_id and current_org:
+                logger.info(
+                    f"Processing weekly report for organization: {current_org.name} "
+                    f"(channel: {channel_name or channel_id})"
+                )
                 try:
                     report_message = self.generate_weekly_report(current_org)
                     self.send_message(
-                        integration.default_channel_id,
+                        channel_id,
                         integration.bot_access_token,
                         report_message,
                     )

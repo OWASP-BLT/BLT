@@ -248,3 +248,55 @@ class SlackWeeklyReportTests(TestCase):
         message = call_args.kwargs["text"]
         self.assertIn("Test Project", message)
         self.assertIn("Projects Overview", message)
+
+    @patch("slack_bolt.App")
+    def test_weekly_report_custom_channel(self, mock_app):
+        """Test that weekly report uses custom channel when configured."""
+        # Set custom weekly report channel
+        self.slack_integration.weekly_report_channel_id = "C789012"
+        self.slack_integration.weekly_report_channel_name = "weekly-reports"
+        self.slack_integration.save()
+
+        # Mock the Slack app and client
+        mock_client = MagicMock()
+        mock_app.return_value.client = mock_client
+        mock_client.conversations_join.return_value = None
+        mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
+
+        # Run the command
+        command = Command()
+        command.handle()
+
+        # Verify that the custom channel was used instead of default
+        mock_app.assert_called_once_with(token="xoxb-test-token")
+        mock_client.conversations_join.assert_called_once_with(channel="C789012")
+        mock_client.chat_postMessage.assert_called_once()
+
+        # Verify the message was sent to the custom channel
+        call_args = mock_client.chat_postMessage.call_args
+        self.assertEqual(call_args.kwargs["channel"], "C789012")
+
+    @patch("slack_bolt.App")
+    def test_weekly_report_fallback_to_default_channel(self, mock_app):
+        """Test that weekly report falls back to default channel when custom not set."""
+        # Ensure weekly report channel is not set (it's None by default in setUp)
+        self.assertIsNone(self.slack_integration.weekly_report_channel_id)
+
+        # Mock the Slack app and client
+        mock_client = MagicMock()
+        mock_app.return_value.client = mock_client
+        mock_client.conversations_join.return_value = None
+        mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
+
+        # Run the command
+        command = Command()
+        command.handle()
+
+        # Verify that the default channel was used
+        mock_app.assert_called_once_with(token="xoxb-test-token")
+        mock_client.conversations_join.assert_called_once_with(channel="C123456")
+        mock_client.chat_postMessage.assert_called_once()
+
+        # Verify the message was sent to the default channel
+        call_args = mock_client.chat_postMessage.call_args
+        self.assertEqual(call_args.kwargs["channel"], "C123456")
