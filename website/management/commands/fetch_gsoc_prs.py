@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Fetch closed pull requests from GitHub repositories listed on the GSoC page since 2024-11-11"
+    help = "Fetch closed pull requests from GitHub repositories merged in the last 6 months"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -204,10 +204,10 @@ class Command(BaseCommand):
         total_prs_added = 0
         total_prs_updated = 0
 
-        since_date_str = since_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        since_date_str = since_date.strftime("%Y-%m-%d")
 
-        self.stdout.write(f"Fetching PRs since {since_date_str} for {owner}/{repo_name}")
-        self.stdout.write(f"Current date: {timezone.now().strftime('%Y-%m-%dT%H:%M:%SZ')}")
+        self.stdout.write(f"Fetching closed PRs for {owner}/{repo_name}")
+        self.stdout.write(f"Will filter for PRs merged since {since_date_str}")
         self.stdout.write(f"Starting from page {repo.last_pr_page_processed + 1}")
 
         # Set up headers for GitHub API
@@ -224,10 +224,11 @@ class Command(BaseCommand):
         reached_end = False
 
         while not reached_end:
+            # Note: The /pulls endpoint doesn't support 'since' parameter
+            # We filter by merged_at date locally after fetching
             url = (
                 f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
                 f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
-                f"&since={since_date_str}"
             )
 
             if verbose:
@@ -276,7 +277,7 @@ class Command(BaseCommand):
         if verbose:
             self.stdout.write(f"Fetched {total_prs_fetched} PRs for {owner}/{repo_name}")
             merged_prs_query = GitHubIssue.objects.filter(
-                repo=repo, type="pull_request", is_merged=True, created_at__gte=since_date
+                repo=repo, type="pull_request", is_merged=True, merged_at__gte=since_date
             )
             merged_prs = merged_prs_query.count()
             self.stdout.write(f"Total merged PRs in database: {merged_prs}")
