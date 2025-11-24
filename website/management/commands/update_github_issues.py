@@ -23,10 +23,33 @@ class Command(LoggedBaseCommand):
 
     def handle(self, *_, **options):
         fetch_all_blt = options.get("all_blt_repos", False)
+
+        # Fetch PRs from the last 6 months
+        from dateutil.relativedelta import relativedelta
+
+        since_date = timezone.now() - relativedelta(months=6)
+        since_date_str = since_date.strftime("%Y-%m-%d")
+
         users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
         user_count = users_with_github.count()
 
-        self.stdout.write(self.style.SUCCESS(f"Found {user_count} users with GitHub profiles"))
+        self.stdout.write(f"Found {user_count} users with GitHub profiles")
+
+        # If no users with GitHub URLs, just fetch BLT repos directly
+        if user_count == 0:
+            self.stdout.write(self.style.WARNING("No users with GitHub URLs found."))
+            self.stdout.write("Fetching PRs from BLT repositories instead...")
+
+            from django.core.management import call_command
+
+            try:
+                call_command("fetch_gsoc_prs")
+                self.stdout.write(self.style.SUCCESS("Successfully fetched BLT repo PRs!"))
+            except CommandError as e:
+                self.stdout.write(self.style.ERROR(f"Error fetching BLT repo PRs: {e!s}"))
+            return
+
+        self.stdout.write(f"Fetching PRs merged in the last 6 months (since {since_date_str})")
         self.stdout.write("-" * 50)
 
         merged_pr_counts = defaultdict(int)
@@ -60,6 +83,8 @@ class Command(LoggedBaseCommand):
             pr_count = len(all_prs)
             self.stdout.write(f"Found {pr_count} pull requests")
 
+            skipped_old_prs = 0
+
             with transaction.atomic():
                 for pr in all_prs:
                     repo_full_name = pr["repository_url"].split("repos/")[-1]
@@ -69,6 +94,18 @@ class Command(LoggedBaseCommand):
 
                     try:
                         merged = True if pr["pull_request"].get("merged_at") else False
+
+                        # Skip PRs that aren't merged
+                        if not merged:
+                            continue
+
+                        # Parse merged_at date and skip if before since_date
+                        merged_at = timezone.make_aware(
+                            datetime.strptime(pr["pull_request"]["merged_at"], "%Y-%m-%dT%H:%M:%SZ")
+                        )
+                        if merged_at < since_date:
+                            skipped_old_prs += 1
+                            continue
                         # Use repo_url (which is unique) instead of name (which can have duplicates)
                         repo = Repo.objects.get(repo_url=github_repo_url)
 
@@ -217,6 +254,8 @@ class Command(LoggedBaseCommand):
                         )
                         continue
 
+            if skipped_old_prs > 0:
+                self.stdout.write(f"Skipped {skipped_old_prs} PRs merged before {since_date.strftime('%Y-%m-%d')}")
             self.stdout.write(self.style.SUCCESS(f"Successfully updated PRs and reviews for {github_username}"))
 
         # Bulk update merged PR count

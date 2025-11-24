@@ -4,9 +4,9 @@ from urllib.parse import urlparse
 
 import pytz
 import requests
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Fetch closed pull requests from GitHub repositories listed on the GSoC page since 2024-11-11"
+    help = "Fetch closed pull requests from GitHub repositories merged in the last 6 months"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -45,11 +45,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         limit = options["limit"]
-        verbose = True  # Always use verbose mode for debugging
+        verbose = options.get("verbose", False)  # Use verbose flag from options
         repos_arg = options["repos"]
         reset = options["reset"]
 
-        self.stdout.write("Fetching closed PRs since 2024-11-11 for GSoC repositories")
+        # Fetch PRs from the last 6 months
+        since_date = timezone.now() - relativedelta(months=6)
+        since_date_str = since_date.strftime("%Y-%m-%d")
+
+        self.stdout.write(f"Fetching closed PRs merged in the last 6 months (since {since_date_str})")
 
         # Determine which repositories to process
         if repos_arg:
@@ -118,8 +122,10 @@ class Command(BaseCommand):
                     repo.save()
                     self.stdout.write(f"Reset last_pr_page_processed for {repo_full_name}")
 
-                # Fetch closed PRs since 2024-11-11
-                prs_fetched, prs_added, prs_updated = self.fetch_and_save_prs(repo, owner, repo_name, verbose)
+                # Fetch closed PRs since the specified date
+                prs_fetched, prs_added, prs_updated = self.fetch_and_save_prs(
+                    repo, owner, repo_name, since_date, verbose
+                )
 
                 total_prs_fetched += prs_fetched
                 total_prs_added += prs_added
@@ -165,7 +171,7 @@ class Command(BaseCommand):
                     headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
 
                 url = f"https://api.github.com/repos/{owner}/{repo_name}"
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
 
                 repo_data = response.json()
@@ -187,76 +193,66 @@ class Command(BaseCommand):
 
         return repo
 
-    def fetch_and_save_prs(self, repo, owner, repo_name, verbose=False):
+    def fetch_and_save_prs(self, repo, owner, repo_name, since_date, verbose=False):
         """
-        Fetch closed pull requests from GitHub API and save them to the database.
+        Fetch closed pull requests from GitHub API using Search API for server-side filtering.
         Returns a tuple of (total_prs_fetched, total_prs_added, total_prs_updated).
         """
         total_prs_fetched = 0
         total_prs_added = 0
         total_prs_updated = 0
 
-        # Fixed start date: 2024-11-11
-        since_date = timezone.make_aware(datetime(2024, 11, 11))
-        since_date_str = since_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        since_date_str = since_date.strftime("%Y-%m-%d")
 
-        self.stdout.write(f"Fetching PRs since {since_date_str} for {owner}/{repo_name}")
-        self.stdout.write(f"Current date: {timezone.now().strftime('%Y-%m-%dT%H:%M:%SZ')}")
-        self.stdout.write(f"Starting from page {repo.last_pr_page_processed + 1}")
+        self.stdout.write(f"Fetching merged PRs for {owner}/{repo_name} since {since_date_str}")
 
         # Set up headers for GitHub API
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
-            self.stdout.write("Using GitHub token for authentication")
-        else:
-            self.stdout.write("No GitHub token found, using unauthenticated requests (rate limits may apply)")
 
-        # Start from the last processed page + 1
-        page = repo.last_pr_page_processed + 1
+        # Use GitHub Search API for server-side filtering by merge date
+        page = 1
         per_page = 100
         reached_end = False
 
         while not reached_end:
+            # Search API allows filtering by merged date
             url = (
-                f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
-                f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
-                f"&since={since_date_str}"
+                f"https://api.github.com/search/issues"
+                f"?q=repo:{owner}/{repo_name}+type:pr+is:merged+merged:>={since_date_str}"
+                f"&per_page={per_page}&page={page}&sort=updated&order=desc"
             )
 
             if verbose:
                 self.stdout.write(f"Fetching PRs from: {url}")
 
             try:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
 
-                data = response.json()
+                result = response.json()
+                data = result.get("items", [])
+
                 if not data:
-                    self.stdout.write(f"No more PRs found for {owner}/{repo_name} on page {page}")
+                    if verbose:
+                        self.stdout.write(f"No more PRs found for {owner}/{repo_name} on page {page}")
                     reached_end = True
                     break
 
-                self.stdout.write(f"Fetched {len(data)} PRs from page {page}")
-
-                # Check if any PRs are merged
-                merged_count = sum(1 for pr in data if pr.get("merged_at") is not None)
-                self.stdout.write(f"Found {merged_count} merged PRs on page {page}")
+                if verbose:
+                    self.stdout.write(f"Fetched {len(data)} merged PRs from page {page}")
 
                 # Process this page of PRs
-                prs_added, prs_updated = self.save_prs_to_db(repo, data, verbose)
+                prs_added, prs_updated = self.save_prs_to_db(repo, data, since_date, verbose)
                 total_prs_fetched += len(data)
                 total_prs_added += prs_added
                 total_prs_updated += prs_updated
 
-                # Update the repository's last processed page
-                repo.last_pr_page_processed = page
-                repo.last_pr_fetch_date = timezone.now()
-                repo.save()
-
                 # Check if we've reached the last page
                 if len(data) < per_page:
-                    self.stdout.write(f"Reached last page ({page}) for {owner}/{repo_name}")
+                    if verbose:
+                        self.stdout.write(f"Reached last page ({page}) for {owner}/{repo_name}")
                     reached_end = True
                     break
 
@@ -267,111 +263,139 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"Error fetching PRs for {owner}/{repo_name}: {str(e)}"))
                 break
 
-        if verbose:
-            self.stdout.write(f"Fetched {total_prs_fetched} PRs for {owner}/{repo_name}")
-            merged_prs_query = GitHubIssue.objects.filter(
-                repo=repo, type="pull_request", is_merged=True, created_at__gte=since_date
-            )
-            merged_prs = merged_prs_query.count()
-            self.stdout.write(f"Total merged PRs in database: {merged_prs}")
+        self.stdout.write(f"Fetched {total_prs_fetched} PRs, Added {total_prs_added}, Updated {total_prs_updated}")
 
         return total_prs_fetched, total_prs_added, total_prs_updated
 
-    @transaction.atomic
-    def save_prs_to_db(self, repo, prs, verbose=False):
+    def save_prs_to_db(self, repo, prs, since_date, verbose=False):
         """
-        Save pull requests to the database.
+        Save pull requests to the database using bulk operations.
         Returns the number of new PRs added and updated.
         """
         added_count = 0
         updated_count = 0
-        skipped_count = 0
         skipped_not_merged = 0
+        skipped_old_prs = 0
 
-        self.stdout.write(f"Processing {len(prs)} PRs for {repo.name}")
+        if verbose:
+            self.stdout.write(f"Processing {len(prs)} PRs for {repo.name}")
+
+        # Pre-fetch existing PRs for this repo
+        existing_pr_ids = set(
+            GitHubIssue.objects.filter(
+                repo=repo, issue_id__in=[pr["number"] for pr in prs if "pull_request" in pr]
+            ).values_list("issue_id", flat=True)
+        )
+
+        # Collect all contributor data first
+        contributor_github_ids = []
+        contributor_data_map = {}
 
         for pr in prs:
+            if not pr.get("pull_request", {}).get("merged_at"):
+                continue
+            if pr.get("user") and pr["user"].get("id"):
+                github_id = pr["user"]["id"]
+                user_type = pr["user"].get("type", "User")
+                username = pr["user"]["login"]
+
+                # Skip bots
+                if user_type == "Bot" or username.endswith("[bot]"):
+                    continue
+
+                contributor_github_ids.append(github_id)
+                contributor_data_map[github_id] = {
+                    "name": username,
+                    "github_url": pr["user"]["html_url"],
+                    "avatar_url": pr["user"]["avatar_url"],
+                    "contributor_type": user_type,
+                }
+
+        # Bulk fetch existing contributors
+        existing_contributors = {
+            c.github_id: c for c in Contributor.objects.filter(github_id__in=contributor_github_ids)
+        }
+
+        # Bulk create missing contributors
+        new_contributors = []
+        for github_id, data in contributor_data_map.items():
+            if github_id not in existing_contributors:
+                new_contributors.append(
+                    Contributor(
+                        github_id=github_id,
+                        name=data["name"],
+                        github_url=data["github_url"],
+                        avatar_url=data["avatar_url"],
+                        contributor_type=data["contributor_type"],
+                        contributions=0,
+                    )
+                )
+
+        if new_contributors:
+            Contributor.objects.bulk_create(new_contributors, ignore_conflicts=True)
+            # Refresh contributor cache
+            existing_contributors = {
+                c.github_id: c for c in Contributor.objects.filter(github_id__in=contributor_github_ids)
+            }
+
+        # Bulk fetch user profiles
+        github_urls = [data["github_url"] for data in contributor_data_map.values()]
+        userprofile_map = {up.github_url: up for up in UserProfile.objects.filter(github_url__in=github_urls)}
+
+        # Prepare bulk create/update lists
+        prs_to_create = []
+        prs_to_update = []
+
+        for pr in prs:
+            # Search API returns issues, check if it has pull_request key
+            if "pull_request" not in pr:
+                continue
+
+            # Get merged_at from pull_request object
+            pr_data = pr.get("pull_request", {})
+            merged_at_str = pr_data.get("merged_at")
+
             # Skip PRs that aren't merged
-            if not pr.get("merged_at"):
+            if not merged_at_str:
                 skipped_not_merged += 1
-                if verbose:
-                    self.stdout.write(f"PR {pr['number']} is not merged, skipping")
                 continue
 
             # Parse dates
             created_at = datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
             updated_at = datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
+            closed_at = (
+                datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
+                if pr.get("closed_at")
+                else None
+            )
+            merged_at = datetime.strptime(merged_at_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
 
-            closed_at = None
-            if pr["closed_at"]:
-                closed_at = datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
+            # Skip PRs that were merged before the since_date
+            if merged_at < since_date:
+                skipped_old_prs += 1
+                continue
 
-            merged_at = None
-            is_merged = False
-            if pr["merged_at"]:
-                merged_at = datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
-                is_merged = True
-
-            # Try to find the user profile
-            user_profile = None
+            # Get contributor and user profile from cache
             contributor = None
-            github_url = None
+            user_profile = None
 
-            if pr["user"] and pr["user"]["html_url"]:
-                # Get or create a Contributor record
-                github_url = pr["user"]["html_url"]
+            if pr.get("user") and pr["user"].get("id"):
                 github_id = pr["user"]["id"]
-                github_username = pr["user"]["login"]
-                avatar_url = pr["user"]["avatar_url"]
+                github_url = pr["user"]["html_url"]
                 user_type = pr["user"].get("type", "User")
+                username = pr["user"]["login"]
 
-                # Skip bot accounts using GitHub API type field
-                if user_type == "Bot":
-                    if verbose:
-                        self.stdout.write(f"Skipping bot account: {github_username}")
+                # Skip bots
+                if user_type == "Bot" or username.endswith("[bot]"):
                     continue
 
-                # Fallback check for bot naming patterns
-                if github_username.endswith("[bot]"):
-                    if verbose:
-                        self.stdout.write(f"Skipping bot account (by name): {github_username}")
-                    continue
-
-                try:
-                    contributor, created = Contributor.objects.get_or_create(
-                        github_id=github_id,
-                        defaults={
-                            "name": github_username,
-                            "github_url": github_url,
-                            "avatar_url": avatar_url,
-                            "contributor_type": user_type,
-                            "contributions": 1,
-                        },
-                    )
-
-                    if not created:
-                        # Update the contributions count
-                        contributor.contributions += 1
-                        contributor.save()
-
-                    if verbose:
-                        if created:
-                            self.stdout.write(f"Created new contributor: {github_username}")
-                        else:
-                            self.stdout.write(
-                                f"Updated contributor: {github_username}, contributions: {contributor.contributions}"
-                            )
-
-                    # Also try to find a matching UserProfile
-                    user_profile = UserProfile.objects.filter(github_url=github_url).first()
-
-                except Exception as e:
-                    self.stdout.write(
-                        self.style.ERROR(f"Error creating/updating contributor {github_username}: {str(e)}")
-                    )
+                contributor = existing_contributors.get(github_id)
+                user_profile = userprofile_map.get(github_url)
 
             # Prepare the data for the GitHubIssue
             issue_data = {
+                "repo": repo,
+                "issue_id": pr["number"],
                 "title": pr["title"],
                 "body": pr["body"] or "",
                 "state": pr["state"],
@@ -380,46 +404,41 @@ class Command(BaseCommand):
                 "updated_at": updated_at,
                 "closed_at": closed_at,
                 "merged_at": merged_at,
-                "is_merged": is_merged,
+                "is_merged": True,
                 "url": pr["html_url"],
                 "user_profile": user_profile,
                 "contributor": contributor,
             }
 
-            # Try to get the existing issue or create a new one
-            try:
-                # Use issue_id and repo as the lookup fields to match the unique_together constraint
-                github_issue, created = GitHubIssue.objects.update_or_create(
-                    issue_id=pr["number"],  # Use number instead of id
-                    repo=repo,
-                    defaults=issue_data,
-                )
+            # Check if PR exists
+            if pr["number"] in existing_pr_ids:
+                prs_to_update.append((pr["number"], issue_data))
+                updated_count += 1
+            else:
+                prs_to_create.append(GitHubIssue(**issue_data))
+                added_count += 1
 
-                if created:
-                    added_count += 1
-                    if verbose:
-                        self.stdout.write(f"Added PR #{pr['number']}: {pr['title']}")
-                else:
-                    updated_count += 1
-                    if verbose:
-                        self.stdout.write(f"Updated PR #{pr['number']}: {pr['title']}")
+        # Bulk create new PRs
+        if prs_to_create:
+            GitHubIssue.objects.bulk_create(prs_to_create, ignore_conflicts=True)
 
-                # Add the repo to the contributor's repos if not already there
-                if contributor and repo:
-                    # The relationship is defined in the Repo model, so we need to add the contributor to the repo
-                    repo.contributor.add(contributor)
+        # Bulk update existing PRs
+        for pr_number, data in prs_to_update:
+            GitHubIssue.objects.filter(repo=repo, issue_id=pr_number).update(
+                **{k: v for k, v in data.items() if k not in ["repo", "issue_id"]}
+            )
 
-                # Fetch reviews for this PR
-                self.fetch_and_save_reviews(github_issue, pr, verbose)
+        # Bulk add contributors to repo (M2M relationship)
+        if existing_contributors:
+            repo.contributor.add(*existing_contributors.values())
 
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"Error saving PR #{pr['number']}: {str(e)}"))
-                skipped_count += 1
+        if verbose:
+            if skipped_not_merged > 0:
+                self.stdout.write(f"Skipped {skipped_not_merged} PRs that are not merged")
+            if skipped_old_prs > 0:
+                self.stdout.write(f"Skipped {skipped_old_prs} PRs merged before {since_date.strftime('%Y-%m-%d')}")
 
-        self.stdout.write(f"Skipped {skipped_count} PRs due to errors")
-        self.stdout.write(f"Skipped {skipped_not_merged} PRs that are not merged")
-        self.stdout.write(f"Added {added_count} new PRs to the database")
-        self.stdout.write(f"Updated {updated_count} existing PRs in the database")
+        self.stdout.write(f"Added {added_count} new PRs, Updated {updated_count} existing PRs")
 
         return added_count, updated_count
 
@@ -429,8 +448,10 @@ class Command(BaseCommand):
         """
         from website.models import GitHubReview
 
-        # Get the reviews URL from the PR data
-        reviews_url = pr_data.get("url")
+        # Get the reviews URL from the PR data (Search API returns pull_request.url)
+        pr_obj = pr_data.get("pull_request", {})
+        reviews_url = pr_obj.get("url")
+
         if not reviews_url:
             return
 
