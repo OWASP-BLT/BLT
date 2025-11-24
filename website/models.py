@@ -851,6 +851,7 @@ class UserProfile(models.Model):
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
+    is_verifier = models.BooleanField(default=False, help_text="Whether the user has verifier permissions")
 
     #  fields for visit tracking
     daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
@@ -897,6 +898,10 @@ class UserProfile(models.Model):
 
     def check_team_membership(self):
         return self.team is not None
+
+    def check_verifier_permission(self):
+        """Check if user has verifier permission"""
+        return self.is_verifier
 
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
