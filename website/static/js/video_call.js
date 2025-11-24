@@ -702,18 +702,6 @@ class VideoCall {
 
                 // Update server status with the determined type
                 this.updateServerStatus('connected', serverType);
-
-                // Log connection details
-                console.log(`Connection type: ${serverType}`);
-                console.log(`Local candidate type: ${localCandidate.candidateType}`);
-                console.log(`Remote candidate type: ${remoteCandidate.candidateType}`);
-
-                if (localCandidate.ip) {
-                    console.log(`Local IP: ${this.maskIP(localCandidate.ip)}`);
-                }
-                if (remoteCandidate.ip) {
-                    console.log(`Remote IP: ${this.maskIP(remoteCandidate.ip)}`);
-                }
             } else {
                 this.updateServerStatus('checking');
             }
