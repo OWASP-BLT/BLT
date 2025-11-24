@@ -1817,6 +1817,26 @@ class Repo(models.Model):
         ]
 
 
+class RepoRefreshActivity(models.Model):
+    """Track repository refresh activities by users"""
+
+    repo = models.ForeignKey(Repo, on_delete=models.CASCADE, related_name="refresh_activities")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="repo_refresh_activities")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    issues_count = models.IntegerField(default=0, help_text="Number of issues fetched during this refresh")
+    prs_count = models.IntegerField(default=0, help_text="Number of pull requests fetched during this refresh")
+    success = models.BooleanField(default=True, help_text="Whether the refresh completed successfully")
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["repo", "-timestamp"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} refreshed {self.repo.name} at {self.timestamp}"
+
+
 class ContributorStats(models.Model):
     contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name="stats")
     repo = models.ForeignKey(Repo, on_delete=models.CASCADE, related_name="stats")

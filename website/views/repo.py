@@ -20,7 +20,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
-from website.models import GitHubIssue, Organization, Repo
+from website.models import GitHubIssue, Organization, Repo, RepoRefreshActivity
 from website.utils import ai_summary, markdown_to_text
 
 logger = logging.getLogger(__name__)
@@ -356,6 +356,9 @@ class RepoDetailView(DetailView):
         context["dollar_tag_issues"] = repo.github_issues.filter(has_dollar_tag=True).order_by("-updated_at")[:5]
         context["dollar_tag_issues_count"] = repo.github_issues.filter(has_dollar_tag=True).count()
 
+        # Add refresh activities (last 10)
+        context["refresh_activities"] = repo.refresh_activities.select_related("user")[:10]
+
         return context
 
 
@@ -664,6 +667,11 @@ def update_repo_data_stream(request, slug):
             return StreamingHttpResponse(rate_limit_stream(), content_type="text/event-stream")
 
         def event_stream():
+            # Initialize counters for tracking
+            issues_fetched = 0
+            prs_fetched = 0
+            success = False
+
             try:
                 yield f"data: $ Starting repository update for: {repo.name}\n\n"
                 yield f"data: $ Repository URL: {repo.repo_url}\n\n"
@@ -673,6 +681,10 @@ def update_repo_data_stream(request, slug):
                     logger.error("GitHub token not set in settings")
                     yield "data: $ Error: GitHub API token not configured\n\n"
                     yield "data: DONE\n\n"
+                    # Save activity record for failed attempt
+                    RepoRefreshActivity.objects.create(
+                        repo=repo, user=request.user, issues_count=0, prs_count=0, success=False
+                    )
                     return
 
                 # Test GitHub API token validity
@@ -768,8 +780,6 @@ def update_repo_data_stream(request, slug):
                 # Fetch issues and pull requests
                 yield "data: $ Fetching issues and pull requests...\n\n"
                 try:
-                    issues_fetched = 0
-                    prs_fetched = 0
                     page = 1
 
                     # Fetch issues (both issues and PRs)
@@ -856,6 +866,14 @@ def update_repo_data_stream(request, slug):
                 except Exception as e:
                     yield f"data: $ Error fetching issues: {str(e)[:100]}\n\n"
 
+                # Mark as successful
+                success = True
+
+                # Save refresh activity
+                RepoRefreshActivity.objects.create(
+                    repo=repo, user=request.user, issues_count=issues_fetched, prs_count=prs_fetched, success=True
+                )
+
                 # Final summary
                 yield "data: $ \n\n"
                 yield "data: $ ========================================\n\n"
@@ -872,6 +890,10 @@ def update_repo_data_stream(request, slug):
 
             except Exception as e:
                 logger.error(f"Error in event_stream: {str(e)}")
+                # Save activity record for failed attempt
+                RepoRefreshActivity.objects.create(
+                    repo=repo, user=request.user, issues_count=issues_fetched, prs_count=prs_fetched, success=False
+                )
                 yield f"data: $ Unexpected error: {str(e)[:100]}\n\n"
                 yield "data: DONE\n\n"
 
