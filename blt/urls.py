@@ -43,7 +43,6 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
-from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -1187,7 +1186,7 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     # banned_apps url
-    path("/api/banned_apps/", include("banned_apps.urls")),
+    path("banned_apps/", include("banned_apps.urls", namespace="banned_apps")),
 ]
 
 if settings.DEBUG:

@@ -101,8 +101,8 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "banned_apps",
 )
-INSTALLED_APPS += ("banned_apps",)
 
 if DEBUG:
     INSTALLED_APPS += ("livereload",)
