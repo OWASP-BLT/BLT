@@ -9,7 +9,7 @@
                         <img src="{{ screenshot.image.url }}"
                              loading="lazy"
                              class="w-full rounded-lg object-cover lg:max-h-[300px] h-full"
-                             alt="screenshot"
+                             alt="Bug report screenshot for {{ activity.description|truncatewords:10 }}"
                              width="50%"
                              height="50%">
                     </a>
@@ -20,7 +20,7 @@
                     <img src="{{ activity.screenshot.url }}"
                          loading="lazy"
                          class="w-full rounded-lg object-cover lg:max-h-[300px] h-full"
-                         alt="screenshot"
+                         alt="Bug report screenshot for {{ activity.description|truncatewords:10 }}"
                          width="50%"
                          height="50%">
                 </a>

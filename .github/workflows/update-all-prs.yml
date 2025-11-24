@@ -20,7 +20,6 @@ permissions:
   pull-requests: write
   issues: write
   actions: write
-  workflows: write
 
 jobs:
   update_and_check_prs:
@@ -80,23 +79,41 @@ jobs:
               core.info(`\n--- Processing PR #${pull_number}: ${pr.title} ---`);
               
               try {
+                // Check if PR contains workflow file changes
+                // GITHUB_TOKEN cannot update PRs with workflow changes (requires PAT with workflow scope)
+                const files = await github.paginate(github.rest.pulls.listFiles, {
+                  owner,
+                  repo,
+                  pull_number,
+                  per_page: 100,
+                });
+                
+                const workflowFiles = files.filter(file => 
+                  file.filename.startsWith('.github/workflows/')
+                );
+                
                 // Try to update the PR branch with the base branch
-                core.info(`Attempting to update PR #${pull_number}...`);
                 let prWasUpdated = false;
-                try {
-                  await github.rest.pulls.updateBranch({
-                    owner,
-                    repo,
-                    pull_number,
-                  });
-                  core.info(`✓ Successfully updated PR #${pull_number}`);
-                  prWasUpdated = true;
-                } catch (updateError) {
-                  // PR might already be up to date or have other issues
-                  if (updateError.status === 422) {
-                    core.info(`PR #${pull_number} is already up to date or cannot be updated: ${updateError.message}`);
-                  } else {
-                    core.warning(`Failed to update PR #${pull_number}: ${updateError.message}`);
+                if (workflowFiles.length > 0) {
+                  core.warning(`Skipping update for PR #${pull_number}: Contains workflow file changes (GITHUB_TOKEN limitation)`);
+                  core.info(`Workflow files changed: ${workflowFiles.map(f => f.filename).join(', ')}`);
+                } else {
+                  core.info(`Attempting to update PR #${pull_number}...`);
+                  try {
+                    await github.rest.pulls.updateBranch({
+                      owner,
+                      repo,
+                      pull_number,
+                    });
+                    core.info(`✓ Successfully updated PR #${pull_number}`);
+                    prWasUpdated = true;
+                  } catch (updateError) {
+                    // PR might already be up to date or have other issues
+                    if (updateError.status === 422) {
+                      core.info(`PR #${pull_number} is already up to date or cannot be updated: ${updateError.message}`);
+                    } else {
+                      core.warning(`Failed to update PR #${pull_number}: ${updateError.message}`);
+                    }
                   }
                 }
                 
