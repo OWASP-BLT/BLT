@@ -2145,14 +2145,14 @@ class GitHubReview(models.Model):
         UserProfile,
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name="reviews_made_as_user",
     )
     reviewer_contributor = models.ForeignKey(
         Contributor,
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name="reviews_made_as_contributor",
     )
     body = models.TextField(null=True, blank=True)

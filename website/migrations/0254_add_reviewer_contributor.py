@@ -9,26 +9,26 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Make reviewer nullable
+        # Make reviewer nullable and use PROTECT to prevent deletion
         migrations.AlterField(
             model_name="githubreview",
             name="reviewer",
             field=models.ForeignKey(
                 blank=True,
                 null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
+                on_delete=django.db.models.deletion.PROTECT,
                 related_name="reviews_made_as_user",
                 to="website.userprofile",
             ),
         ),
-        # Add reviewer_contributor field
+        # Add reviewer_contributor field with PROTECT to prevent deletion
         migrations.AddField(
             model_name="githubreview",
             name="reviewer_contributor",
             field=models.ForeignKey(
                 blank=True,
                 null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
+                on_delete=django.db.models.deletion.PROTECT,
                 related_name="reviews_made_as_contributor",
                 to="website.contributor",
             ),
