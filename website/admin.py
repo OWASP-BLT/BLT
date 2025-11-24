@@ -78,9 +78,6 @@ from website.models import (
     Section,
     SlackBotActivity,
     SlackIntegration,
-    StakingEntry,
-    StakingPool,
-    StakingTransaction,
     Subscription,
     Tag,
     TaskContent,
@@ -1042,27 +1039,6 @@ class ReminderSettingsAdmin(admin.ModelAdmin):
     search_fields = ("user__username",)
 
 
-class StakingEntryAdmin(admin.ModelAdmin):
-    list_display = ("user", "pool", "staked_amount", "actual_reward", "status", "challenge_completed", "created_at")
-    list_filter = ("status", "challenge_completed", "created_at")
-    search_fields = ("user__username", "pool__name")
-    date_hierarchy = "created_at"
-
-
-class StakingPoolAdmin(admin.ModelAdmin):
-    list_display = ("name", "pool_type", "stake_amount", "status", "start_date", "end_date", "winner", "created_by")
-    list_filter = ("pool_type", "status", "start_date")
-    search_fields = ("name", "description", "created_by__username")
-    date_hierarchy = "start_date"
-
-
-class StakingTransactionAdmin(admin.ModelAdmin):
-    list_display = ("user", "pool", "transaction_type", "amount", "created_at")
-    list_filter = ("transaction_type", "created_at")
-    search_fields = ("user__username", "pool__name", "description")
-    date_hierarchy = "created_at"
-
-
 class ThreadAdmin(admin.ModelAdmin):
     list_display = ("id", "updated_at")
     list_filter = ("updated_at",)
@@ -1092,9 +1068,6 @@ admin.site.register(ManagementCommandLog, ManagementCommandLogAdmin)
 admin.site.register(OsshArticle, OsshArticleAdmin)
 admin.site.register(OsshDiscussionChannel, OsshDiscussionChannelAdmin)
 admin.site.register(ReminderSettings, ReminderSettingsAdmin)
-admin.site.register(StakingEntry, StakingEntryAdmin)
-admin.site.register(StakingPool, StakingPoolAdmin)
-admin.site.register(StakingTransaction, StakingTransactionAdmin)
 admin.site.register(Thread, ThreadAdmin)
 admin.site.register(UserBadge, UserBadgeAdmin)
 

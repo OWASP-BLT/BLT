@@ -294,14 +294,7 @@ from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
-from website.views.staking_competitive import (
-    create_staking_pool,
-    my_staking,
-    pool_detail,
-    stake_in_pool,
-    staking_home,
-    staking_leaderboard,
-)
+
 from website.views.teams import (
     GiveKudosView,
     TeamChallenges,
@@ -1073,13 +1066,6 @@ urlpatterns = [
     path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
     path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
     path("user_challenges/", UserChallengeListView.as_view(), name="user_challenges"),
-    # Competitive Staking URLs
-    path("staking/", staking_home, name="staking_home"),
-    path("staking/pool/<int:pool_id>/", pool_detail, name="pool_detail"),
-    path("staking/pool/<int:pool_id>/join/", stake_in_pool, name="stake_in_pool"),
-    path("staking/my-stakes/", my_staking, name="my_staking"),
-    path("staking/leaderboard/", staking_leaderboard, name="staking_leaderboard"),
-    path("staking/create/", create_staking_pool, name="create_staking_pool"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
