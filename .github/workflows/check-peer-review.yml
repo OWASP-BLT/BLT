@@ -13,6 +13,11 @@ on:
       - submitted
       - dismissed
 
+# Prevent multiple workflow runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   pull-requests: write
   contents: read
@@ -66,7 +71,7 @@ jobs:
           fi
           
           # Define excluded users (users whose reviews don't count as valid peer reviews)
-          EXCLUDED_USERS=("$PR_AUTHOR" "DonnieBLT" "coderabbit[bot]")
+          EXCLUDED_USERS=("$PR_AUTHOR" "DonnieBLT" "coderabbitai[bot]")
           
           # Extract reviewer usernames from APPROVED reviews only
           # Filter out the PR author, specific excluded users, and any user with "copilot" in their username
@@ -75,12 +80,12 @@ jobs:
             select(.state == "APPROVED") | 
             select(.user.login != $author) | 
             select(.user.login != "DonnieBLT") | 
-            select(.user.login != "coderabbit[bot]") | 
+            select(.user.login != "coderabbitai[bot]") | 
             select(.user.login | contains("copilot") | not) | 
             .user.login' | sort -u)
           
           echo "Reviews found: $(echo "$REVIEWS_RESPONSE" | jq length)"
-          echo "Valid approved reviewers (excluding author, DonnieBLT, coderabbit, and copilot): $VALID_REVIEWERS"
+          echo "Valid approved reviewers (excluding author, DonnieBLT, coderabbitai, and copilot): $VALID_REVIEWERS"
           
           # Check if there are any valid reviewers
           if [ -z "$VALID_REVIEWERS" ]; then
@@ -107,7 +112,7 @@ jobs:
           This pull request needs a peer review before it can be merged. Please request a review from a team member who is not:
           - The PR author
           - DonnieBLT
-          - coderabbit
+          - coderabbitai
           - copilot
 
           Once a valid peer review is submitted, this check will pass automatically. Thank you!" \
