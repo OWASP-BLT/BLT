@@ -1238,6 +1238,14 @@ class OrganizationJobStatsViewSet(APIView):
         return Response(stats)
 
 
+def safe_json(response):
+    try:
+        return response.json()
+    except ValueError:
+        logger.error("Invalid JSON received from USPTO API", exc_info=True)
+        return None
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def trademark_search_api(request):
@@ -1286,8 +1294,13 @@ def trademark_search_api(request):
             "x-rapidapi-key": settings.USPTO_API,
         }
 
-        available_response = requests.get(available_url, headers=headers)
-        available_data = available_response.json()
+        available_response = requests.get(available_url, headers=headers, timeout=10)
+        available_data = safe_json(available_response)
+        if available_data is None:
+            return Response(
+                {"error": "Invalid JSON response from USPTO API"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         if available_response.status_code == 429:
             return Response(
@@ -1298,8 +1311,13 @@ def trademark_search_api(request):
         if isinstance(available_data, list) and len(available_data) > 0:
             if available_data[0].get("available") == "no":
                 search_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/{query}/active"
-                search_response = requests.get(search_url, headers=headers)
-                search_data = search_response.json()
+                search_response = requests.get(search_url, headers=headers, timeout=10)
+                search_data = safe_json(search_response)
+                if search_data is None:
+                    return Response(
+                        {"error": "Invalid JSON response from USPTO API"},
+                        status=status.HTTP_502_BAD_GATEWAY,
+                    )
 
                 return Response(
                     {
@@ -1310,7 +1328,7 @@ def trademark_search_api(request):
                     }
                 )
             else:
-                return Response({"available": True, "query": query, "trademarks": []})
+                return Response({"available": True, "query": query, "count": 0, "trademarks": []})
 
         return Response({"error": "Invalid response from USPTO API"}, status=status.HTTP_502_BAD_GATEWAY)
 
