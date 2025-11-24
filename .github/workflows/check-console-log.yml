@@ -59,9 +59,9 @@ jobs:
             
             while IFS= read -r file; do
               if [ -f "$file" ]; then
-                # Search for console.log (but not console.error, console.warn, console.debug, console.info)
-                # Using grep with Perl regex to match console.log specifically
-                MATCHES=$(grep -n "console\.log" "$file" || true)
+                # Search for console.log using word boundaries to avoid false positives
+                # Excludes commented lines (lines with // or /* after line number)
+                MATCHES=$(grep -n '\bconsole\.log\b' "$file" | grep -Ev '^\s*[0-9]+:\s*(//|/\*)' || true)
                 
                 if [ -n "$MATCHES" ]; then
                   echo "Found console.log in $file:"
@@ -170,7 +170,7 @@ jobs:
             const pull_number = context.issue.number;
             
             const labelName = 'has-console-log';
-            const labelColor = 'e74c3c'; // Red (BLT project color)
+            const labelColor = 'e74c3c'; // Red
             const labelDescription = 'PR contains console.log statements that need to be removed';
             
             // Ensure label exists
