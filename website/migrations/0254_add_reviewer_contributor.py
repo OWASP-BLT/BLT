@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0248_add_slack_fields_to_project"),
+        ("website", "0253_alter_organization_logo_alter_organization_url_and_more"),
     ]
 
     operations = [

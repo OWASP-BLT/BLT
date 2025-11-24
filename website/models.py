@@ -2161,12 +2161,12 @@ class GitHubReview(models.Model):
     url = models.URLField()
 
     class Meta:
-        constraints = [
+        constraints = (
             models.CheckConstraint(
                 check=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
                 name="at_least_one_reviewer",
             ),
-        ]
+        )
 
     def __str__(self):
         reviewer_name = "Unknown"

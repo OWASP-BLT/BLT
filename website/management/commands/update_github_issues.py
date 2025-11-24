@@ -3,6 +3,7 @@ from datetime import datetime
 
 import requests
 from django.conf import settings
+from django.core.management import CommandError
 from django.db import transaction
 from django.utils import timezone
 
@@ -20,7 +21,7 @@ class Command(LoggedBaseCommand):
             help="Also fetch all PRs from BLT repos (not just from BLT users)",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *_, **options):
         fetch_all_blt = options.get("all_blt_repos", False)
         users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
         user_count = users_with_github.count()
@@ -53,7 +54,7 @@ class Command(LoggedBaseCommand):
                     api_url = response.links.get("next", {}).get("url")
 
                 except requests.exceptions.RequestException as e:
-                    self.stdout.write(self.style.ERROR(f"Error fetching data for {github_username}: {str(e)}"))
+                    self.stdout.write(self.style.ERROR(f"Error fetching data for {github_username}: {e!s}"))
                     break  # Stop fetching if an error occurs
 
             pr_count = len(all_prs)
@@ -102,8 +103,8 @@ class Command(LoggedBaseCommand):
                             # Add contributor to repo
                             repo.contributor.add(contributor)
 
-                        except Exception as e:
-                            self.stdout.write(self.style.WARNING(f"Error creating contributor: {str(e)}"))
+                        except CommandError as e:
+                            self.stdout.write(self.style.WARNING(f"Error creating contributor: {e!s}"))
                             contributor = None
 
                         # Create or update the pull request
@@ -205,9 +206,7 @@ class Command(LoggedBaseCommand):
                                         },
                                     )
                         except requests.exceptions.RequestException as e:
-                            self.stdout.write(
-                                self.style.ERROR(f"Error fetching reviews for PR {pr['number']}: {str(e)}")
-                            )
+                            self.stdout.write(self.style.ERROR(f"Error fetching reviews for PR {pr['number']}: {e!s}"))
                             continue
 
                     except Repo.DoesNotExist:
@@ -248,5 +247,5 @@ class Command(LoggedBaseCommand):
             try:
                 call_command("fetch_gsoc_prs")
                 self.stdout.write(self.style.SUCCESS("Successfully fetched all BLT repo PRs!"))
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"Error fetching BLT repo PRs: {str(e)}"))
+            except CommandError as e:
+                self.stdout.write(self.style.ERROR(f"Error fetching BLT repo PRs: {e!s}"))
