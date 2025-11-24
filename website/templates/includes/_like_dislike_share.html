@@ -141,20 +141,6 @@
     }
 
     $('body').on('click', '#like_unlike', like_unlike_handler);
-
-    function dislike_handler(e){
-        e.preventDefault();
-        var issue_pk = document.getElementById("dislike-btn").getAttribute("name");
-        $.ajax({
-            type: 'GET',
-            url: '/dislike_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-        });
-    }
-    $('body').on('click', '#dislike-btn', dislike_handler);
 </script>
 <script>
     function flag_unflag_handler(e){

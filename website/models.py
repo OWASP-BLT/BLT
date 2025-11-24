@@ -1466,7 +1466,7 @@ class Activity(models.Model):
     # Approve the activity
     def approve_activity(self):
         # Check auto-approval criteria
-        if self.like_count >= 3 and self.dislike_count < 3:
+        if self.like_count >= 3:
             self.is_approved = True
         self.save()
 

@@ -1989,10 +1989,6 @@ def like_activity(request, id):
     activity = get_object_or_404(Activity, id=id)
     user = request.user
 
-    if activity.dislikes.filter(id=user.id).exists():
-        activity.dislikes.remove(user)
-        activity.dislike_count -= 1
-
     if activity.likes.filter(id=user.id).exists():
         activity.likes.remove(user)
         activity.like_count -= 1
@@ -2003,7 +1999,7 @@ def like_activity(request, id):
     activity.save()
 
     # Check if the activity meets the approval criteria
-    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+    if activity.like_count >= 3 and not activity.is_approved:
         activity.is_approved = True
         activity.save()
 
@@ -2018,47 +2014,6 @@ def like_activity(request, id):
         {
             "success": True,
             "like_count": activity.like_count,
-            "dislike_count": activity.dislike_count,
-        }
-    )
-
-
-@login_required
-@require_POST
-def dislike_activity(request, id):
-    activity = get_object_or_404(Activity, id=id)
-    user = request.user
-
-    if activity.likes.filter(id=user.id).exists():
-        activity.likes.remove(user)
-        activity.like_count -= 1
-
-    if activity.dislikes.filter(id=user.id).exists():
-        activity.dislikes.remove(user)
-        activity.dislike_count -= 1
-    else:
-        activity.dislikes.add(user)
-        activity.dislike_count += 1
-
-    activity.save()
-
-    # Check if the activity meets the approval criteria
-    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
-        activity.is_approved = True
-        activity.save()
-
-        # Trigger posting on BlueSky
-        blue_sky_service = BlueSkyService()
-        try:
-            activity.post_to_bluesky(blue_sky_service)
-        except Exception:
-            return JsonResponse({"success": False})
-
-    return JsonResponse(
-        {
-            "success": True,
-            "like_count": activity.like_count,
-            "dislike_count": activity.dislike_count,
         }
     )
 

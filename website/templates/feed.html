@@ -69,11 +69,6 @@
                                     onclick="likeActivity({{ activity.id }})">
                                 Like (<span id="like-count-{{ activity.id }}">{{ activity.like_count }}</span>)
                             </button>
-                            <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
-                                    data-id="{{ activity.id }}"
-                                    onclick="dislikeActivity({{ activity.id }})">
-                                Dislike (<span id="dislike-count-{{ activity.id }}">{{ activity.dislike_count }}</span>)
-                            </button>
                             <!-- Approve Button (for mentors) -->
                             {% if is_mentor and not activity.is_approved %}
                                 <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
@@ -141,24 +136,6 @@
           .then(data => {
               if (data.success) {
                   document.getElementById(`like-count-${activityId}`).innerText = data.like_count;
-                  document.getElementById(`dislike-count-${activityId}`).innerText = data.dislike_count;
-              } else {
-                  console.error(data.error);
-              }
-          })
-          .catch(error => console.error("Error:", error));
-      }
-    
-      function dislikeActivity(activityId) {
-          fetch(`/activity/dislike/${activityId}/`, {
-              method: "POST",
-              headers: { "X-CSRFToken": getCookie("csrftoken") },
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success) {
-                  document.getElementById(`like-count-${activityId}`).innerText = data.like_count;
-                  document.getElementById(`dislike-count-${activityId}`).innerText = data.dislike_count;
               } else {
                   console.error(data.error);
               }

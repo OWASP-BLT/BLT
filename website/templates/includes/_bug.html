@@ -194,21 +194,6 @@
                         </path>
                     </svg>
                 </button>
-                <!-- Dislike -->
-                <button onclick="dislike_handler(event, {{ bug.id }})"
-                        aria-label="Dislike this bug report"
-                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded">
-                    <svg id="dislikeSvg{{ bug.id }}"
-                         class="w-5 h-5"
-                         viewBox="0 0 24 24"
-                         fill="none"
-                         stroke="currentColor"
-                         stroke-width="2"
-                         aria-hidden="true">
-                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3">
-                        </path>
-                    </svg>
-                </button>
                 <!-- Flag -->
                 <button onclick="flag_unflag_handler(event, {{ bug.id }})"
                         aria-label="Flag this bug report"
