@@ -358,19 +358,20 @@
                                             {% if entry.is_contributor %}
                                                 {% if entry.contributor.avatar_url %}
                                                     <img src="{{ entry.contributor.avatar_url }}"
-                                                         alt="{{ entry.user.username }}"
+                                                         alt="Avatar for {% if entry.user.username %}{{ entry.user.username }}{% else %}contributor{% endif %}"
                                                          class="w-8 h-8 rounded-full object-cover"
                                                          width="32"
                                                          height="32">
                                                 {% else %}
                                                     <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                                                        <i class="fab fa-github text-gray-600 dark:text-gray-400"></i>
+                                                        <i class="fab fa-github text-gray-600 dark:text-gray-400"
+                                                           aria-hidden="true"></i>
                                                     </div>
                                                 {% endif %}
                                             {% else %}
                                                 {% if entry.user.userprofile.user_avatar %}
                                                     <img src="{{ entry.user.userprofile.user_avatar.url }}"
-                                                         alt="{{ entry.user.username }}"
+                                                         alt="Avatar for {{ entry.user.username }}"
                                                          class="w-8 h-8 rounded-full object-cover"
                                                          width="32"
                                                          height="32">
@@ -389,7 +390,9 @@
                                     <!-- Reviews List -->
                                     <div class="mt-2 pl-11">
                                         <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reviews:</div>
-                                        <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                        <div class="space-y-2 max-h-48 overflow-y-auto pr-2"
+                                             role="list"
+                                             aria-label="Reviews by reviewer">
                                             {% for review in entry.reviews %}
                                                 <a href="{{ review.url }}"
                                                    target="_blank"

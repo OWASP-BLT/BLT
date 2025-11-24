@@ -2690,7 +2690,8 @@ class Hackathon(models.Model):
                 else:
                     leaderboard[contributor_id] = {
                         "user": {
-                            "username": review.reviewer_contributor.name or review.reviewer_contributor.github_id,
+                            "username": review.reviewer_contributor.name
+                            or f"github-user-{review.reviewer_contributor.github_id}",
                             "email": "",
                             "id": contributor_id,
                         },

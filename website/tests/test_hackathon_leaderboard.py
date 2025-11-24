@@ -11,6 +11,16 @@ from website.models import GitHubIssue, Hackathon, Organization, Repo
 class HackathonLeaderboardTestCase(TestCase):
     """Test case for the hackathon leaderboard functionality."""
 
+    @staticmethod
+    def _extract_username(entry):
+        """Helper method to extract username from leaderboard entry."""
+        user = entry.get("user")
+        if hasattr(user, "username"):
+            return user.username
+        elif isinstance(user, dict):
+            return user.get("username")
+        return None
+
     def setUp(self):
         """Set up test data for the hackathon leaderboard tests."""
         # Create test users
@@ -866,12 +876,7 @@ class HackathonLeaderboardTestCase(TestCase):
         self.assertEqual(len(reviewer_leaderboard), 2, "Reviewer leaderboard should only have 2 non-bot reviewers")
 
         # Verify that bot reviews are excluded
-        all_usernames = []
-        for entry in reviewer_leaderboard:
-            if hasattr(entry["user"], "username"):
-                all_usernames.append(entry["user"].username)
-            elif isinstance(entry["user"], dict):
-                all_usernames.append(entry["user"]["username"])
+        all_usernames = [self._extract_username(entry) for entry in reviewer_leaderboard]
 
         self.assertIn("testuser2", all_usernames, "Registered user should be in reviewer leaderboard")
         self.assertIn("human-reviewer", all_usernames, "Human contributor should be in reviewer leaderboard")
