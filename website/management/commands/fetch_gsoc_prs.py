@@ -423,10 +423,43 @@ class Command(BaseCommand):
             GitHubIssue.objects.bulk_create(prs_to_create, ignore_conflicts=True)
 
         # Bulk update existing PRs
-        for pr_number, data in prs_to_update:
-            GitHubIssue.objects.filter(repo=repo, issue_id=pr_number).update(
-                **{k: v for k, v in data.items() if k not in ["repo", "issue_id"]}
-            )
+        if prs_to_update:
+            # Fetch existing PR objects
+            pr_numbers_to_update = [pr_number for pr_number, _ in prs_to_update]
+            existing_prs = {
+                pr.issue_id: pr for pr in GitHubIssue.objects.filter(repo=repo, issue_id__in=pr_numbers_to_update)
+            }
+
+            # Update fields in memory
+            prs_to_bulk_update = []
+            for pr_number, data in prs_to_update:
+                pr_obj = existing_prs.get(pr_number)
+                if pr_obj:
+                    # Update all fields except repo and issue_id
+                    for key, value in data.items():
+                        if key not in ["repo", "issue_id"]:
+                            setattr(pr_obj, key, value)
+                    prs_to_bulk_update.append(pr_obj)
+
+            # Bulk update in one query
+            if prs_to_bulk_update:
+                GitHubIssue.objects.bulk_update(
+                    prs_to_bulk_update,
+                    [
+                        "title",
+                        "body",
+                        "state",
+                        "created_at",
+                        "updated_at",
+                        "closed_at",
+                        "merged_at",
+                        "is_merged",
+                        "url",
+                        "user_profile",
+                        "contributor",
+                    ],
+                    batch_size=100,
+                )
 
         # Bulk add contributors to repo (M2M relationship)
         if existing_contributors:

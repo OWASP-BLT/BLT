@@ -67,7 +67,7 @@ class Command(LoggedBaseCommand):
             # Handle pagination for pull requests
             while api_url:
                 try:
-                    response = requests.get(api_url, headers=headers)
+                    response = requests.get(api_url, headers=headers, timeout=(3, 20))
                     response.raise_for_status()
                     prs_data = response.json()
 
@@ -113,7 +113,7 @@ class Command(LoggedBaseCommand):
                         try:
                             # Get user details from GitHub API
                             user_api_url = pr["user"]["url"]
-                            user_response = requests.get(user_api_url, headers=headers)
+                            user_response = requests.get(user_api_url, headers=headers, timeout=(3, 10))
                             user_response.raise_for_status()
                             user_data = user_response.json()
 

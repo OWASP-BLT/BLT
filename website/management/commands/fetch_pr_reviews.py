@@ -143,11 +143,20 @@ class Command(BaseCommand):
             )
         )
 
+        # Pre-fetch all PR objects to avoid N+1 queries
+        pr_ids = list(set(pr_id for pr_id, _ in all_reviews_data))
+        pr_objects_map = {pr.id: pr for pr in GitHubIssue.objects.filter(id__in=pr_ids)}
+
         # Bulk create/update reviews
         reviews_to_create = []
         reviews_to_update = []
 
         for pr_id, review in all_reviews_data:
+            # Skip if PR doesn't exist
+            pull_request_obj = pr_objects_map.get(pr_id)
+            if not pull_request_obj:
+                continue
+
             reviewer_github_id = review["user"]["id"]
             reviewer_github_url = review["user"]["html_url"]
 
@@ -155,7 +164,7 @@ class Command(BaseCommand):
             reviewer_profile = userprofile_map.get(reviewer_github_url)
 
             review_data = {
-                "pull_request_id": pr_id,
+                "pull_request": pull_request_obj,
                 "reviewer": reviewer_profile,
                 "reviewer_contributor": reviewer_contributor,
                 "body": review.get("body", "")[:1000],  # Truncate long bodies
