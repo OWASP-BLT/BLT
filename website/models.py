@@ -138,8 +138,8 @@ class Organization(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
-    url = models.URLField(unique=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True, max_length=255)
+    url = models.URLField(unique=True, max_length=255)
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
     matrix_url = models.URLField(null=True, blank=True)
@@ -1237,14 +1237,16 @@ class Project(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
+    url = models.URLField(
+        unique=True, null=True, blank=True, max_length=255
+    )  # Made url nullable in case of no website also made the max_length as 255 because the default is 100
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     slack = models.URLField(null=True, blank=True)
     slack_channel = models.CharField(max_length=255, blank=True, null=True)
     slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     facebook = models.URLField(null=True, blank=True)
-    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
