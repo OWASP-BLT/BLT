@@ -358,7 +358,7 @@
                                             {% if entry.is_contributor %}
                                                 {% if entry.contributor.avatar_url %}
                                                     <img src="{{ entry.contributor.avatar_url }}"
-                                                         alt="Avatar for {% if entry.user.username %}{{ entry.user.username }}{% else %}contributor{% endif %}"
+                                                         alt="Avatar for {{ entry.user.username }}"
                                                          class="w-8 h-8 rounded-full object-cover"
                                                          width="32"
                                                          height="32">
