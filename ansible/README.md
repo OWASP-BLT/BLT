@@ -14,7 +14,9 @@ Minimal Ansible playbook to deploy the BLT Django project.
    - `ansible_ssh_private_key_file` - Path to your SSH key
    - `domain` - Your domain name
    - `postgres_db_password` - Secure PostgreSQL password
-   - `enable_remote_postgres` - Set to `true` only if you need remote PostgreSQL access
+   - `postgres_host` - PostgreSQL host (default: 127.0.0.1 for local)
+   - `postgres_port` - PostgreSQL port (default: 5432)
+   - `enable_remote_postgres` - Set to `true` only if you need remote PostgreSQL access (WARNING: exposes DB to internet)
 2. Run:
 ```bash
 ansible-playbook -i ansible/inventory.yml ansible/playbook.yml

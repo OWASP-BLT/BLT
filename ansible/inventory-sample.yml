@@ -24,10 +24,13 @@ all:
     postgres_db_name: blt
     postgres_db_user: blt_user
     postgres_db_password: changeme_secure_password
+    postgres_host: 127.0.0.1  # PostgreSQL host (use 127.0.0.1 for local, or external IP for remote DB)
+    postgres_port: 5432       # PostgreSQL port
     
     # Enable remote PostgreSQL access (true/false)
     # When false, PostgreSQL will only accept local connections
     # When true, PostgreSQL will listen on all interfaces and port 5432 will be opened in firewall
+    # WARNING: Opening PostgreSQL to 0.0.0.0/0 exposes it to the internet. Consider IP restrictions in production.
     enable_remote_postgres: false
     
     # Uvicorn workers
