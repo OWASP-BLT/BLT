@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -1234,3 +1234,83 @@ class OrganizationJobStatsViewSet(APIView):
         }
 
         return Response(stats)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def trademark_search_api(request):
+    """
+    API endpoint to search trademarks
+    GET /api/trademarks/search/?query=keyword
+    """
+    query = request.query_params.get("query", "").strip()
+
+    if not query:
+        return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+    # mock test
+    # if not settings.USPTO_API:
+    #     return Response({
+    #         "available": False,
+    #         "query": query,
+    #         "count": 1,
+    #         "trademarks": [
+    #             {
+    #                 "registration_number": "MOCK123",
+    #                 "serial_number": "MOCK456",
+    #                 "status_label": "LIVE",
+    #                 "description": "This is mock trademark data returned in development mode.",
+    #                 "owners": [
+    #                     {
+    #                         "name": "Mock Owner Inc.",
+    #                         "country": "US",
+    #                         "state": "CA",
+    #                         "city": "San Francisco",
+    #                         "owner_label": "Mock Label",
+    #                         "legal_entity_type_label": "Corporation"
+    #                     }
+    #                 ]
+    #             }
+    #         ]
+    #     })
+
+    if settings.USPTO_API is None:
+        return Response({"error": "USPTO API key not configured"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    try:
+        # Check availability
+        available_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/{query}"
+        headers = {
+            "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
+            "x-rapidapi-key": settings.USPTO_API,
+        }
+
+        available_response = requests.get(available_url, headers=headers)
+        available_data = available_response.json()
+
+        if available_response.status_code == 429:
+            return Response(
+                {"error": "Rate limit exceeded. Please try again later."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        # If not available, fetch trademark details
+        if isinstance(available_data, list) and len(available_data) > 0:
+            if available_data[0].get("available") == "no":
+                search_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/{query}/active"
+                search_response = requests.get(search_url, headers=headers)
+                search_data = search_response.json()
+
+                return Response(
+                    {
+                        "available": False,
+                        "query": query,
+                        "count": search_data.get("count", 0),
+                        "trademarks": search_data.get("items", []),
+                    }
+                )
+            else:
+                return Response({"available": True, "query": query, "trademarks": []})
+
+        return Response({"error": "Invalid response from USPTO API"}, status=status.HTTP_502_BAD_GATEWAY)
+
+    except requests.exceptions.RequestException as e:
+        return Response({"error": f"Failed to fetch trademark data: {str(e)}"}, status=status.HTTP_502_BAD_GATEWAY)
