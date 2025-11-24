@@ -35,6 +35,20 @@
               referrerpolicy="no-referrer" />
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+            }
+        </script>
+        <script>
+            (function() {
+                const savedTheme = localStorage.getItem("theme");
+                if (savedTheme === "dark") {
+                    document.documentElement.classList.add("dark");
+                }
+            })();
+        </script>
+        <script src="{% static 'js/darkMode.js' %}" defer></script>
         {% if not debug %}
             <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
                     crossorigin="anonymous"></script>
@@ -43,8 +57,8 @@
     <body>
         {% include "includes/header.html" %}
         {% include "includes/sidenav.html" %}
-        <div class="w-full h-[80px]"></div>
-        <main class="w-full">
+        <div class="w-full h-[80px] bg-gray-50 dark:bg-gray-900"></div>
+        <main class="w-full bg-gray-50 dark:bg-gray-900">
             {% block body %}
             {% endblock body %}
         </main>
