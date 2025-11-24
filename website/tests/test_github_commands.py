@@ -34,7 +34,7 @@ class GitHubCommandsIntegrationTests(TestCase):
         except Exception as e:
             success = False
             print(f"Command failed: {e}")
-        
+
         self.assertTrue(success, "fetch_gsoc_prs command should be callable")
 
     def test_fetch_pr_reviews_command_exists(self):
@@ -47,7 +47,7 @@ class GitHubCommandsIntegrationTests(TestCase):
         except Exception as e:
             success = False
             print(f"Command failed: {e}")
-        
+
         self.assertTrue(success, "fetch_pr_reviews command should be callable")
 
     def test_update_github_issues_command_exists(self):
@@ -61,7 +61,7 @@ class GitHubCommandsIntegrationTests(TestCase):
         except Exception as e:
             success = False
             print(f"Command failed: {e}")
-        
+
         self.assertTrue(success, "update_github_issues command should be callable")
 
     def test_bulk_update_preserves_data(self):
