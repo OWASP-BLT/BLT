@@ -20,7 +20,7 @@ class BountyPayoutTestCase(TestCase):
 
         # Create repository
         self.repo = Repo.objects.create(
-            name="TestRepo", organization=self.org, url="https://github.com/TestOrg/TestRepo"
+            name="TestRepo", organization=self.org, repo_url="https://github.com/TestOrg/TestRepo"
         )
 
         # Create GitHub issue with bounty
@@ -110,6 +110,7 @@ class BountyPayoutTestCase(TestCase):
         self.assertEqual(response_data["status"], "warning")
         self.assertIn("already processed", response_data["message"])
 
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
     def test_bounty_payout_unauthorized(self):
         """Test that invalid API token is rejected."""
         payload = {

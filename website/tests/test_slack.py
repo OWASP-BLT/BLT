@@ -151,7 +151,7 @@ class SlackHandlerTests(TestCase):
         request = MagicMock()
         request.method = "POST"
         request.POST = {
-            "command": "/apps",
+            "command": "/installed_apps",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test",
@@ -180,4 +180,4 @@ class SlackHandlerTests(TestCase):
         # Verify activity was logged
         activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
         self.assertIsNotNone(activity)
-        self.assertEqual(activity.details["command"], "/apps")
+        self.assertEqual(activity.details["command"], "/installed_apps")
