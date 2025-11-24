@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
+from dateutil import parser as dateutil_parser
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -1246,8 +1247,10 @@ def handle_issue_event(payload):
     except Repo.DoesNotExist:
         logger.info(f"Repository not found in BLT: {repo_html_url}")
         # Not an error - we only track issues for repos we have in our database
+        # Continue to badge assignment
     except Exception as e:
         logger.error(f"Error finding repository: {e}")
+        # Continue to badge assignment
     else:
         # Find and update the GitHubIssue record
         try:
@@ -1258,15 +1261,11 @@ def handle_issue_event(payload):
 
             # Update closed_at timestamp if the issue was closed
             if action == "closed" and issue_data.get("closed_at"):
-                from dateutil import parser
-
-                github_issue.closed_at = parser.parse(issue_data["closed_at"])
+                github_issue.closed_at = dateutil_parser.parse(issue_data["closed_at"])
 
             # Update updated_at timestamp
             if issue_data.get("updated_at"):
-                from dateutil import parser
-
-                github_issue.updated_at = parser.parse(issue_data["updated_at"])
+                github_issue.updated_at = dateutil_parser.parse(issue_data["updated_at"])
 
             github_issue.save()
             logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
