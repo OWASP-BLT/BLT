@@ -333,6 +333,7 @@ class LeaderboardTests(TestCase):
             repo=self.repo,
             type="pull_request",
             is_merged=True,
+            merged_at=timezone.now(),  # Add merged_at for 6-month filter
             title="Test PR 1",
             state="closed",
             created_at=timezone.now(),
@@ -346,6 +347,7 @@ class LeaderboardTests(TestCase):
             repo=self.repo,
             type="pull_request",
             is_merged=True,
+            merged_at=timezone.now(),  # Add merged_at for 6-month filter
             title="Test PR 2",
             state="closed",
             created_at=timezone.now(),
