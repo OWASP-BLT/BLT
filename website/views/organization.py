@@ -1481,16 +1481,12 @@ def trademark_detailview(request, slug):
     page_number = request.GET.get("page", 1)
 
     # Search in local database first
-    trademarks = (
-        Trademark.objects.filter(
-            Q(keyword__icontains=query)
-            | Q(serial_number__iexact=query)
-            | Q(registration_number__iexact=query)
-            | Q(description__icontains=query)
-        )
-        .select_related()
-        .prefetch_related("owners")
-    )
+    trademarks = Trademark.objects.filter(
+        Q(keyword__icontains=query)
+        | Q(serial_number__iexact=query)
+        | Q(registration_number__iexact=query)
+        | Q(description__icontains=query)
+    ).prefetch_related("owners")
 
     # If we have results in local database, use them
     if trademarks.exists():
@@ -1501,30 +1497,9 @@ def trademark_detailview(request, slug):
         except (PageNotAnInteger, EmptyPage):
             page_obj = paginator.get_page(1)
 
-        # Format items to match the template structure
-        items = []
-        for tm in page_obj:
-            items.append(
-                {
-                    "keyword": tm.keyword,
-                    "registration_number": tm.registration_number,
-                    "serial_number": tm.serial_number,
-                    "status_label": tm.status_label,
-                    "status_code": tm.status_code,
-                    "status_date": tm.status_date,
-                    "status_definition": tm.status_definition,
-                    "filing_date": tm.filing_date,
-                    "registration_date": tm.registration_date,
-                    "abandonment_date": tm.abandonment_date,
-                    "expiration_date": tm.expiration_date,
-                    "description": tm.description,
-                    "owners": tm.owners.all(),
-                }
-            )
-
         context = {
             "count": paginator.count,
-            "items": items,
+            "items": page_obj,
             "query": query,
             "page_obj": page_obj,
             "from_local_db": True,
@@ -1572,7 +1547,7 @@ def trademark_detailview(request, slug):
 
         return render(request, "trademark_detailview.html", context)
     except requests.exceptions.RequestException as e:
-        logger.error(f"USPTO API request failed: {str(e)}")
+        logger.error(f"USPTO API request failed: {str(e)}", exc_info=True)
         error_message = "Unable to process request. Please try again later."
         return render(request, "trademark_detailview.html", {"error_message": error_message, "query": query})
 

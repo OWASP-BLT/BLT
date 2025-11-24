@@ -212,8 +212,8 @@ VACUUM ANALYZE website_trademark;
    - Or increase batch size to 5000+
 
 3. **Duplicate Key Errors**
-   - Solution: The command uses `ignore_conflicts=True` to skip duplicates
-   - Check data for inconsistencies
+   - Solution: The command uses `ignore_conflicts=True` to skip duplicate records during import
+   - Duplicate records are automatically skipped without failing the entire batch
 
 4. **Date Parsing Errors**
    - Solution: Ensure dates are in supported formats

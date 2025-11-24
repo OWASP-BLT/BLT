@@ -134,19 +134,22 @@ class Command(BaseCommand):
 
                     # Batch insert
                     if len(trademarks_batch) >= batch_size:
+                        batch_count = len(trademarks_batch)
                         self._bulk_insert(trademarks_batch)
-                        total_imported += len(trademarks_batch)
+                        total_imported += batch_count
                         trademarks_batch = []
                         self.stdout.write(self.style.SUCCESS(f"Imported {total_imported} trademarks..."))
 
                 except Exception as e:
                     total_skipped += 1
                     self.stderr.write(f"Error on row {row_num}: {str(e)}")
+                    continue  # Skip adding this problematic record to the batch
 
             # Insert remaining records
             if trademarks_batch:
+                batch_count = len(trademarks_batch)
                 self._bulk_insert(trademarks_batch)
-                total_imported += len(trademarks_batch)
+                total_imported += batch_count
 
         self.stdout.write(
             self.style.SUCCESS(f"\nImport complete! Total imported: {total_imported}, Skipped: {total_skipped}")
@@ -154,7 +157,21 @@ class Command(BaseCommand):
 
     def import_from_json(self, file_path, batch_size):
         """Import trademark data from JSON file."""
+        import os
+
         self.stdout.write(f"Starting JSON import from {file_path}")
+
+        # Check file size before loading to prevent memory exhaustion
+        file_size = os.path.getsize(file_path)
+        max_size = 500 * 1024 * 1024  # 500 MB limit
+        if file_size > max_size:
+            self.stderr.write(
+                self.style.ERROR(
+                    f"File size ({file_size / (1024*1024):.1f} MB) exceeds maximum allowed size ({max_size / (1024*1024):.1f} MB). "
+                    "Please split the file into smaller chunks."
+                )
+            )
+            return
 
         with open(file_path, "r", encoding="utf-8") as jsonfile:
             data = json.load(jsonfile)
@@ -218,8 +235,9 @@ class Command(BaseCommand):
 
                 # Batch insert
                 if len(trademarks_batch) >= batch_size:
+                    batch_count = len(trademarks_batch)
                     self._bulk_insert(trademarks_batch)
-                    total_imported += len(trademarks_batch)
+                    total_imported += batch_count
                     trademarks_batch = []
                     self.stdout.write(self.style.SUCCESS(f"Imported {total_imported} trademarks..."))
 
@@ -229,8 +247,9 @@ class Command(BaseCommand):
 
         # Insert remaining records
         if trademarks_batch:
+            batch_count = len(trademarks_batch)
             self._bulk_insert(trademarks_batch)
-            total_imported += len(trademarks_batch)
+            total_imported += batch_count
 
         self.stdout.write(
             self.style.SUCCESS(f"\nImport complete! Total imported: {total_imported}, Skipped: {total_skipped}")
@@ -239,19 +258,23 @@ class Command(BaseCommand):
     @transaction.atomic
     def _bulk_insert(self, trademarks_batch):
         """Bulk insert trademarks and associate owners."""
-        # Create trademarks without ignore_conflicts to ensure we get all instances back
+        # Bulk create trademarks with ignore_conflicts to skip duplicates
         trademarks_to_create = [tm for tm, _ in trademarks_batch]
-        owners_to_associate = [owner for _, owner in trademarks_batch]
-
-        # Bulk create trademarks
-        created_trademarks = Trademark.objects.bulk_create(trademarks_to_create, ignore_conflicts=False)
+        Trademark.objects.bulk_create(trademarks_to_create, ignore_conflicts=True)
 
         # Associate owners with trademarks
-        # Only process if we successfully created the trademarks
-        if created_trademarks:
-            for trademark, owner in zip(created_trademarks, owners_to_associate):
-                if owner:
-                    trademark.owners.add(owner)
+        # Fetch each trademark by unique field to ensure correct association
+        for trademark, owner in trademarks_batch:
+            if owner:
+                # Use serial_number as it's more unique than keyword
+                lookup_field = trademark.serial_number if trademark.serial_number else trademark.registration_number
+                if lookup_field:
+                    created_tm = Trademark.objects.filter(
+                        serial_number=trademark.serial_number if trademark.serial_number else None,
+                        registration_number=trademark.registration_number if not trademark.serial_number else None,
+                    ).first()
+                    if created_tm:
+                        created_tm.owners.add(owner)
 
     def handle(self, *args, **options):
         file_path = options["file_path"]

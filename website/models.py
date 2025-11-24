@@ -480,8 +480,6 @@ class Trademark(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["keyword", "status_label"]),
-            models.Index(fields=["registration_number"]),
-            models.Index(fields=["serial_number"]),
         ]
 
     def __str__(self):
