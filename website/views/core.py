@@ -843,6 +843,9 @@ def add_forum_post(request):
             title = data.get("title")
             category = data.get("category")
             description = data.get("description")
+            repo_id = data.get("repo")
+            project_id = data.get("project")
+            organization_id = data.get("organization")
 
             if not all([title, category, description]):
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
@@ -850,9 +853,21 @@ def add_forum_post(request):
             # Explicitly validate category exists before creating post
             category_obj = ForumCategory.objects.get(pk=category)
 
-            post = ForumPost.objects.create(
-                user=request.user, title=title, category=category_obj, description=description
-            )
+            post_data = {
+                "user": request.user,
+                "title": title,
+                "category_id": category,
+                "description": description,
+            }
+
+            if repo_id:
+                post_data["repo_id"] = repo_id
+            if project_id:
+                post_data["project_id"] = project_id
+            if organization_id:
+                post_data["organization_id"] = organization_id
+
+            post = ForumPost.objects.create(**post_data)
 
             return JsonResponse({"success": True, "post_id": post.id})
         except json.JSONDecodeError:
@@ -949,8 +964,10 @@ def view_forum(request):
         .all()
     )
 
+
     if selected_category:
         posts = posts.filter(category_id=selected_category)
+
 
     # Optimize user vote queries to avoid N+1 problem
     if request.user.is_authenticated:
@@ -962,6 +979,11 @@ def view_forum(request):
         for post in posts:
             post.user_vote = user_votes.get(post.id)
 
+    organizations = Organization.objects.all().order_by("name")
+    projects = Project.objects.all().order_by("name")
+    repos = Repo.objects.all().order_by("name")
+
+
     return render(
         request,
         "forum.html",
@@ -969,6 +991,9 @@ def view_forum(request):
             "categories": categories,
             "posts": posts,
             "selected_category": selected_category,
+            "organizations": organizations,
+            "projects": projects,
+            "repos": repos,
             "total_posts_count": total_posts_count,
         },
     )
@@ -1884,6 +1909,25 @@ def management_commands(request):
                 "help_text": help_text,
             }
 
+            # Get command file path and metadata
+            try:
+                command_file = command_class.__module__.replace(".", os.sep) + ".py"
+                command_path = os.path.join(settings.BASE_DIR, command_file)
+
+                if os.path.exists(command_path):
+                    command_info["file_path"] = command_path
+                    # Get file modification time
+                    mtime = os.path.getmtime(command_path)
+                    command_info["file_modified"] = datetime.fromtimestamp(mtime, tz=pytz.UTC)
+
+                    # Generate GitHub URL
+                    # Assuming the repo is OWASP-BLT/BLT
+                    relative_path = os.path.relpath(command_path, settings.BASE_DIR)
+                    github_url = f"https://github.com/OWASP-BLT/BLT/blob/main/{relative_path}"
+                    command_info["github_url"] = github_url
+            except Exception as e:
+                logging.error(f"Error getting file info for command {name}: {e}")
+
             # Get command arguments if they exist
             command_args = []
             if hasattr(command_class, "add_arguments"):
@@ -1917,6 +1961,8 @@ def management_commands(request):
                         "last_run": log.last_run,
                         "last_success": log.success,
                         "run_count": log.run_count,
+                        "execution_time": log.execution_time,
+                        "output": log.output,
                     }
                 )
 
@@ -2069,19 +2115,26 @@ def run_management_command(request):
             try:
                 # Capture command output
                 import sys
+                import time
                 from io import StringIO
 
                 # Redirect stdout to capture output
                 old_stdout = sys.stdout
                 sys.stdout = mystdout = StringIO()
 
+                # Track execution time
+                start_time = time.time()
                 call_command(command, *command_args, **command_kwargs)
+                end_time = time.time()
+                execution_time = end_time - start_time
 
                 # Get the output and restore stdout
                 output = mystdout.getvalue()
                 sys.stdout = old_stdout
 
                 log_entry.success = True
+                log_entry.execution_time = execution_time
+                log_entry.output = output[:10000] if output else ""  # Limit output to 10000 chars
                 log_entry.save()
 
                 # Record execution in DailyStats
@@ -2114,6 +2167,14 @@ def run_management_command(request):
 
                 messages.success(request, f"Command '{command}' executed successfully.")
             except Exception as e:
+                # Try to capture execution time even on failure
+                try:
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                    log_entry.execution_time = execution_time
+                except Exception:
+                    pass
+
                 log_entry.success = False
                 log_entry.save()
 

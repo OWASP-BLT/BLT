@@ -37,7 +37,18 @@ from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.filters import ProjectRepoFilter
-from website.models import IP, BaconToken, Challenge, Contribution, Contributor, ContributorStats, Organization, Project, Repo, UserProfile
+from website.models import (
+    IP,
+    BaconToken,
+    Challenge,
+    Contribution,
+    Contributor,
+    ContributorStats,
+    Organization,
+    Project,
+    Repo,
+    UserProfile,
+)
 from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -1192,13 +1203,15 @@ class RepoDetailView(DetailView):
         # Get streak highlights and challenge completions for the time period
         streak_highlights = []
         challenge_highlights = []
-        
+
         try:
             # Get user profiles with recent streak achievements
-            user_profiles = UserProfile.objects.select_related('user').filter(
-                user__is_active=True
-            ).prefetch_related('user__user_challenges', 'user__points_set')
-            
+            user_profiles = (
+                UserProfile.objects.select_related("user")
+                .filter(user__is_active=True)
+                .prefetch_related("user__user_challenges", "user__points_set")
+            )
+
             for profile in user_profiles:
                 if profile.current_streak > 0:
                     # Check if they reached a milestone streak recently
@@ -1215,32 +1228,36 @@ class RepoDetailView(DetailView):
                         milestone_achieved = "180-day streak achieved!"
                     elif profile.current_streak == 365:
                         milestone_achieved = "365-day streak achieved!"
-                    
+
                     if milestone_achieved:
-                        streak_highlights.append({
-                            'user': profile.user,
-                            'current_streak': profile.current_streak,
-                            'longest_streak': profile.longest_streak,
-                            'milestone': milestone_achieved,
-                            'user_profile': profile
-                        })
-            
+                        streak_highlights.append(
+                            {
+                                "user": profile.user,
+                                "current_streak": profile.current_streak,
+                                "longest_streak": profile.longest_streak,
+                                "milestone": milestone_achieved,
+                                "user_profile": profile,
+                            }
+                        )
+
             # Get recent challenge completions from the time period
-            completed_challenges = Challenge.objects.filter(
-                completed=True,
-                completed_at__gte=start_date,
-                completed_at__lte=end_date
-            ).select_related().prefetch_related('participants')
-            
+            completed_challenges = (
+                Challenge.objects.filter(completed=True, completed_at__gte=start_date, completed_at__lte=end_date)
+                .select_related()
+                .prefetch_related("participants")
+            )
+
             for challenge in completed_challenges:
                 for participant in challenge.participants.all():
-                    challenge_highlights.append({
-                        'user': participant,
-                        'challenge': challenge,
-                        'completed_at': challenge.completed_at,
-                        'points_earned': challenge.points
-                    })
-                    
+                    challenge_highlights.append(
+                        {
+                            "user": participant,
+                            "challenge": challenge,
+                            "completed_at": challenge.completed_at,
+                            "points_earned": challenge.points,
+                        }
+                    )
+
         except Exception as e:
             logger.error(f"Error fetching streak and challenge highlights: {e}")
             # Continue without highlights if there's an error
