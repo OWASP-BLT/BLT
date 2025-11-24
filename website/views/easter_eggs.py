@@ -3,6 +3,7 @@ import logging
 import secrets
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db import transaction
@@ -63,19 +64,14 @@ def discover_easter_egg(request):
         # Check if user has already discovered this Easter egg
         existing_discovery = EasterEggDiscovery.objects.filter(user=request.user, easter_egg=easter_egg).first()
 
-        if existing_discovery:
-            if (
-                easter_egg.max_claims_per_user > 0
-                and EasterEggDiscovery.objects.filter(user=request.user, easter_egg=easter_egg).count()
-                >= easter_egg.max_claims_per_user
-            ):
-                return JsonResponse(
-                    {
-                        "error": "You have already discovered this Easter egg",
-                        "already_discovered": True,
-                    },
-                    status=400,
-                )
+        if existing_discovery and easter_egg.max_claims_per_user > 0:
+            return JsonResponse(
+                {
+                    "error": "You have already discovered this Easter egg",
+                    "already_discovered": True,
+                },
+                status=400,
+            )
 
         # Additional security check for bacon token Easter egg
         if easter_egg.reward_type == "bacon":
@@ -147,8 +143,6 @@ def generate_verification_token(user_id, egg_code):
     This uses a secret salt and HMAC to prevent token forgery.
     """
     # Use Django's SECRET_KEY as salt
-    from django.conf import settings
-
     salt = settings.SECRET_KEY.encode()
     data = f"{user_id}:{egg_code}:{timezone.now().date()}".encode()
     return hashlib.pbkdf2_hmac("sha256", data, salt, 100000).hex()

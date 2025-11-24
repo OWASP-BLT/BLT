@@ -54,7 +54,7 @@
 
             // For bacon Easter egg, get verification token first
             if (needsVerification) {
-                const verifyResponse = await fetch(`/easter-eggs/verify/?code=${code}`, {
+                const verifyResponse = await fetch(`/easter-eggs/verify/?code=${encodeURIComponent(code)}`, {
                     credentials: 'same-origin'
                 });
                 const verifyData = await verifyResponse.json();
