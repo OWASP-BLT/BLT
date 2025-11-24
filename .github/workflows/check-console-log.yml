@@ -1,0 +1,259 @@
+name: Check Console.log Statements
+
+# This workflow checks for console.log statements in JavaScript files
+# console.error and console.warn are allowed for debugging purposes
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - '**.js'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  check_console_log:
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for console.log statements
+        id: check
+        run: |
+          echo "Checking for console.log statements in JavaScript files..."
+          
+          # Get list of changed JavaScript files in this PR
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            
+            # Get changed JS files
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA...$HEAD_SHA | grep '\.js$' || true)
+            
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "No JavaScript files changed in this PR"
+              echo "violations_found=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            
+            echo "Changed JavaScript files:"
+            echo "$CHANGED_FILES"
+            echo ""
+            
+            # Check for console.log in changed files
+            VIOLATIONS=""
+            VIOLATION_COUNT=0
+            
+            while IFS= read -r file; do
+              if [ -f "$file" ]; then
+                # Search for console.log (but not console.error, console.warn, console.debug, console.info)
+                # Using grep with Perl regex to match console.log specifically
+                MATCHES=$(grep -n "console\.log" "$file" || true)
+                
+                if [ -n "$MATCHES" ]; then
+                  echo "Found console.log in $file:"
+                  echo "$MATCHES"
+                  echo ""
+                  VIOLATIONS="${VIOLATIONS}**$file**:\n\`\`\`\n${MATCHES}\n\`\`\`\n\n"
+                  VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+                fi
+              fi
+            done <<< "$CHANGED_FILES"
+            
+            if [ $VIOLATION_COUNT -gt 0 ]; then
+              echo "violations_found=true" >> $GITHUB_OUTPUT
+              echo "violation_count=$VIOLATION_COUNT" >> $GITHUB_OUTPUT
+              # Save violations to a file for use in comment
+              echo -e "$VIOLATIONS" > violations.txt
+              exit 1
+            else
+              echo "No console.log statements found in changed files ✓"
+              echo "violations_found=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+      - name: Comment on PR if violations found
+        if: failure() && steps.check.outputs.violations_found == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            // Read violations from file
+            let violations = '';
+            try {
+              violations = fs.readFileSync('violations.txt', 'utf8');
+            } catch (error) {
+              violations = 'Could not read violations file';
+            }
+            
+            const violationCount = '${{ steps.check.outputs.violation_count }}';
+            
+            const commentMarker = '<!-- console-log-check -->';
+            const commentBody = commentMarker + '\n' +
+              '## ❌ Console.log Statements Detected\n\n' +
+              `Found **${violationCount}** file(s) with \`console.log\` statements that should be removed.\n\n` +
+              '### Why remove console.log?\n' +
+              '- Console statements can expose sensitive information in production\n' +
+              '- They can clutter browser console logs\n' +
+              '- They may impact performance in production builds\n\n' +
+              '### Files with violations:\n\n' +
+              violations +
+              '\n### How to fix:\n' +
+              '1. Remove or comment out `console.log` statements from your code\n' +
+              '2. If you need debugging output, consider using:\n' +
+              '   - `console.error()` for error messages (allowed)\n' +
+              '   - `console.warn()` for warnings (allowed)\n' +
+              '   - A proper logging library for production code\n\n' +
+              '3. For temporary debugging, you can use `// console.log()` to comment it out\n\n' +
+              '**Note:** `console.error` and `console.warn` are allowed for debugging purposes.\n\n' +
+              'Please remove the console.log statements and push your changes.';
+            
+            // Check if we already commented
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            
+            const existingComment = comments.find(comment => 
+              comment.body && comment.body.includes(commentMarker)
+            );
+            
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body: commentBody,
+              });
+              core.info(`Updated existing comment on PR #${pull_number}`);
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pull_number,
+                body: commentBody,
+              });
+              core.info(`Added comment to PR #${pull_number}`);
+            }
+
+      - name: Add label if violations found
+        if: failure() && steps.check.outputs.violations_found == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            const labelName = 'has-console-log';
+            const labelColor = 'e74c3c'; // Red (BLT project color)
+            const labelDescription = 'PR contains console.log statements that need to be removed';
+            
+            // Ensure label exists
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: labelName });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: labelName,
+                  color: labelColor,
+                  description: labelDescription,
+                });
+                core.info(`Created label: ${labelName}`);
+              }
+            }
+            
+            // Add label
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            
+            const hasLabel = currentLabels.some(label => label.name === labelName);
+            
+            if (!hasLabel) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: pull_number,
+                labels: [labelName],
+              });
+              core.info(`Added label "${labelName}" to PR #${pull_number}`);
+            }
+
+      - name: Remove label and comment if no violations
+        if: success() && steps.check.outputs.violations_found == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            const labelName = 'has-console-log';
+            const commentMarker = '<!-- console-log-check -->';
+            
+            // Remove label if present
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number: pull_number,
+                name: labelName,
+              });
+              core.info(`Removed label "${labelName}" from PR #${pull_number}`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.info(`Label "${labelName}" not found on PR #${pull_number}`);
+              }
+            }
+            
+            // Remove comment if present
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            
+            const existingComment = comments.find(comment => 
+              comment.body && comment.body.includes(commentMarker)
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.deleteComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+              });
+              core.info(`Removed comment from PR #${pull_number}`);
+            }
