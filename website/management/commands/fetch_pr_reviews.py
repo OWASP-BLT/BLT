@@ -163,15 +163,27 @@ class Command(BaseCommand):
             reviewer_contributor = contributor_map.get(reviewer_github_id)
             reviewer_profile = userprofile_map.get(reviewer_github_url)
 
+            # Parse submitted_at safely (can be null for PENDING reviews)
+            submitted_at = None
+            if review.get("submitted_at"):
+                try:
+                    submitted_at = datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+                        tzinfo=pytz.UTC
+                    )
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Invalid submitted_at for review {review['id']}: {review.get('submitted_at')}")
+                    continue  # Skip reviews with invalid dates
+            else:
+                # Skip PENDING reviews without submitted_at
+                continue
+
             review_data = {
                 "pull_request": pull_request_obj,
                 "reviewer": reviewer_profile,
                 "reviewer_contributor": reviewer_contributor,
                 "body": review.get("body", "")[:1000],  # Truncate long bodies
                 "state": review["state"],
-                "submitted_at": datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
-                    tzinfo=pytz.UTC
-                ),
+                "submitted_at": submitted_at,
                 "url": review["html_url"],
             }
 
