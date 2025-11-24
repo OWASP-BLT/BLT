@@ -1257,31 +1257,6 @@ def trademark_search_api(request):
 
     if not query:
         return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-    # mock test
-    # if not settings.USPTO_API:
-    #     return Response({
-    #         "available": False,
-    #         "query": query,
-    #         "count": 1,
-    #         "trademarks": [
-    #             {
-    #                 "registration_number": "MOCK123",
-    #                 "serial_number": "MOCK456",
-    #                 "status_label": "LIVE",
-    #                 "description": "This is mock trademark data returned in development mode.",
-    #                 "owners": [
-    #                     {
-    #                         "name": "Mock Owner Inc.",
-    #                         "country": "US",
-    #                         "state": "CA",
-    #                         "city": "San Francisco",
-    #                         "owner_label": "Mock Label",
-    #                         "legal_entity_type_label": "Corporation"
-    #                     }
-    #                 ]
-    #             }
-    #         ]
-    #     })
 
     if settings.USPTO_API is None:
         return Response({"error": "USPTO API key not configured"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -1333,7 +1308,7 @@ def trademark_search_api(request):
         return Response({"error": "Invalid response from USPTO API"}, status=status.HTTP_502_BAD_GATEWAY)
 
     except requests.exceptions.RequestException as e:
-        logger.error("Trademark API request failed", exc_info=e)
+        logger.error("Trademark API request failed")
 
         return Response(
             {"error": "Failed to fetch trademark data due to an external service error."},
