@@ -263,18 +263,29 @@ class Command(BaseCommand):
         Trademark.objects.bulk_create(trademarks_to_create, ignore_conflicts=True)
 
         # Associate owners with trademarks
-        # Fetch each trademark by unique field to ensure correct association
+        # Collect all serial/registration numbers for batch lookup
+        serial_numbers = [tm.serial_number for tm, _ in trademarks_batch if tm.serial_number]
+        registration_numbers = [
+            tm.registration_number for tm, _ in trademarks_batch if not tm.serial_number and tm.registration_number
+        ]
+
+        # Batch fetch created trademarks
+        created_by_serial = {tm.serial_number: tm for tm in Trademark.objects.filter(serial_number__in=serial_numbers)}
+        created_by_reg = {
+            tm.registration_number: tm for tm in Trademark.objects.filter(registration_number__in=registration_numbers)
+        }
+
+        # Associate owners
         for trademark, owner in trademarks_batch:
             if owner:
-                # Use serial_number as it's more unique than keyword
-                lookup_field = trademark.serial_number if trademark.serial_number else trademark.registration_number
-                if lookup_field:
-                    created_tm = Trademark.objects.filter(
-                        serial_number=trademark.serial_number if trademark.serial_number else None,
-                        registration_number=trademark.registration_number if not trademark.serial_number else None,
-                    ).first()
-                    if created_tm:
-                        created_tm.owners.add(owner)
+                created_tm = None
+                if trademark.serial_number:
+                    created_tm = created_by_serial.get(trademark.serial_number)
+                elif trademark.registration_number:
+                    created_tm = created_by_reg.get(trademark.registration_number)
+
+                if created_tm:
+                    created_tm.owners.add(owner)
 
     def handle(self, *args, **options):
         file_path = options["file_path"]
