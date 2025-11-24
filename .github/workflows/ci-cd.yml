@@ -128,7 +128,25 @@ jobs:
             
             const message = `## ❌ Pre-commit checks failed
             
-            The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
+            The pre-commit hooks found issues that need to be fixed. 
+            
+            ### 🤖 **Automatic Fix Options**
+            
+            You can automatically fix most issues by using one of these methods:
+            
+            1. **Add the \`fix-pre-commit\` label** to this PR to automatically run pre-commit fixes
+               - Click on "Labels" in the sidebar →
+               - Select or type \`fix-pre-commit\` →
+               - The workflow will automatically run and commit fixes
+            
+            2. **Manually trigger the workflow**
+               - Go to the [Pre-commit fix workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/pre-commit-fix.yaml)
+               - Click "Run workflow"
+               - Select this PR's branch
+            
+            ### 💻 **Manual Fix (Local)**
+            
+            Alternatively, you can run the following commands locally to fix them:
             
             \`\`\`bash
             # Install pre-commit if you haven't already
