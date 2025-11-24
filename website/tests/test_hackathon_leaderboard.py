@@ -577,3 +577,349 @@ class HackathonLeaderboardTestCase(TestCase):
         # (unless creation and merge happen on the same day, which they don't in this test)
         self.assertNotEqual(creation_date_1, merge_date_1)
         self.assertNotEqual(creation_date_2, merge_date_2)
+
+    def test_reviewer_leaderboard(self):
+        """Test that the reviewer leaderboard correctly shows reviewers and their reviews."""
+        from website.models import Contributor, GitHubReview
+
+        # Create a new hackathon for reviewer testing
+        now = timezone.now()
+        review_hackathon = Hackathon.objects.create(
+            name="Review Test Hackathon",
+            slug="review-test-hackathon",
+            description="A hackathon for testing reviewer leaderboard",
+            organization=self.organization,
+            start_time=now - datetime.timedelta(days=5),
+            end_time=now + datetime.timedelta(days=5),
+            is_active=True,
+        )
+
+        # Create a new repository for this test
+        review_repo = Repo.objects.create(
+            name="Review Repo",
+            slug="review-repo",
+            repo_url="https://github.com/test/reviewrepo",
+            organization=self.organization,
+        )
+
+        review_hackathon.repositories.add(review_repo)
+
+        # Create some pull requests during the hackathon
+        pr1 = GitHubIssue.objects.create(
+            issue_id=11001,
+            title="PR 1 for review testing",
+            body="Test PR body",
+            state="closed",
+            type="pull_request",
+            created_at=now - datetime.timedelta(days=3),
+            updated_at=now - datetime.timedelta(days=2),
+            merged_at=now - datetime.timedelta(days=1),
+            is_merged=True,
+            url="https://github.com/test/reviewrepo/pull/11001",
+            repo=review_repo,
+            user_profile=self.user1.userprofile,
+        )
+
+        pr2 = GitHubIssue.objects.create(
+            issue_id=11002,
+            title="PR 2 for review testing",
+            body="Test PR body",
+            state="closed",
+            type="pull_request",
+            created_at=now - datetime.timedelta(days=3),
+            updated_at=now - datetime.timedelta(days=2),
+            merged_at=now - datetime.timedelta(days=1),
+            is_merged=True,
+            url="https://github.com/test/reviewrepo/pull/11002",
+            repo=review_repo,
+            user_profile=self.user1.userprofile,
+        )
+
+        pr3 = GitHubIssue.objects.create(
+            issue_id=11003,
+            title="PR 3 for review testing",
+            body="Test PR body",
+            state="closed",
+            type="pull_request",
+            created_at=now - datetime.timedelta(days=3),
+            updated_at=now - datetime.timedelta(days=2),
+            merged_at=now - datetime.timedelta(days=1),
+            is_merged=True,
+            url="https://github.com/test/reviewrepo/pull/11003",
+            repo=review_repo,
+            user_profile=self.user2.userprofile,
+        )
+
+        # Create reviews for these PRs
+        # User2 reviews PR1 (approved)
+        review1 = GitHubReview.objects.create(
+            review_id=20001,
+            pull_request=pr1,
+            reviewer=self.user2.userprofile,
+            body="Looks good!",
+            state="APPROVED",
+            submitted_at=now - datetime.timedelta(days=2),
+            url="https://github.com/test/reviewrepo/pull/11001#review-20001",
+        )
+
+        # User2 reviews PR2 (changes requested)
+        review2 = GitHubReview.objects.create(
+            review_id=20002,
+            pull_request=pr2,
+            reviewer=self.user2.userprofile,
+            body="Please fix this",
+            state="CHANGES_REQUESTED",
+            submitted_at=now - datetime.timedelta(days=2),
+            url="https://github.com/test/reviewrepo/pull/11002#review-20002",
+        )
+
+        # User3 reviews PR1 (commented)
+        review3 = GitHubReview.objects.create(
+            review_id=20003,
+            pull_request=pr1,
+            reviewer=self.user3.userprofile,
+            body="Nice work",
+            state="COMMENTED",
+            submitted_at=now - datetime.timedelta(days=2),
+            url="https://github.com/test/reviewrepo/pull/11001#review-20003",
+        )
+
+        # User3 reviews PR3 (approved)
+        review4 = GitHubReview.objects.create(
+            review_id=20004,
+            pull_request=pr3,
+            reviewer=self.user3.userprofile,
+            body="LGTM",
+            state="APPROVED",
+            submitted_at=now - datetime.timedelta(days=2),
+            url="https://github.com/test/reviewrepo/pull/11003#review-20004",
+        )
+
+        # Create a review outside the hackathon timeframe (should not be counted)
+        review_outside = GitHubReview.objects.create(
+            review_id=20005,
+            pull_request=pr1,
+            reviewer=self.user2.userprofile,
+            body="Old review",
+            state="APPROVED",
+            submitted_at=now - datetime.timedelta(days=10),
+            url="https://github.com/test/reviewrepo/pull/11001#review-20005",
+        )
+
+        # Get the reviewer leaderboard
+        reviewer_leaderboard = review_hackathon.get_reviewer_leaderboard()
+
+        # Check the leaderboard order and review counts
+        self.assertEqual(len(reviewer_leaderboard), 2, "Reviewer leaderboard should have 2 reviewers")
+
+        # User2 should be first with 2 reviews
+        self.assertEqual(reviewer_leaderboard[0]["user"].id, self.user2.id)
+        self.assertEqual(reviewer_leaderboard[0]["count"], 2)
+        self.assertEqual(len(reviewer_leaderboard[0]["reviews"]), 2)
+
+        # User3 should be second with 2 reviews
+        self.assertEqual(reviewer_leaderboard[1]["user"].id, self.user3.id)
+        self.assertEqual(reviewer_leaderboard[1]["count"], 2)
+        self.assertEqual(len(reviewer_leaderboard[1]["reviews"]), 2)
+
+        # Test the hackathon detail view
+        response = self.client.get(reverse("hackathon_detail", kwargs={"slug": review_hackathon.slug}))
+        self.assertEqual(response.status_code, 200)
+
+        # Check that the reviewer leaderboard is in the context
+        self.assertIn("reviewer_leaderboard", response.context)
+        view_reviewer_leaderboard = response.context["reviewer_leaderboard"]
+
+        # Verify the same data is in the view context
+        self.assertEqual(len(view_reviewer_leaderboard), 2)
+        self.assertEqual(view_reviewer_leaderboard[0]["count"], 2)
+        self.assertEqual(view_reviewer_leaderboard[1]["count"], 2)
+
+        # Check that the template contains the review states
+        content = response.content.decode("utf-8")
+        self.assertIn("PR Reviewer Leaderboard", content)
+        self.assertIn("testuser2", content)
+        self.assertIn("testuser3", content)
+
+        # Ensure reviews outside the timeframe are not included
+        self.assertNotIn("Old review", content)
+
+    def test_reviewer_leaderboard_excludes_bots(self):
+        """Test that the reviewer leaderboard correctly excludes bot accounts."""
+        from website.models import Contributor, GitHubReview
+
+        # Create a new hackathon for bot filtering test
+        now = timezone.now()
+        bot_review_hackathon = Hackathon.objects.create(
+            name="Bot Review Test Hackathon",
+            slug="bot-review-test-hackathon",
+            description="A hackathon for testing bot filtering in reviewer leaderboard",
+            organization=self.organization,
+            start_time=now - datetime.timedelta(days=5),
+            end_time=now + datetime.timedelta(days=5),
+            is_active=True,
+        )
+
+        # Create a new repository for this test
+        bot_review_repo = Repo.objects.create(
+            name="Bot Review Repo",
+            slug="bot-review-repo",
+            repo_url="https://github.com/test/botreviewrepo",
+            organization=self.organization,
+        )
+
+        bot_review_hackathon.repositories.add(bot_review_repo)
+
+        # Create a pull request during the hackathon
+        pr1 = GitHubIssue.objects.create(
+            issue_id=12001,
+            title="PR for bot review testing",
+            body="Test PR body",
+            state="closed",
+            type="pull_request",
+            created_at=now - datetime.timedelta(days=3),
+            updated_at=now - datetime.timedelta(days=2),
+            merged_at=now - datetime.timedelta(days=1),
+            is_merged=True,
+            url="https://github.com/test/botreviewrepo/pull/12001",
+            repo=bot_review_repo,
+            user_profile=self.user1.userprofile,
+        )
+
+        # Create bot contributors
+        bot1 = Contributor.objects.create(
+            name="dependabot[bot]",
+            github_id=10000001,
+            github_url="https://github.com/apps/dependabot",
+            avatar_url="https://avatars.githubusercontent.com/in/29110",
+            contributor_type="Bot",
+            contributions=1,
+        )
+
+        bot2 = Contributor.objects.create(
+            name="github-actions[bot]",
+            github_id=10000002,
+            github_url="https://github.com/apps/github-actions",
+            avatar_url="https://avatars.githubusercontent.com/in/15368",
+            contributor_type="Bot",
+            contributions=1,
+        )
+
+        # Create a bot with User type but bot-like name (edge case)
+        bot3 = Contributor.objects.create(
+            name="renovate-bot",
+            github_id=10000003,
+            github_url="https://github.com/renovate-bot",
+            avatar_url="https://avatars.githubusercontent.com/u/10000003",
+            contributor_type="User",
+            contributions=1,
+        )
+
+        # Create a regular contributor
+        human_reviewer = Contributor.objects.create(
+            name="human-reviewer",
+            github_id=10000004,
+            github_url="https://github.com/human-reviewer",
+            avatar_url="https://avatars.githubusercontent.com/u/10000004",
+            contributor_type="User",
+            contributions=1,
+        )
+
+        # Create reviews from bot contributors (should be excluded)
+        for i, bot in enumerate([bot1, bot2, bot3], start=1):
+            GitHubReview.objects.create(
+                review_id=21000 + i,
+                pull_request=pr1,
+                reviewer_contributor=bot,
+                body="Bot review",
+                state="APPROVED",
+                submitted_at=now - datetime.timedelta(days=2),
+                url=f"https://github.com/test/botreviewrepo/pull/12001#review-{21000 + i}",
+            )
+
+        # Create review from human contributor (should be included)
+        GitHubReview.objects.create(
+            review_id=21100,
+            pull_request=pr1,
+            reviewer_contributor=human_reviewer,
+            body="Human review",
+            state="APPROVED",
+            submitted_at=now - datetime.timedelta(days=2),
+            url="https://github.com/test/botreviewrepo/pull/12001#review-21100",
+        )
+
+        # Create review from registered user (should be included)
+        GitHubReview.objects.create(
+            review_id=21200,
+            pull_request=pr1,
+            reviewer=self.user2.userprofile,
+            body="User review",
+            state="APPROVED",
+            submitted_at=now - datetime.timedelta(days=2),
+            url="https://github.com/test/botreviewrepo/pull/12001#review-21200",
+        )
+
+        # Get the reviewer leaderboard
+        reviewer_leaderboard = bot_review_hackathon.get_reviewer_leaderboard()
+
+        # Check that only non-bot reviewers are in the leaderboard
+        self.assertEqual(len(reviewer_leaderboard), 2, "Reviewer leaderboard should only have 2 non-bot reviewers")
+
+        # Verify that bot reviews are excluded
+        all_usernames = []
+        for entry in reviewer_leaderboard:
+            if hasattr(entry["user"], "username"):
+                all_usernames.append(entry["user"].username)
+            elif isinstance(entry["user"], dict):
+                all_usernames.append(entry["user"]["username"])
+
+        self.assertIn("testuser2", all_usernames, "Registered user should be in reviewer leaderboard")
+        self.assertIn("human-reviewer", all_usernames, "Human contributor should be in reviewer leaderboard")
+        self.assertNotIn("dependabot[bot]", all_usernames, "Bot should be excluded from reviewer leaderboard")
+        self.assertNotIn(
+            "github-actions[bot]", all_usernames, "Bot should be excluded from reviewer leaderboard"
+        )
+        self.assertNotIn(
+            "renovate-bot", all_usernames, "Bot-like name should be excluded from reviewer leaderboard"
+        )
+
+    def test_reviewer_leaderboard_empty(self):
+        """Test that the reviewer leaderboard handles empty data correctly."""
+        # Create a new hackathon with no reviews
+        empty_review_hackathon = Hackathon.objects.create(
+            name="Empty Review Hackathon",
+            slug="empty-review-hackathon",
+            description="A hackathon with no reviews",
+            organization=self.organization,
+            start_time=timezone.now() - datetime.timedelta(days=5),
+            end_time=timezone.now() + datetime.timedelta(days=5),
+            is_active=True,
+        )
+
+        # Create a new repository that has no reviews
+        empty_review_repo = Repo.objects.create(
+            name="Empty Review Repo",
+            slug="empty-review-repo",
+            repo_url="https://github.com/test/emptyreview",
+            organization=self.organization,
+        )
+
+        empty_review_hackathon.repositories.add(empty_review_repo)
+
+        # Get the reviewer leaderboard
+        reviewer_leaderboard = empty_review_hackathon.get_reviewer_leaderboard()
+
+        # Check that the leaderboard is empty
+        self.assertEqual(len(reviewer_leaderboard), 0, "Reviewer leaderboard should be empty")
+
+        # Test the hackathon detail view
+        response = self.client.get(reverse("hackathon_detail", kwargs={"slug": empty_review_hackathon.slug}))
+        self.assertEqual(response.status_code, 200)
+
+        # Check that the reviewer leaderboard is in the context and empty
+        self.assertIn("reviewer_leaderboard", response.context)
+        self.assertEqual(len(response.context["reviewer_leaderboard"]), 0)
+
+        # Check that the template shows the "no reviews" message
+        content = response.content.decode("utf-8")
+        self.assertIn("No reviews yet", content)
