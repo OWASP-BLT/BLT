@@ -685,7 +685,6 @@
             const commentText = document.getElementById('kudosComment').value.trim();
             const userUsername = "{{ request.user.username|default:'' }}";
             const sender = userUsername || "{{ user.username }}";
-            console.log(sender)
             fetch("/teams/give-kudos/", { 
                 method: "POST",
                 headers: {

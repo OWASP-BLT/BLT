@@ -152,7 +152,7 @@
 
             function log(s) {
                 if (typeof console != "undefined" && typeof console.debug != "undefined") {
-                    console.log(s);
+                    // Debug logging disabled
                 } else {
                     alert(s);
                 }

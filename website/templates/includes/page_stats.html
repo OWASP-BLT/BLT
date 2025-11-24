@@ -60,7 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const initializeChart = function() {
         // Wait for Chart.js to be available
         if (typeof Chart === 'undefined') {
-            console.log('Chart.js not yet loaded, retrying...');
             setTimeout(initializeChart, 100);
             return;
         }
@@ -78,7 +77,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Parse the JSON data only if it's not empty
             if (rawData && rawData.trim() !== '') {
                 viewsByDate = JSON.parse(rawData);
-                console.log('Successfully parsed view data:', viewsByDate);
             } else {
                 console.warn('Empty page views data received');
             }
