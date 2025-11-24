@@ -3248,3 +3248,58 @@ class StakingTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
+
+
+class EasterEgg(models.Model):
+    """Model to track different Easter eggs available on the site"""
+
+    name = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=50, unique=True, help_text="Unique code identifier for the Easter egg")
+    description = models.TextField(help_text="Description of the Easter egg")
+    reward_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("bacon", "BACON Token"),
+            ("badge", "Badge"),
+            ("points", "Points"),
+            ("fun", "Just for Fun"),
+        ],
+        default="fun",
+    )
+    reward_amount = models.IntegerField(default=0, help_text="Amount of reward (if applicable)")
+    is_active = models.BooleanField(default=True)
+    max_claims_per_user = models.IntegerField(
+        default=1, help_text="Maximum times a user can claim this Easter egg (0 = unlimited)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Easter Egg"
+        verbose_name_plural = "Easter Eggs"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class EasterEggDiscovery(models.Model):
+    """Model to track user discoveries of Easter eggs"""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="easter_egg_discoveries")
+    easter_egg = models.ForeignKey(EasterEgg, on_delete=models.CASCADE, related_name="discoveries")
+    discovered_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-discovered_at"]
+        verbose_name = "Easter Egg Discovery"
+        verbose_name_plural = "Easter Egg Discoveries"
+        unique_together = ["user", "easter_egg"]
+        indexes = [
+            models.Index(fields=["user", "discovered_at"]),
+            models.Index(fields=["easter_egg", "discovered_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} found {self.easter_egg.name}"

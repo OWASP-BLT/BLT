@@ -130,6 +130,7 @@ from website.views.core import (
     website_stats,
 )
 from website.views.daily_reminders import reminder_settings, send_test_reminder
+from website.views.easter_eggs import discover_easter_egg, get_verification_token
 from website.views.education import (
     add_lecture,
     add_section,
@@ -1189,6 +1190,9 @@ urlpatterns = [
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
+    # Easter Eggs
+    path("easter-eggs/discover/", discover_easter_egg, name="discover_easter_egg"),
+    path("easter-eggs/verify/", get_verification_token, name="get_verification_token"),
 ]
 
 if settings.DEBUG:

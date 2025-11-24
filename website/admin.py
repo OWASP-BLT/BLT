@@ -33,6 +33,8 @@ from website.models import (
     DailyStats,
     DailyStatusReport,
     Domain,
+    EasterEgg,
+    EasterEggDiscovery,
     Enrollment,
     ForumCategory,
     ForumComment,
@@ -1197,3 +1199,33 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
+
+
+@admin.register(EasterEgg)
+class EasterEggAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "reward_type", "reward_amount", "is_active", "discoveries_count", "created_at")
+    list_filter = ("reward_type", "is_active", "created_at")
+    search_fields = ("name", "code", "description")
+    readonly_fields = ("created_at", "discoveries_count")
+    fieldsets = (
+        ("Easter Egg Information", {"fields": ("name", "code", "description", "is_active")}),
+        (
+            "Reward Settings",
+            {"fields": ("reward_type", "reward_amount", "max_claims_per_user")},
+        ),
+        ("Statistics", {"fields": ("discoveries_count", "created_at")}),
+    )
+
+    def discoveries_count(self, obj):
+        return obj.discoveries.count()
+
+    discoveries_count.short_description = "Total Discoveries"
+
+
+@admin.register(EasterEggDiscovery)
+class EasterEggDiscoveryAdmin(admin.ModelAdmin):
+    list_display = ("user", "easter_egg", "discovered_at", "ip_address")
+    list_filter = ("discovered_at", "easter_egg")
+    search_fields = ("user__username", "easter_egg__name", "ip_address")
+    readonly_fields = ("discovered_at",)
+    date_hierarchy = "discovered_at"
