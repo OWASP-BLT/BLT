@@ -964,10 +964,8 @@ def view_forum(request):
         .all()
     )
 
-
     if selected_category:
         posts = posts.filter(category_id=selected_category)
-
 
     # Optimize user vote queries to avoid N+1 problem
     if request.user.is_authenticated:
@@ -982,7 +980,6 @@ def view_forum(request):
     organizations = Organization.objects.all().order_by("name")
     projects = Project.objects.all().order_by("name")
     repos = Repo.objects.all().order_by("name")
-
 
     return render(
         request,
