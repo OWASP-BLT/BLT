@@ -1,4 +1,5 @@
 import json
+import logging
 import smtplib
 import uuid
 from datetime import datetime
@@ -63,6 +64,7 @@ from website.serializers import (
 from website.utils import image_validator
 from website.views.user import LeaderboardBase
 
+logger = logging.getLogger(__name__)
 # API's
 
 
@@ -1313,4 +1315,9 @@ def trademark_search_api(request):
         return Response({"error": "Invalid response from USPTO API"}, status=status.HTTP_502_BAD_GATEWAY)
 
     except requests.exceptions.RequestException as e:
-        return Response({"error": f"Failed to fetch trademark data: {str(e)}"}, status=status.HTTP_502_BAD_GATEWAY)
+        logger.error("Trademark API request failed", exc_info=e)
+
+        return Response(
+            {"error": "Failed to fetch trademark data due to an external service error."},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
