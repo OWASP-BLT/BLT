@@ -151,7 +151,7 @@ class SlackHandlerTests(TestCase):
         request = MagicMock()
         request.method = "POST"
         request.POST = {
-            "command": "/apps",
+            "command": "/installed_apps",
             "user_id": "U123",
             "team_id": "T070JPE5BQQ",
             "team_domain": "test",
@@ -406,3 +406,4 @@ class SlackHandlerTests(TestCase):
         self.assertEqual(huddle.description, "Q1 planning")
         self.assertEqual(huddle.status, "scheduled")
         self.assertEqual(huddle.participants.count(), 1)
+        self.assertEqual(activity.details["command"], "/installed_apps")
