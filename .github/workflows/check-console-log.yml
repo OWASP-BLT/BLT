@@ -60,7 +60,8 @@ jobs:
             while IFS= read -r file; do
               if [ -f "$file" ]; then
                 # Search for console.log using word boundaries to avoid false positives
-                # Excludes lines where content starts with // or /* (single-line comments)
+                # Excludes lines where content starts with // or /* (single-line comments at start of line)
+                # Lines with console.log followed by inline comments are correctly flagged
                 # Note: Multi-line comment blocks are not fully handled and may cause false positives
                 # grep -n output format is: line_number:content
                 MATCHES=$(grep -n '\bconsole\.log\b' "$file" | grep -Ev '^[0-9]+:\s*(//|/\*)' || true)
@@ -69,7 +70,8 @@ jobs:
                   echo "Found console.log in $file:"
                   echo "$MATCHES"
                   echo ""
-                  VIOLATIONS="${VIOLATIONS}**$file**:\n\`\`\`javascript\n${MATCHES}\n\`\`\`\n\n"
+                  # Using 'text' format to display grep output with line numbers
+                  VIOLATIONS="${VIOLATIONS}**$file**:\n\`\`\`text\n${MATCHES}\n\`\`\`\n\n"
                   VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
                 fi
               fi
