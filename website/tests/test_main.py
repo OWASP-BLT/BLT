@@ -392,7 +392,7 @@ class LeaderboardTests(TestCase):
         self.assertContains(response, "80")
         self.assertContains(response, "40")
 
-        # Check PR leaderboard
+        # Check PR leaderboard - GitHub URLs should appear in href attributes
         self.assertContains(response, "https://github.com/user1")
         self.assertContains(response, "https://github.com/user2")
 
