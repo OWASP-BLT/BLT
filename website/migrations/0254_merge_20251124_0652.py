@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0253_add_verifier_permission"),
         ("website", "0253_alter_organization_logo_alter_organization_url_and_more"),
