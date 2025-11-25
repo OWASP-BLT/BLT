@@ -30,6 +30,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+from website.cache.cve_cache import get_cached_cve_score
 
 logger = logging.getLogger(__name__)
 
@@ -626,8 +627,6 @@ class Issue(models.Model):
     def get_cve_score(self):
         if self.cve_id is None:
             return None
-        from website.cache.cve_cache import get_cached_cve_score
-
         return get_cached_cve_score(self.cve_id)
 
     class Meta:
