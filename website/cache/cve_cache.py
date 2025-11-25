@@ -20,6 +20,9 @@ CVE_API_TIMEOUT = getattr(settings, "CVE_API_TIMEOUT", 10)
 # Cache key prefix
 CVE_CACHE_KEY_PREFIX = "cve"
 
+# Sentinel value to cache None results (distinguish from cache miss)
+CACHE_NONE = "<CACHED_NONE>"
+
 
 def get_cve_cache_key(cve_id):
     """Generate cache key for CVE data."""
@@ -43,10 +46,13 @@ def get_cached_cve_score(cve_id):
     
     # Try to get from cache first
     try:
-        cached_score = cache.get(cache_key)
-        if cached_score is not None:
+        cached_value = cache.get(cache_key)
+        if cached_value is not None:
             logger.debug(f"CVE score cache hit for {cve_id}")
-            return cached_score
+            # Translate sentinel back to None
+            if cached_value == CACHE_NONE:
+                return None
+            return cached_value
     except Exception as e:
         logger.warning(f"Error reading from cache for {cve_id}: {e}")
         # Continue to API call on cache error
@@ -56,13 +62,14 @@ def get_cached_cve_score(cve_id):
     score = fetch_cve_score_from_api(cve_id)
     
     # Cache the result (even if None, to avoid repeated API calls for invalid CVEs)
-    if score is not None:
-        try:
-            cache.set(cache_key, score, timeout=CVE_CACHE_TIMEOUT)
-            logger.debug(f"Cached CVE score for {cve_id}")
-        except Exception as e:
-            logger.warning(f"Error caching CVE score for {cve_id}: {e}")
-            # Continue even if caching fails
+    try:
+        # Use sentinel value for None to distinguish from cache miss
+        cache_value = CACHE_NONE if score is None else score
+        cache.set(cache_key, cache_value, timeout=CVE_CACHE_TIMEOUT)
+        logger.debug(f"Cached CVE score for {cve_id}")
+    except Exception as e:
+        logger.warning(f"Error caching CVE score for {cve_id}: {e}")
+        # Continue even if caching fails
     
     return score
 
