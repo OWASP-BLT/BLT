@@ -1,6 +1,7 @@
 """
 Tests for CVE caching utilities.
 """
+
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
@@ -233,7 +234,6 @@ class TestFetchCveScoreFromApi:
         assert result is None
         assert "Error parsing CVE response" in caplog.text
 
-
     @patch("website.cache.cve_cache.requests.get")
     def test_decimal_conversion_error_handling(self, mock_get, caplog):
         """Test error handling when baseScore cannot be converted to Decimal."""
@@ -272,15 +272,14 @@ class TestFetchCveScoreFromApi:
         mock_response = Mock()
         # Create a scenario where accessing [0] raises IndexError
         # We need to mock a list-like object that passes len() but fails on [0]
-        from unittest.mock import MagicMock
-        
+
         class IndexErrorList:
             def __len__(self):
                 return 1  # Passes len() check
-            
+
             def __getitem__(self, key):
                 raise IndexError
-        
+
         mock_response.json.return_value = {
             "resultsPerPage": 1,
             "vulnerabilities": [
@@ -445,4 +444,3 @@ class TestGetCachedCveScore:
 
         assert result is None
         mock_fetch.assert_called_once_with(cve_id)
-
