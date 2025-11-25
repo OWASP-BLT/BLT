@@ -282,7 +282,7 @@ class TestGetCachedCveScore:
         cached_score = Decimal("7.5")
         cache_key = get_cve_cache_key(cve_id)
 
-        # Set cache
+        # Set cache with actual score (not sentinel)
         cache.set(cache_key, cached_score, timeout=86400)
 
         # Get from cache
@@ -313,22 +313,29 @@ class TestGetCachedCveScore:
 
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
     def test_cache_miss_api_returns_none(self, mock_fetch, clear_cache):
-        """Test that None results are not cached to avoid repeated API calls."""
+        """Test that None results are cached using sentinel value to avoid repeated API calls."""
+        from website.cache.cve_cache import CACHE_NONE
+
         cve_id = "CVE-2024-9999"
         mock_fetch.return_value = None
 
-        # First call
+        # First call - cache miss, should call API
         result1 = get_cached_cve_score(cve_id)
         assert result1 is None
         assert mock_fetch.call_count == 1
 
-        # Second call - should call API again since None wasn't cached
+        # Verify None was cached with sentinel value
+        from website.cache.cve_cache import get_cve_cache_key
+        cache_key = get_cve_cache_key(cve_id)
+        cached_value = cache.get(cache_key)
+        assert cached_value == CACHE_NONE
+
+        # Second call - cache hit, should NOT call API again
         mock_fetch.reset_mock()
         result2 = get_cached_cve_score(cve_id)
         assert result2 is None
-        # Note: Based on the implementation, None results are NOT cached
-        # So this will call the API again
-        assert mock_fetch.call_count == 1
+        # None results are now cached, so API should not be called again
+        mock_fetch.assert_not_called()
 
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
     def test_cache_error_fallback_to_api(self, mock_fetch, clear_cache, caplog):
