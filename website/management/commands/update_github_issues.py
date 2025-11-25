@@ -33,7 +33,22 @@ class Command(LoggedBaseCommand):
         users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
         user_count = users_with_github.count()
 
-        self.stdout.write(self.style.SUCCESS(f"Found {user_count} users with GitHub profiles"))
+        self.stdout.write(f"Found {user_count} users with GitHub profiles")
+
+        # If no users with GitHub URLs, just fetch BLT repos directly
+        if user_count == 0:
+            self.stdout.write(self.style.WARNING("No users with GitHub URLs found."))
+            self.stdout.write("Fetching PRs from BLT repositories instead...")
+
+            from django.core.management import call_command
+
+            try:
+                call_command("fetch_gsoc_prs")
+                self.stdout.write(self.style.SUCCESS("Successfully fetched BLT repo PRs!"))
+            except CommandError as e:
+                self.stdout.write(self.style.ERROR(f"Error fetching BLT repo PRs: {e!s}"))
+            return
+
         self.stdout.write(f"Fetching PRs merged in the last 6 months (since {since_date_str})")
         self.stdout.write("-" * 50)
 
@@ -52,7 +67,7 @@ class Command(LoggedBaseCommand):
             # Handle pagination for pull requests
             while api_url:
                 try:
-                    response = requests.get(api_url, headers=headers)
+                    response = requests.get(api_url, headers=headers, timeout=(3, 20))
                     response.raise_for_status()
                     prs_data = response.json()
 
@@ -98,7 +113,7 @@ class Command(LoggedBaseCommand):
                         try:
                             # Get user details from GitHub API
                             user_api_url = pr["user"]["url"]
-                            user_response = requests.get(user_api_url, headers=headers)
+                            user_response = requests.get(user_api_url, headers=headers, timeout=(3, 10))
                             user_response.raise_for_status()
                             user_data = user_response.json()
 

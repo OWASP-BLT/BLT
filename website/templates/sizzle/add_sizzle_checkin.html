@@ -185,29 +185,29 @@
                 textarea.focus();
             });
 
+            {% if yesterday_report %}
             // Fill from previous check-in button functionality
             const fillFromPreviousBtn = document.getElementById('fillFromPreviousBtn');
             if (fillFromPreviousBtn) {
                 fillFromPreviousBtn.addEventListener('click', () => {
                     const previousWorkTextarea = document.getElementById('previous_work_card');
-                    {% if yesterday_report %}
-                        previousWorkTextarea.value = "{{ yesterday_report.next_plan|escapejs }}";
-                        previousWorkTextarea.focus();
-                    {% endif %}
+                    previousWorkTextarea.value = "{{ yesterday_report.next_plan|escapejs }}";
+                    previousWorkTextarea.focus();
                 });
             }
+            {% endif %}
 
+            {% if last_checkin %}
             // Fill from last check-in button functionality (when no yesterday report)
             const fillFromLastCheckinBtn = document.getElementById('fillFromLastCheckinBtn');
             if (fillFromLastCheckinBtn) {
                 fillFromLastCheckinBtn.addEventListener('click', () => {
                     const previousWorkTextarea = document.getElementById('previous_work_card');
-                    {% if last_checkin %}
-                        previousWorkTextarea.value = "{{ last_checkin.next_plan|escapejs }}";
-                        previousWorkTextarea.focus();
-                    {% endif %}
+                    previousWorkTextarea.value = "{{ last_checkin.next_plan|escapejs }}";
+                    previousWorkTextarea.focus();
                 });
             }
+            {% endif %}
         });
     </script>
 {% endblock content %}
