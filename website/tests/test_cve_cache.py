@@ -233,11 +233,66 @@ class TestFetchCveScoreFromApi:
         assert result is None
         assert "Error parsing CVE response" in caplog.text
 
+
     @patch("website.cache.cve_cache.requests.get")
-    def test_key_error_handling(self, mock_get, clear_cache, caplog):
-        """Test KeyError handling when parsing response."""
+    def test_decimal_conversion_error_handling(self, mock_get, clear_cache, caplog):
+        """Test error handling when baseScore cannot be converted to Decimal."""
         mock_response = Mock()
-        mock_response.json.return_value = {"invalid": "structure"}
+        # Return structure with invalid baseScore that can't be converted to Decimal
+        mock_response.json.return_value = {
+            "resultsPerPage": 1,
+            "vulnerabilities": [
+                {
+                    "cve": {
+                        "metrics": {
+                            "cvssMetricV31": [
+                                {
+                                    "cvssData": {
+                                        "baseScore": "invalid_number",  # Will cause Decimal conversion error
+                                    }
+                                }
+                            ],
+                        }
+                    }
+                }
+            ],
+        }
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = fetch_cve_score_from_api("CVE-2024-1234")
+
+        assert result is None
+        # Decimal conversion errors are caught by generic Exception handler
+        assert "Unexpected error fetching CVE score" in caplog.text
+
+    @patch("website.cache.cve_cache.requests.get")
+    def test_index_error_handling(self, mock_get, clear_cache, caplog):
+        """Test IndexError handling when accessing list index fails."""
+        mock_response = Mock()
+        # Create a scenario where accessing [0] raises IndexError
+        # We need to mock a list-like object that passes len() but fails on [0]
+        from unittest.mock import MagicMock
+        
+        class IndexErrorList:
+            def __len__(self):
+                return 1  # Passes len() check
+            
+            def __getitem__(self, key):
+                raise IndexError("list index out of range")
+        
+        mock_response.json.return_value = {
+            "resultsPerPage": 1,
+            "vulnerabilities": [
+                {
+                    "cve": {
+                        "metrics": {
+                            "cvssMetricV31": IndexErrorList(),
+                        }
+                    }
+                }
+            ],
+        }
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
