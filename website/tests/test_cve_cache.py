@@ -9,7 +9,13 @@ import pytest
 import requests
 from django.core.cache import cache
 
-from website.cache.cve_cache import CACHE_NONE, fetch_cve_score_from_api, get_cached_cve_score, get_cve_cache_key
+from website.cache.cve_cache import (
+    CACHE_NONE,
+    CVE_API_MAX_RETRIES,
+    fetch_cve_score_from_api,
+    get_cached_cve_score,
+    get_cve_cache_key,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -26,6 +32,12 @@ class TestGetCveCacheKey:
     def test_cache_key_format(self):
         """Test that cache key is generated correctly."""
         cve_id = "CVE-2024-1234"
+        expected = "cve:CVE-2024-1234"
+        assert get_cve_cache_key(cve_id) == expected
+
+    def test_cache_key_normalizes_whitespace_and_case(self):
+        """Cache keys should ignore casing/whitespace differences."""
+        cve_id = "  cve-2024-1234 "
         expected = "cve:CVE-2024-1234"
         assert get_cve_cache_key(cve_id) == expected
 
@@ -169,8 +181,9 @@ class TestFetchCveScoreFromApi:
         assert "Timeout fetching CVE score" in caplog.text
         assert "CVE-2024-1234" in caplog.text
 
+    @patch("website.cache.cve_cache.time.sleep", autospec=True)
     @patch("website.cache.cve_cache.requests.get")
-    def test_rate_limit_429(self, mock_get, caplog):
+    def test_rate_limit_429(self, mock_get, mock_sleep, caplog):
         """Test rate limiting (429) handling."""
         mock_response = Mock()
         mock_response.status_code = 429
@@ -183,6 +196,9 @@ class TestFetchCveScoreFromApi:
         assert result is None
         assert "Rate limit exceeded" in caplog.text
         assert "CVE-2024-1234" in caplog.text
+        assert mock_get.call_count == CVE_API_MAX_RETRIES
+        # Retries happen max_retries - 1 times (final attempt does not sleep afterward)
+        assert mock_sleep.call_count == CVE_API_MAX_RETRIES - 1
 
     @patch("website.cache.cve_cache.requests.get")
     def test_http_error_non_429(self, mock_get, caplog):
@@ -324,6 +340,8 @@ class TestFetchCveScoreFromApi:
 
         assert result is None
         mock_get.assert_called_once()
+        # Ensure normalization happened
+        assert "INVALID-ID".upper() in mock_get.call_args[0][0]
 
 
 class TestGetCachedCveScore:
@@ -444,3 +462,18 @@ class TestGetCachedCveScore:
 
         assert result is None
         mock_fetch.assert_called_once_with(cve_id)
+
+    @patch("website.cache.cve_cache.fetch_cve_score_from_api")
+    def test_cve_id_normalization_prevents_duplicate_fetches(self, mock_fetch):
+        """Whitespace/case variations should map to same cache entry."""
+        api_score = Decimal("4.2")
+        mock_fetch.return_value = api_score
+
+        first_result = get_cached_cve_score("  cve-2024-4242  ")
+        assert first_result == api_score
+        assert mock_fetch.call_count == 1
+        mock_fetch.reset_mock()
+
+        second_result = get_cached_cve_score("CVE-2024-4242")
+        assert second_result == api_score
+        mock_fetch.assert_not_called()
