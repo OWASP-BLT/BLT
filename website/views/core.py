@@ -27,14 +27,17 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.validators import validate_email
 from django.db import connection, models
 from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -54,6 +57,7 @@ from website.models import (
     ForumVote,
     Hunt,
     InviteFriend,
+    InviteOrganization,
     Issue,
     ManagementCommandLog,
     Organization,
@@ -73,6 +77,9 @@ from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_ur
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
+
+# Constants
+SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
 
 
 # ----------------------------------------------------------------------------------
@@ -1934,8 +1941,8 @@ def management_commands(request):
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                command_instance = command_class()
+                command_instance.add_arguments(parser)
 
                 # Extract argument information
                 for action in parser._actions:
@@ -2076,8 +2083,8 @@ def run_management_command(request):
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                command_instance = command_class()
+                command_instance.add_arguments(parser)
 
                 # Extract argument information and collect values from POST
                 for action in parser._actions:
@@ -3088,6 +3095,142 @@ class RoadmapView(TemplateView):
 
 class StyleGuideView(TemplateView):
     template_name = "style_guide.html"
+
+
+def invite_organization(request):
+    """
+    View for inviting organizations to join BLT.
+    Generates professional invitation emails with referral tracking.
+    """
+    context = {}
+
+    if request.method == "POST":
+        # Require authentication for POST requests
+        if not request.user.is_authenticated:
+            messages.error(request, "Please log in to send organization invitations.")
+            context["exists"] = False
+            context["show_login_prompt"] = True
+            return render(request, "invite.html", context)
+
+        # Handle form submission
+        email = request.POST.get("email", "").strip()
+        organization_name = request.POST.get("organization_name", "").strip()
+
+        # Add to context for later use
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Validate both fields are provided first
+        if not (email and organization_name):
+            messages.error(request, "Please provide both email and organization name.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Validate email format
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            messages.error(request, "Please enter a valid email address.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Reject sample/placeholder emails
+        if re.match(SAMPLE_INVITE_EMAIL_PATTERN, email):
+            messages.error(
+                request,
+                "This email format is reserved for system use. Please provide a valid organization email address.",
+            )
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Validate organization_name length
+        if len(organization_name) > 255:
+            messages.error(request, "Organization name is too long (max 255 characters).")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Rate limiting check - DB-backed for reliability
+        today = timezone.now().date()
+        invite_count = (
+            InviteOrganization.objects.filter(sender=request.user, created__date=today)
+            .exclude(
+                email__regex=SAMPLE_INVITE_EMAIL_PATTERN  # Exclude sample invites from count
+            )
+            .count()
+        )
+
+        if invite_count >= 10:  # 10 invites per day
+            messages.error(request, "Daily invitation limit reached. Please try again tomorrow.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Create invite record for logged-in users (or get existing one)
+        invite_record, created = InviteOrganization.objects.get_or_create(
+            sender=request.user,
+            email=email,
+            defaults={"organization_name": organization_name},
+        )
+        if not created:
+            # Update organization name if it changed
+            invite_record.organization_name = organization_name
+            invite_record.save()
+
+        # Generate referral link
+        base_url = request.build_absolute_uri(reverse("register_organization"))
+        referral_link = f"{base_url}?ref={invite_record.referral_code}"
+        context["referral_link"] = referral_link
+
+    # Add login prompt for non-authenticated users
+    if not request.user.is_authenticated:
+        context["show_login_prompt"] = True
+
+    # Add template context variables - check if we have the data in context
+    email = context.get("email", "")
+    organization_name = context.get("organization_name", "")
+
+    # Only generate email content for authenticated users with valid data
+    if email and organization_name and request.user.is_authenticated:
+        context["exists"] = True
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Generate email content
+        domain = email.split("@")[-1] if email and "@" in email else ""
+        email_subject = "Invitation to Join BLT (Bug Logging Tool) - Enhanced Security Testing Platform"
+
+        org_name = organization_name if organization_name else "your organization"
+        sender_name = request.user.get_full_name() or request.user.username
+        referral_link = context.get("referral_link", "")
+
+        try:
+            email_body = render_to_string(
+                "email/organization_invite.html",
+                {
+                    "org_name": org_name,
+                    "referral_link": referral_link,
+                    "sender_name": sender_name,
+                },
+            )
+        except Exception:
+            logging.exception("Failed to render organization invite email")
+            messages.error(request, "Error generating invitation email. Please try again.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        context.update(
+            {
+                "domain": domain,
+                "email_subject": email_subject,
+                "email_body": email_body,
+            }
+        )
+    else:
+        context["exists"] = False
+
+    # Add user authentication context
+    context["user_logged_in"] = request.user.is_authenticated
+
+    return render(request, "invite.html", context)
 
 
 @csrf_exempt
