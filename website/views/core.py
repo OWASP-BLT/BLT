@@ -41,7 +41,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
@@ -802,13 +802,17 @@ def vote_forum_post(request):
 
             return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
         except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
+            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in vote_forum_post")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in vote_forum_post")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -820,14 +824,22 @@ def set_vote_status(request):
             vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
 
             return JsonResponse(
-                {"up_vote": vote.up_vote if vote else False, "down_vote": vote.down_vote if vote else False}
+                {
+                    "success": True,
+                    "up_vote": vote.up_vote if vote else False,
+                    "down_vote": vote.down_vote if vote else False,
+                }
             )
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in set_vote_status")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in set_vote_status")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -843,7 +855,10 @@ def add_forum_post(request):
             organization_id = data.get("organization")
 
             if not all([title, category, description]):
-                return JsonResponse({"status": "error", "message": "Missing required fields"})
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+
+            # Explicitly validate category exists before creating post
+            category_obj = ForumCategory.objects.get(pk=category)
 
             post_data = {
                 "user": request.user,
@@ -861,13 +876,19 @@ def add_forum_post(request):
 
             post = ForumPost.objects.create(**post_data)
 
-            return JsonResponse({"status": "success", "post_id": post.id})
+            return JsonResponse({"success": True, "post_id": post.id})
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in add_forum_post")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
+        except ForumCategory.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in add_forum_post")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -879,20 +900,24 @@ def add_forum_comment(request):
             content = data.get("content")
 
             if not all([post_id, content]):
-                return JsonResponse({"status": "error", "message": "Missing required fields"})
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
             post = ForumPost.objects.get(id=post_id)
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
 
-            return JsonResponse({"status": "success", "comment_id": comment.id})
+            return JsonResponse({"success": True, "comment_id": comment.id})
         except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
+            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in add_forum_comment")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in add_forum_comment")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -927,20 +952,39 @@ def delete_forum_post(request):
         return JsonResponse({"status": "error", "message": "Server error occurred"})
 
 
+@ensure_csrf_cookie
 def view_forum(request):
-    categories = ForumCategory.objects.all()
+    # Annotate categories with post counts
+    categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
 
+    # Add is_selected flag to categories for cleaner template logic
+    for category in categories:
+        category.is_selected = str(category.id) == selected_category
+
+    # Get total posts count before filtering
+    total_posts_count = ForumPost.objects.count()
+
     posts = (
-        ForumPost.objects.select_related("user", "category", "repo", "project", "organization")
+        ForumPost.objects.select_related("user", "category")
         .prefetch_related("comments")
+        .annotate(comment_count=Count("comments"))
+        .order_by("-created")  # Sort by newest first
         .all()
     )
 
-    total_posts_count = posts.count()
-
     if selected_category:
         posts = posts.filter(category_id=selected_category)
+
+    # Optimize user vote queries to avoid N+1 problem
+    if request.user.is_authenticated:
+        # Get all votes for current user and these posts in one query
+        post_ids = [post.id for post in posts]
+        user_votes = {vote.post_id: vote for vote in ForumVote.objects.filter(post_id__in=post_ids, user=request.user)}
+
+        # Attach votes to posts
+        for post in posts:
+            post.user_vote = user_votes.get(post.id)
 
     organizations = Organization.objects.all().order_by("name")
     projects = Project.objects.all().order_by("name")
