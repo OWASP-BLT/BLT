@@ -572,6 +572,8 @@ class Issue(models.Model):
     closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
+    github_state = models.CharField(max_length=10, null=True, blank=True)
+    github_comment_count = models.IntegerField(null=True, blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
@@ -639,6 +641,43 @@ class Issue(models.Model):
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
             logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
+
+    def fetch_github_data(self):
+        """
+        Fetches GitHub issue state and comment count from GitHub API.
+        Updates github_state and github_comment_count fields.
+        """
+        if not self.github_url:
+            return
+
+        try:
+            parts = self.github_url.rstrip("/").split("/")
+            if len(parts) < 7 or "github.com" not in self.github_url:
+                return
+
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
+
+            headers = {"Accept": "application/vnd.github.v3+json"}
+
+            from django.conf import settings
+
+            if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN != "blank":
+                headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+            response = requests.get(api_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            self.github_state = data.get("state", "unknown")
+            self.github_comment_count = data.get("comments", 0)
+            self.save(update_fields=["github_state", "github_comment_count"])
+
+        except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+            logger.warning(f"Error fetching GitHub data for issue {self.id}: {e}")
 
     class Meta:
         ordering = ["-created"]
