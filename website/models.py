@@ -9,7 +9,6 @@ from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
 import pytz
-import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
 from django.conf import settings
