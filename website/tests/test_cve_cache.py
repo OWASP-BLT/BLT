@@ -33,7 +33,7 @@ class TestFetchCveScoreFromApi:
     """Test direct API fetching (without cache)."""
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_successful_fetch_with_cvss_v3_1(self, mock_get, clear_cache):
+    def test_successful_fetch_with_cvss_v3_1(self, mock_get):
         """Test successful CVE score fetch with CVSS v3.1."""
         mock_response = Mock()
         mock_response.json.return_value = {
@@ -64,7 +64,7 @@ class TestFetchCveScoreFromApi:
         assert "CVE-2024-1234" in mock_get.call_args[0][0]
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_successful_fetch_with_cvss_v2(self, mock_get, clear_cache):
+    def test_successful_fetch_with_cvss_v2(self, mock_get):
         """Test successful CVE score fetch with CVSS v2.0."""
         mock_response = Mock()
         mock_response.json.return_value = {
@@ -93,7 +93,7 @@ class TestFetchCveScoreFromApi:
         assert result == Decimal("6.8")
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_no_results_found(self, mock_get, clear_cache):
+    def test_no_results_found(self, mock_get):
         """Test when API returns no results."""
         mock_response = Mock()
         mock_response.json.return_value = {"resultsPerPage": 0}
@@ -105,7 +105,7 @@ class TestFetchCveScoreFromApi:
         assert result is None
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_empty_vulnerabilities(self, mock_get, clear_cache):
+    def test_empty_vulnerabilities(self, mock_get):
         """Test when vulnerabilities array is empty."""
         mock_response = Mock()
         mock_response.json.return_value = {
@@ -120,7 +120,7 @@ class TestFetchCveScoreFromApi:
         assert result is None
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_missing_metrics(self, mock_get, clear_cache):
+    def test_missing_metrics(self, mock_get):
         """Test when metrics are missing from response."""
         mock_response = Mock()
         mock_response.json.return_value = {
@@ -135,7 +135,7 @@ class TestFetchCveScoreFromApi:
         assert result is None
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_missing_base_score(self, mock_get, clear_cache):
+    def test_missing_base_score(self, mock_get):
         """Test when baseScore is missing from response."""
         mock_response = Mock()
         mock_response.json.return_value = {
@@ -158,7 +158,7 @@ class TestFetchCveScoreFromApi:
         assert result is None
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_timeout_exception(self, mock_get, clear_cache, caplog):
+    def test_timeout_exception(self, mock_get, caplog):
         """Test timeout handling."""
         mock_get.side_effect = requests.exceptions.Timeout("Connection timeout")
 
@@ -169,7 +169,7 @@ class TestFetchCveScoreFromApi:
         assert "CVE-2024-1234" in caplog.text
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_rate_limit_429(self, mock_get, clear_cache, caplog):
+    def test_rate_limit_429(self, mock_get, caplog):
         """Test rate limiting (429) handling."""
         mock_response = Mock()
         mock_response.status_code = 429
@@ -184,7 +184,7 @@ class TestFetchCveScoreFromApi:
         assert "CVE-2024-1234" in caplog.text
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_http_error_non_429(self, mock_get, clear_cache, caplog):
+    def test_http_error_non_429(self, mock_get, caplog):
         """Test non-429 HTTP error handling."""
         mock_response = Mock()
         mock_response.status_code = 500
@@ -199,7 +199,7 @@ class TestFetchCveScoreFromApi:
         assert "CVE-2024-1234" in caplog.text
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_connection_error(self, mock_get, clear_cache, caplog):
+    def test_connection_error(self, mock_get, caplog):
         """Test connection error handling."""
         mock_get.side_effect = requests.exceptions.ConnectionError("Connection failed")
 
@@ -210,7 +210,7 @@ class TestFetchCveScoreFromApi:
         assert "CVE-2024-1234" in caplog.text
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_request_exception(self, mock_get, clear_cache, caplog):
+    def test_request_exception(self, mock_get, caplog):
         """Test generic RequestException handling."""
         mock_get.side_effect = requests.exceptions.RequestException("Request failed")
 
@@ -221,7 +221,7 @@ class TestFetchCveScoreFromApi:
         assert "CVE-2024-1234" in caplog.text
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_json_parsing_error(self, mock_get, clear_cache, caplog):
+    def test_json_parsing_error(self, mock_get, caplog):
         """Test JSON parsing error handling."""
         mock_response = Mock()
         mock_response.json.side_effect = ValueError("Invalid JSON")
@@ -235,7 +235,7 @@ class TestFetchCveScoreFromApi:
 
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_decimal_conversion_error_handling(self, mock_get, clear_cache, caplog):
+    def test_decimal_conversion_error_handling(self, mock_get, caplog):
         """Test error handling when baseScore cannot be converted to Decimal."""
         mock_response = Mock()
         # Return structure with invalid baseScore that can't be converted to Decimal
@@ -267,7 +267,7 @@ class TestFetchCveScoreFromApi:
         assert "Unexpected error fetching CVE score" in caplog.text
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_index_error_handling(self, mock_get, clear_cache, caplog):
+    def test_index_error_handling(self, mock_get, caplog):
         """Test IndexError handling when accessing list index fails."""
         mock_response = Mock()
         # Create a scenario where accessing [0] raises IndexError
@@ -301,20 +301,20 @@ class TestFetchCveScoreFromApi:
         assert result is None
         assert "Error parsing CVE response" in caplog.text
 
-    def test_none_input(self, clear_cache):
+    def test_none_input(self):
         """Test that None input returns None without calling API."""
         result = fetch_cve_score_from_api(None)
 
         assert result is None
 
-    def test_empty_string_input(self, clear_cache):
+    def test_empty_string_input(self):
         """Test that empty string input returns None without calling API."""
         result = fetch_cve_score_from_api("")
 
         assert result is None
 
     @patch("website.cache.cve_cache.requests.get")
-    def test_invalid_cve_id_format(self, mock_get, clear_cache):
+    def test_invalid_cve_id_format(self, mock_get):
         """Test with invalid CVE ID format."""
         mock_response = Mock()
         mock_response.json.return_value = {"resultsPerPage": 0}
@@ -331,7 +331,7 @@ class TestGetCachedCveScore:
     """Test cached CVE score retrieval."""
 
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
-    def test_cache_hit(self, mock_fetch, clear_cache):
+    def test_cache_hit(self, mock_fetch):
         """Test that cached score is returned without API call."""
         cve_id = "CVE-2024-1234"
         cached_score = Decimal("7.5")
@@ -347,7 +347,7 @@ class TestGetCachedCveScore:
         mock_fetch.assert_not_called()
 
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
-    def test_cache_miss_then_hit(self, mock_fetch, clear_cache):
+    def test_cache_miss_then_hit(self, mock_fetch):
         """Test cache miss followed by cache hit."""
         cve_id = "CVE-2024-1234"
         api_score = Decimal("8.2")
@@ -367,7 +367,7 @@ class TestGetCachedCveScore:
         mock_fetch.assert_not_called()
 
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
-    def test_cache_miss_api_returns_none(self, mock_fetch, clear_cache):
+    def test_cache_miss_api_returns_none(self, mock_fetch):
         """Test that None results are cached using sentinel value to avoid repeated API calls."""
         cve_id = "CVE-2024-9999"
         mock_fetch.return_value = None
@@ -391,7 +391,7 @@ class TestGetCachedCveScore:
         mock_fetch.assert_not_called()
 
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
-    def test_cache_error_fallback_to_api(self, mock_fetch, clear_cache, caplog):
+    def test_cache_error_fallback_to_api(self, mock_fetch, caplog):
         """Test that cache errors fall back to API."""
         cve_id = "CVE-2024-1234"
         api_score = Decimal("6.5")
@@ -406,7 +406,7 @@ class TestGetCachedCveScore:
         mock_fetch.assert_called_once_with(cve_id)
 
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
-    def test_cache_set_error_continues(self, mock_fetch, clear_cache, caplog):
+    def test_cache_set_error_continues(self, mock_fetch, caplog):
         """Test that cache set errors don't break the flow."""
         cve_id = "CVE-2024-1234"
         api_score = Decimal("9.1")
@@ -419,7 +419,7 @@ class TestGetCachedCveScore:
         assert result == api_score
         assert "Error caching CVE score" in caplog.text
 
-    def test_none_input(self, clear_cache):
+    def test_none_input(self):
         """Test that None input returns None without cache or API calls."""
         with patch("website.cache.cve_cache.fetch_cve_score_from_api") as mock_fetch:
             result = get_cached_cve_score(None)
@@ -427,7 +427,7 @@ class TestGetCachedCveScore:
         assert result is None
         mock_fetch.assert_not_called()
 
-    def test_empty_string_input(self, clear_cache):
+    def test_empty_string_input(self):
         """Test that empty string input returns None without cache or API calls."""
         with patch("website.cache.cve_cache.fetch_cve_score_from_api") as mock_fetch:
             result = get_cached_cve_score("")
@@ -436,7 +436,7 @@ class TestGetCachedCveScore:
         mock_fetch.assert_not_called()
 
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
-    def test_timeout_propagates_correctly(self, mock_fetch, clear_cache, caplog):
+    def test_timeout_propagates_correctly(self, mock_fetch):
         """Test that timeout from API is handled correctly in cached function."""
         cve_id = "CVE-2024-1234"
         mock_fetch.return_value = None
