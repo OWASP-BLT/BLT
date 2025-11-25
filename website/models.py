@@ -553,6 +553,12 @@ class Issue(models.Model):
         (7, "Server Down"),
         (8, "Trademark Squatting"),
     )
+
+    GITHUB_STATE_CHOICES = [
+        ("open", "Open"),
+        ("closed", "Closed"),
+    ]
+
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
     hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
@@ -572,8 +578,18 @@ class Issue(models.Model):
     closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
-    github_state = models.CharField(max_length=10, null=True, blank=True)
+    github_state = models.CharField(
+        max_length=10,
+        choices=GITHUB_STATE_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Current state of the GitHub issue",
+    )
     github_comment_count = models.IntegerField(blank=True, default=0)
+    github_data_fetch_failed = models.BooleanField(
+        default=False,
+        help_text="Indicates if fetching GitHub data failed",
+    )
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
@@ -645,7 +661,7 @@ class Issue(models.Model):
     def fetch_github_data(self):
         """
         Fetches GitHub issue state and comment count from GitHub API.
-        Updates github_state and github_comment_count fields.
+        Updates github_state, github_comment_count, and github_data_fetch_failed fields.
         """
         if not self.github_url:
             return
@@ -654,22 +670,19 @@ class Issue(models.Model):
             # Parse URL properly to handle query strings and fragments
             parsed_url = urlparse(self.github_url)
 
-            # Validate it's a GitHub URL
-            if "github.com" not in parsed_url.netloc:
-                # Clear stale data if URL changed to non-GitHub
+            if not parsed_url.netloc.endswith(".github.com") and parsed_url.netloc != "github.com":
                 self.github_state = None
                 self.github_comment_count = 0
-                self.save(update_fields=["github_state", "github_comment_count"])
+                self.github_data_fetch_failed = True
+                self.save(update_fields=["github_state", "github_comment_count", "github_data_fetch_failed"])
                 return
 
-            # Extract owner, repo, and issue number from path
-            # Expected format: /owner/repo/issues/number
             path_parts = parsed_url.path.strip("/").split("/")
             if len(path_parts) < 4 or path_parts[2] != "issues":
-                # Clear stale data if URL format is invalid
                 self.github_state = None
                 self.github_comment_count = 0
-                self.save(update_fields=["github_state", "github_comment_count"])
+                self.github_data_fetch_failed = True
+                self.save(update_fields=["github_state", "github_comment_count", "github_data_fetch_failed"])
                 return
 
             owner = path_parts[0]
@@ -690,12 +703,22 @@ class Issue(models.Model):
             response.raise_for_status()
             data = response.json()
 
-            self.github_state = data.get("state", "unknown")
+            # Map GitHub state to our choices - normalize to 'open' or 'closed'
+            raw_state = data.get("state", "")
+            if raw_state == "open":
+                self.github_state = "open"
+            else:
+                # Treat any other state (closed, merged, etc.) as closed
+                self.github_state = "closed"
+
             self.github_comment_count = data.get("comments", 0)
-            self.save(update_fields=["github_state", "github_comment_count"])
+            self.github_data_fetch_failed = False
+            self.save(update_fields=["github_state", "github_comment_count", "github_data_fetch_failed"])
 
         except (requests.exceptions.RequestException, KeyError, IndexError) as e:
             logger.warning(f"Error fetching GitHub data for issue {self.id}: {e}")
+            self.github_data_fetch_failed = True
+            self.save(update_fields=["github_data_fetch_failed"])
 
     class Meta:
         ordering = ["-created"]
