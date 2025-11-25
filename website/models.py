@@ -627,6 +627,7 @@ class Issue(models.Model):
         if self.cve_id is None:
             return None
         from website.cache.cve_cache import get_cached_cve_score
+
         return get_cached_cve_score(self.cve_id)
 
     class Meta:
@@ -1828,7 +1829,7 @@ class ContributorStats(models.Model):
         unique_together = ("contributor", "repo", "date", "granularity")
 
     def __str__(self):
-        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        return f"{self.contributor.name} in {self.repo.name} on {self.date} [{self.granularity}]"
 
 
 class SlackBotActivity(models.Model):
@@ -2649,7 +2650,7 @@ class HackathonSponsor(models.Model):
         unique_together = ("hackathon", "organization")
 
     def __str__(self):
-        return f"{self.organization.name} - {self.get_sponsor_level_display()} " f"sponsor for {self.hackathon.name}"
+        return f"{self.organization.name} - {self.get_sponsor_level_display()} sponsor for {self.hackathon.name}"
 
 
 class HackathonPrize(models.Model):
