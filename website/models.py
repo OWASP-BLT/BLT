@@ -767,6 +767,22 @@ class InviteFriend(models.Model):
         return f"Invite from {self.sender}"
 
 
+class InviteOrganization(models.Model):
+    sender = models.ForeignKey(User, related_name="sent_org_invites", on_delete=models.SET_NULL, null=True)
+    email = models.EmailField()
+    organization_name = models.CharField(max_length=255, blank=True)
+    referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False, unique=True)
+    organization = models.ForeignKey(
+        "Organization", null=True, blank=True, related_name="invites", on_delete=models.SET_NULL
+    )
+    points_awarded = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        sender_name = self.sender.username if self.sender else "Unknown"
+        return f"Organization invite from {sender_name} to {self.email}"
+
+
 def user_images_path(instance, filename):
     from django.template.defaultfilters import slugify
 
