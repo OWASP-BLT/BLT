@@ -126,6 +126,15 @@ jobs:
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
             
+            // Build dynamic URLs for buttons
+            const prNumber = context.issue.number;
+            const addLabelUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${prNumber}/labels`;
+            const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/pre-commit-fix.yaml`;
+            
+            // Build shield.io badge URLs for button appearance
+            const labelBadge = 'https://img.shields.io/badge/Add_Label-fix--pre--commit-blue?style=for-the-badge&logo=github';
+            const workflowBadge = 'https://img.shields.io/badge/Run_Workflow-Pre--commit_Fix-green?style=for-the-badge&logo=github-actions';
+            
             const message = `## ❌ Pre-commit checks failed
             
             The pre-commit hooks found issues that need to be fixed. 
@@ -134,15 +143,14 @@ jobs:
             
             You can automatically fix most issues by using one of these methods:
             
-            1. **Add the \`fix-pre-commit\` label** to this PR to automatically run pre-commit fixes
-               - Click on "Labels" in the sidebar →
-               - Select or type \`fix-pre-commit\` →
-               - The workflow will automatically run and commit fixes
+            | Action | Button |
+            |--------|--------|
+            | **Add the \`fix-pre-commit\` label** to trigger automatic fixes | [![Add Label](${labelBadge})](${addLabelUrl}) |
+            | **Run the pre-commit fix workflow** manually | [![Run Workflow](${workflowBadge})](${workflowUrl}) |
             
-            2. **Manually trigger the workflow**
-               - Go to the [Pre-commit fix workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/pre-commit-fix.yaml)
-               - Click "Run workflow"
-               - Select this PR's branch
+            > **How to use:**
+            > - Click the **Add Label** button → Add \`fix-pre-commit\` label → Workflow runs automatically
+            > - Or click **Run Workflow** → Click "Run workflow" dropdown → Select this PR's branch
             
             ### 💻 **Manual Fix (Local)**
             
