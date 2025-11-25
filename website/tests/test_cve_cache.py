@@ -279,7 +279,7 @@ class TestFetchCveScoreFromApi:
                 return 1  # Passes len() check
             
             def __getitem__(self, key):
-                raise IndexError("list index out of range")
+                raise IndexError
         
         mock_response.json.return_value = {
             "resultsPerPage": 1,
