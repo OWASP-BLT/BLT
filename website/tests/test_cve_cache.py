@@ -11,9 +11,9 @@ from django.core.cache import cache
 from website.cache.cve_cache import CACHE_NONE, fetch_cve_score_from_api, get_cached_cve_score, get_cve_cache_key
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def clear_cache():
-    """Clear cache before each test."""
+    """Clear cache before and after each test."""
     cache.clear()
     yield
     cache.clear()
@@ -325,7 +325,8 @@ class TestGetCachedCveScore:
         # Verify None was cached with sentinel value
         cache_key = get_cve_cache_key(cve_id)
         cached_value = cache.get(cache_key)
-        assert cached_value == CACHE_NONE
+        assert cached_value is not None, "Cache should contain sentinel value, not None"
+        assert cached_value == CACHE_NONE, f"Expected {CACHE_NONE}, got {cached_value}"
 
         # Second call - cache hit, should NOT call API again
         mock_fetch.reset_mock()
