@@ -38,7 +38,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
@@ -945,6 +945,7 @@ def delete_forum_post(request):
         return JsonResponse({"status": "error", "message": "Server error occurred"})
 
 
+@ensure_csrf_cookie
 def view_forum(request):
     # Annotate categories with post counts
     categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
@@ -961,6 +962,7 @@ def view_forum(request):
         ForumPost.objects.select_related("user", "category")
         .prefetch_related("comments")
         .annotate(comment_count=Count("comments"))
+        .order_by("-created")  # Sort by newest first
         .all()
     )
 

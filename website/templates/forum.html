@@ -132,14 +132,14 @@
                         <div class="flex justify-between items-center px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
                             <div class="flex gap-2">
                                 <button type="button"
-                                        class="flex items-center gap-2 px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 transition-colors duration-200 {% if post.user_vote and post.user_vote.up_vote %}bg-[#e74c3c] text-white{% endif %}"
+                                        class="flex items-center gap-2 px-4 py-2 rounded-md transition-colors duration-200 {% if post.user_vote and post.user_vote.up_vote %}bg-[#e74c3c] text-white hover:bg-[#c0392b] hover:text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700{% endif %}"
                                         data-vote-type="up"
                                         data-suggestion-id="{{ post.id }}">
                                     <i class="fas fa-arrow-up"></i>
                                     <span class="font-medium">{{ post.up_votes }}</span>
                                 </button>
                                 <button type="button"
-                                        class="flex items-center gap-2 px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 transition-colors duration-200 {% if post.user_vote and post.user_vote.down_vote %}bg-[#e74c3c] text-white{% endif %}"
+                                        class="flex items-center gap-2 px-4 py-2 rounded-md transition-colors duration-200 {% if post.user_vote and post.user_vote.down_vote %}bg-[#e74c3c] text-white hover:bg-[#c0392b] hover:text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700{% endif %}"
                                         data-vote-type="down"
                                         data-suggestion-id="{{ post.id }}">
                                     <i class="fas fa-arrow-down"></i>
@@ -286,43 +286,6 @@
         document.querySelectorAll('[data-vote-type]').forEach(button => {
             button.addEventListener('click', handleVote);
         });
-
-        document.querySelectorAll('[data-suggestion-id]').forEach(button => {
-            const suggestionId = button.dataset.suggestionId;
-            if (suggestionId) {
-                fetchVoteStatus(suggestionId);
-            }
-        });
-    }
-
-    function fetchVoteStatus(suggestionId) {
-        fetch('/forum/set-vote-status/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({id: suggestionId}),
-        })
-        .then(response => {
-            if (response.redirected) {
-                // Unauthenticated users don't need per-post vote state
-                return null;
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!data) return;
-            const upButton = document.querySelector(`[data-vote-type="up"][data-suggestion-id="${suggestionId}"]`);
-            const downButton = document.querySelector(`[data-vote-type="down"][data-suggestion-id="${suggestionId}"]`);
-            
-            if (data.up_vote) {
-                upButton?.classList.add('bg-[#e74c3c]', 'text-white');
-            } else if (data.down_vote) {
-                downButton?.classList.add('bg-[#e74c3c]', 'text-white');
-            }
-        })
-        .catch(error => console.error('Error fetching vote status:', error));
     }
 
     function handleVote(event) {
@@ -332,6 +295,19 @@
         
         if (!postId || !voteType) {
             console.error('Missing required data attributes');
+            return;
+        }
+
+        // Check if user is authenticated
+        const container = document.querySelector('[data-user-authenticated]');
+        const isAuthenticated = container && container.dataset.userAuthenticated === 'true';
+        
+        if (!isAuthenticated) {
+            showLoginMessage('Please log in to vote on discussions.');
+            setTimeout(() => {
+                const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = `/accounts/login/?next=${currentPath}`;
+            }, 2000);
             return;
         }
 
@@ -357,9 +333,16 @@
             }),
         })
         .then(response => {
-            if (response.redirected) {
-                showLoginMessage('Please log in to vote on discussions.');
-                return null;
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    showLoginMessage('Please log in to vote on discussions.');
+                    setTimeout(() => {
+                        const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+                        window.location.href = `/accounts/login/?next=${currentPath}`;
+                    }, 2000);
+                    return null;
+                }
+                throw new Error('Failed to vote');
             }
             return response.json();
         })
@@ -370,10 +353,23 @@
                 upButton.querySelector('span').textContent = data.up_vote;
                 downButton.querySelector('span').textContent = data.down_vote;
 
-                upButton.classList.toggle('bg-[#e74c3c]', upVote);
-                upButton.classList.toggle('text-white', upVote);
-                downButton.classList.toggle('bg-[#e74c3c]', downVote);
-                downButton.classList.toggle('text-white', downVote);
+                // Update upvote button styling
+                if (upVote) {
+                    upButton.classList.add('bg-[#e74c3c]', 'text-white', 'hover:text-white');
+                    upButton.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+                } else {
+                    upButton.classList.remove('bg-[#e74c3c]', 'text-white', 'hover:text-white');
+                    upButton.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+                }
+
+                // Update downvote button styling
+                if (downVote) {
+                    downButton.classList.add('bg-[#e74c3c]', 'text-white', 'hover:text-white');
+                    downButton.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+                } else {
+                    downButton.classList.remove('bg-[#e74c3c]', 'text-white', 'hover:text-white');
+                    downButton.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+                }
             } else {
                 showErrorMessage(data.error || 'Failed to vote. Please try again.');
             }
@@ -385,9 +381,18 @@
     }
 
     function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 
     function showLoginMessage(message) {
@@ -494,9 +499,16 @@
             }),
         })
         .then(response => {
-            if (response.redirected) {
-                showLoginMessage('Please log in to create a discussion.');
-                return null;
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    showLoginMessage('Please log in to create a discussion.');
+                    setTimeout(() => {
+                        const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+                        window.location.href = `/accounts/login/?next=${currentPath}`;
+                    }, 2000);
+                    return null;
+                }
+                throw new Error('Failed to create discussion');
             }
             return response.json();
         })
@@ -535,9 +547,16 @@
             }),
         })
         .then(response => {
-            if (response.redirected) {
-                showLoginMessage('Please log in to comment on discussions.');
-                return null;
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    showLoginMessage('Please log in to comment on discussions.');
+                    setTimeout(() => {
+                        const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+                        window.location.href = `/accounts/login/?next=${currentPath}`;
+                    }, 2000);
+                    return null;
+                }
+                throw new Error('Failed to post comment');
             }
             return response.json();
         })
