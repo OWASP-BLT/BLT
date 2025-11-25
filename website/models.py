@@ -573,7 +573,7 @@ class Issue(models.Model):
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
     github_state = models.CharField(max_length=10, null=True, blank=True)
-    github_comment_count = models.IntegerField(null=True, blank=True, default=0)
+    github_comment_count = models.IntegerField(blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
