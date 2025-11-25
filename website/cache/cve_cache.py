@@ -100,11 +100,20 @@ def fetch_cve_score_from_api(cve_id):
         if not metrics:
             return None
         
-        # Get the first available CVSS metric (prefer v3.1, then v3.0, then v2.0)
-        cvss_metric_v = next(iter(metrics))
-        cvss_data = metrics[cvss_metric_v]
+        # Prefer CVSS v3.1, then v3.0, then v2.0
+        preferred_versions = ["cvssMetricV31", "cvssMetricV30", "cvssMetricV2"]
+        cvss_metric_v = None
+        cvss_data = None
         
-        if not cvss_data or len(cvss_data) == 0:
+        for version_key in preferred_versions:
+            if version_key in metrics:
+                candidate_data = metrics[version_key]
+                if candidate_data and len(candidate_data) > 0:
+                    cvss_metric_v = version_key
+                    cvss_data = candidate_data
+                    break
+        
+        if not cvss_metric_v or not cvss_data:
             return None
         
         base_score = cvss_data[0].get("cvssData", {}).get("baseScore")
