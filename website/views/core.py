@@ -869,7 +869,7 @@ def add_forum_post(request):
 
             post = ForumPost.objects.create(**post_data)
 
-            return JsonResponse({"success": True, "post_id": post.id})
+            return JsonResponse({"status": "success", "post_id": post.id})
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
         except (ValueError, TypeError):
@@ -898,7 +898,7 @@ def add_forum_comment(request):
             post = ForumPost.objects.get(id=post_id)
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
 
-            return JsonResponse({"success": True, "comment_id": comment.id})
+            return JsonResponse({"status": "success", "comment_id": comment.id})
         except ForumPost.DoesNotExist:
             return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
