@@ -41,6 +41,7 @@ from website.api.views import (
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
+    trademark_search_api,
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
@@ -1189,6 +1190,7 @@ urlpatterns = [
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
+    path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
 ]
 
 if settings.DEBUG:
