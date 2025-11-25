@@ -2,6 +2,7 @@
 CVE caching utilities for NVD API responses.
 """
 import logging
+from decimal import Decimal
 
 import requests
 from django.conf import settings
@@ -109,7 +110,6 @@ def fetch_cve_score_from_api(cve_id):
         base_score = cvss_data[0].get("cvssData", {}).get("baseScore")
         
         if base_score is not None:
-            from decimal import Decimal
             return Decimal(str(base_score))
         
         return None
