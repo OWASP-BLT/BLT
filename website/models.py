@@ -651,13 +651,30 @@ class Issue(models.Model):
             return
 
         try:
-            parts = self.github_url.rstrip("/").split("/")
-            if len(parts) < 7 or "github.com" not in self.github_url:
+            # Parse URL properly to handle query strings and fragments
+            parsed_url = urlparse(self.github_url)
+
+            # Validate it's a GitHub URL
+            if "github.com" not in parsed_url.netloc:
+                # Clear stale data if URL changed to non-GitHub
+                self.github_state = None
+                self.github_comment_count = 0
+                self.save(update_fields=["github_state", "github_comment_count"])
                 return
 
-            owner = parts[3]
-            repo = parts[4]
-            issue_number = parts[6]
+            # Extract owner, repo, and issue number from path
+            # Expected format: /owner/repo/issues/number
+            path_parts = parsed_url.path.strip("/").split("/")
+            if len(path_parts) < 4 or path_parts[2] != "issues":
+                # Clear stale data if URL format is invalid
+                self.github_state = None
+                self.github_comment_count = 0
+                self.save(update_fields=["github_state", "github_comment_count"])
+                return
+
+            owner = path_parts[0]
+            repo = path_parts[1]
+            issue_number = path_parts[3]
 
             api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
 
@@ -665,8 +682,9 @@ class Issue(models.Model):
 
             from django.conf import settings
 
+            # Use Bearer format for modern GitHub tokens (OAuth, fine-grained PATs, JWTs)
             if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN != "blank":
-                headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+                headers["Authorization"] = f"Bearer {settings.GITHUB_TOKEN}"
 
             response = requests.get(api_url, headers=headers, timeout=10)
             response.raise_for_status()
