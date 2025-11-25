@@ -8,7 +8,7 @@ import pytest
 import requests
 from django.core.cache import cache
 
-from website.cache.cve_cache import fetch_cve_score_from_api, get_cached_cve_score, get_cve_cache_key
+from website.cache.cve_cache import CACHE_NONE, fetch_cve_score_from_api, get_cached_cve_score, get_cve_cache_key
 
 
 @pytest.fixture
@@ -314,8 +314,6 @@ class TestGetCachedCveScore:
     @patch("website.cache.cve_cache.fetch_cve_score_from_api")
     def test_cache_miss_api_returns_none(self, mock_fetch, clear_cache):
         """Test that None results are cached using sentinel value to avoid repeated API calls."""
-        from website.cache.cve_cache import CACHE_NONE
-
         cve_id = "CVE-2024-9999"
         mock_fetch.return_value = None
 
@@ -325,7 +323,6 @@ class TestGetCachedCveScore:
         assert mock_fetch.call_count == 1
 
         # Verify None was cached with sentinel value
-        from website.cache.cve_cache import get_cve_cache_key
         cache_key = get_cve_cache_key(cve_id)
         cached_value = cache.get(cache_key)
         assert cached_value == CACHE_NONE
