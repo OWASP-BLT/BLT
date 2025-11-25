@@ -333,11 +333,11 @@ class LeaderboardTests(TestCase):
             repo=self.repo,
             type="pull_request",
             is_merged=True,
+            merged_at=timezone.now(),  # Add merged_at for 6-month filter
             title="Test PR 1",
             state="closed",
             created_at=timezone.now(),
             updated_at=timezone.now(),
-            merged_at=timezone.now(),
             url="https://github.com/OWASP-BLT/BLT/pull/1",
             issue_id=1,
         )
@@ -347,11 +347,11 @@ class LeaderboardTests(TestCase):
             repo=self.repo,
             type="pull_request",
             is_merged=True,
+            merged_at=timezone.now(),  # Add merged_at for 6-month filter
             title="Test PR 2",
             state="closed",
             created_at=timezone.now(),
             updated_at=timezone.now(),
-            merged_at=timezone.now(),
             url="https://github.com/OWASP-BLT/BLT/pull/2",
             issue_id=2,
         )
@@ -392,7 +392,7 @@ class LeaderboardTests(TestCase):
         self.assertContains(response, "80")
         self.assertContains(response, "40")
 
-        # Check PR leaderboard
+        # Check PR leaderboard - GitHub URLs should appear in href attributes
         self.assertContains(response, "https://github.com/user1")
         self.assertContains(response, "https://github.com/user2")
 
