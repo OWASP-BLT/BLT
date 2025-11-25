@@ -17,6 +17,20 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="issue",
             name="github_state",
-            field=models.CharField(blank=True, max_length=10, null=True),
+            field=models.CharField(
+                blank=True,
+                choices=[("open", "Open"), ("closed", "Closed")],
+                help_text="Current state of the GitHub issue",
+                max_length=10,
+                null=True,
+            ),
+        ),
+        migrations.AddField(
+            model_name="issue",
+            name="github_data_fetch_failed",
+            field=models.BooleanField(
+                default=False,
+                help_text="Indicates if fetching GitHub data failed",
+            ),
         ),
     ]
