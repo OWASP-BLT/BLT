@@ -8,11 +8,7 @@ import pytest
 import requests
 from django.core.cache import cache
 
-from website.cache.cve_cache import (
-    fetch_cve_score_from_api,
-    get_cached_cve_score,
-    get_cve_cache_key,
-)
+from website.cache.cve_cache import fetch_cve_score_from_api, get_cached_cve_score, get_cve_cache_key
 
 
 @pytest.fixture
