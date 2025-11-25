@@ -9,15 +9,13 @@
 
   $('.userDomainListItem').click(function(e) {
       var name = e.currentTarget;
-      console.log(name)
       $("#domain_"+name.getAttribute("id")).text(name.getAttribute("data-name"));
       $("#domain"+name.getAttribute("id")).val(name.getAttribute("value"));
   });
 
-  $("#update-role").submit(function(e){z
+  $("#update-role").submit(function(e){
     e.preventDefault();
       var serializedData = $(this).serialize();
-      console.log(serializedData)
       $.ajax({
             type: 'POST',
             url: "/dashboard/organization/settings/role/update",
@@ -84,7 +82,6 @@
   $("#add-role").submit(function(e){
     e.preventDefault();
       var serializedData = $(this).serialize();
-      console.log(serializedData)
       $.ajax({
             type: 'POST',
             url: "/dashboard/organization/settings/role/add",
@@ -103,7 +100,6 @@
   $("#add-or-update-organization").submit(function(e){
     e.preventDefault();
       var serializedData = $(this).serialize();
-      console.log(serializedData)
       $.ajax({
             type: 'POST',
             url: "/dashboard/admin/organization/addorupdate",
@@ -122,13 +118,11 @@
   $("#add-or-update-domain").submit(function(e){
     e.preventDefault();
       var serializedData = $(this).serialize();
-      console.log(serializedData)
       $.ajax({
             type: 'POST',
             url: "/dashboard/organization/domain/addorupdate",
             data: serializedData,
             success: function (response) {
-              console.log(response)
               window.location.reload();
             },
             error: function (response) {
