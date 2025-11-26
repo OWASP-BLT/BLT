@@ -1,6 +1,6 @@
-import requests
 from urllib.parse import quote_plus
 
+import requests
 from django.conf import settings
 from django.utils.dateparse import parse_datetime
 
