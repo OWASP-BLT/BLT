@@ -1353,7 +1353,6 @@
                     button.addEventListener("click", function (e) {
                         e.stopPropagation();
                         const notificationId = this.getAttribute("data-notification-id");
-                        console.log("Deleting notification with ID:", notificationId);
                         deleteNotification(notificationId, this.closest("div")); 
                     });
                 });
