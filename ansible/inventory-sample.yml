@@ -24,6 +24,8 @@ all:
     postgres_db_name: blt
     postgres_db_user: blt_user
     postgres_db_password: changeme_secure_password
+    postgres_host: 127.0.0.1
+    postgres_port: 5432
     
     # Enable remote PostgreSQL access (true/false)
     # When false, PostgreSQL will only accept local connections
