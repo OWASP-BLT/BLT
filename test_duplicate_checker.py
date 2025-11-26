@@ -15,22 +15,24 @@ Usage:
 """
 import os
 import sys
+
 import django
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'blt.settings')
 django.setup()
 
-from django.test import TestCase, Client
 from django.contrib.auth.models import User
-from website.models import Domain, Issue
+from django.test import Client, TestCase
+
 from website.duplicate_checker import (
-    normalize_text,
-    extract_domain_from_url,
     calculate_similarity,
-    extract_keywords,
     check_for_duplicates,
+    extract_domain_from_url,
+    extract_keywords,
+    normalize_text,
 )
+from website.models import Domain, Issue
 
 
 class DuplicateCheckerUnitTests(TestCase):
