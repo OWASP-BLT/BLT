@@ -21,10 +21,11 @@ class Command(BaseCommand):
                 logger.error("Error sending weekly Slack reports", exc_info=True)
 
             # Add other weekly commands here
-            # try:
-            #     call_command('another_weekly_command')
-            # except Exception as e:
-            #     logger.error("Error in another weekly command", exc_info=True)
+            try:
+                call_command('cleanup_sample_invites', days=7)
+            except Exception as e:
+                logger.error("Error in sample invites cleanup", exc_info=True)
+
         except Exception as e:
             logger.error("Error in weekly tasks", exc_info=True)
             raise
