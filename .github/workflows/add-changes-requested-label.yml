@@ -52,8 +52,13 @@ jobs:
             // We look at the most recent review from each reviewer
             const reviewerStates = new Map();
             
-            // Process reviews in chronological order (they come sorted by creation date)
-            for (const review of reviews) {
+            // Sort reviews by submitted_at to ensure we process them chronologically
+            const sortedReviews = reviews
+              .filter(review => review.user && review.user.login) // Filter out reviews with null users
+              .sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at));
+            
+            // Process reviews in chronological order to track most recent state
+            for (const review of sortedReviews) {
               reviewerStates.set(review.user.login, review.state);
             }
             
