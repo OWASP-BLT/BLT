@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    Slack Bot - OWASP BLT
+{% endblock title %}
+{% block description %}
+    Integrate OWASP BLT Slack Bot with your workspace. Access OWASP projects, chapters, events, and more directly from Slack.
+{% endblock description %}
+{% block keywords %}
+    OWASP, BLT, Slack Bot, Slack Integration, OWASP Projects, GSoC, Slack Commands, Bug Logging, Chapters, Events
+{% endblock keywords %}
+{% block og_title %}
+    OWASP BLT Slack Bot - Connect Your Workspace
+{% endblock og_title %}
+{% block og_description %}
+    Bring OWASP resources to your Slack workspace. Search projects, view chapters, track events, and collaborate with the OWASP community.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen">
+        <!-- Hero Section -->
+        <div class="bg-[#e74c3c] text-white">
+            <div class="container mx-auto px-4 py-16 md:py-24">
+                <div class="max-w-4xl mx-auto text-center">
+                    <div class="flex justify-center mb-6">
+                        <svg class="h-20 w-20"
+                             fill="currentColor"
+                             viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+                        </svg>
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">OWASP BLT Slack Bot</h1>
+                    <p class="text-xl md:text-2xl text-white/90 leading-relaxed mb-8">
+                        Bring the power of OWASP directly to your Slack workspace. Search projects, discover chapters, track GSoC opportunities, and stay updated with OWASP events—all without leaving Slack.
+                    </p>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        {% if slack_client_id %}
+                            <a href="https://slack.com/oauth/v2/authorize?client_id={{ slack_client_id }}&scope=channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands&user_scope="
+                               class="inline-flex items-center px-8 py-4 bg-white hover:bg-gray-100 text-gray-900 font-bold rounded-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105">
+                                <svg class="h-6 w-6 mr-3"
+                                     fill="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+                                </svg>
+                                Add to Slack
+                            </a>
+                        {% endif %}
+                        <a href="#commands"
+                           class="inline-flex items-center px-8 py-4 bg-transparent border-2 border-white hover:bg-white hover:text-[#e74c3c] text-white font-bold rounded-lg transition-all shadow-xl">
+                            View Commands
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container mx-auto px-4 py-12 md:py-20">
+            <!-- Features Section -->
+            <section class="mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center text-gray-900 dark:text-gray-100">
+                    Why Use Our Slack Bot?
+                </h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Feature 1 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <div class="text-[#e74c3c] mb-4">
+                            <svg class="h-12 w-12"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Discover OWASP Projects</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Search through all OWASP projects, filter by technology, and view detailed information about repositories, issues, and contributors—all from Slack.
+                        </p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <div class="text-[#e74c3c] mb-4">
+                            <svg class="h-12 w-12"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Connect with Chapters</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Explore OWASP chapters worldwide, find your local community, and get involved with security professionals in your area.
+                        </p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <div class="text-[#e74c3c] mb-4">
+                            <svg class="h-12 w-12"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">GSoC Opportunities</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Search Google Summer of Code projects by technology or mentor, view project details, and find the perfect opportunity to contribute.
+                        </p>
+                    </div>
+                    <!-- Feature 4 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <div class="text-[#e74c3c] mb-4">
+                            <svg class="h-12 w-12"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Track Events</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Stay updated with upcoming OWASP events, conferences, and community gatherings. Never miss an important event again.
+                        </p>
+                    </div>
+                    <!-- Feature 5 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <div class="text-[#e74c3c] mb-4">
+                            <svg class="h-12 w-12"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Platform Statistics</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Get real-time statistics about OWASP projects, issues, users, domains, and bug hunts directly in your Slack channel.
+                        </p>
+                    </div>
+                    <!-- Feature 6 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <div class="text-[#e74c3c] mb-4">
+                            <svg class="h-12 w-12"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">User Profiles</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Look up OWASP community members, view their contributions to projects, and discover their involvement in GSoC and mentorship programs.
+                        </p>
+                    </div>
+                </div>
+            </section>
+            <!-- Commands Section -->
+            <section id="commands" class="mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center text-gray-900 dark:text-gray-100">Available Commands</h2>
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Command 1 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start">
+                            <code class="flex-shrink-0 bg-gray-100 dark:bg-gray-900 text-[#e74c3c] px-4 py-2 rounded font-mono text-sm">/discover [search term]</code>
+                            <div class="ml-6">
+                                <p class="text-gray-700 dark:text-gray-300 mb-2">
+                                    Search and discover OWASP projects. Use without arguments to see OWASP-BLT repositories, or add a search term to find projects by name, technology, or topic.
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-gray-500 italic">
+                                    Example: <code>/discover python</code> or <code>/discover security</code>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Command 2 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start">
+                            <code class="flex-shrink-0 bg-gray-100 dark:bg-gray-900 text-[#e74c3c] px-4 py-2 rounded font-mono text-sm">/blt [subcommand]</code>
+                            <div class="ml-6">
+                                <p class="text-gray-700 dark:text-gray-300 mb-2">Multi-purpose command with several subcommands:</p>
+                                <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400 text-sm">
+                                    <li>
+                                        <code>user &lt;username&gt;</code> - View OWASP profile for a GitHub user
+                                    </li>
+                                    <li>
+                                        <code>chapters [location]</code> - Browse OWASP chapters worldwide
+                                    </li>
+                                    <li>
+                                        <code>projects [search]</code> - Discover OWASP projects
+                                    </li>
+                                    <li>
+                                        <code>gsoc [search]</code> - View GSoC 2025 projects
+                                    </li>
+                                    <li>
+                                        <code>events [category]</code> - Get upcoming OWASP events
+                                    </li>
+                                    <li>
+                                        <code>committees [name]</code> - View OWASP committees
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Command 3 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start">
+                            <code class="flex-shrink-0 bg-gray-100 dark:bg-gray-900 text-[#e74c3c] px-4 py-2 rounded font-mono text-sm">/gsoc25 [search]</code>
+                            <div class="ml-6">
+                                <p class="text-gray-700 dark:text-gray-300 mb-2">
+                                    Search Google Summer of Code 2025 projects. Filter by technology, project name, or mentor.
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-gray-500 italic">
+                                    Example: <code>/gsoc25 python</code> or <code>/gsoc25 mentor:donnie</code>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Command 4 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start">
+                            <code class="flex-shrink-0 bg-gray-100 dark:bg-gray-900 text-[#e74c3c] px-4 py-2 rounded font-mono text-sm">/stats</code>
+                            <div class="ml-6">
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    Get comprehensive statistics about the OWASP BLT platform including project counts, user statistics, domains, hunts, and more.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Command 5 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start">
+                            <code class="flex-shrink-0 bg-gray-100 dark:bg-gray-900 text-[#e74c3c] px-4 py-2 rounded font-mono text-sm">/contrib</code>
+                            <div class="ml-6">
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    Learn how to contribute to OWASP projects. Get guidance on joining project channels, finding projects, and submitting contributions.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Command 6 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start">
+                            <code class="flex-shrink-0 bg-gray-100 dark:bg-gray-900 text-[#e74c3c] px-4 py-2 rounded font-mono text-sm">/help</code>
+                            <div class="ml-6">
+                                <p class="text-gray-700 dark:text-gray-300">Display a list of all available commands with brief descriptions.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Command 7 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start">
+                            <code class="flex-shrink-0 bg-gray-100 dark:bg-gray-900 text-[#e74c3c] px-4 py-2 rounded font-mono text-sm">/report &lt;description&gt;</code>
+                            <div class="ml-6">
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    Report a bug or issue directly from Slack. Your report will be logged and tracked in the system.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Command 8 -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start">
+                            <code class="flex-shrink-0 bg-gray-100 dark:bg-gray-900 text-[#e74c3c] px-4 py-2 rounded font-mono text-sm">/apps</code>
+                            <div class="ml-6">
+                                <p class="text-gray-700 dark:text-gray-300">View a list of all Slack apps installed in your workspace.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Benefits Section -->
+            <section class="mb-20 bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 md:p-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-8 text-center text-gray-900 dark:text-gray-100">
+                    Benefits for Your Organization
+                </h2>
+                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 text-[#e74c3c] mr-4">
+                            <svg class="h-8 w-8"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Increased Productivity</h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Access OWASP resources without switching between tools. Stay in Slack and keep your workflow uninterrupted.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 text-[#e74c3c] mr-4">
+                            <svg class="h-8 w-8"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Security First</h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Built by OWASP, for OWASP. Connect your team to best practices and resources from the world's leading application security community.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 text-[#e74c3c] mr-4">
+                            <svg class="h-8 w-8"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Enhanced Collaboration</h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Share project information, event details, and contribution opportunities with your team instantly.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 text-[#e74c3c] mr-4">
+                            <svg class="h-8 w-8"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Real-Time Updates</h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Stay informed about the latest OWASP events, project updates, and community activities as they happen.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- CTA Section -->
+            <section class="text-center">
+                <div class="bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-2xl p-12 text-white">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-6">Ready to Get Started?</h2>
+                    <p class="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
+                        Connect the OWASP BLT Slack Bot to your workspace in seconds and bring the power of OWASP to your team.
+                    </p>
+                    {% if slack_client_id %}
+                        <a href="https://slack.com/oauth/v2/authorize?client_id={{ slack_client_id }}&scope=channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands&user_scope="
+                           class="inline-flex items-center px-8 py-4 bg-white hover:bg-gray-100 text-[#e74c3c] font-bold rounded-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105">
+                            <svg class="h-6 w-6 mr-3"
+                                 fill="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+                            </svg>
+                            Add to Slack Now
+                        </a>
+                    {% else %}
+                        <p class="text-white/80 italic">Slack integration is not configured yet. Contact your administrator.</p>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </div>
+{% endblock content %}
