@@ -121,6 +121,19 @@ class SlackIntegration(models.Model):
         blank=True,
         help_text="Custom welcome message for new members. Use Slack markdown formatting.",
     )
+    # Weekly report channel configuration
+    weekly_report_channel_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Channel name for weekly reports (optional, defaults to default_channel_name)",
+    )
+    weekly_report_channel_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Channel ID for weekly reports (optional, defaults to default_channel_id)",
+    )
 
     def __str__(self):
         return f"Slack Integration for {self.integration.organization.name}"

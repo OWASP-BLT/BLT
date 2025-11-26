@@ -1,8 +1,7 @@
 import logging
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
-
-# from django.core import management
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -15,15 +14,18 @@ class Command(BaseCommand):
         try:
             logger.info(f"Starting weekly scheduled tasks at {timezone.now()}")
 
-            # Add commands to be executed weekly
-            # management.call_command('weekly_command1')
-            # management.call_command('weekly_command2')
+            # Send weekly Slack reports to organizations with Slack integration
+            try:
+                call_command("slack_weekly_report")
+            except Exception as e:
+                logger.error("Error sending weekly Slack reports", exc_info=True)
 
-            # Clean up old sample invite records (older than 7 days)
-            from django.core import management
+            # Add other weekly commands here
+            try:
+                call_command('cleanup_sample_invites', days=7)
+            except Exception as e:
+                logger.error("Error in sample invites cleanup", exc_info=True)
 
-            management.call_command("cleanup_sample_invites", days=7)
-            logger.info("Completed sample invites cleanup")
         except Exception as e:
-            logger.error(f"Error in weekly tasks: {str(e)}")
+            logger.error("Error in weekly tasks", exc_info=True)
             raise
