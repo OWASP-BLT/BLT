@@ -766,7 +766,6 @@ function updateGithubRepos(slug) {
     let eventSource;
     try {
         eventSource = new EventSource(`/organization/${slug}/update-repos/`);
-        console.log('EventSource created:', eventSource);
     } catch (err) {
         console.error('Error creating EventSource:', err);
         statusMessages.innerHTML = `<div class="text-red-500">Error: ${err.message}</div>`;
@@ -788,12 +787,10 @@ function updateGithubRepos(slug) {
     // Handle connection open
     eventSource.onopen = function() {
         clearTimeout(connectionTimeout);
-        console.log('EventSource connection opened');
     };
     
     // Handle incoming messages
     eventSource.onmessage = function(event) {
-        console.log('EventSource message received:', event.data);
         const message = event.data;
         
         // Check if the update is complete
