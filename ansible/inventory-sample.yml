@@ -28,8 +28,9 @@ all:
     postgres_port: 5432
     
     # Enable remote PostgreSQL access (true/false)
-    # When false, PostgreSQL will only accept local connections
+    # When false, PostgreSQL will only accept local connections (recommended for production)
     # When true, PostgreSQL will listen on all interfaces and port 5432 will be opened in firewall
+    # WARNING: Remote access allows connections from any IP (0.0.0.0/0). Consider using SSH tunnels or VPN instead.
     enable_remote_postgres: false
     
     # Uvicorn workers

@@ -137,7 +137,7 @@
         owner: "{{ app_user }}"
         group: "{{ app_user }}"
         mode: '0600'
-        content: "{{ lookup('password', '/dev/null', length=64, chars='ascii_letters,digits') }}"
+        content: "{{ lookup('password', '/dev/null', length=64, chars='ascii_letters,digits,!@#$%^&*()_+-=') }}"
       when: not secret_key_file.stat.exists or secret_key_file.stat.size == 0
 
     - name: Read persisted SECRET_KEY
@@ -231,6 +231,7 @@
       lineinfile:
         path: "{{ postgres_hba_file }}"
         insertafter: EOF
+        # WARNING: This allows connections from any IP address. For production, consider restricting to specific IP ranges.
         line: 'host    all             all             0.0.0.0/0               scram-sha-256'
       when: enable_remote_postgres | bool
       notify: Restart postgres
