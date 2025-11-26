@@ -215,7 +215,7 @@ def mark_lecture_complete(request):
 
         except Exception as e:
             logger.error(f"Error: {str(e)}")
-            return JsonResponse({"status": "error", "message": "An error occured, please try again later"}, status=400)
+            return JsonResponse({"status": "error", "message": "An error occurred, please try again later"}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request method"})
 
@@ -471,7 +471,7 @@ def update_sections_order(request, course_id):
         return JsonResponse({"status": "success"})
     except Exception as e:
         logger.error(f"Error: {str(e)}")
-        return JsonResponse({"status": "error", "message": "An error occured, please try again later"}, status=400)
+        return JsonResponse({"status": "error", "message": "An error occurred, please try again later"}, status=400)
 
 
 @instructor_required
@@ -495,7 +495,7 @@ def update_lectures_order(request, section_id):
         return JsonResponse({"status": "success"})
     except Exception as e:
         logger.error(f"Error: {str(e)}")
-        return JsonResponse({"status": "error", "message": "An error occured, please try again later"}, status=400)
+        return JsonResponse({"status": "error", "message": "An error occurred, please try again later"}, status=400)
 
 
 def get_course_content(request, course_id):
