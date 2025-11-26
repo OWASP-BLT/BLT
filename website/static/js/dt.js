@@ -21,7 +21,6 @@ var MtrDatepickerDemo = (function() {
 
 	function datepickerChange(resultElement, datepicker, elemId) {
 		var result = datepicker.format('YYYY-MM-DD HH:mm');
-		console.log("HERE")
 		if(elemId=="datepicker-1-res"){
 			$("#id_start_date").val(result);
 		}
