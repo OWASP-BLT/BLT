@@ -15,24 +15,28 @@
                   content="{% block description %}Seamlessly manage bug bounties, track vulnerabilities, and fortify your digital assets with {% env 'PROJECT_NAME' %}'s comprehensive platform. Empower your security team and engage researchers effectively.{% endblock description %}" />
             <meta name="keywords"
                   content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug bounty, vulnerability management, security platform, ethical hacking, cyber security, bug tracking, vulnerability, OWASP, application security{% endblock keywords %}" />
-            <!-- Open Graph Meta Tags for Social Sharing -->
+
+            <!-- Open Graph Meta Tags -->
             <meta property="og:title"
                   content="{% block og_title %} {% env 'PROJECT_NAME' %} | Your Hub for Secure Bug Bounty & Vulnerability Programs{% endblock og_title %}" />
-            {% comment %} <meta property="og:image" content="{% block og_image_url %}{% static 'images/OWASP_black_logo.svg' %}{% endblock og_image_url %}" /> {% endcomment %}
             <meta property="og:description"
                   content="{% block og_description %}Launch, manage, and scale your bug bounty programs with ease. {% env 'PROJECT_NAME' %} provides robust tools for submission, tracking, and remediation, ensuring your applications stay secure. Join the vanguard of cybersecurity.{% endblock og_description %}" />
             <meta property="og:type" content="website" />
         {% endblock metaTags %}
+
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
               rel="stylesheet">
+
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
               integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
+
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com/3.4.5"></script>
         <script>
@@ -40,40 +44,53 @@
                 darkMode: 'class',
             }
         </script>
+
         {% if not debug %}
             <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
                     crossorigin="anonymous"></script>
         {% endif %}
-        <!-- Dark mode: same as base.html -->
-        <script src="{% static 'js/darkMode.js' %}"></script>
+
+        <!-- Dark mode -->
+        <script src="{% static 'js/darkMode.js' %}" defer></script>
         <script>
             const theme = localStorage.getItem("theme");
             if (theme === "dark") {
                 document.documentElement.classList.add("dark");
             }
         </script>
+
     </head>
+
     <body>
         {% include "includes/header.html" %}
         {% include "includes/sidenav.html" %}
-        <div class="w-full h-[80px]"></div>
-        <main class="w-full">
+
+        <div class="w-full h-[80px] bg-gray-50 dark:bg-gray-900"></div>
+
+        <main class="w-full bg-gray-50 dark:bg-gray-900">
             {% block body %}
             {% endblock body %}
         </main>
+
         <!-- Messages container -->
         <div id="messages-container" class="fixed bottom-5 left-5 z-50 max-w-md">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500{% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500{% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
+                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in 
+                        {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500
+                        {% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500
+                        {% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500
+                        {% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
                         <div class="flex-grow mr-3">{{ message }}</div>
                         <button class="text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
                     </div>
                 {% endfor %}
             {% endif %}
         </div>
-        <!-- Include messages JavaScript -->
+
+        <!-- Messages JS -->
         <script src="{% static 'js/messages.js' %}"></script>
+
         {% block scripts %}
         {% endblock scripts %}
     </body>

@@ -178,6 +178,9 @@ class HackathonDetailView(DetailView):
         # Get the leaderboard
         context["leaderboard"] = hackathon.get_leaderboard()
 
+        # Get the reviewer leaderboard
+        context["reviewer_leaderboard"] = hackathon.get_reviewer_leaderboard()
+
         # Get repositories with merged PR counts
         repositories = hackathon.repositories.all()
         repo_ids = repositories.values_list("id", flat=True)
@@ -533,7 +536,7 @@ def _refresh_repository_pull_requests(hackathon, repo):
     # to get all PRs that might be relevant
     all_prs_data = []
     page = 1
-    max_pages = 5  # Limit to 5 pages (500 PRs) to avoid excessive API calls
+    max_pages = 100
 
     while page <= max_pages:
         params["page"] = page
