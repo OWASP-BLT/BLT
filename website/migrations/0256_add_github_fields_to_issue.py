@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="issue",
-            name="github_data_fetch_failed",
+            name="github_fetch_status",
             field=models.BooleanField(
                 default=False,
                 help_text="Indicates if fetching GitHub data failed",

@@ -578,15 +578,15 @@ class Issue(models.Model):
     closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
+    github_comment_count = models.IntegerField(blank=True, default=0)
     github_state = models.CharField(
         max_length=10,
-        choices=GITHUB_STATE_CHOICES,
-        null=True,
+        choices=[("open", "Open"), ("closed", "Closed")],
         blank=True,
+        null=True,
         help_text="Current state of the GitHub issue",
     )
-    github_comment_count = models.IntegerField(blank=True, default=0)
-    github_data_fetch_failed = models.BooleanField(
+    github_fetch_status = models.BooleanField(
         default=False,
         help_text="Indicates if fetching GitHub data failed",
     )
@@ -661,7 +661,7 @@ class Issue(models.Model):
     def fetch_github_data(self):
         """
         Fetches GitHub issue state and comment count from GitHub API.
-        Updates github_state, github_comment_count, and github_data_fetch_failed fields.
+        Updates github_state, github_comment_count, and github_fetch_status fields.
         """
         if not self.github_url:
             return
@@ -673,16 +673,16 @@ class Issue(models.Model):
             if not parsed_url.netloc.endswith(".github.com") and parsed_url.netloc != "github.com":
                 self.github_state = None
                 self.github_comment_count = 0
-                self.github_data_fetch_failed = True
-                self.save(update_fields=["github_state", "github_comment_count", "github_data_fetch_failed"])
+                self.github_fetch_status = True
+                self.save(update_fields=["github_state", "github_comment_count", "github_fetch_status"])
                 return
 
             path_parts = parsed_url.path.strip("/").split("/")
             if len(path_parts) < 4 or path_parts[2] != "issues":
                 self.github_state = None
                 self.github_comment_count = 0
-                self.github_data_fetch_failed = True
-                self.save(update_fields=["github_state", "github_comment_count", "github_data_fetch_failed"])
+                self.github_fetch_status = True
+                self.save(update_fields=["github_state", "github_comment_count", "github_fetch_status"])
                 return
 
             owner = path_parts[0]
@@ -712,13 +712,13 @@ class Issue(models.Model):
                 self.github_state = "closed"
 
             self.github_comment_count = data.get("comments", 0)
-            self.github_data_fetch_failed = False
-            self.save(update_fields=["github_state", "github_comment_count", "github_data_fetch_failed"])
+            self.github_fetch_status = False
+            self.save(update_fields=["github_state", "github_comment_count", "github_fetch_status"])
 
         except (requests.exceptions.RequestException, KeyError, IndexError) as e:
             logger.warning(f"Error fetching GitHub data for issue {self.id}: {e}")
-            self.github_data_fetch_failed = True
-            self.save(update_fields=["github_data_fetch_failed"])
+            self.github_fetch_status = True
+            self.save(update_fields=["github_fetch_status"])
 
     class Meta:
         ordering = ["-created"]
@@ -1090,7 +1090,7 @@ class IP(models.Model):
     address = models.CharField(max_length=39, null=True, blank=True)
     user = models.CharField(max_length=150, null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
-    created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     agent = models.TextField(null=True, blank=True)
     count = models.BigIntegerField(default=1)
     path = models.CharField(max_length=255, null=True, blank=True)

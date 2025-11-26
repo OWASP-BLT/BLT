@@ -137,7 +137,7 @@
                     </svg>
                     <span>View on GitHub</span>
                 </a>
-                {% if bug.github_data_fetch_failed %}
+                {% if bug.github_fetch_status %}
                     <!-- Case 1: GitHub URL exists but fetch failed -->
                     <span class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                         <svg class="w-3 h-3"
