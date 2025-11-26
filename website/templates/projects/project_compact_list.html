@@ -71,124 +71,172 @@
             <!-- Compact Table View -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
+                           aria-label="Projects list in compact view">
                         <thead class="bg-gray-50 dark:bg-gray-900">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <a href="?sort=name&order={% if sort_by == 'name' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
                                        class="flex items-center hover:text-red-500">
                                         Name
                                         {% if sort_by == "name" %}
                                             {% if order == "asc" %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted ascending">
                                                     <path d="M5 10l5-5 5 5H5z" />
                                                 </svg>
                                             {% else %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted descending">
                                                     <path d="M15 10l-5 5-5-5h10z" />
                                                 </svg>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <a href="?sort=organization&order={% if sort_by == 'organization' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
                                        class="flex items-center hover:text-red-500">
                                         Organization
                                         {% if sort_by == "organization" %}
                                             {% if order == "asc" %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted ascending">
                                                     <path d="M5 10l5-5 5 5H5z" />
                                                 </svg>
                                             {% else %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted descending">
                                                     <path d="M15 10l-5 5-5-5h10z" />
                                                 </svg>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <a href="?sort=status&order={% if sort_by == 'status' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
                                        class="flex items-center hover:text-red-500">
                                         Status
                                         {% if sort_by == "status" %}
                                             {% if order == "asc" %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted ascending">
                                                     <path d="M5 10l5-5 5 5H5z" />
                                                 </svg>
                                             {% else %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted descending">
                                                     <path d="M15 10l-5 5-5-5h10z" />
                                                 </svg>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <a href="?sort=repos_count&order={% if sort_by == 'repos_count' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
                                        class="flex items-center hover:text-red-500">
                                         Repos
                                         {% if sort_by == "repos_count" %}
                                             {% if order == "asc" %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted ascending">
                                                     <path d="M5 10l5-5 5 5H5z" />
                                                 </svg>
                                             {% else %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted descending">
                                                     <path d="M15 10l-5 5-5-5h10z" />
                                                 </svg>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Stars
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Forks
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Issues
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <a href="?sort=slack_channel&order={% if sort_by == 'slack_channel' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
                                        class="flex items-center hover:text-red-500">
                                         Slack
                                         {% if sort_by == "slack_channel" %}
                                             {% if order == "asc" %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted ascending">
                                                     <path d="M5 10l5-5 5 5H5z" />
                                                 </svg>
                                             {% else %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted descending">
                                                     <path d="M15 10l-5 5-5-5h10z" />
                                                 </svg>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Social
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <a href="?sort=created&order={% if sort_by == 'created' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
                                        class="flex items-center hover:text-red-500">
                                         Created
                                         {% if sort_by == "created" %}
                                             {% if order == "asc" %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted ascending">
                                                     <path d="M5 10l5-5 5 5H5z" />
                                                 </svg>
                                             {% else %}
-                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     aria-label="Sorted descending">
                                                     <path d="M15 10l-5 5-5-5h10z" />
                                                 </svg>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
@@ -201,6 +249,8 @@
                                             {% if item.project.logo %}
                                                 <img src="{{ item.project.logo.url }}"
                                                      alt="{{ item.project.name }}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded mr-2" />
                                             {% else %}
                                                 <div class="w-8 h-8 rounded mr-2 bg-red-500 flex items-center justify-center text-white font-bold">
@@ -246,6 +296,7 @@
                                         {% if item.project.slack %}
                                             <a href="{{ item.project.slack }}"
                                                target="_blank"
+                                               rel="noopener noreferrer"
                                                class="text-sm text-red-600 dark:text-red-400 hover:underline"
                                                title="Slack: {{ item.project.slack_channel|default:'General' }}">
                                                 {% if item.project.slack_channel %}
@@ -261,8 +312,9 @@
                                     <td class="px-4 py-3 whitespace-nowrap">
                                         <div class="flex gap-2">
                                             {% if item.project.twitter %}
-                                                <a href="{% if 'http' in item.project.twitter %}{{ item.project.twitter }}{% else %}https://twitter.com/{{ item.project.twitter }}{% endif %}"
+                                                <a href="{% if item.project.twitter|slice:':7' == 'http://' or item.project.twitter|slice:':8' == 'https://' %}{{ item.project.twitter }}{% else %}https://twitter.com/{{ item.project.twitter }}{% endif %}"
                                                    target="_blank"
+                                                   rel="noopener noreferrer"
                                                    class="text-gray-400 hover:text-blue-400"
                                                    title="Twitter">
                                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -273,6 +325,7 @@
                                             {% if item.project.facebook %}
                                                 <a href="{{ item.project.facebook }}"
                                                    target="_blank"
+                                                   rel="noopener noreferrer"
                                                    class="text-gray-400 hover:text-blue-600"
                                                    title="Facebook">
                                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

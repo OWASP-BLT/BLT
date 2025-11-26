@@ -105,7 +105,7 @@ class ProjectCompactViewTestCase(TestCase):
         content = response.content.decode()
         pos1 = content.find("Test Project 1")
         pos2 = content.find("Test Project 2")
-        self.assertTrue(pos1 < pos2)
+        self.assertLess(pos1, pos2)
 
     def test_compact_view_search_functionality(self):
         """Test search functionality in compact view"""
@@ -123,8 +123,8 @@ class ProjectCompactViewTestCase(TestCase):
     def test_compact_view_pagination_exists(self):
         """Test that pagination context is provided"""
         response = self.client.get(reverse("project_compact_list"))
-        self.assertTrue("projects_with_stats" in response.context)
-        self.assertTrue("page_obj" in response.context)
+        self.assertIn("projects_with_stats", response.context)
+        self.assertIn("page_obj", response.context)
 
     def test_compact_view_has_view_switcher(self):
         """Test that view switcher links are present"""

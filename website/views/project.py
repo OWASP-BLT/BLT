@@ -22,7 +22,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
 from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -330,39 +330,53 @@ class ProjectCompactListView(FilterView):
     paginate_by = 50
 
     def get_queryset(self):
-        queryset = Project.objects.select_related("organization").prefetch_related("repos").exclude(slug="")
+        queryset = Project.objects.select_related("organization").exclude(slug="")
+
+        # Aggregate repo stats at the database level to avoid N+1 queries
+        queryset = queryset.annotate(
+            repo_count=Count("repos"),
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+            total_issues=Coalesce(Sum("repos__total_issues"), 0),
+        )
 
         # Apply sorting
         sort_by = self.request.GET.get("sort", "name")
         order = self.request.GET.get("order", "asc")
 
-        # Map sort fields to actual model fields
-        sort_mapping = {
-            "name": "name",
-            "organization": "organization__name",
-            "status": "status",
-            "repos_count": "repos__count",
-            "slack_channel": "slack_channel",
-            "created": "created",
-            "modified": "modified",
-        }
+        # Handle organization sorting with explicit NULL placement
+        if sort_by == "organization":
+            if order == "desc":
+                queryset = queryset.order_by(F("organization__name").desc(nulls_last=True))
+            else:
+                queryset = queryset.order_by(F("organization__name").asc(nulls_last=True))
+        else:
+            # Map sort fields to actual model fields
+            sort_mapping = {
+                "name": "name",
+                "status": "status",
+                "repos_count": "repo_count",
+                "slack_channel": "slack_channel",
+                "created": "created",
+                "modified": "modified",
+            }
 
-        field = sort_mapping.get(sort_by, "name")
+            field = sort_mapping.get(sort_by, "name")
 
-        # Handle repos_count separately as it's an aggregation
-        if sort_by == "repos_count":
-            queryset = queryset.annotate(repos_count=Count("repos"))
-            field = "repos_count"
+            if order == "desc":
+                field = f"-{field}"
 
-        if order == "desc":
-            field = f"-{field}"
+            queryset = queryset.order_by(field)
 
-        queryset = queryset.order_by(field)
-
-        # Apply organization filter
+        # Apply organization filter with validation
         organization_id = self.request.GET.get("organization")
         if organization_id:
-            queryset = queryset.filter(organization_id=organization_id)
+            try:
+                organization_id = int(organization_id)
+                queryset = queryset.filter(organization_id=organization_id)
+            except (ValueError, TypeError):
+                # Invalid organization_id, skip the filter
+                pass
 
         # Apply search filter
         search = self.request.GET.get("search")
@@ -377,22 +391,16 @@ class ProjectCompactListView(FilterView):
         # Get organizations that have projects
         context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
 
-        # Calculate aggregate stats for each project
+        # Build projects_with_stats from annotated queryset - no additional queries needed
         projects_with_stats = []
         for project in context["projects"]:
-            repos = project.repos.all()
-            total_stars = sum(repo.stars for repo in repos)
-            total_forks = sum(repo.forks for repo in repos)
-            total_issues = sum(repo.total_issues for repo in repos)
-            repo_count = repos.count()
-
             projects_with_stats.append(
                 {
                     "project": project,
-                    "repo_count": repo_count,
-                    "total_stars": total_stars,
-                    "total_forks": total_forks,
-                    "total_issues": total_issues,
+                    "repo_count": project.repo_count,
+                    "total_stars": project.total_stars,
+                    "total_forks": project.total_forks,
+                    "total_issues": project.total_issues,
                 }
             )
 
