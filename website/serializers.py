@@ -16,6 +16,8 @@ from website.models import (
     Repo,
     Tag,
     TimeLog,
+    Trademark,
+    TrademarkOwner,
     User,
     UserProfile,
 )
@@ -257,3 +259,37 @@ class JobPublicSerializer(serializers.ModelSerializer):
             "created_at",
             "views_count",
         )
+
+
+class TrademarkOwnerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrademarkOwner
+        fields = [
+            "name",
+            "address1",
+            "address2",
+            "city",
+            "state",
+            "country",
+            "postcode",
+            "owner_label",
+            "legal_entity_type_label",
+        ]
+
+
+class TrademarkSerializer(serializers.ModelSerializer):
+    owners = TrademarkOwnerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Trademark
+        fields = [
+            "keyword",
+            "registration_number",
+            "serial_number",
+            "status_label",
+            "filing_date",
+            "registration_date",
+            "expiration_date",
+            "description",
+            "owners",
+        ]
