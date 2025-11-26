@@ -407,23 +407,10 @@
         }
 
         function previewUploadedImage(input, previewId, defaultIconId, removeButtonId) {
-            console.log('Preview function called with:', {
-                previewId,
-                defaultIconId,
-                removeButtonId
-            });
-            
             const preview = document.getElementById(previewId);
             const defaultIcon = document.getElementById(defaultIconId);
             const removeButton = document.getElementById(removeButtonId);
             const errorDiv = document.getElementById('logoError');
-            
-            console.log('Elements found:', {
-                preview: preview !== null,
-                defaultIcon: defaultIcon !== null,
-                removeButton: removeButton !== null,
-                errorDiv: errorDiv !== null
-            });
 
             // Clear any previous errors
             if (errorDiv) {
@@ -442,7 +429,6 @@
                 // Validate file type
                 const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
                 if (!validTypes.includes(file.type)) {
-                    console.log('Invalid file type:', file.type);
                     if (errorDiv) {
                         errorDiv.textContent = 'Please select a valid image file (JPG, PNG, GIF, or WebP)';
                         errorDiv.style.display = 'block';
@@ -454,7 +440,6 @@
                 // Validate file size (5MB = 5 * 1024 * 1024 bytes)
                 const maxSize = 5 * 1024 * 1024;
                 if (file.size > maxSize) {
-                    console.log('File too large:', file.size);
                     if (errorDiv) {
                         errorDiv.textContent = 'File size must be less than 5MB';
                         errorDiv.style.display = 'block';
@@ -466,8 +451,6 @@
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
-                    console.log('Image loaded, updating elements');
-                    
                     // Set the image source
                     preview.src = e.target.result;
                     
@@ -480,8 +463,6 @@
                     preview.classList.remove('hidden');
                     defaultIcon.classList.add('hidden');
                     removeButton.classList.remove('hidden');
-                    
-                    console.log('Image preview updated successfully');
                 }
                 
                 reader.onerror = function() {
@@ -494,18 +475,10 @@
                 }
                 
                 reader.readAsDataURL(file);
-            } else {
-                console.log('No file selected');
             }
         }
 
         function removeUploadedImage(inputId, previewId, defaultIconId, removeButtonId) {
-            console.log('Remove function called with:', {
-                inputId,
-                previewId,
-                defaultIconId,
-                removeButtonId
-            });
             
             const input = document.getElementById(inputId);
             const preview = document.getElementById(previewId);
@@ -537,8 +510,6 @@
                 errorDiv.style.display = 'none';
                 errorDiv.textContent = '';
             }
-            
-            console.log('Logo removed successfully');
         }
     </script>
 {% endblock js %}
