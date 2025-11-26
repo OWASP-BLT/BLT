@@ -6,17 +6,17 @@ This document describes the GitHub Actions workflows available in this repositor
 
 **Workflow File:** `.github/workflows/regenerate-migrations.yml`
 
-This workflow automatically deletes and regenerates all Django migrations in a pull request. It's useful when you need to clean up and recreate migrations, especially when dealing with:
+This workflow automatically deletes and regenerates Django migrations that are part of a pull request. It's useful when you need to clean up and recreate migrations, especially when dealing with:
 - Migration conflicts
 - Complex migration dependencies
-- Starting fresh with a clean migration history
+- Regenerating migrations after model changes
 
 ### How to Use
 
 1. **Via Label (Recommended):**
    - Add the label `regenerate-migrations` to your pull request
    - The workflow will automatically:
-     - Delete all existing migration files (except `__init__.py`)
+     - Identify and delete migration files added/modified in the PR (except `__init__.py`)
      - Run `python manage.py makemigrations` to create fresh migrations
      - Commit and push the new migrations back to your PR branch
      - Comment on the PR with the results
@@ -31,21 +31,21 @@ This workflow automatically deletes and regenerates all Django migrations in a p
 
 ### What It Does
 
-1. **Checks out your PR branch** (including from forks)
-2. **Sets up Python 3.11.2** and installs Poetry
+1. **Checks out your PR branch** (including from forks) with full history
+2. **Sets up Python 3.11** and installs Poetry
 3. **Installs project dependencies** using Poetry
-4. **Deletes all migrations** in:
-   - `website/migrations/` (except `__init__.py`)
-   - `comments/migrations/` (except `__init__.py`)
-5. **Creates a temporary .env file** with minimal settings for Django to run
-6. **Runs makemigrations** to generate fresh migration files
-7. **Commits and pushes** the new migrations to your branch
-8. **Comments on your PR** with the results
+4. **Identifies migration files** that were added or modified in this PR by comparing against the base branch
+5. **Deletes only the PR migration files** (preserves `__init__.py` and existing migrations not in the PR)
+6. **Creates a temporary .env file** with minimal settings for Django to run
+7. **Runs makemigrations** to generate fresh migration files
+8. **Commits and pushes** the new migrations to your branch
+9. **Comments on your PR** with the results
 
 ### Important Notes
 
-- ⚠️ **This will delete all existing migrations!** Make sure this is what you want before using it.
+- ✅ **Only deletes migration files that are part of the PR** - existing migrations in the base branch are preserved
 - The workflow preserves `__init__.py` files in migration directories
+- If no migration files are found in the PR, the workflow will skip deletion and just run makemigrations
 - If no changes are detected after regeneration, the workflow will comment that migrations are already up to date
 - The workflow works with both repository branches and forked PRs
 - Only migration files are committed - no other changes will be included
@@ -61,12 +61,12 @@ You have conflicts in migration files between your branch and main.
 4. Continue with your PR
 ```
 
-**Scenario 2: Clean Slate**
+**Scenario 2: Regenerating After Model Changes**
 ```
-You want to start with a fresh migration history.
+You've modified models and created migrations, but want to regenerate them.
 1. Ensure your models are correct
 2. Add the `regenerate-migrations` label
-3. The workflow creates new initial migrations based on your current models
+3. The workflow deletes your PR's migration files and regenerates them
 ```
 
 **Scenario 3: Complex Dependencies**

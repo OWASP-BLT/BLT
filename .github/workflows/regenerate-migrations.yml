@@ -39,6 +39,7 @@ jobs:
             github.event.pull_request.head.repo.full_name ||
             github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -53,23 +54,44 @@ jobs:
         run: |
           poetry install --with dev
 
-      - name: Delete existing migrations
+      - name: Identify and delete PR migration files
         run: |
-          # Delete migration files in website app (keep __init__.py)
-          find website/migrations -type f -name "*.py" \
-            ! -name "__init__.py" -delete
-          echo "Deleted website migrations"
+          # Fetch the base branch for comparison
+          BASE_BRANCH="${{ github.event_name == 'pull_request_target' &&
+            github.event.pull_request.base.ref || 'main' }}"
+          git fetch origin "$BASE_BRANCH"
 
-          # Delete migration files in comments app (keep __init__.py)
-          find comments/migrations -type f -name "*.py" \
-            ! -name "__init__.py" -delete
-          echo "Deleted comments migrations"
+          # Get list of migration files that are new or modified in this PR
+          echo "Finding migration files changed in this PR..."
+          CHANGED_MIGRATIONS=$(git diff --name-only \
+            --diff-filter=AM \
+            "origin/$BASE_BRANCH"...HEAD | \
+            grep -E '(website|comments)/migrations/.*\.py$' | \
+            grep -v '__init__.py' || true)
 
-          # Show what remains
-          echo "Remaining files in website/migrations:"
-          ls -la website/migrations/
-          echo "Remaining files in comments/migrations:"
-          ls -la comments/migrations/
+          if [ -z "$CHANGED_MIGRATIONS" ]; then
+            echo "No migration files found in this PR"
+            echo "MIGRATION_FILES_FOUND=false" >> $GITHUB_ENV
+          else
+            echo "Migration files found in PR:"
+            echo "$CHANGED_MIGRATIONS"
+            echo "MIGRATION_FILES_FOUND=true" >> $GITHUB_ENV
+
+            # Delete each migration file found in the PR
+            echo "$CHANGED_MIGRATIONS" | while read -r file; do
+              if [ -f "$file" ]; then
+                echo "Deleting: $file"
+                rm "$file"
+              fi
+            done
+
+            echo ""
+            echo "Remaining files in website/migrations:"
+            ls -la website/migrations/ || true
+            echo ""
+            echo "Remaining files in comments/migrations:"
+            ls -la comments/migrations/ || true
+          fi
 
       - name: Create .env file for settings
         run: |
@@ -135,8 +157,8 @@ jobs:
               '## ✅ Migrations Regenerated',
               '',
               'The Django migrations have been successfully regenerated:',
-              '- Deleted all existing migration files',
-              '  (except `__init__.py`)',
+              '- Deleted migration files that were added/modified',
+              '  in this PR (except `__init__.py`)',
               '- Ran `python manage.py makemigrations`',
               '  to create fresh migrations',
               '- Committed and pushed the new migration files to this PR',
