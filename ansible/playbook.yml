@@ -201,6 +201,29 @@
       when: enable_remote_postgres | bool
       notify: Restart postgres
 
+    - name: Check if md5 authentication is currently configured
+      shell: grep -q "md5" "{{ postgres_hba_file }}"
+      register: md5_auth_check
+      failed_when: false
+      changed_when: false
+      when: enable_remote_postgres | bool
+
+    - name: Display PostgreSQL authentication upgrade warning
+      debug:
+        msg: |
+          NOTICE: Upgrading PostgreSQL authentication from md5 to scram-sha-256.
+          If you have existing users, their passwords will be automatically reset.
+          This is a one-time operation for better security.
+      when: enable_remote_postgres | bool and md5_auth_check.rc == 0
+
+    - name: Reset user password to support scram-sha-256 (for existing users)
+      community.postgresql.postgresql_user:
+        name: "{{ postgres_db_user }}"
+        password: "{{ postgres_db_password }}"
+        state: present
+      become_user: postgres
+      when: enable_remote_postgres | bool and md5_auth_check.rc == 0
+
     - name: Add remote access rule to pg_hba.conf
       lineinfile:
         path: "{{ postgres_hba_file }}"

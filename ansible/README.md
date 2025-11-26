@@ -28,6 +28,7 @@ ansible-playbook -i ansible/inventory.yml ansible/playbook.yml
 - Nginx reverse proxies to uvicorn (ASGI) server on port 8000.
 - Opens ports 22, 80, 443 with UFW.
 - For HTTPS, you can manually install Certbot or extend the playbook.
+- PostgreSQL uses `scram-sha-256` authentication for better security (automatically upgrades from `md5` if needed).
 
 ## Quick Certbot (optional)
 ```bash
