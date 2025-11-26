@@ -21,10 +21,10 @@ jobs:
 
             const message = `
                   🚫 **Please do not create new issues**  
-                  We currently have **200+ open issues** to focus on.
+                  We currently have **many open issues** to focus on, some even with $5 bounties.
                   
                   If you believe your issue is important and should be solved,  
-                  please create a new topic in our **Discussion Board** instead.  
+                  please create a new topic in the BLT forum page instead.  
                   Thanks for understanding! 🙏
                   `;
 
