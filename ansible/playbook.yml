@@ -100,14 +100,19 @@
         state: link
       when: poetry_installed.rc != 0
 
+    - name: Get Poetry path
+      shell: command -v poetry
+      register: poetry_path
+      changed_when: false
+
     - name: Check if poetry-plugin-export is installed
-      shell: /usr/local/bin/poetry self show plugins | grep -q poetry-plugin-export
+      shell: "{{ poetry_path.stdout }} self show plugins | grep -q poetry-plugin-export"
       register: poetry_export_installed
       ignore_errors: true
       changed_when: false
 
     - name: Install poetry-plugin-export for Poetry 2.0+
-      shell: /usr/local/bin/poetry self add poetry-plugin-export
+      shell: "{{ poetry_path.stdout }} self add poetry-plugin-export"
       args:
         executable: /bin/bash
       when: poetry_export_installed.rc != 0
