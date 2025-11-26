@@ -345,7 +345,7 @@ def get_github_stats(user_profile):
 
     # Get review ranking
     all_reviewers = (
-        UserProfile.objects.annotate(review_count=Count("reviews_made"))
+        UserProfile.objects.annotate(review_count=Count("reviews_made_as_user"))
         .filter(review_count__gt=0)
         .order_by("-review_count")
     )
@@ -576,46 +576,57 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard - Only show PRs from tracked repositories
+        # Pull Request Leaderboard - Use Contributor model
+        # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for PRs merged in the last 6 months
+        from dateutil.relativedelta import relativedelta
+
+        since_date = timezone.now() - relativedelta(months=6)
         pr_leaderboard = (
             GitHubIssue.objects.filter(
                 type="pull_request",
                 is_merged=True,
-                repo__isnull=False,  # Only include PRs from tracked repositories
+                contributor__isnull=False,
+                merged_at__gte=since_date,
             )
-            .exclude(user_profile__isnull=True)  # Exclude PRs without user profiles
-            .select_related("user_profile__user", "repo")  # Optimize database queries
+            .filter(
+                Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
+            )
+            .select_related("contributor", "user_profile__user")
             .values(
+                "contributor__name",
+                "contributor__github_url",
+                "contributor__avatar_url",
                 "user_profile__user__username",
-                "user_profile__user__email",
-                "user_profile__github_url",
             )
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
-        # Extract GitHub username from URL for avatar
-        for leader in pr_leaderboard:
-            github_username = extract_github_username(leader.get("user_profile__github_url"))
-            if github_username:
-                leader["github_username"] = github_username
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Reviewed PR Leaderboard - Fixed query to properly count reviews
+        # Code Review Leaderboard - Use reviewer_contributor
+        # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for reviews on PRs merged in the last 6 months
         reviewed_pr_leaderboard = (
-            GitHubReview.objects.filter(reviewer__user__isnull=False)
+            GitHubReview.objects.filter(
+                reviewer_contributor__isnull=False,
+                pull_request__merged_at__gte=since_date,
+            )
+            .filter(
+                Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(pull_request__repo__repo_url__startswith="https://github.com/owasp-blt/")
+            )
+            .select_related("reviewer_contributor", "reviewer__user")
             .values(
+                "reviewer_contributor__name",
+                "reviewer_contributor__github_url",
+                "reviewer_contributor__avatar_url",
                 "reviewer__user__username",
-                "reviewer__user__email",
-                "reviewer__github_url",
             )
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
         )
-        # Extract GitHub username from URL for avatar
-        for leader in reviewed_pr_leaderboard:
-            github_username = extract_github_username(leader.get("reviewer__github_url"))
-            if github_username:
-                leader["github_username"] = github_username
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         # Top visitors leaderboard
