@@ -1,9 +1,10 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
-from datetime import timedelta
 
-from website.models import UserProfile, GitHubIssue, Repo, Organization
+from website.models import GitHubIssue, Organization, Repo, UserProfile
 
 
 class ContributorClubsTest(TestCase):

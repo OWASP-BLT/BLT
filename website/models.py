@@ -1003,9 +1003,10 @@ class UserProfile(models.Model):
         """
         Calculate and update club memberships based on merged PR activity
         """
-        from django.utils import timezone
         from datetime import timedelta
-        
+
+        from django.utils import timezone
+
         # Milestone clubs based on total merged PRs
         self.ten_club_member = self.merged_pr_count >= 10
         self.fifty_club_member = self.merged_pr_count >= 50
