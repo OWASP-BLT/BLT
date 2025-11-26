@@ -127,7 +127,7 @@ def add_email_constraint(apps, schema_editor):
             schema_editor.execute("ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);")
             logger.info("Added unique constraint on email field for PostgreSQL")
         elif vendor == "mysql":
-            # MySQL: Add unique index (will fail silently if exists due to IF NOT EXISTS in newer versions)
+            # MySQL: Add unique index (will raise error if exists, caught by exception handler below)
             schema_editor.execute("ALTER TABLE auth_user ADD UNIQUE INDEX auth_user_email_unique (email);")
             logger.info("Added unique index on email field for MySQL")
         elif vendor == "sqlite":
@@ -139,9 +139,13 @@ def add_email_constraint(apps, schema_editor):
             schema_editor.execute("ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);")
             logger.info(f"Added unique constraint on email field for {vendor}")
     except (DatabaseError, IntegrityError) as e:
-        # Constraint may already exist
-        logger.warning(f"Could not add constraint (may already exist): {e}")
-        pass
+        # Constraint may already exist - this is expected if migration is re-run
+        error_msg = str(e).lower()
+        if "already exists" in error_msg or "duplicate" in error_msg:
+            logger.info(f"Constraint already exists, skipping: {e}")
+        else:
+            logger.error(f"Unexpected error adding constraint: {e}")
+            raise
 
 
 def remove_email_constraint(apps, schema_editor):
@@ -167,9 +171,13 @@ def remove_email_constraint(apps, schema_editor):
             schema_editor.execute("ALTER TABLE auth_user DROP CONSTRAINT auth_user_email_unique;")
             logger.info(f"Dropped unique constraint on email field for {vendor}")
     except DatabaseError as e:
-        # Constraint may not exist or other database error
-        logger.warning(f"Could not remove constraint: {e}")
-        pass
+        # Constraint may not exist - this is expected if migration is being rolled back without a prior forward run
+        error_msg = str(e).lower()
+        if "does not exist" in error_msg or "not found" in error_msg or "unknown" in error_msg:
+            logger.info(f"Constraint does not exist, skipping removal: {e}")
+        else:
+            logger.error(f"Unexpected error removing constraint: {e}")
+            raise
 
 
 class Migration(migrations.Migration):
