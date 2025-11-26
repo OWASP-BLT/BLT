@@ -711,16 +711,38 @@ document.addEventListener('DOMContentLoaded', function() {
 function copyToClipboard() {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(function() {
-        // Show success toast
+        // Show success toast using DOM manipulation (not innerHTML for security)
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-12 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
-        toast.innerHTML = '<div class="flex items-center"><svg class="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Link copied to clipboard!</div>';
+        
+        const container = document.createElement('div');
+        container.className = 'flex items-center';
+        
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'w-5 h-5 text-green-400 mr-2');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('d', 'M5 13l4 4L19 7');
+        svg.appendChild(path);
+        
+        const text = document.createTextNode(' Link copied to clipboard!');
+        
+        container.appendChild(svg);
+        container.appendChild(text);
+        toast.appendChild(container);
         document.body.appendChild(toast);
         
         setTimeout(() => {
             toast.classList.add('opacity-0');
             setTimeout(() => {
-                document.body.removeChild(toast);
+                if (toast.parentNode) {
+                    toast.remove();
+                }
             }, 500);
         }, 3000);
         
@@ -728,6 +750,44 @@ function copyToClipboard() {
         document.getElementById('shareDropdown').classList.add('hidden');
     }).catch(function(err) {
         console.error('Failed to copy: ', err);
+        
+        // Show error toast to inform user
+        const errorToast = document.createElement('div');
+        errorToast.className = 'fixed bottom-12 left-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
+        
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'flex items-center';
+        
+        const errorSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        errorSvg.setAttribute('class', 'w-5 h-5 mr-2');
+        errorSvg.setAttribute('fill', 'none');
+        errorSvg.setAttribute('stroke', 'currentColor');
+        errorSvg.setAttribute('viewBox', '0 0 24 24');
+        const errorPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        errorPath.setAttribute('stroke-linecap', 'round');
+        errorPath.setAttribute('stroke-linejoin', 'round');
+        errorPath.setAttribute('stroke-width', '2');
+        errorPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+        errorSvg.appendChild(errorPath);
+        
+        const errorText = document.createTextNode(' Failed to copy link. Please try again.');
+        
+        errorContainer.appendChild(errorSvg);
+        errorContainer.appendChild(errorText);
+        errorToast.appendChild(errorContainer);
+        document.body.appendChild(errorToast);
+        
+        setTimeout(() => {
+            errorToast.classList.add('opacity-0');
+            setTimeout(() => {
+                if (errorToast.parentNode) {
+                    errorToast.remove();
+                }
+            }, 500);
+        }, 3000);
+        
+        // Close the dropdown
+        document.getElementById('shareDropdown').classList.add('hidden');
     });
 }
     </script>
