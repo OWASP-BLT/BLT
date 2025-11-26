@@ -57,6 +57,11 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Wallet.objects.create(user=instance)
 
 
+# Enforce email uniqueness on the User model at the application level
+# This works in conjunction with the database constraint added in migration 0257
+User._meta.get_field("email")._unique = True
+
+
 class Subscription(models.Model):
     name = models.CharField(max_length=25, null=False, blank=True)
     charge_per_month = models.IntegerField(null=False, blank=True)
