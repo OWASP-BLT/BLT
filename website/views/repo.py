@@ -98,24 +98,33 @@ class RepoListView(ListView):
         context["organizations"] = organizations
 
         # Get current organization filter
-        context["current_organization"] = self.request.GET.get("organization")
+        organization_param = self.request.GET.get("organization")
+        organization_id = None
+
+        # Convert organization parameter to integer if valid
+        if organization_param and organization_param.strip():
+            try:
+                organization_id = int(organization_param)
+            except (ValueError, TypeError):
+                # Re-raise ValueError to be consistent with get_queryset behavior
+                raise ValueError("Invalid organization ID: must be a valid integer.")
+
+        context["current_organization"] = organization_id
 
         # Get organization name if filtered by organization
-        if context["current_organization"] and context["current_organization"].strip():
+        if organization_id:
             try:
-                org = Organization.objects.get(id=context["current_organization"])
+                org = Organization.objects.get(id=organization_id)
                 context["current_organization_name"] = org.name
-            except (Organization.DoesNotExist, ValueError):
+            except Organization.DoesNotExist:
                 context["current_organization_name"] = None
-        else:
-            context["current_organization"] = None
 
         # Get language counts based on current filters
         queryset = Repo.objects.all()
 
         # Apply organization filter if selected
-        if context["current_organization"]:
-            queryset = queryset.filter(organization__id=context["current_organization"])
+        if organization_id:
+            queryset = queryset.filter(organization__id=organization_id)
 
         # Apply search filter if present
         search_query = self.request.GET.get("q")
