@@ -80,8 +80,17 @@
                             </p>
                         </div>
                     {% else %}
-                        <div class="mb-10 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                            <p>No report available for yesterday.</p>
+                        <div class="mb-10 bg-gray-100 dark:bg-gray-800 py-4 px-2 rounded-lg">
+                            {% if last_checkin %}
+                                <p class="mb-2">No report available for yesterday. Last check-in was on {{ last_checkin.date|date:"F d, Y" }}.</p>
+                                <button type="button"
+                                        id="fillFromLastCheckinBtn"
+                                        class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                                    Fill from Last Check-in
+                                </button>
+                            {% else %}
+                                <p>No previous check-ins available.</p>
+                            {% endif %}
                         </div>
                     {% endif %}
                     <div class="form-group mb-10 flex items-center">
@@ -188,17 +197,29 @@
                 textarea.focus();
             });
 
+            {% if yesterday_report %}
             // Fill from previous check-in button functionality
             const fillFromPreviousBtn = document.getElementById('fillFromPreviousBtn');
             if (fillFromPreviousBtn) {
                 fillFromPreviousBtn.addEventListener('click', () => {
                     const previousWorkTextarea = document.getElementById('previous_work_card');
-                    {% if yesterday_report %}
-                        previousWorkTextarea.value = "{{ yesterday_report.next_plan|escapejs }}";
-                        previousWorkTextarea.focus();
-                    {% endif %}
+                    previousWorkTextarea.value = "{{ yesterday_report.next_plan|escapejs }}";
+                    previousWorkTextarea.focus();
                 });
             }
+            {% endif %}
+
+            {% if last_checkin %}
+            // Fill from last check-in button functionality (when no yesterday report)
+            const fillFromLastCheckinBtn = document.getElementById('fillFromLastCheckinBtn');
+            if (fillFromLastCheckinBtn) {
+                fillFromLastCheckinBtn.addEventListener('click', () => {
+                    const previousWorkTextarea = document.getElementById('previous_work_card');
+                    previousWorkTextarea.value = "{{ last_checkin.next_plan|escapejs }}";
+                    previousWorkTextarea.focus();
+                });
+            }
+            {% endif %}
         });
     </script>
 {% endblock content %}

@@ -2115,6 +2115,11 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
+    # Fetch the last check-in (most recent) for the user only if no yesterday report
+    last_checkin = None
+    if not yesterday_report:
+        last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+
     # Fetch all check-ins for the user, ordered by date
     all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
 
@@ -2125,11 +2130,7 @@ def add_sizzle_checkIN(request):
     return render(
         request,
         "sizzle/add_sizzle_checkin.html",
-        {
-            "yesterday_report": yesterday_report,
-            "all_checkins": all_checkins,
-            "organizations_list": organizations_list,
-        },
+        {"yesterday_report": yesterday_report, "last_checkin": last_checkin, "all_checkins": all_checkins}, "organizations_list": organizations_list,
     )
 
 
