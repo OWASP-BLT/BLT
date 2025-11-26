@@ -1,0 +1,173 @@
+name: Regenerate Django Migrations
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types:
+      - labeled
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+jobs:
+  regenerate-migrations:
+    if: >
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request_target' &&
+       github.event.label.name == 'regenerate-migrations')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: >
+            ${{ github.event_name == 'pull_request_target' &&
+            github.event.pull_request.head.ref || github.ref_name }}
+          repository: >
+            ${{ github.event_name == 'pull_request_target' &&
+            github.event.pull_request.head.repo.full_name ||
+            github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.2'
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+
+      - name: Delete existing migrations
+        run: |
+          # Delete migration files in website app (keep __init__.py)
+          find website/migrations -type f -name "*.py" \
+            ! -name "__init__.py" -delete
+          echo "Deleted website migrations"
+
+          # Delete migration files in comments app (keep __init__.py)
+          find comments/migrations -type f -name "*.py" \
+            ! -name "__init__.py" -delete
+          echo "Deleted comments migrations"
+
+          # Show what remains
+          echo "Remaining files in website/migrations:"
+          ls -la website/migrations/
+          echo "Remaining files in comments/migrations:"
+          ls -la comments/migrations/
+
+      - name: Create .env file for settings
+        run: |
+          # Create a minimal .env file with required settings for makemigrations
+          cat > .env << EOF
+          SECRET_KEY=dummy-secret-key-for-migrations
+          DATABASE_URL=sqlite:///db.sqlite3
+          DEBUG=True
+          EOF
+
+      - name: Run makemigrations
+        run: |
+          poetry run python manage.py makemigrations
+          echo "Generated new migrations"
+
+          # Show generated migrations
+          echo "New migrations in website/migrations:"
+          ls -la website/migrations/
+          echo "New migrations in comments/migrations:"
+          ls -la comments/migrations/
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected after regenerating migrations."
+            echo "changes_detected=true" >> $GITHUB_ENV
+            git status
+          else
+            echo "No changes made after regenerating migrations."
+            echo "changes_detected=false" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push changes
+        if: env.changes_detected == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "github-actions[bot]@users.noreply.github.com"
+          git add website/migrations/ comments/migrations/
+          git commit -m "Regenerate Django migrations"
+          BRANCH_NAME="${{ github.event_name == 'pull_request_target' &&
+            github.event.pull_request.head.ref || github.ref_name }}"
+          git push origin HEAD:$BRANCH_NAME
+
+      - name: Comment on PR
+        if: >
+          env.changes_detected == 'true' &&
+          github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = `## ✅ Migrations Regenerated
+
+            The Django migrations have been successfully regenerated:
+            - Deleted all existing migration files (except \`__init__.py\`)
+            - Ran \`python manage.py makemigrations\` to create fresh
+              migrations
+            - Committed and pushed the new migration files to this PR
+
+            Please review the changes and ensure all models are properly
+            migrated.`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+      - name: Comment on PR if no changes
+        if: >
+          env.changes_detected == 'false' &&
+          github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = `## ℹ️ No Migration Changes
+
+            The migration regeneration process completed, but no changes
+            were detected. This means the existing migrations are already
+            up to date with your models.`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+      - name: Remove label
+        if: github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'regenerate-migrations'
+              });
+            } catch (error) {
+              // Label might not exist or already removed
+              console.log('Could not remove label:', error.message);
+            }
