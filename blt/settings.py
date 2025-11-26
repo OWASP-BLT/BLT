@@ -1,5 +1,7 @@
 import json
 import os
+import random
+import string
 import sys
 
 import dj_database_url
@@ -57,24 +59,8 @@ ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
 
-# SECRET_KEY: Fail fast if not set in production to avoid using a compromised key
-if not os.environ.get("SECRET_KEY"):
-    if DEBUG or TESTING:
-        import warnings
-
-        warnings.warn(
-            "SECRET_KEY not set in environment. Using insecure fallback for development only. "
-            "DO NOT use in production!",
-            RuntimeWarning,
-        )
-        SECRET_KEY = "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s"
-    else:
-        raise RuntimeError(
-            "SECRET_KEY environment variable is not set. This is required for production. "
-            "Set SECRET_KEY in your environment variables or .env file."
-        )
-else:
-    SECRET_KEY = os.environ["SECRET_KEY"]
+# SECRET_KEY: Use environment variable or generate random key for development
+SECRET_KEY = os.environ.get("SECRET_KEY") or "".join(random.choices(string.ascii_letters + string.digits, k=50))
 
 SITE_ID = 1
 
