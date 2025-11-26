@@ -52,28 +52,23 @@
                       method="post"
                       action="{% url 'account_login' %}?next={{ request.path }}">
                     {% csrf_token %}
-
                     <!-- START FIX #4056 -->
                     {% if form.non_field_errors %}
-                        <div class="p-3 mb-4 text-sm text-red-700 bg-red-100 border border-red-400 rounded-lg dark:bg-red-900 dark:text-red-100 dark:border-red-700" role="alert">
-                            <strong class="font-bold">Login Failed:</strong>
-                            {% for error in form.non_field_errors %}
-                                <span class="block">{{ error }}</span>
-                            {% endfor %}
+                        <div class="p-3 mb-4 text-sm text-red-700 bg-red-100 border border-red-400 rounded-lg dark:bg-red-900 dark:text-red-100 dark:border-red-700"
+                             role="alert">
+                            <strong class="font-bold">{% trans "Login Failed:" %}</strong>
+                            {% for error in form.non_field_errors %}<span class="block">{{ error }}</span>{% endfor %}
                         </div>
                     {% endif %}
-
                     {% if messages %}
                         <div class="mb-4 space-y-2">
                             {% for message in messages %}
-                                <div class="p-3 text-sm rounded-lg border {% if message.tags == 'error' %}bg-red-100 text-red-700 border-red-400 dark:bg-red-900 dark:text-red-100{% else %}bg-blue-100 text-blue-700 border-blue-400{% endif %}" role="alert">
-                                    {{ message }}
-                                </div>
+                                <div class="p-3 text-sm rounded-lg border {% if 'error' in message.tags %}bg-red-100 text-red-700 border-red-400 dark:bg-red-900 dark:text-red-100{% else %}bg-blue-100 text-blue-700 border-blue-400{% endif %}"
+                                     role="alert">{{ message }}</div>
                             {% endfor %}
                         </div>
                     {% endif %}
                     <!-- END FIX -->
-
                     {% if redirect_field_value %}
                         <input type="hidden"
                                name="{{ redirect_field_name }}"
