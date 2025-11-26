@@ -4,14 +4,12 @@
 <!-- Include Font Awesome CSS -->
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 <style>
     .scrollbar-none {
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
 </style>
-
 <div class="sidebar fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 transform transition-all duration-300 ease-in-out">
     <div class="h-full flex flex-col justify-between overflow-hidden">
         <div class="overflow-y-auto flex-grow py-2 scrollbar-none">
@@ -75,10 +73,11 @@
                             </a>
                             <a href="{% url 'organization_slack_apps' request.resolver_match.kwargs.id %}"
                                class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_slack_apps' %} bg-[#feeae9] text-[#e74c3c] {% else %} text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] {% endif %} transition-all duration-200">
-                                <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'organization_slack_apps' %} bg-[#fde0dd] text-[#e74c3c] {% else %} bg-gray-100 text-gray-500 dark:text-gray-500 dark:group-hover:bg-red-900/50 dark:group-hover:text-[#e74c3c] {% endif %} transition-all duration-200">
+                                <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'organization_slack_apps' %} bg-[#fde0dd] text-[#e74c3c] dark:bg-red-900/50 dark:text-[#e74c3c] {% else %} bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-[#fde0dd] dark:group-hover:bg-red-900/50 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c] {% endif %} transition-all duration-200">
                                     <i class="fa-brands fa-slack"></i>
                                 </div>
                                 <span class="truncate">{% trans "Slack Installed Apps" %}</span>
+                            </a>
                             <a href="{% url 'organization_manage_jobs' request.resolver_match.kwargs.id %}"
                                class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_manage_jobs' or request.resolver_match.url_name == 'create_job' or request.resolver_match.url_name == 'edit_job' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'organization_manage_jobs' or request.resolver_match.url_name == 'create_job' or request.resolver_match.url_name == 'edit_job' %}bg-[#fde0dd] text-[#e74c3c] dark:bg-red-900/50 dark:text-[#e74c3c]{% else %}bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-[#fde0dd] dark:group-hover:bg-red-900/50 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
