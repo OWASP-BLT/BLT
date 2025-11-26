@@ -74,7 +74,7 @@ jobs:
             
             // Determine the appropriate label
             const changesRequestedLabel = 'changes-requested';
-            const labelColor = 'e74c3c'; // BLT red color for changes requested
+            const labelColor = 'e74c3c'; // Red color for changes requested
             const description = 'PR has requested changes from a reviewer';
             
             // Get current labels on the PR (with pagination)
@@ -121,7 +121,7 @@ jobs:
                   core.info(`Applied label ${changesRequestedLabel} to PR #${pull_number}`);
                 } catch (error) {
                   if (error.status === 403) {
-                    core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                    core.warning(`Permission denied: Cannot add label to PR. Check that workflow has "issues: write" and "pull-requests: write" permissions.`);
                   } else {
                     throw error;
                   }
