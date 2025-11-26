@@ -147,17 +147,13 @@ class Command(LoggedBaseCommand):
                         self.save_comment(comment, item, repo_obj)
                         comments_count += 1
                     except Exception as e:
-                        self.stdout.write(
-                            self.style.ERROR(f"Error saving comment {comment.get('id')}: {str(e)}")
-                        )
+                        self.stdout.write(self.style.ERROR(f"Error saving comment {comment.get('id')}: {str(e)}"))
 
                 page += 1
                 time.sleep(0.3)  # Rate limiting
 
             except requests.exceptions.RequestException as e:
-                self.stdout.write(
-                    self.style.ERROR(f"Error fetching comments for issue #{issue_number}: {str(e)}")
-                )
+                self.stdout.write(self.style.ERROR(f"Error fetching comments for issue #{issue_number}: {str(e)}"))
                 break
 
         return comments_count
