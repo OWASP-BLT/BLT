@@ -1,0 +1,163 @@
+name: Check HTML Screenshot Requirement
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  check_html_screenshot:
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != 'sentry-autofix'
+      && github.actor != 'DonnieBLT'
+      && github.actor != 'Copilot'
+      && github.actor != 'copilot-swe-agent[bot]'
+      && github.actor != 'copilot-swe-agent'
+    steps:
+      - name: Check for HTML changes and screenshots
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const repo = context.repo.repo;
+            const owner = context.repo.owner;
+
+            try {
+              console.log(`Checking PR #${prNumber} for HTML file changes and screenshots...`);
+
+              // Get PR details to access the description
+              const { data: pr } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber,
+              });
+
+              const prBody = pr.body || '';
+              console.log('PR Description length:', prBody.length);
+
+              // Get all files changed in the PR with pagination
+              let allFiles = [];
+              let page = 1;
+              let hasMorePages = true;
+              
+              while (hasMorePages) {
+                const { data: files } = await github.rest.pulls.listFiles({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  per_page: 100,
+                  page: page
+                });
+                
+                allFiles = allFiles.concat(files);
+                hasMorePages = files.length === 100;
+                page++;
+              }
+
+              console.log(`Total files changed: ${allFiles.length}`);
+
+              // Filter for HTML files (modified or added)
+              const htmlFiles = allFiles.filter(file => 
+                file.filename.toLowerCase().endsWith('.html')
+              );
+
+              if (htmlFiles.length > 0) {
+                console.log(`Found ${htmlFiles.length} HTML file(s) changed:`);
+                htmlFiles.forEach(file => console.log(`  - ${file.filename}`));
+
+                // Check if PR description contains screenshots or videos
+                // Look for common patterns:
+                // - Markdown images: ![alt](url)
+                // - HTML img tags: <img src="..." />
+                // - Video links: <video>, ![video], .mp4, .mov, .gif, etc.
+                // - Image hosting services: imgur, cloudinary, github user-content, etc.
+                
+                const hasScreenshot = 
+                  // Markdown image syntax
+                  /!\[.*?\]\(.*?\)/i.test(prBody) ||
+                  // HTML img tag
+                  /<img\s+[^>]*src=/i.test(prBody) ||
+                  // Video tags or video file extensions
+                  /<video\s+/i.test(prBody) ||
+                  /\.(mp4|mov|avi|webm|gif)\b/i.test(prBody) ||
+                  // Common image hosting services
+                  /https?:\/\/(i\.)?imgur\.com/i.test(prBody) ||
+                  /https?:\/\/.*cloudinary\.com/i.test(prBody) ||
+                  /https?:\/\/user-images\.githubusercontent\.com/i.test(prBody) ||
+                  /https?:\/\/github\.com\/.*\/assets\//i.test(prBody);
+
+                if (!hasScreenshot) {
+                  console.log('No screenshot or video found in PR description.');
+
+                  // Check if we already posted a comment
+                  const { data: comments } = await github.rest.issues.listComments({
+                    owner,
+                    repo,
+                    issue_number: prNumber,
+                  });
+
+                  const botComment = comments.find(comment => 
+                    comment.user.type === 'Bot' && 
+                    comment.body.includes('HTML files have been modified') &&
+                    comment.body.includes('screenshot or video')
+                  );
+
+                  if (!botComment) {
+                    // Create the comment message
+                    const fileList = htmlFiles.map(file => `- \`${file.filename}\``).join('\n');
+                    const message = [
+                      '📸 **Screenshot or Video Required**',
+                      '',
+                      'This PR modifies HTML file(s):',
+                      '',
+                      fileList,
+                      '',
+                      'Please add a screenshot or video to the **top summary field** (PR description) to show the visual changes.',
+                      '',
+                      'You can add screenshots by:',
+                      '- Dragging and dropping an image into the description field',
+                      '- Using Markdown syntax: `![description](image-url)`',
+                      '- Using HTML: `<img src="image-url" />`',
+                      '',
+                      'For videos, you can:',
+                      '- Upload a video file (drag and drop)',
+                      '- Link to a video hosting service',
+                      '',
+                      'Thank you for your contribution! 🙏'
+                    ].join('\n');
+
+                    // Post the comment
+                    await github.rest.issues.createComment({
+                      owner,
+                      repo,
+                      issue_number: prNumber,
+                      body: message
+                    });
+
+                    console.log('Comment posted successfully.');
+                  } else {
+                    console.log('Comment already exists, skipping.');
+                  }
+                } else {
+                  console.log('Screenshot or video found in PR description.');
+                }
+              } else {
+                console.log('No HTML files changed.');
+              }
+            } catch (error) {
+              console.error(`Error checking HTML screenshot requirement: ${error.message}`);
+              if (error.stack) {
+                console.error(error.stack);
+              }
+            }
