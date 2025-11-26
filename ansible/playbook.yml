@@ -98,18 +98,12 @@
         path: /tmp/requirements.txt
       register: requirements_txt_stat
 
-    - name: Get poetry.lock checksum
-      stat:
-        path: "{{ app_dir }}/current/poetry.lock"
-        checksum_algorithm: sha256
-      register: poetry_lock_checksum
-      when: poetry_lock_stat.stat.exists
-
-    - name: Get pyproject.toml checksum
-      stat:
-        path: "{{ app_dir }}/current/pyproject.toml"
-        checksum_algorithm: sha256
-      register: pyproject_checksum
+    - name: Determine if dependencies need updating
+      set_fact:
+        should_update_dependencies: >-
+          {{ git_result.changed or
+             not requirements_txt_stat.stat.exists or
+             not poetry_lock_stat.stat.exists }}
 
     - name: Export dependencies from Poetry
       shell: |
@@ -117,19 +111,13 @@
         cd {{ app_dir }}/current && poetry export -f requirements.txt --without-hashes -o /tmp/requirements.txt
       args:
         executable: /bin/bash
-      when: >
-        git_result.changed or
-        not requirements_txt_stat.stat.exists or
-        not poetry_lock_stat.stat.exists
+      when: should_update_dependencies | bool
 
     - name: Install Python dependencies from requirements.txt
       pip:
         requirements: /tmp/requirements.txt
         virtualenv: "{{ venv_dir }}"
-      when: >
-        git_result.changed or
-        not requirements_txt_stat.stat.exists or
-        not poetry_lock_stat.stat.exists
+      when: should_update_dependencies | bool
 
     - name: Check if SECRET_KEY file exists
       stat:
