@@ -991,7 +991,13 @@ def check_security_txt(domain_url):
     Returns:
         bool: True if security.txt is found, False otherwise
     """
+    import logging
+
     import requests
+
+    from website.utils import rebuild_safe_url
+
+    logger = logging.getLogger(__name__)
 
     # Ensure URL has a scheme
     if not domain_url.startswith(("http://", "https://")):
@@ -1003,23 +1009,29 @@ def check_security_txt(domain_url):
 
     # Check at well-known location first (/.well-known/security.txt)
     well_known_url = f"{domain_url}/.well-known/security.txt"
-
-    try:
-        response = requests.head(well_known_url, timeout=5)
-        if response.status_code == 200:
-            return True
-    except requests.RequestException:
-        pass
+    safe_well_known_url = rebuild_safe_url(well_known_url)
+    if not safe_well_known_url:
+        logger.debug(f"Skipping unsafe or invalid well-known URL: {well_known_url}")
+    else:
+        try:
+            response = requests.head(safe_well_known_url, timeout=5)
+            if response.status_code == 200:
+                return True
+        except requests.RequestException as e:
+            logger.debug(f"HEAD request failed for {safe_well_known_url}: {e}")
 
     # If not found, check at root location (/security.txt)
     root_url = f"{domain_url}/security.txt"
-
-    try:
-        response = requests.head(root_url, timeout=5)
-        if response.status_code == 200:
-            return True
-    except requests.RequestException:
-        pass
+    safe_root_url = rebuild_safe_url(root_url)
+    if not safe_root_url:
+        logger.debug(f"Skipping unsafe or invalid root URL: {root_url}")
+    else:
+        try:
+            response = requests.head(safe_root_url, timeout=5)
+            if response.status_code == 200:
+                return True
+        except requests.RequestException as e:
+            logger.debug(f"HEAD request failed for {safe_root_url}: {e}")
 
     # If we reach here, no security.txt was found
     return False
