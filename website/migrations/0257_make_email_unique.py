@@ -23,7 +23,6 @@ def remove_duplicate_emails(apps, schema_editor):
         # Handle NULL or empty emails by setting them to unique placeholder values using UUIDs
         logger.info("Handling NULL or empty email addresses...")
         empty_email_users = User.objects.using(db_alias).filter(models.Q(email__isnull=True) | models.Q(email=""))
-        empty_count = empty_email_users.count()
 
         users_to_update = []
         for user in empty_email_users:
@@ -32,12 +31,14 @@ def remove_duplicate_emails(apps, schema_editor):
 
         if users_to_update:
             User.objects.bulk_update(users_to_update, ["email"], batch_size=500)
-        logger.info(f"Updated {empty_count} users with empty/NULL emails")
+            logger.info(f"Updated {len(users_to_update)} users with empty/NULL emails")
+        else:
+            logger.info("No empty/NULL emails found")
 
         # Normalize all emails to lowercase using bulk update
         logger.info("Normalizing all email addresses to lowercase...")
         users_to_normalize = []
-        for user in User.objects.using(db_alias).iterator(chunk_size=1000):
+        for user in User.objects.using(db_alias).iterator(chunk_size=500):
             if user.email:
                 normalized_email = user.email.lower()
                 if user.email != normalized_email:
