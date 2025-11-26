@@ -147,6 +147,12 @@
                                 </a>
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                File Info
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                                Execution Time
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -158,9 +164,9 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                                     <div class="flex items-center">
                                         <span>{{ command.name }}</span>
-                                        {% if command.arguments %}
+                                        {% if command.arguments or command.output %}
                                             <button class="ml-2 text-gray-400 dark:text-gray-600 hover:text-gray-600 focus:outline-none"
-                                                    title="Show arguments">
+                                                    title="Show details">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                      class="h-4 w-4"
                                                      fill="none"
@@ -225,6 +231,32 @@
                                         </div>
                                     {% endif %}
                                 </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">
+                                    {% if command.file_modified %}
+                                        <div class="flex flex-col">
+                                            <span class="text-xs text-gray-600">Modified: {{ command.file_modified|timesince }} ago</span>
+                                            {% if command.github_url %}
+                                                <a href="{{ command.github_url }}"
+                                                   target="_blank"
+                                                   class="text-[#e74c3c] hover:underline text-xs mt-1 flex items-center">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                                    </svg>
+                                                    View on GitHub
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-gray-400 text-xs">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if command.execution_time %}
+                                        <span class="text-xs">{{ command.execution_time|floatformat:3 }}s</span>
+                                    {% else %}
+                                        <span class="text-gray-400 text-xs">N/A</span>
+                                    {% endif %}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                     <div class="flex items-center space-x-2">
                                         {% if request.user.is_superuser %}
@@ -266,58 +298,59 @@
                                     </div>
                                 </td>
                             </tr>
-                            {% if command.arguments %}
-                                <tr class="hidden bg-gray-50 dark:bg-gray-900"
-                                    id="args-{{ command.name }}">
-                                    <td colspan="7" class="px-6 py-4">
-                                        <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                                            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Command Arguments</h3>
-                                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                                <thead>
-                                                    <tr>
-                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-                                                            Argument
-                                                        </th>
-                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-                                                            Flags
-                                                        </th>
-                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-                                                            Description
-                                                        </th>
-                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Type</th>
-                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-                                                            Required
-                                                        </th>
-                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-                                                            Default
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for arg in command.arguments %}
-                                                        <tr>
-                                                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ arg.name }}</td>
-                                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ arg.flags }}</td>
-                                                            <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-500">{{ arg.help }}</td>
-                                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">{{ arg.type }}</td>
-                                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
-                                                                {% if arg.required %}
-                                                                    <span class="text-red-500">Yes</span>
-                                                                {% else %}
-                                                                    No
-                                                                {% endif %}
-                                                            </td>
-                                                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
-                                                                {% if arg.default %}
-                                                                    {{ arg.default }}
-                                                                {% else %}
-                                                                    <span class="text-gray-400 dark:text-gray-600">None</span>
-                                                                {% endif %}
-                                                            </td>
-                                                        </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
+                            {% if command.arguments or command.output %}
+                                <tr class="hidden bg-gray-50" id="args-{{ command.name }}">
+                                    <td colspan="9" class="px-6 py-4">
+                                        <div class="bg-gray-50 p-4 rounded-lg space-y-4">
+                                            {% if command.arguments %}
+                                                <div>
+                                                    <h3 class="text-sm font-medium text-gray-700 mb-2">Command Arguments</h3>
+                                                    <table class="min-w-full divide-y divide-gray-200">
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Argument</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flags</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for arg in command.arguments %}
+                                                                <tr>
+                                                                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{{ arg.name }}</td>
+                                                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{ arg.flags }}</td>
+                                                                    <td class="px-4 py-2 text-sm text-gray-500">{{ arg.help }}</td>
+                                                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{ arg.type }}</td>
+                                                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                                                        {% if arg.required %}
+                                                                            <span class="text-red-500">Yes</span>
+                                                                        {% else %}
+                                                                            No
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                                                        {% if arg.default %}
+                                                                            {{ arg.default }}
+                                                                        {% else %}
+                                                                            <span class="text-gray-400">None</span>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            {% endif %}
+                                            {% if command.output %}
+                                                <div>
+                                                    <h3 class="text-sm font-medium text-gray-700 mb-2">Last Execution Output</h3>
+                                                    <div class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-xs overflow-x-auto max-h-96 overflow-y-auto">
+                                                        <pre class="whitespace-pre-wrap">{{ command.output }}</pre>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -389,7 +422,6 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, setting up event listeners');
             const commandRows = document.querySelectorAll('tr[data-command]');
             
             commandRows.forEach(row => {
@@ -411,7 +443,6 @@
             // Set up form submission handling
             const runCommandForm = document.getElementById('runCommandForm');
             if (runCommandForm) {
-                console.log('Found command form, setting up submit handler');
                 runCommandForm.addEventListener('submit', function(e) {
                     e.preventDefault();
                     submitCommandForm(this);
@@ -479,7 +510,6 @@
         
         // Command modal functions
         function openCommandModal(commandName) {
-            console.log('Opening modal for command:', commandName);
             const modal = document.getElementById('commandModal');
             const form = document.getElementById('runCommandForm');
             const argsContainer = document.getElementById('commandArguments');
@@ -499,7 +529,8 @@
             }
             
             // Reset form and hide results/loading
-            form.reset();
+            // Use prototype method to avoid conflicts with input elements named "reset"
+            HTMLFormElement.prototype.reset.call(form);
             if (resultsSection) resultsSection.classList.add('hidden');
             if (loadingSection) loadingSection.classList.add('hidden');
             
@@ -512,11 +543,9 @@
             
             // Get command arguments
             const argsRow = document.getElementById(`args-${commandName}`);
-            console.log('Args row found:', !!argsRow);
             
             if (argsRow) {
                 const argRows = argsRow.querySelectorAll('tbody tr');
-                console.log('Found argument rows:', argRows.length);
                 
                 argRows.forEach((row, index) => {
                     const cells = row.querySelectorAll('td');
@@ -531,8 +560,6 @@
                     const argType = cells[3].textContent.trim();
                     const argRequired = cells[4].textContent.trim().includes('Yes');
                     const argDefault = cells[5].textContent.trim();
-                    
-                    console.log('Processing argument:', argName, argType);
                     
                     // Create form field
                     const fieldDiv = document.createElement('div');
@@ -604,17 +631,14 @@
             
             // Show modal
             modal.classList.remove('hidden');
-            console.log('Modal should now be visible');
         }
         
         function closeCommandModal() {
-            console.log('Closing modal');
             const modal = document.getElementById('commandModal');
             if (modal) modal.classList.add('hidden');
         }
         
         function submitCommandForm(form) {
-            console.log('Submitting command form');
             const formData = new FormData(form);
             const commandName = formData.get('command');
             const runBtn = document.getElementById('runCommandBtn');
@@ -630,8 +654,6 @@
             if (loadingSection) loadingSection.classList.remove('hidden');
             if (resultsSection) resultsSection.classList.add('hidden');
             
-            console.log('Sending AJAX request for command:', commandName);
-            
             // Submit form via AJAX
             fetch(form.action, {
                 method: 'POST',
@@ -641,11 +663,9 @@
                 }
             })
             .then(response => {
-                console.log('Received response:', response.status);
                 return response.json();
             })
             .then(data => {
-                console.log('Command result:', data);
                 // Hide loading state
                 if (loadingSection) loadingSection.classList.add('hidden');
                 if (runBtn) {

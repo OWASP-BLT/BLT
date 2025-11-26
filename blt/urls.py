@@ -41,8 +41,10 @@ from website.api.views import (
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
+    trademark_search_api,
 )
 from website.feeds import ActivityFeed
+from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -55,6 +57,7 @@ from website.views.bitcoin import (
     update_submission_status,
 )
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
+from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -103,10 +106,12 @@ from website.views.core import (
     add_forum_post,
     badge_list,
     check_owasp_compliance,
+    delete_forum_post,
     donate_view,
     features_view,
     find_key,
     home,
+    invite_organization,
     management_commands,
     robots_txt,
     run_management_command,
@@ -167,6 +172,7 @@ from website.views.hackathon import (
     HackathonSponsorCreateView,
     HackathonUpdateView,
     add_org_repos_to_hackathon,
+    refresh_all_hackathon_repositories,
     refresh_repository_data,
 )
 from website.views.issue import (
@@ -296,6 +302,7 @@ from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
+from website.views.slackbot import slack_landing_page
 from website.views.social import queue_social_view
 from website.views.staking_competitive import (
     create_staking_pool,
@@ -322,13 +329,13 @@ from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
     GlobalLeaderboardView,
-    InviteCreate,
     SpecificMonthLeaderboardView,
     UserChallengeListView,
     UserDeleteView,
     UserProfileDetailView,
     assign_badge,
     badge_user_list,
+    contributor_stats_view,
     contributors,
     contributors_view,
     create_wallet,
@@ -425,6 +432,7 @@ urlpatterns = [
         SlackCallbackView.as_view(),
         name="slack_oauth_callback",
     ),
+    path("slack/", slack_landing_page, name="slack_landing_page"),
     path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
@@ -658,12 +666,17 @@ urlpatterns = [
         badge_user_list,
         name="badge_user_list",
     ),
+    # Adventure URLs
+    path("adventures/", AdventureListView.as_view(), name="adventure_list"),
+    path("adventures/<slug:slug>/", AdventureDetailView.as_view(), name="adventure_detail"),
+    path("adventures/<slug:slug>/start/", start_adventure, name="start_adventure"),
+    path("adventures/<slug:slug>/task/<int:task_id>/submit/", submit_task, name="submit_task"),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
     path("bounties/payouts/", BountyPayoutsView.as_view(), name="bounty_payouts"),
     path("api/load-more-issues/", load_more_issues, name="load_more_issues"),
-    re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"),
+    re_path(r"^invite/$", invite_organization, name="invite"),
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
     re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
@@ -844,6 +857,7 @@ urlpatterns = [
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
+    path("contributor-stats/", contributor_stats_view, name="contributor_stats"),
     # users
     path("users/", users_view, name="users"),
     # company specific urls :
@@ -996,6 +1010,7 @@ urlpatterns = [
     path("forum/vote/", vote_forum_post, name="vote_forum_post"),
     path("forum/set-vote-status/", set_vote_status, name="set_vote_status"),
     path("forum/comment/", add_forum_comment, name="add_forum_comment"),
+    path("forum/delete/", delete_forum_post, name="delete_forum_post"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s\W]+)$",
         trademark_detailview,
@@ -1145,6 +1160,11 @@ urlpatterns = [
                     refresh_repository_data,
                     name="refresh_repository_data",
                 ),
+                path(
+                    "<slug:slug>/refresh-all-repos/",
+                    refresh_all_hackathon_repositories,
+                    name="refresh_all_hackathon_repositories",
+                ),
                 # Add the new URL pattern for adding all org repos to hackathon
                 path(
                     "<slug:slug>/add-org-repos/",
@@ -1182,6 +1202,8 @@ urlpatterns = [
     path("slack/disconnect/", disconnect_slack_account, name="disconnect_slack_account"),
     path("slack/send-test-reminder/", send_test_slack_reminder, name="send_test_slack_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
+    path("bounty_payout/", bounty_payout, name="bounty_payout"),
+    path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
 ]
 
 if settings.DEBUG:

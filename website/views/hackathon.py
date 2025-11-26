@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from datetime import timedelta
 
@@ -27,6 +28,9 @@ from website.models import (
     Repo,
     UserProfile,
 )
+
+logger = logging.getLogger(__name__)
+REPO_REFRESH_DELAY_SECONDS = getattr(settings, "HACKATHON_REPO_REFRESH_DELAY", 1.0)
 
 
 class HackathonListView(ListView):
@@ -173,6 +177,9 @@ class HackathonDetailView(DetailView):
 
         # Get the leaderboard
         context["leaderboard"] = hackathon.get_leaderboard()
+
+        # Get the reviewer leaderboard
+        context["reviewer_leaderboard"] = hackathon.get_reviewer_leaderboard()
 
         # Get repositories with merged PR counts
         repositories = hackathon.repositories.all()
@@ -437,6 +444,67 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
     return redirect("hackathon_detail", slug=hackathon_slug)
 
 
+@login_required
+def refresh_all_hackathon_repositories(request, slug):
+    """Refresh pull request data for all repositories linked to a hackathon."""
+    hackathon = get_object_or_404(Hackathon, slug=slug)
+
+    user = request.user
+    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+        messages.error(request, "You don't have permission to refresh repository data.")
+        return redirect("hackathon_detail", slug=slug)
+
+    repositories = list(hackathon.repositories.all())
+    if not repositories:
+        messages.info(request, f"No repositories are linked to {hackathon.name}.")
+        return redirect("hackathon_detail", slug=slug)
+
+    refreshed_count = 0
+    total_new_prs = 0
+    failed_repos = []
+
+    for index, repo in enumerate(repositories, start=1):
+        try:
+            new_prs = _refresh_repository_pull_requests(hackathon, repo)
+            total_new_prs += new_prs
+            refreshed_count += 1
+        except requests.exceptions.RequestException as exc:
+            failed_repos.append(repo.name)
+            logger.warning(
+                "GitHub API request failed while refreshing repo '%s' for hackathon '%s': %s",
+                repo.name,
+                hackathon.slug,
+                exc,
+                exc_info=True,
+            )
+        except Exception:
+            failed_repos.append(repo.name)
+            logger.exception(
+                "Unexpected error while refreshing repo '%s' for hackathon '%s'",
+                repo.name,
+                hackathon.slug,
+            )
+
+        if index < len(repositories) and REPO_REFRESH_DELAY_SECONDS > 0:
+            # Sleep briefly to avoid tripping GitHub's secondary rate limits across repositories.
+            time.sleep(REPO_REFRESH_DELAY_SECONDS)
+
+    if refreshed_count:
+        messages.success(
+            request,
+            f"Successfully refreshed {refreshed_count} repositories. Found {total_new_prs} new pull requests.",
+        )
+
+    if failed_repos:
+        repo_list = ", ".join(failed_repos)
+        messages.error(
+            request,
+            f"Unable to refresh the following repositories: {repo_list}. Please try again later.",
+        )
+
+    return redirect("hackathon_detail", slug=slug)
+
+
 def _refresh_repository_pull_requests(hackathon, repo):
     """Helper function to refresh pull request data from GitHub API."""
     # Extract owner and repo name from repo URL
@@ -468,7 +536,7 @@ def _refresh_repository_pull_requests(hackathon, repo):
     # to get all PRs that might be relevant
     all_prs_data = []
     page = 1
-    max_pages = 5  # Limit to 5 pages (500 PRs) to avoid excessive API calls
+    max_pages = 100
 
     while page <= max_pages:
         params["page"] = page

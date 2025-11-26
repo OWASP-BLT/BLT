@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
+from dateutil import parser as dateutil_parser
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -38,6 +39,7 @@ from website.models import (
     Badge,
     Challenge,
     Contributor,
+    ContributorStats,
     Domain,
     GitHubIssue,
     GitHubReview,
@@ -48,6 +50,7 @@ from website.models import (
     Monitor,
     Notification,
     Points,
+    Repo,
     Tag,
     Thread,
     User,
@@ -344,7 +347,7 @@ def get_github_stats(user_profile):
 
     # Get review ranking
     all_reviewers = (
-        UserProfile.objects.annotate(review_count=Count("reviews_made"))
+        UserProfile.objects.annotate(review_count=Count("reviews_made_as_user"))
         .filter(review_count__gt=0)
         .order_by("-review_count")
     )
@@ -575,46 +578,57 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard - Only show PRs from tracked repositories
+        # Pull Request Leaderboard - Use Contributor model
+        # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for PRs merged in the last 6 months
+        from dateutil.relativedelta import relativedelta
+
+        since_date = timezone.now() - relativedelta(months=6)
         pr_leaderboard = (
             GitHubIssue.objects.filter(
                 type="pull_request",
                 is_merged=True,
-                repo__isnull=False,  # Only include PRs from tracked repositories
+                contributor__isnull=False,
+                merged_at__gte=since_date,
             )
-            .exclude(user_profile__isnull=True)  # Exclude PRs without user profiles
-            .select_related("user_profile__user", "repo")  # Optimize database queries
+            .filter(
+                Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
+            )
+            .select_related("contributor", "user_profile__user")
             .values(
+                "contributor__name",
+                "contributor__github_url",
+                "contributor__avatar_url",
                 "user_profile__user__username",
-                "user_profile__user__email",
-                "user_profile__github_url",
             )
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
-        # Extract GitHub username from URL for avatar
-        for leader in pr_leaderboard:
-            github_username = extract_github_username(leader.get("user_profile__github_url"))
-            if github_username:
-                leader["github_username"] = github_username
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Reviewed PR Leaderboard - Fixed query to properly count reviews
+        # Code Review Leaderboard - Use reviewer_contributor
+        # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for reviews on PRs merged in the last 6 months
         reviewed_pr_leaderboard = (
-            GitHubReview.objects.filter(reviewer__user__isnull=False)
+            GitHubReview.objects.filter(
+                reviewer_contributor__isnull=False,
+                pull_request__merged_at__gte=since_date,
+            )
+            .filter(
+                Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(pull_request__repo__repo_url__startswith="https://github.com/owasp-blt/")
+            )
+            .select_related("reviewer_contributor", "reviewer__user")
             .values(
+                "reviewer_contributor__name",
+                "reviewer_contributor__github_url",
+                "reviewer_contributor__avatar_url",
                 "reviewer__user__username",
-                "reviewer__user__email",
-                "reviewer__github_url",
             )
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
         )
-        # Extract GitHub username from URL for avatar
-        for leader in reviewed_pr_leaderboard:
-            github_username = extract_github_username(leader.get("reviewer__github_url"))
-            if github_username:
-                leader["github_username"] = github_username
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         # Top visitors leaderboard
@@ -827,6 +841,212 @@ def contributors(request):
     return JsonResponse({"contributors": contributors_data})
 
 
+def contributor_stats_view(request):
+    """
+    Weekly Activity view that highlights streak and challenge completions.
+    This view displays contributor statistics with enhanced highlights for user achievements.
+    """
+    from datetime import timedelta
+
+    from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+
+    # Calculate the date range for the current week
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=7)
+
+    # Get time period from request (defaulting to current week)
+    time_period = request.GET.get("period", "current_week")
+    page_number = request.GET.get("page", 1)
+
+    # Define time periods
+    if time_period == "today":
+        start_date = end_date
+    elif time_period == "current_week":
+        start_date = end_date - timedelta(days=7)
+    elif time_period == "current_month":
+        start_date = end_date.replace(day=1)
+    elif time_period == "last_month":
+        if end_date.month == 1:
+            start_date = end_date.replace(year=end_date.year - 1, month=12, day=1)
+        else:
+            start_date = end_date.replace(month=end_date.month - 1, day=1)
+
+    # Get user profiles with recent activity and streak/challenge data
+    user_profiles = (
+        UserProfile.objects.select_related("user")
+        .filter(user__is_active=True)
+        .prefetch_related("user__user_challenges", "user__points_set")
+    )
+
+    # Get recent streak achievements (users who reached milestone streaks this week)
+    streak_highlights = []
+    for profile in user_profiles:
+        if profile.current_streak > 0:
+            # Check if they reached a milestone streak recently
+            milestone_achieved = None
+            if profile.current_streak == 7:
+                milestone_achieved = "7-day streak achieved!"
+            elif profile.current_streak == 15:
+                milestone_achieved = "15-day streak achieved!"
+            elif profile.current_streak == 30:
+                milestone_achieved = "30-day streak achieved!"
+            elif profile.current_streak == 100:
+                milestone_achieved = "100-day streak achieved!"
+            elif profile.current_streak == 180:
+                milestone_achieved = "180-day streak achieved!"
+            elif profile.current_streak == 365:
+                milestone_achieved = "365-day streak achieved!"
+
+            if milestone_achieved:
+                streak_highlights.append(
+                    {
+                        "user": profile.user,
+                        "current_streak": profile.current_streak,
+                        "longest_streak": profile.longest_streak,
+                        "milestone": milestone_achieved,
+                        "user_profile": profile,
+                    }
+                )
+
+    # Get recent challenge completions from the past week
+    completed_challenges = (
+        Challenge.objects.filter(completed=True, completed_at__gte=start_date, completed_at__lte=end_date)
+        .select_related()
+        .prefetch_related("participants")
+    )
+
+    challenge_highlights = []
+    for challenge in completed_challenges:
+        for participant in challenge.participants.all():
+            challenge_highlights.append(
+                {
+                    "user": participant,
+                    "challenge": challenge,
+                    "completed_at": challenge.completed_at,
+                    "points_earned": challenge.points,
+                }
+            )
+
+    # Get contributor stats for the time period
+    contributor_stats = []
+    try:
+        # Get aggregated stats for the time period
+        stats_query = (
+            ContributorStats.objects.filter(date__gte=start_date, date__lte=end_date)
+            .values("contributor")
+            .annotate(
+                total_commits=Sum("commits"),
+                total_issues_opened=Sum("issues_opened"),
+                total_issues_closed=Sum("issues_closed"),
+                total_prs=Sum("pull_requests"),
+                total_comments=Sum("comments"),
+            )
+            .order_by("-total_commits")
+        )
+
+        for stat in stats_query:
+            try:
+                contributor = Contributor.objects.get(id=stat["contributor"])
+
+                # Calculate impact score
+                impact_score = (
+                    stat["total_commits"] * 5
+                    + stat["total_prs"] * 3
+                    + stat["total_issues_opened"] * 2
+                    + stat["total_issues_closed"] * 2
+                    + stat["total_comments"]
+                )
+
+                # Determine impact level
+                if impact_score > 200:
+                    impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
+                elif impact_score > 100:
+                    impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
+                else:
+                    impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
+
+                contributor_stats.append(
+                    {
+                        "contributor": contributor,
+                        "commits": stat["total_commits"] or 0,
+                        "issues_opened": stat["total_issues_opened"] or 0,
+                        "issues_closed": stat["total_issues_closed"] or 0,
+                        "pull_requests": stat["total_prs"] or 0,
+                        "comments": stat["total_comments"] or 0,
+                        "impact_score": impact_score,
+                        "impact_level": impact_level,
+                    }
+                )
+            except Contributor.DoesNotExist:
+                continue
+    except Exception as e:
+        logger.error(f"Error fetching contributor stats: {e}")
+
+    # Sort by impact score
+    contributor_stats.sort(key=lambda x: x["impact_score"], reverse=True)
+
+    # Paginate contributor stats
+    paginator = Paginator(contributor_stats, 10)
+    try:
+        paginated_stats = paginator.page(page_number)
+    except PageNotAnInteger:
+        paginated_stats = paginator.page(1)
+    except EmptyPage:
+        paginated_stats = paginator.page(paginator.num_pages)
+
+    # Get weekly leaderboard - top users by points earned in the time period
+    leaderboard = []
+    try:
+        leaderboard_query = (
+            Points.objects.filter(created__gte=start_date, created__lte=end_date)
+            .values("user")
+            .annotate(total_points=Sum("score"))
+            .order_by("-total_points")[:10]  # Top 10 contributors
+        )
+
+        for entry in leaderboard_query:
+            try:
+                user = User.objects.get(id=entry["user"])
+                user_profile = UserProfile.objects.get(user=user)
+                leaderboard.append(
+                    {
+                        "user": user,
+                        "user_profile": user_profile,
+                        "total_points": entry["total_points"],
+                    }
+                )
+            except (User.DoesNotExist, UserProfile.DoesNotExist):
+                continue
+    except Exception as e:
+        logger.error(f"Error fetching leaderboard: {e}")
+
+    # Prepare time period options
+    time_period_options = [
+        ("today", "Today's Data"),
+        ("current_week", "Current Week"),
+        ("current_month", "Current Month"),
+        ("last_month", "Last Month"),
+    ]
+
+    context = {
+        "contributor_stats": paginated_stats,
+        "page_obj": paginated_stats,
+        "paginator": paginator,
+        "is_paginated": paginator.num_pages > 1,
+        "time_period": time_period,
+        "time_period_options": time_period_options,
+        "start_date": start_date,
+        "end_date": end_date,
+        "streak_highlights": streak_highlights,
+        "challenge_highlights": challenge_highlights,
+        "total_streak_achievements": len(streak_highlights),
+        "total_challenge_completions": len(challenge_highlights),
+        "leaderboard": leaderboard,
+    }
+
+    return render(request, "weekly_activity.html", context)
+
+
 def create_wallet(request):
     for user in User.objects.all():
         Wallet.objects.get_or_create(user=user)
@@ -1036,12 +1256,70 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    logger.debug("issue closed")
-    if payload["action"] == "closed":
+    """
+    Handle GitHub issue events (opened, closed, etc.)
+    Updates GitHubIssue records in BLT to match GitHub issue state
+    """
+    action = payload.get("action")
+    issue_data = payload.get("issue", {})
+    repo_data = payload.get("repository", {})
+
+    logger.debug(f"GitHub issue event: {action}")
+
+    # Extract issue details
+    issue_id = issue_data.get("number")
+    issue_state = issue_data.get("state")
+    issue_html_url = issue_data.get("html_url")
+
+    # Extract repository details
+    repo_full_name = repo_data.get("full_name")  # e.g., "owner/repo"
+    repo_html_url = repo_data.get("html_url")
+
+    if not issue_id or not repo_html_url:
+        logger.warning("Issue event missing required data")
+        return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
+
+    # Find the Repo in BLT database
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+    except Repo.DoesNotExist:
+        logger.info(f"Repository not found in BLT: {repo_html_url}")
+        # Not an error - we only track issues for repos we have in our database
+        # Continue to badge assignment
+    except Exception as e:
+        logger.error(f"Error finding repository: {e}")
+        # Continue to badge assignment
+    else:
+        # Find and update the GitHubIssue record
+        try:
+            github_issue = GitHubIssue.objects.get(issue_id=issue_id, repo=repo, type="issue")
+
+            # Update the issue state
+            github_issue.state = issue_state
+
+            # Update closed_at timestamp if the issue was closed
+            if action == "closed" and issue_data.get("closed_at"):
+                github_issue.closed_at = dateutil_parser.parse(issue_data["closed_at"])
+
+            # Update updated_at timestamp
+            if issue_data.get("updated_at"):
+                github_issue.updated_at = dateutil_parser.parse(issue_data["updated_at"])
+
+            github_issue.save()
+            logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
+        except GitHubIssue.DoesNotExist:
+            logger.info(f"GitHubIssue {issue_id} not found in BLT for repo {repo_full_name}")
+            # Not an error - we may not have all issues in our database
+        except Exception as e:
+            logger.error(f"Error updating GitHubIssue: {e}")
+
+    # Assign badge for first issue closed (existing functionality)
+    if action == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
             closer_user = closer_profile.user
             assign_github_badge(closer_user, "First Issue Closed")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
@@ -1366,7 +1644,7 @@ def mark_as_read(request):
         except Exception as e:
             logger.error(f"Error marking notifications as read: {e}")
             return JsonResponse(
-                {"status": "error", "message": "An error occured while marking notifications as read"}, status=400
+                {"status": "error", "message": "An error occurred while marking notifications as read"}, status=400
             )
 
 
@@ -1383,7 +1661,7 @@ def delete_notification(request, notification_id):
         except Exception as e:
             logger.error(f"Error deleting notification: {e}")
             return JsonResponse(
-                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                {"status": "error", "message": "An error occurred while deleting notification, please try again."},
                 status=400,
             )
     else:

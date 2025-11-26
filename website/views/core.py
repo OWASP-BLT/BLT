@@ -27,19 +27,22 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.validators import validate_email
 from django.db import connection, models
 from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -54,6 +57,7 @@ from website.models import (
     ForumVote,
     Hunt,
     InviteFriend,
+    InviteOrganization,
     Issue,
     ManagementCommandLog,
     Organization,
@@ -73,6 +77,9 @@ from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_ur
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
+
+# Constants
+SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
 
 
 # ----------------------------------------------------------------------------------
@@ -795,13 +802,17 @@ def vote_forum_post(request):
 
             return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
         except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
+            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in vote_forum_post")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in vote_forum_post")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -813,14 +824,22 @@ def set_vote_status(request):
             vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
 
             return JsonResponse(
-                {"up_vote": vote.up_vote if vote else False, "down_vote": vote.down_vote if vote else False}
+                {
+                    "success": True,
+                    "up_vote": vote.up_vote if vote else False,
+                    "down_vote": vote.down_vote if vote else False,
+                }
             )
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in set_vote_status")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in set_vote_status")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -831,21 +850,45 @@ def add_forum_post(request):
             title = data.get("title")
             category = data.get("category")
             description = data.get("description")
+            repo_id = data.get("repo")
+            project_id = data.get("project")
+            organization_id = data.get("organization")
 
             if not all([title, category, description]):
-                return JsonResponse({"status": "error", "message": "Missing required fields"})
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-            post = ForumPost.objects.create(
-                user=request.user, title=title, category_id=category, description=description
-            )
+            # Explicitly validate category exists before creating post
+            category_obj = ForumCategory.objects.get(pk=category)
+
+            post_data = {
+                "user": request.user,
+                "title": title,
+                "category_id": category,
+                "description": description,
+            }
+
+            if repo_id:
+                post_data["repo_id"] = repo_id
+            if project_id:
+                post_data["project_id"] = project_id
+            if organization_id:
+                post_data["organization_id"] = organization_id
+
+            post = ForumPost.objects.create(**post_data)
 
             return JsonResponse({"status": "success", "post_id": post.id})
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in add_forum_post")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
+        except ForumCategory.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in add_forum_post")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -857,33 +900,108 @@ def add_forum_comment(request):
             content = data.get("content")
 
             if not all([post_id, content]):
-                return JsonResponse({"status": "error", "message": "Missing required fields"})
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
             post = ForumPost.objects.get(id=post_id)
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
 
             return JsonResponse({"status": "success", "comment_id": comment.id})
         except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
+            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in add_forum_comment")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in add_forum_comment")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
+@login_required
+@require_POST
+def delete_forum_post(request):
+    if not request.user.is_superuser:
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        post_id = data.get("post_id")
+
+        if not post_id:
+            return JsonResponse({"status": "error", "message": "Post ID is required"})
+
+        # Validate post_id is an integer
+        try:
+            post_id = int(post_id)
+        except (ValueError, TypeError):
+            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
+
+        post = ForumPost.objects.get(id=post_id)
+        post.delete()
+
+        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
+    except ForumPost.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Post not found"})
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+    except Exception as e:
+        logging.exception("Unexpected error deleting forum post")
+        return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+
+@ensure_csrf_cookie
 def view_forum(request):
-    categories = ForumCategory.objects.all()
+    # Annotate categories with post counts
+    categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
 
-    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+    # Add is_selected flag to categories for cleaner template logic
+    for category in categories:
+        category.is_selected = str(category.id) == selected_category
+
+    # Get total posts count before filtering
+    total_posts_count = ForumPost.objects.count()
+
+    posts = (
+        ForumPost.objects.select_related("user", "category")
+        .prefetch_related("comments")
+        .annotate(comment_count=Count("comments"))
+        .order_by("-created")  # Sort by newest first
+        .all()
+    )
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
+    # Optimize user vote queries to avoid N+1 problem
+    if request.user.is_authenticated:
+        # Get all votes for current user and these posts in one query
+        post_ids = [post.id for post in posts]
+        user_votes = {vote.post_id: vote for vote in ForumVote.objects.filter(post_id__in=post_ids, user=request.user)}
+
+        # Attach votes to posts
+        for post in posts:
+            post.user_vote = user_votes.get(post.id)
+
+    organizations = Organization.objects.all().order_by("name")
+    projects = Project.objects.all().order_by("name")
+    repos = Repo.objects.all().order_by("name")
+
     return render(
-        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+        request,
+        "forum.html",
+        {
+            "categories": categories,
+            "posts": posts,
+            "selected_category": selected_category,
+            "organizations": organizations,
+            "projects": projects,
+            "repos": repos,
+            "total_posts_count": total_posts_count,
+        },
     )
 
 
@@ -1797,6 +1915,25 @@ def management_commands(request):
                 "help_text": help_text,
             }
 
+            # Get command file path and metadata
+            try:
+                command_file = command_class.__module__.replace(".", os.sep) + ".py"
+                command_path = os.path.join(settings.BASE_DIR, command_file)
+
+                if os.path.exists(command_path):
+                    command_info["file_path"] = command_path
+                    # Get file modification time
+                    mtime = os.path.getmtime(command_path)
+                    command_info["file_modified"] = datetime.fromtimestamp(mtime, tz=pytz.UTC)
+
+                    # Generate GitHub URL
+                    # Assuming the repo is OWASP-BLT/BLT
+                    relative_path = os.path.relpath(command_path, settings.BASE_DIR)
+                    github_url = f"https://github.com/OWASP-BLT/BLT/blob/main/{relative_path}"
+                    command_info["github_url"] = github_url
+            except Exception as e:
+                logging.error(f"Error getting file info for command {name}: {e}")
+
             # Get command arguments if they exist
             command_args = []
             if hasattr(command_class, "add_arguments"):
@@ -1804,8 +1941,8 @@ def management_commands(request):
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                command_instance = command_class()
+                command_instance.add_arguments(parser)
 
                 # Extract argument information
                 for action in parser._actions:
@@ -1830,6 +1967,8 @@ def management_commands(request):
                         "last_run": log.last_run,
                         "last_success": log.success,
                         "run_count": log.run_count,
+                        "execution_time": log.execution_time,
+                        "output": log.output,
                     }
                 )
 
@@ -1944,8 +2083,8 @@ def run_management_command(request):
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                command_instance = command_class()
+                command_instance.add_arguments(parser)
 
                 # Extract argument information and collect values from POST
                 for action in parser._actions:
@@ -1982,19 +2121,26 @@ def run_management_command(request):
             try:
                 # Capture command output
                 import sys
+                import time
                 from io import StringIO
 
                 # Redirect stdout to capture output
                 old_stdout = sys.stdout
                 sys.stdout = mystdout = StringIO()
 
+                # Track execution time
+                start_time = time.time()
                 call_command(command, *command_args, **command_kwargs)
+                end_time = time.time()
+                execution_time = end_time - start_time
 
                 # Get the output and restore stdout
                 output = mystdout.getvalue()
                 sys.stdout = old_stdout
 
                 log_entry.success = True
+                log_entry.execution_time = execution_time
+                log_entry.output = output[:10000] if output else ""  # Limit output to 10000 chars
                 log_entry.save()
 
                 # Record execution in DailyStats
@@ -2027,6 +2173,14 @@ def run_management_command(request):
 
                 messages.success(request, f"Command '{command}' executed successfully.")
             except Exception as e:
+                # Try to capture execution time even on failure
+                try:
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                    log_entry.execution_time = execution_time
+                except Exception:
+                    pass
+
                 log_entry.success = False
                 log_entry.save()
 
@@ -2941,6 +3095,142 @@ class RoadmapView(TemplateView):
 
 class StyleGuideView(TemplateView):
     template_name = "style_guide.html"
+
+
+def invite_organization(request):
+    """
+    View for inviting organizations to join BLT.
+    Generates professional invitation emails with referral tracking.
+    """
+    context = {}
+
+    if request.method == "POST":
+        # Require authentication for POST requests
+        if not request.user.is_authenticated:
+            messages.error(request, "Please log in to send organization invitations.")
+            context["exists"] = False
+            context["show_login_prompt"] = True
+            return render(request, "invite.html", context)
+
+        # Handle form submission
+        email = request.POST.get("email", "").strip()
+        organization_name = request.POST.get("organization_name", "").strip()
+
+        # Add to context for later use
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Validate both fields are provided first
+        if not (email and organization_name):
+            messages.error(request, "Please provide both email and organization name.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Validate email format
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            messages.error(request, "Please enter a valid email address.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Reject sample/placeholder emails
+        if re.match(SAMPLE_INVITE_EMAIL_PATTERN, email):
+            messages.error(
+                request,
+                "This email format is reserved for system use. Please provide a valid organization email address.",
+            )
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Validate organization_name length
+        if len(organization_name) > 255:
+            messages.error(request, "Organization name is too long (max 255 characters).")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Rate limiting check - DB-backed for reliability
+        today = timezone.now().date()
+        invite_count = (
+            InviteOrganization.objects.filter(sender=request.user, created__date=today)
+            .exclude(
+                email__regex=SAMPLE_INVITE_EMAIL_PATTERN  # Exclude sample invites from count
+            )
+            .count()
+        )
+
+        if invite_count >= 10:  # 10 invites per day
+            messages.error(request, "Daily invitation limit reached. Please try again tomorrow.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Create invite record for logged-in users (or get existing one)
+        invite_record, created = InviteOrganization.objects.get_or_create(
+            sender=request.user,
+            email=email,
+            defaults={"organization_name": organization_name},
+        )
+        if not created:
+            # Update organization name if it changed
+            invite_record.organization_name = organization_name
+            invite_record.save()
+
+        # Generate referral link
+        base_url = request.build_absolute_uri(reverse("register_organization"))
+        referral_link = f"{base_url}?ref={invite_record.referral_code}"
+        context["referral_link"] = referral_link
+
+    # Add login prompt for non-authenticated users
+    if not request.user.is_authenticated:
+        context["show_login_prompt"] = True
+
+    # Add template context variables - check if we have the data in context
+    email = context.get("email", "")
+    organization_name = context.get("organization_name", "")
+
+    # Only generate email content for authenticated users with valid data
+    if email and organization_name and request.user.is_authenticated:
+        context["exists"] = True
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Generate email content
+        domain = email.split("@")[-1] if email and "@" in email else ""
+        email_subject = "Invitation to Join BLT (Bug Logging Tool) - Enhanced Security Testing Platform"
+
+        org_name = organization_name if organization_name else "your organization"
+        sender_name = request.user.get_full_name() or request.user.username
+        referral_link = context.get("referral_link", "")
+
+        try:
+            email_body = render_to_string(
+                "email/organization_invite.html",
+                {
+                    "org_name": org_name,
+                    "referral_link": referral_link,
+                    "sender_name": sender_name,
+                },
+            )
+        except Exception:
+            logging.exception("Failed to render organization invite email")
+            messages.error(request, "Error generating invitation email. Please try again.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        context.update(
+            {
+                "domain": domain,
+                "email_subject": email_subject,
+                "email_body": email_body,
+            }
+        )
+    else:
+        context["exists"] = False
+
+    # Add user authentication context
+    context["user_logged_in"] = request.user.is_authenticated
+
+    return render(request, "invite.html", context)
 
 
 @csrf_exempt

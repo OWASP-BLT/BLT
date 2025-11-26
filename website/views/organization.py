@@ -2108,13 +2108,18 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
+    # Fetch the last check-in (most recent) for the user only if no yesterday report
+    last_checkin = None
+    if not yesterday_report:
+        last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+
     # Fetch all check-ins for the user, ordered by date
     all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
 
     return render(
         request,
         "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
+        {"yesterday_report": yesterday_report, "last_checkin": last_checkin, "all_checkins": all_checkins},
     )
 
 
@@ -2294,6 +2299,56 @@ class OrganizationDetailView(DetailView):
             )
         )
 
+    def get_leaderboard_data(self, organization):
+        """
+        Get leaderboard data for all organization repositories.
+        Returns top contributors with their PR counts since 2024-11-11.
+        """
+        # Fixed start date: 2024-11-11
+        since_date = timezone.make_aware(datetime(2024, 11, 11))
+
+        # Get all repos for this organization
+        repos = organization.repos.all()
+
+        if not repos.exists():
+            return []
+
+        # Get all contributors who have merged PRs in these repos
+        contributors_with_prs = []
+        processed_contributors = set()
+
+        for repo in repos:
+            # Get contributors for this repo with merged PRs
+            for contributor in repo.contributor.all():
+                # Skip if we've already processed this contributor
+                if contributor.id in processed_contributors:
+                    continue
+
+                # Count PRs for this contributor across all organization repos
+                pr_count = GitHubIssue.objects.filter(
+                    contributor=contributor,
+                    repo__in=repos,
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=since_date,
+                ).count()
+
+                if pr_count > 0:
+                    contributors_with_prs.append(
+                        {
+                            "contributor": contributor,
+                            "pr_count": pr_count,
+                            "url": contributor.github_url,
+                            "username": contributor.name,
+                            "avatar_url": contributor.avatar_url,
+                        }
+                    )
+                    processed_contributors.add(contributor.id)
+
+        # Sort by PR count (descending) and return top 10
+        contributors_with_prs.sort(key=lambda x: x["pr_count"], reverse=True)
+        return contributors_with_prs[:10]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         organization = self.object
@@ -2332,6 +2387,9 @@ class OrganizationDetailView(DetailView):
         if organization.source_code and "github.com" in organization.source_code:
             github_url = organization.source_code
 
+        # Get leaderboard data for all organizations
+        leaderboard = self.get_leaderboard_data(organization)
+
         context.update(
             {
                 "total_domains": domains.count(),
@@ -2341,6 +2399,7 @@ class OrganizationDetailView(DetailView):
                 "view_count": view_count,
                 "total_repos": total_repos,
                 "github_url": github_url,
+                "leaderboard": leaderboard,
             }
         )
 
