@@ -16,16 +16,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
 from website.forms import VideoSubmissionForm
-from website.models import (
-    Course,
-    EducationalVideo,
-    Enrollment,
-    Lecture,
-    LectureStatus,
-    Section,
-    Tag,
-    UserProfile,
-)
+from website.models import Course, EducationalVideo, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
 
 logger = logging.getLogger(__name__)
