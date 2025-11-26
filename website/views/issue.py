@@ -336,7 +336,7 @@ def newhome(request, template="bugs_list.html"):
         else:
             messages.error(request, "No email associated with your account. Please add an email.")
 
-    issues_queryset = Issue.objects.exclude((Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True))
+    issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
     paginator = Paginator(issues_queryset, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -438,12 +438,10 @@ def search_issues(request, template="search.html"):
         query = query[6:]
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
-            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) | Q(is_private=True)
-            )[0:20]
+            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
         else:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20]
 
         context = {
@@ -456,7 +454,7 @@ def search_issues(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
         }
     if stype == "user" or stype is None:
@@ -464,7 +462,7 @@ def search_issues(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
         }
 
@@ -473,7 +471,7 @@ def search_issues(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
         }
 
@@ -1481,9 +1479,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.GET = {}
 
         context = super(IssueCreate, self).get_context_data(**kwargs)
-        context["activities"] = Issue.objects.exclude(
-            (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
-        )[0:10]
+        context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1508,10 +1504,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             context["report_on_hunt"] = False
 
         context["top_domains"] = (
-            Issue.objects.exclude(Q(is_private=True))
-            .values("domain__name")
-            .annotate(count=Count("domain__name"))
-            .order_by("-count")[:30]
+            Issue.objects.values("domain__name").annotate(count=Count("domain__name")).order_by("-count")[:30]
         )
 
         # Add top users data
@@ -1535,11 +1528,11 @@ class AllIssuesView(ListView):
         username = self.request.GET.get("user")
         if username is None:
             self.activities = Issue.objects.filter(hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
             )
         else:
             self.activities = Issue.objects.filter(user__username=username, hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
             )
         return self.activities
 
@@ -1566,9 +1559,7 @@ class AllIssuesView(ListView):
         # Add top users data
         top_users = (
             User.objects.annotate(
-                issue_count=Count(
-                    "issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True) & ~Q(issue__is_private=True)
-                )
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
             )
             .filter(issue_count__gt=0)
             .order_by("-issue_count")[:10]
@@ -1609,15 +1600,15 @@ class SpecificIssuesView(ListView):
 
         if username is None:
             self.activities = Issue.objects.filter(hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
             )
         elif statu != "none":
             self.activities = Issue.objects.filter(user__username=username, status=statu, hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
             )
         else:
             self.activities = Issue.objects.filter(user__username=username, label=query, hunt=None).exclude(
-                (Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True)
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
             )
         return self.activities
 

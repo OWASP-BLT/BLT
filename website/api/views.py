@@ -82,9 +82,9 @@ class UserIssueViewSet(viewsets.ModelViewSet):
         anonymous_user = self.request.user.is_anonymous
         user_id = self.request.user.id
         if anonymous_user:
-            return Issue.objects.exclude(Q(is_hidden=True) | Q(is_private=True))
+            return Issue.objects.exclude(Q(is_hidden=True))
         else:
-            return Issue.objects.exclude((Q(is_hidden=True) & ~Q(user_id=user_id)) | Q(is_private=True))
+            return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
@@ -152,9 +152,9 @@ class IssueViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = (
-            Issue.objects.exclude((Q(is_hidden=True) & ~Q(user_id=self.request.user.id)) | Q(is_private=True))
+            Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
             if self.request.user.is_authenticated
-            else Issue.objects.exclude(Q(is_hidden=True) | Q(is_private=True))
+            else Issue.objects.exclude(Q(is_hidden=True))
         )
 
         status = self.request.GET.get("status")

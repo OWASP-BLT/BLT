@@ -10,11 +10,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name="issue",
-            name="is_private",
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
             model_name="userprofile",
             name="private_reports_count",
             field=models.PositiveIntegerField(default=0),
