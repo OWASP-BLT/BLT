@@ -320,14 +320,9 @@ class WeeklyBugDigestTestCase(TestCase):
             mail.outbox = []
 
             # Command should not crash and should continue processing
-            try:
-                call_command("send_weekly_bug_digest", days=7)
-                command_completed = True
-            except Exception:
-                command_completed = False
+            call_command("send_weekly_bug_digest", days=7)
 
-            # Verify command completed despite errors
-            self.assertTrue(command_completed, "Command should complete even with email errors")
+            # If an exception is raised, the test will fail; reaching here means it completed despite errors
             # Verify send was attempted for all recipients (2 users should receive emails)
             self.assertEqual(mock_send.call_count, 2, "Should attempt to send to all recipients despite errors")
 

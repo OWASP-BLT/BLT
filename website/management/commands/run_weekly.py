@@ -17,12 +17,12 @@ class Command(BaseCommand):
         try:
             management.call_command("send_weekly_bug_digest")
             logger.info("Completed weekly bug digest emails")
-        except Exception as e:
-            logger.exception("Error sending weekly bug digest: %s", e)
+        except Exception:
+            logger.exception("Error sending weekly bug digest")
 
         # Clean up old sample invite records (older than 7 days)
         try:
             management.call_command("cleanup_sample_invites", days=7)
             logger.info("Completed sample invites cleanup")
-        except Exception as e:
-            logger.exception("Error cleaning up sample invites: %s", e)
+        except Exception:
+            logger.exception("Error cleaning up sample invites")

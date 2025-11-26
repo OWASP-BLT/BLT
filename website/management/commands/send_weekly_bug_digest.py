@@ -39,7 +39,7 @@ class Command(LoggedBaseCommand):
             help="Send digest for a specific organization slug only",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *_args, **options):
         days = options["days"]
         dry_run = options.get("dry_run", False)
         org_slug = options.get("organization")
@@ -84,7 +84,7 @@ class Command(LoggedBaseCommand):
                 email_count += result["sent"]
                 skipped_count += result["skipped"]
                 error_count += result["errors"]
-            except Exception as e:
+            except Exception:
                 logger.exception("Error processing organization %s", org.name)
                 error_count += 1
 
@@ -110,15 +110,18 @@ class Command(LoggedBaseCommand):
             return {"sent": sent, "skipped": skipped, "errors": errors}
 
         # Get new bugs for these domains in the past week
-        new_bugs = (
+        new_bugs_qs = (
             Issue.objects.filter(domain__in=domains, created__gte=start_date, is_hidden=False)
             .select_related("user", "domain")
             .order_by("-created")
         )
 
-        if not new_bugs.exists():
+        if not new_bugs_qs.exists():
             logger.debug(f"No new bugs for organization: {org.name}")
             return {"sent": sent, "skipped": skipped, "errors": errors}
+
+        # Materialize bugs once to avoid repeated iteration
+        bug_list = list(new_bugs_qs)
 
         # Get followers (users who subscribed to any of the organization's domains)
         followers = (
@@ -132,7 +135,7 @@ class Command(LoggedBaseCommand):
             logger.debug(f"No followers for organization: {org.name}")
             return {"sent": sent, "skipped": skipped, "errors": errors}
 
-        logger.info(f"Processing {org.name}: {new_bugs.count()} bugs, {followers.count()} followers")
+        logger.info("Processing %s: %s bugs, %s followers", org.name, len(bug_list), followers.count())
 
         # Send email to each follower
         for follower in followers:
@@ -155,14 +158,14 @@ class Command(LoggedBaseCommand):
                 continue
 
             try:
-                if not dry_run:
-                    self.send_digest_email(follower.user, org, new_bugs, days)
-                    logger.debug(f"Sent weekly digest for {org.name}")
+                if dry_run:
+                    logger.debug("[DRY RUN] Would send digest for %s (user_id=%s)", org.name, follower.user.id)
                 else:
-                    logger.debug(f"[DRY RUN] Would send digest for {org.name}")
+                    self.send_digest_email(follower.user, org, bug_list, days)
+                    logger.debug("Sent weekly digest for %s (user_id=%s)", org.name, follower.user.id)
                 sent += 1
-            except Exception as e:
-                logger.error(f"Failed to send email for {org.name}: {str(e)}", exc_info=True)
+            except Exception:
+                logger.exception("Failed to send weekly digest for %s (user_id=%s)", org.name, follower.user.id)
                 errors += 1
 
         return {"sent": sent, "skipped": skipped, "errors": errors}
@@ -212,8 +215,8 @@ class Command(LoggedBaseCommand):
         try:
             # Render HTML email
             html_content = render_to_string("email/weekly_bug_digest.html", context)
-        except Exception as e:
-            logger.error(f"Failed to render email template: {str(e)}")
+        except Exception:
+            logger.exception("Failed to render weekly_bug_digest template for organization %s", organization.name)
             raise
 
         # Create plain text version
@@ -229,8 +232,12 @@ class Command(LoggedBaseCommand):
             )
             email.attach_alternative(html_content, "text/html")
             email.send(fail_silently=False)
-        except Exception as e:
-            logger.error(f"Failed to send email: {str(e)}")
+        except Exception:
+            logger.exception(
+                "Failed to send weekly bug digest email to user_id=%s for organization %s",
+                user.id,
+                organization.name,
+            )
             raise
 
     def _create_text_content(self, user, organization, bugs, days, domain_name):
