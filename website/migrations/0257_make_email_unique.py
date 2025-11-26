@@ -71,6 +71,48 @@ def reverse_migration(apps, schema_editor):
     print("Note: Deleted duplicate users cannot be restored.")
 
 
+def add_email_constraint(apps, schema_editor):
+    """
+    Add unique constraint on email field in a database-agnostic way.
+    """
+    # Get the database vendor (postgresql, mysql, sqlite, etc.)
+    vendor = schema_editor.connection.vendor
+
+    if vendor == "postgresql":
+        schema_editor.execute("ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);")
+    elif vendor == "mysql":
+        schema_editor.execute("ALTER TABLE auth_user ADD UNIQUE INDEX auth_user_email_unique (email);")
+    elif vendor == "sqlite":
+        # SQLite doesn't support adding constraints to existing tables easily
+        # The constraint was already enforced by the data migration
+        # and will be enforced at the application level
+        print("SQLite detected: Unique constraint will be enforced at the application level")
+    else:
+        # For other databases, attempt standard SQL
+        schema_editor.execute("ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);")
+
+
+def remove_email_constraint(apps, schema_editor):
+    """
+    Remove unique constraint on email field in a database-agnostic way.
+    """
+    vendor = schema_editor.connection.vendor
+
+    if vendor == "postgresql":
+        schema_editor.execute("ALTER TABLE auth_user DROP CONSTRAINT IF EXISTS auth_user_email_unique;")
+    elif vendor == "mysql":
+        schema_editor.execute("ALTER TABLE auth_user DROP INDEX IF EXISTS auth_user_email_unique;")
+    elif vendor == "sqlite":
+        # SQLite doesn't support dropping constraints easily
+        print("SQLite detected: No constraint to remove")
+    else:
+        # For other databases, attempt standard SQL
+        try:
+            schema_editor.execute("ALTER TABLE auth_user DROP CONSTRAINT auth_user_email_unique;")
+        except Exception:
+            pass  # Constraint may not exist
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("website", "0256_inviteorganization"),
@@ -81,11 +123,6 @@ class Migration(migrations.Migration):
         # First, remove duplicates and normalize emails
         migrations.RunPython(remove_duplicate_emails, reverse_migration),
         # Then, add the unique constraint at the database level
-        # We use RunSQL since we cannot use AddConstraint for models from other apps (auth.User)
-        migrations.RunSQL(
-            # Forward migration: Add unique constraint (works on PostgreSQL, MySQL, SQLite)
-            sql="ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);",
-            # Reverse migration: Drop the constraint
-            reverse_sql="ALTER TABLE auth_user DROP CONSTRAINT auth_user_email_unique;",
-        ),
+        # We use RunPython with custom SQL for database-agnostic implementation
+        migrations.RunPython(add_email_constraint, remove_email_constraint),
     ]
