@@ -711,7 +711,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function copyToClipboard() {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(function() {
-        // Show success toast using DOM manipulation (not innerHTML for security)
+        // Show success toast using DOM manipulation to prevent XSS attacks (safer than innerHTML)
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-12 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
         
@@ -740,9 +740,7 @@ function copyToClipboard() {
         setTimeout(() => {
             toast.classList.add('opacity-0');
             setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
+                toast.remove();
             }, 500);
         }, 3000);
         
@@ -780,9 +778,7 @@ function copyToClipboard() {
         setTimeout(() => {
             errorToast.classList.add('opacity-0');
             setTimeout(() => {
-                if (errorToast.parentNode) {
-                    errorToast.remove();
-                }
+                errorToast.remove();
             }, 500);
         }, 3000);
         
