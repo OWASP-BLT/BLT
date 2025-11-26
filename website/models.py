@@ -1231,6 +1231,7 @@ class RepoOwner(models.Model):
         
         try:
             from bitcash.network import NetworkAPI
+
             # Get balance in satoshis and convert to BCH
             balance_satoshis = NetworkAPI.get_balance(self.bch_address)
             balance_bch = Decimal(balance_satoshis) / Decimal('100000000')
