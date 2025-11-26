@@ -22,6 +22,92 @@
     <div class="container mx-auto px-4 py-8">
         <!-- Breadcrumbs -->
         {% include "includes/breadcrumbs.html" %}
+        <!-- Share Button -->
+        <div class="flex justify-end mb-4">
+            <div class="relative inline-block">
+                <button id="shareButton"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                    <svg class="w-5 h-5 mr-2"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                        </path>
+                    </svg>
+                    Share
+                </button>
+                <!-- Share Options Dropdown -->
+                <div id="shareDropdown"
+                     class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                    <div class="py-1" role="menu" aria-orientation="vertical">
+                        <button onclick="copyToClipboard()"
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                            <svg class="w-5 h-5 mr-3"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            Copy Link
+                        </button>
+                        <a href="https://twitter.com/intent/tweet?text={{ hackathon.name|urlencode }} - {{ hackathon.description|truncatewords:10|urlencode }}&url={{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                            <svg class="w-5 h-5 mr-3"
+                                 fill="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z">
+                                </path>
+                            </svg>
+                            Share on Twitter
+                        </a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                            <svg class="w-5 h-5 mr-3"
+                                 fill="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z">
+                                </path>
+                            </svg>
+                            Share on LinkedIn
+                        </a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                            <svg class="w-5 h-5 mr-3"
+                                 fill="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z">
+                                </path>
+                            </svg>
+                            Share on Facebook
+                        </a>
+                        <a href="mailto:?subject={{ hackathon.name|urlencode }}&body=Check out this hackathon: {{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+                           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                            <svg class="w-5 h-5 mr-3"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            Share via Email
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- Hackathon Header -->
         <div class="relative rounded-lg overflow-hidden mb-8">
             {% if hackathon.banner_image %}
@@ -602,6 +688,47 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Share button functionality
+    const shareButton = document.getElementById('shareButton');
+    const shareDropdown = document.getElementById('shareDropdown');
+    
+    // Toggle dropdown on button click
+    shareButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        shareDropdown.classList.toggle('hidden');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!shareButton.contains(e.target) && !shareDropdown.contains(e.target)) {
+            shareDropdown.classList.add('hidden');
+        }
+    });
 });
+
+// Copy to clipboard function
+function copyToClipboard() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(function() {
+        // Show success toast
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-12 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
+        toast.innerHTML = '<div class="flex items-center"><svg class="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Link copied to clipboard!</div>';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 500);
+        }, 3000);
+        
+        // Close the dropdown
+        document.getElementById('shareDropdown').classList.add('hidden');
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+    });
+}
     </script>
 {% endblock scripts %}
