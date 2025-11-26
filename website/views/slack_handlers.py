@@ -10,8 +10,9 @@ import time
 
 import requests
 import yaml
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
@@ -931,16 +932,8 @@ def slack_commands(request):
                 return JsonResponse({"response_type": "ephemeral", "text": "Error reporting bug. Please try again."})
 
         elif command == "/sweep":
-            try:
-                # Post project status update to #project-sweeper channel
-                return post_project_sweep_update(workspace_client, user_id, activity, team_id)
-            except Exception as e:
-                activity.success = False
-                activity.error_message = f"Error processing sweep command: {str(e)}"
-                activity.save()
-                return JsonResponse(
-                    {"response_type": "ephemeral", "text": "Error processing sweep command. Please try again later."}
-                )
+            # Post project status update to #project-sweeper channel
+            return post_project_sweep_update(workspace_client, user_id, activity, team_id)
 
     return HttpResponse(status=405)
 
@@ -2619,11 +2612,17 @@ def post_project_sweep_update(workspace_client, user_id, activity, team_id):
         # Get the project-sweeper channel ID
         sweeper_channel_id = "C0607RP8MS8"  # from project_channels.csv
 
-        # Gather project statistics
-        total_projects = Project.objects.count()
-        inactive_projects = Project.objects.filter(status="inactive").count()
-        projects_without_slack = Project.objects.filter(slack_channel__isnull=True).count()
-        projects_without_description = Project.objects.filter(description="").count()
+        # Gather project statistics using optimized aggregation query
+        stats = Project.objects.aggregate(
+            total=Count("id"),
+            inactive=Count("id", filter=Q(status="inactive")),
+            no_slack=Count("id", filter=Q(slack_channel__isnull=True)),
+            no_description=Count("id", filter=Q(description="") | Q(description__isnull=True)),
+        )
+        total_projects = stats["total"]
+        inactive_projects = stats["inactive"]
+        projects_without_slack = stats["no_slack"]
+        projects_without_description = stats["no_description"]
 
         # Get some example projects needing attention
         inactive_list = Project.objects.filter(status="inactive")[:5]
@@ -2637,7 +2636,9 @@ def post_project_sweep_update(workspace_client, user_id, activity, team_id):
             },
             {
                 "type": "context",
-                "elements": [{"type": "mrkdwn", "text": f"Generated at {time.strftime('%Y-%m-%d %H:%M UTC')}"}],
+                "elements": [
+                    {"type": "mrkdwn", "text": f"Generated at {timezone.now().strftime('%Y-%m-%d %H:%M UTC')}"}
+                ],
             },
             {"type": "divider"},
             {
@@ -2717,9 +2718,9 @@ def post_project_sweep_update(workspace_client, user_id, activity, team_id):
         try:
             # Join the channel first (in case bot is not a member)
             workspace_client.conversations_join(channel=sweeper_channel_id)
-        except Exception:
-            # Ignore if already a member or no permission
-            pass
+        except SlackApiError as e:
+            # Bot might already be a member or lack permissions - log but continue
+            logger.debug(f"Could not join channel {sweeper_channel_id}: {str(e)}")
 
         # Post the message
         response = workspace_client.chat_postMessage(
