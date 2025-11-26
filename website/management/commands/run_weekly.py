@@ -43,9 +43,10 @@ class Command(BaseCommand):
                     logger.warning(f"Skipping domain {domain.name} - no email configured")
                     continue
 
-                open_issues = domain.open_issues
-                closed_issues = domain.closed_issues
-                total_issues = open_issues.count() + closed_issues.count()
+                # Count issues once to avoid duplicate queries
+                open_issues_count = domain.open_issues.count()
+                closed_issues_count = domain.closed_issues.count()
+                total_issues = open_issues_count + closed_issues_count
 
                 # Get most recent issues ordered by creation date
                 issues = Issue.objects.filter(domain=domain).order_by("-created")[:10]
@@ -54,8 +55,8 @@ class Command(BaseCommand):
                 report_lines = [
                     "Hey! This is a weekly report from OWASP BLT regarding the bugs reported for your organization!\n\n",
                     f"Organization Name: {domain.name}\n",
-                    f"Open issues: {open_issues.count()}\n",
-                    f"Closed issues: {closed_issues.count()}\n",
+                    f"Open issues: {open_issues_count}\n",
+                    f"Closed issues: {closed_issues_count}\n",
                     f"Total issues: {total_issues}\n\n",
                     "Recent Issues:\n",
                 ]
