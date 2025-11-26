@@ -422,7 +422,6 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, setting up event listeners');
             const commandRows = document.querySelectorAll('tr[data-command]');
             
             commandRows.forEach(row => {
@@ -444,7 +443,6 @@
             // Set up form submission handling
             const runCommandForm = document.getElementById('runCommandForm');
             if (runCommandForm) {
-                console.log('Found command form, setting up submit handler');
                 runCommandForm.addEventListener('submit', function(e) {
                     e.preventDefault();
                     submitCommandForm(this);
@@ -512,7 +510,6 @@
         
         // Command modal functions
         function openCommandModal(commandName) {
-            console.log('Opening modal for command:', commandName);
             const modal = document.getElementById('commandModal');
             const form = document.getElementById('runCommandForm');
             const argsContainer = document.getElementById('commandArguments');
@@ -532,7 +529,8 @@
             }
             
             // Reset form and hide results/loading
-            form.reset();
+            // Use prototype method to avoid conflicts with input elements named "reset"
+            HTMLFormElement.prototype.reset.call(form);
             if (resultsSection) resultsSection.classList.add('hidden');
             if (loadingSection) loadingSection.classList.add('hidden');
             
@@ -545,11 +543,9 @@
             
             // Get command arguments
             const argsRow = document.getElementById(`args-${commandName}`);
-            console.log('Args row found:', !!argsRow);
             
             if (argsRow) {
                 const argRows = argsRow.querySelectorAll('tbody tr');
-                console.log('Found argument rows:', argRows.length);
                 
                 argRows.forEach((row, index) => {
                     const cells = row.querySelectorAll('td');
@@ -564,8 +560,6 @@
                     const argType = cells[3].textContent.trim();
                     const argRequired = cells[4].textContent.trim().includes('Yes');
                     const argDefault = cells[5].textContent.trim();
-                    
-                    console.log('Processing argument:', argName, argType);
                     
                     // Create form field
                     const fieldDiv = document.createElement('div');
@@ -637,17 +631,14 @@
             
             // Show modal
             modal.classList.remove('hidden');
-            console.log('Modal should now be visible');
         }
         
         function closeCommandModal() {
-            console.log('Closing modal');
             const modal = document.getElementById('commandModal');
             if (modal) modal.classList.add('hidden');
         }
         
         function submitCommandForm(form) {
-            console.log('Submitting command form');
             const formData = new FormData(form);
             const commandName = formData.get('command');
             const runBtn = document.getElementById('runCommandBtn');
@@ -663,8 +654,6 @@
             if (loadingSection) loadingSection.classList.remove('hidden');
             if (resultsSection) resultsSection.classList.add('hidden');
             
-            console.log('Sending AJAX request for command:', commandName);
-            
             // Submit form via AJAX
             fetch(form.action, {
                 method: 'POST',
@@ -674,11 +663,9 @@
                 }
             })
             .then(response => {
-                console.log('Received response:', response.status);
                 return response.json();
             })
             .then(data => {
-                console.log('Command result:', data);
                 // Hide loading state
                 if (loadingSection) loadingSection.classList.add('hidden');
                 if (runBtn) {

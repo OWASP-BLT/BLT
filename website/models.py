@@ -138,8 +138,8 @@ class Organization(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
-    url = models.URLField(unique=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True, max_length=255)
+    url = models.URLField(unique=True, max_length=255)
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
     matrix_url = models.URLField(null=True, blank=True)
@@ -778,6 +778,22 @@ class InviteFriend(models.Model):
         return f"Invite from {self.sender}"
 
 
+class InviteOrganization(models.Model):
+    sender = models.ForeignKey(User, related_name="sent_org_invites", on_delete=models.SET_NULL, null=True)
+    email = models.EmailField()
+    organization_name = models.CharField(max_length=255, blank=True)
+    referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False, unique=True)
+    organization = models.ForeignKey(
+        "Organization", null=True, blank=True, related_name="invites", on_delete=models.SET_NULL
+    )
+    points_awarded = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        sender_name = self.sender.username if self.sender else "Unknown"
+        return f"Organization invite from {sender_name} to {self.email}"
+
+
 def user_images_path(instance, filename):
     from django.template.defaultfilters import slugify
 
@@ -805,6 +821,7 @@ class UserProfile(models.Model):
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
+    is_verifier = models.BooleanField(default=False, help_text="Whether the user has verifier permissions")
 
     #  fields for visit tracking
     daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
@@ -851,6 +868,10 @@ class UserProfile(models.Model):
 
     def check_team_membership(self):
         return self.team is not None
+
+    def check_verifier_permission(self):
+        """Check if user has verifier permission"""
+        return self.is_verifier
 
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
@@ -1216,14 +1237,16 @@ class Project(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
+    url = models.URLField(
+        unique=True, null=True, blank=True, max_length=255
+    )  # Made url nullable in case of no website also made the max_length as 255 because the default is 100
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     slack = models.URLField(null=True, blank=True)
     slack_channel = models.CharField(max_length=255, blank=True, null=True)
     slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     facebook = models.URLField(null=True, blank=True)
-    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     webhook_url = models.URLField(
         null=True, blank=True, help_text="Webhook URL to trigger contributor stats recalculation"
     )
@@ -1838,7 +1861,7 @@ class ContributorStats(models.Model):
         unique_together = ("contributor", "repo", "date", "granularity")
 
     def __str__(self):
-        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        return f"{self.contributor.name} in {self.repo.name} on {self.date} [{self.granularity}]"
 
 
 class SlackBotActivity(models.Model):
@@ -2142,16 +2165,38 @@ class GitHubReview(models.Model):
     )
     reviewer = models.ForeignKey(
         UserProfile,
-        on_delete=models.CASCADE,
-        related_name="reviews_made",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviews_made_as_user",
+    )
+    reviewer_contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviews_made_as_contributor",
     )
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)  # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
     submitted_at = models.DateTimeField()
     url = models.URLField()
 
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
+                name="at_least_one_reviewer",
+            ),
+        )
+
     def __str__(self):
-        return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
+        reviewer_name = "Unknown"
+        if self.reviewer:
+            reviewer_name = self.reviewer.user.username
+        elif self.reviewer_contributor:
+            reviewer_name = self.reviewer_contributor.name
+        return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
 
 
 class Kudos(models.Model):
@@ -2613,6 +2658,76 @@ class Hackathon(models.Model):
 
         return leaderboard_list
 
+    def get_reviewer_leaderboard(self):
+        """
+        Generate a leaderboard of reviewers based on PR reviews
+        during the hackathon timeframe.
+        """
+
+        # Get all merged pull requests from the hackathon's repositories within the timeframe
+        pull_requests = GitHubIssue.objects.filter(
+            repo__in=self.repositories.all(),
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=self.start_time,
+            merged_at__lte=self.end_time,
+        )
+
+        # Get all reviews for these pull requests within the hackathon timeframe
+        reviews = GitHubReview.objects.filter(
+            pull_request__in=pull_requests,
+            submitted_at__gte=self.start_time,
+            submitted_at__lte=self.end_time,
+        ).select_related("reviewer", "reviewer_contributor", "pull_request", "pull_request__repo")
+
+        # Group by reviewer and count reviews
+        leaderboard = {}
+        for review in reviews:
+            if review.reviewer:
+                # Registered user reviewer
+                user_id = review.reviewer.user.id
+                if user_id in leaderboard:
+                    leaderboard[user_id]["count"] += 1
+                    leaderboard[user_id]["reviews"].append(review)
+                else:
+                    leaderboard[user_id] = {
+                        "user": review.reviewer.user,
+                        "count": 1,
+                        "reviews": [review],
+                        "is_contributor": False,
+                    }
+            elif review.reviewer_contributor:
+                # Skip bot accounts - check contributor_type field (primary) and name patterns (fallback)
+                if review.reviewer_contributor.contributor_type == "Bot":
+                    continue
+                github_username = review.reviewer_contributor.name
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
+                    continue
+
+                # GitHub contributor reviewer
+                contributor_id = f"contributor_{review.reviewer_contributor.id}"
+                if contributor_id in leaderboard:
+                    leaderboard[contributor_id]["count"] += 1
+                    leaderboard[contributor_id]["reviews"].append(review)
+                else:
+                    leaderboard[contributor_id] = {
+                        "user": {
+                            "username": review.reviewer_contributor.name or review.reviewer_contributor.github_id,
+                            "email": "",
+                            "id": contributor_id,
+                        },
+                        "count": 1,
+                        "reviews": [review],
+                        "is_contributor": True,
+                        "contributor": review.reviewer_contributor,
+                    }
+
+        # Convert to list and sort by count (descending)
+        leaderboard_list = list(leaderboard.values())
+        leaderboard_list.sort(key=lambda x: x["count"], reverse=True)
+
+        return leaderboard_list
+
 
 class HackathonSponsor(models.Model):
     hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name="sponsors")
@@ -2637,7 +2752,7 @@ class HackathonSponsor(models.Model):
         unique_together = ("hackathon", "organization")
 
     def __str__(self):
-        return f"{self.organization.name} - {self.get_sponsor_level_display()} " f"sponsor for {self.hackathon.name}"
+        return f"{self.organization.name} - {self.get_sponsor_level_display()} sponsor for {self.hackathon.name}"
 
 
 class HackathonPrize(models.Model):
