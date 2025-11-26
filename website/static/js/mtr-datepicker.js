@@ -377,10 +377,9 @@ function MtrDatepicker(inputConfig) {
 
 			// If the future dates is enabed, it will be a good idea to check the input timestamp, maybe it is in the past?
 			if (input.future) {
-				var timestampDate = new Date(input.timestamp);
-				var todayDate = new Date();
-				// console.log(input.timestamp)				
-				// if (timestampDate.getTime() < todayDate.getTime()) {
+			var timestampDate = new Date(input.timestamp);
+			var todayDate = new Date();
+			// if (timestampDate.getTime() < todayDate.getTime()) {
 				// 	console.error('Invalid argument: timestamp should be in the future if the future check is enabled.');
 				// 	result = false;
 				// }
