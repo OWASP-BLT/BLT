@@ -85,23 +85,23 @@
       changed_when: false
 
     - name: Install Poetry using official installer
-      shell: curl -sSL https://install.python-poetry.org | python3 -
+      shell: |
+        curl -sSL https://install.python-poetry.org | python3 - --version 1.8.5
       args:
         executable: /bin/bash
       when: poetry_installed.rc != 0
       environment:
         POETRY_HOME: /opt/poetry
 
-    - name: Add Poetry to PATH
-      lineinfile:
-        path: /etc/environment
-        regexp: '^PATH='
-        line: 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/poetry/bin"'
+    - name: Create Poetry bin symlink
+      file:
+        src: /opt/poetry/bin/poetry
+        dest: /usr/local/bin/poetry
+        state: link
       when: poetry_installed.rc != 0
 
     - name: Install Python dependencies (poetry export)
       shell: |
-        export PATH="/opt/poetry/bin:$PATH"
         cd {{ app_dir }}/current && poetry export -f requirements.txt --without-hashes -o /tmp/requirements.txt
         {{ venv_dir }}/bin/pip install -r /tmp/requirements.txt
       args:
