@@ -304,7 +304,9 @@ class SlackHandlerTests(TestCase):
         # Create test request for /blt_remind
         request = MagicMock()
         remind_text = '"Team meeting" in 30 minutes'
-        request.body = f"command=/blt_remind&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={remind_text}".encode()
+        request.body = (
+            f"command=/blt_remind&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={remind_text}".encode()
+        )
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {
@@ -379,7 +381,9 @@ class SlackHandlerTests(TestCase):
         # Create test request for /blt_huddle
         request = MagicMock()
         huddle_text = '"Sprint Planning" "Q1 planning" in 2 hours with <@U456>'
-        request.body = f"command=/blt_huddle&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={huddle_text}".encode()
+        request.body = (
+            f"command=/blt_huddle&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={huddle_text}".encode()
+        )
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {

@@ -2672,7 +2672,9 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
                 }
             ]
             send_dm(workspace_client, user_id, "Poll Command Help", help_blocks)
-            return JsonResponse({"response_type": "ephemeral", "text": "I've sent you help on using /blt_poll in a DM! 📊"})
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "I've sent you help on using /blt_poll in a DM! 📊"}
+            )
 
         # Parse the command text to extract question and options
         parts = re.findall(r'"([^"]+)"', text)
