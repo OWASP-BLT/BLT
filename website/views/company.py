@@ -2262,7 +2262,7 @@ def accept_bug(request, issue_id, reward_id=None):
             # Attempt automatic reward distribution via smart contract
             if issue.user and hasattr(issue.user, "userprofile"):
                 user_profile = issue.user.userprofile
-                
+
                 # Get the appropriate crypto address based on user preference
                 # Note: Currently only ETH distribution is implemented via smart contract
                 # BTC and BCH distribution can use existing systems or be implemented separately
@@ -2276,7 +2276,7 @@ def accept_bug(request, issue_id, reward_id=None):
                 # Fallback to ETH address if preferred crypto not available
                 elif user_profile.eth_address:
                     crypto_address = user_profile.eth_address
-                
+
                 # Currently only ETH distribution is automated via smart contract
                 if crypto_address and user_profile.preferred_cryptocurrency == "ETH":
                     try:
@@ -2287,7 +2287,7 @@ def accept_bug(request, issue_id, reward_id=None):
                             hunter_address=crypto_address,
                             amount_usd=reward.value,
                         )
-                        
+
                         if success:
                             issue.blockchain_tx_hash = tx_hash
                             issue.reward_distributed_at = timezone.now()
@@ -2301,9 +2301,7 @@ def accept_bug(request, issue_id, reward_id=None):
                                 f"Bug accepted and reward automatically distributed! Transaction: {tx_hash[:10]}...",
                             )
                         else:
-                            logger.warning(
-                                f"Automatic reward distribution failed for issue {issue.id}: {error_msg}"
-                            )
+                            logger.warning(f"Automatic reward distribution failed for issue {issue.id}: {error_msg}")
                             messages.warning(
                                 request,
                                 "Bug accepted. Automatic reward distribution failed - please distribute manually.",

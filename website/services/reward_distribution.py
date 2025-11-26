@@ -168,9 +168,7 @@ class RewardDistributionService:
 
             if tx_receipt["status"] == 1:
                 tx_hash_hex = tx_hash.hex()
-                logger.info(
-                    f"Reward distributed successfully. Hunt: {hunt_id}, Issue: {issue_id}, TX: {tx_hash_hex}"
-                )
+                logger.info(f"Reward distributed successfully. Hunt: {hunt_id}, Issue: {issue_id}, TX: {tx_hash_hex}")
                 return True, tx_hash_hex, None
             else:
                 logger.error(f"Transaction failed. Receipt: {tx_receipt}")

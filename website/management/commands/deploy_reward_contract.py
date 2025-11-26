@@ -86,9 +86,7 @@ class Command(BaseCommand):
 
             if not os.path.exists(bin_file) or not os.path.exists(abi_file):
                 self.stdout.write(
-                    self.style.WARNING(
-                        "\nCompiled contract files not found. Please compile the contract first."
-                    )
+                    self.style.WARNING("\nCompiled contract files not found. Please compile the contract first.")
                 )
                 return
 
@@ -152,9 +150,7 @@ class Command(BaseCommand):
                 contract_address = tx_receipt["contractAddress"]
                 self.stdout.write(self.style.SUCCESS("\n✓ Contract deployed successfully!"))
                 self.stdout.write(self.style.SUCCESS(f"Contract address: {contract_address}"))
-                self.stdout.write(
-                    self.style.SUCCESS(f"Transaction hash: {tx_hash.hex()}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"Transaction hash: {tx_hash.hex()}"))
                 self.stdout.write(f"Gas used: {tx_receipt['gasUsed']}")
 
                 self.stdout.write(self.style.WARNING("\nNext steps:"))
