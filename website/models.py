@@ -579,7 +579,7 @@ class Issue(models.Model):
         null=True,
         blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(10)],
-        help_text="AI-generated spam score (0-10, ≥6 triggers moderation)"
+        help_text="AI-generated spam score (0-10, ≥6 triggers moderation)",
     )
     spam_reason = models.TextField(null=True, blank=True)
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
