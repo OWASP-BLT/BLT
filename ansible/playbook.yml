@@ -9,6 +9,8 @@
     django_settings: blt.settings
     listen_interface: 127.0.0.1
     enable_remote_postgres: "{{ enable_remote_postgres | default(false) }}"
+    postgres_host: "{{ postgres_host | default('127.0.0.1') }}"
+    postgres_port: "{{ postgres_port | default('5432') }}"
   pre_tasks:
     - name: Update apt cache
       apt:
@@ -76,13 +78,31 @@
         state: latest
         virtualenv: "{{ venv_dir }}"
 
+    - name: Check if Poetry is installed
+      shell: command -v poetry
+      register: poetry_installed
+      ignore_errors: true
+      changed_when: false
+
+    - name: Install Poetry using official installer
+      shell: curl -sSL https://install.python-poetry.org | python3 -
+      args:
+        executable: /bin/bash
+      when: poetry_installed.rc != 0
+      environment:
+        POETRY_HOME: /opt/poetry
+
+    - name: Add Poetry to PATH
+      lineinfile:
+        path: /etc/environment
+        regexp: '^PATH='
+        line: 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/poetry/bin"'
+      when: poetry_installed.rc != 0
+
     - name: Install Python dependencies (poetry export)
       shell: |
-        if command -v poetry >/dev/null 2>&1; then
-          cd {{ app_dir }}/current && poetry export -f requirements.txt --without-hashes -o /tmp/requirements.txt
-        else
-          cd {{ app_dir }}/current && pip install poetry && poetry export -f requirements.txt --without-hashes -o /tmp/requirements.txt
-        fi
+        export PATH="/opt/poetry/bin:$PATH"
+        cd {{ app_dir }}/current && poetry export -f requirements.txt --without-hashes -o /tmp/requirements.txt
         {{ venv_dir }}/bin/pip install -r /tmp/requirements.txt
       args:
         executable: /bin/bash
@@ -116,7 +136,7 @@
           DEBUG=False
           ALLOWED_HOSTS=.{{ domain }},{{ domain }},127.0.0.1,localhost
           SECRET_KEY={{ secret_key_content['content'] | b64decode | trim }}
-          DATABASE_URL=postgres://{{ postgres_db_user }}:{{ postgres_db_password }}@127.0.0.1:5432/{{ postgres_db_name }}
+          DATABASE_URL=postgres://{{ postgres_db_user }}:{{ postgres_db_password }}@{{ postgres_host }}:{{ postgres_port }}/{{ postgres_db_name }}
           PORT=8000
           # Add any extra environment variables below
           # SENTRY_DSN=
@@ -138,6 +158,7 @@
         chdir: "{{ app_dir }}/current"
       environment:
         DJANGO_SETTINGS_MODULE: blt.settings
+      become_user: "{{ app_user }}"
 
     - name: Apply migrations
       shell: "{{ venv_dir }}/bin/python manage.py migrate --noinput"
@@ -145,6 +166,7 @@
         chdir: "{{ app_dir }}/current"
       environment:
         DJANGO_SETTINGS_MODULE: blt.settings
+      become_user: "{{ app_user }}"
 
     - name: Ensure PostgreSQL service is started
       service:
@@ -190,7 +212,7 @@
       lineinfile:
         path: "{{ postgres_hba_file }}"
         insertafter: EOF
-        line: 'host    all             all             0.0.0.0/0               md5'
+        line: 'host    all             all             0.0.0.0/0               scram-sha-256'
       when: enable_remote_postgres | bool
       notify: Restart postgres
 
