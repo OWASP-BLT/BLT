@@ -406,9 +406,6 @@ async function addReaction(messageId, emoji) {
 
 function updateReactions(messageId, reactions) {
     try {
-        // console.log('[updateReactions] Updating for messageId:', messageId, 'with reactions:', reactions);
-
-        
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
         if (!messageElement) {
             console.warn(`[updateReactions] Message element ${messageId} not found`);
@@ -436,7 +433,6 @@ function updateReactions(messageId, reactions) {
                 }
                 if (users.length === 0) return; // Don't show reactions with 0 users
 
-                // console.log(`[updateReactions] Adding existing reaction ${emoji} (${users.length}) for ${messageId}`);
                 const reactionButton = document.createElement('button');
                 reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200';
                 reactionButton.innerHTML = `
@@ -452,7 +448,6 @@ function updateReactions(messageId, reactions) {
         // 2. Display common quick reaction buttons (if not already displayed)
         commonEmojis.forEach(emoji => {
             if (!displayedEmojis.has(emoji)) {
-                //  console.log(`[updateReactions] Adding common quick reaction ${emoji} for ${messageId}`);
                 const quickReactionBtn = document.createElement('button');
                 quickReactionBtn.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200';
                 quickReactionBtn.innerHTML = `<span>${emoji}</span>`;
@@ -529,7 +524,6 @@ function appendMessage(data) {
 function handleWebSocketMessage(event) {
     try {
         const data = JSON.parse(event.data);
-        // console.log('Received websocket message:', data);
         
         switch (data.type) {
             case 'chat_message':
@@ -545,7 +539,6 @@ function handleWebSocketMessage(event) {
                 }
                 break;
             case 'reaction_update':
-                // console.log('Reaction update received:', data);
                 // Update the data attribute as well
                 const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
                 if (messageElement) {
@@ -636,7 +629,6 @@ function escapeHtml(unsafe) {
 
 // Initialize WebSocket connection and other event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing chat room...');
     connectWebSocket();
     
     // Set up form handler

@@ -778,6 +778,22 @@ class InviteFriend(models.Model):
         return f"Invite from {self.sender}"
 
 
+class InviteOrganization(models.Model):
+    sender = models.ForeignKey(User, related_name="sent_org_invites", on_delete=models.SET_NULL, null=True)
+    email = models.EmailField()
+    organization_name = models.CharField(max_length=255, blank=True)
+    referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False, unique=True)
+    organization = models.ForeignKey(
+        "Organization", null=True, blank=True, related_name="invites", on_delete=models.SET_NULL
+    )
+    points_awarded = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        sender_name = self.sender.username if self.sender else "Unknown"
+        return f"Organization invite from {sender_name} to {self.email}"
+
+
 def user_images_path(instance, filename):
     from django.template.defaultfilters import slugify
 
@@ -1839,7 +1855,7 @@ class ContributorStats(models.Model):
         unique_together = ("contributor", "repo", "date", "granularity")
 
     def __str__(self):
-        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        return f"{self.contributor.name} in {self.repo.name} on {self.date} [{self.granularity}]"
 
 
 class SlackBotActivity(models.Model):
@@ -2143,16 +2159,38 @@ class GitHubReview(models.Model):
     )
     reviewer = models.ForeignKey(
         UserProfile,
-        on_delete=models.CASCADE,
-        related_name="reviews_made",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviews_made_as_user",
+    )
+    reviewer_contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviews_made_as_contributor",
     )
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)  # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
     submitted_at = models.DateTimeField()
     url = models.URLField()
 
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
+                name="at_least_one_reviewer",
+            ),
+        )
+
     def __str__(self):
-        return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
+        reviewer_name = "Unknown"
+        if self.reviewer:
+            reviewer_name = self.reviewer.user.username
+        elif self.reviewer_contributor:
+            reviewer_name = self.reviewer_contributor.name
+        return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
 
 
 class Kudos(models.Model):
@@ -2638,7 +2676,7 @@ class HackathonSponsor(models.Model):
         unique_together = ("hackathon", "organization")
 
     def __str__(self):
-        return f"{self.organization.name} - {self.get_sponsor_level_display()} " f"sponsor for {self.hackathon.name}"
+        return f"{self.organization.name} - {self.get_sponsor_level_display()} sponsor for {self.hackathon.name}"
 
 
 class HackathonPrize(models.Model):
