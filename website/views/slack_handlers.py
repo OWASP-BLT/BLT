@@ -711,6 +711,185 @@ def slack_commands(request):
 
                 return response
 
+        elif command == "/ghissue":
+            text = request.POST.get("text", "").strip()
+
+            # Parse the command format: /ghissue <owner/repo> <issue title and description>
+            if not text:
+                guidance_message = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                ":information_source: *How to use the /ghissue command:*\n\n"
+                                "*Format:* `/ghissue <owner/repo> <issue title>`\n\n"
+                                "*Example:*\n"
+                                "`/ghissue OWASP-BLT/BLT Fix login bug on mobile devices`\n\n"
+                                "*Note:*\n"
+                                "• Separate the repository and title with a space\n"
+                                "• The repository should be in the format `owner/repo`\n"
+                                "• You can add a description by providing more details after the title"
+                            ),
+                        },
+                    }
+                ]
+                send_dm(workspace_client, user_id, "How to use /ghissue", guidance_message)
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "I've sent you guidance on using the /ghissue command in a DM! 📚",
+                    }
+                )
+
+            # Parse the text to extract repository and issue details
+            parts = text.split(maxsplit=1)
+            if len(parts) < 2:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Invalid format. Usage: `/ghissue <owner/repo> <issue title and description>`",
+                    }
+                )
+
+            repository = parts[0]
+            issue_text = parts[1]
+
+            # Validate repository format
+            if "/" not in repository or repository.count("/") != 1:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Invalid repository format. Use `owner/repo` format (e.g., `OWASP-BLT/BLT`)",
+                    }
+                )
+
+            try:
+                # Use GitHub token for authentication
+                if not GITHUB_TOKEN:
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ GitHub API token not configured. Please contact the administrator.",
+                        }
+                    )
+
+                # Create GitHub issue
+                headers = get_github_headers()
+                url = f"https://api.github.com/repos/{repository}/issues"
+
+                # Parse title and body (first line is title, rest is body)
+                lines = issue_text.split("\n", 1)
+                title = lines[0].strip()
+                body = lines[1].strip() if len(lines) > 1 else ""
+
+                # Add metadata about who created the issue
+                if body:
+                    body += f"\n\n---\n_Created via Slack by <@{user_id}>_"
+                else:
+                    body = f"_Created via Slack by <@{user_id}>_"
+
+                issue_data = {
+                    "title": title,
+                    "body": body,
+                }
+
+                response = requests.post(url, json=issue_data, headers=headers, timeout=10)
+
+                if response.status_code == 201:
+                    issue = response.json()
+                    blocks = [
+                        {
+                            "type": "header",
+                            "text": {"type": "plain_text", "text": "✅ GitHub Issue Created!", "emoji": True},
+                        },
+                        {"type": "divider"},
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": (
+                                    f"*Repository:* {repository}\n"
+                                    f"*Issue:* <{issue['html_url']}|#{issue['number']} - {issue['title']}>\n"
+                                    f"*Status:* {issue['state']}\n"
+                                    f"*Created at:* {issue['created_at'][:10]}"
+                                ),
+                            },
+                        },
+                        {
+                            "type": "actions",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {"type": "plain_text", "text": "View Issue", "emoji": True},
+                                    "url": issue["html_url"],
+                                    "action_id": "view_github_issue",
+                                }
+                            ],
+                        },
+                    ]
+                    send_dm(workspace_client, user_id, "GitHub Issue Created", blocks)
+                    activity.success = True
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": f"✅ Issue created successfully! #{issue['number']} - I've sent you the details in a DM.",
+                        }
+                    )
+                elif response.status_code == 404:
+                    activity.success = False
+                    activity.error_message = "Repository not found"
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": f"❌ Repository `{repository}` not found. Please check the repository name.",
+                        }
+                    )
+                elif response.status_code == 403:
+                    activity.success = False
+                    activity.error_message = "GitHub API rate limit or permission denied"
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ Permission denied or rate limit exceeded. Please try again later.",
+                        }
+                    )
+                else:
+                    activity.success = False
+                    activity.error_message = f"GitHub API error: {response.status_code}"
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": f"❌ Failed to create issue. GitHub API error: {response.status_code}",
+                        }
+                    )
+
+            except requests.RequestException as e:
+                activity.success = False
+                activity.error_message = f"Network error: {str(e)}"
+                activity.save()
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Network error occurred while creating the issue. Please try again.",
+                    }
+                )
+            except Exception as e:
+                activity.success = False
+                activity.error_message = f"Error: {str(e)}"
+                activity.save()
+                logger.error(f"Error in /ghissue command: {str(e)}")
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ An unexpected error occurred. Please try again later.",
+                    }
+                )
+
         elif command == "/help":
             try:
                 help_message = [
@@ -728,7 +907,7 @@ def slack_commands(request):
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": "*Existing Commands*\n`/discover` - Find projects\n`/contrib` - Learn to contribute\n`/gsoc25` - GSoC 2025 details\n`/blt` - Multi-purpose tool",
+                                "text": "*Project Commands*\n`/discover` - Find projects\n`/contrib` - Learn to contribute\n`/gsoc25` - GSoC 2025 details\n`/blt` - Multi-purpose tool\n`/ghissue` - Create GitHub issue",
                             },
                         ],
                     },
