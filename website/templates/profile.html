@@ -1519,7 +1519,6 @@
         $('body').on('click', '.follow_unfollow', function (e) {
             e.preventDefault();
             var usr = $(this).attr('name');
-            console.log(usr)
             $.ajax({
                 type: 'GET',
                 url: '/follow/' + usr + '/',
