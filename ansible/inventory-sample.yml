@@ -23,7 +23,8 @@ all:
     # PostgreSQL settings
     postgres_db_name: blt
     postgres_db_user: blt_user
-    postgres_db_password: changeme_secure_password
+    # CHANGE THIS PASSWORD! Use a strong password (min 12 chars, mix of upper/lowercase, numbers, special chars)
+    postgres_db_password: CHANGE_ME_TO_SECURE_PASSWORD_123!@#
     postgres_host: 127.0.0.1
     postgres_port: 5432
     
@@ -35,3 +36,6 @@ all:
     
     # Uvicorn workers
     uvicorn_workers: 4
+    
+    # Poetry version (use "latest" or specific version like "1.8.5")
+    poetry_version: "1.8.5"

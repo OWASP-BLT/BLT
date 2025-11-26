@@ -11,6 +11,7 @@
     enable_remote_postgres: "{{ enable_remote_postgres | default(false) }}"
     postgres_host: "{{ postgres_host | default('127.0.0.1') }}"
     postgres_port: "{{ postgres_port | default('5432') }}"
+    poetry_version: "{{ poetry_version | default('1.8.5') }}"
   pre_tasks:
     - name: Update apt cache
       apt:
@@ -69,6 +70,13 @@
       args:
         creates: "{{ venv_dir }}/bin/activate"
 
+    - name: Set ownership of virtualenv to app user
+      file:
+        path: "{{ venv_dir }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        recurse: yes
+
     - name: Upgrade pip/setuptools/wheel
       pip:
         name:
@@ -86,7 +94,7 @@
 
     - name: Install Poetry using official installer
       shell: |
-        curl -sSL https://install.python-poetry.org | python3 - --version 1.8.5
+        curl -sSL https://install.python-poetry.org | python3 - --version {{ poetry_version }}
       args:
         executable: /bin/bash
       when: poetry_installed.rc != 0
@@ -137,7 +145,7 @@
         owner: "{{ app_user }}"
         group: "{{ app_user }}"
         mode: '0600'
-        content: "{{ lookup('password', '/dev/null', length=64, chars='ascii_letters,digits,!@#$%^&*()_+-=') }}"
+        content: "{{ lookup('password', '/dev/null', length=64, chars='ascii_letters,digits,_-') }}"
       when: not secret_key_file.stat.exists or secret_key_file.stat.size == 0
 
     - name: Read persisted SECRET_KEY
@@ -169,23 +177,8 @@
         state: link
         owner: "{{ app_user }}"
         group: "{{ app_user }}"
+        force: yes
       notify: Restart app
-
-    - name: Collect static files
-      shell: "{{ venv_dir }}/bin/python manage.py collectstatic --noinput"
-      args:
-        chdir: "{{ app_dir }}/current"
-      environment:
-        DJANGO_SETTINGS_MODULE: blt.settings
-      become_user: "{{ app_user }}"
-
-    - name: Apply migrations
-      shell: "{{ venv_dir }}/bin/python manage.py migrate --noinput"
-      args:
-        chdir: "{{ app_dir }}/current"
-      environment:
-        DJANGO_SETTINGS_MODULE: blt.settings
-      become_user: "{{ app_user }}"
 
     - name: Ensure PostgreSQL service is started
       service:
@@ -193,16 +186,28 @@
         state: started
         enabled: yes
 
+    - name: Find PostgreSQL main directory
+      find:
+        paths: /etc/postgresql
+        patterns: main
+        file_type: directory
+        recurse: yes
+      register: pg_main_dir_find
+
     - name: Set fact for PostgreSQL main directory
-      shell: ls -d /etc/postgresql/*/main | head -n1
-      register: pg_main_dir
-      changed_when: false
+      set_fact:
+        pg_main_dir: "{{ (pg_main_dir_find.files | map(attribute='path') | list)[0] | default('') }}"
+
+    - name: Fail if PostgreSQL main directory not found
+      fail:
+        msg: "Could not find PostgreSQL main directory under /etc/postgresql/*/main"
+      when: pg_main_dir == ''
 
     - name: Register postgres conf paths
       set_fact:
-        postgres_conf_dir: "{{ pg_main_dir.stdout }}"
-        postgres_conf_file: "{{ pg_main_dir.stdout }}/postgresql.conf"
-        postgres_hba_file: "{{ pg_main_dir.stdout }}/pg_hba.conf"
+        postgres_conf_dir: "{{ pg_main_dir }}"
+        postgres_conf_file: "{{ pg_main_dir }}/postgresql.conf"
+        postgres_hba_file: "{{ pg_main_dir }}/pg_hba.conf"
 
     - name: Create PostgreSQL role if absent
       community.postgresql.postgresql_user:
@@ -219,6 +224,22 @@
         state: present
       become_user: postgres
 
+    - name: Backup postgresql.conf before modification
+      copy:
+        src: "{{ postgres_conf_file }}"
+        dest: "{{ postgres_conf_file }}.backup"
+        remote_src: yes
+        force: no
+      when: enable_remote_postgres | bool
+
+    - name: Backup pg_hba.conf before modification
+      copy:
+        src: "{{ postgres_hba_file }}"
+        dest: "{{ postgres_hba_file }}.backup"
+        remote_src: yes
+        force: no
+      when: enable_remote_postgres | bool
+
     - name: Allow PostgreSQL to listen on all addresses (listen_addresses)
       lineinfile:
         path: "{{ postgres_conf_file }}"
@@ -227,14 +248,31 @@
       when: enable_remote_postgres | bool
       notify: Restart postgres
 
+    # WARNING: This allows connections from any IP address. For production, consider restricting to specific IP ranges.
     - name: Add remote access rule to pg_hba.conf
       lineinfile:
         path: "{{ postgres_hba_file }}"
-        insertafter: EOF
-        # WARNING: This allows connections from any IP address. For production, consider restricting to specific IP ranges.
+        regexp: '^host\s+all\s+all\s+0\.0\.0\.0/0\s+'
         line: 'host    all             all             0.0.0.0/0               scram-sha-256'
+        insertafter: EOF
       when: enable_remote_postgres | bool
       notify: Restart postgres
+
+    - name: Collect static files
+      shell: "{{ venv_dir }}/bin/python manage.py collectstatic --noinput"
+      args:
+        chdir: "{{ app_dir }}/current"
+      environment:
+        DJANGO_SETTINGS_MODULE: blt.settings
+      become_user: "{{ app_user }}"
+
+    - name: Apply migrations
+      shell: "{{ venv_dir }}/bin/python manage.py migrate --noinput"
+      args:
+        chdir: "{{ app_dir }}/current"
+      environment:
+        DJANGO_SETTINGS_MODULE: blt.settings
+      become_user: "{{ app_user }}"
 
     - name: Create systemd service for uvicorn (ASGI)
       copy:
@@ -325,7 +363,7 @@
     - name: Reload nginx
       systemd:
         name: nginx
-        state: restarted
+        state: reloaded
 
   post_tasks:
     - name: Display deployment summary
