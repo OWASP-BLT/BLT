@@ -126,35 +126,9 @@ jobs:
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
             
-            // Build dynamic URLs for buttons
-            const prNumber = context.issue.number;
-            const addLabelUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${prNumber}/labels`;
-            const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/pre-commit-fix.yaml`;
-            
-            // Build shield.io badge URLs for button appearance
-            const labelBadge = 'https://img.shields.io/badge/Add_Label-fix--pre--commit-blue?style=for-the-badge&logo=github';
-            const workflowBadge = 'https://img.shields.io/badge/Run_Workflow-Pre--commit_Fix-green?style=for-the-badge&logo=github-actions';
-            
             const message = `## ❌ Pre-commit checks failed
             
-            The pre-commit hooks found issues that need to be fixed. 
-            
-            ### 🤖 **Automatic Fix Options**
-            
-            You can automatically fix most issues by using one of these methods:
-            
-            | Action | Button |
-            |--------|--------|
-            | **Add the \`fix-pre-commit\` label** to trigger automatic fixes | [![Add Label](${labelBadge})](${addLabelUrl}) |
-            | **Run the pre-commit fix workflow** manually | [![Run Workflow](${workflowBadge})](${workflowUrl}) |
-            
-            > **How to use:**
-            > - Click the **Add Label** button → Add \`fix-pre-commit\` label → Workflow runs automatically
-            > - Or click **Run Workflow** → Click "Run workflow" dropdown → Select this PR's branch
-            
-            ### 💻 **Manual Fix (Local)**
-            
-            Alternatively, you can run the following commands locally to fix them:
+            The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
             
             \`\`\`bash
             # Install pre-commit if you haven't already
@@ -299,8 +273,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      test_result: ${{ steps.run-tests.outputs.exit_code }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
@@ -313,7 +291,122 @@ jobs:
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
-        run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+        id: run-tests
+        run: |
+          set +e
+          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          exit 0
+        continue-on-error: true
+      - name: Fail the job if tests failed
+        if: steps.run-tests.outputs.exit_code != '0'
+        run: exit 1
+
+  label-test-result:
+    name: Label Test Result
+    needs: test
+    if: always() && github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Add test status label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            // Validate PR context exists
+            if (!pull_number) {
+              core.warning('No pull request number found in context. Skipping label.');
+              return;
+            }
+            
+            core.info(`Processing test result label for PR #${pull_number}`);
+            
+            // Determine label based on test exit code
+            const testExitCode = '${{ needs.test.outputs.test_result }}';
+            core.info(`Test exit code from job output: ${testExitCode}`);
+            
+            const newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
+            const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
+            const description = testExitCode === '0' ? 'Django tests passed' : 'Django tests failed';
+            
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+            
+            // Remove any existing test labels
+            const testRegex = /^tests:/i;
+            for (const name of currentNames) {
+              if (testRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+            
+            // Ensure the new label exists (create if missing)
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            await ensureLabelExists(newLabel);
+            
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
+              try {
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [newLabel] 
+                });
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                } else {
+                  throw error;
+                }
+              }
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+            }
+            
+            core.info(`Test exit code: ${testExitCode}`)
 
   docker-test:
     runs-on: ubuntu-latest
