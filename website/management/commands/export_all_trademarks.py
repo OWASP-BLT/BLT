@@ -319,7 +319,7 @@ class Command(BaseCommand):
                         )
 
                         if consecutive_errors >= max_consecutive_errors:
-                            self.stderr.write(self.style.ERROR(f"Too many consecutive errors. Stopping export."))
+                            self.stderr.write(self.style.ERROR("Too many consecutive errors. Stopping export."))
                             break
 
                         # Exponential backoff on errors
