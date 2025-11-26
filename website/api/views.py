@@ -1,4 +1,5 @@
 import json
+import logging
 import smtplib
 import uuid
 from datetime import datetime
@@ -17,7 +18,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -64,6 +65,7 @@ from website.serializers import (
 from website.utils import image_validator
 from website.views.user import LeaderboardBase
 
+logger = logging.getLogger(__name__)
 # API's
 
 
@@ -1256,3 +1258,81 @@ class OrganizationJobStatsViewSet(APIView):
         }
 
         return Response(stats)
+
+
+def safe_json(response):
+    try:
+        return response.json()
+    except ValueError:
+        logger.error("Invalid JSON received from USPTO API", exc_info=True)
+        return None
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def trademark_search_api(request):
+    """
+    API endpoint to search trademarks
+    GET /api/trademarks/search/?query=keyword
+    """
+    query = request.query_params.get("query", "").strip()
+
+    if not query:
+        return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if settings.USPTO_API is None:
+        return Response({"error": "USPTO API key not configured"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    try:
+        # Check availability
+        available_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/{query}"
+        headers = {
+            "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
+            "x-rapidapi-key": settings.USPTO_API,
+        }
+
+        available_response = requests.get(available_url, headers=headers, timeout=10)
+        available_data = safe_json(available_response)
+        if available_data is None:
+            return Response(
+                {"error": "Invalid JSON response from USPTO API"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if available_response.status_code == 429:
+            return Response(
+                {"error": "Rate limit exceeded. Please try again later."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        # If not available, fetch trademark details
+        if isinstance(available_data, list) and len(available_data) > 0:
+            if available_data[0].get("available") == "no":
+                search_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/{query}/active"
+                search_response = requests.get(search_url, headers=headers, timeout=10)
+                search_data = safe_json(search_response)
+                if search_data is None:
+                    return Response(
+                        {"error": "Invalid JSON response from USPTO API"},
+                        status=status.HTTP_502_BAD_GATEWAY,
+                    )
+
+                return Response(
+                    {
+                        "available": False,
+                        "query": query,
+                        "count": search_data.get("count", 0),
+                        "trademarks": search_data.get("items", []),
+                    }
+                )
+            else:
+                return Response({"available": True, "query": query, "count": 0, "trademarks": []})
+
+        return Response({"error": "Invalid response from USPTO API"}, status=status.HTTP_502_BAD_GATEWAY)
+
+    except requests.exceptions.RequestException as e:
+        logger.error("Trademark API request failed")
+
+        return Response(
+            {"error": "Failed to fetch trademark data due to an external service error."},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
