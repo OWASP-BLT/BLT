@@ -362,6 +362,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "short_description",
         "winnings",
         "issues_hidden",
+        "is_verifier",
         "btc_address",
         "bch_address",
         "eth_address",
