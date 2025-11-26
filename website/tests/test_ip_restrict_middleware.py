@@ -6,7 +6,7 @@ from django.http import HttpResponseForbidden
 from django.test import RequestFactory, TestCase
 
 from blt.middleware.ip_restrict import BLOCKED_AGENTS_CACHE_KEY, MAX_COUNT, IPRestrictMiddleware
-from website.models import Blocked, IP
+from website.models import IP, Blocked
 
 
 class IPRestrictMiddlewareTestCase(TestCase):
