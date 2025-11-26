@@ -88,6 +88,67 @@
                   enctype="multipart/form-data"
                   onsubmit="return validateCVE()">
                 {% csrf_token %}
+                <!-- Duplicate Warning Section -->
+                {% if show_duplicate_warning and similar_bugs %}
+                    <div class="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-6 rounded-lg">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl"></i>
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <h3 class="text-lg font-semibold text-yellow-800 dark:text-yellow-200">
+                                    ⚠️ Similar Bugs Found ({{ duplicate_confidence }} confidence)
+                                </h3>
+                                <p class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                                    We found {{ similar_bugs|length }} similar bug report(s). Please review them to avoid duplicates.
+                                </p>
+                                <div class="mt-4 space-y-3">
+                                    {% for bug in similar_bugs %}
+                                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex-1">
+                                                    <div class="flex items-center gap-2 mb-2">
+                                                        <a href="/issue/{{ bug.id }}/"
+                                                           target="_blank"
+                                                           class="text-blue-600 hover:text-blue-800 font-semibold">
+                                                            Bug #{{ bug.id }}
+                                                        </a>
+                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full {% if bug.similarity >= 0.7 %}bg-red-100 text-red-800{% elif bug.similarity >= 0.6 %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                            {{ bug.similarity|floatformat:0 }}% match
+                                                        </span>
+                                                        <span class="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                                            {{ bug.status }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">{{ bug.description }}</p>
+                                                    <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                                        <span><i class="fas fa-user mr-1"></i>{{ bug.user }}</span>
+                                                        <span><i class="fas fa-calendar mr-1"></i>{{ bug.created }}</span>
+                                                        <span><i class="fas fa-link mr-1"></i>{{ bug.url|truncatechars:40 }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mt-4 flex items-center gap-4">
+                                    <input type="checkbox"
+                                           name="confirm_not_duplicate"
+                                           id="confirm_not_duplicate"
+                                           class="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                                    <label for="confirm_not_duplicate"
+                                           class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                        I confirm this is NOT a duplicate and want to proceed with submission
+                                    </label>
+                                </div>
+                                <div class="mt-4 text-sm text-yellow-700 dark:text-yellow-300">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    If your bug is different, please check the box above and submit. Otherwise, consider commenting on an existing bug.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2 space-y-6">
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -428,60 +489,134 @@
     });
 
 
+    // Cancel form function
+    function cancelForm() {
+        if (confirm('Are you sure you want to cancel? All entered data will be lost.')) {
+            window.location.href = '/';
+        }
+    }
+
     $(function () {
+        // Check Duplicates button handler - using new duplicate checker API
         $(".duplicates").click(async () => {
-            var uri = $("input[name='url']").val();
+            const uri = $("input[name='url']").val();
+            const title = $("input[name='description']").val();
+            const markdownDesc = $("textarea[name='markdown_description']").val();
 
-            $("#view_all").attr("href", `/search/?query=${encodeURIComponent(uri)}`);
+            if (!uri || !title) {
+                alert('Please enter both URL and bug title to check for duplicates.');
+                return;
+            }
 
-            let resp = await fetch("/api/v1/urlcheck/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    "domain_url": uri
-                })
-            });
+            // Combine title and description for better duplicate detection
+            const fullDescription = title + (markdownDesc ? '. ' + markdownDesc : '');
 
-            let resp_json = await resp.json()
+            // Show loading state
+            const button = $(".duplicates");
+            const originalText = button.html();
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Checking...');
 
-            $("#duplicate-list").html("")
-            resp_json.map(issue => add_duplicates(issue));
+            try {
+                $("#view_all").attr("href", `/search/?query=${encodeURIComponent(uri)}`);
 
-            $("#duplicate-container").show()
+                // Use new duplicate checker API
+                let resp = await fetch("/api/v1/bugs/check-duplicate/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        "url": uri,
+                        "description": fullDescription
+                    })
+                });
 
+                if (!resp.ok) {
+                    throw new Error(`HTTP error! status: ${resp.status}`);
+                }
+
+                let data = await resp.json();
+
+                $("#duplicate-list").html("");
+
+                if (data.similar_bugs && data.similar_bugs.length > 0) {
+                    data.similar_bugs.forEach(bug => add_duplicates(bug, data.confidence));
+                    $("#duplicate-container").show();
+                } else {
+                    alert('No similar bugs found! This appears to be a new issue.');
+                }
+
+            } catch (error) {
+                console.error('Error checking duplicates:', error);
+                alert('Error checking for duplicates. Please try again.');
+            } finally {
+                // Restore button state
+                button.prop('disabled', false).html(originalText);
+            }
         });
 
         $("#close-duplicate-container").click(() => {
-            $("#duplicate-container").hide()
-        })
+            $("#duplicate-container").hide();
+        });
 
-
-        let add_duplicates = (issue) => {
-            $("#duplicate-list").append(
-                `
-                    <li class="py-2 border-x-gray-500 border-t-2 cursor-pointer hover:bg-gray-100 transition-all duration-200">
-                        <div class="flex items-center space-x-4 px-2 py-1">
-                            <div class="flex-shrink-0">
-                                <img class="w-[50px] h-[50px] rounded-full" src="{% media_url %}${issue.user__userprofile__user_avatar}" alt="Neil image" width="50px" height="50px">
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xl font-bold text-black/90 dark:text-white/90">
-                                    ${issue.description.substring(0, 50)}...
-                                </p>
-                                <a href="/issue/${issue.id}" class="text-lg text-gray-500 dark:text-gray-500 hover:text-red-500 truncate">
-                                    /issue/${issue.id}
-                                </a>
-                            </div>
-                            <div class="inline-flex items-center text-base text-lg font-medium text-gray-500 dark:text-gray-500">
-                                    ${issue.created__day}/${issue.created__month}/${issue.created__year}
-                                </div>
-                        </div>
-                    </li>
-                `
-            )
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
         }
+
+        // Updated add_duplicates function for new API response format
+        let add_duplicates = (bug, confidence) => {
+            const similarityPercent = Math.round(bug.similarity * 100);
+            const confidenceColor = confidence === 'high' ? 'bg-red-100 text-red-800' : 
+                                    confidence === 'medium' ? 'bg-orange-100 text-orange-800' : 
+                                    'bg-blue-100 text-blue-800';
+            
+            const createdDate = new Date(bug.created);
+            const formattedDate = createdDate.toLocaleDateString();
+
+            $("#duplicate-list").append(`
+                <li class="py-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
+                    <div class="flex items-start space-x-4 px-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-2">
+                                <a href="/issue/${bug.id}" target="_blank" class="text-lg font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                    Bug #${bug.id}
+                                </a>
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full ${confidenceColor}">
+                                    ${similarityPercent}% match
+                                </span>
+                                <span class="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                                    ${bug.status}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                ${escapeHtml(bug.description)}
+                            </p>
+                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span><i class="fas fa-user mr-1"></i>${escapeHtml(bug.user)}</span>
+                                <span><i class="fas fa-calendar mr-1"></i>${formattedDate}</span>
+                                <span><i class="fas fa-thumbs-up mr-1"></i>${bug.upvotes} upvotes</span>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
+                                <i class="fas fa-link mr-1"></i>${escapeHtml(bug.url)}
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            `);
+        };
 
     });
 

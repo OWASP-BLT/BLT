@@ -25,6 +25,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from website.duplicate_checker import check_for_duplicates, find_similar_bugs
 from website.models import (
     ActivityLog,
     Contributor,
@@ -1314,3 +1315,214 @@ def trademark_search_api(request):
             {"error": "Failed to fetch trademark data due to an external service error."},
             status=status.HTTP_502_BAD_GATEWAY,
         )
+
+
+class CheckDuplicateBugApiView(APIView):
+    """
+    API endpoint to check for duplicate bug reports before submission.
+    Helps users avoid submitting duplicate bugs by finding similar existing reports.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        """
+        Check for duplicate bugs based on URL and description.
+
+        Request body:
+        {
+            "url": "https://example.com/page",
+            "description": "Bug description text",
+            "domain_id": 123  # Optional
+        }
+
+        Response:
+        {
+            "is_duplicate": true/false,
+            "confidence": "high/medium/low/none",
+            "similar_bugs": [
+                {
+                    "id": 123,
+                    "url": "...",
+                    "description": "...",
+                    "similarity": 0.85,
+                    "status": "open",
+                    "created": "...",
+                    "user": "..."
+                }
+            ]
+        }
+        """
+        # Input validation and sanitization
+        url = request.data.get("url", "").strip()
+        description = request.data.get("description", "").strip()
+        domain_id = request.data.get("domain_id")
+
+        # Validate input
+        if not url:
+            return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not description:
+            return Response({"error": "Description is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate URL length (prevent DoS)
+        if len(url) > 2048:
+            return Response({"error": "URL is too long (max 2048 characters)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate description length (prevent DoS)
+        if len(description) > 10000:
+            return Response(
+                {"error": "Description is too long (max 10000 characters)"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get domain if provided
+        domain = None
+        if domain_id:
+            try:
+                domain_id = int(domain_id)
+                domain = Domain.objects.get(id=domain_id)
+            except (ValueError, TypeError, Domain.DoesNotExist):
+                logger.warning(f"Invalid domain_id provided: {domain_id}")
+                pass
+
+        # Check for duplicates
+        try:
+            result = check_for_duplicates(url, description, domain)
+
+            # Format the response
+            similar_bugs_data = []
+            for bug_info in result["similar_bugs"]:
+                issue = bug_info["issue"]
+                similar_bugs_data.append(
+                    {
+                        "id": issue.id,
+                        "url": issue.url,
+                        "description": issue.description[:200],  # Truncate for preview
+                        "similarity": bug_info["similarity"],
+                        "description_similarity": bug_info["description_similarity"],
+                        "url_similarity": bug_info["url_similarity"],
+                        "keyword_matches": bug_info["keyword_matches"],
+                        "status": issue.status,
+                        "created": issue.created,
+                        "user": issue.user.username if issue.user else "Anonymous",
+                        "label": issue.get_label_display(),
+                        "verified": issue.verified,
+                        "upvotes": issue.upvoted.count() if hasattr(issue, "upvoted") else 0,
+                    }
+                )
+
+            response_data = {
+                "is_duplicate": result["is_duplicate"],
+                "confidence": result["confidence"],
+                "similar_bugs": similar_bugs_data,
+                "message": self._get_message(result),
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error checking for duplicates: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while checking for duplicates"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def _get_message(self, result):
+        """Generate a user-friendly message based on the duplicate check result."""
+        if not result["is_duplicate"]:
+            if result["similar_bugs"]:
+                return "No exact duplicates found, but there are some similar reports you might want to review."
+            return "No similar bugs found. This appears to be a new issue."
+
+        confidence = result["confidence"]
+        if confidence == "high":
+            return "This bug appears to be very similar to existing reports. Please review them before submitting."
+        elif confidence == "medium":
+            return "This bug might be similar to existing reports. Please check if your issue is already reported."
+        else:
+            return "There are some potentially related bugs. You may want to review them."
+
+
+class FindSimilarBugsApiView(APIView):
+    """
+    API endpoint to find similar bugs for a given domain.
+    Useful for browsing related issues.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        """
+        Find similar bugs based on query parameters.
+
+        Query parameters:
+        - url: URL to search for
+        - description: Description text to match
+        - domain_id: Optional domain ID to narrow search
+        - threshold: Similarity threshold (0.0-1.0, default 0.5)
+        - limit: Maximum results to return (default 10)
+        """
+        url = request.query_params.get("url", "").strip()
+        description = request.query_params.get("description", "").strip()
+        domain_id = request.query_params.get("domain_id")
+
+        try:
+            threshold = float(request.query_params.get("threshold", 0.5))
+            threshold = max(0.0, min(1.0, threshold))  # Clamp between 0 and 1
+        except (ValueError, TypeError):
+            threshold = 0.5
+
+        try:
+            limit = int(request.query_params.get("limit", 10))
+            limit = max(1, min(50, limit))  # Clamp between 1 and 50
+        except (ValueError, TypeError):
+            limit = 10
+
+        # Validate input
+        if not url and not description:
+            return Response({"error": "Either URL or description is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get domain if provided
+        domain = None
+        if domain_id:
+            try:
+                domain = Domain.objects.get(id=domain_id)
+            except Domain.DoesNotExist:
+                pass
+
+        # Find similar bugs
+        try:
+            # Use a default value if one is missing
+            search_url = url or "https://example.com"
+            search_description = description or "search query"
+
+            similar_bugs = find_similar_bugs(
+                search_url, search_description, domain, similarity_threshold=threshold, limit=limit
+            )
+
+            # Format response
+            results = []
+            for bug_info in similar_bugs:
+                issue = bug_info["issue"]
+                results.append(
+                    {
+                        "id": issue.id,
+                        "url": issue.url,
+                        "description": issue.description[:200],
+                        "similarity": bug_info["similarity"],
+                        "status": issue.status,
+                        "created": issue.created,
+                        "user": issue.user.username if issue.user else "Anonymous",
+                        "domain": issue.domain.name if issue.domain else None,
+                        "verified": issue.verified,
+                    }
+                )
+
+            return Response({"count": len(results), "results": results}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error finding similar bugs: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while searching for similar bugs"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

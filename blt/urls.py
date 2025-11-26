@@ -24,7 +24,9 @@ from website.api.views import (
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
+    CheckDuplicateBugApiView,
     DomainViewSet,
+    FindSimilarBugsApiView,
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
@@ -1191,6 +1193,14 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
+    # Duplicate Bug Checking API
+    path(
+        "duplicate-check-example/",
+        TemplateView.as_view(template_name="duplicate_check_example.html"),
+        name="duplicate_check_example",
+    ),
+    path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
+    path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
 ]
 
 if settings.DEBUG:

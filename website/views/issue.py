@@ -56,6 +56,7 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
+from website.duplicate_checker import check_for_duplicates
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
     IP,
@@ -986,6 +987,77 @@ class IssueCreate(IssueBaseCreate, CreateView):
             messages.error(self.request, "You have reached your issue creation limit for today.")
             return render(self.request, "report.html", {"form": self.get_form()})
         form.instance.reporter_ip_address = reporter_ip
+
+        # Check for duplicate bugs before creating the issue
+        url = form.cleaned_data.get("url", "")
+        title = form.cleaned_data.get("description", "")  # This is the bug title
+        markdown_description = form.cleaned_data.get("markdown_description", "")
+
+        # Combine title and detailed description for better duplicate detection
+        full_description = title
+        if markdown_description:
+            full_description = f"{title}. {markdown_description}"
+
+        # Only check for duplicates if we have both URL and title
+        if url and title:
+            # Add https:// if not present for duplicate checking
+            check_url = url if url.startswith(("http://", "https://")) else f"https://{url}"
+
+            try:
+                # Get domain object if available for more accurate matching
+                parsed_url = urlparse(check_url)
+                clean_domain = parsed_url.netloc.replace("www.", "").lower()
+                domain_obj = Domain.objects.filter(Q(name__iexact=clean_domain) | Q(url__iexact=clean_domain)).first()
+
+                duplicate_result = check_for_duplicates(
+                    check_url,
+                    full_description,  # Use combined title + description
+                    domain=domain_obj,
+                    threshold=0.65,
+                )
+
+                if duplicate_result["is_duplicate"] and duplicate_result["confidence"] in ["high", "medium"]:
+                    # Check if user wants to proceed anyway
+                    if not self.request.POST.get("confirm_not_duplicate"):
+                        # Store similar bugs for display
+                        similar_bugs_data = []
+                        for bug in duplicate_result["similar_bugs"][:5]:
+                            try:
+                                similar_bugs_data.append(
+                                    {
+                                        "id": bug["issue"].id,
+                                        "url": bug["issue"].url,
+                                        "description": bug["issue"].description[:200],
+                                        "similarity": bug["similarity"],
+                                        "status": bug["issue"].status,
+                                        "user": bug["issue"].user.username if bug["issue"].user else "Anonymous",
+                                        "created": bug["issue"].created.strftime("%Y-%m-%d"),
+                                    }
+                                )
+                            except Exception as e:
+                                logger.warning(f"Error formatting similar bug: {e}")
+                                continue
+
+                        if similar_bugs_data:
+                            messages.warning(
+                                self.request,
+                                f"Similar bugs found ({duplicate_result['confidence']} confidence). Please review them before submitting.",
+                            )
+                            captcha_form = CaptchaForm(self.request.POST)
+                            return render(
+                                self.request,
+                                "report.html",
+                                {
+                                    "form": self.get_form(),
+                                    "captcha_form": captcha_form,
+                                    "similar_bugs": similar_bugs_data,
+                                    "duplicate_confidence": duplicate_result["confidence"],
+                                    "show_duplicate_warning": True,
+                                },
+                            )
+            except Exception as e:
+                # If duplicate check fails, log it but don't block submission
+                logger.warning(f"Duplicate check failed: {str(e)}", exc_info=True)
 
         @atomic
         def create_issue(self, form):
