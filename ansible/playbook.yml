@@ -194,14 +194,14 @@
         recurse: yes
       register: pg_main_dir_find
 
-    - name: Set fact for PostgreSQL main directory
-      set_fact:
-        pg_main_dir: "{{ (pg_main_dir_find.files | map(attribute='path') | list)[0] | default('') }}"
-
     - name: Fail if PostgreSQL main directory not found
       fail:
         msg: "Could not find PostgreSQL main directory under /etc/postgresql/*/main"
-      when: pg_main_dir == ''
+      when: pg_main_dir_find.files | length == 0
+
+    - name: Set fact for PostgreSQL main directory
+      set_fact:
+        pg_main_dir: "{{ (pg_main_dir_find.files | map(attribute='path') | list)[0] }}"
 
     - name: Register postgres conf paths
       set_fact:
