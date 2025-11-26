@@ -125,7 +125,7 @@ jobs:
               violations +
               '\n### How to fix:\n' +
               '1. Remove or comment out all `console.*` statements from your code (console.log, console.error, console.warn, etc.)\n' +
-              '2. Use the project\'s existing error tracking system for debugging\n' +
+              "2. Use the project's existing error tracking system for debugging\n" +
               '3. For temporary debugging during development, comment out console statements: `// console.log()`\n\n' +
               '**Note:** \n' +
               '- All console methods (log, error, warn, debug, info, etc.) are forbidden.\n' +
