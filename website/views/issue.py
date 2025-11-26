@@ -1632,13 +1632,13 @@ class IssueView(DetailView):
             context["os_version"] = user_agent.os.version_string
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
-        
+
         # Calculate user's total score
         # Both total_score and users_score are set for backward compatibility
         if self.object.user:
-            total_score = Points.objects.filter(user=self.object.user).aggregate(
-                total_score=Sum("score")
-            )["total_score"] or 0
+            total_score = (
+                Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score"))["total_score"] or 0
+            )
             context["total_score"] = total_score
             context["users_score"] = total_score
         else:
@@ -1665,10 +1665,10 @@ class IssueView(DetailView):
         if self.object.domain:
             context["email_clicks"] = self.object.domain.clicks
             context["email_events"] = self.object.domain.email_event
-            
+
             # Generate GitHub issues URL from the domain's github field
             if self.object.domain.github:
-                github_url = self.object.domain.github.rstrip('/')
+                github_url = self.object.domain.github.rstrip("/")
                 context["github_issues_url"] = f"{github_url}/issues"
 
         return context
