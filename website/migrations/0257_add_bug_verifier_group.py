@@ -39,7 +39,7 @@ def remove_bug_verifier_group(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0252_add_adventure_models"),
+        ("website", "0256_inviteorganization"),
     ]
 
     operations = [
