@@ -99,13 +99,10 @@ jobs:
         if: env.changes_detected == 'true'
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email \
-            "github-actions[bot]@users.noreply.github.com"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add website/migrations/ comments/migrations/
           git commit -m "Regenerate Django migrations"
-          BRANCH_NAME="${{ github.event_name == 'pull_request_target' &&
-            github.event.pull_request.head.ref || github.ref_name }}"
-          git push origin HEAD:$BRANCH_NAME
+          git push origin HEAD
 
       - name: Comment on PR
         if: >
@@ -115,16 +112,19 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const message = `## ✅ Migrations Regenerated
-
-            The Django migrations have been successfully regenerated:
-            - Deleted all existing migration files (except \`__init__.py\`)
-            - Ran \`python manage.py makemigrations\` to create fresh
-              migrations
-            - Committed and pushed the new migration files to this PR
-
-            Please review the changes and ensure all models are properly
-            migrated.`;
+            const message = [
+              '## ✅ Migrations Regenerated',
+              '',
+              'The Django migrations have been successfully regenerated:',
+              '- Deleted all existing migration files',
+              '  (except `__init__.py`)',
+              '- Ran `python manage.py makemigrations`',
+              '  to create fresh migrations',
+              '- Committed and pushed the new migration files to this PR',
+              '',
+              'Please review the changes and ensure all models are',
+              'properly migrated.'
+            ].join('\n');
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -141,11 +141,14 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const message = `## ℹ️ No Migration Changes
-
-            The migration regeneration process completed, but no changes
-            were detected. This means the existing migrations are already
-            up to date with your models.`;
+            const message = [
+              '## ℹ️ No Migration Changes',
+              '',
+              'The migration regeneration process completed,',
+              'but no changes were detected.',
+              'This means the existing migrations are already',
+              'up to date with your models.'
+            ].join('\n');
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
