@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0252_add_adventure_models"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
