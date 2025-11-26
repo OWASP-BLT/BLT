@@ -1,7 +1,7 @@
-name: Check Console.log Statements
+name: Check Console Statements
 
-# This workflow checks for console.log statements in JavaScript files
-# console.error and console.warn are allowed for debugging purposes
+# This workflow checks for any console statements in JavaScript files
+# All console methods are forbidden as the project has sufficient error tracking
 on:
   pull_request:
     types:
@@ -30,10 +30,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for console.log statements
+      - name: Check for console statements
         id: check
         run: |
-          echo "Checking for console.log statements in JavaScript files..."
+          echo "Checking for console statements in JavaScript files..."
           
           # Get list of changed JavaScript files in this PR
           if [ "${{ github.event_name }}" == "pull_request" ]; then
@@ -53,21 +53,22 @@ jobs:
             echo "$CHANGED_FILES"
             echo ""
             
-            # Check for console.log in changed files
+            # Check for any console statements in changed files
             VIOLATIONS=""
             VIOLATION_COUNT=0
             
             while IFS= read -r file; do
               if [ -f "$file" ]; then
-                # Search for console.log using word boundaries to avoid false positives
+                # Search for any console methods using word boundaries to avoid false positives
+                # Matches: console.log, console.error, console.warn, console.debug, console.info, etc.
                 # Excludes lines where content starts with // or /* (single-line comments at start of line)
-                # Lines with console.log followed by inline comments are correctly flagged
+                # Lines with console statements followed by inline comments are correctly flagged
                 # Note: Multi-line comment blocks are not fully handled and may cause false positives
                 # grep -n output format is: line_number:content
-                MATCHES=$(grep -n '\bconsole\.log\b' "$file" | grep -Ev '^[0-9]+:\s*(//|/\*)' || true)
+                MATCHES=$(grep -n '\bconsole\.\w\+' "$file" | grep -Ev '^[0-9]+:\s*(//|/\*)' || true)
                 
                 if [ -n "$MATCHES" ]; then
-                  echo "Found console.log in $file:"
+                  echo "Found console statements in $file:"
                   echo "$MATCHES"
                   echo ""
                   # Using 'text' format to display grep output with line numbers
@@ -113,25 +114,23 @@ jobs:
             
             const commentMarker = '<!-- console-log-check -->';
             const commentBody = commentMarker + '\n' +
-              '## ❌ Console.log Statements Detected\n\n' +
-              `Found **${violationCount}** file(s) with \`console.log\` statements that should be removed.\n\n` +
-              '### Why remove console.log?\n' +
+              '## ❌ Console Statements Detected\n\n' +
+              `Found **${violationCount}** file(s) with \`console\` statements that should be removed.\n\n` +
+              '### Why remove console statements?\n' +
+              '- The project has sufficient error tracking in place\n' +
               '- Console statements can expose sensitive information in production\n' +
               '- They can clutter browser console logs\n' +
               '- They may impact performance in production builds\n\n' +
               '### Files with violations:\n\n' +
               violations +
               '\n### How to fix:\n' +
-              '1. Remove or comment out `console.log` statements from your code\n' +
-              '2. If you need debugging output, consider using:\n' +
-              '   - `console.error()` for error messages (allowed)\n' +
-              '   - `console.warn()` for warnings (allowed)\n' +
-              '   - A proper logging library for production code\n\n' +
-              '3. For temporary debugging, you can use `// console.log()` to comment it out\n\n' +
+              '1. Remove or comment out all `console.*` statements from your code (console.log, console.error, console.warn, etc.)\n' +
+              '2. Use the project\'s existing error tracking system for debugging\n' +
+              '3. For temporary debugging during development, comment out console statements: `// console.log()`\n\n' +
               '**Note:** \n' +
-              '- `console.error` and `console.warn` are allowed for debugging purposes.\n' +
-              '- If console.log is inside a multi-line comment block (`/* ... */`), it may still be flagged. Please manually verify.\n\n' +
-              'Please remove the console.log statements and push your changes.';
+              '- All console methods (log, error, warn, debug, info, etc.) are forbidden.\n' +
+              '- If console statements are inside a multi-line comment block (`/* ... */`), they may still be flagged. Please manually verify.\n\n' +
+              'Please remove all console statements and push your changes.';
             
             // Check if we already commented
             const { data: comments } = await github.rest.issues.listComments({
@@ -175,9 +174,9 @@ jobs:
             const repo = context.repo.repo;
             const pull_number = context.issue.number;
             
-            const labelName = 'has-console-log';
+            const labelName = 'has-console-statements';
             const labelColor = 'e74c3c'; // Red
-            const labelDescription = 'PR contains console.log statements that need to be removed';
+            const labelDescription = 'PR contains console statements that need to be removed';
             
             // Ensure label exists
             try {
@@ -225,7 +224,7 @@ jobs:
             const repo = context.repo.repo;
             const pull_number = context.issue.number;
             
-            const labelName = 'has-console-log';
+            const labelName = 'has-console-statements';
             const commentMarker = '<!-- console-log-check -->';
             
             // Remove label if present

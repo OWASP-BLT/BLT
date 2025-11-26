@@ -185,9 +185,9 @@ poetry run pre-commit install
 
 For JavaScript code, please follow these guidelines:
 
-- **Avoid `console.log` statements**: Our CI/CD pipeline automatically checks for `console.log` statements in JavaScript files. Remove them before submitting your PR.
-- `console.error` and `console.warn` are allowed for debugging purposes.
-- For production logging, consider using a proper logging library instead of console methods.
+- **Avoid all `console` statements**: Our CI/CD pipeline automatically checks for any `console` statements in JavaScript files (including `console.log`, `console.error`, `console.warn`, etc.). Remove them before submitting your PR.
+- The project has sufficient error tracking systems in place, so console statements are not needed.
+- For temporary debugging during development, comment out console statements before committing: `// console.log()`.
 
 ## Testing
 
