@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load static %}
+{% block title %}
+    Projects - Compact View
+{% endblock title %}
+{% block content %}
+    <div class="flex">
+        {% include "includes/sidenav.html" %}
+        <div class="container py-6 mx-auto px-4 max-w-full">
+            <!-- Header with view switcher -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Projects - Compact View</h1>
+                    <div class="flex gap-2">
+                        <a href="{% url 'project_list' %}"
+                           class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                            <svg class="w-5 h-5 inline-block mr-1"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                            Card View
+                        </a>
+                        <a href="{% url 'project_compact_list' %}"
+                           class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                            <svg class="w-5 h-5 inline-block mr-1"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Compact View
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Filter Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+                <form method="get" class="flex flex-wrap gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                        <input type="text"
+                               name="search"
+                               value="{{ request.GET.search }}"
+                               placeholder="Search projects..."
+                               class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Organization</label>
+                        <select name="organization"
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+                            <option value="">All Organizations</option>
+                            {% for org in organizations %}
+                                <option value="{{ org.id }}"
+                                        {% if request.GET.organization == org.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ org.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit"
+                                class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium">
+                            Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <!-- Compact Table View -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-900">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <a href="?sort=name&order={% if sort_by == 'name' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                                       class="flex items-center hover:text-red-500">
+                                        Name
+                                        {% if sort_by == "name" %}
+                                            {% if order == "asc" %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M5 10l5-5 5 5H5z" />
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M15 10l-5 5-5-5h10z" />
+                                                </svg>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <a href="?sort=organization&order={% if sort_by == 'organization' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                                       class="flex items-center hover:text-red-500">
+                                        Organization
+                                        {% if sort_by == "organization" %}
+                                            {% if order == "asc" %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M5 10l5-5 5 5H5z" />
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M15 10l-5 5-5-5h10z" />
+                                                </svg>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <a href="?sort=status&order={% if sort_by == 'status' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                                       class="flex items-center hover:text-red-500">
+                                        Status
+                                        {% if sort_by == "status" %}
+                                            {% if order == "asc" %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M5 10l5-5 5 5H5z" />
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M15 10l-5 5-5-5h10z" />
+                                                </svg>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <a href="?sort=repos_count&order={% if sort_by == 'repos_count' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                                       class="flex items-center hover:text-red-500">
+                                        Repos
+                                        {% if sort_by == "repos_count" %}
+                                            {% if order == "asc" %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M5 10l5-5 5 5H5z" />
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M15 10l-5 5-5-5h10z" />
+                                                </svg>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Stars
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Forks
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Issues
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <a href="?sort=slack_channel&order={% if sort_by == 'slack_channel' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                                       class="flex items-center hover:text-red-500">
+                                        Slack
+                                        {% if sort_by == "slack_channel" %}
+                                            {% if order == "asc" %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M5 10l5-5 5 5H5z" />
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M15 10l-5 5-5-5h10z" />
+                                                </svg>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Social
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <a href="?sort=created&order={% if sort_by == 'created' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                                       class="flex items-center hover:text-red-500">
+                                        Created
+                                        {% if sort_by == "created" %}
+                                            {% if order == "asc" %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M5 10l5-5 5 5H5z" />
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M15 10l-5 5-5-5h10z" />
+                                                </svg>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            {% for item in projects_with_stats %}
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            {% if item.project.logo %}
+                                                <img src="{{ item.project.logo.url }}"
+                                                     alt="{{ item.project.name }}"
+                                                     class="w-8 h-8 rounded mr-2" />
+                                            {% else %}
+                                                <div class="w-8 h-8 rounded mr-2 bg-red-500 flex items-center justify-center text-white font-bold">
+                                                    {{ item.project.name|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <a href="{% url 'project_detail' item.project.slug %}"
+                                                   class="text-sm font-medium text-red-600 dark:text-red-400 hover:underline">{{ item.project.name }}</a>
+                                                {% if item.project.url %}
+                                                    <a href="{{ item.project.url }}"
+                                                       target="_blank"
+                                                       class="ml-1 text-gray-400 hover:text-gray-600">
+                                                        <svg class="w-3 h-3 inline"
+                                                             fill="none"
+                                                             stroke="currentColor"
+                                                             viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        {% if item.project.organization %}
+                                            <a href="{% url 'organization_detail' item.project.organization.slug %}"
+                                               class="text-sm text-gray-900 dark:text-gray-100 hover:text-red-600 dark:hover:text-red-400">{{ item.project.organization.name }}</a>
+                                        {% else %}
+                                            <span class="text-sm text-gray-400 dark:text-gray-500">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if item.project.status == 'flagship' %}bg-purple-100 text-purple-800{% elif item.project.status == 'production' %}bg-green-100 text-green-800{% elif item.project.status == 'incubator' %}bg-blue-100 text-blue-800{% elif item.project.status == 'lab' %}bg-yellow-100 text-yellow-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ item.project.get_status_display|default:item.project.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ item.repo_count }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ item.total_stars|intcomma }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ item.total_forks|intcomma }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ item.total_issues|intcomma }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        {% if item.project.slack %}
+                                            <a href="{{ item.project.slack }}"
+                                               target="_blank"
+                                               class="text-sm text-red-600 dark:text-red-400 hover:underline"
+                                               title="Slack: {{ item.project.slack_channel|default:'General' }}">
+                                                {% if item.project.slack_channel %}
+                                                    {{ item.project.slack_channel }}
+                                                {% else %}
+                                                    Link
+                                                {% endif %}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-sm text-gray-400 dark:text-gray-500">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="flex gap-2">
+                                            {% if item.project.twitter %}
+                                                <a href="{% if 'http' in item.project.twitter %}{{ item.project.twitter }}{% else %}https://twitter.com/{{ item.project.twitter }}{% endif %}"
+                                                   target="_blank"
+                                                   class="text-gray-400 hover:text-blue-400"
+                                                   title="Twitter">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                                                    </svg>
+                                                </a>
+                                            {% endif %}
+                                            {% if item.project.facebook %}
+                                                <a href="{{ item.project.facebook }}"
+                                                   target="_blank"
+                                                   class="text-gray-400 hover:text-blue-600"
+                                                   title="Facebook">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                                    </svg>
+                                                </a>
+                                            {% endif %}
+                                            {% if not item.project.twitter and not item.project.facebook %}
+                                                <span class="text-sm text-gray-400 dark:text-gray-500">-</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ item.project.created|date:"Y-m-d" }}
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <a href="{% url 'project_detail' item.project.slug %}"
+                                           class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">View</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="11"
+                                        class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                        No projects found.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="mt-6 flex justify-center">
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% if request.GET.sort %}&sort={{ request.GET.sort }}&order={{ request.GET.order }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">First</a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}&order={{ request.GET.order }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                               class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">Previous</a>
+                        {% endif %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}&order={{ request.GET.order }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                               class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">Next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.sort %}&sort={{ request.GET.sort }}&order={{ request.GET.order }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">Last</a>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

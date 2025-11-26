@@ -321,6 +321,88 @@ class ProjectView(FilterView):
         return context
 
 
+class ProjectCompactListView(FilterView):
+    """Compact spreadsheet-like view for projects with sortable columns"""
+
+    model = Project
+    template_name = "projects/project_compact_list.html"
+    context_object_name = "projects"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = Project.objects.select_related("organization").prefetch_related("repos").exclude(slug="")
+
+        # Apply sorting
+        sort_by = self.request.GET.get("sort", "name")
+        order = self.request.GET.get("order", "asc")
+
+        # Map sort fields to actual model fields
+        sort_mapping = {
+            "name": "name",
+            "organization": "organization__name",
+            "status": "status",
+            "repos_count": "repos__count",
+            "slack_channel": "slack_channel",
+            "created": "created",
+            "modified": "modified",
+        }
+
+        field = sort_mapping.get(sort_by, "name")
+
+        # Handle repos_count separately as it's an aggregation
+        if sort_by == "repos_count":
+            queryset = queryset.annotate(repos_count=Count("repos"))
+            field = "repos_count"
+
+        if order == "desc":
+            field = f"-{field}"
+
+        queryset = queryset.order_by(field)
+
+        # Apply organization filter
+        organization_id = self.request.GET.get("organization")
+        if organization_id:
+            queryset = queryset.filter(organization_id=organization_id)
+
+        # Apply search filter
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search))
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get organizations that have projects
+        context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
+
+        # Calculate aggregate stats for each project
+        projects_with_stats = []
+        for project in context["projects"]:
+            repos = project.repos.all()
+            total_stars = sum(repo.stars for repo in repos)
+            total_forks = sum(repo.forks for repo in repos)
+            total_issues = sum(repo.total_issues for repo in repos)
+            repo_count = repos.count()
+
+            projects_with_stats.append(
+                {
+                    "project": project,
+                    "repo_count": repo_count,
+                    "total_stars": total_stars,
+                    "total_forks": total_forks,
+                    "total_issues": total_issues,
+                }
+            )
+
+        context["projects_with_stats"] = projects_with_stats
+        context["sort_by"] = self.request.GET.get("sort", "name")
+        context["order"] = self.request.GET.get("order", "asc")
+
+        return context
+
+
 @login_required
 @require_http_methods(["POST"])
 def create_project(request):
