@@ -231,8 +231,7 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         {% for hackathon in recent_hackathons %}
-                            <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
-                               class="block bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-200 dark:border-gray-700 group">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-200 dark:border-gray-700">
                                 {% if hackathon.banner_image %}
                                     <div class="h-32 bg-cover bg-center"
                                          style="background-image: url('{{ hackathon.banner_image.url }}')"></div>
@@ -250,8 +249,7 @@
                                     </div>
                                     <p class="text-gray-600 dark:text-gray-400 text-xs mb-2">
                                         Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
-    class="text-[#e74c3c] hover:underline"
-    onclick="event.stopPropagation();">{{ hackathon.organization.name }}</a>
+    class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                     </p>
                                     <p class="text-gray-700 dark:text-gray-300 text-sm mb-3 line-clamp-2">{{ hackathon.description|truncatechars:120 }}</p>
                                     <!-- Hackathon Statistics -->
@@ -282,12 +280,13 @@
                                         <i class="far fa-calendar mr-1.5"></i>
                                         <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
                                     </div>
-                                    <div class="inline-flex items-center justify-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] group-hover:bg-red-700 transition-colors w-full">
+                                    <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
+                                       class="inline-flex items-center justify-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
                                         View Details
                                         <i class="fas fa-arrow-right ml-2"></i>
-                                    </div>
+                                    </a>
                                 </div>
-                            </a>
+                            </div>
                         {% endfor %}
                     </div>
                     <div class="text-center">
