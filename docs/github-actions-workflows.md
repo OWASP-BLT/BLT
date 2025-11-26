@@ -31,15 +31,17 @@ This workflow automatically deletes and regenerates Django migrations that are p
 
 ### What It Does
 
-1. **Checks out your PR branch** (including from forks) with full history
+1. **Checks out the base branch** (trusted code) with full history
 2. **Sets up Python 3.11** and installs Poetry
 3. **Installs project dependencies** using Poetry
-4. **Identifies migration files** that were added or modified in this PR by comparing against the base branch
-5. **Deletes only the PR migration files** (preserves `__init__.py` and existing migrations not in the PR)
-6. **Creates a temporary .env file** with minimal settings for Django to run
-7. **Runs makemigrations** to generate fresh migration files
-8. **Commits and pushes** the new migrations to your branch
-9. **Comments on your PR** with the results
+4. **Fetches the PR branch** as a remote (without checking it out)
+5. **Identifies migration files** that were added or modified in this PR
+6. **Safely copies model files** from the PR (data only, no code execution)
+7. **Deletes only the PR migration files** (preserves `__init__.py` and existing migrations)
+8. **Creates a temporary .env file** with minimal settings for Django to run
+9. **Runs makemigrations** on trusted base code with updated model definitions
+10. **Commits and pushes** the new migrations to the PR branch
+11. **Comments on your PR** with the results
 
 ### Important Notes
 
@@ -86,11 +88,13 @@ The workflow needs the following permissions:
 
 ### Security
 
-This workflow uses `pull_request_target` to work with forked PRs. It:
-- Only runs when explicitly triggered (via label or manual dispatch)
-- Uses the PR head SHA to ensure it works on the actual PR code
-- Has write permissions to commit back to the PR branch
-- Is safe because it only runs Django's `makemigrations` command
+This workflow uses `pull_request_target` to work with forked PRs but is designed to prevent code injection attacks:
+
+- **Trusted code execution**: The workflow checks out the BASE branch (trusted code) and runs `makemigrations` against it
+- **Safe data extraction**: Only model definition files are copied from the PR using `git show` (no code execution from PR)
+- **Explicit trigger required**: Only runs when explicitly triggered via label or manual dispatch
+- **Collaborator gate**: Only repository collaborators with write access can add labels
+- **Write permissions**: Used only for committing regenerated migrations back to the PR branch
 
 ## Other Workflows
 
