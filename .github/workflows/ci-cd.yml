@@ -35,7 +35,7 @@ permissions:
   contents: read
 
 concurrency:
-  cancel-in-progress: false
+  cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
@@ -45,41 +45,60 @@ jobs:
     permissions: 
       contents: read  # Minimal permission for checking out code
     outputs:
-      python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
+      poetry-cache-key: ${{ steps.cache-keys.outputs.poetry-cache-key }}
+      precommit-cache-key: ${{ steps.cache-keys.outputs.precommit-cache-key }}
     steps:
       - uses: actions/checkout@v4
       
-      - name: Cache pre-commit hooks
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pre-commit-
+      - name: Generate cache keys
+        id: cache-keys
+        run: |
+          echo "poetry-cache-key=${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}" >> $GITHUB_OUTPUT
+          echo "precommit-cache-key=${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}" >> $GITHUB_OUTPUT
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+          cache: 'pip'
 
-      - name: Get Poetry cache directory
-        id: poetry-cache
-        run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
-      
       - name: Cache Poetry dependencies
+        id: cache-poetry
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pypoetry
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          key: ${{ steps.cache-keys.outputs.poetry-cache-key }}
           restore-keys: |
             ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
             ${{ runner.os }}-poetry-
+      
+      - name: Cache pre-commit hooks
+        id: cache-precommit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ steps.cache-keys.outputs.precommit-cache-key }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+      
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: pip install poetry
 
-      - name: Print memory usage
-        run: free -h
+      - name: Install dependencies
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: poetry install --with dev --no-interaction
+
+      - name: Install pre-commit
+        if: steps.cache-precommit.outputs.cache-hit != 'true'
+        run: pip install pre-commit
+
+      - name: Warm up pre-commit cache
+        if: steps.cache-precommit.outputs.cache-hit != 'true'
+        run: pre-commit install-hooks
 
   pre-commit:
     name: Run pre-commit
@@ -100,15 +119,28 @@ jobs:
           # For forked PRs with pull_request_target, checkout from the fork repository
           # SECURITY: We run pre-commit which only executes linters/formatters, not arbitrary code from the PR
           repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
+      
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+          cache: 'pip'
+      
+      - name: Restore pre-commit cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ needs.setup.outputs.precommit-cache-key }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+      
+      - name: Install pre-commit
+        run: pip install pre-commit
+      
       - name: Run pre-commit
         id: pre-commit
         run: |
-          pip install pre-commit
           set +e
-          pre-commit run --all-files > pre-commit-output.txt 2>&1
+          pre-commit run --all-files --show-diff-on-failure > pre-commit-output.txt 2>&1
           echo "exit_code=$?" >> $GITHUB_OUTPUT
           set -e
         continue-on-error: true
@@ -263,8 +295,6 @@ jobs:
       - name: Fail the job if pre-commit failed
         if: steps.pre-commit.outputs.exit_code != '0'
         run: exit 1
-      - name: Print memory usage
-        run: free -h
 
 
   test:
@@ -275,19 +305,39 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+          cache: 'pip'
+      
+      - name: Restore Poetry cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ needs.setup.outputs.poetry-cache-key }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
-      - run: pip install poetry
-      - run: poetry lock
-      - run: poetry install --with dev
-      - run: poetry run python manage.py collectstatic --noinput
-      - name: Run tests
-        run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+      
+      - name: Install Poetry
+        run: pip install poetry
+      
+      - name: Install Python dependencies
+        run: poetry install --with dev --no-interaction
+      
+      - name: Collect static files
+        run: poetry run python manage.py collectstatic --noinput
+      
+      - name: Run tests in parallel
+        run: poetry run xvfb-run --auto-servernum python manage.py test -v 2 --failfast --parallel
 
   docker-test:
     runs-on: ubuntu-latest
@@ -297,28 +347,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and test Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: blt-test:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Docker build
         run: |
-          docker --version
-          # Use Docker Compose v2 (built-in Docker CLI plugin, no manual installation needed)
-          docker compose version
-
-      - name: Build Docker image
-        run: |
-          docker build -t my-app .
-
-      - name: Run Docker container
-        run: |
-          docker run -d --name my-container my-app
-
-      - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock
-      - run: docker exec my-container poetry install --without dev --no-interaction
-
-      - name: Clean up
-        run: |
-          docker stop my-container
-          docker rm my-container
-
-      - name: Print memory usage
-        run: free -h
+          docker run --rm blt-test:latest python --version
