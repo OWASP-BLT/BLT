@@ -77,16 +77,15 @@ logger = logging.getLogger(__name__)
 def slack_safe_call(client, method, **kwargs):
     try:
         return client.api_call(method, **kwargs)
-
     except SlackApiError as e:
         error = e.response.get("error")
-
-        # Rate-limit handling
         if error == "ratelimited":
             retry_after = int(e.response.headers.get("Retry-After", 1))
-            time.sleep(retry_after)
-            return client.api_call(method, **kwargs)
-
+            logger.warning(
+                "Slack API rate limited for method %s (Retry-After=%s). Not retrying on request thread.",
+                method,
+                retry_after,
+            )
         raise
 
 
@@ -4150,12 +4149,11 @@ def organization_slack_apps(request, id, template="organization/dashboard/slack_
             },
         )
     except SlackRequestError as e:
-        # Network/connection/invalid response issues
         return render(
             request,
             template,
             {
-                "error": f"Slack network error: {str(e)}",
+                "error": f"Slack network error: {e!s}",
                 "organization": organization,
             },
         )
@@ -4176,7 +4174,7 @@ def organization_slack_apps(request, id, template="organization/dashboard/slack_
             commands = cmd_resp.get("commands", [])
         except SlackApiError as e:
             logger.warning("Slack command fetch failed for %s: %s", app_id, e)
-        except Exception as e:
+        except Exception:
             logger.exception("Unexpected error fetching commands for %s", app_id)
             continue
 
