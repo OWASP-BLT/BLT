@@ -2,8 +2,8 @@ import json
 import logging
 import os
 import random
-import string
 import re
+import string
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
