@@ -35,7 +35,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11.2'
+          python-version: '3.11'
 
       - name: Install Poetry
         run: |
@@ -65,9 +65,12 @@ jobs:
 
       - name: Create .env file for settings
         run: |
-          # Create a minimal .env file with required settings for makemigrations
+          # Create a minimal .env file with required settings
+          # Generate a secure random secret key
+          SECRET_KEY=$(python -c \
+            "import secrets; print(secrets.token_urlsafe(50))")
           cat > .env << EOF
-          SECRET_KEY=dummy-secret-key-for-migrations
+          SECRET_KEY=$SECRET_KEY
           DATABASE_URL=sqlite:///db.sqlite3
           DEBUG=True
           EOF
@@ -97,11 +100,19 @@ jobs:
 
       - name: Commit and push changes
         if: env.changes_detected == 'true'
+        env:
+          TRIGGER_TYPE: >
+            ${{ github.event_name == 'pull_request_target' &&
+            'label' || 'manual dispatch' }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 'N/A' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add website/migrations/ comments/migrations/
-          git commit -m "Regenerate Django migrations"
+          git commit -m "Regenerate Django migrations
+
+          Triggered by: $TRIGGER_TYPE
+          PR: #$PR_NUMBER"
           git push origin HEAD
 
       - name: Comment on PR
