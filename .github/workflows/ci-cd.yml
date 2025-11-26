@@ -85,19 +85,19 @@ jobs:
             ${{ runner.os }}-pre-commit-
       
       - name: Install Poetry
-        if: steps.cache-poetry.outputs.cache-hit != true
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: pip install poetry
 
       - name: Install dependencies
-        if: steps.cache-poetry.outputs.cache-hit != true
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: poetry install --with dev --no-interaction
 
       - name: Install pre-commit
-        if: steps.cache-precommit.outputs.cache-hit != true
+        if: steps.cache-precommit.outputs.cache-hit != 'true'
         run: pip install pre-commit
 
       - name: Warm up pre-commit cache
-        if: steps.cache-precommit.outputs.cache-hit != true
+        if: steps.cache-precommit.outputs.cache-hit != 'true'
         run: pre-commit install-hooks
 
   pre-commit:
@@ -337,6 +337,8 @@ jobs:
         run: poetry run python manage.py collectstatic --noinput
       
       - name: Run tests in parallel
+        # Parallel execution with --failfast stops all processes on first failure
+        # Django creates separate test databases for each parallel process
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 2 --failfast --parallel
 
   docker-test:
