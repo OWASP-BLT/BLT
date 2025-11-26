@@ -30,6 +30,24 @@ class RepoListView(ListView):
     context_object_name = "repos"
     paginate_by = 100
 
+    def _parse_organization_param(self):
+        """
+        Parse and validate the organization parameter from the request.
+
+        Returns:
+            int or None: The organization ID if valid, None otherwise.
+
+        Raises:
+            ValueError: If the organization parameter is invalid (non-integer).
+        """
+        organization = self.request.GET.get("organization")
+        if organization and organization.strip():
+            try:
+                return int(organization)
+            except (ValueError, TypeError):
+                raise ValueError("Invalid organization ID: must be a valid integer.")
+        return None
+
     def get_queryset(self):
         # Start with all repos instead of just OWASP repos
         queryset = Repo.objects.all()
@@ -40,13 +58,9 @@ class RepoListView(ListView):
             queryset = queryset.filter(primary_language=language)
 
         # Handle organization filter
-        organization = self.request.GET.get("organization")
-        if organization and organization.strip():
-            try:
-                organization = int(organization)
-                queryset = queryset.filter(organization__id=organization)
-            except (ValueError, TypeError):
-                raise ValueError("Invalid organization ID: must be a valid integer.")
+        organization_id = self._parse_organization_param()
+        if organization_id:
+            queryset = queryset.filter(organization__id=organization_id)
 
         # Handle search query
         search_query = self.request.GET.get("q")
@@ -98,17 +112,7 @@ class RepoListView(ListView):
         context["organizations"] = organizations
 
         # Get current organization filter
-        organization_param = self.request.GET.get("organization")
-        organization_id = None
-
-        # Convert organization parameter to integer if valid
-        if organization_param and organization_param.strip():
-            try:
-                organization_id = int(organization_param)
-            except (ValueError, TypeError):
-                # Re-raise ValueError to be consistent with get_queryset behavior
-                raise ValueError("Invalid organization ID: must be a valid integer.")
-
+        organization_id = self._parse_organization_param()
         context["current_organization"] = organization_id
 
         # Get organization name if filtered by organization
