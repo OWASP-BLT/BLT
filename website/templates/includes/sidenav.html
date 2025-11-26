@@ -72,7 +72,7 @@
                                 <span class="truncate">{% trans "Integrations" %}</span>
                             </a>
                             <a href="{% url 'organization_slack_apps' request.resolver_match.kwargs.id %}"
-                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_slack_apps' %} bg-[#feeae9] text-[#e74c3c] {% else %} text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] {% endif %} transition-all duration-200">
+                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'organization_slack_apps' %} bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c] {% else %} text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] {% endif %} transition-all duration-200">
                                 <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if request.resolver_match.url_name == 'organization_slack_apps' %} bg-[#fde0dd] text-[#e74c3c] dark:bg-red-900/50 dark:text-[#e74c3c] {% else %} bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-[#fde0dd] dark:group-hover:bg-red-900/50 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c] {% endif %} transition-all duration-200">
                                     <i class="fa-brands fa-slack"></i>
                                 </div>
