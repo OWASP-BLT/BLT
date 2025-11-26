@@ -2240,10 +2240,10 @@ def can_verify_issue(user, issue):
     """
     if not issue.domain:
         return False
-    
+
     is_domain_manager = issue.domain.managers.filter(id=user.id).exists()
     is_org_admin = issue.domain.organization and issue.domain.organization.admin == user
-    
+
     return is_domain_manager or is_org_admin
 
 
@@ -2255,24 +2255,26 @@ def verify_issue(request, issue_id):
     """
     if request.method != "POST":
         return JsonResponse({"success": False, "error": "Only POST requests are allowed."}, status=405)
-    
+
     issue = get_object_or_404(Issue, id=issue_id)
-    
+
     # Check if user has permission to verify the issue
     if not can_verify_issue(request.user, issue):
         if not issue.domain:
             return JsonResponse({"success": False, "error": "This issue is not associated with a domain."}, status=400)
         return JsonResponse({"success": False, "error": "You do not have permission to verify this issue."}, status=403)
-    
+
     # Toggle verification status
     issue.verified = not issue.verified
     issue.save()
-    
-    return JsonResponse({
-        "success": True, 
-        "verified": issue.verified,
-        "message": "Issue verified successfully." if issue.verified else "Issue verification removed."
-    })
+
+    return JsonResponse(
+        {
+            "success": True,
+            "verified": issue.verified,
+            "message": "Issue verified successfully." if issue.verified else "Issue verification removed.",
+        }
+    )
 
 
 @login_required(login_url="/accounts/login")
@@ -2284,7 +2286,7 @@ def accept_bug(request, issue_id, reward_id=None):
         if not issue.domain:
             messages.error(request, "This issue is not associated with a domain.")
             return redirect("show_bughunt", pk=issue.hunt.id)
-        
+
         if not can_verify_issue(request.user, issue):
             messages.error(request, "You do not have permission to verify this issue.")
             return redirect("show_bughunt", pk=issue.hunt.id)
