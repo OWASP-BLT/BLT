@@ -54,10 +54,27 @@ EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Ex
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
-
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
+
+# SECRET_KEY: Fail fast if not set in production to avoid using a compromised key
+if not os.environ.get("SECRET_KEY"):
+    if DEBUG or TESTING:
+        import warnings
+
+        warnings.warn(
+            "SECRET_KEY not set in environment. Using insecure fallback for development only. "
+            "DO NOT use in production!",
+            RuntimeWarning,
+        )
+        SECRET_KEY = "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s"
+    else:
+        raise RuntimeError(
+            "SECRET_KEY environment variable is not set. This is required for production. "
+            "Set SECRET_KEY in your environment variables or .env file."
+        )
+else:
+    SECRET_KEY = os.environ["SECRET_KEY"]
 
 SITE_ID = 1
 
