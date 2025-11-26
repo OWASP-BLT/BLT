@@ -102,8 +102,10 @@
 
     - name: Install Python dependencies (poetry export)
       shell: |
-        cd {{ app_dir }}/current && poetry export -f requirements.txt --without-hashes -o /tmp/requirements.txt
-        {{ venv_dir }}/bin/pip install -r /tmp/requirements.txt
+        TMPFILE=$(mktemp)
+        cd {{ app_dir }}/current && poetry export -f requirements.txt --without-hashes -o "$TMPFILE"
+        {{ venv_dir }}/bin/pip install -r "$TMPFILE"
+        rm -f "$TMPFILE"
       args:
         executable: /bin/bash
 
