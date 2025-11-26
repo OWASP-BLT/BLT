@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0253_add_verifier_permission"),
         ("website", "0254_update_anonymous_hunt_to_bch_payment"),
