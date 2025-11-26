@@ -503,8 +503,6 @@
         window.organizationId = {{ organization.id }};
         
         // Date inputs are now plain text with MM/DD/YYYY format
-        console.log('[Date] Using plain text inputs for manual date entry');
-        
         // Add date validation and formatting
         function validateDateFormat(input) {
             const datePattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
@@ -547,8 +545,5 @@
                 });
             }
         });
-        
-        // Wait for hunt_controller.js to load and use its functions
-        console.log('[Edit Hunt] Using external hunt controller functions with date validation');
     </script>
 {% endblock scripts %}

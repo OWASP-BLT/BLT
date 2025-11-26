@@ -18,6 +18,12 @@ class Command(BaseCommand):
             # Add commands to be executed weekly
             # management.call_command('weekly_command1')
             # management.call_command('weekly_command2')
+
+            # Clean up old sample invite records (older than 7 days)
+            from django.core import management
+
+            management.call_command("cleanup_sample_invites", days=7)
+            logger.info("Completed sample invites cleanup")
         except Exception as e:
             logger.error(f"Error in weekly tasks: {str(e)}")
             raise
