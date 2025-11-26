@@ -38,8 +38,8 @@ jobs:
             
             core.info(`Checking review status for PR #${pull_number}`);
             
-            // Get all reviews for the PR
-            const { data: reviews } = await github.rest.pulls.listReviews({
+            // Get all reviews for the PR (with pagination)
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
               owner,
               repo,
               pull_number,
@@ -72,8 +72,8 @@ jobs:
             const labelColor = 'e74c3c'; // BLT red color for changes requested
             const description = 'PR has requested changes from a reviewer';
             
-            // Get current labels on the PR
-            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+            // Get current labels on the PR (with pagination)
+            const current = await github.paginate(github.rest.issues.listLabelsOnIssue, { 
               owner, 
               repo, 
               issue_number: pull_number, 
