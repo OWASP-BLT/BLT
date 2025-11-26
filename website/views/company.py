@@ -271,9 +271,9 @@ class RegisterOrganizationView(View):
                 manager_emails_str = data.get("email", "").strip()
                 if manager_emails_str:
                     # Sanitize email list and limit to prevent abuse
-                    manager_emails = [
-                        email.strip()[:254] for email in manager_emails_str.split(",") if email.strip()
-                    ][:10]  # Limit to 10 emails
+                    manager_emails = [email.strip()[:254] for email in manager_emails_str.split(",") if email.strip()][
+                        :10
+                    ]  # Limit to 10 emails
                     if manager_emails:
                         managers = User.objects.filter(email__in=manager_emails, is_active=True)
                         organization.managers.set(managers)
@@ -353,7 +353,9 @@ class RegisterOrganizationView(View):
                     default_storage.delete(logo_path)
                 except Exception:
                     pass
-            messages.error(request, "There was an error saving the organization. Please check all fields and try again.")
+            messages.error(
+                request, "There was an error saving the organization. Please check all fields and try again."
+            )
             return redirect("register_organization")
         except Exception as e:
             logger.error(f"Unexpected error creating organization: {str(e)}")
