@@ -710,6 +710,46 @@ document.addEventListener('DOMContentLoaded', function() {
 // Copy to clipboard function
 function copyToClipboard() {
     const url = window.location.href;
+    
+    // Check if clipboard API is available
+    if (!navigator.clipboard) {
+        // Fallback for browsers that don't support clipboard API
+        const errorToast = document.createElement('div');
+        errorToast.className = 'fixed bottom-12 left-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
+        
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'flex items-center';
+        
+        const errorSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        errorSvg.setAttribute('class', 'w-5 h-5 mr-2');
+        errorSvg.setAttribute('fill', 'none');
+        errorSvg.setAttribute('stroke', 'currentColor');
+        errorSvg.setAttribute('viewBox', '0 0 24 24');
+        const errorPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        errorPath.setAttribute('stroke-linecap', 'round');
+        errorPath.setAttribute('stroke-linejoin', 'round');
+        errorPath.setAttribute('stroke-width', '2');
+        errorPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+        errorSvg.appendChild(errorPath);
+        
+        const errorText = document.createTextNode(' Clipboard not supported in this browser.');
+        
+        errorContainer.appendChild(errorSvg);
+        errorContainer.appendChild(errorText);
+        errorToast.appendChild(errorContainer);
+        document.body.appendChild(errorToast);
+        
+        setTimeout(() => {
+            errorToast.classList.add('opacity-0');
+            setTimeout(() => {
+                errorToast.remove();
+            }, 500);
+        }, 3000);
+        
+        document.getElementById('shareDropdown').classList.add('hidden');
+        return;
+    }
+    
     navigator.clipboard.writeText(url).then(function() {
         // Show success toast using DOM manipulation to prevent XSS attacks (safer than innerHTML)
         const toast = document.createElement('div');
