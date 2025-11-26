@@ -2108,13 +2108,18 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
+    # Fetch the last check-in (most recent) for the user only if no yesterday report
+    last_checkin = None
+    if not yesterday_report:
+        last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+
     # Fetch all check-ins for the user, ordered by date
     all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
 
     return render(
         request,
         "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
+        {"yesterday_report": yesterday_report, "last_checkin": last_checkin, "all_checkins": all_checkins},
     )
 
 
@@ -2301,24 +2306,24 @@ class OrganizationDetailView(DetailView):
         """
         # Fixed start date: 2024-11-11
         since_date = timezone.make_aware(datetime(2024, 11, 11))
-        
+
         # Get all repos for this organization
         repos = organization.repos.all()
-        
+
         if not repos.exists():
             return []
-        
+
         # Get all contributors who have merged PRs in these repos
         contributors_with_prs = []
         processed_contributors = set()
-        
+
         for repo in repos:
             # Get contributors for this repo with merged PRs
             for contributor in repo.contributor.all():
                 # Skip if we've already processed this contributor
                 if contributor.id in processed_contributors:
                     continue
-                    
+
                 # Count PRs for this contributor across all organization repos
                 pr_count = GitHubIssue.objects.filter(
                     contributor=contributor,
@@ -2327,7 +2332,7 @@ class OrganizationDetailView(DetailView):
                     is_merged=True,
                     merged_at__gte=since_date,
                 ).count()
-                
+
                 if pr_count > 0:
                     contributors_with_prs.append(
                         {
@@ -2339,7 +2344,7 @@ class OrganizationDetailView(DetailView):
                         }
                     )
                     processed_contributors.add(contributor.id)
-        
+
         # Sort by PR count (descending) and return top 10
         contributors_with_prs.sort(key=lambda x: x["pr_count"], reverse=True)
         return contributors_with_prs[:10]
