@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Bug Report Digest</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #e74c3c;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0 0 0;
+            font-size: 14px;
+        }
+        .summary {
+            background-color: #f8f9fa;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        .summary h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #333;
+        }
+        .bug-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+        }
+        .bug-label {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .label-security { background-color: #dc3545; color: white; }
+        .label-functional { background-color: #007bff; color: white; }
+        .label-performance { background-color: #ffc107; color: #333; }
+        .label-design { background-color: #6f42c1; color: white; }
+        .label-general { background-color: #6c757d; color: white; }
+        .bug-description {
+            color: #333;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .bug-meta {
+            color: #666;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        .bug-meta span {
+            margin-right: 15px;
+        }
+        .view-button {
+            display: inline-block;
+            background-color: #e74c3c;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+        .footer a {
+            color: #e74c3c;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Weekly Bug Report Digest</h1>
+            <p>{{ organization.name }}</p>
+        </div>
+
+        <div class="summary">
+            <h2>Hi {{ user.username }}!</h2>
+            <p>Here's your weekly summary of bug reports for <strong>{{ organization.name }}</strong>.</p>
+            <p><strong>{{ bug_count }}</strong> new bug{{ bug_count|pluralize }} reported in the last {{ days }} day{{ days|pluralize }}.</p>
+        </div>
+
+        {% for bug in bugs %}
+        <div class="bug-item">
+            {% with label_name=bug.get_label_display|lower %}
+                {% if label_name == "security" %}
+                    <span class="bug-label label-security">Security</span>
+                {% elif label_name == "functional" %}
+                    <span class="bug-label label-functional">Functional</span>
+                {% elif label_name == "performance" %}
+                    <span class="bug-label label-performance">Performance</span>
+                {% elif label_name == "design" %}
+                    <span class="bug-label label-design">Design</span>
+                {% else %}
+                    <span class="bug-label label-general">{{ bug.get_label_display }}</span>
+                {% endif %}
+            {% endwith %}
+
+            <div class="bug-description">
+                {{ bug.description|truncatewords:truncate_words }}
+            </div>
+
+            <div class="bug-meta">
+                <span><strong>{{ bug.domain.name }}</strong></span>
+                <span>Reported by <strong>{{ bug.user.username|default:"Anonymous" }}</strong></span>
+                <span>{{ bug.created|date:"M d, Y" }}</span>
+            </div>
+
+            <a href="https://{{ domain_name }}/issue/{{ bug.id }}" class="view-button">View Bug Report</a>
+        </div>
+        {% endfor %}
+
+        <div class="footer">
+            {% if organization.slug %}
+            <p>
+                <a href="https://{{ domain_name }}/organization/{{ organization.slug }}">View all bugs for {{ organization.name }}</a>
+            </p>
+            {% endif %}
+            <p>
+                To manage your email preferences or unsubscribe, visit your 
+                <a href="https://{{ domain_name }}/profile/edit">profile settings</a>.
+            </p>
+            <p style="margin-top: 20px;">
+                Made by the OWASP BLT Community
+            </p>
+        </div>
+    </div>
+</body>
+</html>
