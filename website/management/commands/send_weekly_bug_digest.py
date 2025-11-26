@@ -4,10 +4,10 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.core.management.base import CommandError
 from django.db.models import Prefetch
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.core.management.base import CommandError
 
 from website.management.base import LoggedBaseCommand
 from website.models import Domain, Issue, Organization, UserProfile
@@ -43,16 +43,17 @@ class Command(LoggedBaseCommand):
         days = options["days"]
         dry_run = options.get("dry_run", False)
         org_slug = options.get("organization")
+
+        # Validate days parameter first
+        if days <= 0:
+            raise CommandError("Days parameter must be positive")
+
         start_date = timezone.now() - timedelta(days=days)
 
         if dry_run:
             logger.info("DRY RUN MODE - No emails will be sent")
 
         logger.info(f"Starting weekly bug digest for bugs reported since {start_date}")
-
-        # Validate days parameter
-        if days <= 0:
-            raise CommandError("Days parameter must be positive")
 
         # Process organizations with optimized query
         org_filter = {"is_active": True}
@@ -84,7 +85,7 @@ class Command(LoggedBaseCommand):
                 skipped_count += result["skipped"]
                 error_count += result["errors"]
             except Exception as e:
-                logger.error(f"Error processing organization {org.name}: {str(e)}", exc_info=True)
+                logger.exception("Error processing organization %s", org.name)
                 error_count += 1
 
         logger.info(
@@ -190,8 +191,10 @@ class Command(LoggedBaseCommand):
         # Remove any protocol and whitespace
         domain_name = domain_name.strip().replace("http://", "").replace("https://", "")
         # Validate it's a reasonable domain (proper format with labels separated by dots)
-        if not domain_name or not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$', domain_name):
-            logger.error(f"Invalid DOMAIN_NAME in settings, using default")
+        if not domain_name or not re.match(
+            r"^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$", domain_name
+        ):
+            logger.error("Invalid DOMAIN_NAME in settings, using default")
             domain_name = "blt.owasp.org"  # Fallback to safe default
 
         # Prepare context for email template
@@ -214,7 +217,7 @@ class Command(LoggedBaseCommand):
             raise
 
         # Create plain text version
-        text_content = self._create_text_content(user, organization, bug_list, days)
+        text_content = self._create_text_content(user, organization, bug_list, days, domain_name)
 
         # Create and send email
         try:
@@ -230,9 +233,8 @@ class Command(LoggedBaseCommand):
             logger.error(f"Failed to send email: {str(e)}")
             raise
 
-    def _create_text_content(self, user, organization, bugs, days):
+    def _create_text_content(self, user, organization, bugs, days, domain_name):
         """Create plain text email content"""
-        domain_name = getattr(settings, "DOMAIN_NAME", "blt.owasp.org")
         project_name = getattr(settings, "PROJECT_NAME", "BLT")
 
         text_content = f"""Hi {user.username},

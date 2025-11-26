@@ -1,10 +1,11 @@
+{# djlint:off H030,H031,H021 #}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weekly Bug Report Digest</title>
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Weekly Bug Report Digest</title>
+        <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
@@ -102,65 +103,62 @@
             color: #e74c3c;
             text-decoration: none;
         }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Weekly Bug Report Digest</h1>
-            <p>{{ organization.name }}</p>
-        </div>
-
-        <div class="summary">
-            <h2>Hi {{ user.username }}!</h2>
-            <p>Here's your weekly summary of bug reports for <strong>{{ organization.name }}</strong>.</p>
-            <p><strong>{{ bug_count }}</strong> new bug{{ bug_count|pluralize }} reported in the last {{ days }} day{{ days|pluralize }}.</p>
-        </div>
-
-        {% for bug in bugs %}
-        <div class="bug-item">
-            {% with label_name=bug.get_label_display|lower %}
-                {% if label_name == "security" %}
-                    <span class="bug-label label-security">Security</span>
-                {% elif label_name == "functional" %}
-                    <span class="bug-label label-functional">Functional</span>
-                {% elif label_name == "performance" %}
-                    <span class="bug-label label-performance">Performance</span>
-                {% elif label_name == "design" %}
-                    <span class="bug-label label-design">Design</span>
-                {% else %}
-                    <span class="bug-label label-general">{{ bug.get_label_display }}</span>
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Weekly Bug Report Digest</h1>
+                <p>{{ organization.name }}</p>
+            </div>
+            <div class="summary">
+                <h2>Hi {{ user.username }}!</h2>
+                <p>
+                    Here's your weekly summary of bug reports for <strong>{{ organization.name }}</strong>.
+                </p>
+                <p>
+                    <strong>{{ bug_count }}</strong> new bug{{ bug_count|pluralize }} reported in the last {{ days }} day{{ days|pluralize }}.
+                </p>
+            </div>
+            {% for bug in bugs %}
+                <div class="bug-item">
+                    {% with label_name=bug.get_label_display|lower %}
+                        {% if label_name == "security" %}
+                            <span class="bug-label label-security">Security</span>
+                        {% elif label_name == "functional" %}
+                            <span class="bug-label label-functional">Functional</span>
+                        {% elif label_name == "performance" %}
+                            <span class="bug-label label-performance">Performance</span>
+                        {% elif label_name == "design" %}
+                            <span class="bug-label label-design">Design</span>
+                        {% else %}
+                            <span class="bug-label label-general">{{ bug.get_label_display }}</span>
+                        {% endif %}
+                    {% endwith %}
+                    <div class="bug-description">{{ bug.description|truncatewords:truncate_words }}</div>
+                    <div class="bug-meta">
+                        <span><strong>{{ bug.domain.name }}</strong></span>
+                        <span>Reported by <strong>{{ bug.user.username|default:"Anonymous" }}</strong></span>
+                        <span>{{ bug.created|date:"M d, Y" }}</span>
+                    </div>
+                    <a href="https://{{ domain_name }}/issue/{{ bug.id }}"
+                       class="view-button">View Bug Report</a>
+                </div>
+            {% endfor %}
+            <div class="footer">
+                {% if organization.slug %}
+                    <p>
+                        <a href="https://{{ domain_name }}/organization/{{ organization.slug }}">View all bugs for {{ organization.name }}</a>
+                    </p>
                 {% endif %}
-            {% endwith %}
-
-            <div class="bug-description">
-                {{ bug.description|truncatewords:truncate_words }}
+                <p>
+                    To manage your email preferences or unsubscribe, visit your
+                    <a href="https://{{ domain_name }}/profile/edit">profile settings</a>.
+                </p>
+                {# TODO: Add one-click unsubscribe link for CAN-SPAM/GDPR compliance #}
+                {# <a href="https://{{ domain_name }}/unsubscribe/{{ unsubscribe_token }}">Unsubscribe</a> #}
+                <p style="margin-top: 20px;">Made by the OWASP BLT Community</p>
             </div>
-
-            <div class="bug-meta">
-                <span><strong>{{ bug.domain.name }}</strong></span>
-                <span>Reported by <strong>{{ bug.user.username|default:"Anonymous" }}</strong></span>
-                <span>{{ bug.created|date:"M d, Y" }}</span>
-            </div>
-
-            <a href="https://{{ domain_name }}/issue/{{ bug.id }}" class="view-button">View Bug Report</a>
         </div>
-        {% endfor %}
-
-        <div class="footer">
-            {% if organization.slug %}
-            <p>
-                <a href="https://{{ domain_name }}/organization/{{ organization.slug }}">View all bugs for {{ organization.name }}</a>
-            </p>
-            {% endif %}
-            <p>
-                To manage your email preferences or unsubscribe, visit your 
-                <a href="https://{{ domain_name }}/profile/edit">profile settings</a>.
-            </p>
-            <p style="margin-top: 20px;">
-                Made by the OWASP BLT Community
-            </p>
-        </div>
-    </div>
-</body>
+    </body>
 </html>

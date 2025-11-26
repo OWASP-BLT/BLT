@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.utils import timezone
 
 from website.models import Domain, Issue, Organization
@@ -145,7 +145,7 @@ class WeeklyBugDigestTestCase(TestCase):
     def test_command_excludes_hidden_bugs(self):
         """Test that hidden bugs are not included in digest"""
         # Create hidden bug
-        hidden_bug = Issue.objects.create(
+        Issue.objects.create(
             domain=self.domain1,
             url="https://test1.com/hidden",
             description="Hidden bug - should not appear",
@@ -183,7 +183,7 @@ class WeeklyBugDigestTestCase(TestCase):
 
         # Should send one email to user2 for active domain2
         self.assertEqual(len(mail.outbox), 1, "Should send email to user2 for active domain2")
-        
+
         # Check emails don't contain bugs from inactive domain
         for email in mail.outbox:
             self.assertNotIn("test1.com", email.body)
@@ -318,14 +318,14 @@ class WeeklyBugDigestTestCase(TestCase):
         with patch("django.core.mail.EmailMultiAlternatives.send") as mock_send:
             mock_send.side_effect = Exception("SMTP error")
             mail.outbox = []
-            
+
             # Command should not crash and should continue processing
             try:
                 call_command("send_weekly_bug_digest", days=7)
                 command_completed = True
             except Exception:
                 command_completed = False
-            
+
             # Verify command completed despite errors
             self.assertTrue(command_completed, "Command should complete even with email errors")
             # Verify send was attempted for all recipients (2 users should receive emails)
@@ -344,9 +344,13 @@ class WeeklyBugDigestTestCase(TestCase):
         self.assertEqual(mail.outbox[0].to[0], "test2@example.com")
 
     def test_zero_days_parameter_validation(self):
-        """Test that zero or negative days parameter is handled"""
+        """Test that zero or negative days parameter raises error"""
+        from django.core.management.base import CommandError
+
         mail.outbox = []
-        call_command("send_weekly_bug_digest", days=0)
-        
-        # No emails should be sent
-        self.assertEqual(len(mail.outbox), 0)
+
+        # Should raise CommandError for invalid days parameter
+        with self.assertRaises(CommandError) as context:
+            call_command("send_weekly_bug_digest", days=0)
+
+        self.assertIn("Days parameter must be positive", str(context.exception))
