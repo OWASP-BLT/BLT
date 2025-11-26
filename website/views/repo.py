@@ -41,7 +41,7 @@ class RepoListView(ListView):
 
         # Handle organization filter
         organization = self.request.GET.get("organization")
-        if organization:
+        if organization and organization.strip():
             try:
                 organization = int(organization)
                 queryset = queryset.filter(organization__id=organization)
@@ -101,12 +101,14 @@ class RepoListView(ListView):
         context["current_organization"] = self.request.GET.get("organization")
 
         # Get organization name if filtered by organization
-        if context["current_organization"]:
+        if context["current_organization"] and context["current_organization"].strip():
             try:
                 org = Organization.objects.get(id=context["current_organization"])
                 context["current_organization_name"] = org.name
-            except Organization.DoesNotExist:
+            except (Organization.DoesNotExist, ValueError):
                 context["current_organization_name"] = None
+        else:
+            context["current_organization"] = None
 
         # Get language counts based on current filters
         queryset = Repo.objects.all()
