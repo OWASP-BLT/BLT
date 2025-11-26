@@ -812,6 +812,7 @@ function copyToClipboard() {
         document.body.appendChild(textArea);
         textArea.select();
         try {
+            // Using deprecated execCommand as fallback for older browsers and HTTP contexts
             document.execCommand('copy');
             showCopySuccessToast();
             document.getElementById('shareDropdown').classList.add('hidden');
