@@ -126,9 +126,35 @@ jobs:
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
             
+            // Build dynamic URLs for buttons
+            const prNumber = context.issue.number;
+            const addLabelUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${prNumber}/labels`;
+            const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/pre-commit-fix.yaml`;
+            
+            // Build shield.io badge URLs for button appearance
+            const labelBadge = 'https://img.shields.io/badge/Add_Label-fix--pre--commit-blue?style=for-the-badge&logo=github';
+            const workflowBadge = 'https://img.shields.io/badge/Run_Workflow-Pre--commit_Fix-green?style=for-the-badge&logo=github-actions';
+            
             const message = `## ❌ Pre-commit checks failed
             
-            The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
+            The pre-commit hooks found issues that need to be fixed. 
+            
+            ### 🤖 **Automatic Fix Options**
+            
+            You can automatically fix most issues by using one of these methods:
+            
+            | Action | Button |
+            |--------|--------|
+            | **Add the \`fix-pre-commit\` label** to trigger automatic fixes | [![Add Label](${labelBadge})](${addLabelUrl}) |
+            | **Run the pre-commit fix workflow** manually | [![Run Workflow](${workflowBadge})](${workflowUrl}) |
+            
+            > **How to use:**
+            > - Click the **Add Label** button → Add \`fix-pre-commit\` label → Workflow runs automatically
+            > - Or click **Run Workflow** → Click "Run workflow" dropdown → Select this PR's branch
+            
+            ### 💻 **Manual Fix (Local)**
+            
+            Alternatively, you can run the following commands locally to fix them:
             
             \`\`\`bash
             # Install pre-commit if you haven't already
