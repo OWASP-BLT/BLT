@@ -85,19 +85,19 @@ jobs:
             ${{ runner.os }}-pre-commit-
       
       - name: Install Poetry
-        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        if: steps.cache-poetry.outputs.cache-hit != true
         run: pip install poetry
 
       - name: Install dependencies
-        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        if: steps.cache-poetry.outputs.cache-hit != true
         run: poetry install --with dev --no-interaction
 
       - name: Install pre-commit
-        if: steps.cache-precommit.outputs.cache-hit != 'true'
+        if: steps.cache-precommit.outputs.cache-hit != true
         run: pip install pre-commit
 
       - name: Warm up pre-commit cache
-        if: steps.cache-precommit.outputs.cache-hit != 'true'
+        if: steps.cache-precommit.outputs.cache-hit != true
         run: pre-commit install-hooks
 
   pre-commit:
@@ -140,7 +140,7 @@ jobs:
         id: pre-commit
         run: |
           set +e
-          pre-commit run --all-files --show-diff-on-failure > pre-commit-output.txt 2>&1
+          pre-commit run --all-files > pre-commit-output.txt 2>&1
           echo "exit_code=$?" >> $GITHUB_OUTPUT
           set -e
         continue-on-error: true
@@ -351,7 +351,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and test Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: false
