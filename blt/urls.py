@@ -306,6 +306,7 @@ from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
+from website.views.slackbot import slack_landing_page
 from website.views.social import queue_social_view
 from website.views.staking_competitive import (
     create_staking_pool,
@@ -435,6 +436,7 @@ urlpatterns = [
         SlackCallbackView.as_view(),
         name="slack_oauth_callback",
     ),
+    path("slack/", slack_landing_page, name="slack_landing_page"),
     path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
