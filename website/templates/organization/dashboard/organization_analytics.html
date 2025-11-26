@@ -6,21 +6,23 @@
 {% endblock title %}
 {% block body %}
     {% block edit_link %}
-        <div class="bottom-right">
-            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_analytics.html">
-                <i class="fab fa-github"></i>
+        <div class="bg-gray-50 dark:bg-gray-900 flex float-end gap-4 mr-10">
+            <a class="text-black dark:text-white"
+               href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_analytics.html">
+                <i class="fab fa-github fa-2x"></i>
             </a>
-            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-                <i class="fab fa-figma"></i>
+            <a class="text-black dark:text-white"
+               href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
+                <i class="fab fa-figma fa-2x"></i>
             </a>
         </div>
     {% endblock edit_link %}
-    <div class="bg-[#F3F5F7] pb-10">
-        <div class="w-full mt-5">
-            <p class="text-[#e74c3c] font-satoshi font-bold text-[35px] px-8">Dashboard</p>
+    <div class="bg-gray-50 dark:bg-gray-900 pb-10 transition-colors">
+        <div class="w-full">
+            <p class="text-[#e74c3c] font-satoshi pt-5 font-bold text-[35px] px-8">Dashboard</p>
         </div>
         <div class="flex flex-col lg:flex-row gap-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
-            <div class="flex justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex justify-center items-center bg-white shadow-md dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-105 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
                         <i class="fa-solid fa-bug fa-2x text-black dark:text-white"></i>
@@ -33,7 +35,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex flex-wrap justify-center items-center bg-white shadow-md dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-105  transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
                         <i class="fa-sharp fa-solid fa-flag fa-2x text-black dark:text-white"></i>
@@ -46,7 +48,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex flex-wrap justify-center items-center bg-white shadow-md dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-105 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
                         <i class="fa-sharp fa-solid fa-globe fa-2x text-black dark:text-white"></i>
@@ -59,7 +61,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex flex-wrap justify-center items-center bg-white shadow-md dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-105 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
                         <i class="fa-sharp fa-solid fa-dollar-sign fa-2x text-black dark:text-white"></i>
@@ -70,7 +72,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center items-center bg-white dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+            <div class="flex flex-wrap justify-center items-center bg-white shadow-md dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-105 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
                         <i class="fa-solid fa-shield-halved fa-2x text-black dark:text-white"></i>
@@ -86,34 +88,36 @@
         </div>
         <div class="flex flex-col lg:flex-row gap-y-5 mt-4">
             <div class="flex flex-col ps-8 gap-5">
-                <div class="flex flex-col lg:flex-row gap-5 bg-[#F3F5F7]">
-                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl lg:w-[56vh]">
+                <div class="flex flex-col lg:flex-row gap-5 bg-gray-50 dark:bg-gray-900">
+                    <div class="bg-[#f6f6f6] shadow-sm dark:bg-gray-800 p-5 rounded-xl lg:w-[56vh]">
                         <div class="header-container">
-                            <h3 class="section-header">Bug Reported Type</h3>
+                            <h3 class="section-header text-gray-900 dark:text-gray-100 text-lg font-semibold mb-4">Bug Reported Type</h3>
                         </div>
                         <div class="pie-chart w-full h-[90%]">
                             <canvas id="bugTypePie" height="220px" width="660px"></canvas>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl lg:w-[56vh]">
+                    <div class="bg-[#f6f6f6] shadow-sm dark:bg-gray-800 p-5 rounded-xl lg:w-[56vh]">
                         <div class="header-container">
-                            <h3 class="section-header">Reported on Domains</h3>
+                            <h3 class="section-header text-gray-900 dark:text-gray-100 text-lg font-semibold mb-4">Reported on Domains</h3>
                         </div>
                         <div class="pie-chart w-full h-[90%]">
                             <canvas id="domainPie" height="220px" width="660px"></canvas>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl w-full lg:w-[115vh]">
-                    <h3 class="section-header">Monthly Reports of {{ get_current_year_monthly_reported_bar_data.current_year }}</h3>
+                <div class="bg-[#f6f6f6] shadow-sm dark:bg-gray-800 p-5 rounded-xl w-full lg:w-[115vh]">
+                    <h3 class="section-header text-gray-900 dark:text-gray-100 text-lg font-semibold mb-4">
+                        Monthly Reports of {{ get_current_year_monthly_reported_bar_data.current_year }}
+                    </h3>
                     <div class="bar-chart">
                         <canvas id="myChart" height="220px" width="660px"></canvas>
                     </div>
                 </div>
-                <div class="p-5 bg-white dark:bg-gray-800 rounded-xl flex lg:flex-row lg:w-[115vh]">
+                <div class="p-5 bg-[#f6f6f6] shadow-sm dark:bg-gray-800 rounded-xl flex lg:flex-row lg:w-[115vh]">
                     <div class="w-full">
                         <div class="header-container">
-                            <h3 class="section-header">Total Reported</h3>
+                            <h3 class="section-header text-gray-900 dark:text-gray-100 text-lg font-semibold mb-4">Total Reported</h3>
                             {% if bug_rate_increase_descrease_weekly.is_increasing %}
                                 <svg class="up-arrow"
                                      width="42"
@@ -137,11 +141,11 @@
                                 </svg>
                             {% endif %}
                         </div>
-                        <h1 class="price">
-                            {{ bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency">Bugs</span>
+                        <h1 class="price text-3xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency text-lg text-gray-600 dark:text-gray-400 ml-2">Bugs</span>
                         </h1>
-                        <p>
-                            <span class="{% if bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase{% else %}percentage-decrease{% endif %}">
+                        <p class="text-gray-700 dark:text-gray-300">
+                            <span class="{% if bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase text-green-600 dark:text-green-400 font-semibold{% else %}percentage-decrease text-red-600 dark:text-red-400 font-semibold{% endif %}">
                                 {{ bug_rate_increase_descrease_weekly.percent_increase }}%
                             </span>
                             {% if bug_rate_increase_descrease_weekly.is_increasing %}
@@ -154,7 +158,7 @@
                     </div>
                     <div class="w-full">
                         <div class="header-container">
-                            <h3 class="section-header">Accepted Bugs</h3>
+                            <h3 class="section-header text-gray-900 dark:text-gray-100 text-lg font-semibold mb-4">Accepted Bugs</h3>
                             {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
                                 <svg class="up-arrow"
                                      width="42"
@@ -178,13 +182,13 @@
                                 </svg>
                             {% endif %}
                         </div>
-                        <h1 class="price">
-                            {{ accepted_bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency">Accepted
+                        <h1 class="price text-3xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ accepted_bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency text-lg text-gray-600 dark:text-gray-400 ml-2">Accepted
                         Bugs</span>
                     </h1>
-                    <p>
-                        <span class="{% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase{% else %}percentage-decrease{% endif %}">
-                            {{ accepted_bug_rate_increase_descrease_weekly.percent_increase }}
+                    <p class="text-gray-700 dark:text-gray-300">
+                        <span class="{% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase text-green-600 dark:text-green-400 font-semibold{% else %}percentage-decrease text-red-600 dark:text-red-400 font-semibold{% endif %}">
+                            {{ accepted_bug_rate_increase_descrease_weekly.percent_increase }}%
                         </span>
                         {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
                             Increasing
@@ -197,9 +201,9 @@
             </div>
         </div>
         <div class="mx-5 flex flex-col gap-5 lg:w-[60vh]">
-            <div class="rounded-xl bg-white dark:bg-gray-800 p-5">
-                <div class="header-container">
-                    <h3 class="section-header">Your balance</h3>
+            <div class="rounded-xl bg-[#f6f6f6] shadow-sm dark:bg-gray-800 p-5">
+                <div class="header-container flex justify-between">
+                    <h3 class="section-header text-gray-900 dark:text-gray-100 text-lg font-semibold mb-4">Your balance</h3>
                     <svg width="24"
                          height="25"
                          viewBox="0 0 24 25"
@@ -210,10 +214,10 @@
                         <path d="M12 10.4166C10.9 10.4166 10 11.3541 10 12.5C10 13.6458 10.9 14.5833 12 14.5833C13.1 14.5833 14 13.6458 14 12.5C14 11.3541 13.1 10.4166 12 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
                     </svg>
                 </div>
-                <h1 class="price">
-                    $120,435.00<span class="price-currency">(USD)</span>
+                <h1 class="price text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    $120,435.00<span class="price-currency text-lg text-gray-600 dark:text-gray-400 ml-2">(USD)</span>
                 </h1>
-                <p>From Jan 01, 2022 to Jan 31, 2022</p>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">From Jan 01, 2022 to Jan 31, 2022</p>
                 <div class="button-box">
                     <button class="btn btn-purple">
                         <svg width="23"
@@ -245,9 +249,9 @@
                     </button>
                 </div>
             </div>
-            <div class="box spending-box">
-                <div class="header-container">
-                    <h3 class="section-header">Spent On Bug Types</h3>
+            <div class="box spending-box bg-[#f6f6f6] dark:bg-gray-800 p-5 rounded-xl shadow-sm">
+                <div class="header-container flex justify-between">
+                    <h3 class="section-header text-gray-900 dark:text-gray-100 text-lg font-semibold mb-4">Spent On Bug Types</h3>
                     <svg width="24"
                          height="25"
                          viewBox="0 0 24 25"
@@ -261,16 +265,16 @@
                 <div class="pie-chart">
                     <canvas id="spentOnBugTypes" height="220px" width="220px"></canvas>
                 </div>
-                <div class="overall-spending">
-                    <h4>Total Spent</h4>
-                    <span>${{ total_info.total_money_distributed }}</span>
+                <div class="overall-spending mb-4">
+                    <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Total Spent</h4>
+                    <span class="text-2xl font-bold text-gray-900 dark:text-gray-100">${{ total_info.total_money_distributed }}</span>
                 </div>
                 <div class="pie-chart__labels">
                     {% for bugtype, money_spent in spent_on_bugtypes.zipped_data %}
-                        <div class="pie-chart__labels-item">
+                        <div class="pie-chart__labels-item flex gap-1 dark:text-white">
                             <div class="label">
                                 <div class="label__color first"></div>
-                                {{ bugtype }}
+                                {{ bugtype }} :
                             </div>
                             ${{ money_spent }}
                         </div>
@@ -281,7 +285,7 @@
     </div>
     <!-- Security Incidents Summary Section -->
     <div id="security-incidents" class="w-full px-8 mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div class="bg-[#f6f6f6] dark:bg-gray-800 rounded-xl p-6 shadow-sm">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Security Incidents Summary</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Recent Incidents -->
@@ -329,7 +333,7 @@
     </div>
     <!-- Threat Intelligence Section -->
     <div id="threat-intelligence" class="w-full px-8 mt-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div class="bg-[#f6f6f6] dark:bg-gray-800 rounded-xl p-6 shadow-sm">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Threat Intelligence</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Risk Score -->
@@ -374,48 +378,48 @@
     </div>
     <!-- Network Traffic Analysis Section -->
     <div id="network-traffic" class="w-full px-8 mt-8">
-        <div class="bg-white rounded-xl p-6 shadow-sm">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Network Traffic Analysis</h2>
+        <div class="bg-[#f6f6f6] dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Network Traffic Analysis</h2>
             <!-- Traffic Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Daily Traffic</h3>
-                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-blue-200 rounded-[50px] mb-2">
-                        <i class="fa-solid fa-chart-line fa-2x text-black"></i>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg flex flex-col items-center justify-center">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Daily Traffic</h3>
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-blue-200 dark:bg-blue-800 rounded-[50px] mb-2">
+                        <i class="fa-solid fa-chart-line fa-2x text-gray-800 dark:text-gray-200"></i>
                     </div>
-                    <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.day_count }}</p>
-                    <p class="text-sm text-gray-500">Last 24 hours</p>
+                    <p class="text-3xl font-bold text-gray-700 dark:text-gray-300">{{ network_traffic_data.day_count }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Last 24 hours</p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Weekly Traffic</h3>
-                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-purple-200 rounded-[50px] mb-2">
-                        <i class="fa-solid fa-calendar-week fa-2x text-black"></i>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg flex flex-col items-center justify-center">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Weekly Traffic</h3>
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-purple-200 dark:bg-purple-800 rounded-[50px] mb-2">
+                        <i class="fa-solid fa-calendar-week fa-2x text-gray-800 dark:text-gray-200"></i>
                     </div>
-                    <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.week_count }}</p>
-                    <p class="text-sm text-gray-500">Last 7 days</p>
+                    <p class="text-3xl font-bold text-gray-700 dark:text-gray-300">{{ network_traffic_data.week_count }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Last 7 days</p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Peak Hour</h3>
-                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-yellow-200 rounded-[50px] mb-2">
-                        <i class="fa-solid fa-bolt fa-2x text-black"></i>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg flex flex-col items-center justify-center">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Peak Hour</h3>
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-yellow-200 dark:bg-yellow-700 rounded-[50px] mb-2">
+                        <i class="fa-solid fa-bolt fa-2x text-gray-800 dark:text-gray-200"></i>
                     </div>
-                    <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.peak_hour }}:00</p>
-                    <p class="text-sm text-gray-500">{{ network_traffic_data.peak_count }} requests</p>
+                    <p class="text-3xl font-bold text-gray-700 dark:text-gray-300">{{ network_traffic_data.peak_hour }}:00</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ network_traffic_data.peak_count }} requests</p>
                 </div>
             </div>
             <!-- Traffic Charts -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-5 rounded-xl border border-gray-200">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
                     <div class="header-container mb-4">
-                        <h3 class="section-header text-lg font-semibold">Daily Traffic Volume (30 Days)</h3>
+                        <h3 class="section-header text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Traffic Volume (30 Days)</h3>
                     </div>
                     <div class="relative h-[300px]">
                         <canvas id="trafficVolumeChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-5 rounded-xl border border-gray-200">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
                     <div class="header-container mb-4">
-                        <h3 class="section-header text-lg font-semibold">Hourly Distribution</h3>
+                        <h3 class="section-header text-lg font-semibold text-gray-900 dark:text-gray-100">Hourly Distribution</h3>
                     </div>
                     <div class="relative h-[300px]">
                         <canvas id="hourlyDistributionChart"></canvas>
@@ -424,24 +428,25 @@
             </div>
             <!-- Domain Error Rates -->
             <div class="mt-8">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Domains with Errors</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Top Domains with Errors</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
-                        <thead class="bg-gray-100">
+                    <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+                        <thead class="bg-gray-100 dark:bg-gray-700">
                             <tr>
-                                <th class="py-3 px-4 text-left">Domain</th>
-                                <th class="py-3 px-4 text-left">Error Count</th>
+                                <th class="py-3 px-4 text-left text-gray-900 dark:text-gray-100">Domain</th>
+                                <th class="py-3 px-4 text-left text-gray-900 dark:text-gray-100">Error Count</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for domain in network_traffic_data.domain_error_rates %}
-                                <tr class="border-t border-gray-200">
-                                    <td class="py-3 px-4">{{ domain.domain__name }}</td>
-                                    <td class="py-3 px-4">{{ domain.error_count }}</td>
+                                <tr class="border-t border-gray-200 dark:border-gray-600">
+                                    <td class="py-3 px-4 text-gray-800 dark:text-gray-200">{{ domain.domain__name }}</td>
+                                    <td class="py-3 px-4 text-gray-800 dark:text-gray-200">{{ domain.error_count }}</td>
                                 </tr>
                             {% empty %}
-                                <tr class="border-t border-gray-200">
-                                    <td class="py-3 px-4 text-center" colspan="2">No domain error data available</td>
+                                <tr class="border-t border-gray-200 dark:border-gray-600">
+                                    <td class="py-3 px-4 text-center text-gray-500 dark:text-gray-400"
+                                        colspan="2">No domain error data available</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -457,6 +462,7 @@
             integrity="sha384-+94tm/qgImqyuSRr1vU2PjQIoot8h3qdaFB/xTawzWLRkcCWPricrBj5Xr45hCP1"
             crossorigin="anonymous"></script>
     <script src="{% static 'organization/js/index.js' %}"></script>
+    <script src="{% static 'js/darkMode.js' %}"></script>
     <script>
   // populate Chart (PIE): Bug Report  Type
   function populateBugTypePie() {
