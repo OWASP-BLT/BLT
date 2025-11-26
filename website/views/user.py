@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
+from dateutil import parser as dateutil_parser
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -49,6 +50,7 @@ from website.models import (
     Monitor,
     Notification,
     Points,
+    Repo,
     Tag,
     Thread,
     User,
@@ -992,6 +994,32 @@ def contributor_stats_view(request):
     except EmptyPage:
         paginated_stats = paginator.page(paginator.num_pages)
 
+    # Get weekly leaderboard - top users by points earned in the time period
+    leaderboard = []
+    try:
+        leaderboard_query = (
+            Points.objects.filter(created__gte=start_date, created__lte=end_date)
+            .values("user")
+            .annotate(total_points=Sum("score"))
+            .order_by("-total_points")[:10]  # Top 10 contributors
+        )
+
+        for entry in leaderboard_query:
+            try:
+                user = User.objects.get(id=entry["user"])
+                user_profile = UserProfile.objects.get(user=user)
+                leaderboard.append(
+                    {
+                        "user": user,
+                        "user_profile": user_profile,
+                        "total_points": entry["total_points"],
+                    }
+                )
+            except (User.DoesNotExist, UserProfile.DoesNotExist):
+                continue
+    except Exception as e:
+        logger.error(f"Error fetching leaderboard: {e}")
+
     # Prepare time period options
     time_period_options = [
         ("today", "Today's Data"),
@@ -1013,6 +1041,7 @@ def contributor_stats_view(request):
         "challenge_highlights": challenge_highlights,
         "total_streak_achievements": len(streak_highlights),
         "total_challenge_completions": len(challenge_highlights),
+        "leaderboard": leaderboard,
     }
 
     return render(request, "weekly_activity.html", context)
@@ -1227,12 +1256,70 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    logger.debug("issue closed")
-    if payload["action"] == "closed":
+    """
+    Handle GitHub issue events (opened, closed, etc.)
+    Updates GitHubIssue records in BLT to match GitHub issue state
+    """
+    action = payload.get("action")
+    issue_data = payload.get("issue", {})
+    repo_data = payload.get("repository", {})
+
+    logger.debug(f"GitHub issue event: {action}")
+
+    # Extract issue details
+    issue_id = issue_data.get("number")
+    issue_state = issue_data.get("state")
+    issue_html_url = issue_data.get("html_url")
+
+    # Extract repository details
+    repo_full_name = repo_data.get("full_name")  # e.g., "owner/repo"
+    repo_html_url = repo_data.get("html_url")
+
+    if not issue_id or not repo_html_url:
+        logger.warning("Issue event missing required data")
+        return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
+
+    # Find the Repo in BLT database
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+    except Repo.DoesNotExist:
+        logger.info(f"Repository not found in BLT: {repo_html_url}")
+        # Not an error - we only track issues for repos we have in our database
+        # Continue to badge assignment
+    except Exception as e:
+        logger.error(f"Error finding repository: {e}")
+        # Continue to badge assignment
+    else:
+        # Find and update the GitHubIssue record
+        try:
+            github_issue = GitHubIssue.objects.get(issue_id=issue_id, repo=repo, type="issue")
+
+            # Update the issue state
+            github_issue.state = issue_state
+
+            # Update closed_at timestamp if the issue was closed
+            if action == "closed" and issue_data.get("closed_at"):
+                github_issue.closed_at = dateutil_parser.parse(issue_data["closed_at"])
+
+            # Update updated_at timestamp
+            if issue_data.get("updated_at"):
+                github_issue.updated_at = dateutil_parser.parse(issue_data["updated_at"])
+
+            github_issue.save()
+            logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
+        except GitHubIssue.DoesNotExist:
+            logger.info(f"GitHubIssue {issue_id} not found in BLT for repo {repo_full_name}")
+            # Not an error - we may not have all issues in our database
+        except Exception as e:
+            logger.error(f"Error updating GitHubIssue: {e}")
+
+    # Assign badge for first issue closed (existing functionality)
+    if action == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
             closer_user = closer_profile.user
             assign_github_badge(closer_user, "First Issue Closed")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
