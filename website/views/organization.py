@@ -1517,17 +1517,21 @@ def fetch_organization_trademarks(request, slug):
     Fetch and store trademark information for a specific organization from USPTO API.
     """
     organization = get_object_or_404(Organization, slug=slug)
-    
+
     # Check if user has permission to trigger trademark search
-    if not (request.user.is_staff or organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()):
+    if not (
+        request.user.is_staff
+        or organization.admin == request.user
+        or organization.managers.filter(id=request.user.id).exists()
+    ):
         messages.error(request, "You don't have permission to fetch trademarks for this organization.")
         return redirect("organization_detail", slug=slug)
-    
+
     # Check if API key is configured
     if not settings.USPTO_API:
         messages.error(request, "USPTO API key is not configured. Please contact an administrator.")
         return redirect("organization_detail", slug=slug)
-    
+
     try:
         # Fetch trademark data from USPTO API
         url = "https://uspto-trademark.p.rapidapi.com/v1/batchTrademarkSearch/"
@@ -1540,33 +1544,33 @@ def fetch_organization_trademarks(request, slug):
             "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
             "Content-Type": "application/x-www-form-urlencoded",
         }
-        
+
         response = requests.post(url, data=initial_payload, headers=headers, timeout=10)
         response.raise_for_status()
         response_json = response.json()
-        
+
         # The initial call returns a scroll_id for pagination
         scroll_id = response_json.get("scroll_id")
         results = []
-        
+
         if scroll_id and scroll_id.strip():
             pagination_payload = {
                 "keywords": f'["{organization.name}"]',
                 "start_index": "0",
                 "scroll_id": scroll_id,
             }
-            
+
             response = requests.post(url, data=pagination_payload, headers=headers, timeout=10)
             response.raise_for_status()
             results = response.json().get("results", [])
         else:
             # If no scroll_id, check if results are in the initial response
             results = response_json.get("results", [])
-        
+
         # Store trademark data in the database
         trademarks_created = 0
         trademarks_updated = 0
-        
+
         if results:
             for item in results:
                 # Skip items without a valid serial number
@@ -1574,10 +1578,10 @@ def fetch_organization_trademarks(request, slug):
                 if not serial_number or not str(serial_number).strip():
                     logger.warning(
                         "Skipping trademark without valid serial number",
-                        extra={"keyword": item.get("keyword"), "organization_id": organization.id}
+                        extra={"keyword": item.get("keyword"), "organization_id": organization.id},
                     )
                     continue
-                
+
                 trademark, created = Trademark.objects.update_or_create(
                     serial_number=serial_number,
                     defaults={
@@ -1593,14 +1597,14 @@ def fetch_organization_trademarks(request, slug):
                         "expiration_date": item.get("expiration_date"),
                         "description": item.get("description"),
                         "organization": organization,
-                    }
+                    },
                 )
-                
+
                 if created:
                     trademarks_created += 1
                 else:
                     trademarks_updated += 1
-                
+
                 # Update or create trademark owners
                 if item.get("owners"):
                     owner_objects = []
@@ -1618,25 +1622,25 @@ def fetch_organization_trademarks(request, slug):
                                 "owner_label": owner_data.get("owner_label"),
                                 "legal_entity_type": owner_data.get("legal_entity_type"),
                                 "legal_entity_type_label": owner_data.get("legal_entity_type_label"),
-                            }
+                            },
                         )
                         owner_objects.append(owner)
                     trademark.owners.set(owner_objects)
-        
+
         # Update organization trademark metadata
         organization.trademark_check_date = timezone.now()
         organization.trademark_count = len(results)
         organization.save()
-        
+
         if results:
             messages.success(
                 request,
                 f"Successfully fetched {len(results)} trademarks for {organization.name} "
-                f"({trademarks_created} new, {trademarks_updated} updated)."
+                f"({trademarks_created} new, {trademarks_updated} updated).",
             )
         else:
             messages.info(request, f"No trademarks found for {organization.name} in the USPTO database.")
-    
+
     except requests.exceptions.Timeout:
         messages.error(request, "Request timed out while fetching trademark data. Please try again later.")
     except requests.exceptions.HTTPError as e:
@@ -1647,7 +1651,7 @@ def fetch_organization_trademarks(request, slug):
     except Exception as e:
         logger.exception("Error fetching trademarks for organization", extra={"organization_slug": slug})
         messages.error(request, "An error occurred while fetching trademark data. Please try again later.")
-    
+
     return redirect("organization_detail", slug=slug)
 
 
