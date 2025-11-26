@@ -44,8 +44,24 @@ jobs:
               const prAuthor = pr.user.login;
               const prUpdatedAt = new Date(pr.updated_at);
               
+              // Bot detection: Check if PR author is a bot
+              // - GitHub user type is 'Bot'
+              // - Username ends with '[bot]'
+              // - Username is in known bot list
+              const knownBots = ['copilot', 'dependabot', 'github-actions'];
+              const isBot = pr.user.type === 'Bot' || 
+                            prAuthor.endsWith('[bot]') || 
+                            knownBots.includes(prAuthor.toLowerCase());
+              
               core.info(`\nChecking PR #${pull_number} by @${prAuthor}`);
               core.info(`  Last updated: ${pr.updated_at}`);
+              core.info(`  Is bot: ${isBot}`);
+              
+              // Skip reminder for bot-created PRs
+              if (isBot) {
+                core.info(`  Skipping - PR created by bot`);
+                continue;
+              }
               
               // Check if PR was updated in the last 24 hours
               if (prUpdatedAt > twentyFourHoursAgo) {
