@@ -1,5 +1,13 @@
 name: Regenerate Django Migrations
 
+# SECURITY NOTE:
+# This workflow uses pull_request_target to allow writing back to forked PRs.
+# It only runs when explicitly triggered via the 'regenerate-migrations' label
+# or manual workflow dispatch. The workflow executes Django's makemigrations
+# command which is safe as it only reads models and generates migration files.
+# Maintainers should review PRs for malicious model definitions before
+# triggering this workflow.
+
 on:
   workflow_dispatch:
   pull_request_target:
