@@ -862,7 +862,7 @@ class AddDomainView(View):
         if method == "delete":
             return self.delete(request, *args, **kwargs)
         elif method == "put":
-            print("*" * 100)
+            logger.debug("*" * 100)
             return self.put(request, *args, **kwargs)
 
         return super().dispatch(request, *args, **kwargs)
@@ -1209,11 +1209,6 @@ class AddSlackIntegrationView(View):
                 messages.error(request, "Slack integration is not configured. Please contact the administrator.")
                 return redirect("organization_manage_integrations", id=id)
 
-            # Validate organization ID is an integer
-            if not isinstance(id, int):
-                messages.error(request, "Invalid organization ID.")
-                return redirect("home")
-
             # Get and validate redirect URI
             redirect_uri = self._get_redirect_uri(request)
 
@@ -1232,9 +1227,7 @@ class AddSlackIntegrationView(View):
             state = urlencode({"organization_id": str(id)})
 
             # Build OAuth URL using only validated components
-            from urllib.parse import urlencode as url_encode
-
-            params = url_encode(
+            params = urlencode(
                 {
                     "client_id": client_id,
                     "scope": "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands",
@@ -1385,7 +1378,7 @@ class SlackCallbackView(View):
             )
 
             # Update or create SlackIntegration
-            slack_integration, slack_created = SlackIntegration.objects.update_or_create(
+            SlackIntegration.objects.update_or_create(
                 integration=integration,
                 defaults={
                     "bot_access_token": token_data["access_token"],
