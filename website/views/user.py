@@ -578,11 +578,16 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Pull Request Leaderboard - Use Contributor model
         # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for PRs merged in the last 6 months
+        from dateutil.relativedelta import relativedelta
+
+        since_date = timezone.now() - relativedelta(months=6)
         pr_leaderboard = (
             GitHubIssue.objects.filter(
                 type="pull_request",
                 is_merged=True,
                 contributor__isnull=False,
+                merged_at__gte=since_date,
             )
             .filter(
                 Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
@@ -602,9 +607,11 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Code Review Leaderboard - Use reviewer_contributor
         # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for reviews on PRs merged in the last 6 months
         reviewed_pr_leaderboard = (
             GitHubReview.objects.filter(
                 reviewer_contributor__isnull=False,
+                pull_request__merged_at__gte=since_date,
             )
             .filter(
                 Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
