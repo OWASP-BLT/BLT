@@ -1,0 +1,147 @@
+name: Add Changes Requested Label
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  pull_request_review:
+    types:
+      - submitted
+      - dismissed
+
+# Prevent multiple workflow runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+
+jobs:
+  add_changes_requested_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Changes Requested and Add Label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            
+            core.info(`Checking review status for PR #${pull_number}`);
+            
+            // Get all reviews for the PR
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner,
+              repo,
+              pull_number,
+              per_page: 100
+            });
+            
+            core.info(`Found ${reviews.length} reviews for PR #${pull_number}`);
+            
+            // Check if any review has "CHANGES_REQUESTED" state
+            // We look at the most recent review from each reviewer
+            const reviewerStates = new Map();
+            
+            // Process reviews in chronological order (they come sorted by creation date)
+            for (const review of reviews) {
+              reviewerStates.set(review.user.login, review.state);
+            }
+            
+            // Check if any reviewer's most recent state is CHANGES_REQUESTED
+            let hasChangesRequested = false;
+            for (const [reviewer, state] of reviewerStates) {
+              core.info(`Reviewer ${reviewer} latest state: ${state}`);
+              if (state === 'CHANGES_REQUESTED') {
+                hasChangesRequested = true;
+                break;
+              }
+            }
+            
+            // Determine the appropriate label
+            const changesRequestedLabel = 'changes-requested';
+            const labelColor = 'e74c3c'; // BLT red color for changes requested
+            const description = 'PR has requested changes from a reviewer';
+            
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+            
+            // Ensure the label exists (create if missing)
+            async function ensureLabelExists(labelName, color, desc) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: color,
+                    description: desc,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            await ensureLabelExists(changesRequestedLabel, labelColor, description);
+            
+            if (hasChangesRequested) {
+              // Add the label if it isn't already present
+              if (!currentNames.has(changesRequestedLabel)) {
+                try {
+                  await github.rest.issues.addLabels({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    labels: [changesRequestedLabel] 
+                  });
+                  core.info(`Applied label ${changesRequestedLabel} to PR #${pull_number}`);
+                } catch (error) {
+                  if (error.status === 403) {
+                    core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                  } else {
+                    throw error;
+                  }
+                }
+              } else {
+                core.info(`Label ${changesRequestedLabel} already present on PR #${pull_number}`);
+              }
+            } else {
+              // Remove the label if no changes are requested
+              if (currentNames.has(changesRequestedLabel)) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name: changesRequestedLabel 
+                  });
+                  core.info(`Removed label ${changesRequestedLabel} from PR #${pull_number}`);
+                } catch (err) {
+                  // Ignore error if label doesn't exist
+                  if (err.status !== 404) {
+                    core.warning(`Failed to remove label ${changesRequestedLabel}: ${err.message}`);
+                  }
+                }
+              } else {
+                core.info(`No changes requested - label ${changesRequestedLabel} not present on PR #${pull_number}`);
+              }
+            }
