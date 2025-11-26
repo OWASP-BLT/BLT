@@ -39,7 +39,6 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
-
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
 from website.views.core import SAMPLE_INVITE_EMAIL_PATTERN
 
