@@ -503,9 +503,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 # Limit emoji length to prevent abuse (emojis are typically 1-4 characters)
                 if len(emoji) > 10:
                     await self.send(
-                        text_data=json.dumps(
-                            {"type": "error", "code": "invalid_emoji", "message": "Emoji too long"}
-                        )
+                        text_data=json.dumps({"type": "error", "code": "invalid_emoji", "message": "Emoji too long"})
                     )
                     return
 
