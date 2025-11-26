@@ -6,6 +6,7 @@ import time
 
 import requests
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from slack_bolt import App
 from slack_bolt.adapter.django import SlackRequestHandler
@@ -380,6 +381,15 @@ if app:
 
         except Exception as e:
             logger.error(f"Error sending DM to user {user_id}: {e}")
+
+
+def slack_landing_page(request):
+    """Landing page for Slack bot with features and installation button."""
+    slack_client_id = os.environ.get("SLACK_ID_CLIENT")
+    context = {
+        "slack_client_id": slack_client_id,
+    }
+    return render(request, "slack.html", context)
 
 
 @csrf_exempt
