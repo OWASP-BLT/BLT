@@ -24,10 +24,11 @@ def remove_duplicate_emails(apps, schema_editor):
     # Handle NULL or empty emails by setting them to unique placeholder values
     print("Handling NULL or empty email addresses...")
     empty_email_users = User.objects.using(db_alias).filter(models.Q(email__isnull=True) | models.Q(email=""))
+    empty_count = empty_email_users.count()
     for user in empty_email_users:
         user.email = f"user_{user.id}@placeholder.local"
         user.save(update_fields=["email"])
-    print(f"Updated {empty_email_users.count()} users with empty/NULL emails")
+    print(f"Updated {empty_count} users with empty/NULL emails")
 
     # Find and remove duplicate emails
     print("Finding duplicate email addresses...")
@@ -48,9 +49,6 @@ def remove_duplicate_emails(apps, schema_editor):
 
         # Get all users with this email, ordered by ID (oldest first)
         users_with_email = User.objects.using(db_alias).filter(email=email).order_by("id")
-
-        # Count duplicates before deletion
-        duplicate_count = users_with_email.count() - 1
 
         # Keep the first user (oldest account) and delete the rest
         first_user = users_with_email.first()
@@ -83,11 +81,11 @@ class Migration(migrations.Migration):
         # First, remove duplicates and normalize emails
         migrations.RunPython(remove_duplicate_emails, reverse_migration),
         # Then, add the unique constraint at the database level
-        migrations.AddConstraint(
-            model_name="user",
-            constraint=models.UniqueConstraint(
-                fields=["email"],
-                name="auth_user_email_unique",
-            ),
+        # We use RunSQL since we cannot use AddConstraint for models from other apps (auth.User)
+        migrations.RunSQL(
+            # Forward migration: Add unique constraint (works on PostgreSQL, MySQL, SQLite)
+            sql="ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);",
+            # Reverse migration: Drop the constraint
+            reverse_sql="ALTER TABLE auth_user DROP CONSTRAINT auth_user_email_unique;",
         ),
     ]

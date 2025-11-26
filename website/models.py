@@ -59,6 +59,9 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 # Enforce email uniqueness on the User model at the application level
 # This works in conjunction with the database constraint added in migration 0257
+# Note: We modify the built-in User model's meta because we cannot define a custom
+# User model (AUTH_USER_MODEL) after the project has already been using auth.User.
+# This is a supported pattern for adding constraints to Django's built-in User model.
 User._meta.get_field("email")._unique = True
 
 
