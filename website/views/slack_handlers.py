@@ -713,7 +713,7 @@ def slack_commands(request):
 
         elif command == "/ghissue":
             text = request.POST.get("text", "").strip()
-            
+
             # Parse the command format: /ghissue <owner/repo> <issue title and description>
             if not text:
                 guidance_message = [
@@ -741,7 +741,7 @@ def slack_commands(request):
                         "text": "I've sent you guidance on using the /ghissue command in a DM! 📚",
                     }
                 )
-            
+
             # Parse the text to extract repository and issue details
             parts = text.split(maxsplit=1)
             if len(parts) < 2:
@@ -751,10 +751,10 @@ def slack_commands(request):
                         "text": "❌ Invalid format. Usage: `/ghissue <owner/repo> <issue title and description>`",
                     }
                 )
-            
+
             repository = parts[0]
             issue_text = parts[1]
-            
+
             # Validate repository format
             if "/" not in repository or repository.count("/") != 1:
                 return JsonResponse(
@@ -763,7 +763,7 @@ def slack_commands(request):
                         "text": "❌ Invalid repository format. Use `owner/repo` format (e.g., `OWASP-BLT/BLT`)",
                     }
                 )
-            
+
             try:
                 # Use GitHub token for authentication
                 if not GITHUB_TOKEN:
@@ -773,29 +773,29 @@ def slack_commands(request):
                             "text": "❌ GitHub API token not configured. Please contact the administrator.",
                         }
                     )
-                
+
                 # Create GitHub issue
                 headers = get_github_headers()
                 url = f"https://api.github.com/repos/{repository}/issues"
-                
+
                 # Parse title and body (first line is title, rest is body)
                 lines = issue_text.split("\n", 1)
                 title = lines[0].strip()
                 body = lines[1].strip() if len(lines) > 1 else ""
-                
+
                 # Add metadata about who created the issue
                 if body:
                     body += f"\n\n---\n_Created via Slack by <@{user_id}>_"
                 else:
                     body = f"_Created via Slack by <@{user_id}>_"
-                
+
                 issue_data = {
                     "title": title,
                     "body": body,
                 }
-                
+
                 response = requests.post(url, json=issue_data, headers=headers, timeout=10)
-                
+
                 if response.status_code == 201:
                     issue = response.json()
                     blocks = [
@@ -867,7 +867,7 @@ def slack_commands(request):
                             "text": f"❌ Failed to create issue. GitHub API error: {response.status_code}",
                         }
                     )
-            
+
             except requests.RequestException as e:
                 activity.success = False
                 activity.error_message = f"Network error: {str(e)}"
