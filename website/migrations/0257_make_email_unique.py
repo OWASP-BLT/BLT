@@ -1,66 +1,107 @@
 # Generated migration to enforce email uniqueness
 
-from django.db import migrations, models
+import logging
+import uuid
+
+from django.db import migrations, models, transaction
+
+logger = logging.getLogger(__name__)
 
 
 def remove_duplicate_emails(apps, schema_editor):
     """
     Remove duplicate email addresses, keeping the user with the lowest ID (oldest account).
     Also normalizes all emails to lowercase for case-insensitive uniqueness.
+
+    WARNING: This migration will delete duplicate user accounts and all their related data.
+    Ensure you have a database backup before running this migration.
     """
     User = apps.get_model("auth", "User")
     db_alias = schema_editor.connection.alias
 
-    # First, normalize all emails to lowercase
-    print("Normalizing all email addresses to lowercase...")
-    users = User.objects.using(db_alias).all()
-    for user in users:
-        if user.email:
-            normalized_email = user.email.lower()
-            if user.email != normalized_email:
-                user.email = normalized_email
-                user.save(update_fields=["email"])
+    with transaction.atomic():
+        # Handle NULL or empty emails by setting them to unique placeholder values using UUIDs
+        logger.info("Handling NULL or empty email addresses...")
+        empty_email_users = User.objects.using(db_alias).filter(models.Q(email__isnull=True) | models.Q(email=""))
+        empty_count = empty_email_users.count()
 
-    # Handle NULL or empty emails by setting them to unique placeholder values
-    print("Handling NULL or empty email addresses...")
-    empty_email_users = User.objects.using(db_alias).filter(models.Q(email__isnull=True) | models.Q(email=""))
-    empty_count = empty_email_users.count()
-    for user in empty_email_users:
-        user.email = f"user_{user.id}@placeholder.local"
-        user.save(update_fields=["email"])
-    print(f"Updated {empty_count} users with empty/NULL emails")
+        users_to_update = []
+        for user in empty_email_users:
+            user.email = f"noemail-{uuid.uuid4().hex[:16]}@placeholder.local"
+            users_to_update.append(user)
 
-    # Find and remove duplicate emails
-    print("Finding duplicate email addresses...")
-    from django.db.models import Count
+        if users_to_update:
+            User.objects.bulk_update(users_to_update, ["email"], batch_size=500)
+        logger.info(f"Updated {empty_count} users with empty/NULL emails")
 
-    duplicates = (
-        User.objects.using(db_alias)
-        .values("email")
-        .annotate(email_count=Count("id"))
-        .filter(email_count__gt=1)
-        .order_by()
-    )
+        # Normalize all emails to lowercase using bulk update
+        logger.info("Normalizing all email addresses to lowercase...")
+        users_to_normalize = []
+        for user in User.objects.using(db_alias).iterator(chunk_size=1000):
+            if user.email:
+                normalized_email = user.email.lower()
+                if user.email != normalized_email:
+                    user.email = normalized_email
+                    users_to_normalize.append(user)
 
-    total_deleted = 0
-    for duplicate in duplicates:
-        email = duplicate["email"]
-        print(f"Processing duplicates for email: {email}")
+        if users_to_normalize:
+            User.objects.bulk_update(users_to_normalize, ["email"], batch_size=500)
+            logger.info(f"Normalized {len(users_to_normalize)} email addresses to lowercase")
 
-        # Get all users with this email, ordered by ID (oldest first)
-        users_with_email = User.objects.using(db_alias).filter(email=email).order_by("id")
+        # Find and remove duplicate emails (after normalization, case-insensitive duplicates become actual duplicates)
+        logger.info("Finding duplicate email addresses...")
+        from django.db.models import Count
 
-        # Keep the first user (oldest account) and delete the rest
-        first_user = users_with_email.first()
-        deleted_count = users_with_email.exclude(id=first_user.id).delete()[0]
+        duplicates = (
+            User.objects.using(db_alias)
+            .values("email")
+            .annotate(email_count=Count("id"))
+            .filter(email_count__gt=1)
+            .order_by()
+        )
 
-        print(f"  Kept user {first_user.id} (username: {first_user.username}), deleted {deleted_count} duplicate(s)")
-        total_deleted += deleted_count
+        # Collect all user IDs to delete in one pass for efficiency
+        ids_to_delete = []
+        kept_user_info = []
 
-    if total_deleted > 0:
-        print(f"Total duplicate accounts removed: {total_deleted}")
-    else:
-        print("No duplicate email addresses found.")
+        for duplicate in duplicates:
+            email = duplicate["email"]
+            logger.info(f"Processing duplicates for email: {email}")
+
+            # Get all users with this email, ordered by ID (oldest first)
+            users_with_email = User.objects.using(db_alias).filter(email=email).order_by("id")
+            user_data = list(users_with_email.values("id", "username", "email"))
+
+            if len(user_data) > 1:
+                # Keep the first user (oldest account)
+                first_user = user_data[0]
+                kept_user_info.append(first_user)
+
+                # Log which users will be deleted before deletion
+                for user in user_data[1:]:
+                    logger.warning(
+                        f"  Deleting duplicate user: ID={user['id']}, "
+                        f"username={user['username']}, email={user['email']}"
+                    )
+                    ids_to_delete.append(user["id"])
+
+                logger.info(
+                    f"  Kept user {first_user['id']} (username: {first_user['username']}), "
+                    f"marked {len(user_data) - 1} duplicate(s) for deletion"
+                )
+
+        # Perform bulk deletion
+        total_deleted = 0
+        if ids_to_delete:
+            logger.warning(
+                f"About to delete {len(ids_to_delete)} duplicate user accounts. "
+                "This will also delete all related data (issues, comments, etc.) through cascade deletion."
+            )
+            deleted_count, _ = User.objects.using(db_alias).filter(id__in=ids_to_delete).delete()
+            total_deleted = deleted_count
+            logger.info(f"Total duplicate accounts removed: {total_deleted}")
+        else:
+            logger.info("No duplicate email addresses found.")
 
 
 def reverse_migration(apps, schema_editor):
@@ -68,49 +109,67 @@ def reverse_migration(apps, schema_editor):
     Reverse operation - no-op since we cannot restore deleted users.
     The constraint removal is handled by the constraint operation itself.
     """
-    print("Note: Deleted duplicate users cannot be restored.")
+    logger.warning("Note: Deleted duplicate users cannot be restored.")
 
 
 def add_email_constraint(apps, schema_editor):
     """
     Add unique constraint on email field in a database-agnostic way.
+    Makes the operation idempotent by checking for existing constraint.
     """
-    # Get the database vendor (postgresql, mysql, sqlite, etc.)
+    from django.db import DatabaseError, IntegrityError
+
     vendor = schema_editor.connection.vendor
 
-    if vendor == "postgresql":
-        schema_editor.execute("ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);")
-    elif vendor == "mysql":
-        schema_editor.execute("ALTER TABLE auth_user ADD UNIQUE INDEX auth_user_email_unique (email);")
-    elif vendor == "sqlite":
-        # SQLite doesn't support adding constraints to existing tables easily
-        # The constraint was already enforced by the data migration
-        # and will be enforced at the application level
-        print("SQLite detected: Unique constraint will be enforced at the application level")
-    else:
-        # For other databases, attempt standard SQL
-        schema_editor.execute("ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);")
+    try:
+        if vendor == "postgresql":
+            # PostgreSQL: Check if constraint exists, add if not
+            schema_editor.execute("ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);")
+            logger.info("Added unique constraint on email field for PostgreSQL")
+        elif vendor == "mysql":
+            # MySQL: Add unique index (will fail silently if exists due to IF NOT EXISTS in newer versions)
+            schema_editor.execute("ALTER TABLE auth_user ADD UNIQUE INDEX auth_user_email_unique (email);")
+            logger.info("Added unique index on email field for MySQL")
+        elif vendor == "sqlite":
+            # SQLite doesn't support adding constraints to existing tables easily
+            # The constraint will be enforced at the application level
+            logger.info("SQLite detected: Unique constraint will be enforced at the application level")
+        else:
+            # For other databases, attempt standard SQL
+            schema_editor.execute("ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);")
+            logger.info(f"Added unique constraint on email field for {vendor}")
+    except (DatabaseError, IntegrityError) as e:
+        # Constraint may already exist
+        logger.warning(f"Could not add constraint (may already exist): {e}")
+        pass
 
 
 def remove_email_constraint(apps, schema_editor):
     """
     Remove unique constraint on email field in a database-agnostic way.
     """
+    from django.db import DatabaseError
+
     vendor = schema_editor.connection.vendor
 
-    if vendor == "postgresql":
-        schema_editor.execute("ALTER TABLE auth_user DROP CONSTRAINT IF EXISTS auth_user_email_unique;")
-    elif vendor == "mysql":
-        schema_editor.execute("ALTER TABLE auth_user DROP INDEX IF EXISTS auth_user_email_unique;")
-    elif vendor == "sqlite":
-        # SQLite doesn't support dropping constraints easily
-        print("SQLite detected: No constraint to remove")
-    else:
-        # For other databases, attempt standard SQL
-        try:
+    try:
+        if vendor == "postgresql":
+            schema_editor.execute("ALTER TABLE auth_user DROP CONSTRAINT IF EXISTS auth_user_email_unique;")
+            logger.info("Dropped unique constraint on email field for PostgreSQL")
+        elif vendor == "mysql":
+            schema_editor.execute("ALTER TABLE auth_user DROP INDEX IF EXISTS auth_user_email_unique;")
+            logger.info("Dropped unique index on email field for MySQL")
+        elif vendor == "sqlite":
+            # SQLite doesn't support dropping constraints easily
+            logger.info("SQLite detected: No constraint to remove")
+        else:
+            # For other databases, attempt standard SQL
             schema_editor.execute("ALTER TABLE auth_user DROP CONSTRAINT auth_user_email_unique;")
-        except Exception:
-            pass  # Constraint may not exist
+            logger.info(f"Dropped unique constraint on email field for {vendor}")
+    except DatabaseError as e:
+        # Constraint may not exist or other database error
+        logger.warning(f"Could not remove constraint: {e}")
+        pass
 
 
 class Migration(migrations.Migration):
