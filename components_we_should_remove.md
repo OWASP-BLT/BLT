@@ -367,5 +367,5 @@ By removing these components, OWASP BLT can return to its roots as a focused, ef
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** November 26, 2025  
+**Last Updated:** November 26, 2024  
 **Maintained By:** OWASP BLT Core Team
