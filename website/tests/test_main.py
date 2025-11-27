@@ -42,7 +42,8 @@ class MySeleniumTests(LiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
+        super(MySeleniumTests, cls).setUpClass()
+
         options = webdriver.ChromeOptions()
         options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
@@ -50,49 +51,47 @@ class MySeleniumTests(LiveServerTestCase):
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-extensions")
-        options.add_argument("--disable-browser-side-navigation")
-        options.add_argument("--disable-infobars")
-        options.page_load_strategy = "eager"
-        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-dev-tools")
+        options.add_argument("--remote-debugging-pipe")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option("useAutomationExtension", False)
+        options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
 
         try:
             service = Service(chromedriver_autoinstaller.install())
             cls.selenium = webdriver.Chrome(service=service, options=options)
-            cls.selenium.set_page_load_timeout(60)
-            cls.selenium.implicitly_wait(60)
+            cls.selenium.set_page_load_timeout(30)
+            cls.selenium.implicitly_wait(30)
         except Exception as e:
             print(f"Error setting up Chrome: {e}")
             raise
 
-    def setUp(self):
-        """Single setUp method combining all setup logic"""
-        super().setUp()
-
-        # Clean up existing test users first
-        User.objects.filter(username__startswith="testuser_").delete()
-
-        # Create test user with unique username using timestamp
-        timestamp = int(time.time())
-        self.user = User.objects.create_user(
-            username=f"testuser_{timestamp}", email=f"testuser_{timestamp}@example.com", password="secret"
-        )
-
-        # Verify email
+    def _ensure_verified_user(self, username: str, email: str, password: str) -> User:
         from allauth.account.models import EmailAddress
 
-        EmailAddress.objects.create(user=self.user, email=self.user.email, verified=True, primary=True)
-
-    def tearDown(self):
-        """Clean up after each test"""
-        # Clean up test users
-        User.objects.filter(username__startswith="testuser_").delete()
-        super().tearDown()
+        user, _ = User.objects.get_or_create(
+            username=username,
+            defaults={"email": email or ""},
+        )
+        if email and user.email != email:
+            user.email = email
+        if password:
+            user.set_password(password)
+        user.save()
+        UserProfile.objects.get_or_create(user=user)
+        if user.email:
+            EmailAddress.objects.update_or_create(
+                user=user,
+                email=user.email,
+                defaults={"verified": True, "primary": True},
+            )
+        return user
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(cls, "selenium"):
-            cls.selenium.quit()
-        super().tearDownClass()
+        cls.selenium.quit()
+        User.objects.filter(username="bugbugbug").delete()
+        super(MySeleniumTests, cls).tearDownClass()
 
     @override_settings(DEBUG=True)
     def test_signup(self):
@@ -156,26 +155,32 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(DEBUG=True)
     def test_login_email(self):
+        user_email = "bugbugbug@bugbug.com"
+        user_name = "bugbugbug"
+        self._ensure_verified_user(user_name, user_email, "secret")
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys(self.user.email)
+        self.selenium.find_element("name", "login").send_keys(user_email)
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         # Check for current header format: @username and separate Points display
-        self.assertIn(f"@{self.user.username.split('_')[0]}", body.text)
+        self.assertIn(f"@{user_name.split('_')[0]}", body.text)
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True)
     def test_login_username(self):
+        user_email = "bugbugbug@bugbug.com"
+        user_name = "bugbugbug"
+        self._ensure_verified_user(user_name, user_email, "secret")
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys(self.user.username)
+        self.selenium.find_element("name", "login").send_keys(user_name)
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         # Check for current header format: @username and separate Points display
-        self.assertIn(f"@{self.user.username.split('_')[0]}", body.text)
+        self.assertIn(f"@{user_name.split('_')[0]}", body.text)
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True, IS_TEST=True)
