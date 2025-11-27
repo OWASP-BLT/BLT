@@ -44,17 +44,40 @@ def get_project_with_least_members():
             .first()
         )
         return project.slack_channel if project else None
-    except (Project.DoesNotExist, AttributeError):
+    except Exception as e:
+        logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
         return None
 
 
-def get_project_examples():
-    """Get formatted project channel examples for the welcome message."""
+def _build_owasp_welcome_message(user_id):
+    """Build the OWASP Slack welcome message with dynamic project examples."""
     least_members_channel = get_project_with_least_members()
     project_examples = "*#project-blt*"
     if least_members_channel:
         project_examples += f" or *#{least_members_channel}*"
-    return project_examples
+
+    return (
+        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
+        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
+        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
+        ":small_blue_diamond: *Get Involved:*\n"
+        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
+        f"• Explore project channels like {project_examples} to dive into specific projects.\n"
+        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
+        ":small_blue_diamond: *Stay Updated:*\n"
+        "• Visit *#newsroom* for the latest updates and announcements.\n"
+        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
+        ":small_blue_diamond: *Connect and Learn:*\n"
+        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
+        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
+        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
+        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
+        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
+        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
+        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
+        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
+        "Welcome aboard! :rocket:"
+    )
 
 
 # Replace GSoC cache with hardcoded project data
@@ -260,32 +283,7 @@ def _handle_team_join(user_id, request):
                 # If no welcome message but it's OWASP workspace
                 if team_id == "T04T40NHX":
                     workspace_client = WebClient(token=SLACK_TOKEN)
-                    least_members_channel = get_project_with_least_members()
-                    project_examples = "*#project-blt*"
-                    if least_members_channel:
-                        project_examples += f" or *#{least_members_channel}*"
-                    welcome_message = (
-                        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-                        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-                        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-                        ":small_blue_diamond: *Get Involved:*\n"
-                        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                        f"• Explore project channels like {project_examples} to dive into specific projects.\n"
-                        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-                        ":small_blue_diamond: *Stay Updated:*\n"
-                        "• Visit *#newsroom* for the latest updates and announcements.\n"
-                        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-                        ":small_blue_diamond: *Connect and Learn:*\n"
-                        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-                        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-                        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-                        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-                        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-                        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-                        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-                        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-                        "Welcome aboard! :rocket:"
-                    )
+                    welcome_message = _build_owasp_welcome_message(user_id)
                 else:
                     workspace_client = WebClient(token=slack_integration.bot_access_token)
                     welcome_message = (
@@ -299,32 +297,7 @@ def _handle_team_join(user_id, request):
             if team_id == "T04T40NHX":
                 workspace_client = WebClient(token=SLACK_TOKEN)
                 # Use the default OWASP welcome message
-                least_members_channel = get_project_with_least_members()
-                project_examples = "*#project-blt*"
-                if least_members_channel:
-                    project_examples += f" or *#{least_members_channel}*"
-                welcome_message = (
-                    f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-                    "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-                    "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-                    ":small_blue_diamond: *Get Involved:*\n"
-                    "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                    f"• Explore project channels like {project_examples} to dive into specific projects.\n"
-                    "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-                    ":small_blue_diamond: *Stay Updated:*\n"
-                    "• Visit *#newsroom* for the latest updates and announcements.\n"
-                    "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-                    ":small_blue_diamond: *Connect and Learn:*\n"
-                    "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-                    "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-                    "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-                    "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-                    "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-                    "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-                    "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-                    "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-                    "Welcome aboard! :rocket:"
-                )
+                welcome_message = _build_owasp_welcome_message(user_id)
             else:
                 return
 
