@@ -19,43 +19,52 @@
         <div class="container py-6 mx-auto px-14 max-w-[1300px]">
             <!-- Stats Overview - Made more compact -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 max-w-6xl mx-auto">
-                <div class="flex flex-wrap gap-8">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Total Projects</h3>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_projects }}</p>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Total Repositories</h3>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_repos }}</p>
-                    </div>
-                    {% if filtered_count is not None %}
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex flex-wrap gap-8">
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Filtered Results</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ filtered_count }}</p>
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Total Projects</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_projects }}</p>
                         </div>
-                    {% endif %}
-                    {% if user.is_authenticated %}
-                        <button type="button"
-                                onclick="openAddProjectModal()"
-                                class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transform hover:scale-105 transition-all duration-200 font-medium flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add New Project
-                        </button>
-                    {% else %}
-                        <button type="button"
-                                disabled
-                                class="px-6 py-3 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed flex items-center gap-2 group relative">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add New Project
-                            <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 dark:bg-gray-100 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                Please login to add a new project
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Total Repositories</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_repos }}</p>
+                        </div>
+                        {% if filtered_count is not None %}
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+                                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Filtered Results</h3>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ filtered_count }}</p>
                             </div>
-                        </button>
-                    {% endif %}
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            <button type="button"
+                                    onclick="openAddProjectModal()"
+                                    class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transform hover:scale-105 transition-all duration-200 font-medium flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add New Project
+                            </button>
+                        {% else %}
+                            <button type="button"
+                                    disabled
+                                    class="px-6 py-3 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed flex items-center gap-2 group relative">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add New Project
+                                <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 dark:bg-gray-100 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    Please login to add a new project
+                                </div>
+                            </button>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'project_compact_list' %}"
+                       class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Compact View
+                    </a>
                 </div>
             </div>
             <!-- Filter Section - More compact -->
