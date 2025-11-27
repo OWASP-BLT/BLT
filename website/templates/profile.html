@@ -58,29 +58,31 @@
                 {% endif %}
             </div>
             {% if recommendation_blurb %}
-                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-200">
-                            <i class="fas fa-info-circle"></i> {% trans "About" %}
-                        </h3>
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 shadow-sm">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-user-circle text-blue-600 dark:text-blue-400 text-lg"></i>
+                            <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">{% trans "About" %}</h3>
+                        </div>
                         {% if request.user == user %}
                             <a href="{% url 'edit_recommendation_blurb' %}"
-                               class="text-xs text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-edit"></i> {% trans "Edit" %}
+                               class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                                <i class="fas fa-edit text-xs"></i> {% trans "Edit" %}
                             </a>
                         {% endif %}
                     </div>
-                    <p class="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{{ recommendation_blurb }}</p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{{ recommendation_blurb }}</p>
                 </div>
             {% elif request.user == user %}
-                <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <div class="flex items-center justify-between">
+                <div class="bg-gray-50 dark:bg-gray-800/50 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-200">
+                    <div class="flex flex-col items-center justify-center text-center gap-2">
+                        <i class="fas fa-info-circle text-gray-400 dark:text-gray-500 text-xl"></i>
                         <p class="text-sm text-gray-600 dark:text-gray-400">
-                            <i class="fas fa-info-circle"></i> {% trans "Add an 'About' section to help others understand your expertise" %}
+                            {% trans "Add an 'About' section to help others understand your expertise and background" %}
                         </p>
                         <a href="{% url 'edit_recommendation_blurb' %}"
-                           class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                            <i class="fas fa-plus"></i> {% trans "Add" %}
+                           class="mt-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200 flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30">
+                            <i class="fas fa-plus-circle"></i> {% trans "Add About Section" %}
                         </a>
                     </div>
                 </div>
@@ -580,6 +582,42 @@
                 </div>
             </div>
             <div class="flex flex-col gap-3">
+                <!-- Recommendation Blurb in Main Content (Better Visibility) -->
+                {% if recommendation_blurb %}
+                    <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-l-4 border-blue-500 dark:border-blue-400 rounded-lg p-5 shadow-sm">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-user-circle text-blue-600 dark:text-blue-400 text-xl"></i>
+                                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">{% trans "About" %}</h2>
+                            </div>
+                            {% if request.user == user %}
+                                <a href="{% url 'edit_recommendation_blurb' %}"
+                                   class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200 flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                                    <i class="fas fa-edit text-xs"></i> {% trans "Edit" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                        <p class="text-base text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                            {{ recommendation_blurb }}
+                        </p>
+                    </div>
+                {% elif request.user == user %}
+                    <div class="bg-gray-50 dark:bg-gray-800/50 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-5 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200">
+                        <div class="flex flex-col items-center justify-center text-center gap-3">
+                            <i class="fas fa-info-circle text-gray-400 dark:text-gray-500 text-2xl"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{% trans "Add an 'About' section" %}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    {% trans "Help others understand your expertise and background" %}
+                                </p>
+                            </div>
+                            <a href="{% url 'edit_recommendation_blurb' %}"
+                               class="mt-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-blue-300 dark:border-blue-700">
+                                <i class="fas fa-plus-circle"></i> {% trans "Add About Section" %}
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="flex items-center justify-between">
                     <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">
                         <span>{% trans "Recommendations" %}</span>
