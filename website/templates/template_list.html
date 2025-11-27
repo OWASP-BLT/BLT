@@ -16,10 +16,10 @@
                            name="search"
                            value="{{ search_query }}"
                            placeholder="Search templates..."
-                           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#e74c3c]">
+                           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#e74c3c] bg-white dark:bg-gray-900">
                     <!-- Filter Dropdown -->
                     <select name="filter"
-                            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#e74c3c]">
+                            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#e74c3c] bg-white dark:bg-gray-900">
                         {% for option in filter_options %}
                             <option value="{{ option.value }}"
                                     {% if filter_by == option.value %}selected{% endif %}>{{ option.label }}</option>

@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -11,9 +12,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
-from django.db.models.functions import ExtractMonth
+from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -29,14 +30,17 @@ from website.models import (
     HuntPrize,
     Integration,
     IntegrationServices,
+    InviteOrganization,
     Issue,
     IssueScreenshot,
     Organization,
     OrganizationAdmin,
+    Points,
     SlackIntegration,
     Winner,
 )
 from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
+from website.views.core import SAMPLE_INVITE_EMAIL_PATTERN
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -133,7 +137,28 @@ def dashboard_view(request, *args, **kwargs):
 
 class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, "organization/register_organization.html")
+        recent_organizations = Organization.objects.filter(is_active=True).order_by("-created")[:5]
+        context = {"recent_organizations": recent_organizations}
+
+        # Handle referral code parameter
+        ref_code = request.GET.get("ref")
+        if ref_code:
+            try:
+                # Validate that ref_code is a valid UUID
+                uuid.UUID(ref_code)
+                # Verify the referral code exists in the database
+                if not InviteOrganization.objects.filter(referral_code=ref_code, points_awarded=False).exists():
+                    messages.warning(request, "Invalid or expired referral code.")
+                    request.session.pop("org_ref", None)
+                    return render(request, "organization/register_organization.html", context)
+            except (ValueError, AttributeError):
+                messages.warning(request, "Invalid referral code.")
+                request.session.pop("org_ref", None)
+                return render(request, "organization/register_organization.html", context)
+            request.session["org_ref"] = ref_code
+            request.session.modified = True
+
+        return render(request, "organization/register_organization.html", context)
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -149,6 +174,9 @@ class RegisterOrganizationView(View):
 
         organization_name = data.get("organization_name", "")
         organization_url = data.get("organization_url", "")
+        support_email = data.get("support_email", "")
+        twitter_url = data.get("twitter_url", "")
+        facebook_url = data.get("facebook_url", "")
 
         if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
             messages.error(request, "organization name is invalid or already exists.")
@@ -156,6 +184,11 @@ class RegisterOrganizationView(View):
 
         if organization_url == "" or Organization.objects.filter(url=organization_url).exists():
             messages.error(request, "organization URL is invalid or already exists.")
+            return redirect("register_organization")
+
+        # Database constraint set to 255 char
+        if len(organization_url) > 255:
+            messages.error(request, "Organization URL is too long (maximum 255 characters).")
             return redirect("register_organization")
 
         organization_logo = request.FILES.get("logo")
@@ -172,10 +205,10 @@ class RegisterOrganizationView(View):
                 organization = Organization.objects.create(
                     admin=user,
                     name=organization_name,
-                    url=data["organization_url"],
-                    email=data["support_email"],
-                    twitter=data.get("twitter_url", ""),
-                    facebook=data.get("facebook_url", ""),
+                    url=organization_url,
+                    email=support_email,
+                    twitter=twitter_url,
+                    facebook=facebook_url,
                     logo=logo_path,
                     is_active=True,
                 )
@@ -185,13 +218,105 @@ class RegisterOrganizationView(View):
                 organization.managers.set(managers)
                 organization.save()
 
+                ref_code = request.session.get("org_ref")
+                success_message = "Organization registered successfully."
+
+                # Validate and process referral if present
+                if ref_code:
+                    referral_succeeded = False
+                    referral_error_type = None
+                    try:
+                        invite = InviteOrganization.objects.select_for_update().get(
+                            referral_code=ref_code, points_awarded=False
+                        )
+                        if not invite.sender:
+                            raise ValueError("Invalid invite sender")
+                        if re.match(SAMPLE_INVITE_EMAIL_PATTERN, invite.email):
+                            raise ValueError("Sample referral links cannot be used for registration")
+
+                        # Award points
+                        Points.objects.create(
+                            user=invite.sender,
+                            score=5,
+                            reason=f"Organization invite referral: {organization.name}",
+                        )
+                        invite.points_awarded = True
+                        invite.organization = organization
+                        invite.save()
+                        referral_succeeded = True
+                        success_message = f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral."
+                    except InviteOrganization.DoesNotExist as e:
+                        referral_error_type = type(e).__name__
+                        logger.warning(f"Referral code {ref_code} not found or already used")
+                    except ValueError as e:
+                        referral_error_type = type(e).__name__
+                        logger.warning(f"Invalid referral: {e}")
+                    except IntegrityError as e:
+                        referral_error_type = type(e).__name__
+                        logger.exception(f"Database integrity error processing referral: {e}")
+                    except DatabaseError as e:
+                        referral_error_type = type(e).__name__
+                        logger.exception("Database error processing referral code")
+                    except Exception as e:
+                        referral_error_type = type(e).__name__
+                        logger.exception("Failed to process referral code during organization registration")
+                    finally:
+                        request.session.pop("org_ref", None)
+
+                    if not referral_succeeded:
+                        error_detail = referral_error_type if referral_error_type else "Unknown error"
+                        messages.warning(
+                            request,
+                            f"Referral code could not be applied ({error_detail}), but your organization was created successfully.",
+                        )
+                else:
+                    request.session.pop("org_ref", None)
+
+                messages.success(request, success_message)
+
         except ValidationError as e:
-            messages.error(request, f"Error saving organization: {e}")
+            # Construct a more specific error message based on validation errors
+            error_messages = []
+
+            if hasattr(e, "message_dict"):
+                # Field-specific validation errors
+                for field, messages_list in e.message_dict.items():
+                    if field == "name":
+                        error_messages.append("Organization name is invalid or already exists.")
+                    elif field == "url":
+                        error_messages.append("Organization URL is invalid or already exists.")
+                    elif field == "email":
+                        error_messages.append("Support email address is invalid.")
+                    else:
+                        error_messages.append(f"Invalid {field.replace('_', ' ')}: {', '.join(messages_list)}")
+            elif hasattr(e, "messages"):
+                # General validation errors
+                error_messages.extend(e.messages)
+            else:
+                # Fallback to generic message
+                error_messages.append(
+                    "Please check that all required fields are filled correctly and the organization name/URL are unique."
+                )
+
+            # Display all error messages
+            for error_msg in error_messages:
+                messages.error(request, error_msg)
+
+            if logo_path:
+                default_storage.delete(logo_path)
+            return render(request, "organization/register_organization.html")
+        except Exception as e:
+            if "value too long" in str(e):
+                messages.error(
+                    request,
+                    "One of the entered values is too long. Please check that all URLs and text fields are within the allowed length limits.",
+                )
+            else:
+                messages.error(request, f"Error creating organization: {e}")
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
 
-        messages.success(request, "organization registered successfully.")
         return redirect("organization_detail", slug=organization.slug)
 
 
@@ -449,6 +574,204 @@ class OrganizationDashboardAnalyticsView(View):
             "zipped_data": zip(labels, data),
         }
 
+    def get_network_traffic_data(self, organization):
+        """Collects and analyzes network traffic data for the organization."""
+        # Get current date for time-based analysis
+        current_date = timezone.now().date()
+
+        # Define time periods for analysis
+        last_day = current_date - timedelta(days=1)
+        last_week = current_date - timedelta(days=7)
+        last_month = current_date - timedelta(days=30)
+
+        # Get server-related issues (focusing on performance and server down issues)
+        server_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label__in=[3, 7],  # Performance (3) and Server Down (7) labels
+        )
+
+        # Calculate daily traffic patterns (last 30 days)
+        daily_traffic = (
+            server_issues.filter(created__gte=last_month)
+            .annotate(day=TruncDay("created"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+
+        # Format data for Chart.js
+        traffic_dates = []
+        traffic_counts = []
+        for entry in daily_traffic:
+            traffic_dates.append(entry["day"].strftime("%Y-%m-%d"))
+            traffic_counts.append(entry["count"])
+
+        # Calculate response time metrics (using closed_date - created as proxy for response time)
+        resolved_issues = server_issues.filter(status="closed", closed_date__isnull=False)
+
+        avg_response_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+
+        # Calculate error rates by domain
+        domain_error_rates = (
+            server_issues.values("domain__name").annotate(error_count=Count("id")).order_by("-error_count")
+        )
+
+        # Get hourly distribution of issues
+        hourly_distribution = (
+            server_issues.annotate(hour=ExtractHour("created"))
+            .values("hour")
+            .annotate(count=Count("id"))
+            .order_by("hour")
+        )
+
+        hours = []
+        hourly_counts = []
+        for entry in hourly_distribution:
+            hours.append(entry["hour"])
+            hourly_counts.append(entry["count"])
+
+        # Calculate peak traffic times
+        peak_hour = 0
+        peak_count = 0
+        if hourly_counts:
+            peak_hour = hours[hourly_counts.index(max(hourly_counts))]
+            peak_count = max(hourly_counts)
+
+        # Calculate recent traffic metrics
+        day_count = server_issues.filter(created__gte=last_day).count()
+        week_count = server_issues.filter(created__gte=last_week).count()
+        month_count = server_issues.filter(created__gte=last_month).count()
+
+        # Calculate week-over-week change
+        prev_week_count = server_issues.filter(
+            created__gte=last_week - timedelta(days=7), created__lt=last_week
+        ).count()
+
+        if prev_week_count == 0:
+            week_over_week_change = 100 if week_count > 0 else 0
+        else:
+            week_over_week_change = ((week_count - prev_week_count) / prev_week_count) * 100
+
+        return {
+            "traffic_dates": json.dumps(traffic_dates),
+            "traffic_counts": json.dumps(traffic_counts),
+            "avg_response_time": avg_response_time,
+            "domain_error_rates": domain_error_rates[:5],  # Top 5 domains with errors
+            "hours": json.dumps(hours),
+            "hourly_counts": json.dumps(hourly_counts),
+            "peak_hour": peak_hour,
+            "peak_count": peak_count,
+            "day_count": day_count,
+            "week_count": week_count,
+            "month_count": month_count,
+            "week_over_week_change": week_over_week_change,
+            "is_traffic_increasing": week_over_week_change >= 0,
+        }
+
+    def get_compliance_monitoring(self, organization):
+        """Collects compliance monitoring data for the organization."""
+        # Get all domains for the organization
+        domains = Domain.objects.filter(organization__id=organization)
+        total_domains = domains.count()
+
+        # Security.txt compliance
+        domains_with_security_txt = domains.filter(has_security_txt=True).count()
+        security_txt_compliance = (domains_with_security_txt / total_domains * 100) if total_domains > 0 else 0
+
+        # Issue resolution compliance (SLA: resolve security issues within 30 days)
+        security_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label=4,  # Security label
+        )
+
+        resolved_security_issues = security_issues.filter(status="closed", closed_date__isnull=False)
+
+        # Calculate issues resolved within 30 days
+        compliant_resolutions = 0
+        for issue in resolved_security_issues:
+            if issue.closed_date and issue.created:
+                resolution_time = (issue.closed_date - issue.created).days
+                if resolution_time <= 30:
+                    compliant_resolutions += 1
+
+        total_resolved = resolved_security_issues.count()
+        resolution_compliance = (compliant_resolutions / total_resolved * 100) if total_resolved > 0 else 0
+
+        # Open security issues older than 30 days (compliance risk)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        overdue_security_issues = security_issues.filter(
+            created__lt=thirty_days_ago, status__in=["open", "in_progress"]
+        ).count()
+
+        # Overall compliance score (weighted average)
+        # 40% security.txt, 40% resolution compliance, 20% no overdue issues
+        overdue_compliance = 100 if overdue_security_issues == 0 else max(0, 100 - (overdue_security_issues * 10))
+        overall_compliance = security_txt_compliance * 0.4 + resolution_compliance * 0.4 + overdue_compliance * 0.2
+
+        # Domain-level compliance status
+        domain_compliance = []
+        for domain in domains[:10]:  # Top 10 domains
+            domain_security_issues = security_issues.filter(domain=domain)
+            domain_overdue = domain_security_issues.filter(
+                created__lt=thirty_days_ago, status__in=["open", "in_progress"]
+            ).count()
+
+            domain_status = "compliant"
+            if domain_overdue > 5:
+                domain_status = "critical"
+            elif domain_overdue > 2:
+                domain_status = "warning"
+            elif not domain.has_security_txt:
+                domain_status = "warning"
+
+            domain_compliance.append(
+                {
+                    "name": domain.name,
+                    "has_security_txt": domain.has_security_txt,
+                    "overdue_issues": domain_overdue,
+                    "status": domain_status,
+                }
+            )
+
+        # Compliance metrics over time (last 6 months)
+        monthly_compliance = []
+        for i in range(6):
+            month_start = timezone.now() - timedelta(days=30 * (i + 1))
+            month_end = timezone.now() - timedelta(days=30 * i)
+
+            month_issues = security_issues.filter(created__gte=month_start, created__lt=month_end)
+            month_resolved = month_issues.filter(status="closed", closed_date__isnull=False)
+
+            month_compliant = 0
+            for issue in month_resolved:
+                if issue.closed_date and issue.created:
+                    resolution_time = (issue.closed_date - issue.created).days
+                    if resolution_time <= 30:
+                        month_compliant += 1
+
+            month_total = month_resolved.count()
+            month_compliance_rate = (month_compliant / month_total * 100) if month_total > 0 else 100
+
+            monthly_compliance.insert(
+                0, {"month": month_start.strftime("%b"), "compliance_rate": round(month_compliance_rate, 1)}
+            )
+
+        return {
+            "overall_compliance": round(overall_compliance, 1),
+            "security_txt_compliance": round(security_txt_compliance, 1),
+            "resolution_compliance": round(resolution_compliance, 1),
+            "total_domains": total_domains,
+            "domains_with_security_txt": domains_with_security_txt,
+            "overdue_security_issues": overdue_security_issues,
+            "total_security_issues": security_issues.count(),
+            "compliant_resolutions": compliant_resolutions,
+            "total_resolved": total_resolved,
+            "domain_compliance": domain_compliance,
+            "monthly_compliance": monthly_compliance,
+            "monthly_compliance_labels": json.dumps([m["month"] for m in monthly_compliance]),
+            "monthly_compliance_data": json.dumps([m["compliance_rate"] for m in monthly_compliance]),
+        }
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # For authenticated users, show all organizations they have access to
@@ -480,6 +803,8 @@ class OrganizationDashboardAnalyticsView(View):
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
             "security_incidents_summary": self.get_security_incidents_summary(id),
+            "network_traffic_data": self.get_network_traffic_data(id),
+            "compliance_monitoring": self.get_compliance_monitoring(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
@@ -1401,8 +1726,12 @@ class OrganizationDashboardManageRolesView(View):
         # Handle both with and without scheme
         if "://" not in organization_url:
             organization_url = f"https://{organization_url}"
-        parsed_url = urlparse(organization_url)
-        organization_domain = parsed_url.netloc.replace("www.", "").strip()
+        try:
+            parsed_url = urlparse(organization_url)
+            organization_domain = parsed_url.netloc.replace("www.", "").strip()
+        except (TypeError, ValueError):
+            logger.warning(f"Failed to parse organization URL: {organization_obj.url}")
+            organization_domain = ""
 
         # Try to get users matching organization email domain
         if organization_domain:
@@ -1522,6 +1851,11 @@ class OrganizationDashboardManageRolesView(View):
 
                 if existing_role:
                     messages.error(request, f"{user.username} already has an active role in this organization")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Prevent assigning role to organization owner
+                if user == organization_obj.admin:
+                    messages.error(request, "Cannot assign role to organization owner (already has full access)")
                     return redirect("organization_manage_roles", id=id)
 
                 # Check if user is trying to assign themselves
@@ -2108,3 +2442,301 @@ def check_domain_security_txt(request):
         return redirect("organization_manage_domains", id=domain.organization.id)
     else:
         return redirect("organization_manage_domains", id=request.user.userprofile.team.id)
+
+
+# Job Board Views
+
+
+class OrganizationDashboardManageJobsView(View):
+    """View for managing organization job postings"""
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        from website.models import Job
+
+        # For authenticated users, show organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+        else:
+            organizations = []
+
+        # Get the organization object
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
+
+        # Get all jobs for this organization
+        jobs = Job.objects.filter(organization=organization_obj).order_by("-created_at")
+
+        # Apply search and filters
+        search_query = request.GET.get("q", "")
+        status_filter = request.GET.get("status", "")
+        job_type_filter = request.GET.get("type", "")
+        visibility_filter = request.GET.get("visibility", "")
+
+        if search_query:
+            jobs = jobs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+
+        if status_filter:
+            jobs = jobs.filter(status=status_filter)
+
+        if job_type_filter:
+            jobs = jobs.filter(job_type=job_type_filter)
+
+        if visibility_filter:
+            if visibility_filter == "public":
+                jobs = jobs.filter(is_public=True)
+            elif visibility_filter == "private":
+                jobs = jobs.filter(is_public=False)
+
+        # Get statistics (from all jobs, not filtered)
+        all_jobs = Job.objects.filter(organization=organization_obj)
+        total_jobs = all_jobs.count()
+        active_jobs = all_jobs.filter(status="active").count()
+        draft_jobs = all_jobs.filter(status="draft").count()
+        public_jobs = all_jobs.filter(is_public=True).count()
+        total_views = all_jobs.aggregate(total=Sum("views_count"))["total"] or 0
+
+        context = {
+            "organization": id,
+            "organizations": organizations,
+            "organization_obj": organization_obj,
+            "jobs": jobs,
+            "total_jobs": total_jobs,
+            "active_jobs": active_jobs,
+            "draft_jobs": draft_jobs,
+            "public_jobs": public_jobs,
+            "total_views": total_views,
+            "search_query": search_query,
+            "status_filter": status_filter,
+            "job_type_filter": job_type_filter,
+            "visibility_filter": visibility_filter,
+        }
+
+        return render(request, "organization/dashboard/organization_manage_jobs.html", context)
+
+
+@login_required
+def create_job(request, id):
+    """Create a new job posting for the organization"""
+    from website.forms import JobForm
+
+    # Get organization and verify access
+    organization = get_object_or_404(Organization, id=id)
+
+    # Check if user is admin or manager
+    is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+    if not is_member:
+        messages.error(request, "You do not have permission to create jobs for this organization.")
+        return redirect("home")
+
+    if request.method == "POST":
+        form = JobForm(request.POST)
+        if form.is_valid():
+            job = form.save(commit=False)
+            job.organization = organization
+            job.posted_by = request.user
+            job.save()
+            messages.success(request, f"Job '{job.title}' has been created successfully!")
+            return redirect("organization_manage_jobs", id=id)
+    else:
+        form = JobForm()
+
+    # Get organizations for sidebar
+    if request.user.is_authenticated:
+        organizations = (
+            Organization.objects.values("name", "id")
+            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+            .distinct()
+        )
+    else:
+        organizations = []
+
+    context = {
+        "form": form,
+        "organization": id,
+        "organization_obj": organization,
+        "organizations": organizations,
+    }
+
+    return render(request, "organization/dashboard/create_job.html", context)
+
+
+@login_required
+def edit_job(request, id, job_id):
+    """Edit an existing job posting"""
+    from website.forms import JobForm
+    from website.models import Job
+
+    # Get organization and job
+    organization = get_object_or_404(Organization, id=id)
+    job = get_object_or_404(Job, id=job_id, organization=organization)
+
+    # Check permissions
+    is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+    if not is_member:
+        messages.error(request, "You do not have permission to edit this job.")
+        return redirect("home")
+
+    if request.method == "POST":
+        form = JobForm(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Job '{job.title}' has been updated successfully!")
+            return redirect("organization_manage_jobs", id=id)
+    else:
+        form = JobForm(instance=job)
+
+    # Get organizations for sidebar
+    if request.user.is_authenticated:
+        organizations = (
+            Organization.objects.values("name", "id")
+            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+            .distinct()
+        )
+    else:
+        organizations = []
+
+    context = {
+        "form": form,
+        "job": job,
+        "organization": id,
+        "organization_obj": organization,
+        "organizations": organizations,
+        "is_edit": True,
+    }
+
+    return render(request, "organization/dashboard/create_job.html", context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_job(request, id, job_id):
+    """Delete a job posting"""
+    from website.models import Job
+
+    organization = get_object_or_404(Organization, id=id)
+    job = get_object_or_404(Job, id=job_id, organization=organization)
+
+    # Check permissions
+    is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+    if not is_member:
+        messages.error(request, "You do not have permission to delete this job.")
+        return redirect("home")
+
+    job_title = job.title
+    job.delete()
+    messages.success(request, f"Job '{job_title}' has been deleted successfully!")
+
+    return redirect("organization_manage_jobs", id=id)
+
+
+@login_required
+@require_http_methods(["POST"])
+def toggle_job_status(request, id, job_id):
+    """Toggle job status between active and paused"""
+    from website.models import Job
+
+    organization = get_object_or_404(Organization, id=id)
+    job = get_object_or_404(Job, id=job_id, organization=organization)
+
+    # Check permissions
+    is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+    if not is_member:
+        return JsonResponse({"success": False, "message": "Permission denied"})
+
+    # Toggle between active and paused
+    if job.status == "active":
+        job.status = "paused"
+    elif job.status == "paused":
+        job.status = "active"
+
+    job.save(update_fields=["status"])
+
+    return JsonResponse({"success": True, "status": job.status})
+
+
+def public_job_list(request):
+    """Public view showing all active public jobs"""
+    from django.utils import timezone
+
+    from website.models import Job
+
+    # Get all public and active jobs that haven't expired
+    jobs = (
+        Job.objects.filter(is_public=True, status="active")
+        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+        .select_related("organization")
+        .order_by("-created_at")
+    )
+
+    # Search functionality
+    search_query = request.GET.get("q", "")
+    if search_query:
+        jobs = jobs.filter(
+            Q(title__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(location__icontains=search_query)
+            | Q(organization__name__icontains=search_query)
+        )
+
+    # Filter by job type
+    job_type = request.GET.get("type", "")
+    if job_type:
+        jobs = jobs.filter(job_type=job_type)
+
+    # Filter by location
+    location = request.GET.get("location", "")
+    if location:
+        jobs = jobs.filter(location__icontains=location)
+
+    context = {
+        "jobs": jobs,
+        "search_query": search_query,
+        "job_type_filter": job_type,
+        "location_filter": location,
+    }
+
+    return render(request, "jobs/public_job_list.html", context)
+
+
+def job_detail(request, pk):
+    """Public view for a single job posting; org members can see all their jobs"""
+    from django.http import Http404
+
+    from website.models import Job
+
+    job = get_object_or_404(Job, pk=pk)
+
+    # Check if user is org member (admin or manager)
+    is_org_member = False
+    if request.user.is_authenticated:
+        is_org_member = (
+            job.organization.admin == request.user or job.organization.managers.filter(id=request.user.id).exists()
+        )
+
+    # Public users can only see active, public, non-expired jobs
+    if not is_org_member:
+        from django.utils import timezone
+
+        is_expired = job.expires_at and job.expires_at < timezone.now()
+        if not job.is_public or job.status != "active" or is_expired:
+            raise Http404("Job not found")
+
+    # Increment view count
+    job.increment_views()
+
+    context = {
+        "job": job,
+    }
+
+    return render(request, "jobs/job_detail.html", context)

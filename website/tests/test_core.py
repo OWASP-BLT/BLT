@@ -113,6 +113,124 @@ class ForumTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, comment_data["content"])
 
+    def test_forum_post_with_repo_link(self):
+        # Create a test repo
+        from website.models import Organization, Project
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+        repo = Repo.objects.create(
+            name="Test Repo", description="Test repo desc", repo_url="https://github.com/test/repo"
+        )
+
+        # Create a forum post with repo link
+        post_data = {
+            "title": "Test Post with Repo",
+            "category": self.category.id,
+            "description": "Test Description with repo link",
+            "repo": repo.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Verify post has repo link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.repo)
+        self.assertEqual(post.repo.id, repo.id)
+
+    def test_forum_post_with_project_link(self):
+        # Create a test project
+        from website.models import Project
+
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+
+        # Create a forum post with project link
+        post_data = {
+            "title": "Test Post with Project",
+            "category": self.category.id,
+            "description": "Test Description with project link",
+            "project": project.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Verify post has project link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.project)
+        self.assertEqual(post.project.id, project.id)
+
+    def test_forum_post_with_organization_link(self):
+        # Create a test organization
+        from website.models import Organization
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+
+        # Create a forum post with organization link
+        post_data = {
+            "title": "Test Post with Organization",
+            "category": self.category.id,
+            "description": "Test Description with organization link",
+            "organization": organization.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Verify post has organization link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.organization)
+        self.assertEqual(post.organization.id, organization.id)
+
+    def test_forum_post_with_all_links(self):
+        # Create test entities
+        from website.models import Organization, Project
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+        repo = Repo.objects.create(
+            name="Test Repo", description="Test repo desc", repo_url="https://github.com/test/repo"
+        )
+
+        # Create a forum post with all links
+        post_data = {
+            "title": "Test Post with All Links",
+            "category": self.category.id,
+            "description": "Test Description with all links",
+            "repo": repo.id,
+            "project": project.id,
+            "organization": organization.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Verify post has all links
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.repo)
+        self.assertIsNotNone(post.project)
+        self.assertIsNotNone(post.organization)
+        self.assertEqual(post.repo.id, repo.id)
+        self.assertEqual(post.project.id, project.id)
+        self.assertEqual(post.organization.id, organization.id)
+
 
 class TopEarnersTests(TestCase):
     def setUp(self):

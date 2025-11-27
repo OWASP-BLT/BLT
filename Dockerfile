@@ -21,10 +21,12 @@ RUN apt-get update && \
 #     ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
 
 # Install Chromium (works on all architectures)
-RUN apt-get update && \
-    apt-get install -y chromium && \
-    ln -sf /usr/bin/chromium /usr/local/bin/google-chrome && \
-    rm -rf /var/lib/apt/lists/*
+# Retry logic with --fix-missing for transient network errors
+RUN apt-get update \
+    && apt-get install -y --fix-missing chromium \
+    || (apt-get update && apt-get install -y --fix-missing chromium) \
+    && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry and dependencies
 RUN pip install poetry
@@ -59,10 +61,10 @@ RUN apt-get update && \
 COPY . /blt
 
 # Convert line endings and set permissions
-RUN dos2unix Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
+RUN dos2unix Dockerfile docker-compose.yml scripts/entrypoint.sh ./blt/settings.py
 # Check if .env exists and run dos2unix on it, otherwise skip
 RUN if [ -f /blt/.env ]; then dos2unix /blt/.env; fi
-RUN chmod +x /blt/entrypoint.sh
+RUN chmod +x /blt/scripts/entrypoint.sh
 
-ENTRYPOINT ["/blt/entrypoint.sh"]
+ENTRYPOINT ["/blt/scripts/entrypoint.sh"]
 CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]

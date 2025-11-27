@@ -56,6 +56,7 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
+from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
     IP,
@@ -803,6 +804,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
     fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
     template_name = "report.html"
 
+    # Duplicate detection threshold - can be adjusted without code changes
+    DUPLICATE_CHECK_THRESHOLD = 0.65
+
     def get_initial(self):
         try:
             json_data = json.loads(self.request.body)
@@ -986,6 +990,72 @@ class IssueCreate(IssueBaseCreate, CreateView):
             messages.error(self.request, "You have reached your issue creation limit for today.")
             return render(self.request, "report.html", {"form": self.get_form()})
         form.instance.reporter_ip_address = reporter_ip
+
+        # Check for duplicate bugs before creating the issue
+        url = form.cleaned_data.get("url", "")
+        title = form.cleaned_data.get("description", "")  # This is the bug title
+        markdown_description = form.cleaned_data.get("markdown_description", "")
+
+        # Combine title and detailed description for better duplicate detection
+        full_description = title
+        if markdown_description:
+            full_description = f"{title}. {markdown_description}"
+
+        # Only check for duplicates if we have both URL and title
+        if url and title:
+            # Add https:// if not present for duplicate checking
+            check_url = url if url.startswith(("http://", "https://")) else f"https://{url}"
+
+            try:
+                # Get domain object if available for more accurate matching
+                parsed_url = urlparse(check_url)
+                clean_domain = parsed_url.netloc.replace("www.", "").lower()
+                domain_obj = Domain.objects.filter(Q(name__iexact=clean_domain) | Q(url__iexact=clean_domain)).first()
+
+                duplicate_result = check_for_duplicates(
+                    check_url,
+                    full_description,  # Use combined title + description
+                    domain=domain_obj,
+                    threshold=self.DUPLICATE_CHECK_THRESHOLD,
+                )
+
+                if duplicate_result["is_duplicate"] and duplicate_result["confidence"] in ["high", "medium"]:
+                    # Check if user wants to proceed anyway
+                    if not self.request.POST.get("confirm_not_duplicate"):
+                        # Store similar bugs for display using shared helper
+                        similar_bugs_data = []
+                        for bug in duplicate_result["similar_bugs"][:5]:
+                            try:
+                                similar_bugs_data.append(format_similar_bug(bug, truncate_description=200))
+                            except (KeyError, AttributeError, ValueError, TypeError) as e:
+                                logger.warning("Error formatting similar bug: %s", e)
+                                continue
+
+                        if similar_bugs_data:
+                            messages.warning(
+                                self.request,
+                                f"Similar bugs found ({duplicate_result['confidence']} confidence). Please review them before submitting.",
+                            )
+                            captcha_form = CaptchaForm(self.request.POST)
+                            return render(
+                                self.request,
+                                "report.html",
+                                {
+                                    "form": self.get_form(),
+                                    "captcha_form": captcha_form,
+                                    "similar_bugs": similar_bugs_data,
+                                    "duplicate_confidence": duplicate_result["confidence"],
+                                    "show_duplicate_warning": True,
+                                },
+                            )
+            except (KeyError, AttributeError, ValueError, TypeError) as e:
+                # If duplicate check fails, log it but don't block submission
+                logger.warning(
+                    "Duplicate check failed for URL %s: %s. Proceeding with submission.",
+                    url,
+                    e,
+                    exc_info=True,
+                )
 
         @atomic
         def create_issue(self, form):
@@ -1594,7 +1664,7 @@ class IssueView(DetailView):
             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
+        ipdetails.user = self.request.user.username if self.request.user.is_authenticated else None
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
         ipdetails.path = request.path
@@ -1603,22 +1673,22 @@ class IssueView(DetailView):
 
         try:
             if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
+                # Check if IP record already exists for this authenticated user and issue
+                if not IP.objects.filter(user=self.request.user.username, issuenumber=self.object.id).exists():
+                    # First time this user is viewing this issue
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
             else:
-                try:
-                    objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
+                # Check if IP record already exists for this address and issue
+                if not IP.objects.filter(address=get_client_ip(request), issuenumber=self.object.id).exists():
+                    # First time this IP is viewing this issue
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-                except Exception as e:
-                    logger.error(f"Error: {e}")
-                    pass  # pass this temporarly to avoid error
         except Exception as e:
-            pass  # pass this temporarly to avoid error
+            logger.error(f"Error tracking IP view for issue {self.object.id}: {e}")
+            pass  # Continue loading the page even if view tracking fails
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -1632,9 +1702,18 @@ class IssueView(DetailView):
             context["os_version"] = user_agent.os.version_string
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
-        context["total_score"] = list(
-            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
-        )[0]
+
+        # Calculate user's total score
+        # Both total_score and users_score are set for backward compatibility
+        if self.object.user:
+            total_score = (
+                Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score"))["total_score"] or 0
+            )
+            context["total_score"] = total_score
+            context["users_score"] = total_score
+        else:
+            context["total_score"] = 0
+            context["users_score"] = 0
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1651,6 +1730,26 @@ class IssueView(DetailView):
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
+
+        # Add email-related data from domain
+        if self.object.domain:
+            context["email_clicks"] = self.object.domain.clicks
+            context["email_events"] = self.object.domain.email_event
+
+            # Generate GitHub issues URL from the domain's github field
+            if self.object.domain.github:
+                github_url = self.object.domain.github.rstrip("/")
+                context["github_issues_url"] = f"{github_url}/issues"
+        # Add CVE severity and suggested tip amount
+        if self.object.cve_id and self.object.cve_score:
+            context["cve_severity"] = self.object.get_cve_severity()
+            context["suggested_tip_amount"] = self.object.get_suggested_tip_amount()
+
+        # Add user score for the issue reporter
+        if self.object.user:
+            context["users_score"] = (
+                list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
+            )
 
         return context
 

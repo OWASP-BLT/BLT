@@ -19,43 +19,52 @@
         <div class="container py-6 mx-auto px-14 max-w-[1300px]">
             <!-- Stats Overview - Made more compact -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 max-w-6xl mx-auto">
-                <div class="flex flex-wrap gap-8">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Total Projects</h3>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_projects }}</p>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Total Repositories</h3>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_repos }}</p>
-                    </div>
-                    {% if filtered_count is not None %}
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex flex-wrap gap-8">
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Filtered Results</h3>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ filtered_count }}</p>
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Total Projects</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_projects }}</p>
                         </div>
-                    {% endif %}
-                    {% if user.is_authenticated %}
-                        <button type="button"
-                                onclick="openAddProjectModal()"
-                                class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transform hover:scale-105 transition-all duration-200 font-medium flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add New Project
-                        </button>
-                    {% else %}
-                        <button type="button"
-                                disabled
-                                class="px-6 py-3 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed flex items-center gap-2 group relative">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add New Project
-                            <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 dark:bg-gray-100 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                Please login to add a new project
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Total Repositories</h3>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_repos }}</p>
+                        </div>
+                        {% if filtered_count is not None %}
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+                                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-500">Filtered Results</h3>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ filtered_count }}</p>
                             </div>
-                        </button>
-                    {% endif %}
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            <button type="button"
+                                    onclick="openAddProjectModal()"
+                                    class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transform hover:scale-105 transition-all duration-200 font-medium flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add New Project
+                            </button>
+                        {% else %}
+                            <button type="button"
+                                    disabled
+                                    class="px-6 py-3 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed flex items-center gap-2 group relative">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add New Project
+                                <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 dark:bg-gray-100 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    Please login to add a new project
+                                </div>
+                            </button>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'project_compact_list' %}"
+                       class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Compact View
+                    </a>
                 </div>
             </div>
             <!-- Filter Section - More compact -->
@@ -69,12 +78,12 @@
                                    name="search"
                                    value="{{ request.GET.search }}"
                                    placeholder="Search projects or repos..."
-                                   class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                                   class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900" />
                         </div>
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Organization</label>
                             <select name="organization"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900">
                                 <option value="">All Organizations</option>
                                 {% for org in organizations %}
                                     <option value="{{ org.id }}"
@@ -88,7 +97,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Repository Type</label>
                             <select name="repo_type"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900">
                                 <option value="all"
                                         {% if request.GET.repo_type == 'all' %}selected{% endif %}>
                                     All Repositories
@@ -106,7 +115,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sort By</label>
                             <select name="sort"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900">
                                 <option value="stars" {% if request.GET.sort == 'stars' %}selected{% endif %}>Stars</option>
                                 <option value="forks" {% if request.GET.sort == 'forks' %}selected{% endif %}>Forks</option>
                                 <option value="open_issues"
@@ -126,7 +135,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Order</label>
                             <select name="order"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900">
                                 <option value="asc" {% if request.GET.order == 'asc' %}selected{% endif %}>Ascending</option>
                                 <option value="desc" {% if request.GET.order == 'desc' %}selected{% endif %}>Descending</option>
                             </select>
@@ -156,11 +165,17 @@
                             <div class="flex items-start gap-6">
                                 {% if project.slug %}
                                     <a href="{% url 'project_detail' slug=project.slug %}" class="block">
-                                        <img src="{{ project.logo.url }}"
-                                             alt="{{ project.name }}"
-                                             height="50"
-                                             width="50"
-                                             class="w-20 h-20 rounded-lg shadow-lg flex-shrink-0 hover:opacity-80 transition-opacity">
+                                        {% if project.logo %}
+                                            <img src="{{ project.logo.url }}"
+                                                 alt="{{ project.name }}"
+                                                 height="50"
+                                                 width="50"
+                                                 class="w-20 h-20 rounded-lg shadow-lg flex-shrink-0 hover:opacity-80 transition-opacity">
+                                        {% else %}
+                                            <div class="w-20 h-20 rounded-lg bg-white/20 dark:bg-gray-800/20 flex items-center justify-center flex-shrink-0 hover:bg-white/30 transition-colors">
+                                                <span class="text-2xl text-white font-bold">{{ project.name|slice:":1"|upper }}</span>
+                                            </div>
+                                        {% endif %}
                                     </a>
                                 {% else %}
                                     <div class="w-20 h-20 rounded-lg bg-white/20 dark:bg-gray-800/20 flex items-center justify-center flex-shrink-0 hover:bg-white/30 transition-colors">

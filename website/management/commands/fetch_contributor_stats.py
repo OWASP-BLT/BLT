@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 
 from website.management.base import LoggedBaseCommand
-from website.models import Contribution, Project, Repo
+from website.models import Contribution, Repo
 
 
 class Command(LoggedBaseCommand):
@@ -27,21 +27,18 @@ class Command(LoggedBaseCommand):
         # Authentication headers
         headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"}
 
-        # Find the repository
-        try:
-            # First try to find the repo directly
-            repository = Repo.objects.get(repo_url__contains=f"{owner}/{repo_name}")
-            project = repository.project
-        except Repo.DoesNotExist:
-            try:
-                # If repo not found, try to find a project with a repo containing this path
-                project = Project.objects.filter(repos__repo_url__contains=f"{owner}/{repo_name}").first()
-                if not project:
-                    self.stdout.write(self.style.ERROR(f"No project found with repository {owner}/{repo_name}"))
-                    return
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"Error finding project: {str(e)}"))
-                return
+        # Find the repository using exact URL match
+        repo_url = f"https://github.com/{owner}/{repo_name}"
+        repository = Repo.objects.filter(repo_url=repo_url).first()
+
+        if not repository:
+            self.stdout.write(self.style.ERROR(f"No repository found with URL {repo_url}"))
+            return
+
+        project = repository.project
+        if not project:
+            self.stdout.write(self.style.ERROR(f"Repository {owner}/{repo_name} is not associated with a project"))
+            return
 
         # Fetch and process data in parallel
         data_types = ["pulls", "issuesopen", "issuesclosed", "commits", "comments"]

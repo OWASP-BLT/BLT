@@ -8,7 +8,7 @@ from calendar import monthrange
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 import requests
 import sentry_sdk
@@ -22,7 +22,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
 from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -30,14 +30,25 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.filters import ProjectRepoFilter
-from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
+from website.models import (
+    IP,
+    BaconToken,
+    Challenge,
+    Contribution,
+    Contributor,
+    ContributorStats,
+    Organization,
+    Project,
+    Repo,
+    UserProfile,
+)
 from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -310,6 +321,97 @@ class ProjectView(FilterView):
         return context
 
 
+class ProjectCompactListView(ListView):
+    """Compact spreadsheet-like view for projects with sortable columns"""
+
+    model = Project
+    template_name = "projects/project_compact_list.html"
+    context_object_name = "projects"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = Project.objects.select_related("organization").exclude(slug="")
+
+        # Aggregate repo stats at the database level to avoid N+1 queries
+        queryset = queryset.annotate(
+            repo_count=Count("repos"),
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+            total_issues=Coalesce(Sum("repos__total_issues"), 0),
+        )
+
+        # Apply sorting
+        sort_by = self.request.GET.get("sort", "name")
+        order = self.request.GET.get("order", "asc")
+
+        # Handle organization sorting with explicit NULL placement
+        if sort_by == "organization":
+            if order == "desc":
+                queryset = queryset.order_by(F("organization__name").desc(nulls_last=True))
+            else:
+                queryset = queryset.order_by(F("organization__name").asc(nulls_last=True))
+        else:
+            # Map sort fields to actual model fields
+            sort_mapping = {
+                "name": "name",
+                "status": "status",
+                "repos_count": "repo_count",
+                "slack_channel": "slack_channel",
+                "slack_user_count": "slack_user_count",
+                "created": "created",
+                "modified": "modified",
+            }
+
+            field = sort_mapping.get(sort_by, "name")
+
+            if order == "desc":
+                field = f"-{field}"
+
+            queryset = queryset.order_by(field)
+
+        # Apply organization filter with validation
+        organization_id = self.request.GET.get("organization")
+        if organization_id:
+            try:
+                organization_id = int(organization_id)
+                queryset = queryset.filter(organization_id=organization_id)
+            except (ValueError, TypeError):
+                # Invalid organization_id, skip the filter
+                pass
+
+        # Apply search filter
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search))
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get organizations that have projects
+        context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
+
+        # Build projects_with_stats from annotated queryset - no additional queries needed
+        projects_with_stats = []
+        for project in context["projects"]:
+            projects_with_stats.append(
+                {
+                    "project": project,
+                    "repo_count": project.repo_count,
+                    "total_stars": project.total_stars,
+                    "total_forks": project.total_forks,
+                    "total_issues": project.total_issues,
+                }
+            )
+
+        context["projects_with_stats"] = projects_with_stats
+        context["sort_by"] = self.request.GET.get("sort", "name")
+        context["order"] = self.request.GET.get("order", "asc")
+
+        return context
+
+
 @login_required
 @require_http_methods(["POST"])
 def create_project(request):
@@ -535,7 +637,8 @@ def create_project(request):
                 return response
 
         def get_issue_count(full_name, query):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = api_get(search_url)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
@@ -597,9 +700,9 @@ def create_project(request):
 
                 # Issues count - Fixed
                 full_name = repo_data.get("full_name")
-                open_issues = get_issue_count(full_name, "type:issue+state:open")
-                closed_issues = get_issue_count(full_name, "type:issue+state:closed")
-                open_pull_requests = get_issue_count(full_name, "type:pr+state:open")
+                open_issues = get_issue_count(full_name, "type:issue state:open")
+                closed_issues = get_issue_count(full_name, "type:issue state:closed")
+                open_pull_requests = get_issue_count(full_name, "type:pr state:open")
                 total_issues = open_issues + closed_issues
 
                 # Latest release
@@ -722,6 +825,18 @@ class ProjectsDetailView(DetailView):
         response = super().get(request, *args, **kwargs)
 
         return response
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+@require_http_methods(["POST"])
+def delete_project(request, slug):
+    """Delete a project. Only accessible by superusers."""
+    project = get_object_or_404(Project, slug=slug)
+    project_name = project.name
+    project.delete()
+    messages.success(request, f'Project "{project_name}" has been deleted successfully.')
+    return redirect("project_list")
 
 
 class RepoDetailView(DetailView):
@@ -1189,6 +1304,68 @@ class RepoDetailView(DetailView):
         # Sort processed stats by impact score
         processed_stats.sort(key=lambda x: x["impact_score"], reverse=True)
 
+        # Get streak highlights and challenge completions for the time period
+        streak_highlights = []
+        challenge_highlights = []
+
+        try:
+            # Get user profiles with recent streak achievements
+            user_profiles = (
+                UserProfile.objects.select_related("user")
+                .filter(user__is_active=True)
+                .prefetch_related("user__user_challenges", "user__points_set")
+            )
+
+            for profile in user_profiles:
+                if profile.current_streak > 0:
+                    # Check if they reached a milestone streak recently
+                    milestone_achieved = None
+                    if profile.current_streak == 7:
+                        milestone_achieved = "7-day streak achieved!"
+                    elif profile.current_streak == 15:
+                        milestone_achieved = "15-day streak achieved!"
+                    elif profile.current_streak == 30:
+                        milestone_achieved = "30-day streak achieved!"
+                    elif profile.current_streak == 100:
+                        milestone_achieved = "100-day streak achieved!"
+                    elif profile.current_streak == 180:
+                        milestone_achieved = "180-day streak achieved!"
+                    elif profile.current_streak == 365:
+                        milestone_achieved = "365-day streak achieved!"
+
+                    if milestone_achieved:
+                        streak_highlights.append(
+                            {
+                                "user": profile.user,
+                                "current_streak": profile.current_streak,
+                                "longest_streak": profile.longest_streak,
+                                "milestone": milestone_achieved,
+                                "user_profile": profile,
+                            }
+                        )
+
+            # Get recent challenge completions from the time period
+            completed_challenges = (
+                Challenge.objects.filter(completed=True, completed_at__gte=start_date, completed_at__lte=end_date)
+                .select_related()
+                .prefetch_related("participants")
+            )
+
+            for challenge in completed_challenges:
+                for participant in challenge.participants.all():
+                    challenge_highlights.append(
+                        {
+                            "user": participant,
+                            "challenge": challenge,
+                            "completed_at": challenge.completed_at,
+                            "points_earned": challenge.points,
+                        }
+                    )
+
+        except Exception as e:
+            logger.error(f"Error fetching streak and challenge highlights: {e}")
+            # Continue without highlights if there's an error
+
         # Set up pagination
         paginator = Paginator(processed_stats, 10)  # Changed from 2 to 10 entries per page
         try:
@@ -1219,6 +1396,10 @@ class RepoDetailView(DetailView):
                 "start_date": start_date,
                 "end_date": end_date,
                 "is_paginated": paginator.num_pages > 1,  # Add this
+                "streak_highlights": streak_highlights,
+                "challenge_highlights": challenge_highlights,
+                "total_streak_achievements": len(streak_highlights),
+                "total_challenge_completions": len(challenge_highlights),
                 "issues_labels": activity_data["issues_labels"],
                 "issues_opened": activity_data["issues_opened"],
                 "issues_closed": activity_data["issues_closed"],
@@ -1368,7 +1549,8 @@ class RepoDetailView(DetailView):
                 return render(request, "includes/_contributor_stats_table.html", context)
 
         def get_issue_count(full_name, query, headers):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = requests.get(search_url, headers=headers)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
@@ -1536,9 +1718,9 @@ class RepoDetailView(DetailView):
                     commit_count = 0
 
                 # Get open issues and PRs
-                open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
-                closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
-                open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+                open_issues = get_issue_count(full_name, "type:issue state:open", headers)
+                closed_issues = get_issue_count(full_name, "type:issue state:closed", headers)
+                open_pull_requests = get_issue_count(full_name, "type:pr state:open", headers)
                 total_issues = open_issues + closed_issues
 
                 if (

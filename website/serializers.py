@@ -9,12 +9,15 @@ from website.models import (
     HuntPrize,
     Issue,
     IssueScreenshot,
+    Job,
     Organization,
     Points,
     Project,
     Repo,
     Tag,
     TimeLog,
+    Trademark,
+    TrademarkOwner,
     User,
     UserProfile,
 )
@@ -190,3 +193,103 @@ class RepoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Repo
         fields = ("id", "name", "url", "organization")
+
+
+class JobSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Job model
+    """
+
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_logo = serializers.ImageField(source="organization.logo", read_only=True)
+    posted_by_username = serializers.CharField(source="posted_by.username", read_only=True)
+
+    class Meta:
+        model = Job
+        fields = (
+            "id",
+            "organization",
+            "organization_name",
+            "organization_logo",
+            "title",
+            "description",
+            "requirements",
+            "location",
+            "job_type",
+            "salary_range",
+            "is_public",
+            "status",
+            "expires_at",
+            "application_email",
+            "application_url",
+            "application_instructions",
+            "posted_by",
+            "posted_by_username",
+            "created_at",
+            "updated_at",
+            "views_count",
+        )
+        read_only_fields = ("id", "posted_by", "created_at", "updated_at", "views_count")
+
+
+class JobPublicSerializer(serializers.ModelSerializer):
+    """
+    Public serializer for Job model (limited fields for public API)
+    """
+
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_logo = serializers.ImageField(source="organization.logo", read_only=True)
+
+    class Meta:
+        model = Job
+        fields = (
+            "id",
+            "organization_name",
+            "organization_logo",
+            "title",
+            "description",
+            "requirements",
+            "location",
+            "job_type",
+            "salary_range",
+            "expires_at",
+            "application_email",
+            "application_url",
+            "application_instructions",
+            "created_at",
+            "views_count",
+        )
+
+
+class TrademarkOwnerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrademarkOwner
+        fields = [
+            "name",
+            "address1",
+            "address2",
+            "city",
+            "state",
+            "country",
+            "postcode",
+            "owner_label",
+            "legal_entity_type_label",
+        ]
+
+
+class TrademarkSerializer(serializers.ModelSerializer):
+    owners = TrademarkOwnerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Trademark
+        fields = [
+            "keyword",
+            "registration_number",
+            "serial_number",
+            "status_label",
+            "filing_date",
+            "registration_date",
+            "expiration_date",
+            "description",
+            "owners",
+        ]

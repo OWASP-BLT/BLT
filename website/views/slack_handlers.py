@@ -7,11 +7,13 @@ import os
 import re
 import threading
 import time
+from urllib.parse import quote_plus
 
 import requests
 import yaml
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
@@ -30,6 +32,53 @@ client = WebClient(token=SLACK_TOKEN)
 
 # Add at the top with other environment variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+
+
+def get_project_with_least_members():
+    """Get the project channel name with the least members (excluding project-blt)."""
+    try:
+        project = (
+            Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
+            .exclude(slack_channel="project-blt")
+            .order_by("slack_user_count")
+            .first()
+        )
+        return project.slack_channel if project else None
+    except Exception as e:
+        logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
+        return None
+
+
+def _build_owasp_welcome_message(user_id):
+    """Build the OWASP Slack welcome message with dynamic project examples."""
+    least_members_channel = get_project_with_least_members()
+    project_examples = "*#project-blt*"
+    if least_members_channel:
+        project_examples += f" or *#{least_members_channel}*"
+
+    return (
+        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
+        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
+        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
+        ":small_blue_diamond: *Get Involved:*\n"
+        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
+        f"• Explore project channels like {project_examples} to dive into specific projects.\n"
+        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
+        ":small_blue_diamond: *Stay Updated:*\n"
+        "• Visit *#newsroom* for the latest updates and announcements.\n"
+        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
+        ":small_blue_diamond: *Connect and Learn:*\n"
+        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
+        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
+        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
+        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
+        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
+        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
+        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
+        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
+        "Welcome aboard! :rocket:"
+    )
+
 
 # Replace GSoC cache with hardcoded project data
 GSOC_PROJECTS = [
@@ -234,28 +283,7 @@ def _handle_team_join(user_id, request):
                 # If no welcome message but it's OWASP workspace
                 if team_id == "T04T40NHX":
                     workspace_client = WebClient(token=SLACK_TOKEN)
-                    welcome_message = (
-                        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-                        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-                        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-                        ":small_blue_diamond: *Get Involved:*\n"
-                        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                        "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
-                        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-                        ":small_blue_diamond: *Stay Updated:*\n"
-                        "• Visit *#newsroom* for the latest updates and announcements.\n"
-                        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-                        ":small_blue_diamond: *Connect and Learn:*\n"
-                        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-                        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-                        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-                        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-                        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-                        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-                        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-                        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-                        "Welcome aboard! :rocket:"
-                    )
+                    welcome_message = _build_owasp_welcome_message(user_id)
                 else:
                     workspace_client = WebClient(token=slack_integration.bot_access_token)
                     welcome_message = (
@@ -269,28 +297,7 @@ def _handle_team_join(user_id, request):
             if team_id == "T04T40NHX":
                 workspace_client = WebClient(token=SLACK_TOKEN)
                 # Use the default OWASP welcome message
-                welcome_message = (
-                    f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-                    "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-                    "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-                    ":small_blue_diamond: *Get Involved:*\n"
-                    "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                    "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
-                    "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-                    ":small_blue_diamond: *Stay Updated:*\n"
-                    "• Visit *#newsroom* for the latest updates and announcements.\n"
-                    "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-                    ":small_blue_diamond: *Connect and Learn:*\n"
-                    "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-                    "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-                    "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-                    "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-                    "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-                    "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-                    "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-                    "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-                    "Welcome aboard! :rocket:"
-                )
+                welcome_message = _build_owasp_welcome_message(user_id)
             else:
                 return
 
@@ -711,6 +718,185 @@ def slack_commands(request):
 
                 return response
 
+        elif command == "/ghissue":
+            text = request.POST.get("text", "").strip()
+
+            # Parse the command format: /ghissue <owner/repo> <issue title and description>
+            if not text:
+                guidance_message = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                ":information_source: *How to use the /ghissue command:*\n\n"
+                                "*Format:* `/ghissue <owner/repo> <issue title>`\n\n"
+                                "*Example:*\n"
+                                "`/ghissue OWASP-BLT/BLT Fix login bug on mobile devices`\n\n"
+                                "*Note:*\n"
+                                "• Separate the repository and title with a space\n"
+                                "• The repository should be in the format `owner/repo`\n"
+                                "• You can add a description by providing more details after the title"
+                            ),
+                        },
+                    }
+                ]
+                send_dm(workspace_client, user_id, "How to use /ghissue", guidance_message)
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "I've sent you guidance on using the /ghissue command in a DM! 📚",
+                    }
+                )
+
+            # Parse the text to extract repository and issue details
+            parts = text.split(maxsplit=1)
+            if len(parts) < 2:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Invalid format. Usage: `/ghissue <owner/repo> <issue title and description>`",
+                    }
+                )
+
+            repository = parts[0]
+            issue_text = parts[1]
+
+            # Validate repository format
+            if "/" not in repository or repository.count("/") != 1:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Invalid repository format. Use `owner/repo` format (e.g., `OWASP-BLT/BLT`)",
+                    }
+                )
+
+            try:
+                # Use GitHub token for authentication
+                if not GITHUB_TOKEN:
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ GitHub API token not configured. Please contact the administrator.",
+                        }
+                    )
+
+                # Create GitHub issue
+                headers = get_github_headers()
+                url = f"https://api.github.com/repos/{repository}/issues"
+
+                # Parse title and body (first line is title, rest is body)
+                lines = issue_text.split("\n", 1)
+                title = lines[0].strip()
+                body = lines[1].strip() if len(lines) > 1 else ""
+
+                # Add metadata about who created the issue
+                if body:
+                    body += f"\n\n---\n_Created via Slack by <@{user_id}>_"
+                else:
+                    body = f"_Created via Slack by <@{user_id}>_"
+
+                issue_data = {
+                    "title": title,
+                    "body": body,
+                }
+
+                response = requests.post(url, json=issue_data, headers=headers, timeout=10)
+
+                if response.status_code == 201:
+                    issue = response.json()
+                    blocks = [
+                        {
+                            "type": "header",
+                            "text": {"type": "plain_text", "text": "✅ GitHub Issue Created!", "emoji": True},
+                        },
+                        {"type": "divider"},
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": (
+                                    f"*Repository:* {repository}\n"
+                                    f"*Issue:* <{issue['html_url']}|#{issue['number']} - {issue['title']}>\n"
+                                    f"*Status:* {issue['state']}\n"
+                                    f"*Created at:* {issue['created_at'][:10]}"
+                                ),
+                            },
+                        },
+                        {
+                            "type": "actions",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {"type": "plain_text", "text": "View Issue", "emoji": True},
+                                    "url": issue["html_url"],
+                                    "action_id": "view_github_issue",
+                                }
+                            ],
+                        },
+                    ]
+                    send_dm(workspace_client, user_id, "GitHub Issue Created", blocks)
+                    activity.success = True
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": f"✅ Issue created successfully! #{issue['number']} - I've sent you the details in a DM.",
+                        }
+                    )
+                elif response.status_code == 404:
+                    activity.success = False
+                    activity.error_message = "Repository not found"
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": f"❌ Repository `{repository}` not found. Please check the repository name.",
+                        }
+                    )
+                elif response.status_code == 403:
+                    activity.success = False
+                    activity.error_message = "GitHub API rate limit or permission denied"
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ Permission denied or rate limit exceeded. Please try again later.",
+                        }
+                    )
+                else:
+                    activity.success = False
+                    activity.error_message = f"GitHub API error: {response.status_code}"
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": f"❌ Failed to create issue. GitHub API error: {response.status_code}",
+                        }
+                    )
+
+            except requests.RequestException as e:
+                activity.success = False
+                activity.error_message = f"Network error: {str(e)}"
+                activity.save()
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Network error occurred while creating the issue. Please try again.",
+                    }
+                )
+            except Exception as e:
+                activity.success = False
+                activity.error_message = f"Error: {str(e)}"
+                activity.save()
+                logger.error(f"Error in /ghissue command: {str(e)}")
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ An unexpected error occurred. Please try again later.",
+                    }
+                )
+
         elif command == "/help":
             try:
                 help_message = [
@@ -724,11 +910,11 @@ def slack_commands(request):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats",
+                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats\n`/installed_apps` - List installed apps\n`/sweep` - Post project status to #project-sweeper",
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": "*Existing Commands*\n`/discover` - Find projects\n`/contrib` - Learn to contribute\n`/gsoc25` - GSoC 2025 details\n`/blt` - Multi-purpose tool",
+                                "text": "*Project Commands*\n`/discover` - Find projects\n`/contrib` - Learn to contribute\n`/gsoc25` - GSoC 2025 details\n`/blt` - Multi-purpose tool\n`/ghissue` - Create GitHub issue",
                             },
                         ],
                     },
@@ -746,7 +932,160 @@ def slack_commands(request):
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error sending help message."})
 
+        elif command == "/installed_apps":
+            try:
+                # Get basic workspace info
+                team_info = workspace_client.team_info()
+                team_name = team_info.get("team", {}).get("name", "Unknown Workspace")
+
+                # Create the message blocks
+                apps_blocks = [
+                    {
+                        "type": "header",
+                        "text": {"type": "plain_text", "text": f"📱 Apps in {team_name}", "emoji": True},
+                    },
+                    {"type": "divider"},
+                ]
+
+                # Try to get app list using admin API (requires elevated permissions)
+                try:
+                    apps_response = workspace_client.api_call("admin.apps.approved.list", params={"limit": 100})
+
+                    if apps_response.get("ok"):
+                        # If approved_apps is present (even if empty), show the installed apps
+                        if "approved_apps" in apps_response:
+                            apps = apps_response["approved_apps"]
+
+                            apps_blocks.append(
+                                {
+                                    "type": "section",
+                                    "text": {"type": "mrkdwn", "text": f"*Total Apps Installed:* {len(apps)}"},
+                                }
+                            )
+
+                            if len(apps) == 0:
+                                apps_blocks.append(
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "No apps are currently installed on this workspace.",
+                                        },
+                                    }
+                                )
+                            else:
+                                # List each app (limit to first 20 to avoid message size limits)
+                                for app in apps[:20]:
+                                    app_info = app.get("app", {})
+                                    app_name = app_info.get("name", "Unknown App")
+                                    app_id = app_info.get("id", "N/A")
+
+                                    apps_blocks.append(
+                                        {
+                                            "type": "section",
+                                            "text": {"type": "mrkdwn", "text": f"• *{app_name}* (`{app_id}`)"},
+                                        }
+                                    )
+
+                                if len(apps) > 20:
+                                    apps_blocks.append(
+                                        {
+                                            "type": "context",
+                                            "elements": [
+                                                {"type": "mrkdwn", "text": f"_Showing 20 of {len(apps)} apps_"}
+                                            ],
+                                        }
+                                    )
+                        else:
+                            # Fallback: Show guidance when admin permissions aren't available
+                            apps_blocks.extend(
+                                [
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "⚠️ *Limited Access*\n\n"
+                                            "This bot doesn't have admin permissions to list all workspace apps.",
+                                        },
+                                    },
+                                    {"type": "divider"},
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "*Alternative ways to view installed apps:*\n\n"
+                                            "1️⃣ Click on your workspace name (top left)\n"
+                                            "2️⃣ Select *Settings & administration*\n"
+                                            "3️⃣ Choose *Manage apps*\n"
+                                            "4️⃣ You'll see all installed and available apps\n\n"
+                                            "Or visit: https://slack.com/apps/manage",
+                                        },
+                                    },
+                                ]
+                            )
+
+                except SlackApiError:
+                    # If admin API not available, provide helpful information
+                    apps_blocks.extend(
+                        [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "⚠️ *Unable to retrieve app list*\n\n"
+                                    "The bot needs additional permissions to list installed apps.",
+                                },
+                            },
+                            {"type": "divider"},
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "*How to view apps manually:*\n\n"
+                                    "• Visit your Slack workspace settings\n"
+                                    "• Go to *Apps* in the left sidebar\n"
+                                    "• Or visit: https://slack.com/apps/manage",
+                                },
+                            },
+                        ]
+                    )
+
+                # Send the response as a DM
+                dm_response = workspace_client.conversations_open(users=[user_id])
+                if dm_response["ok"]:
+                    dm_channel = dm_response["channel"]["id"]
+                    workspace_client.chat_postMessage(
+                        channel=dm_channel, blocks=apps_blocks, text=f"Apps installed in {team_name}"
+                    )
+
+                    activity.success = True
+                    activity.save()
+
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "I've sent you information about installed apps in a DM! 📱",
+                        }
+                    )
+                else:
+                    activity.success = False
+                    activity.error_message = "Could not open DM channel"
+                    activity.save()
+                    return JsonResponse({"response_type": "ephemeral", "text": "Sorry, I couldn't open a DM channel."})
+
+            except (SlackApiError, KeyError, ValueError) as e:
+                activity.success = False
+                activity.error_message = str(e)
+                activity.save()
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "Sorry, there was an error retrieving the apps list. Please try again later.",
+                    }
+                )
+
         elif command == "/report":
+            text = request.POST.get("text", "").strip()
             if not text:
                 return JsonResponse(
                     {
@@ -776,6 +1115,10 @@ def slack_commands(request):
                 activity.error_message = f"Error creating issue: {str(e)}"
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error reporting bug. Please try again."})
+
+        elif command == "/sweep":
+            # Post project status update to #project-sweeper channel
+            return post_project_sweep_update(workspace_client, user_id, activity, team_id)
 
     return HttpResponse(status=405)
 
@@ -1570,13 +1913,15 @@ def get_user_profile(username, workspace_client, user_id):
                         f"*Bio:* {profile.get('bio', 'No bio provided')}"
                     ),
                 },
-                "accessory": {
-                    "type": "image",
-                    "image_url": profile["avatar_url"],
-                    "alt_text": f"GitHub avatar for {username}",
-                }
-                if profile.get("avatar_url")
-                else None,
+                "accessory": (
+                    {
+                        "type": "image",
+                        "image_url": profile["avatar_url"],
+                        "alt_text": f"GitHub avatar for {username}",
+                    }
+                    if profile.get("avatar_url")
+                    else None
+                ),
             },
         ]
 
@@ -1654,7 +1999,9 @@ def get_owasp_contributions(username, headers):
 def get_org_prs(username, org, headers):
     """Helper function to get PRs for a specific organization"""
     try:
-        search_url = f"https://api.github.com/search/issues?q=author:{username}+org:{org}+type:pr"
+        query = f"author:{username} org:{org} type:pr"
+        encoded_query = quote_plus(query)
+        search_url = f"https://api.github.com/search/issues?q={encoded_query}"
         pr_response = requests.get(search_url, headers=headers, timeout=10)
 
         if pr_response.status_code == 200:
@@ -2440,6 +2787,169 @@ def get_committee_details(repo_name, headers, workspace_client, user_id):
         logger.error(f"Error getting committee details: {str(e)}")
         return JsonResponse(
             {"response_type": "ephemeral", "text": "❌ An error occurred while fetching committee details."}
+        )
+
+
+def post_project_sweep_update(workspace_client, user_id, activity, team_id):
+    """
+    Post a sweep update about projects needing attention to the #project-sweeper channel.
+    This includes projects without Slack channels, inactive projects, and projects without descriptions.
+    """
+    try:
+        # Get the project-sweeper channel ID
+        sweeper_channel_id = "C0607RP8MS8"  # from project_channels.csv
+
+        # Gather project statistics using optimized aggregation query
+        stats = Project.objects.aggregate(
+            total=Count("id"),
+            inactive=Count("id", filter=Q(status="inactive")),
+            no_slack=Count("id", filter=Q(slack_channel__isnull=True)),
+            no_description=Count("id", filter=Q(description="") | Q(description__isnull=True)),
+        )
+        total_projects = stats["total"]
+        inactive_projects = stats["inactive"]
+        projects_without_slack = stats["no_slack"]
+        projects_without_description = stats["no_description"]
+
+        # Get some example projects needing attention
+        inactive_list = Project.objects.filter(status="inactive")[:5]
+        no_slack_list = Project.objects.filter(slack_channel__isnull=True).exclude(status="inactive")[:5]
+
+        # Build the message blocks
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": "🧹 Project Sweep Report", "emoji": True},
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {"type": "mrkdwn", "text": f"Generated at {timezone.now().strftime('%Y-%m-%d %H:%M UTC')}"}
+                ],
+            },
+            {"type": "divider"},
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*📊 Project Statistics*\n"
+                    f"• Total Projects: *{total_projects}*\n"
+                    f"• Inactive Projects: *{inactive_projects}*\n"
+                    f"• Projects without Slack: *{projects_without_slack}*\n"
+                    f"• Projects without Description: *{projects_without_description}*",
+                },
+            },
+        ]
+
+        # Add inactive projects section
+        if inactive_list:
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": "*🔴 Inactive Projects*"},
+                    },
+                ]
+            )
+            for proj in inactive_list:
+                proj_text = f"• *{proj.name}*"
+                if proj.url:
+                    proj_text += f" - <{proj.url}|View>"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": proj_text},
+                    }
+                )
+
+        # Add projects without Slack channels section
+        if no_slack_list:
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": "*📢 Projects Without Slack Channels*"},
+                    },
+                ]
+            )
+            for proj in no_slack_list:
+                proj_text = f"• *{proj.name}* (Status: {proj.status})"
+                if proj.url:
+                    proj_text += f" - <{proj.url}|View>"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": proj_text},
+                    }
+                )
+
+        # Add footer
+        blocks.extend(
+            [
+                {"type": "divider"},
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "💡 Use `/sweep` to generate this report. Contact project leaders to update inactive projects or add Slack channels.",
+                        }
+                    ],
+                },
+            ]
+        )
+
+        # Post to the project-sweeper channel
+        try:
+            # Join the channel first (in case bot is not a member)
+            workspace_client.conversations_join(channel=sweeper_channel_id)
+        except SlackApiError as e:
+            # Bot might already be a member or lack permissions - log but continue
+            logger.debug(f"Could not join channel {sweeper_channel_id}: {str(e)}")
+
+        # Post the message
+        response = workspace_client.chat_postMessage(
+            channel=sweeper_channel_id,
+            blocks=blocks,
+            text="Project Sweep Report",  # Fallback text
+        )
+
+        if response["ok"]:
+            activity.success = True
+            activity.save()
+
+            # Send confirmation to user
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"✅ Project sweep report posted to <#{sweeper_channel_id}>!",
+                }
+            )
+        else:
+            activity.success = False
+            activity.error_message = f"Failed to post message: {response.get('error', 'Unknown error')}"
+            activity.save()
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ Failed to post sweep report to the channel."}
+            )
+
+    except SlackApiError as e:
+        logger.error(f"Slack API error in sweep command: {str(e)}")
+        activity.success = False
+        activity.error_message = f"Slack API error: {str(e)}"
+        activity.save()
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ Error posting to Slack. Please try again later."}
+        )
+    except Exception as e:
+        logger.error(f"Error in post_project_sweep_update: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while generating the sweep report."}
         )
 
 
