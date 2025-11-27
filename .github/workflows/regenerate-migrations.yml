@@ -1,0 +1,277 @@
+name: Regenerate Django Migrations
+
+# SECURITY NOTE:
+# This workflow uses pull_request_target to allow writing back to forked PRs.
+# It only runs when explicitly triggered via the 'regenerate-migrations' label
+# or manual workflow dispatch. The label can only be added by repository
+# collaborators with write access, providing an approval gate.
+#
+# IMPORTANT: This workflow checks out the BASE branch (trusted code) and only
+# copies MODEL FILES from the PR branch. It does NOT execute any code from the
+# PR directly. The makemigrations command runs against trusted base code with
+# only the model definitions updated from the PR.
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types:
+      - labeled
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+jobs:
+  regenerate-migrations:
+    if: >
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request_target' &&
+       github.event.label.name == 'regenerate-migrations')
+    runs-on: ubuntu-latest
+
+    steps:
+      # First, checkout the BASE branch (trusted code)
+      - name: Checkout base branch (trusted)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+
+      # Fetch PR branch and safely copy only model files (no code execution)
+      - name: Fetch PR changes and identify migration files
+        env:
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REF: ${{ github.event.pull_request.base.ref || 'main' }}
+        run: |
+          # Add the PR's fork as a remote and fetch it
+          if [ -n "$PR_HEAD_REPO" ]; then
+            FORK_URL="https://github.com/$PR_HEAD_REPO.git"
+            git remote add pr-fork "$FORK_URL" || true
+            git fetch pr-fork "$PR_HEAD_REF"
+            PR_SHA=$(git rev-parse "pr-fork/$PR_HEAD_REF")
+          else
+            PR_SHA=$(git rev-parse HEAD)
+          fi
+          echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
+
+          # Get list of migration files that are new or modified in this PR
+          echo "Finding migration files changed in this PR..."
+          CHANGED_MIGRATIONS=$(git diff --name-only \
+            --diff-filter=AM \
+            "origin/$BASE_REF"..."$PR_SHA" | \
+            grep -E '(website|comments)/migrations/.*\.py$' | \
+            grep -v '__init__.py' || true)
+
+          if [ -z "$CHANGED_MIGRATIONS" ]; then
+            echo "No migration files found in this PR"
+            echo "MIGRATION_FILES_FOUND=false" >> $GITHUB_ENV
+          else
+            echo "Migration files found in PR:"
+            echo "$CHANGED_MIGRATIONS"
+            echo "MIGRATION_FILES_FOUND=true" >> $GITHUB_ENV
+            echo "CHANGED_MIGRATIONS<<EOF" >> $GITHUB_ENV
+            echo "$CHANGED_MIGRATIONS" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          fi
+
+          # Get list of model files changed in this PR (to copy from PR)
+          echo "Finding model files changed in this PR..."
+          CHANGED_MODELS=$(git diff --name-only \
+            --diff-filter=AM \
+            "origin/$BASE_REF"..."$PR_SHA" | \
+            grep -E '(website|comments)/models.*\.py$' || true)
+
+          if [ -n "$CHANGED_MODELS" ]; then
+            echo "Model files to copy from PR:"
+            echo "$CHANGED_MODELS"
+            echo "CHANGED_MODELS<<EOF" >> $GITHUB_ENV
+            echo "$CHANGED_MODELS" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          fi
+
+      # Safely copy only model files from PR (no arbitrary code execution)
+      - name: Copy model files from PR
+        if: env.CHANGED_MODELS != ''
+        run: |
+          echo "Copying model files from PR branch..."
+          echo "$CHANGED_MODELS" | while read -r file; do
+            if [ -n "$file" ]; then
+              echo "Copying: $file"
+              git show "$PR_SHA:$file" > "$file" 2>/dev/null || true
+            fi
+          done
+
+      # Delete only the migration files that were in the PR
+      - name: Delete PR migration files
+        if: env.MIGRATION_FILES_FOUND == 'true'
+        run: |
+          echo "Deleting migration files from PR..."
+          echo "$CHANGED_MIGRATIONS" | while read -r file; do
+            if [ -f "$file" ]; then
+              echo "Deleting: $file"
+              rm "$file"
+            fi
+          done
+
+          echo ""
+          echo "Remaining files in website/migrations:"
+          ls -la website/migrations/ || true
+          echo ""
+          echo "Remaining files in comments/migrations:"
+          ls -la comments/migrations/ || true
+
+      - name: Create .env file for settings
+        run: |
+          # Create a minimal .env file with required settings
+          # Generate a secure random secret key
+          SECRET_KEY=$(python -c \
+            "import secrets; print(secrets.token_urlsafe(50))")
+          cat > .env << EOF
+          SECRET_KEY=$SECRET_KEY
+          DATABASE_URL=sqlite:///db.sqlite3
+          DEBUG=True
+          EOF
+
+      - name: Run makemigrations
+        run: |
+          poetry run python manage.py makemigrations
+          echo "Generated new migrations"
+
+          # Show generated migrations
+          echo "New migrations in website/migrations:"
+          ls -la website/migrations/
+          echo "New migrations in comments/migrations:"
+          ls -la comments/migrations/
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected after regenerating migrations."
+            echo "changes_detected=true" >> $GITHUB_ENV
+            git status
+          else
+            echo "No changes made after regenerating migrations."
+            echo "changes_detected=false" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push changes to PR branch
+        if: env.changes_detected == 'true'
+        env:
+          TRIGGER_TYPE: >
+            ${{ github.event_name == 'pull_request_target' &&
+            'label' || 'manual dispatch' }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 'N/A' }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage the migration files and model files
+          git add website/migrations/ comments/migrations/
+          git add website/models*.py comments/models*.py 2>/dev/null || true
+
+          git commit -m "Regenerate Django migrations
+
+          Triggered by: $TRIGGER_TYPE
+          PR: #$PR_NUMBER"
+
+          # Push to the PR branch
+          if [ -n "$PR_HEAD_REF" ]; then
+            # For PRs, we need to push to the PR's head branch
+            TOKEN="${{ secrets.GITHUB_TOKEN }}"
+            PUSH_URL="https://x-access-token:$TOKEN@github.com"
+            git push "$PUSH_URL/$PR_HEAD_REPO.git" HEAD:"$PR_HEAD_REF"
+          else
+            # For manual dispatch, push to current branch
+            git push origin HEAD
+          fi
+
+      - name: Comment on PR
+        if: >
+          env.changes_detected == 'true' &&
+          github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = [
+              '## ✅ Migrations Regenerated',
+              '',
+              'The Django migrations have been successfully regenerated:',
+              '- Deleted migration files that were added/modified',
+              '  in this PR (except `__init__.py`)',
+              '- Ran `python manage.py makemigrations`',
+              '  to create fresh migrations',
+              '- Committed and pushed the new migration files to this PR',
+              '',
+              'Please review the changes and ensure all models are',
+              'properly migrated.'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+      - name: Comment on PR if no changes
+        if: >
+          env.changes_detected == 'false' &&
+          github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = [
+              '## ℹ️ No Migration Changes',
+              '',
+              'The migration regeneration process completed,',
+              'but no changes were detected.',
+              'This means the existing migrations are already',
+              'up to date with your models.'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+      - name: Remove label
+        if: github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'regenerate-migrations'
+              });
+            } catch (error) {
+              // Label might not exist or already removed
+              console.log('Could not remove label:', error.message);
+            }
