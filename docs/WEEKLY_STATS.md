@@ -6,16 +6,23 @@ The weekly stats delivery feature sends automated bug statistics reports to all 
 
 ## Implementation
 
-The feature is implemented as a Django management command located at:
+The feature is implemented as a separate Django management command:
 ```
-website/management/commands/run_weekly.py
+website/management/commands/send_weekly_stats.py
 ```
+
+This command is automatically called by the weekly cron scheduler (`run_weekly.py`).
 
 ## Usage
 
 ### Manual Execution
 
-Run the management command directly:
+You can run the weekly stats command directly:
+```bash
+python manage.py send_weekly_stats
+```
+
+Or run all weekly tasks (including weekly stats):
 ```bash
 python manage.py run_weekly
 ```
@@ -29,23 +36,14 @@ This will:
 
 ### Automated Execution with Cron
 
-To schedule weekly execution, add a cron job:
+The weekly stats are automatically run as part of the weekly cron job. To schedule weekly execution, add a cron job:
 
 ```bash
 # Edit crontab
 crontab -e
 
 # Add entry to run every Monday at 9:00 AM
-0 9 * * 1 cd /path/to/BLT && /path/to/python manage.py run_weekly >> /var/log/blt/weekly_stats.log 2>&1
-```
-
-Or use a more specific schedule:
-```bash
-# Every Monday at 9:00 AM UTC
-0 9 * * 1 cd /path/to/BLT && /path/to/python manage.py run_weekly
-
-# First day of every month at 8:00 AM
-0 8 1 * * cd /path/to/BLT && /path/to/python manage.py run_weekly
+0 9 * * 1 cd /path/to/BLT && /path/to/python manage.py run_weekly >> /var/log/blt/weekly.log 2>&1
 ```
 
 ### Using with Heroku Scheduler
@@ -92,11 +90,11 @@ The command includes comprehensive error handling:
 
 - **Missing Email**: Domains without email addresses are skipped with a warning
 - **Email Failures**: Failed email sends are logged with full error details
-- **Command Errors**: Any unhandled exceptions are logged and raised
+- **Command Errors**: Any unhandled exceptions are logged
 
 ## Logging
 
-The command logs to the `website.management.commands.run_weekly` logger:
+The command logs to the `website.management.commands.send_weekly_stats` logger:
 
 - **INFO**: Start/completion messages and successful sends
 - **WARNING**: Skipped domains (missing email)
@@ -107,7 +105,10 @@ The command logs to the `website.management.commands.run_weekly` logger:
 Test the command locally:
 
 ```bash
-# Run with full output
+# Run weekly stats directly
+python manage.py send_weekly_stats
+
+# Run all weekly tasks
 python manage.py run_weekly
 
 # Test email configuration first
@@ -132,7 +133,7 @@ Ensure you're in the correct directory and using the right Python environment:
 ```bash
 cd /path/to/BLT
 which python  # Should point to your virtual environment
-python manage.py run_weekly
+python manage.py send_weekly_stats
 ```
 
 ### Permission denied errors
@@ -141,17 +142,3 @@ Ensure the user running the command has:
 - Read access to the project directory
 - Write access to log files (if logging to file)
 - Access to the database
-
-## Extending the Feature
-
-To add additional weekly tasks, modify the `handle` method in `run_weekly.py`:
-
-```python
-def handle(self, *args, **options):
-    # Existing weekly stats
-    sent, failed = self.send_weekly_stats()
-    
-    # Add new weekly task here
-    # self.cleanup_old_data()
-    # self.generate_monthly_report()
-```
