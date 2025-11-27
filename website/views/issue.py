@@ -56,7 +56,7 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
-from website.duplicate_checker import check_for_duplicates
+from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
     IP,
@@ -804,6 +804,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
     fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
     template_name = "report.html"
 
+    # Duplicate detection threshold - can be adjusted without code changes
+    DUPLICATE_CHECK_THRESHOLD = 0.65
+
     def get_initial(self):
         try:
             json_data = json.loads(self.request.body)
@@ -1013,28 +1016,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     check_url,
                     full_description,  # Use combined title + description
                     domain=domain_obj,
-                    threshold=0.65,
+                    threshold=self.DUPLICATE_CHECK_THRESHOLD,
                 )
 
                 if duplicate_result["is_duplicate"] and duplicate_result["confidence"] in ["high", "medium"]:
                     # Check if user wants to proceed anyway
                     if not self.request.POST.get("confirm_not_duplicate"):
-                        # Store similar bugs for display
+                        # Store similar bugs for display using shared helper
                         similar_bugs_data = []
                         for bug in duplicate_result["similar_bugs"][:5]:
                             try:
-                                similar_bugs_data.append(
-                                    {
-                                        "id": bug["issue"].id,
-                                        "url": bug["issue"].url,
-                                        "description": bug["issue"].description[:200],
-                                        "similarity": bug["similarity"],
-                                        "similarity_percent": int(bug["similarity"] * 100),  # Convert to percentage
-                                        "status": bug["issue"].status,
-                                        "user": bug["issue"].user.username if bug["issue"].user else "Anonymous",
-                                        "created": bug["issue"].created.strftime("%Y-%m-%d"),
-                                    }
-                                )
+                                similar_bugs_data.append(format_similar_bug(bug, truncate_description=200))
                             except (KeyError, AttributeError, ValueError, TypeError) as e:
                                 logger.warning("Error formatting similar bug: %s", e)
                                 continue
@@ -1058,7 +1050,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             )
             except (KeyError, AttributeError, ValueError, TypeError) as e:
                 # If duplicate check fails, log it but don't block submission
-                logger.warning("Duplicate check failed: %s", e, exc_info=True)
+                logger.warning(
+                    "Duplicate check failed for URL %s: %s. Proceeding with submission.",
+                    url,
+                    e,
+                    exc_info=True,
+                )
 
         @atomic
         def create_issue(self, form):

@@ -16,6 +16,57 @@ from website.models import Issue
 
 logger = logging.getLogger(__name__)
 
+# Common stop words for keyword extraction (module-level constant for performance)
+STOP_WORDS = {
+    "the",
+    "is",
+    "at",
+    "which",
+    "on",
+    "in",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "for",
+    "with",
+    "to",
+    "from",
+    "by",
+    "of",
+    "as",
+    "this",
+    "that",
+    "it",
+    "are",
+    "was",
+    "were",
+    "been",
+    "be",
+    "have",
+    "has",
+    "had",
+    "do",
+    "does",
+    "did",
+    "will",
+    "would",
+    "could",
+    "should",
+    "may",
+    "might",
+    "can",
+    "bug",
+    "issue",
+    "error",
+    "problem",
+    "found",
+    "when",
+    "not",
+    "working",
+}
+
 
 def normalize_text(text):
     """
@@ -113,62 +164,11 @@ def extract_keywords(text, min_length=3):
     if not text:
         return []
 
-    # Common words to ignore
-    stop_words = {
-        "the",
-        "is",
-        "at",
-        "which",
-        "on",
-        "in",
-        "a",
-        "an",
-        "and",
-        "or",
-        "but",
-        "for",
-        "with",
-        "to",
-        "from",
-        "by",
-        "of",
-        "as",
-        "this",
-        "that",
-        "it",
-        "are",
-        "was",
-        "were",
-        "been",
-        "be",
-        "have",
-        "has",
-        "had",
-        "do",
-        "does",
-        "did",
-        "will",
-        "would",
-        "could",
-        "should",
-        "may",
-        "might",
-        "can",
-        "bug",
-        "issue",
-        "error",
-        "problem",
-        "found",
-        "when",
-        "not",
-        "working",
-    }
-
     normalized = normalize_text(text)
     words = normalized.split()
 
-    # Filter keywords
-    keywords = [word for word in words if len(word) >= min_length and word not in stop_words]
+    # Filter keywords using module-level stop words
+    keywords = [word for word in words if len(word) >= min_length and word not in STOP_WORDS]
 
     return keywords
 
@@ -328,4 +328,39 @@ def check_for_duplicates(url, description, domain=None, threshold=0.7):
         "similar_bugs": similar_bugs,
         "confidence": confidence,
         "highest_similarity": highest_similarity,
+    }
+
+
+def format_similar_bug(bug_info, truncate_description=200):
+    """
+    Helper function to format similar bug data consistently.
+    Used by both API views and form views.
+
+    Args:
+        bug_info: Dictionary with 'issue' and 'similarity' keys
+        truncate_description: Length to truncate description (0 for no truncation)
+
+    Returns:
+        Dictionary with formatted bug data
+    """
+    issue = bug_info["issue"]
+    description = issue.description
+    if truncate_description > 0 and len(description) > truncate_description:
+        description = description[:truncate_description] + "..."
+
+    return {
+        "id": issue.id,
+        "url": issue.url,
+        "description": description,
+        "similarity": bug_info["similarity"],
+        "similarity_percent": int(bug_info["similarity"] * 100),
+        "description_similarity": bug_info.get("description_similarity", 0),
+        "url_similarity": bug_info.get("url_similarity", 0),
+        "keyword_matches": bug_info.get("keyword_matches", 0),
+        "status": issue.status,
+        "created": issue.created.isoformat() if hasattr(issue.created, "isoformat") else str(issue.created),
+        "user": issue.user.username if issue.user else "Anonymous",
+        "label": issue.get_label_display() if hasattr(issue, "get_label_display") else "",
+        "verified": getattr(issue, "verified", False),
+        "upvotes": issue.upvoted.count() if hasattr(issue, "upvoted") else 0,
     }

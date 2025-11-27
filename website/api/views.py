@@ -25,7 +25,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website.duplicate_checker import check_for_duplicates, find_similar_bugs
+from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
     ActivityLog,
     Contributor,
@@ -1389,27 +1389,14 @@ class CheckDuplicateBugApiView(APIView):
         try:
             result = check_for_duplicates(url, description, domain)
 
-            # Format the response
+            # Format the response using shared helper
             similar_bugs_data = []
             for bug_info in result["similar_bugs"]:
-                issue = bug_info["issue"]
-                similar_bugs_data.append(
-                    {
-                        "id": issue.id,
-                        "url": issue.url,
-                        "description": issue.description[:200],  # Truncate for preview
-                        "similarity": bug_info["similarity"],
-                        "description_similarity": bug_info["description_similarity"],
-                        "url_similarity": bug_info["url_similarity"],
-                        "keyword_matches": bug_info["keyword_matches"],
-                        "status": issue.status,
-                        "created": issue.created,
-                        "user": issue.user.username if issue.user else "Anonymous",
-                        "label": issue.get_label_display(),
-                        "verified": issue.verified,
-                        "upvotes": issue.upvoted.count() if hasattr(issue, "upvoted") else 0,
-                    }
-                )
+                try:
+                    similar_bugs_data.append(format_similar_bug(bug_info, truncate_description=200))
+                except (KeyError, AttributeError, ValueError, TypeError) as e:
+                    logger.warning("Error formatting similar bug: %s", e)
+                    continue
 
             response_data = {
                 "is_duplicate": result["is_duplicate"],

@@ -500,7 +500,7 @@
 
     $(function () {
         // Check Duplicates button handler - using new duplicate checker API
-        $(".duplicates").click(async () => {
+        $(".duplicates").click(async (event) => {
             const uri = $("input[name='url']").val();
             const title = $("input[name='description']").val();
             const markdownDesc = $("textarea[name='markdown_description']").val();
@@ -513,8 +513,8 @@
             // Combine title and description for better duplicate detection
             const fullDescription = title + (markdownDesc ? '. ' + markdownDesc : '');
 
-            // Show loading state
-            const button = $(".duplicates");
+            // Show loading state - scope to clicked button
+            const button = $(event.currentTarget);
             const originalText = button.html();
             button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Checking...');
 
@@ -581,8 +581,9 @@
         // Updated add_duplicates function for new API response format
         let add_duplicates = (bug, confidence) => {
             const similarityPercent = Math.round((bug.similarity || 0) * 100);
-            const confidenceColor = confidence === 'high' ? 'bg-red-100 text-red-800' : 
-                                    confidence === 'medium' ? 'bg-orange-100 text-orange-800' : 
+            // Use per-bug similarity for color, not global confidence
+            const confidenceColor = similarityPercent >= 70 ? 'bg-red-100 text-red-800' : 
+                                    similarityPercent >= 60 ? 'bg-orange-100 text-orange-800' : 
                                     'bg-blue-100 text-blue-800';
             
             const createdDate = new Date(bug.created);
