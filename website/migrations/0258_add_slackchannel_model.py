@@ -25,6 +25,28 @@ class Migration(migrations.Migration):
                 ("created_at", models.DateTimeField(blank=True, null=True)),
                 ("slack_url", models.URLField(blank=True, default="", max_length=255)),
                 ("last_synced", models.DateTimeField(auto_now=True)),
+                (
+                    "organization",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Organization this Slack channel belongs to",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="slack_channels",
+                        to="website.organization",
+                    ),
+                ),
+                (
+                    "project",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Project this Slack channel is linked to",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="slack_channels",
+                        to="website.project",
+                    ),
+                ),
             ],
             options={
                 "ordering": ["-num_members", "name"],
@@ -33,17 +55,5 @@ class Migration(migrations.Migration):
                     models.Index(fields=["num_members"], name="slackchannel_members_idx"),
                 ],
             },
-        ),
-        migrations.AddField(
-            model_name="project",
-            name="slack_channel_link",
-            field=models.ForeignKey(
-                blank=True,
-                help_text="Link to the SlackChannel record for this project",
-                null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
-                related_name="projects",
-                to="website.slackchannel",
-            ),
         ),
     ]

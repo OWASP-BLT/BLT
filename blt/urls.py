@@ -250,6 +250,7 @@ from website.views.organization import (
     hunt_results,
     join_room,
     like_activity,
+    link_slack_channel_to_project,
     load_more_issues,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -261,6 +262,7 @@ from website.views.organization import (
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
+    slack_channels_list,
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
@@ -537,6 +539,16 @@ urlpatterns = [
         name="ongoing_hunts",
     ),
     re_path(r"^dashboard/organization/domains$", DomainList.as_view(), name="domain_list"),
+    re_path(
+        r"^dashboard/organization/slack-channels$",
+        slack_channels_list,
+        name="slack_channels_list",
+    ),
+    path(
+        "dashboard/organization/slack-channels/link",
+        link_slack_channel_to_project,
+        name="link_slack_channel_to_project",
+    ),
     re_path(
         r"^dashboard/organization/settings$",
         OrganizationSettings.as_view(),

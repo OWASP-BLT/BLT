@@ -144,6 +144,22 @@ class SlackChannel(models.Model):
     created_at = models.DateTimeField(null=True, blank=True)
     slack_url = models.URLField(max_length=255, blank=True, default="")
     last_synced = models.DateTimeField(auto_now=True)
+    organization = models.ForeignKey(
+        "Organization",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="slack_channels",
+        help_text="Organization this Slack channel belongs to",
+    )
+    project = models.ForeignKey(
+        "Project",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="slack_channels",
+        help_text="Project this Slack channel is linked to",
+    )
 
     class Meta:
         ordering = ["-num_members", "name"]
@@ -1321,14 +1337,6 @@ class Project(models.Model):
     slack = models.URLField(null=True, blank=True)
     slack_channel = models.CharField(max_length=255, blank=True, null=True)
     slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
-    slack_channel_link = models.ForeignKey(
-        "SlackChannel",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="projects",
-        help_text="Link to the SlackChannel record for this project",
-    )
     slack_user_count = models.IntegerField(default=0)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)

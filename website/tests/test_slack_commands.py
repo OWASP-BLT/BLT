@@ -409,9 +409,10 @@ class SlackCommandsTests(TestCase):
         self.assertEqual(project.slack_id, "C11111111")
         self.assertEqual(project.slack_user_count, 5)
 
-        # Verify the project is linked to the SlackChannel model
-        self.assertIsNotNone(project.slack_channel_link)
-        self.assertEqual(project.slack_channel_link.channel_id, "C11111111")
+        # Verify the SlackChannel is linked to the project
+        channel1.refresh_from_db()
+        self.assertIsNotNone(channel1.project)
+        self.assertEqual(channel1.project.id, project.id)
 
         # Verify command output mentions saved channels
         output = out.getvalue()
