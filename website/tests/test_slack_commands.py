@@ -118,8 +118,9 @@ class SlackCommandsTests(TestCase):
 
     def test_update_slack_user_count_no_projects(self):
         """Test command with no projects having Slack channels"""
-        # Remove slack_id from the project
+        # Remove both slack_id and slack_channel from the project
         self.project_with_slack.slack_id = None
+        self.project_with_slack.slack_channel = None
         self.project_with_slack.save()
 
         out = StringIO()
@@ -176,3 +177,156 @@ class SlackCommandsTests(TestCase):
         output = out.getvalue()
         self.assertIn("8 members", output)
         self.assertIn("1 projects updated", output)
+
+    @patch("website.management.commands.update_slack_user_count.requests.get")
+    def test_resolve_channel_from_name(self, mock_get):
+        """Test resolving channel ID from channel name when slack_id is missing"""
+        # Delete the existing project_with_slack to test in isolation
+        self.project_with_slack.delete()
+
+        # Create a project with only slack_channel (no slack_id or slack URL)
+        project_channel_only = Project.objects.create(
+            name="Project Channel Only",
+            slug="project-channel-only",
+            description="A project with only slack channel name",
+            slack_channel="project-channel-only",
+        )
+
+        # Mock responses: first for conversations.list, then for conversations.members
+        mock_channels_response = Mock()
+        mock_channels_response.json.return_value = {
+            "ok": True,
+            "channels": [
+                {"name": "project-channel-only", "id": "C98765432"},
+                {"name": "other-channel", "id": "C11111111"},
+            ],
+            "response_metadata": {"next_cursor": ""},
+        }
+        mock_members_response = Mock()
+        mock_members_response.json.return_value = {
+            "ok": True,
+            "members": ["U1", "U2", "U3", "U4", "U5"],  # 5 members
+            "response_metadata": {"next_cursor": ""},
+        }
+
+        mock_get.side_effect = [mock_channels_response, mock_members_response]
+
+        out = StringIO()
+        call_command("update_slack_user_count", "--slack_token=test-token", stdout=out)
+
+        # Verify the project was resolved and updated
+        project_channel_only.refresh_from_db()
+        self.assertEqual(project_channel_only.slack_id, "C98765432")
+        self.assertEqual(project_channel_only.slack, "https://owasp.slack.com/archives/C98765432")
+        self.assertEqual(project_channel_only.slack_user_count, 5)
+
+        # Verify command output
+        output = out.getvalue()
+        self.assertIn("Resolved channel for Project Channel Only", output)
+        self.assertIn("1 channels resolved", output)
+
+    @patch("website.management.commands.update_slack_user_count.requests.get")
+    def test_resolve_channel_with_hash_prefix(self, mock_get):
+        """Test resolving channel ID when slack_channel has # prefix"""
+        # Delete the existing project_with_slack to test in isolation
+        self.project_with_slack.delete()
+
+        # Create a project with slack_channel that has # prefix
+        project_with_hash = Project.objects.create(
+            name="Project With Hash",
+            slug="project-with-hash",
+            description="A project with # prefixed channel name",
+            slack_channel="#project-hash-channel",
+        )
+
+        # Mock responses
+        mock_channels_response = Mock()
+        mock_channels_response.json.return_value = {
+            "ok": True,
+            "channels": [
+                {"name": "project-hash-channel", "id": "C87654321"},
+            ],
+            "response_metadata": {"next_cursor": ""},
+        }
+        mock_members_response = Mock()
+        mock_members_response.json.return_value = {
+            "ok": True,
+            "members": ["U1", "U2", "U3"],  # 3 members
+            "response_metadata": {"next_cursor": ""},
+        }
+
+        mock_get.side_effect = [mock_channels_response, mock_members_response]
+
+        out = StringIO()
+        call_command("update_slack_user_count", "--slack_token=test-token", stdout=out)
+
+        # Verify the project was resolved correctly (# stripped)
+        project_with_hash.refresh_from_db()
+        self.assertEqual(project_with_hash.slack_id, "C87654321")
+        self.assertEqual(project_with_hash.slack, "https://owasp.slack.com/archives/C87654321")
+        self.assertEqual(project_with_hash.slack_user_count, 3)
+
+    @patch("website.management.commands.update_slack_user_count.requests.get")
+    def test_channel_not_found_in_slack(self, mock_get):
+        """Test handling when channel name doesn't exist in Slack"""
+        # Delete the existing project_with_slack to test in isolation
+        self.project_with_slack.delete()
+
+        # Create a project with a channel name that doesn't exist
+        project_missing = Project.objects.create(
+            name="Project Missing Channel",
+            slug="project-missing-channel",
+            description="A project with non-existent channel",
+            slack_channel="non-existent-channel",
+        )
+
+        # Mock responses: conversations.list returns empty
+        mock_channels_response = Mock()
+        mock_channels_response.json.return_value = {
+            "ok": True,
+            "channels": [
+                {"name": "other-channel", "id": "C11111111"},
+            ],
+            "response_metadata": {"next_cursor": ""},
+        }
+
+        mock_get.return_value = mock_channels_response
+
+        out = StringIO()
+        call_command("update_slack_user_count", "--slack_token=test-token", stdout=out)
+
+        # Verify the project was not updated
+        project_missing.refresh_from_db()
+        self.assertIsNone(project_missing.slack_id)
+        self.assertEqual(project_missing.slack_user_count, 0)
+
+        # Verify command output
+        output = out.getvalue()
+        self.assertIn("Could not find channel 'non-existent-channel'", output)
+
+    @patch("website.management.commands.update_slack_user_count.requests.get")
+    def test_channel_lookup_api_error(self, mock_get):
+        """Test handling when channel lookup API fails"""
+        # Remove slack_id from project to trigger channel lookup
+        self.project_with_slack.slack_id = None
+        self.project_with_slack.save()
+
+        # Mock API error for conversations.list
+        mock_error_response = Mock()
+        mock_error_response.json.return_value = {
+            "ok": False,
+            "error": "invalid_auth",
+        }
+        mock_get.return_value = mock_error_response
+
+        out = StringIO()
+        call_command("update_slack_user_count", "--slack_token=test-token", stdout=out)
+
+        # Verify the project was not updated
+        self.project_with_slack.refresh_from_db()
+        self.assertIsNone(self.project_with_slack.slack_id)
+        self.assertEqual(self.project_with_slack.slack_user_count, 0)
+
+        # Verify command output shows failure
+        output = out.getvalue()
+        self.assertIn("Failed to fetch channels list", output)

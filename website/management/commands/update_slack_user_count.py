@@ -2,6 +2,7 @@ import logging
 import os
 
 import requests
+from django.db.models import Q
 
 from website.management.base import LoggedBaseCommand
 from website.models import Project
@@ -24,6 +25,42 @@ class Command(LoggedBaseCommand):
             help="Slack Bot Token (overrides SLACK_BOT_TOKEN environment variable)",
         )
 
+    def fetch_all_channels(self, headers):
+        """Fetch all public channels from Slack to build a name->id mapping."""
+        channels_map = {}
+        url = "https://slack.com/api/conversations.list"
+        cursor = None
+
+        while True:
+            params = {"limit": 1000, "types": "public_channel"}
+            if cursor:
+                params["cursor"] = cursor
+
+            try:
+                response = requests.get(url, headers=headers, params=params, timeout=30)
+                data = response.json()
+
+                if data.get("ok"):
+                    for channel in data.get("channels", []):
+                        channels_map[channel.get("name")] = channel.get("id")
+
+                    # Check for more pages
+                    response_metadata = data.get("response_metadata", {})
+                    cursor = response_metadata.get("next_cursor")
+                    if not cursor:
+                        break
+                else:
+                    error_msg = data.get("error", "Unknown error")
+                    self.stdout.write(self.style.WARNING(f"Failed to fetch channels list: {error_msg}"))
+                    logger.warning(f"Slack API error fetching channels: {error_msg}")
+                    break
+            except requests.exceptions.RequestException as e:
+                self.stdout.write(self.style.ERROR(f"Request failed fetching channels: {str(e)}"))
+                logger.error(f"Request exception fetching channels: {str(e)}", exc_info=True)
+                break
+
+        return channels_map
+
     def handle(self, *args, **kwargs):
         project_id = kwargs.get("project_id")
         slack_token = kwargs.get("slack_token") or os.environ.get("SLACK_BOT_TOKEN")
@@ -37,11 +74,21 @@ class Command(LoggedBaseCommand):
             )
             return
 
-        # Filter projects that have a slack_id
+        # Filter projects that have a slack_id OR have a slack_channel name (to resolve)
+        # Projects with slack_id can have member count updated directly
+        # Projects with slack_channel but no slack_id need channel lookup first
         if project_id:
-            projects = Project.objects.filter(id=project_id, slack_id__isnull=False).exclude(slack_id="")
+            projects = Project.objects.filter(
+                Q(id=project_id)
+                & (
+                    (Q(slack_id__isnull=False) & ~Q(slack_id=""))
+                    | (Q(slack_channel__isnull=False) & ~Q(slack_channel=""))
+                )
+            )
         else:
-            projects = Project.objects.filter(slack_id__isnull=False).exclude(slack_id="")
+            projects = Project.objects.filter(
+                (Q(slack_id__isnull=False) & ~Q(slack_id="")) | (Q(slack_channel__isnull=False) & ~Q(slack_channel=""))
+            )
 
         if not projects.exists():
             self.stdout.write(self.style.WARNING("No projects with Slack channels found"))
@@ -49,11 +96,58 @@ class Command(LoggedBaseCommand):
 
         headers = {"Authorization": f"Bearer {slack_token}", "Content-Type": "application/json"}
 
+        # Check if we need to fetch channel list (for projects missing slack_id)
+        channels_map = None
+        needs_channel_lookup = projects.filter(
+            Q(slack_id__isnull=True) | Q(slack_id=""), slack_channel__isnull=False
+        ).exclude(slack_channel="")
+        if needs_channel_lookup.exists():
+            self.stdout.write("Fetching Slack channels list for channel name resolution...")
+            channels_map = self.fetch_all_channels(headers)
+
         updated_count = 0
+        resolved_count = 0
         failed_count = 0
 
         for project in projects:
             try:
+                channel_id = project.slack_id
+
+                # If project has slack_channel but no slack_id, try to resolve it
+                if (not channel_id or channel_id == "") and project.slack_channel:
+                    if channels_map is None:
+                        self.stdout.write(
+                            self.style.WARNING(f"Skipping {project.name}: has channel name but channel lookup failed")
+                        )
+                        failed_count += 1
+                        continue
+
+                    # Normalize channel name (remove # prefix if present)
+                    channel_name = project.slack_channel.lstrip("#")
+
+                    if channel_name in channels_map:
+                        channel_id = channels_map[channel_name]
+                        # Update project with resolved slack_id and slack URL
+                        project.slack_id = channel_id
+                        project.slack = f"https://owasp.slack.com/archives/{channel_id}"
+                        project.save(update_fields=["slack_id", "slack"])
+                        self.stdout.write(
+                            self.style.SUCCESS(f"Resolved channel for {project.name}: #{channel_name} -> {channel_id}")
+                        )
+                        resolved_count += 1
+                    else:
+                        self.stdout.write(
+                            self.style.WARNING(f"Could not find channel '{channel_name}' for {project.name}")
+                        )
+                        failed_count += 1
+                        continue
+
+                # Skip if we still don't have a channel_id
+                if not channel_id:
+                    self.stdout.write(self.style.WARNING(f"Skipping {project.name}: no slack channel ID available"))
+                    failed_count += 1
+                    continue
+
                 # Use Slack API conversations.members to get accurate member count
                 # The conversations.info API's num_members field is unreliable and often returns 0
                 url = "https://slack.com/api/conversations.members"
@@ -63,7 +157,7 @@ class Command(LoggedBaseCommand):
 
                 # Paginate through all members
                 while True:
-                    params = {"channel": project.slack_id, "limit": 1000}
+                    params = {"channel": channel_id, "limit": 1000}
                     if cursor:
                         params["cursor"] = cursor
 
@@ -119,4 +213,8 @@ class Command(LoggedBaseCommand):
                 failed_count += 1
                 logger.error(f"Unexpected exception for project {project.id}: {str(e)}", exc_info=True)
 
-        self.stdout.write(self.style.SUCCESS(f"\nCompleted: {updated_count} projects updated, {failed_count} failed"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"\nCompleted: {updated_count} projects updated, {resolved_count} channels resolved, {failed_count} failed"
+            )
+        )
