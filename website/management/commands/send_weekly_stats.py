@@ -18,7 +18,11 @@ class Command(BaseCommand):
         """
         self.stdout.write("Starting weekly stats delivery...")
 
-        domains = Domain.objects.all()
+        # Only get domains that have an organization with an owner (admin)
+        domains = Domain.objects.filter(
+            organization__isnull=False,
+            organization__admin__isnull=False,
+        )
         reports_sent = 0
         reports_failed = 0
 
