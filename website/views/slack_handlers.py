@@ -33,6 +33,21 @@ client = WebClient(token=SLACK_TOKEN)
 # Add at the top with other environment variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
+
+def get_project_with_least_members():
+    """Get the project channel name with the least members (excluding project-blt)."""
+    try:
+        project = (
+            Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
+            .exclude(slack_channel="project-blt")
+            .order_by("slack_user_count")
+            .first()
+        )
+        return project.slack_channel if project else None
+    except Exception:
+        return None
+
+
 # Replace GSoC cache with hardcoded project data
 GSOC_PROJECTS = [
     {
@@ -236,13 +251,17 @@ def _handle_team_join(user_id, request):
                 # If no welcome message but it's OWASP workspace
                 if team_id == "T04T40NHX":
                     workspace_client = WebClient(token=SLACK_TOKEN)
+                    least_members_channel = get_project_with_least_members()
+                    project_examples = "*#project-blt*"
+                    if least_members_channel:
+                        project_examples += f" or *#{least_members_channel}*"
                     welcome_message = (
                         f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
                         "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
                         "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
                         ":small_blue_diamond: *Get Involved:*\n"
                         "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                        "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
+                        f"• Explore project channels like {project_examples} to dive into specific projects.\n"
                         "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
                         ":small_blue_diamond: *Stay Updated:*\n"
                         "• Visit *#newsroom* for the latest updates and announcements.\n"
@@ -271,13 +290,17 @@ def _handle_team_join(user_id, request):
             if team_id == "T04T40NHX":
                 workspace_client = WebClient(token=SLACK_TOKEN)
                 # Use the default OWASP welcome message
+                least_members_channel = get_project_with_least_members()
+                project_examples = "*#project-blt*"
+                if least_members_channel:
+                    project_examples += f" or *#{least_members_channel}*"
                 welcome_message = (
                     f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
                     "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
                     "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
                     ":small_blue_diamond: *Get Involved:*\n"
                     "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                    "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
+                    f"• Explore project channels like {project_examples} to dive into specific projects.\n"
                     "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
                     ":small_blue_diamond: *Stay Updated:*\n"
                     "• Visit *#newsroom* for the latest updates and announcements.\n"
