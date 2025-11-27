@@ -197,7 +197,7 @@ class SlackWeeklyReportTests(TestCase):
             default_channel_name="general",
         )
 
-    @patch("slack_bolt.App")
+    @patch("website.management.commands.slack_weekly_report.App")
     def test_weekly_report_generation(self, mock_app):
         """Test that weekly report is generated and sent successfully."""
         # Mock the Slack app and client
@@ -222,7 +222,7 @@ class SlackWeeklyReportTests(TestCase):
         self.assertIn("Test Org", message)
         self.assertIn("Overview Statistics", message)
 
-    @patch("slack_bolt.App")
+    @patch("website.management.commands.slack_weekly_report.App")
     def test_weekly_report_with_projects(self, mock_app):
         """Test weekly report includes project information."""
         # Create a test project
@@ -249,7 +249,7 @@ class SlackWeeklyReportTests(TestCase):
         self.assertIn("Test Project", message)
         self.assertIn("Projects Overview", message)
 
-    @patch("slack_bolt.App")
+    @patch("website.management.commands.slack_weekly_report.App")
     def test_weekly_report_custom_channel(self, mock_app):
         """Test that weekly report uses custom channel when configured."""
         # Set custom weekly report channel
@@ -276,7 +276,7 @@ class SlackWeeklyReportTests(TestCase):
         call_args = mock_client.chat_postMessage.call_args
         self.assertEqual(call_args.kwargs["channel"], "C789012")
 
-    @patch("slack_bolt.App")
+    @patch("website.management.commands.slack_weekly_report.App")
     def test_weekly_report_fallback_to_default_channel(self, mock_app):
         """Test that weekly report falls back to default channel when custom not set."""
         # Ensure weekly report channel is not set (it's None by default in setUp)
@@ -300,4 +300,3 @@ class SlackWeeklyReportTests(TestCase):
         # Verify the message was sent to the default channel
         call_args = mock_client.chat_postMessage.call_args
         self.assertEqual(call_args.kwargs["channel"], "C123456")
-        self.assertEqual(activity.details["command"], "/installed_apps")
