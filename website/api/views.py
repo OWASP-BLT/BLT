@@ -1376,6 +1376,31 @@ def trademark_search_api(request):
         )
 
 
+# Security Incident API
+class SecurityIncidentViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = SecurityIncidentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = SecurityIncident.objects.all().order_by("-created_at")
+
+        request = self.request
+        severity = request.query_params.get("severity")
+        status = request.query_params.get("status")
+
+        allowed_severities = [choice[0] for choice in SecurityIncident.Severity.choices]
+        allowed_statuses = [choice[0] for choice in SecurityIncident.Status.choices]
+
+        if severity in allowed_severities:
+            queryset = queryset.filter(severity=severity)
+
+        if status in allowed_statuses:
+            queryset = queryset.filter(status=status)
+
+        return queryset
+
+
 class CheckDuplicateBugApiView(APIView):
     """
     API endpoint to check for duplicate bug reports before submission.

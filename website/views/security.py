@@ -119,10 +119,10 @@ class SecurityDashboardView(LoginRequiredMixin, TemplateView):
         context["security_issues"] = Issue.objects.filter(label=4).order_by("-created")[:10]
 
         # Summary (filtered, NOT global)
-        context["incident_count"] = queryset.count()
+        context["incident_count"] = filtered_queryset.count()
 
-        severity_agg = list(queryset.values("severity").annotate(total=Count("severity")))
-        status_agg = list(queryset.values("status").annotate(total=Count("status")))
+        severity_agg = list(filtered_queryset.values("severity").annotate(total=Count("severity")))
+        status_agg = list(filtered_queryset.values("status").annotate(total=Count("status")))
 
         context["severity_breakdown"] = severity_agg
         context["status_breakdown"] = status_agg
