@@ -357,6 +357,7 @@ class ProjectCompactListView(ListView):
                 "status": "status",
                 "repos_count": "repo_count",
                 "slack_channel": "slack_channel",
+                "slack_user_count": "slack_user_count",
                 "created": "created",
                 "modified": "modified",
             }
