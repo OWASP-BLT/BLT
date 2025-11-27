@@ -33,23 +33,66 @@
                     {% if form.relationship.errors %}<p class="text-red-500 text-sm mt-1">{{ form.relationship.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="mb-4">
-                    <label for="{{ form.skills_endorsed.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {% trans "Skills to Endorse" %} <span class="text-gray-400 text-xs">({% trans "Select up to 5, optional" %})</span>
-                    </label>
-                    <div class="relative">
-                        {{ form.skills_endorsed }}
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            {% trans "Hold Ctrl (Cmd on Mac) to select multiple skills" %}
-                        </p>
+                    <div class="flex items-center justify-between mb-2.5">
+                        <label for="{{ form.skills_endorsed.id_for_label }}"
+                               class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            <i class="fas fa-tags text-gray-400 mr-2"></i>
+                            {% trans "Skills to Endorse" %}
+                            <span class="text-gray-400 text-xs font-normal">({% trans "Select up to 5, optional" %})</span>
+                        </label>
+                        <div id="selected-skills-count"
+                             class="text-sm font-medium px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 border border-transparent transition-colors duration-200">
+                            <span id="skills-count"
+                                  class="text-blue-600 dark:text-blue-400 font-semibold">0</span>
+                            <span class="text-gray-500 dark:text-gray-400">/ 5</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-64 overflow-y-auto">
+                        <div class="skills-checkbox-container space-y-4">
+                            {% if form.skills_by_category %}
+                                {% for category, skills in form.skills_by_category.items %}
+                                    <div class="skill-category-group">
+                                        <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 pb-1 border-b border-gray-200 dark:border-gray-700">
+                                            {{ category }}
+                                        </h4>
+                                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                            {% for skill_name, skill_display in skills %}
+                                                <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200 skill-checkbox-label">
+                                                    <input type="checkbox"
+                                                           name="{{ form.skills_endorsed.name }}"
+                                                           value="{{ skill_name }}"
+                                                           class="skill-checkbox w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                                           {% if skill_name in form.skills_endorsed.value or skill_name in form.skills_endorsed.initial %}checked{% endif %}>
+                                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ skill_display }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="space-y-2">
+                                    {% for choice in form.skills_endorsed.field.choices %}
+                                        {% if choice.0 and not choice.0|slice:":3" == "---" %}
+                                            <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200 skill-checkbox-label">
+                                                <input type="checkbox"
+                                                       name="{{ form.skills_endorsed.name }}"
+                                                       value="{{ choice.0 }}"
+                                                       class="skill-checkbox w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                                       {% if choice.0 in form.skills_endorsed.value or choice.0 in form.skills_endorsed.initial %}checked{% endif %}>
+                                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ choice.1 }}</span>
+                                            </label>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                     {% if form.skills_endorsed.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.skills_endorsed.errors.0 }}</p>
+                        <p class="text-red-500 text-sm mt-2 flex items-center gap-1">
+                            <i class="fas fa-exclamation-circle text-xs"></i>
+                            {{ form.skills_endorsed.errors.0 }}
+                        </p>
                     {% endif %}
-                    <div id="selected-skills-count"
-                         class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                        <span id="skills-count">0</span> / 5 {% trans "skills selected" %}
-                    </div>
                 </div>
                 <div class="mb-4">
                     <label for="{{ form.recommendation_text.id_for_label }}"
@@ -115,34 +158,58 @@
             updateCharCount();
         }
 
-        // Skills count
-        const skillSelect = document.getElementById('{{ form.skills_endorsed.id_for_label }}');
+        // Update skills count and enforce max 5 selection (for checkboxes)
+        const skillCheckboxes = document.querySelectorAll('.skill-checkbox');
         const skillsCountDisplay = document.getElementById('skills-count');
+        const skillsCountContainer = document.getElementById('selected-skills-count');
         
-        if (skillSelect && skillsCountDisplay) {
+        if (skillCheckboxes.length > 0 && skillsCountDisplay) {
             function updateSkillsCount() {
-                const selected = Array.from(skillSelect.selectedOptions).filter(opt => !opt.value.startsWith('---'));
-                const count = selected.length;
-                skillsCountDisplay.textContent = count;
+                const checked = Array.from(skillCheckboxes).filter(cb => cb.checked);
+                let count = checked.length;
                 
                 if (count > 5) {
-                    skillsCountDisplay.classList.add('text-red-500', 'font-semibold');
-                    const excess = selected.slice(5);
-                    excess.forEach(option => {
-                        option.selected = false;
+                    // Uncheck excess (keep first 5)
+                    const excess = checked.slice(5);
+                    excess.forEach(checkbox => {
+                        checkbox.checked = false;
                     });
-                    const newCount = Array.from(skillSelect.selectedOptions).filter(opt => !opt.value.startsWith('---')).length;
-                    skillsCountDisplay.textContent = newCount;
+                    count = 5;
                     alert('{% trans "Maximum 5 skills allowed. Only the first 5 selections were kept." %}');
+                }
+                
+                skillsCountDisplay.textContent = count;
+                
+                // Update styling based on count
+                if (count > 5) {
+                    skillsCountDisplay.classList.add('text-red-600', 'dark:text-red-400');
+                    skillsCountContainer.classList.add('bg-red-100', 'dark:bg-red-900/30', 'border-red-300', 'dark:border-red-700');
+                    skillsCountContainer.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'bg-yellow-100', 'dark:bg-yellow-900/30');
                 } else if (count === 5) {
-                    skillsCountDisplay.classList.add('text-yellow-600', 'font-semibold');
+                    skillsCountDisplay.classList.add('text-yellow-600', 'dark:text-yellow-400');
+                    skillsCountContainer.classList.add('bg-yellow-100', 'dark:bg-yellow-900/30', 'border-yellow-300', 'dark:border-yellow-700');
+                    skillsCountContainer.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'bg-red-100', 'dark:bg-red-900/30');
                 } else {
-                    skillsCountDisplay.classList.remove('text-red-500', 'text-yellow-600', 'font-semibold');
-                    skillsCountDisplay.classList.add('text-gray-600');
+                    skillsCountDisplay.classList.remove('text-red-600', 'dark:text-red-400', 'text-yellow-600', 'dark:text-yellow-400');
+                    skillsCountDisplay.classList.add('text-blue-600', 'dark:text-blue-400');
+                    skillsCountContainer.classList.remove('bg-red-100', 'dark:bg-red-900/30', 'bg-yellow-100', 'dark:bg-yellow-900/30', 'border-red-300', 'dark:border-red-700', 'border-yellow-300', 'dark:border-yellow-700');
+                    skillsCountContainer.classList.add('bg-gray-100', 'dark:bg-gray-700');
                 }
             }
             
-            skillSelect.addEventListener('change', updateSkillsCount);
+            // Add change listener to all checkboxes
+            skillCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const checked = Array.from(skillCheckboxes).filter(cb => cb.checked);
+                    if (checked.length > 5) {
+                        this.checked = false;
+                        alert('{% trans "Maximum 5 skills allowed." %}');
+                    }
+                    updateSkillsCount();
+                });
+            });
+            
+            // Initialize count
             updateSkillsCount();
         }
     </script>
