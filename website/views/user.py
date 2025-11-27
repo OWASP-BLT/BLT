@@ -2453,6 +2453,7 @@ def edit_recommendation_blurb(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Recommendation blurb updated successfully.")
+            return redirect("profile", slug=request.user.username)
         else:
             messages.error(request, "Please correct the errors in the form.")
     else:
