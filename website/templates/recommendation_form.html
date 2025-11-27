@@ -262,7 +262,7 @@
         if (skillCheckboxes.length > 0 && skillsCountDisplay) {
             function updateSkillsCount() {
                 const checked = Array.from(skillCheckboxes).filter(cb => cb.checked);
-                const count = checked.length;
+                let count = checked.length;
                 skillsCountDisplay.textContent = count;
                 
                 if (count > 5) {
