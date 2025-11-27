@@ -114,6 +114,17 @@ class ProjectCompactViewTestCase(TestCase):
         pos2 = content.find("Test Project 2")
         self.assertLess(pos1, pos2)
 
+    def test_compact_view_sorting_by_slack_member_count(self):
+        """Test sorting projects by slack member count"""
+        response = self.client.get(reverse("project_compact_list") + "?sort=slack_user_count&order=desc")
+        self.assertEqual(response.status_code, 200)
+        # Project 1 has slack_user_count = 150, Project 2 has 0
+        # When sorted by slack_user_count desc, Project 1 should come first
+        content = response.content.decode()
+        pos1 = content.find("Test Project 1")
+        pos2 = content.find("Test Project 2")
+        self.assertLess(pos1, pos2)
+
     def test_compact_view_search_functionality(self):
         """Test search functionality in compact view"""
         response = self.client.get(reverse("project_compact_list") + "?search=Test Project 1")

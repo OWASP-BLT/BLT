@@ -185,10 +185,10 @@
                                 </th>
                                 <th scope="col"
                                     class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    <a href="?sort=slack_channel&order={% if sort_by == 'slack_channel' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
+                                    <a href="?sort=slack_user_count&order={% if sort_by == 'slack_user_count' and order == 'asc' %}desc{% else %}asc{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.organization %}&organization={{ request.GET.organization }}{% endif %}"
                                        class="flex items-center hover:text-red-500">
                                         Slack
-                                        {% if sort_by == "slack_channel" %}
+                                        {% if sort_by == "slack_user_count" %}
                                             {% if order == "asc" %}
                                                 <svg class="w-4 h-4 ml-1"
                                                      fill="currentColor"
