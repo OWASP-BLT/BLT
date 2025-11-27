@@ -23,27 +23,34 @@ jobs:
             const prBody = pr.body || '';
 
             // Look for issue closing keywords in PR body
-            const issueRefs = prBody.match(/(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi);
+            // Match patterns like: fixes #123, fixes: #123, fixes #123, fixes https://github.com/owner/repo/issues/123
+            const hashPattern = /(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved):?\s*#(\d+)/gi;
+            const urlPattern = /(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved):?\s+https?:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/(\d+)/gi;
 
-            if (!issueRefs) {
-              console.log('No issue references found in PR');
-              return;
+            const issueNumbers = [];
+
+            // Match #123 style references
+            let match;
+            while ((match = hashPattern.exec(prBody)) !== null) {
+              issueNumbers.push(match[2]);
             }
 
-            // Extract issue numbers
-            const issueNumbers = issueRefs.map(ref => {
-              const match = ref.match(/#(\d+)/);
-              return match ? match[1] : null;
-            }).filter(Boolean);
+            // Match URL style references
+            while ((match = urlPattern.exec(prBody)) !== null) {
+              issueNumbers.push(match[2]);
+            }
 
-            if (issueNumbers.length === 0) {
-              console.log('No valid issue numbers found');
+            // Remove duplicates
+            const uniqueIssueNumbers = [...new Set(issueNumbers)];
+
+            if (uniqueIssueNumbers.length === 0) {
+              console.log('No issue references found in PR');
               return;
             }
 
             // Check each issue for bounty labels
             let bountyIssue = null;
-            for (const issueNumber of issueNumbers) {
+            for (const issueNumber of uniqueIssueNumbers) {
               const issue = await github.rest.issues.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
