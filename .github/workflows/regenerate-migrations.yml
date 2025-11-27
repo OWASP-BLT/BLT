@@ -185,23 +185,71 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Stage the migration files and model files
-          git add website/migrations/ comments/migrations/
-          git add website/models*.py comments/models*.py 2>/dev/null || true
-
-          git commit -m "Regenerate Django migrations
+          # Define commit message for consistency
+          COMMIT_MSG="Regenerate Django migrations
 
           Triggered by: $TRIGGER_TYPE
           PR: #$PR_NUMBER"
 
           # Push to the PR branch
           if [ -n "$PR_HEAD_REF" ]; then
-            # For PRs, we need to push to the PR's head branch
+            # For PRs, we need to checkout the PR branch first, then apply changes
+            # Save the generated migration files to a temporary location
+            TEMP_DIR=$(mktemp -d)
+            cp -r website/migrations/ "$TEMP_DIR/website_migrations/"
+            # Only copy comments/migrations if it exists
+            if [ -d "comments/migrations" ]; then
+              cp -r comments/migrations/ "$TEMP_DIR/comments_migrations/"
+            fi
+            # Also save any modified model files
+            git diff --name-only | grep -E 'models.*\.py$' | while read -r file; do
+              if [ -f "$file" ]; then
+                mkdir -p "$TEMP_DIR/$(dirname "$file")"
+                cp "$file" "$TEMP_DIR/$file"
+              fi
+            done
+
+            # Checkout the PR branch
+            git fetch pr-fork "$PR_HEAD_REF"
+            git checkout -B pr-branch "pr-fork/$PR_HEAD_REF"
+
+            # Restore the generated migration files
+            if [ -d "$TEMP_DIR/website_migrations" ] && \
+               [ -n "$(ls -A "$TEMP_DIR/website_migrations/")" ]; then
+              cp -r "$TEMP_DIR/website_migrations/"* website/migrations/
+            fi
+            if [ -d "$TEMP_DIR/comments_migrations" ] && \
+               [ -n "$(ls -A "$TEMP_DIR/comments_migrations/")" ]; then
+              cp -r "$TEMP_DIR/comments_migrations/"* comments/migrations/
+            fi
+            # Restore modified model files
+            find "$TEMP_DIR" -name "*.py" -path "*/models*" | while read -r file; do
+              REL_PATH="${file#"$TEMP_DIR"/}"
+              if [ -n "$REL_PATH" ] && [ "$REL_PATH" != "$file" ]; then
+                cp "$file" "$REL_PATH"
+              fi
+            done
+
+            # Clean up
+            rm -rf "$TEMP_DIR"
+
+            # Stage the migration files and model files
+            git add website/migrations/ comments/migrations/
+            git add website/models*.py comments/models*.py 2>/dev/null || true
+
+            git commit -m "$COMMIT_MSG"
+
+            # Push to the PR's head branch
             TOKEN="${{ secrets.GITHUB_TOKEN }}"
             PUSH_URL="https://x-access-token:$TOKEN@github.com"
-            git push "$PUSH_URL/$PR_HEAD_REPO.git" HEAD:"$PR_HEAD_REF"
+            git push "$PUSH_URL/$PR_HEAD_REPO.git" pr-branch:"$PR_HEAD_REF"
           else
             # For manual dispatch, push to current branch
+            git add website/migrations/ comments/migrations/
+            git add website/models*.py comments/models*.py 2>/dev/null || true
+
+            git commit -m "$COMMIT_MSG"
+
             git push origin HEAD
           fi
 
