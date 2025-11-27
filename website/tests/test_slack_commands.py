@@ -33,15 +33,12 @@ class SlackCommandsTests(TestCase):
     @patch("website.management.commands.update_slack_user_count.requests.get")
     def test_update_slack_user_count_success(self, mock_get):
         """Test successful update of Slack user counts"""
-        # Mock Slack API response
+        # Mock Slack API response for conversations.members
         mock_response = Mock()
         mock_response.json.return_value = {
             "ok": True,
-            "channel": {
-                "id": "C12345678",
-                "name": "project-test",
-                "num_members": 42,
-            },
+            "members": ["U1", "U2", "U3"] * 14,  # 42 members
+            "response_metadata": {"next_cursor": ""},
         }
         mock_get.return_value = mock_response
 
@@ -94,15 +91,12 @@ class SlackCommandsTests(TestCase):
     @patch("website.management.commands.update_slack_user_count.requests.get")
     def test_update_slack_user_count_single_project(self, mock_get):
         """Test updating a single project by ID"""
-        # Mock Slack API response
+        # Mock Slack API response for conversations.members
         mock_response = Mock()
         mock_response.json.return_value = {
             "ok": True,
-            "channel": {
-                "id": "C12345678",
-                "name": "project-test",
-                "num_members": 15,
-            },
+            "members": ["U1", "U2", "U3", "U4", "U5"] * 3,  # 15 members
+            "response_metadata": {"next_cursor": ""},
         }
         mock_get.return_value = mock_response
 
@@ -152,3 +146,33 @@ class SlackCommandsTests(TestCase):
         output = out.getvalue()
         self.assertIn("Unexpected error", output)
         self.assertIn("1 failed", output)
+
+    @patch("website.management.commands.update_slack_user_count.requests.get")
+    def test_update_slack_user_count_pagination(self, mock_get):
+        """Test pagination support for channels with many members"""
+        # Mock Slack API responses with pagination
+        mock_response1 = Mock()
+        mock_response1.json.return_value = {
+            "ok": True,
+            "members": ["U1", "U2", "U3", "U4", "U5"],  # 5 members in first page
+            "response_metadata": {"next_cursor": "cursor123"},
+        }
+        mock_response2 = Mock()
+        mock_response2.json.return_value = {
+            "ok": True,
+            "members": ["U6", "U7", "U8"],  # 3 members in second page
+            "response_metadata": {"next_cursor": ""},  # No more pages
+        }
+        mock_get.side_effect = [mock_response1, mock_response2]
+
+        out = StringIO()
+        call_command("update_slack_user_count", "--slack_token=test-token", stdout=out)
+
+        # Verify the project was updated with total from both pages
+        self.project_with_slack.refresh_from_db()
+        self.assertEqual(self.project_with_slack.slack_user_count, 8)
+
+        # Verify command output
+        output = out.getvalue()
+        self.assertIn("8 members", output)
+        self.assertIn("1 projects updated", output)
