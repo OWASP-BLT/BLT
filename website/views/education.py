@@ -666,9 +666,7 @@ def fetch_youtube_video_data(video_url):
     try:
         response = requests.get(api_url, timeout=10)
         if response.status_code != 200:
-            logger.error(
-                f"YouTube API error: {response.status_code}"
-            )
+            logger.error(f"YouTube API error: {response.status_code}")
             return None
 
         data = response.json()
