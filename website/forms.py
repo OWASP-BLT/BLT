@@ -653,7 +653,7 @@ class RecommendationForm(forms.ModelForm):
         self.fields["relationship"].empty_label = "None selected"
         self.fields["relationship"].initial = None
 
-        # Set up skills_endorsed field (not a model field, handled separately)
+        # Set up skills_endorsed field with checkboxes (not a model field, handled separately)
         try:
             skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
             # Group skills by category for better organization
@@ -664,23 +664,23 @@ class RecommendationForm(forms.ModelForm):
                     skills_by_category[category] = []
                 skills_by_category[category].append((skill.name, skill.name))
 
-            # Create choices with category grouping
+            # Create choices (no category headers for checkboxes, we'll group in template)
             choices = []
             for category in sorted(skills_by_category.keys()):
-                choices.append((f"--- {category} ---", f"--- {category} ---"))  # Category header
                 choices.extend(skills_by_category[category])
+
+            # Store category mapping for template use
+            self.skills_by_category = skills_by_category
         except Exception:
             choices = []
+            self.skills_by_category = {}
 
         self.fields["skills_endorsed"] = forms.MultipleChoiceField(
             choices=choices,
             required=False,
-            widget=forms.SelectMultiple(
+            widget=forms.CheckboxSelectMultiple(
                 attrs={
-                    "class": "form-control w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white",
-                    "multiple": "multiple",
-                    "size": "8",
-                    "style": "min-height: 180px;",
+                    "class": "skills-checkbox-list",
                 }
             ),
             help_text="Select up to 5 skills to endorse (optional)",
