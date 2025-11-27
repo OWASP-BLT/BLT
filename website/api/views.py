@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import smtplib
@@ -10,6 +11,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
@@ -1521,6 +1523,10 @@ class FindSimilarBugsApiView(APIView):
             )
 
 
+# Maximum length for issue description submitted via chatbot
+CHATBOT_DESCRIPTION_MAX_LENGTH = 500
+
+
 class ChatbotReportIssueView(APIView):
     """
     API endpoint for reporting issues via the chatbot.
@@ -1530,12 +1536,6 @@ class ChatbotReportIssueView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        import base64
-        import uuid
-        from urllib.parse import urlparse
-
-        from django.core.files.base import ContentFile
-
         url = request.data.get("url", "")
         description = request.data.get("description", "")
         screenshot_data = request.data.get("screenshot", "")
@@ -1554,7 +1554,15 @@ class ChatbotReportIssueView(APIView):
                 url = "https://" + url
 
             parsed_url = urlparse(url)
-            clean_url = url.replace("https://", "").replace("http://", "").replace("www.", "")
+
+            # Build clean URL preserving path and query string
+            clean_url = parsed_url.netloc.replace("www.", "")
+            if parsed_url.path:
+                clean_url += parsed_url.path
+            if parsed_url.query:
+                clean_url += "?" + parsed_url.query
+            if parsed_url.fragment:
+                clean_url += "#" + parsed_url.fragment
 
             # Find or create domain
             domain_name = parsed_url.netloc.replace("www.", "").lower()
@@ -1563,7 +1571,7 @@ class ChatbotReportIssueView(APIView):
             # Create issue
             issue = Issue(
                 url=clean_url,
-                description=description[:500],  # Limit description length
+                description=description[:CHATBOT_DESCRIPTION_MAX_LENGTH],
                 domain=domain,
                 label=0,  # General
             )
@@ -1587,8 +1595,8 @@ class ChatbotReportIssueView(APIView):
                     format_info, base64_data = screenshot_data.split(";base64,")
                     image_data = base64.b64decode(base64_data)
 
-                    # Generate unique filename
-                    file_name = f"chatbot_screenshot_{uuid.uuid4().hex[:12]}.png"
+                    # Generate unique filename with full UUID for uniqueness
+                    file_name = f"chatbot_screenshot_{uuid.uuid4().hex}.png"
 
                     # Save screenshot
                     issue.screenshot.save(file_name, ContentFile(image_data), save=False)
