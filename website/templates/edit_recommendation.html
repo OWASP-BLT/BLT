@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% trans "Edit Recommendation" %}
+{% endblock title %}
+
+{% block content %}
+    <div class="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-2xl">
+            <h2 class="text-2xl font-bold text-center text-black/90 dark:text-white/90 mb-6">
+                {% trans "Edit Recommendation for" %} {{ to_user.username }}
+            </h2>
+
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <span class="text-red-500">*</span> {% trans "indicates required fields" %}
+            </p>
+
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-800{% elif message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'edit_recommendation' recommendation.id %}">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label for="{{ form.relationship.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {% trans "Relationship" %} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.relationship }}
+                    {% if form.relationship.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.relationship.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.skills_endorsed.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {% trans "Skills to Endorse" %} <span class="text-gray-400 text-xs">({% trans "Select up to 5, optional" %})</span>
+                    </label>
+                    <div class="relative">
+                        {{ form.skills_endorsed }}
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            {% trans "Hold Ctrl (Cmd on Mac) to select multiple skills" %}
+                        </p>
+                    </div>
+                    {% if form.skills_endorsed.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.skills_endorsed.errors.0 }}</p>
+                    {% endif %}
+                    <div id="selected-skills-count" class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        <span id="skills-count">0</span> / 5 {% trans "skills selected" %}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.recommendation_text.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {% trans "Your Recommendation" %} <span class="text-red-500" title="Required field">*</span>
+                    </label>
+                    {{ form.recommendation_text }}
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <span id="char-count">0</span> / 1000 {% trans "characters" %} (<span id="char-min-warning">{% trans "minimum 200 characters" %}</span><span id="char-warning"></span>)
+                    </p>
+                    {% if form.recommendation_text.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.recommendation_text.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex gap-4 justify-end">
+                    <a href="{% url 'profile' slug=to_user.username %}"
+                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        {% trans "Cancel" %}
+                    </a>
+                    <button type="submit"
+                            class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">
+                        {% trans "Update Recommendation" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Character counter
+        const textarea = document.getElementById('{{ form.recommendation_text.id_for_label }}');
+        const charCount = document.getElementById('char-count');
+        const charMinWarning = document.getElementById('char-min-warning');
+        const charWarning = document.getElementById('char-warning');
+        
+        if (textarea && charCount) {
+            function updateCharCount() {
+                const length = textarea.value.length;
+                charCount.textContent = length;
+                
+                if (length < 200) {
+                    charCount.classList.add('text-red-500');
+                    charCount.classList.remove('text-gray-500', 'text-yellow-600');
+                    if (charMinWarning) {
+                        charMinWarning.textContent = ` (${200 - length} characters short)`;
+                    }
+                    charWarning.textContent = '';
+                } else if (length > 1000) {
+                    charCount.classList.add('text-red-500');
+                    charCount.classList.remove('text-gray-500', 'text-yellow-600');
+                    if (charWarning) {
+                        charWarning.textContent = ` (${length - 1000} characters over limit)`;
+                    }
+                    charMinWarning.textContent = '';
+                } else {
+                    charCount.classList.remove('text-red-500', 'text-yellow-600');
+                    charCount.classList.add('text-gray-500');
+                    charMinWarning.textContent = '';
+                    charWarning.textContent = '';
+                }
+            }
+            
+            textarea.addEventListener('input', updateCharCount);
+            updateCharCount();
+        }
+
+        // Skills count
+        const skillSelect = document.getElementById('{{ form.skills_endorsed.id_for_label }}');
+        const skillsCountDisplay = document.getElementById('skills-count');
+        
+        if (skillSelect && skillsCountDisplay) {
+            function updateSkillsCount() {
+                const selected = Array.from(skillSelect.selectedOptions).filter(opt => !opt.value.startsWith('---'));
+                const count = selected.length;
+                skillsCountDisplay.textContent = count;
+                
+                if (count > 5) {
+                    skillsCountDisplay.classList.add('text-red-500', 'font-semibold');
+                    const excess = selected.slice(5);
+                    excess.forEach(option => {
+                        option.selected = false;
+                    });
+                    const newCount = Array.from(skillSelect.selectedOptions).filter(opt => !opt.value.startsWith('---')).length;
+                    skillsCountDisplay.textContent = newCount;
+                    alert('{% trans "Maximum 5 skills allowed. Only the first 5 selections were kept." %}');
+                } else if (count === 5) {
+                    skillsCountDisplay.classList.add('text-yellow-600', 'font-semibold');
+                } else {
+                    skillsCountDisplay.classList.remove('text-red-500', 'text-yellow-600', 'font-semibold');
+                    skillsCountDisplay.classList.add('text-gray-600');
+                }
+            }
+            
+            skillSelect.addEventListener('change', updateSkillsCount);
+            updateSkillsCount();
+        }
+    </script>
+{% endblock content %}
+

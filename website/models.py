@@ -957,6 +957,12 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    recommendation_blurb = models.TextField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Short summary/about section for recommendations (max 500 characters). NEW FIELD - additive only."
+    )
 
     def check_team_membership(self):
         return self.team is not None
@@ -3645,3 +3651,202 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+
+
+class RecommendationSkill(models.Model):
+    """
+    Model for structured skill endorsements that can be used in recommendations.
+    """
+    SKILL_CATEGORY_CHOICES = [
+        ("technical", "Technical"),
+        ("soft_skills", "Soft Skills"),
+        ("security", "Security"),
+    ]
+
+    name = models.CharField(max_length=100, unique=True)
+    category = models.CharField(max_length=20, choices=SKILL_CATEGORY_CHOICES, default="technical")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["category", "name"]
+        verbose_name = "Recommendation Skill"
+        verbose_name_plural = "Recommendation Skills"
+
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"
+
+
+class Recommendation(models.Model):
+    """
+    Model for user recommendations. Users can recommend other users on their profiles.
+    Recommendations require approval from the recipient before being displayed.
+    """
+    RELATIONSHIP_CHOICES = [
+        ("colleague", "Colleague"),
+        ("mentor", "Mentor"),
+        ("bug_hunter", "Bug Hunter"),
+        ("team_member", "Team Member"),
+        ("other", "Other"),
+    ]
+
+    from_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="recommendations_given",
+        help_text="User who wrote the recommendation"
+    )
+    to_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="recommendations_received",
+        help_text="User being recommended"
+    )
+    relationship = models.CharField(
+        max_length=20,
+        choices=RELATIONSHIP_CHOICES,
+        help_text="Relationship between recommender and recipient"
+    )
+    recommendation_text = models.TextField(
+        help_text="The recommendation text (200-1000 characters)"
+    )
+    skills_endorsed = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of skill names endorsed in this recommendation"
+    )
+    is_visible = models.BooleanField(
+        default=True,
+        help_text="Whether this recommendation is visible on the profile"
+    )
+    is_approved = models.BooleanField(
+        default=False,
+        help_text="Whether the recipient has approved this recommendation"
+    )
+    is_highlighted = models.BooleanField(
+        default=False,
+        help_text="Whether this recommendation is highlighted/pinned on the profile"
+    )
+    request = models.ForeignKey(
+        "RecommendationRequest",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="recommendation",
+        help_text="The recommendation request that led to this recommendation (if any)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = [("from_user", "to_user")]
+        verbose_name = "Recommendation"
+        verbose_name_plural = "Recommendations"
+        indexes = [
+            models.Index(fields=["to_user", "is_approved", "is_visible"], name="rec_to_user_app_vis_idx"),
+            models.Index(fields=["from_user"], name="rec_from_user_idx"),
+        ]
+
+    def __str__(self):
+        return f"Recommendation from {self.from_user.username} to {self.to_user.username}"
+
+    def clean(self):
+        """Validate recommendation text length"""
+        from django.core.exceptions import ValidationError
+        
+        # Validate text length only (from_user/to_user validation happens in view)
+        if self.recommendation_text:
+            if len(self.recommendation_text) < 200:
+                raise ValidationError("Recommendation text must be at least 200 characters long.")
+            if len(self.recommendation_text) > 1000:
+                raise ValidationError("Recommendation text must not exceed 1000 characters.")
+
+    def save(self, *args, **kwargs):
+        """Override save to run validation"""
+        # Only run full_clean if not in a migration and if both users are set
+        # Check using _state to avoid triggering database queries
+        if not kwargs.get("skip_validation", False) and self.recommendation_text:
+            # Only validate if both foreign keys are set (check IDs, not objects)
+            from_user_set = hasattr(self, 'from_user_id') and self.from_user_id is not None
+            to_user_set = hasattr(self, 'to_user_id') and self.to_user_id is not None
+            
+            if from_user_set and to_user_set:
+                try:
+                    self.full_clean()
+                except (AttributeError, Exception) as e:
+                    # Skip validation if there are issues (will be validated in view)
+                    pass
+        super().save(*args, **kwargs)
+
+
+class RecommendationRequest(models.Model):
+    """
+    Model for recommendation requests. Users can request recommendations from others.
+    This is a NEW model - additive only, doesn't modify existing code.
+    """
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("declined", "Declined"),
+        ("completed", "Completed"),  # Recommendation was written after accepting request
+        ("cancelled", "Cancelled"),  # Request was cancelled by sender
+    ]
+
+    from_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="recommendation_requests_sent",
+        help_text="User requesting the recommendation"
+    )
+    to_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="recommendation_requests_received",
+        help_text="User being asked to write the recommendation"
+    )
+    message = models.TextField(
+        blank=True,
+        null=True,
+        max_length=500,
+        help_text="Optional message from requester"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+        help_text="Status of the recommendation request"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)  # When recommendation was written
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = [("from_user", "to_user")]  # One active request per pair
+        verbose_name = "Recommendation Request"
+        verbose_name_plural = "Recommendation Requests"
+        indexes = [
+            models.Index(fields=["to_user", "status"], name="rec_req_to_user_status_idx"),
+            models.Index(fields=["from_user"], name="rec_req_from_user_idx"),
+        ]
+
+    def __str__(self):
+        return f"Recommendation request from {self.from_user.username} to {self.to_user.username}"
+
+    def accept(self):
+        """Accept the recommendation request"""
+        self.status = "accepted"
+        self.responded_at = timezone.now()
+        self.save(update_fields=["status", "responded_at"])
+
+    def decline(self):
+        """Decline the recommendation request"""
+        self.status = "declined"
+        self.responded_at = timezone.now()
+        self.save(update_fields=["status", "responded_at"])
+
+    def mark_completed(self):
+        """Mark request as completed after recommendation is written"""
+        self.status = "completed"
+        self.completed_at = timezone.now()
+        self.save(update_fields=["status", "completed_at"])

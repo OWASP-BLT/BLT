@@ -77,7 +77,30 @@
                             onclick="openBookmarkModal();">{{ bookmarks|length }} {% trans "Bookmarks" %}</button>
                     <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200"
                             onclick="openKudosModal();">{{ user.kudos_received.count }} {% trans "Kudos" %}</button>
+                    <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200"
+                            onclick="openRecommendationsModal();">{{ recommendations_count }} {% trans "Recommendations" %}</button>
                 </div>
+                {% if request.user != user and not has_recommended %}
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% url 'add_recommendation' user.username %}"
+                           class="select-none flex gap-2 items-center px-4 py-2 bg-green-400 hover:bg-green-500 text-white font-medium rounded-lg transition-all duration-200">
+                            <i class="fa-regular fa-star text-white text-lg"></i>
+                            {% trans "Write Recommendation" %}
+                        </a>
+                        {% if not has_pending_request %}
+                            <a href="{% url 'request_recommendation' user.username %}"
+                               class="select-none flex gap-2 items-center px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white font-medium rounded-lg transition-all duration-200">
+                                <i class="fa-regular fa-envelope text-white text-lg"></i>
+                                {% trans "Request Recommendation" %}
+                            </a>
+                        {% else %}
+                            <span class="select-none flex gap-2 items-center px-4 py-2 bg-gray-400 text-white font-medium rounded-lg cursor-not-allowed">
+                                <i class="fa-regular fa-envelope text-white text-lg"></i>
+                                {% trans "Request Pending" %}
+                            </span>
+                        {% endif %}
+                    </div>
+                {% endif %}
                 {% if request.user != user %}
                     <div class="flex flex-wrap gap-2">
                         <a href="{% if user.userprofile.github_url %}https://github.com/sponsors/{{ user.userprofile.github_url|cut:'https://github.com/'|cut:'http://github.com/'|cut:'/' }}{% else %}https://github.com/sponsors/{{ user.username }}{% endif %}"
@@ -525,6 +548,347 @@
                         <p class="text-red-500">{% trans "No badges awarded yet!" %}</p>
                     {% endfor %}
                 </div>
+            </div>
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-xl font-semibold text-black/90 dark:text-white/90">
+                        <span>{% trans "Recommendations" %}</span>
+                    </h1>
+                    {% if request.user == user and recommendation_blurb %}
+                        <a href="{% url 'edit_recommendation_blurb' %}"
+                           class="text-sm text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-edit"></i> {% trans "Edit Blurb" %}
+                        </a>
+                    {% elif request.user == user %}
+                        <a href="{% url 'edit_recommendation_blurb' %}"
+                           class="text-sm text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-plus"></i> {% trans "Add Blurb" %}
+                        </a>
+                    {% endif %}
+                </div>
+                {% if recommendation_blurb %}
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                        <p class="text-gray-800 dark:text-gray-200">{{ recommendation_blurb }}</p>
+                    </div>
+                {% endif %}
+                {% if request.user == user %}
+                    <!-- Tabs for Received, Given, and Pending (only show for profile owner) -->
+                    <div class="flex border-b border-gray-300 dark:border-gray-600 mb-4">
+                        <button onclick="showReceivedRecommendations()" 
+                                id="tab-received"
+                                class="px-4 py-2 font-medium text-green-600 border-b-2 border-green-600">
+                            {% trans "Received" %} ({{ recommendations_count }})
+                        </button>
+                        <button onclick="showGivenRecommendations()" 
+                                id="tab-given"
+                                class="px-4 py-2 font-medium text-gray-500 border-b-2 border-transparent hover:text-green-600">
+                            {% trans "Given" %} ({{ given_recommendations_count|default:0 }})
+                        </button>
+                        <button onclick="showPendingRecommendations()" 
+                                id="tab-pending"
+                                class="px-4 py-2 font-medium text-gray-500 border-b-2 border-transparent hover:text-blue-600">
+                            {% trans "Pending" %} ({% with approvals=pending_recommendations|length|default:0 sent=sent_requests_pending_count|default:0 given=given_pending_count|default:0 received=received_requests_count|default:0 %}{{ approvals|add:sent|add:given|add:received }}{% endwith %})
+                        </button>
+                    </div>
+                {% endif %}
+                
+                <!-- Received Recommendations (default view) -->
+                <div id="recommendations-received">
+                    {% if recommendations %}
+                        <div class="flex flex-col gap-3">
+                            {% for rec in recommendations|slice:":2" %}
+                                {% if rec.is_highlighted %}
+                                    <div class="border-2 border-yellow-400 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 relative">
+                                        <span class="absolute top-2 right-2 text-yellow-600 dark:text-yellow-400 text-xs">
+                                            <i class="fas fa-star"></i> {% trans "Highlighted" %}
+                                        </span>
+                                {% else %}
+                                    <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                                {% endif %}
+                                    <div class="flex items-center gap-3 mb-2">
+                                        {% if rec.from_user.userprofile.avatar %}
+                                            <img src="{{ rec.from_user.userprofile.avatar }}"
+                                                 class="w-10 h-10 rounded-full"
+                                                 alt="{{ rec.from_user.username }}">
+                                        {% else %}
+                                            <img src="{% gravatar_url rec.from_user.email 40 %}"
+                                                 class="w-10 h-10 rounded-full"
+                                                 alt="{{ rec.from_user.username }}">
+                                        {% endif %}
+                                        <div class="flex-1">
+                                            <a href="{% url 'profile' slug=rec.from_user.username %}"
+                                               class="font-medium hover:text-red-600">{{ rec.from_user.username }}</a>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                {% if rec.get_relationship_display %}{{ rec.get_relationship_display }} • {% endif %}{{ rec.created_at|date:"M d, Y" }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="recommendation-text-container">
+                                        {% with short_text=rec.recommendation_text|truncatewords:30 %}
+                                            <p class="text-gray-800 dark:text-gray-200 mb-2 recommendation-text-short">{{ short_text }}</p>
+                                            <p class="text-gray-800 dark:text-gray-200 mb-2 recommendation-text-full hidden">{{ rec.recommendation_text }}</p>
+                                            {% if short_text|length < rec.recommendation_text|length %}
+                                                <button onclick="toggleRecommendationText(this)" 
+                                                        class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-1">
+                                                    {% trans "See more" %}
+                                                </button>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    {% if rec.skills_endorsed %}
+                                        <div class="flex flex-wrap gap-2 mt-2">
+                                            {% for skill in rec.skills_endorsed %}
+                                                <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">{{ skill }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            {% if recommendations_count > 2 %}
+                                <button onclick="openRecommendationsModal();"
+                                        class="text-blue-600 hover:text-blue-800 font-medium text-center py-2">
+                                    {% trans "View all" %} {{ recommendations_count }} {% trans "recommendations" %} ↓
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 dark:text-gray-400">{% trans "No recommendations yet." %}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Given Recommendations (only for profile owner) -->
+                {% if request.user == user %}
+                    <div id="recommendations-given" class="hidden">
+                        <!-- Approved Recommendations Section -->
+                        {% if given_recommendations %}
+                            <div class="flex flex-col gap-3">
+                                {% for rec in given_recommendations|slice:":2" %}
+                                    {% if rec.is_approved and rec.is_visible %}
+                                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                                                <div class="flex items-center gap-3 mb-2">
+                                                    {% if rec.to_user.userprofile.avatar %}
+                                                        <img src="{{ rec.to_user.userprofile.avatar }}"
+                                                             class="w-10 h-10 rounded-full"
+                                                             alt="{{ rec.to_user.username }}">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url rec.to_user.email 40 %}"
+                                                             class="w-10 h-10 rounded-full"
+                                                             alt="{{ rec.to_user.username }}">
+                                                    {% endif %}
+                                                    <div class="flex-1">
+                                                        <a href="{% url 'profile' slug=rec.to_user.username %}"
+                                                           class="font-medium hover:text-red-600">{{ rec.to_user.username }}</a>
+                                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                            {% if rec.get_relationship_display %}{{ rec.get_relationship_display }} • {% endif %}{{ rec.created_at|date:"M d, Y" }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="recommendation-text-container">
+                                                    {% with short_text=rec.recommendation_text|truncatewords:30 %}
+                                                        <p class="text-gray-800 dark:text-gray-200 mb-2 recommendation-text-short">{{ short_text }}</p>
+                                                        <p class="text-gray-800 dark:text-gray-200 mb-2 recommendation-text-full hidden">{{ rec.recommendation_text }}</p>
+                                                        {% if short_text|length < rec.recommendation_text|length %}
+                                                            <button onclick="toggleRecommendationText(this)" 
+                                                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-1">
+                                                                {% trans "See more" %}
+                                                            </button>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                </div>
+                                                {% if rec.skills_endorsed %}
+                                                    <div class="flex flex-wrap gap-2 mt-2">
+                                                        {% for skill in rec.skills_endorsed %}
+                                                            <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">{{ skill }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if given_recommendations_count > 2 %}
+                                        <button onclick="openRecommendationsModal('given');"
+                                                class="text-blue-600 hover:text-blue-800 font-medium text-center py-2">
+                                            {% trans "View all" %} {{ given_recommendations_count }} {% trans "approved recommendations" %} ↓
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 dark:text-gray-400">{% trans "You haven't given any recommendations yet." %}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Pending Recommendations Tab (only for profile owner) -->
+                    <div id="recommendations-pending" class="hidden">
+                        <!-- Pending Approvals Section (recommendations you received that are pending) -->
+                        {% if pending_recommendations %}
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                                <h2 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                                    <i class="fas fa-hourglass-half"></i> {% trans "Pending Approvals" %} ({{ pending_recommendations|length }})
+                                </h2>
+                                <p class="text-sm text-blue-700 dark:text-blue-300 mb-3">{% trans "Recommendations waiting for your approval" %}</p>
+                                <div class="flex flex-col gap-3">
+                                    {% for rec in pending_recommendations %}
+                                        <div class="border border-blue-300 dark:border-blue-700 rounded-lg p-3 bg-white dark:bg-gray-800">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                {% if rec.from_user.userprofile.avatar %}
+                                                    <img src="{{ rec.from_user.userprofile.avatar }}" class="w-8 h-8 rounded-full" alt="{{ rec.from_user.username }}">
+                                                {% else %}
+                                                    <img src="{% gravatar_url rec.from_user.email 32 %}" class="w-8 h-8 rounded-full" alt="{{ rec.from_user.username }}">
+                                                {% endif %}
+                                                <div class="flex-1">
+                                                    <a href="{% url 'profile' slug=rec.from_user.username %}"
+                                                       class="font-medium hover:text-red-600">{{ rec.from_user.username }}</a>
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                                                        {{ rec.created_at|date:"M d, Y" }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-3">{{ rec.recommendation_text|truncatewords:30 }}</p>
+                                            <form method="post" action="{% url 'approve_recommendation' rec.id %}" class="inline">
+                                                {% csrf_token %}
+                                                <button type="submit" name="action" value="approve" 
+                                                        onclick="if(!confirm('{% trans 'Are you sure you want to approve this recommendation? Once approved, it will be solidified and cannot be removed or modified.' %}')) return false; if(!confirm('{% trans 'FINAL CONFIRMATION: This recommendation will be permanently solidified. Are you absolutely sure you want to approve it?' %}')) return false;"
+                                                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded mr-2">{% trans "Approve" %}</button>
+                                                <button type="submit" name="action" value="delete" 
+                                                        onclick="if(!confirm('{% trans 'Are you sure you want to delete this recommendation? This action cannot be undone.' %}')) return false; if(!confirm('{% trans 'Please confirm again: Delete this recommendation?' %}')) return false;"
+                                                        class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded">{% trans "Delete" %}</button>
+                                            </form>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Pending Requests Section (requests you sent that are pending) -->
+                        {% if sent_requests_pending_count > 0 %}
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                                <h2 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                                    <i class="fas fa-envelope"></i> {% trans "Pending Requests" %} ({{ sent_requests_pending_count }})
+                                </h2>
+                                <p class="text-sm text-blue-700 dark:text-blue-300 mb-3">{% trans "Recommendation requests you sent, waiting for response" %}</p>
+                                <div class="flex flex-col gap-3">
+                                    {% for req in sent_requests_pending %}
+                                        <div class="border border-blue-300 dark:border-blue-700 rounded-lg p-3 bg-white dark:bg-gray-800">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                {% if req.to_user.userprofile.avatar %}
+                                                    <img src="{{ req.to_user.userprofile.avatar }}" class="w-8 h-8 rounded-full" alt="{{ req.to_user.username }}">
+                                                {% else %}
+                                                    <img src="{% gravatar_url req.to_user.email 32 %}" class="w-8 h-8 rounded-full" alt="{{ req.to_user.username }}">
+                                                {% endif %}
+                                                <div class="flex-1">
+                                                    <a href="{% url 'profile' slug=req.to_user.username %}"
+                                                       class="font-medium hover:text-red-600">{{ req.to_user.username }}</a>
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                                                        {% trans "Requested" %} {{ req.created_at|date:"M d, Y" }}
+                                                    </p>
+                                                </div>
+                                                <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">
+                                                    {% trans "Pending" %}
+                                                </span>
+                                            </div>
+                                            {% if req.message %}
+                                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2 italic">
+                                                    "{{ req.message|truncatewords:20 }}"
+                                                </p>
+                                            {% endif %}
+                                            <p class="text-xs text-blue-600 dark:text-blue-400 mb-2">
+                                                <i class="fas fa-info-circle"></i> {% trans "Waiting for" %} {{ req.to_user.username }} {% trans "to respond" %}
+                                            </p>
+                                            <form method="post" action="{% url 'respond_to_request' req.id %}" class="inline">
+                                                {% csrf_token %}
+                                                <button type="submit" name="action" value="cancel"
+                                                        onclick="if(!confirm('{% trans 'Are you sure you want to cancel this recommendation request? This action cannot be undone.' %}')) return false; if(!confirm('{% trans 'Please confirm again: Cancel this request?' %}')) return false;"
+                                                        class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded">
+                                                    <i class="fas fa-times"></i> {% trans "Cancel Request" %}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Pending Recommendations You Gave (waiting for approval) -->
+                        {% if given_pending_recommendations %}
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                                <h2 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                                    <i class="fas fa-hourglass-half"></i> {% trans "Pending Recommendations You Gave" %} ({{ given_pending_count }})
+                                </h2>
+                                <p class="text-sm text-blue-700 dark:text-blue-300 mb-3">{% trans "Recommendations you wrote, waiting for recipient approval" %}</p>
+                                <div class="flex flex-col gap-3">
+                                    {% for rec in given_pending_recommendations %}
+                                        <div class="border border-blue-300 dark:border-blue-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+                                            <div class="flex items-center gap-3 mb-2">
+                                                {% if rec.to_user.userprofile.avatar %}
+                                                    <img src="{{ rec.to_user.userprofile.avatar }}"
+                                                         class="w-10 h-10 rounded-full"
+                                                         alt="{{ rec.to_user.username }}">
+                                                {% else %}
+                                                    <img src="{% gravatar_url rec.to_user.email 40 %}"
+                                                         class="w-10 h-10 rounded-full"
+                                                         alt="{{ rec.to_user.username }}">
+                                                {% endif %}
+                                                <div class="flex-1">
+                                                    <a href="{% url 'profile' slug=rec.to_user.username %}"
+                                                       class="font-medium hover:text-red-600">{{ rec.to_user.username }}</a>
+                                                    <p class="text-sm text-blue-600 dark:text-blue-400">
+                                                        {% if rec.get_relationship_display %}{{ rec.get_relationship_display }} • {% endif %}{{ rec.created_at|date:"M d, Y" }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="recommendation-text-container">
+                                                {% with short_text=rec.recommendation_text|truncatewords:30 %}
+                                                    <p class="text-blue-800 dark:text-blue-200 mb-2 recommendation-text-short">{{ short_text }}</p>
+                                                    <p class="text-blue-800 dark:text-blue-200 mb-2 recommendation-text-full hidden">{{ rec.recommendation_text }}</p>
+                                                    {% if short_text|length < rec.recommendation_text|length %}
+                                                        <button onclick="toggleRecommendationText(this)" 
+                                                                class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-1">
+                                                            {% trans "See more" %}
+                                                        </button>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                            {% if rec.skills_endorsed %}
+                                                <div class="flex flex-wrap gap-2 mt-2">
+                                                    {% for skill in rec.skills_endorsed %}
+                                                        <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">{{ skill }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <div class="mt-3 pt-3 border-t border-blue-300 dark:border-blue-700">
+                                                <p class="text-xs text-blue-600 dark:text-blue-400 mb-2">
+                                                    <i class="fas fa-info-circle"></i> {% trans "Waiting for" %} {{ rec.to_user.username }} {% trans "to approve this recommendation" %}
+                                                </p>
+                                                <div class="flex gap-2">
+                                                    <a href="{% url 'edit_recommendation' rec.id %}"
+                                                       class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded">
+                                                        <i class="fas fa-edit"></i> {% trans "Edit" %}
+                                                    </a>
+                                                    <form method="post" action="{% url 'delete_recommendation' rec.id %}" class="inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" 
+                                                                onclick="if(!confirm('{% trans 'Are you sure you want to cancel this recommendation? This action cannot be undone.' %}')) return false; if(!confirm('{% trans 'Please confirm again: Cancel this recommendation?' %}')) return false;"
+                                                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded">
+                                                            <i class="fas fa-times"></i> {% trans "Cancel" %}
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if not pending_recommendations and sent_requests_pending_count == 0 and not given_pending_recommendations and not received_requests %}
+                            <p class="text-gray-500 dark:text-gray-400 text-center py-8">
+                                <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i><br>
+                                {% trans "No pending items!" %}
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
             <!--  Pull Requests Section -->
             {% if repos_with_prs %}
@@ -1308,6 +1672,186 @@
             </div>
         </div>
     </div>
+    <!-- Recommendations Modal -->
+    <div id="recommendations"
+         class="fixed inset-0 z-10 overflow-y-auto hidden"
+         aria-labelledby="modal-title"
+         role="dialog"
+         aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 transition-opacity"
+             aria-hidden="true"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[50vw]">
+                    <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start lg:w-full">
+                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                <div class="mt-2">
+                                    <h3 class="text-xl font-medium text-black/90 dark:text-white/90 mb-4">{% trans "All Recommendations Received" %}</h3>
+                                    {% if request.user == user %}
+                                        <!-- Tabs in modal -->
+                                        <div class="flex border-b border-gray-300 dark:border-gray-600 mb-4">
+                                            <button onclick="showModalReceivedRecommendations()" 
+                                                    id="modal-tab-received"
+                                                    class="px-4 py-2 font-medium text-green-600 border-b-2 border-green-600">
+                                                {% trans "Received" %} ({{ recommendations_count }})
+                                            </button>
+                                            <button onclick="showModalGivenRecommendations()" 
+                                                    id="modal-tab-given"
+                                                    class="px-4 py-2 font-medium text-gray-500 border-b-2 border-transparent hover:text-green-600">
+                                                {% trans "Given" %} ({{ given_recommendations_count|default:0 }}{% if given_pending_count > 0 %} + {{ given_pending_count }} pending{% endif %})
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Received Recommendations in Modal -->
+                                    <div id="modal-recommendations-received" class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
+                                        {% for rec in recommendations %}
+                                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                                                <div class="flex items-center gap-3 mb-2">
+                                                    {% if rec.from_user.userprofile.avatar %}
+                                                        <img src="{{ rec.from_user.userprofile.avatar }}"
+                                                             class="w-10 h-10 rounded-full"
+                                                             alt="{{ rec.from_user.username }}">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url rec.from_user.email 40 %}"
+                                                             class="w-10 h-10 rounded-full"
+                                                             alt="{{ rec.from_user.username }}">
+                                                    {% endif %}
+                                                    <div class="flex-1">
+                                                        <a href="{% url 'profile' slug=rec.from_user.username %}"
+                                                           class="font-medium hover:text-red-600">{{ rec.from_user.username }}</a>
+                                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                            {% if rec.get_relationship_display %}{{ rec.get_relationship_display }} • {% endif %}{{ rec.created_at|date:"M d, Y" }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <p class="text-gray-800 dark:text-gray-200 mb-2">{{ rec.recommendation_text }}</p>
+                                                {% if rec.skills_endorsed %}
+                                                    <div class="flex flex-wrap gap-2 mt-2">
+                                                        {% for skill in rec.skills_endorsed %}
+                                                            <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">{{ skill }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% empty %}
+                                            <p class="text-gray-500 dark:text-gray-400">{% trans "No recommendations yet." %}</p>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <!-- Given Recommendations in Modal (only for profile owner) -->
+                                    {% if request.user == user %}
+                                        <div id="modal-recommendations-given" class="hidden flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
+                                            <!-- Pending Recommendations in Modal -->
+                                            {% if given_pending_recommendations %}
+                                                <div class="mb-4">
+                                                    <h3 class="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-3">
+                                                        <i class="fas fa-hourglass-half"></i> {% trans "Pending Approval" %} ({{ given_pending_count }})
+                                                    </h3>
+                                                    {% for rec in given_pending_recommendations %}
+                                                        <div class="border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 mb-3 bg-yellow-50 dark:bg-yellow-900/20">
+                                                            <div class="flex items-center gap-3 mb-2">
+                                                                {% if rec.to_user.userprofile.avatar %}
+                                                                    <img src="{{ rec.to_user.userprofile.avatar }}"
+                                                                         class="w-10 h-10 rounded-full"
+                                                                         alt="{{ rec.to_user.username }}">
+                                                                {% else %}
+                                                                    <img src="{% gravatar_url rec.to_user.email 40 %}"
+                                                                         class="w-10 h-10 rounded-full"
+                                                                         alt="{{ rec.to_user.username }}">
+                                                                {% endif %}
+                                                                <div class="flex-1">
+                                                                    <a href="{% url 'profile' slug=rec.to_user.username %}"
+                                                                       class="font-medium hover:text-red-600">{{ rec.to_user.username }}</a>
+                                                                    <p class="text-sm text-yellow-600 dark:text-yellow-400">
+                                                                        {% if rec.get_relationship_display %}{{ rec.get_relationship_display }} • {% endif %}{{ rec.created_at|date:"M d, Y" }}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <p class="text-yellow-800 dark:text-yellow-200 mb-2">{{ rec.recommendation_text }}</p>
+                                                            {% if rec.skills_endorsed %}
+                                                                <div class="flex flex-wrap gap-2 mt-2">
+                                                                    {% for skill in rec.skills_endorsed %}
+                                                                        <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">{{ skill }}</span>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            {% endif %}
+                                                            <div class="mt-3 pt-3 border-t border-yellow-300 dark:border-yellow-700">
+                                                                <p class="text-xs text-yellow-600 dark:text-yellow-400 mb-2">
+                                                                    <i class="fas fa-info-circle"></i> {% trans "Waiting for approval" %}
+                                                                </p>
+                                                                <form method="post" action="{% url 'delete_recommendation' rec.id %}" class="inline">
+                                                                    {% csrf_token %}
+                                                                    <button type="submit" 
+                                                                            onclick="return confirm('{% trans 'Are you sure you want to cancel this recommendation? This action cannot be undone.' %}');"
+                                                                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded">
+                                                                        <i class="fas fa-times"></i> {% trans "Cancel" %}
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <!-- Approved Recommendations in Modal -->
+                                            {% if given_recommendations %}
+                                                <div class="{% if given_pending_recommendations %}mt-4{% endif %}">
+                                                    <h3 class="text-lg font-semibold text-green-800 dark:text-green-200 mb-3">
+                                                        <i class="fas fa-check-circle"></i> {% trans "Approved" %} ({{ given_recommendations_count }})
+                                                    </h3>
+                                                    {% for rec in given_recommendations %}
+                                                        {% if rec.is_approved and rec.is_visible %}
+                                                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-3">
+                                                                <div class="flex items-center gap-3 mb-2">
+                                                                    {% if rec.to_user.userprofile.avatar %}
+                                                                        <img src="{{ rec.to_user.userprofile.avatar }}"
+                                                                             class="w-10 h-10 rounded-full"
+                                                                             alt="{{ rec.to_user.username }}">
+                                                                    {% else %}
+                                                                        <img src="{% gravatar_url rec.to_user.email 40 %}"
+                                                                             class="w-10 h-10 rounded-full"
+                                                                             alt="{{ rec.to_user.username }}">
+                                                                    {% endif %}
+                                                                    <div class="flex-1">
+                                                                        <a href="{% url 'profile' slug=rec.to_user.username %}"
+                                                                           class="font-medium hover:text-red-600">{{ rec.to_user.username }}</a>
+                                                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                                            {% if rec.get_relationship_display %}{{ rec.get_relationship_display }} • {% endif %}{{ rec.created_at|date:"M d, Y" }}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <p class="text-gray-800 dark:text-gray-200 mb-2">{{ rec.recommendation_text }}</p>
+                                                                {% if rec.skills_endorsed %}
+                                                                    <div class="flex flex-wrap gap-2 mt-2">
+                                                                        {% for skill in rec.skills_endorsed %}
+                                                                            <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">{{ skill }}</span>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            {% elif not given_pending_recommendations %}
+                                                <p class="text-gray-500 dark:text-gray-400">{% trans "You haven't given any recommendations yet." %}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button"
+                                class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
+                                id="close-recommendations">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Assign Badge Modal -->
     <div id="assign-badge-modal"
          class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 flex items-center justify-center hidden">
@@ -1401,6 +1945,169 @@
     
     function openBookmarkModal(){
         openBookmark.style.cssText = "display:block !important;"
+    }
+    var closeRecommendations = document.getElementById("close-recommendations");
+    var openRecommendations = document.getElementById("recommendations");
+    if (closeRecommendations && openRecommendations) {
+        closeRecommendations.addEventListener("click", ()=>{
+            openRecommendations.style.display="none";
+        });
+    }
+    function openRecommendationsModal(){
+        if (openRecommendations) {
+            openRecommendations.style.cssText = "display:block !important;";
+        }
+    }
+    var openRecommendations = document.getElementById("recommendations");
+    if (closeRecommendations && openRecommendations) {
+        closeRecommendations.addEventListener("click", ()=>{
+            openRecommendations.style.display="none";
+        });
+    }
+    function openRecommendationsModal(tab = 'received'){
+        if (openRecommendations) {
+            openRecommendations.style.cssText = "display:block !important;";
+            // Set active tab in modal if needed
+            if (tab === 'given') {
+                showModalGivenRecommendations();
+            } else {
+                showModalReceivedRecommendations();
+            }
+        }
+    }
+    
+    function showReceivedRecommendations() {
+        const receivedDiv = document.getElementById('recommendations-received');
+        const givenDiv = document.getElementById('recommendations-given');
+        const pendingDiv = document.getElementById('recommendations-pending');
+        const receivedTab = document.getElementById('tab-received');
+        const givenTab = document.getElementById('tab-given');
+        const pendingTab = document.getElementById('tab-pending');
+        
+        if (receivedDiv) receivedDiv.classList.remove('hidden');
+        if (givenDiv) givenDiv.classList.add('hidden');
+        if (pendingDiv) pendingDiv.classList.add('hidden');
+        
+        if (receivedTab) {
+            receivedTab.classList.add('text-green-600', 'border-green-600');
+            receivedTab.classList.remove('text-gray-500', 'border-transparent');
+        }
+        if (givenTab) {
+            givenTab.classList.remove('text-blue-600', 'border-blue-600');
+            givenTab.classList.add('text-gray-500', 'border-transparent');
+        }
+        if (pendingTab) {
+            pendingTab.classList.remove('text-blue-600', 'border-blue-600');
+            pendingTab.classList.add('text-gray-500', 'border-transparent');
+        }
+    }
+    
+    function showGivenRecommendations() {
+        const receivedDiv = document.getElementById('recommendations-received');
+        const givenDiv = document.getElementById('recommendations-given');
+        const pendingDiv = document.getElementById('recommendations-pending');
+        const receivedTab = document.getElementById('tab-received');
+        const givenTab = document.getElementById('tab-given');
+        const pendingTab = document.getElementById('tab-pending');
+        
+        if (receivedDiv) receivedDiv.classList.add('hidden');
+        if (givenDiv) givenDiv.classList.remove('hidden');
+        if (pendingDiv) pendingDiv.classList.add('hidden');
+        
+        if (givenTab) {
+            givenTab.classList.add('text-green-600', 'border-green-600');
+            givenTab.classList.remove('text-gray-500', 'border-transparent');
+        }
+        if (receivedTab) {
+            receivedTab.classList.remove('text-green-600', 'border-green-600');
+            receivedTab.classList.add('text-gray-500', 'border-transparent');
+        }
+        if (pendingTab) {
+            pendingTab.classList.remove('text-blue-600', 'border-blue-600');
+            pendingTab.classList.add('text-gray-500', 'border-transparent');
+        }
+    }
+    
+    function showPendingRecommendations() {
+        const receivedDiv = document.getElementById('recommendations-received');
+        const givenDiv = document.getElementById('recommendations-given');
+        const pendingDiv = document.getElementById('recommendations-pending');
+        const receivedTab = document.getElementById('tab-received');
+        const givenTab = document.getElementById('tab-given');
+        const pendingTab = document.getElementById('tab-pending');
+        
+        if (receivedDiv) receivedDiv.classList.add('hidden');
+        if (givenDiv) givenDiv.classList.add('hidden');
+        if (pendingDiv) pendingDiv.classList.remove('hidden');
+        
+        if (pendingTab) {
+            pendingTab.classList.add('text-blue-600', 'border-blue-600');
+            pendingTab.classList.remove('text-gray-500', 'border-transparent');
+        }
+        if (receivedTab) {
+            receivedTab.classList.remove('text-green-600', 'border-green-600');
+            receivedTab.classList.add('text-gray-500', 'border-transparent');
+        }
+        if (givenTab) {
+            givenTab.classList.remove('text-green-600', 'border-green-600');
+            givenTab.classList.add('text-gray-500', 'border-transparent');
+        }
+    }
+    
+    function toggleRecommendationText(button) {
+        const container = button.closest('.recommendation-text-container');
+        if (!container) return;
+        
+        const shortText = container.querySelector('.recommendation-text-short');
+        const fullText = container.querySelector('.recommendation-text-full');
+        
+        if (shortText && fullText) {
+            if (shortText.classList.contains('hidden')) {
+                shortText.classList.remove('hidden');
+                fullText.classList.add('hidden');
+                button.textContent = '{% trans "See more" %}';
+            } else {
+                shortText.classList.add('hidden');
+                fullText.classList.remove('hidden');
+                button.textContent = '{% trans "See less" %}';
+            }
+        }
+    }
+    
+    function showModalReceivedRecommendations() {
+        const receivedDiv = document.getElementById('modal-recommendations-received');
+        const givenDiv = document.getElementById('modal-recommendations-given');
+        const receivedTab = document.getElementById('modal-tab-received');
+        const givenTab = document.getElementById('modal-tab-given');
+        
+        if (receivedDiv) receivedDiv.classList.remove('hidden');
+        if (givenDiv) givenDiv.classList.add('hidden');
+        if (receivedTab) {
+            receivedTab.classList.add('text-green-600', 'border-green-600');
+            receivedTab.classList.remove('text-gray-500', 'border-transparent');
+        }
+        if (givenTab) {
+            givenTab.classList.remove('text-green-600', 'border-green-600');
+            givenTab.classList.add('text-gray-500', 'border-transparent');
+        }
+    }
+    
+    function showModalGivenRecommendations() {
+        const receivedDiv = document.getElementById('modal-recommendations-received');
+        const givenDiv = document.getElementById('modal-recommendations-given');
+        const receivedTab = document.getElementById('modal-tab-received');
+        const givenTab = document.getElementById('modal-tab-given');
+        
+        if (receivedDiv) receivedDiv.classList.add('hidden');
+        if (givenDiv) givenDiv.classList.remove('hidden');
+        if (givenTab) {
+            givenTab.classList.add('text-green-600', 'border-green-600');
+            givenTab.classList.remove('text-gray-500', 'border-transparent');
+        }
+        if (receivedTab) {
+            receivedTab.classList.remove('text-green-600', 'border-green-600');
+            receivedTab.classList.add('text-gray-500', 'border-transparent');
+        }
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
