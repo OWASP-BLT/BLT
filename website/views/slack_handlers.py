@@ -44,8 +44,17 @@ def get_project_with_least_members():
             .first()
         )
         return project.slack_channel if project else None
-    except Exception:
+    except (Project.DoesNotExist, AttributeError):
         return None
+
+
+def get_project_examples():
+    """Get formatted project channel examples for the welcome message."""
+    least_members_channel = get_project_with_least_members()
+    project_examples = "*#project-blt*"
+    if least_members_channel:
+        project_examples += f" or *#{least_members_channel}*"
+    return project_examples
 
 
 # Replace GSoC cache with hardcoded project data
