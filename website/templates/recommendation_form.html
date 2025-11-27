@@ -5,81 +5,157 @@
 {% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex flex-col items-center justify-center min-h-screen p-4">
-        <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-            <h1 class="text-2xl font-bold mb-6 text-black/90 dark:text-white/90">
-                {% trans "Write a Recommendation for" %} @{{ to_user.username }}
-            </h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                <span class="text-red-500">*</span> {% trans "indicates required fields" %}
-            </p>
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="mb-4 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
-                        {{ message }}
+    <div class="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4 py-8">
+        <div class="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
+            <!-- Header Section -->
+            <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-6">
+                <div class="flex items-center gap-3 mb-2">
+                    <i class="fas fa-star text-white text-2xl"></i>
+                    <h1 class="text-2xl font-bold text-white">{% trans "Write a Recommendation" %}</h1>
+                </div>
+                <p class="text-green-50 text-sm">
+                    {% trans "Share your experience working with" %} <span class="font-semibold">@{{ to_user.username }}</span>
+                </p>
+            </div>
+            <!-- Form Content -->
+            <div class="p-8">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-6 flex items-center gap-1">
+                    <i class="fas fa-info-circle"></i>
+                    <span class="text-red-500">*</span> {% trans "indicates required fields" %}
+                </p>
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                <form method="post"
+                      action="{% url 'add_recommendation' to_user.username %}">
+                    {% csrf_token %}
+                    <div class="space-y-6">
+                        <!-- Relationship Field -->
+                        <div>
+                            <label for="{{ form.relationship.id_for_label }}"
+                                   class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2.5">
+                                <i class="fas fa-user-friends text-gray-400 mr-2"></i>
+                                {% trans "Relationship" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">{{ form.relationship }}</div>
+                            {% if form.relationship.errors %}
+                                <p class="text-red-500 text-sm mt-2 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle text-xs"></i>
+                                    {{ form.relationship.errors.0 }}
+                                </p>
+                            {% endif %}
+                        </div>
+                        <!-- Skills Field -->
+                        <div>
+                            <label for="{{ form.skills_endorsed.id_for_label }}"
+                                   class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2.5">
+                                <i class="fas fa-tags text-gray-400 mr-2"></i>
+                                {% trans "Skills to Endorse" %}
+                                <span class="text-gray-400 text-xs font-normal">({% trans "Select up to 5, optional" %})</span>
+                            </label>
+                            <div class="relative">{{ form.skills_endorsed }}</div>
+                            <div class="mt-2 flex items-center justify-between">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                    <i class="fas fa-info-circle"></i>
+                                    {% trans "Hold Ctrl (Cmd on Mac) to select multiple skills" %}
+                                </p>
+                                <div id="selected-skills-count"
+                                     class="text-sm font-medium px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 border border-transparent transition-colors duration-200">
+                                    <span id="skills-count"
+                                          class="text-blue-600 dark:text-blue-400 font-semibold">0</span>
+                                    <span class="text-gray-500 dark:text-gray-400">/ 5</span>
+                                </div>
+                            </div>
+                            {% if form.skills_endorsed.errors %}
+                                <p class="text-red-500 text-sm mt-2 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle text-xs"></i>
+                                    {{ form.skills_endorsed.errors.0 }}
+                                </p>
+                            {% endif %}
+                        </div>
+                        <!-- Recommendation Text Field -->
+                        <div>
+                            <label for="{{ form.recommendation_text.id_for_label }}"
+                                   class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2.5">
+                                <i class="fas fa-comment-alt text-gray-400 mr-2"></i>
+                                {% trans "Your Recommendation" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">{{ form.recommendation_text }}</div>
+                            <div class="mt-2 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span id="char-count"
+                                          class="text-sm font-semibold px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 border border-transparent transition-colors duration-200">0</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">/ 1000 {% trans "characters" %}</span>
+                                    <span class="text-red-500 text-xs font-medium" id="char-warning"></span>
+                                </div>
+                                <small class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                    <i class="fas fa-info-circle"></i>
+                                    {% trans "Minimum 200 characters" %}
+                                </small>
+                            </div>
+                            {% if form.recommendation_text.errors %}
+                                <p class="text-red-500 text-sm mt-2 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle text-xs"></i>
+                                    {{ form.recommendation_text.errors.0 }}
+                                </p>
+                            {% endif %}
+                        </div>
                     </div>
-                {% endfor %}
-            {% endif %}
-            <form method="post"
-                  action="{% url 'add_recommendation' to_user.username %}">
-                {% csrf_token %}
-                <div class="mb-4">
-                    <label for="{{ form.relationship.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {% trans "Relationship" %} <span class="text-red-500">*</span>
-                    </label>
-                    {{ form.relationship }}
-                    {% if form.relationship.errors %}<p class="text-red-500 text-sm mt-1">{{ form.relationship.errors.0 }}</p>{% endif %}
-                </div>
-                <div class="mb-4">
-                    <label for="{{ form.skills_endorsed.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {% trans "Skills to Endorse" %} <span class="text-gray-400 text-xs">({% trans "Select up to 5, optional" %})</span>
-                    </label>
-                    <div class="relative">
-                        {{ form.skills_endorsed }}
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            {% trans "Hold Ctrl (Cmd on Mac) to select multiple skills" %}
-                        </p>
+                    <!-- Form Actions -->
+                    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex gap-3 justify-end">
+                        <a href="{% url 'profile' slug=to_user.username %}"
+                           class="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-gray-700 dark:text-gray-300 transition-colors duration-200">
+                            {% trans "Cancel" %}
+                        </a>
+                        <button type="submit"
+                                class="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2">
+                            <i class="fas fa-paper-plane"></i>
+                            {% trans "Submit Recommendation" %}
+                        </button>
                     </div>
-                    {% if form.skills_endorsed.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.skills_endorsed.errors.0 }}</p>
-                    {% endif %}
-                    <div id="selected-skills-count"
-                         class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                        <span id="skills-count">0</span> / 5 {% trans "skills selected" %}
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <label for="{{ form.recommendation_text.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {% trans "Your Recommendation" %} <span class="text-red-500" title="Required field">*</span>
-                    </label>
-                    {{ form.recommendation_text }}
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        <span id="char-count">0</span> / 1000 {% trans "characters" %}
-                        <span class="text-red-500" id="char-warning"></span>
-                        <br>
-                        <small>{% trans "Minimum 200 characters required" %}</small>
-                    </p>
-                    {% if form.recommendation_text.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.recommendation_text.errors.0 }}</p>
-                    {% endif %}
-                </div>
-                <div class="flex gap-4 justify-end">
-                    <a href="{% url 'profile' slug=to_user.username %}"
-                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                        {% trans "Cancel" %}
-                    </a>
-                    <button type="submit"
-                            class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">
-                        {% trans "Submit Recommendation" %}
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
-    <style>
+        <style>
+        /* Enhanced form field styling */
+        #{{ form.relationship.id_for_label }},
+        #{{ form.skills_endorsed.id_for_label }},
+        #{{ form.recommendation_text.id_for_label }} {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+            color: #111827;
+            font-size: 0.875rem;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .dark #{{ form.relationship.id_for_label }},
+        .dark #{{ form.skills_endorsed.id_for_label }},
+        .dark #{{ form.recommendation_text.id_for_label }} {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+        
+        #{{ form.relationship.id_for_label }}:focus,
+        #{{ form.skills_endorsed.id_for_label }}:focus,
+        #{{ form.recommendation_text.id_for_label }}:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        #{{ form.recommendation_text.id_for_label }} {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
         /* Style the placeholder option in relationship dropdown */
         #{{ form.relationship.id_for_label }} option:first-child {
             color: #9ca3af;
@@ -95,8 +171,13 @@
         #{{ form.relationship.id_for_label }}:valid {
             color: inherit;
         }
-    </style>
-    <script>
+        
+        /* Skills select styling */
+        #{{ form.skills_endorsed.id_for_label }} {
+            min-height: 120px;
+        }
+        </style>
+        <script>
         // Character counter
         const textarea = document.getElementById('{{ form.recommendation_text.id_for_label }}');
         const charCount = document.getElementById('char-count');
@@ -108,22 +189,22 @@
                 charCount.textContent = length;
                 
                 if (length < 200) {
-                    charCount.classList.add('text-red-500');
-                    charCount.classList.remove('text-gray-500');
+                    charCount.classList.add('text-red-500', 'bg-red-50', 'dark:bg-red-900/20');
+                    charCount.classList.remove('text-gray-500', 'bg-gray-100');
                     if (charWarning) {
-                        charWarning.textContent = ` (Need ${200 - length} more characters)`;
+                        charWarning.textContent = ` (Need ${200 - length} more)`;
                     }
                     textarea.setCustomValidity('Recommendation text must be at least 200 characters long. You have ' + length + ' characters.');
                 } else if (length > 1000) {
-                    charCount.classList.add('text-red-500');
-                    charCount.classList.remove('text-gray-500');
+                    charCount.classList.add('text-red-500', 'bg-red-50', 'dark:bg-red-900/20');
+                    charCount.classList.remove('text-gray-500', 'bg-gray-100');
                     if (charWarning) {
-                        charWarning.textContent = ` (${length - 1000} characters over limit)`;
+                        charWarning.textContent = ` (${length - 1000} over limit)`;
                     }
                     textarea.setCustomValidity('Recommendation text must not exceed 1000 characters. You have ' + length + ' characters.');
                 } else {
-                    charCount.classList.remove('text-red-500');
-                    charCount.classList.add('text-gray-500');
+                    charCount.classList.remove('text-red-500', 'bg-red-50', 'dark:bg-red-900/20');
+                    charCount.classList.add('text-green-600', 'dark:text-green-400', 'bg-green-50', 'dark:bg-green-900/20');
                     if (charWarning) {
                         charWarning.textContent = '';
                     }
@@ -149,9 +230,11 @@
                 const count = selected.length;
                 skillsCountDisplay.textContent = count;
                 
+                const countSpan = skillsCountDisplay.querySelector('span:first-child');
                 if (count > 5) {
-                    skillsCountDisplay.classList.add('text-red-500', 'font-semibold');
-                    skillsCountDisplay.classList.remove('text-gray-600', 'text-yellow-600');
+                    countSpan.classList.add('text-red-600', 'dark:text-red-400');
+                    skillsCountDisplay.classList.add('bg-red-100', 'dark:bg-red-900/30', 'border-red-300', 'dark:border-red-700');
+                    skillsCountDisplay.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'bg-yellow-100', 'dark:bg-yellow-900/30');
                     // Remove excess selections (keep first 5)
                     const excess = selected.slice(5);
                     excess.forEach(option => {
@@ -159,14 +242,17 @@
                     });
                     // Update count again after removing excess
                     const newCount = Array.from(skillSelect.selectedOptions).filter(opt => !opt.value.startsWith('---')).length;
-                    skillsCountDisplay.textContent = newCount;
+                    countSpan.textContent = newCount;
                     alert('{% trans "Maximum 5 skills allowed. Only the first 5 selections were kept." %}');
                 } else if (count === 5) {
-                    skillsCountDisplay.classList.add('text-yellow-600', 'font-semibold');
-                    skillsCountDisplay.classList.remove('text-red-500', 'text-gray-600');
+                    countSpan.classList.add('text-yellow-600', 'dark:text-yellow-400');
+                    skillsCountDisplay.classList.add('bg-yellow-100', 'dark:bg-yellow-900/30', 'border-yellow-300', 'dark:border-yellow-700');
+                    skillsCountDisplay.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'bg-red-100', 'dark:bg-red-900/30');
                 } else {
-                    skillsCountDisplay.classList.remove('text-red-500', 'text-yellow-600', 'font-semibold');
-                    skillsCountDisplay.classList.add('text-gray-600');
+                    countSpan.classList.remove('text-red-600', 'dark:text-red-400', 'text-yellow-600', 'dark:text-yellow-400');
+                    countSpan.classList.add('text-blue-600', 'dark:text-blue-400');
+                    skillsCountDisplay.classList.remove('bg-red-100', 'dark:bg-red-900/30', 'bg-yellow-100', 'dark:bg-yellow-900/30', 'border-red-300', 'dark:border-red-700', 'border-yellow-300', 'dark:border-yellow-700');
+                    skillsCountDisplay.classList.add('bg-gray-100', 'dark:bg-gray-700');
                 }
             }
             
@@ -197,5 +283,5 @@
             relationshipSelect.addEventListener('change', updateRelationshipStyle);
             updateRelationshipStyle(); // Set initial style
         }
-    </script>
-{% endblock content %}
+        </script>
+    {% endblock content %}
