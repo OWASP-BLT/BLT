@@ -1,0 +1,74 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{{ title }}</h1>
+
+    <div style="margin-bottom: 30px;">
+        <h2>Active Users ({{ active_users.count }})</h2>
+        <p class="help">Users who have reported at least one issue.</p>
+        <div class="module">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f8f8; text-align: left;">
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Username</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Email</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Date Joined</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Issues Reported</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in active_users %}
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                            <a href="{% url 'admin:auth_user_change' user.id %}"><strong>{{ user.username }}</strong></a>
+                        </td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.email }}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.date_joined|date:"Y-m-d" }}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.issue_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="padding: 10px;">No active users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div>
+        <h2>Inactive Users ({{ inactive_users.count }})</h2>
+        <p class="help">Users who have never reported an issue.</p>
+        <div class="module">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f8f8; text-align: left;">
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Username</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Email</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Date Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in inactive_users %}
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                            <a href="{% url 'admin:auth_user_change' user.id %}"><strong>{{ user.username }}</strong></a>
+                        </td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.email }}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.date_joined|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="padding: 10px;">No inactive users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -351,6 +351,7 @@ from website.views.user import (
     user_dashboard,
     users_view,
     view_thread,
+    user_activity_dashboard,
 )
 from website.views.video_call import video_call
 
@@ -549,6 +550,7 @@ urlpatterns = [
         user_dashboard,
         name="user",
     ),
+    path("admin/user-activity/", user_activity_dashboard, name="user_activity_dashboard"),
     path(settings.ADMIN_URL + "/", admin.site.urls),
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
     re_path(
