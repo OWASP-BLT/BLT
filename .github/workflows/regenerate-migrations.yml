@@ -142,17 +142,22 @@ jobs:
                 if [ -n "$file" ]; then
                   # Extract the migration number (e.g., 0100 from 0100_something.py)
                   BASENAME=$(basename "$file")
-                  MIGRATION_NUM=$(echo "$BASENAME" | grep -oE '^[0-9]+' || true)
+                  # Match Django migration format: #### followed by underscore
+                  MIGRATION_NUM=$(echo "$BASENAME" | grep -oE '^[0-9]{4}' || true)
 
                   if [ -n "$MIGRATION_NUM" ]; then
                     # Check if a migration with this number already exists in base
-                    EXISTING=$(ls "$dir"/${MIGRATION_NUM}_*.py 2>/dev/null | head -1 || true)
+                    # Use a safe pattern that only matches valid migration files
+                    EXISTING=$(find "$dir" -maxdepth 1 -name "${MIGRATION_NUM}_*.py" \
+                      -type f 2>/dev/null | head -1 || true)
 
                     if [ -z "$EXISTING" ]; then
                       # No migration with this number in base, safe to copy
                       echo "Copying: $file (migration $MIGRATION_NUM not in base)"
                       mkdir -p "$(dirname "$file")"
-                      git show "$PR_SHA:$file" > "$file" 2>/dev/null || true
+                      if ! git show "$PR_SHA:$file" > "$file" 2>&1; then
+                        echo "Warning: Failed to copy $file"
+                      fi
                     else
                       echo "Skipping: $file (base already has migration $MIGRATION_NUM: $(basename "$EXISTING"))"
                     fi
@@ -161,7 +166,9 @@ jobs:
                     if [ ! -f "$file" ]; then
                       echo "Copying: $file (__init__.py)"
                       mkdir -p "$(dirname "$file")"
-                      git show "$PR_SHA:$file" > "$file" 2>/dev/null || true
+                      if ! git show "$PR_SHA:$file" > "$file" 2>&1; then
+                        echo "Warning: Failed to copy $file"
+                      fi
                     fi
                   fi
                 fi
