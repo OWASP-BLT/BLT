@@ -1394,6 +1394,9 @@ def home(request):
     # Get recent forum posts
     recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
 
+    # Get recent activities for the feed
+    recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
+
     # Get top bug reporters for current month
     current_time = timezone.now()
     top_bug_reporters = (
@@ -1560,6 +1563,7 @@ def home(request):
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_posts": recent_posts,
+            "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
             "latest_blog_posts": latest_blog_posts,

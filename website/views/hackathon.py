@@ -178,6 +178,9 @@ class HackathonDetailView(DetailView):
         # Get the leaderboard
         context["leaderboard"] = hackathon.get_leaderboard()
 
+        # Get the reviewer leaderboard
+        context["reviewer_leaderboard"] = hackathon.get_reviewer_leaderboard()
+
         # Get repositories with merged PR counts
         repositories = hackathon.repositories.all()
         repo_ids = repositories.values_list("id", flat=True)
