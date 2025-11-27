@@ -58,6 +58,56 @@
         {% include "includes/header.html" %}
         {% include "includes/sidenav.html" %}
         <div class="w-full h-[80px] bg-gray-50 dark:bg-gray-900"></div>
+        <!-- Organization Dashboard Top Navigation -->
+        {% if request.resolver_match.kwargs.id %}
+            <div class="w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="w-full px-4 sm:px-6 lg:px-8">
+                    <nav class="flex overflow-x-auto scrollbar-none -mb-px"
+                         aria-label="Dashboard navigation">
+                        <a href="{% url 'organization_analytics' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_analytics' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            Analytics
+                        </a>
+                        <a href="{% url 'organization_team_overview' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_team_overview' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-users mr-2"></i>
+                            Team Overview
+                        </a>
+                        <a href="{% url 'organization_manage_bugs' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_bugs' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-bug mr-2"></i>
+                            Bugs
+                        </a>
+                        <a href="{% url 'organization_manage_domains' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_domains' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-globe mr-2"></i>
+                            Domains
+                        </a>
+                        <a href="{% url 'organization_manage_bughunts' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_bughunts' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-trophy mr-2"></i>
+                            Bug Bounties
+                        </a>
+                        <a href="{% url 'organization_manage_roles' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_roles' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-user-tag mr-2"></i>
+                            Roles
+                        </a>
+                        <a href="{% url 'organization_manage_integrations' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_integrations' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-puzzle-piece mr-2"></i>
+                            Integrations
+                        </a>
+                        <a href="{% url 'organization_manage_jobs' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_jobs' or request.resolver_match.url_name == 'create_job' or request.resolver_match.url_name == 'edit_job' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-briefcase mr-2"></i>
+                            Jobs
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        {% endif %}
         <main class="w-full bg-gray-50 dark:bg-gray-900">
             {% block body %}
             {% endblock body %}
