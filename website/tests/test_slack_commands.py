@@ -84,8 +84,7 @@ class SlackCommandsTests(TestCase):
     def test_update_slack_user_count_no_token(self):
         """Test that command fails gracefully without token"""
         out = StringIO()
-        with patch("website.management.commands.update_slack_user_count.settings") as mock_settings:
-            mock_settings.SLACK_BOT_TOKEN = None
+        with patch.dict("os.environ", {}, clear=True):
             call_command("update_slack_user_count", stdout=out)
 
         # Verify error message
