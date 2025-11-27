@@ -209,6 +209,9 @@ jobs:
               fi
             done
 
+            # Reset local changes before checkout (we've saved what we need)
+            git checkout -- .
+
             # Checkout the PR branch
             git fetch pr-fork "$PR_HEAD_REF"
             git checkout -B pr-branch "pr-fork/$PR_HEAD_REF"
