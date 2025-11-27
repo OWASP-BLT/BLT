@@ -1603,22 +1603,22 @@ class IssueView(DetailView):
 
         try:
             if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user.username, issuenumber=self.object.id)
-                    self.object.save()
-                except:
+                # Check if IP record already exists for this authenticated user and issue
+                if not IP.objects.filter(user=self.request.user.username, issuenumber=self.object.id).exists():
+                    # First time this user is viewing this issue
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
             else:
-                try:
-                    objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
+                # Check if IP record already exists for this address and issue
+                if not IP.objects.filter(address=get_client_ip(request), issuenumber=self.object.id).exists():
+                    # First time this IP is viewing this issue
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-                except Exception as e:
-                    logger.error(f"Error: {e}")
-                    pass  # pass this temporarly to avoid error
         except Exception as e:
-            pass  # pass this temporarly to avoid error
+            logger.error(f"Error tracking IP view for issue {self.object.id}: {e}")
+            pass  # Continue loading the page even if view tracking fails
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
