@@ -1705,9 +1705,18 @@ class IssueView(DetailView):
             context["os_version"] = user_agent.os.version_string
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
-        context["total_score"] = list(
-            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
-        )[0]
+
+        # Calculate user's total score
+        # Both total_score and users_score are set for backward compatibility
+        if self.object.user:
+            total_score = (
+                Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score"))["total_score"] or 0
+            )
+            context["total_score"] = total_score
+            context["users_score"] = total_score
+        else:
+            context["total_score"] = 0
+            context["users_score"] = 0
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1725,6 +1734,15 @@ class IssueView(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
+        # Add email-related data from domain
+        if self.object.domain:
+            context["email_clicks"] = self.object.domain.clicks
+            context["email_events"] = self.object.domain.email_event
+
+            # Generate GitHub issues URL from the domain's github field
+            if self.object.domain.github:
+                github_url = self.object.domain.github.rstrip("/")
+                context["github_issues_url"] = f"{github_url}/issues"
         # Add CVE severity and suggested tip amount
         if self.object.cve_id and self.object.cve_score:
             context["cve_severity"] = self.object.get_cve_severity()
