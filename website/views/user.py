@@ -596,6 +596,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
+            .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
             .select_related("contributor", "user_profile__user")
             .values(
                 "contributor__name",
