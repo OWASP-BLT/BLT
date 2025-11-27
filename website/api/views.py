@@ -1148,7 +1148,8 @@ def github_issue_badge(request, issue_number):
         )
         if not created:
             # Use atomic F() expression to prevent race conditions
-            IP.objects.filter(pk=ip_log.pk).update(count=F("count") + 1)
+            # Also update updated_at to track last view timestamp for accurate 30-day counts
+            IP.objects.filter(pk=ip_log.pk).update(count=F("count") + 1, updated_at=timezone.now())
 
         # Check cache AFTER logging to ensure all views are tracked
         cache_key = f"badge_issue_{issue_number}"
@@ -1194,11 +1195,12 @@ def github_issue_badge(request, issue_number):
             bounty_amount = "$0"
 
         # Calculate view count from past 30 days (AFTER incrementing, so current view counts)
+        # Use updated_at (not created) to accurately track views from IPs active in last 30 days
         thirty_days_ago = timezone.now() - timedelta(days=30)
         view_count = (
             IP.objects.filter(
                 path=badge_path,
-                created__gte=thirty_days_ago,
+                updated_at__gte=thirty_days_ago,
             ).aggregate(total=Sum("count"))["total"]
             or 0
         )

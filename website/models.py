@@ -1057,6 +1057,7 @@ class IP(models.Model):
     user = models.CharField(max_length=150, null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     agent = models.TextField(null=True, blank=True)
     count = models.BigIntegerField(default=1)
     path = models.CharField(max_length=255, null=True, blank=True)
@@ -1066,6 +1067,7 @@ class IP(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["path", "created"], name="ip_path_created_idx"),
+            models.Index(fields=["path", "updated_at"], name="ip_path_updated_idx"),
         ]
 
 
