@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 from django.core.management import call_command
 from django.test import TestCase
 
-from website.models import Project
+from website.models import Project, SlackChannel
 
 
 class SlackCommandsTests(TestCase):
@@ -330,3 +330,85 @@ class SlackCommandsTests(TestCase):
         # Verify command output shows failure
         output = out.getvalue()
         self.assertIn("Failed to fetch channels list", output)
+
+    @patch("website.management.commands.update_slack_user_count.requests.get")
+    def test_channels_saved_to_database(self, mock_get):
+        """Test that fetched Slack channels are saved to the SlackChannel table"""
+        # Delete the existing project_with_slack to test in isolation
+        self.project_with_slack.delete()
+
+        # Create a project with only slack_channel (no slack_id or slack URL)
+        project = Project.objects.create(
+            name="Project For Channel Save Test",
+            slug="project-channel-save-test",
+            description="Test saving channels to database",
+            slack_channel="project-save-test",
+        )
+
+        # Mock responses: conversations.list with channel data, then conversations.members
+        mock_channels_response = Mock()
+        mock_channels_response.json.return_value = {
+            "ok": True,
+            "channels": [
+                {
+                    "id": "C11111111",
+                    "name": "project-save-test",
+                    "topic": {"value": "Test topic", "creator": "U12345", "last_set": 1234567890},
+                    "purpose": {"value": "Test purpose", "creator": "U12345", "last_set": 1234567890},
+                    "num_members": 100,
+                    "is_private": False,
+                    "is_archived": False,
+                    "is_general": False,
+                    "creator": "U12345",
+                    "created": 1234567890,
+                },
+                {
+                    "id": "C22222222",
+                    "name": "other-channel",
+                    "topic": {"value": "Other topic", "creator": "U12345", "last_set": 1234567890},
+                    "purpose": {"value": "Other purpose", "creator": "U12345", "last_set": 1234567890},
+                    "num_members": 50,
+                    "is_private": False,
+                    "is_archived": False,
+                    "is_general": False,
+                    "creator": "U67890",
+                    "created": 1234567890,
+                },
+            ],
+            "response_metadata": {"next_cursor": ""},
+        }
+        mock_members_response = Mock()
+        mock_members_response.json.return_value = {
+            "ok": True,
+            "members": ["U1", "U2", "U3", "U4", "U5"],  # 5 members
+            "response_metadata": {"next_cursor": ""},
+        }
+
+        mock_get.side_effect = [mock_channels_response, mock_members_response]
+
+        out = StringIO()
+        call_command("update_slack_user_count", "--slack_token=test-token", stdout=out)
+
+        # Verify channels were saved to the database
+        self.assertEqual(SlackChannel.objects.count(), 2)
+
+        # Verify first channel data
+        channel1 = SlackChannel.objects.get(channel_id="C11111111")
+        self.assertEqual(channel1.name, "project-save-test")
+        self.assertEqual(channel1.topic, "Test topic")
+        self.assertEqual(channel1.purpose, "Test purpose")
+        self.assertEqual(channel1.creator, "U12345")
+        self.assertEqual(channel1.slack_url, "https://owasp.slack.com/archives/C11111111")
+
+        # Verify second channel data
+        channel2 = SlackChannel.objects.get(channel_id="C22222222")
+        self.assertEqual(channel2.name, "other-channel")
+
+        # Verify the project was also updated
+        project.refresh_from_db()
+        self.assertEqual(project.slack_id, "C11111111")
+        self.assertEqual(project.slack_user_count, 5)
+
+        # Verify command output mentions saved channels
+        output = out.getvalue()
+        self.assertIn("Saved/updated 2 Slack channels", output)

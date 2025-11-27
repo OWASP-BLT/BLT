@@ -1,11 +1,13 @@
 import logging
 import os
+from datetime import datetime
+from datetime import timezone as dt_timezone
 
 import requests
 from django.db.models import Q
 
 from website.management.base import LoggedBaseCommand
-from website.models import Project
+from website.models import Project, SlackChannel
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +28,11 @@ class Command(LoggedBaseCommand):
         )
 
     def fetch_all_channels(self, headers):
-        """Fetch all public channels from Slack to build a name->id mapping."""
+        """Fetch all public channels from Slack to build a name->id mapping and save to database."""
         channels_map = {}
         url = "https://slack.com/api/conversations.list"
         cursor = None
+        channels_saved = 0
 
         while True:
             params = {"limit": 1000, "types": "public_channel"}
@@ -42,7 +45,37 @@ class Command(LoggedBaseCommand):
 
                 if data.get("ok"):
                     for channel in data.get("channels", []):
-                        channels_map[channel.get("name")] = channel.get("id")
+                        channel_id = channel.get("id")
+                        channel_name = channel.get("name")
+                        channels_map[channel_name] = channel_id
+
+                        # Extract topic and purpose values
+                        topic = channel.get("topic", {}).get("value", "") or ""
+                        purpose = channel.get("purpose", {}).get("value", "") or ""
+
+                        # Convert created timestamp to datetime
+                        created_timestamp = channel.get("created")
+                        created_at = None
+                        if created_timestamp:
+                            created_at = datetime.fromtimestamp(created_timestamp, tz=dt_timezone.utc)
+
+                        # Save or update channel in database
+                        SlackChannel.objects.update_or_create(
+                            channel_id=channel_id,
+                            defaults={
+                                "name": channel_name,
+                                "topic": topic,
+                                "purpose": purpose,
+                                "num_members": channel.get("num_members", 0),
+                                "is_private": channel.get("is_private", False),
+                                "is_archived": channel.get("is_archived", False),
+                                "is_general": channel.get("is_general", False),
+                                "creator": channel.get("creator", ""),
+                                "created_at": created_at,
+                                "slack_url": f"https://owasp.slack.com/archives/{channel_id}",
+                            },
+                        )
+                        channels_saved += 1
 
                     # Check for more pages
                     response_metadata = data.get("response_metadata", {})
@@ -58,6 +91,9 @@ class Command(LoggedBaseCommand):
                 self.stdout.write(self.style.ERROR(f"Request failed fetching channels: {str(e)}"))
                 logger.error(f"Request exception fetching channels: {str(e)}", exc_info=True)
                 break
+
+        if channels_saved > 0:
+            self.stdout.write(self.style.SUCCESS(f"Saved/updated {channels_saved} Slack channels to database"))
 
         return channels_map
 
@@ -193,6 +229,9 @@ class Command(LoggedBaseCommand):
                 # Update the project after successful pagination
                 project.slack_user_count = member_count
                 project.save(update_fields=["slack_user_count"])
+
+                # Also update the SlackChannel table with accurate member count
+                SlackChannel.objects.filter(channel_id=channel_id).update(num_members=member_count)
 
                 self.stdout.write(
                     self.style.SUCCESS(f"Updated {project.name} (#{project.slack_channel}): {member_count} members")

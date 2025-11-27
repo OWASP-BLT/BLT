@@ -126,6 +126,36 @@ class SlackIntegration(models.Model):
         return f"Slack Integration for {self.integration.organization.name}"
 
 
+class SlackChannel(models.Model):
+    """
+    Stores Slack channel data fetched from the Slack API.
+    This table captures all channels from the OWASP Slack workspace.
+    """
+
+    channel_id = models.CharField(max_length=50, unique=True, primary_key=True)
+    name = models.CharField(max_length=255, db_index=True)
+    topic = models.TextField(blank=True, default="")
+    purpose = models.TextField(blank=True, default="")
+    num_members = models.IntegerField(default=0)
+    is_private = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
+    is_general = models.BooleanField(default=False)
+    creator = models.CharField(max_length=50, blank=True, default="")
+    created_at = models.DateTimeField(null=True, blank=True)
+    slack_url = models.URLField(max_length=255, blank=True, default="")
+    last_synced = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-num_members", "name"]
+        indexes = [
+            models.Index(fields=["name"], name="slackchannel_name_idx"),
+            models.Index(fields=["num_members"], name="slackchannel_members_idx"),
+        ]
+
+    def __str__(self):
+        return f"#{self.name} ({self.num_members} members)"
+
+
 class OrganisationType(Enum):
     ORGANIZATION = "organization"
     INDIVIDUAL = "individual"
