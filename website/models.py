@@ -3748,20 +3748,14 @@ class Recommendation(models.Model):
                 raise ValidationError("Recommendation text must not exceed 1000 characters.")
 
     def save(self, *args, **kwargs):
-        """Override save to run validation"""
-        # Only run full_clean if not in a migration and if both users are set
-        # Check using _state to avoid triggering database queries
-        if not kwargs.get("skip_validation", False) and self.recommendation_text:
-            # Only validate if both foreign keys are set (check IDs, not objects)
-            from_user_set = hasattr(self, "from_user_id") and self.from_user_id is not None
-            to_user_set = hasattr(self, "to_user_id") and self.to_user_id is not None
+        """Override save to run validation when both users are set"""
+        # Only validate if both foreign keys are set (check IDs, not objects)
+        from_user_set = hasattr(self, "from_user_id") and self.from_user_id is not None
+        to_user_set = hasattr(self, "to_user_id") and self.to_user_id is not None
 
-            if from_user_set and to_user_set:
-                try:
-                    self.full_clean()
-                except (AttributeError, Exception) as e:
-                    # Skip validation if there are issues (will be validated in view)
-                    pass
+        if from_user_set and to_user_set:
+            self.full_clean()
+
         super().save(*args, **kwargs)
 
 
