@@ -314,7 +314,21 @@
         // Check current bid when issue URL is entered
         document.getElementById('issue-url-input').addEventListener('blur', function() {
             const issueUrl = this.value.trim();
-            if (issueUrl && issueUrl.includes('github.com') && issueUrl.includes('/issues/')) {
+            let isValidGithubIssue = false;
+            try {
+                const urlObj = new URL(issueUrl);
+                // Only allow real GitHub host
+                if (urlObj.hostname === 'github.com') {
+                    // Path format: /owner/repo/issues/number
+                    const issuePathRegex = /^\/[^\/]+\/[^\/]+\/issues\/\d+$/;
+                    if (issuePathRegex.test(urlObj.pathname)) {
+                        isValidGithubIssue = true;
+                    }
+                }
+            } catch (e) {
+                // invalid URL; isValidGithubIssue remains false
+            }
+            if (isValidGithubIssue) {
                 fetch('/api/bid/check-current/', {
                     method: 'POST',
                     headers: {
