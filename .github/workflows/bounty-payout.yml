@@ -29,14 +29,13 @@ jobs:
 
             const issueNumbers = [];
 
-            // Match #123 style references
-            let match;
-            while ((match = hashPattern.exec(prBody)) !== null) {
+            // Match #123 style references using matchAll for cleaner iteration
+            for (const match of prBody.matchAll(hashPattern)) {
               issueNumbers.push(match[2]);
             }
 
-            // Match URL style references
-            while ((match = urlPattern.exec(prBody)) !== null) {
+            // Match URL style references using matchAll for cleaner iteration
+            for (const match of prBody.matchAll(urlPattern)) {
               issueNumbers.push(match[2]);
             }
 
