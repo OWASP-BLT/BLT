@@ -44,11 +44,11 @@ class SecurityDashboardView(LoginRequiredMixin, TemplateView):
             writer.writerow(
                 [
                     incident.id,
-                    incident.title,
+                    _escape_csv_formula(incident.title),
                     incident.severity,
                     incident.status,
                     incident.created_at,
-                    incident.affected_systems or "",
+                    _escape_csv_formula(incident.affected_systems or ""),
                 ]
             )
 
