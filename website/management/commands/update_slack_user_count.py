@@ -54,34 +54,56 @@ class Command(LoggedBaseCommand):
 
         for project in projects:
             try:
-                # Use Slack API conversations.info to get channel information including member count
-                url = "https://slack.com/api/conversations.info"
-                params = {"channel": project.slack_id}
+                # Use Slack API conversations.members to get accurate member count
+                # The conversations.info API's num_members field is unreliable and often returns 0
+                url = "https://slack.com/api/conversations.members"
+                member_count = 0
+                cursor = None
+                api_error = False
 
-                response = requests.get(url, headers=headers, params=params, timeout=10)
-                data = response.json()
+                # Paginate through all members
+                while True:
+                    params = {"channel": project.slack_id, "limit": 1000}
+                    if cursor:
+                        params["cursor"] = cursor
 
-                if data.get("ok"):
-                    channel = data.get("channel", {})
-                    member_count = channel.get("num_members", 0)
+                    response = requests.get(url, headers=headers, params=params, timeout=10)
+                    data = response.json()
 
-                    # Update the project
-                    project.slack_user_count = member_count
-                    project.save(update_fields=["slack_user_count"])
+                    if data.get("ok"):
+                        members = data.get("members", [])
+                        member_count += len(members)
 
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Updated {project.name} (#{project.slack_channel}): {member_count} members")
-                    )
-                    updated_count += 1
-                else:
-                    error_msg = data.get("error", "Unknown error")
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"Failed to fetch member count for {project.name} (#{project.slack_channel}): {error_msg}"
+                        # Check for more pages
+                        response_metadata = data.get("response_metadata", {})
+                        cursor = response_metadata.get("next_cursor")
+                        if not cursor:
+                            break
+                    else:
+                        error_msg = data.get("error", "Unknown error")
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"Failed to fetch member count for {project.name} (#{project.slack_channel}): {error_msg}"
+                            )
                         )
-                    )
-                    failed_count += 1
-                    logger.warning(f"Slack API error for project {project.id} ({project.slack_channel}): {error_msg}")
+                        failed_count += 1
+                        logger.warning(
+                            f"Slack API error for project {project.id} ({project.slack_channel}): {error_msg}"
+                        )
+                        api_error = True
+                        break
+
+                if api_error:
+                    continue
+
+                # Update the project after successful pagination
+                project.slack_user_count = member_count
+                project.save(update_fields=["slack_user_count"])
+
+                self.stdout.write(
+                    self.style.SUCCESS(f"Updated {project.name} (#{project.slack_channel}): {member_count} members")
+                )
+                updated_count += 1
 
             except requests.exceptions.RequestException as e:
                 self.stdout.write(
