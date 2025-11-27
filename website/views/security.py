@@ -22,6 +22,15 @@ SEVERITY_ORDER = Case(
 )
 
 
+def _escape_csv_formula(value):
+    """Escape leading formula characters to mitigate CSV formula injection."""
+    if not isinstance(value, str):
+        return value
+    if value and value[0] in ("=", "+", "-", "@"):
+        return "'" + value
+    return value
+
+
 class SecurityDashboardView(LoginRequiredMixin, TemplateView):
     template_name = "security/dashboard.html"
 
