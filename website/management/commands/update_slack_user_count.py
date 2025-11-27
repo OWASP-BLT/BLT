@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(LoggedBaseCommand):
-    help = "Update projects with Slack channel member counts"
+    help = "Update projects with Slack member counts"
 
     def add_arguments(self, parser):
         parser.add_argument(
