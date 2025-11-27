@@ -2034,6 +2034,8 @@ class GitHubIssue(models.Model):
         try:
             # Extract owner and repo from the URL
             # URL format: https://github.com/owner/repo/issues/number
+            # Split gives: ['', '', 'github.com', 'owner', 'repo', 'issues', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue number)
             parts = self.url.split("/")
             if len(parts) < 7:
                 logger.error(f"Malformed GitHub URL: {self.url}")
@@ -2098,6 +2100,8 @@ class GitHubIssue(models.Model):
         try:
             # Extract owner and repo from the URL
             # URL format: https://github.com/owner/repo/issues/number
+            # Split gives: ['', '', 'github.com', 'owner', 'repo', 'issues', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue number)
             parts = self.url.split("/")
             if len(parts) < 7:
                 logger.error(f"Malformed GitHub URL: {self.url}")
@@ -2137,6 +2141,9 @@ class GitHubIssue(models.Model):
 
         try:
             # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number
+            # Split gives: ['', '', 'github.com', 'owner', 'repo', 'issues', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue number)
             parts = self.url.split("/")
             if len(parts) < 7:
                 logger.error(f"Malformed GitHub URL: {self.url}")
