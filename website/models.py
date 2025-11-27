@@ -2029,19 +2029,24 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        # URL format: https://github.com/owner/repo/issues/number
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for comments
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number
+            parts = self.url.split("/")
+            if len(parts) < 7:
+                logger.error(f"Malformed GitHub URL: {self.url}")
+                return []
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for comments
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
             response = requests.get(api_url, headers=headers)
             response.raise_for_status()
             comments = response.json()
@@ -2064,22 +2069,18 @@ class GitHubIssue(models.Model):
             return formatted_comments
         except requests.exceptions.HTTPError as e:
             # Handle HTTP errors with specific status codes
-            logger = logging.getLogger(__name__)
             if e.response.status_code == 403:
                 logger.warning(
-                    f"GitHub API 403 Forbidden for issue {issue_number} ({api_url}). "
+                    f"GitHub API 403 Forbidden for issue ({self.url}). "
                     f"This may indicate an invalid/expired GitHub token, rate limiting, or insufficient permissions. "
                     f"Check GITHUB_TOKEN configuration."
                 )
             else:
-                logger.error(
-                    f"GitHub API HTTP {e.response.status_code} error for issue {issue_number}: {str(e)}"
-                )
+                logger.error(f"GitHub API HTTP {e.response.status_code} error for issue ({self.url}): {str(e)}")
             return []
         except (requests.exceptions.RequestException, KeyError, IndexError) as e:
             # Log other request errors or data parsing errors
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error fetching comments for issue {issue_number}: {str(e)}")
+            logger.error(f"Error fetching comments for issue ({self.url}): {str(e)}")
             return []
 
     def add_comment(self, comment_text):
@@ -2092,27 +2093,31 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        # URL format: https://github.com/owner/repo/issues/number
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for adding comments
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-
-        data = {"body": comment_text}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number
+            parts = self.url.split("/")
+            if len(parts) < 7:
+                logger.error(f"Malformed GitHub URL: {self.url}")
+                return False
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for adding comments
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            data = {"body": comment_text}
+
             response = requests.post(api_url, headers=headers, json=data)
             response.raise_for_status()
             return True
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, IndexError) as e:
             # Log the error but don't raise it
-            logger = logging.getLogger(__name__)
             logger.error(f"Error adding comment to issue {self.issue_id}: {str(e)}")
             return False
 
@@ -2128,26 +2133,30 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for adding labels
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-
-        data = {"labels": labels}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            parts = self.url.split("/")
+            if len(parts) < 7:
+                logger.error(f"Malformed GitHub URL: {self.url}")
+                return False
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for adding labels
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            data = {"labels": labels}
+
             response = requests.post(api_url, headers=headers, json=data)
             response.raise_for_status()
             return True
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, IndexError) as e:
             # Log the error but don't raise it
-            logger = logging.getLogger(__name__)
             logger.error(f"Error adding labels to issue {self.issue_id}: {str(e)}")
             return False
 
