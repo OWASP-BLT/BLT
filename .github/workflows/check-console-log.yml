@@ -1,0 +1,289 @@
+name: Check Console Statements
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API
+# to fetch file content and scan for console statements.
+#
+# This workflow checks for any console statements in JavaScript files
+# All console methods are forbidden as the project has sufficient error tracking
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - '**.js'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  check_console_statements:
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+    steps:
+      - name: Check for console statements
+        id: check
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // SECURITY: We do not checkout PR code. All file content is fetched via the GitHub API.
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            
+            if (!pr) {
+              core.setOutput('violations_found', 'false');
+              core.info('No pull_request in context. Skipping.');
+              return;
+            }
+            
+            const pull_number = pr.number;
+            core.info(`Checking PR #${pull_number} for console statements...`);
+            
+            // Get list of changed files in this PR via API
+            const changedFiles = await github.paginate(
+              github.rest.pulls.listFiles,
+              {
+                owner,
+                repo,
+                pull_number,
+                per_page: 100,
+              }
+            );
+            
+            // Filter for JavaScript files that were added, modified, or renamed
+            const jsFiles = changedFiles
+              .filter(f => f.filename.endsWith('.js') && 
+                          (f.status === 'added' || f.status === 'modified' || f.status === 'renamed'))
+              .map(f => f.filename);
+            
+            if (jsFiles.length === 0) {
+              core.info('No JavaScript files changed in this PR');
+              core.setOutput('violations_found', 'false');
+              return;
+            }
+            
+            core.info(`Found ${jsFiles.length} JavaScript file(s) to check: ${jsFiles.join(', ')}`);
+            
+            let violationCount = 0;
+            let violations = '';
+            
+            for (const file of jsFiles) {
+              try {
+                // Get file content from PR head via API
+                const { data: fileData } = await github.rest.repos.getContent({
+                  owner: pr.head.repo.owner.login,
+                  repo: pr.head.repo.name,
+                  path: file,
+                  ref: pr.head.sha,
+                });
+                
+                if (fileData.type !== 'file' || !fileData.content) {
+                  continue;
+                }
+                
+                // Decode base64 content
+                const content = Buffer.from(fileData.content, fileData.encoding).toString('utf8');
+                const lines = content.split('\n');
+                
+                let matches = [];
+                for (let i = 0; i < lines.length; i++) {
+                  const line = lines[i];
+                  // Exclude lines that start with // or /* (single-line comments)
+                  if (/^\s*(\/\/|\/\*)/.test(line)) continue;
+                  // Check for any console method (log, error, warn, debug, info, etc.)
+                  if (/\bconsole\.\w+/.test(line)) {
+                    matches.push(`${i + 1}:${line}`);
+                  }
+                }
+                
+                if (matches.length > 0) {
+                  violationCount += 1;
+                  violations += `**${file}**:\n\`\`\`text\n${matches.join('\n')}\n\`\`\`\n\n`;
+                  core.info(`Found ${matches.length} console statement(s) in ${file}`);
+                }
+              } catch (error) {
+                core.warning(`Could not fetch content for ${file}: ${error.message}`);
+              }
+            }
+            
+            if (violationCount > 0) {
+              core.setOutput('violations_found', 'true');
+              core.setOutput('violation_count', violationCount.toString());
+              core.setOutput('violations', violations);
+              core.info(`Found console statements in ${violationCount} file(s)`);
+            } else {
+              core.setOutput('violations_found', 'false');
+              core.info('No console statements found in changed files ✓');
+            }
+
+      - name: Comment and label PR if violations found
+        if: steps.check.outputs.violations_found == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            const pull_number = pr.number;
+            
+            const violations = `${{ steps.check.outputs.violations }}`;
+            const violationCount = '${{ steps.check.outputs.violation_count }}';
+            
+            const commentMarker = '<!-- console-log-check -->';
+            const commentBody = commentMarker + '\n' +
+              '## ❌ Console Statements Detected\n\n' +
+              `Found **${violationCount}** file(s) with \`console\` statements that should be removed.\n\n` +
+              '### Why remove console statements?\n' +
+              '- The project has sufficient error tracking in place\n' +
+              '- Console statements can expose sensitive information in production\n' +
+              '- They can clutter browser console logs\n' +
+              '- They may impact performance in production builds\n\n' +
+              '### Files with violations:\n\n' +
+              violations +
+              '\n### How to fix:\n' +
+              '1. Remove or comment out all `console.*` statements from your code (console.log, console.error, console.warn, etc.)\n' +
+              "2. Use the project's existing error tracking system for debugging\n" +
+              '3. For temporary debugging during development, comment out console statements: `// console.log()`\n\n' +
+              '**Note:** \n' +
+              '- All console methods (log, error, warn, debug, info, etc.) are forbidden.\n' +
+              '- If console statements are inside a multi-line comment block (`/* ... */`), they may still be flagged. Please manually verify.\n\n' +
+              'Please remove all console statements and push your changes.';
+            
+            // Check if we already commented
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            
+            const existingComment = comments.find(comment => 
+              comment.body && comment.body.includes(commentMarker)
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body: commentBody,
+              });
+              core.info(`Updated existing comment on PR #${pull_number}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pull_number,
+                body: commentBody,
+              });
+              core.info(`Added comment to PR #${pull_number}`);
+            }
+            
+            // Add label
+            const labelName = 'has-console-statements';
+            const labelColor = 'e74c3c'; // Red
+            const labelDescription = 'PR contains console statements that need to be removed';
+            
+            // Ensure label exists
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: labelName });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: labelName,
+                  color: labelColor,
+                  description: labelDescription,
+                });
+                core.info(`Created label: ${labelName}`);
+              }
+            }
+            
+            // Add label if not present
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            
+            const hasLabel = currentLabels.some(label => label.name === labelName);
+            
+            if (!hasLabel) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: pull_number,
+                labels: [labelName],
+              });
+              core.info(`Added label "${labelName}" to PR #${pull_number}`);
+            }
+            
+            // Fail the workflow to indicate violations were found
+            core.setFailed(`Found console statements in ${violationCount} file(s)`);
+
+      - name: Remove label and comment if no violations
+        if: steps.check.outputs.violations_found == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            
+            if (!pr) {
+              return;
+            }
+            
+            const pull_number = pr.number;
+            const labelName = 'has-console-statements';
+            const commentMarker = '<!-- console-log-check -->';
+            
+            // Remove label if present
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number: pull_number,
+                name: labelName,
+              });
+              core.info(`Removed label "${labelName}" from PR #${pull_number}`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.info(`Label "${labelName}" not found on PR #${pull_number}`);
+              }
+            }
+            
+            // Remove comment if present
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            
+            const existingComment = comments.find(comment => 
+              comment.body && comment.body.includes(commentMarker)
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.deleteComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+              });
+              core.info(`Removed comment from PR #${pull_number}`);
+            }
