@@ -1943,9 +1943,14 @@ def management_commands(request):
             if hasattr(command_class, "add_arguments"):
                 # Create a parser to capture arguments
                 from argparse import ArgumentParser
+                import inspect
 
                 parser = ArgumentParser()
-                command_instance = command_class()
+                # Check if command_class is already an instance or a class
+                if inspect.isclass(command_class):
+                    command_instance = command_class()
+                else:
+                    command_instance = command_class
                 command_instance.add_arguments(parser)
 
                 # Extract argument information
@@ -2085,9 +2090,14 @@ def run_management_command(request):
             # Create a parser to capture arguments
             if hasattr(command_class, "add_arguments"):
                 from argparse import ArgumentParser
+                import inspect
 
                 parser = ArgumentParser()
-                command_instance = command_class()
+                # Check if command_class is already an instance or a class
+                if inspect.isclass(command_class):
+                    command_instance = command_class()
+                else:
+                    command_instance = command_class
                 command_instance.add_arguments(parser)
 
                 # Extract argument information and collect values from POST
