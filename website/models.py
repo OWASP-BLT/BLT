@@ -2062,10 +2062,24 @@ class GitHubIssue(models.Model):
                 )
 
             return formatted_comments
-        except (requests.exceptions.RequestException, KeyError) as e:
-            # Log the error but don't raise it to avoid breaking the site
+        except requests.exceptions.HTTPError as e:
+            # Handle HTTP errors with specific status codes
             logger = logging.getLogger(__name__)
-            logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
+            if e.response.status_code == 403:
+                logger.warning(
+                    f"GitHub API 403 Forbidden for issue {issue_number} ({api_url}). "
+                    f"This may indicate an invalid/expired GitHub token, rate limiting, or insufficient permissions. "
+                    f"Check GITHUB_TOKEN configuration."
+                )
+            else:
+                logger.error(
+                    f"GitHub API HTTP {e.response.status_code} error for issue {issue_number}: {str(e)}"
+                )
+            return []
+        except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+            # Log other request errors or data parsing errors
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching comments for issue {issue_number}: {str(e)}")
             return []
 
     def add_comment(self, comment_text):
