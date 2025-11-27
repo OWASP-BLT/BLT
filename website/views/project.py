@@ -30,7 +30,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
@@ -321,7 +321,7 @@ class ProjectView(FilterView):
         return context
 
 
-class ProjectCompactListView(FilterView):
+class ProjectCompactListView(ListView):
     """Compact spreadsheet-like view for projects with sortable columns"""
 
     model = Project
