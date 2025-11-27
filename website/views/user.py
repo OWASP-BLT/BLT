@@ -73,6 +73,22 @@ from website.models import (
 logger = logging.getLogger(__name__)
 
 
+def build_skills_by_category():
+    """Build skills grouped by category for form rendering."""
+    try:
+        skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
+        skills_by_category = {}
+        for skill in skills_queryset:
+            category = skill.category or "Other"
+            if category not in skills_by_category:
+                skills_by_category[category] = []
+            skills_by_category[category].append((skill.name, skill.name))
+        return skills_by_category
+    except Exception as e:
+        logger.warning(f"Failed to load recommendation skills: {e}")
+        return {}
+
+
 def extract_github_username(github_url):
     """
     Extract GitHub username from a GitHub URL for avatar display.
@@ -1780,17 +1796,7 @@ def add_recommendation(request, username):
     if request.method == "POST":
         form = RecommendationForm(request.POST)
         # Pass skills_by_category to template for checkbox rendering
-        try:
-            skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
-            skills_by_category = {}
-            for skill in skills_queryset:
-                category = skill.category or "Other"
-                if category not in skills_by_category:
-                    skills_by_category[category] = []
-                skills_by_category[category].append((skill.name, skill.name))
-            form.skills_by_category = skills_by_category
-        except Exception:
-            form.skills_by_category = {}
+        form.skills_by_category = build_skills_by_category()
         if form.is_valid():
             try:
                 with transaction.atomic():
@@ -1821,21 +1827,11 @@ def add_recommendation(request, username):
                     try:
                         recommendation.full_clean()
                     except Exception as e:
-                        logger.error(f"Validation error: {e}")
+                        logger.exception(f"Validation error: {e}")
                         messages.error(request, f"Validation error: {e}")
                         form = RecommendationForm(request.POST)
                         # Pass skills_by_category to template
-                        try:
-                            skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
-                            skills_by_category = {}
-                            for skill in skills_queryset:
-                                category = skill.category or "Other"
-                                if category not in skills_by_category:
-                                    skills_by_category[category] = []
-                                skills_by_category[category].append((skill.name, skill.name))
-                            form.skills_by_category = skills_by_category
-                        except Exception:
-                            form.skills_by_category = {}
+                        form.skills_by_category = build_skills_by_category()
                         return render(
                             request,
                             "recommendation_form.html",
@@ -1872,7 +1868,7 @@ def add_recommendation(request, username):
                 return redirect("profile", slug=username)
             except Exception as e:
                 # Handle other errors
-                logger.error(f"Error creating recommendation: {e}")
+                logger.exception(f"Error creating recommendation: {e}")
                 messages.error(request, "An error occurred while creating the recommendation. Please try again.")
                 return redirect("profile", slug=username)
         else:
@@ -1886,17 +1882,7 @@ def add_recommendation(request, username):
 
         form = RecommendationForm()
         # Pass skills_by_category to template for checkbox rendering
-        try:
-            skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
-            skills_by_category = {}
-            for skill in skills_queryset:
-                category = skill.category or "Other"
-                if category not in skills_by_category:
-                    skills_by_category[category] = []
-                skills_by_category[category].append((skill.name, skill.name))
-            form.skills_by_category = skills_by_category
-        except Exception:
-            form.skills_by_category = {}
+        form.skills_by_category = build_skills_by_category()
 
     return render(
         request,
@@ -2189,24 +2175,14 @@ def edit_recommendation(request, recommendation_id):
     if request.method == "POST":
         form = RecommendationForm(request.POST, instance=recommendation)
         # Pass skills_by_category to template
-        try:
-            skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
-            skills_by_category = {}
-            for skill in skills_queryset:
-                category = skill.category or "Other"
-                if category not in skills_by_category:
-                    skills_by_category[category] = []
-                skills_by_category[category].append((skill.name, skill.name))
-            form.skills_by_category = skills_by_category
-        except Exception:
-            form.skills_by_category = {}
+        form.skills_by_category = build_skills_by_category()
         if form.is_valid():
             try:
                 recommendation = form.save()
                 messages.success(request, "Recommendation updated successfully.")
                 return redirect("profile", slug=recommendation.to_user.username)
             except Exception as e:
-                logger.error(f"Error updating recommendation: {e}")
+                logger.exception(f"Error updating recommendation: {e}")
                 messages.error(request, "An error occurred while updating the recommendation. Please try again.")
         else:
             messages.error(request, "Please correct the errors in the form.")
@@ -2217,17 +2193,7 @@ def edit_recommendation(request, recommendation_id):
             form.fields["skills_endorsed"].initial = recommendation.skills_endorsed
 
         # Pass skills_by_category to template for checkbox rendering
-        try:
-            skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
-            skills_by_category = {}
-            for skill in skills_queryset:
-                category = skill.category or "Other"
-                if category not in skills_by_category:
-                    skills_by_category[category] = []
-                skills_by_category[category].append((skill.name, skill.name))
-            form.skills_by_category = skills_by_category
-        except Exception:
-            form.skills_by_category = {}
+        form.skills_by_category = build_skills_by_category()
 
     return render(
         request,
