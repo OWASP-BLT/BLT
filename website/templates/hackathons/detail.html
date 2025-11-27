@@ -22,474 +22,563 @@
     <div class="container mx-auto px-4 py-8">
         <!-- Breadcrumbs -->
         {% include "includes/breadcrumbs.html" %}
-        <!-- Hackathon Header -->
-        <div class="relative rounded-lg overflow-hidden mb-8">
-            {% if hackathon.banner_image %}
-                <img src="{{ hackathon.banner_image.url }}"
-                     alt="{{ hackathon.name }}"
-                     width="1200"
-                     height="256"
-                     class="w-full h-64 object-cover">
-            {% else %}
-                <div class="w-full h-64 bg-gradient-to-r from-gray-700 to-gray-900"></div>
-            {% endif %}
-            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div class="text-center text-white p-4">
-                    <h1 class="text-4xl font-bold mb-2">{{ hackathon.name }}</h1>
-                    <p class="text-xl">
-                        {% if hackathon.is_ongoing %}
-                            <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm">Ongoing</span>
-                        {% elif hackathon.has_ended %}
-                            <span class="bg-gray-500 dark:bg-gray-400 text-white px-3 py-1 rounded-full text-sm">Ended</span>
-                        {% else %}
-                            <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">Upcoming</span>
-                        {% endif %}
-                    </p>
-                    <p class="mt-2">{{ hackathon.time_remaining }}</p>
-                </div>
-            </div>
-        </div>
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Participants</h3>
-                <p class="text-3xl font-bold text-[#e74c3c]">{{ participant_count }}</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Pull Requests</h3>
-                <p class="text-3xl font-bold text-[#e74c3c]">{{ pr_count }}</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Merged PRs</h3>
-                <p class="text-3xl font-bold text-[#e74c3c]">{{ merged_pr_count }}</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Page Views (Hackathon)</h3>
-                <p class="text-3xl font-bold text-[#e74c3c]">{{ hackathon_views }}</p>
-                <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">All-Time: {{ all_time_views }}</p>
-                <div class="mt-2 h-16">
-                    <canvas id="viewsSparkline"></canvas>
-                </div>
-            </div>
-        </div>
-        <!-- Pull Request Activity Chart -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Pull Request Activity</h2>
-            <div class="h-64">
-                <canvas id="prActivityChart"></canvas>
-            </div>
-        </div>
-        <!-- Main Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Column - Hackathon Info -->
-            <div class="lg:col-span-2">
-                <!-- Description -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">About this Hackathon</h2>
-                    <div class="prose max-w-none">{{ hackathon.description|linebreaks }}</div>
-                    {% if hackathon.rules %}
-                        <div class="mt-6">
-                            <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Rules</h3>
-                            <div class="prose max-w-none">{{ hackathon.rules|linebreaks }}</div>
-                        </div>
-                    {% endif %}
-                    <div class="mt-6">
-                        <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Timeline</h3>
-                        <div class="flex flex-col space-y-2">
-                            <div class="flex items-center">
-                                <div class="w-24 font-medium text-gray-600 dark:text-gray-400">Start:</div>
-                                <div>{{ hackathon.start_time|date:"F j, Y, g:i a T" }}</div>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="w-24 font-medium text-gray-600 dark:text-gray-400">End:</div>
-                                <div>{{ hackathon.end_time|date:"F j, Y, g:i a T" }}</div>
-                            </div>
+        <!-- Define share URL variable to avoid duplication -->
+        {% with share_url=request.scheme|add:"://"|add:request.get_host|add:request.path %}
+            <!-- Share Button -->
+            <div class="flex justify-end mb-4">
+                <div class="relative inline-block">
+                    <button id="shareButton"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                        <svg class="w-5 h-5 mr-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                            </path>
+                        </svg>
+                        Share
+                    </button>
+                    <!-- Share Options Dropdown -->
+                    <div id="shareDropdown"
+                         class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                        <div class="py-1" role="menu" aria-orientation="vertical">
+                            <button onclick="copyToClipboard()"
+                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                                <svg class="w-5 h-5 mr-3"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                Copy Link
+                            </button>
+                            <a href="https://twitter.com/intent/tweet?text={{ hackathon.name|urlencode }} - {{ hackathon.description|truncatewords:10|urlencode }}&url={{ share_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                                <svg class="w-5 h-5 mr-3"
+                                     fill="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z">
+                                    </path>
+                                </svg>
+                                Share on Twitter
+                            </a>
+                            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ share_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                                <svg class="w-5 h-5 mr-3"
+                                     fill="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z">
+                                    </path>
+                                </svg>
+                                Share on LinkedIn
+                            </a>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ share_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                                <svg class="w-5 h-5 mr-3"
+                                     fill="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z">
+                                    </path>
+                                </svg>
+                                Share on Facebook
+                            </a>
+                            <a href="mailto:?subject={{ hackathon.name|urlencode }}&body=Check out this hackathon: {{ share_url }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                                <svg class="w-5 h-5 mr-3"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                Share via Email
+                            </a>
                         </div>
                     </div>
-                    <!-- Repositories -->
+                </div>
+            </div>
+            <!-- Hackathon Header -->
+            <div class="relative rounded-lg overflow-hidden mb-8">
+                {% if hackathon.banner_image %}
+                    <img src="{{ hackathon.banner_image.url }}"
+                         alt="{{ hackathon.name }}"
+                         width="1200"
+                         height="256"
+                         class="w-full h-64 object-cover">
+                {% else %}
+                    <div class="w-full h-64 bg-gradient-to-r from-gray-700 to-gray-900"></div>
+                {% endif %}
+                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div class="text-center text-white p-4">
+                        <h1 class="text-4xl font-bold mb-2">{{ hackathon.name }}</h1>
+                        <p class="text-xl">
+                            {% if hackathon.is_ongoing %}
+                                <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm">Ongoing</span>
+                            {% elif hackathon.has_ended %}
+                                <span class="bg-gray-500 dark:bg-gray-400 text-white px-3 py-1 rounded-full text-sm">Ended</span>
+                            {% else %}
+                                <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">Upcoming</span>
+                            {% endif %}
+                        </p>
+                        <p class="mt-2">{{ hackathon.time_remaining }}</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Participants</h3>
+                    <p class="text-3xl font-bold text-[#e74c3c]">{{ participant_count }}</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Pull Requests</h3>
+                    <p class="text-3xl font-bold text-[#e74c3c]">{{ pr_count }}</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Merged PRs</h3>
+                    <p class="text-3xl font-bold text-[#e74c3c]">{{ merged_pr_count }}</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Page Views (Hackathon)</h3>
+                    <p class="text-3xl font-bold text-[#e74c3c]">{{ hackathon_views }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">All-Time: {{ all_time_views }}</p>
+                    <div class="mt-2 h-16">
+                        <canvas id="viewsSparkline"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Pull Request Activity Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Pull Request Activity</h2>
+                <div class="h-64">
+                    <canvas id="prActivityChart"></canvas>
+                </div>
+            </div>
+            <!-- Main Content -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column - Hackathon Info -->
+                <div class="lg:col-span-2">
+                    <!-- Description -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-                        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Repositories</h2>
-                        {% if repositories %}
-                            <div class="space-y-4">
-                                {% for repo_data in repositories %}
-                                    <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <div class="flex items-center">
-                                                <svg class="w-5 h-5 text-gray-600 dark:text-gray-400 mr-2"
-                                                     fill="currentColor"
-                                                     viewBox="0 0 20 20"
-                                                     xmlns="http://www.w3.org/2000/svg">
-                                                    <path fill-rule="evenodd" d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8zM5 12.25v3.25a.25.25 0 00.4.2l1.45-1.087a.25.25 0 01.3 0L8.6 15.7a.25.25 0 00.4-.2v-3.25a.25.25 0 00-.25-.25h-3.5a.25.25 0 00-.25.25z" clip-rule="evenodd">
-                                                    </path>
-                                                </svg>
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">About this Hackathon</h2>
+                        <div class="prose max-w-none">{{ hackathon.description|linebreaks }}</div>
+                        {% if hackathon.rules %}
+                            <div class="mt-6">
+                                <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Rules</h3>
+                                <div class="prose max-w-none">{{ hackathon.rules|linebreaks }}</div>
+                            </div>
+                        {% endif %}
+                        <div class="mt-6">
+                            <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Timeline</h3>
+                            <div class="flex flex-col space-y-2">
+                                <div class="flex items-center">
+                                    <div class="w-24 font-medium text-gray-600 dark:text-gray-400">Start:</div>
+                                    <div>{{ hackathon.start_time|date:"F j, Y, g:i a T" }}</div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-24 font-medium text-gray-600 dark:text-gray-400">End:</div>
+                                    <div>{{ hackathon.end_time|date:"F j, Y, g:i a T" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Repositories -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Repositories</h2>
+                            {% if repositories %}
+                                <div class="space-y-4">
+                                    {% for repo_data in repositories %}
+                                        <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center">
+                                                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-400 mr-2"
+                                                         fill="currentColor"
+                                                         viewBox="0 0 20 20"
+                                                         xmlns="http://www.w3.org/2000/svg">
+                                                        <path fill-rule="evenodd" d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8zM5 12.25v3.25a.25.25 0 00.4.2l1.45-1.087a.25.25 0 01.3 0L8.6 15.7a.25.25 0 00.4-.2v-3.25a.25.25 0 00-.25-.25h-3.5a.25.25 0 00-.25.25z" clip-rule="evenodd">
+                                                        </path>
+                                                    </svg>
+                                                    <a href="{{ repo_data.repo.repo_url }}"
+                                                       target="_blank"
+                                                       class="font-medium hover:text-[#e74c3c]">
+                                                        {{ repo_data.repo.name }}
+                                                    </a>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-500 dark:text-gray-500">{{ repo_data.merged_pr_count }} merged PRs</span>
+                                                    {% if can_manage %}
+                                                        <a href="{% url 'refresh_repository_data' hackathon_slug=hackathon.slug repo_id=repo_data.repo.id %}"
+                                                           class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                                            <svg class="w-4 h-4 mr-1"
+                                                                 fill="none"
+                                                                 stroke="currentColor"
+                                                                 viewBox="0 0 24 24"
+                                                                 xmlns="http://www.w3.org/2000/svg">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                                                </path>
+                                                            </svg>
+                                                            Refresh
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% if repo_data.repo.description %}
+                                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ repo_data.repo.description }}</p>
+                                            {% endif %}
+                                            <!-- Repository Action Buttons -->
+                                            <div class="mt-3 flex flex-wrap gap-2">
                                                 <a href="{{ repo_data.repo.repo_url }}"
                                                    target="_blank"
-                                                   class="font-medium hover:text-[#e74c3c]">
-                                                    {{ repo_data.repo.name }}
+                                                   class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                                    <svg class="w-4 h-4 mr-1"
+                                                         fill="currentColor"
+                                                         viewBox="0 0 24 24"
+                                                         xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                                    </svg>
+                                                    GitHub
                                                 </a>
-                                            </div>
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-sm text-gray-500 dark:text-gray-500">{{ repo_data.merged_pr_count }} merged PRs</span>
-                                                {% if can_manage %}
-                                                    <a href="{% url 'refresh_repository_data' hackathon_slug=hackathon.slug repo_id=repo_data.repo.id %}"
-                                                       class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                                        <svg class="w-4 h-4 mr-1"
-                                                             fill="none"
-                                                             stroke="currentColor"
-                                                             viewBox="0 0 24 24"
-                                                             xmlns="http://www.w3.org/2000/svg">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                                                            </path>
-                                                        </svg>
-                                                        Refresh
-                                                    </a>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        {% if repo_data.repo.description %}
-                                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ repo_data.repo.description }}</p>
-                                        {% endif %}
-                                        <!-- Repository Action Buttons -->
-                                        <div class="mt-3 flex flex-wrap gap-2">
-                                            <a href="{{ repo_data.repo.repo_url }}"
-                                               target="_blank"
-                                               class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                                <svg class="w-4 h-4 mr-1"
-                                                     fill="currentColor"
-                                                     viewBox="0 0 24 24"
-                                                     xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                                                </svg>
-                                                GitHub
-                                            </a>
-                                            <a href="{% url 'repo_detail' repo_data.repo.slug %}"
-                                               class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                                <svg class="w-4 h-4 mr-1"
-                                                     fill="none"
-                                                     stroke="currentColor"
-                                                     viewBox="0 0 24 24"
-                                                     xmlns="http://www.w3.org/2000/svg">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                                    </path>
-                                                </svg>
-                                                Details
-                                            </a>
-                                            {% if request.user.is_superuser %}
-                                                <a href="{% url 'admin:website_githubissue_changelist' %}?repo__id__exact={{ repo_data.repo.id }}"
-                                                   target="_blank"
+                                                <a href="{% url 'repo_detail' repo_data.repo.slug %}"
                                                    class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                                                     <svg class="w-4 h-4 mr-1"
                                                          fill="none"
                                                          stroke="currentColor"
                                                          viewBox="0 0 24 24"
                                                          xmlns="http://www.w3.org/2000/svg">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                                         </path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                     </svg>
-                                                    Admin
+                                                    Details
                                                 </a>
+                                                {% if request.user.is_superuser %}
+                                                    <a href="{% url 'admin:website_githubissue_changelist' %}?repo__id__exact={{ repo_data.repo.id }}"
+                                                       target="_blank"
+                                                       class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                                        <svg class="w-4 h-4 mr-1"
+                                                             fill="none"
+                                                             stroke="currentColor"
+                                                             viewBox="0 0 24 24"
+                                                             xmlns="http://www.w3.org/2000/svg">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                                            </path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                        </svg>
+                                                        Admin
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-gray-600 dark:text-gray-400">No repositories have been added to this hackathon yet.</p>
+                            {% endif %}
+                        </div>
+                        {% if can_manage %}
+                            <div class="mt-8 flex flex-wrap gap-4">
+                                <a href="{% url 'refresh_all_hackathon_repositories' hackathon.slug %}"
+                                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                    <i class="fas fa-sync mr-2"></i> Refresh All Repos
+                                </a>
+                                <a href="{% url 'hackathon_update' hackathon.slug %}"
+                                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                    <i class="fas fa-edit mr-2"></i> Edit Hackathon
+                                </a>
+                                <a href="{% url 'hackathon_sponsor_create' hackathon.slug %}"
+                                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                    <i class="fas fa-plus mr-2"></i> Add Sponsor
+                                </a>
+                                <a href="{% url 'hackathon_prize_create' hackathon.slug %}"
+                                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                    <i class="fas fa-trophy mr-2"></i> Add Prize
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <!-- Prizes -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Prizes</h2>
+                        {% if prizes %}
+                            <div class="space-y-6">
+                                {% for prize in prizes %}
+                                    <div class="border-b pb-4 last:border-b-0 last:pb-0">
+                                        <div class="flex items-center mb-2">
+                                            {% if prize.position == 1 %}
+                                                <div class="text-yellow-500 mr-2">
+                                                    <i class="fas fa-trophy fa-lg"></i>
+                                                </div>
+                                                <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
+                                            {% elif prize.position == 2 %}
+                                                <div class="text-gray-400 dark:text-gray-600 mr-2">
+                                                    <i class="fas fa-trophy fa-lg"></i>
+                                                </div>
+                                                <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
+                                            {% elif prize.position == 3 %}
+                                                <div class="text-amber-700 mr-2">
+                                                    <i class="fas fa-trophy fa-lg"></i>
+                                                </div>
+                                                <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
+                                            {% else %}
+                                                <div class="text-blue-500 mr-2">
+                                                    <i class="fas fa-award fa-lg"></i>
+                                                </div>
+                                                <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
                                             {% endif %}
+                                        </div>
+                                        <p class="text-gray-600 dark:text-gray-400 mb-2">{{ prize.description }}</p>
+                                        {% if prize.value %}<p class="font-medium text-[#e74c3c]">${{ prize.value }}</p>{% endif %}
+                                        {% if prize.sponsor %}
+                                            <div class="mt-2 text-sm text-gray-500 dark:text-gray-500">Sponsored by: {{ prize.sponsor.organization.name }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 dark:text-gray-500 italic">No prizes have been announced yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Right Column - Leaderboard and Sponsors -->
+                <div class="lg:col-span-1">
+                    <!-- Leaderboard -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Leaderboard</h2>
+                        {% if leaderboard %}
+                            <div class="space-y-6">
+                                {% for entry in leaderboard %}
+                                    <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg border border-gray-200 dark:border-gray-700">
+                                        <div class="flex items-center mb-3">
+                                            <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
+                                                {{ forloop.counter }}
+                                            </div>
+                                            <div class="w-8 h-8 mr-3">
+                                                {% if entry.is_contributor %}
+                                                    {% if entry.contributor.avatar_url %}
+                                                        <img src="{{ entry.contributor.avatar_url }}"
+                                                             alt="{{ entry.user.username }}"
+                                                             class="w-8 h-8 rounded-full object-cover"
+                                                             width="32"
+                                                             height="32">
+                                                    {% else %}
+                                                        <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                                            <i class="fab fa-github text-gray-600 dark:text-gray-400"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                {% else %}
+                                                    {% if entry.user.userprofile.user_avatar %}
+                                                        <img src="{{ entry.user.userprofile.user_avatar.url }}"
+                                                             alt="{{ entry.user.username }}"
+                                                             class="w-8 h-8 rounded-full object-cover"
+                                                             width="32"
+                                                             height="32">
+                                                    {% else %}
+                                                        <div class="w-8 h-8 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                                                            <span class="text-white font-medium text-sm">{{ entry.user.username|slice:":1"|upper }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow">
+                                                <div class="font-medium">{{ entry.user.username }}</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
+                                            </div>
+                                        </div>
+                                        <!-- Pull Requests List -->
+                                        <div class="mt-2 pl-11">
+                                            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contributions:</div>
+                                            <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                                {% for pr in entry.prs %}
+                                                    <a href="{{ pr.url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="block p-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 rounded border-l-4 border-[#e74c3c] transition">
+                                                        <div class="font-medium text-sm truncate">{{ pr.title }}</div>
+                                                        <div class="flex items-center text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                                            <span class="flex items-center">
+                                                                <i class="fas fa-code-branch mr-1"></i>
+                                                                {{ pr.repo.name }}
+                                                            </span>
+                                                            <span class="mx-2">•</span>
+                                                            <span>
+                                                                <i class="far fa-calendar-alt mr-1"></i>
+                                                                {% if pr.merged_at %}
+                                                                    {{ pr.merged_at|date:"M d, Y" }}
+                                                                {% else %}
+                                                                    {{ pr.created_at|date:"M d, Y" }}
+                                                                {% endif %}
+                                                            </span>
+                                                        </div>
+                                                    </a>
+                                                {% endfor %}
+                                            </div>
                                         </div>
                                     </div>
                                 {% endfor %}
                             </div>
                         {% else %}
-                            <p class="text-gray-600 dark:text-gray-400">No repositories have been added to this hackathon yet.</p>
+                            <p class="text-gray-500 dark:text-gray-500 italic">No contributions yet. Be the first to contribute!</p>
                         {% endif %}
                     </div>
-                    {% if can_manage %}
-                        <div class="mt-8 flex flex-wrap gap-4">
-                            <a href="{% url 'refresh_all_hackathon_repositories' hackathon.slug %}"
-                               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                <i class="fas fa-sync mr-2"></i> Refresh All Repos
-                            </a>
-                            <a href="{% url 'hackathon_update' hackathon.slug %}"
-                               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                <i class="fas fa-edit mr-2"></i> Edit Hackathon
-                            </a>
-                            <a href="{% url 'hackathon_sponsor_create' hackathon.slug %}"
-                               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                <i class="fas fa-plus mr-2"></i> Add Sponsor
-                            </a>
-                            <a href="{% url 'hackathon_prize_create' hackathon.slug %}"
-                               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                <i class="fas fa-trophy mr-2"></i> Add Prize
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
-                <!-- Prizes -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Prizes</h2>
-                    {% if prizes %}
-                        <div class="space-y-6">
-                            {% for prize in prizes %}
-                                <div class="border-b pb-4 last:border-b-0 last:pb-0">
-                                    <div class="flex items-center mb-2">
-                                        {% if prize.position == 1 %}
-                                            <div class="text-yellow-500 mr-2">
-                                                <i class="fas fa-trophy fa-lg"></i>
+                    <!-- Reviewer Leaderboard -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">PR Reviewer Leaderboard</h2>
+                        {% if reviewer_leaderboard %}
+                            <div class="space-y-6">
+                                {% for entry in reviewer_leaderboard %}
+                                    <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg border border-gray-200 dark:border-gray-700">
+                                        <div class="flex items-center mb-3">
+                                            <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
+                                                {{ forloop.counter }}
                                             </div>
-                                            <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
-                                        {% elif prize.position == 2 %}
-                                            <div class="text-gray-400 dark:text-gray-600 mr-2">
-                                                <i class="fas fa-trophy fa-lg"></i>
-                                            </div>
-                                            <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
-                                        {% elif prize.position == 3 %}
-                                            <div class="text-amber-700 mr-2">
-                                                <i class="fas fa-trophy fa-lg"></i>
-                                            </div>
-                                            <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
-                                        {% else %}
-                                            <div class="text-blue-500 mr-2">
-                                                <i class="fas fa-award fa-lg"></i>
-                                            </div>
-                                            <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
-                                        {% endif %}
-                                    </div>
-                                    <p class="text-gray-600 dark:text-gray-400 mb-2">{{ prize.description }}</p>
-                                    {% if prize.value %}<p class="font-medium text-[#e74c3c]">${{ prize.value }}</p>{% endif %}
-                                    {% if prize.sponsor %}
-                                        <div class="mt-2 text-sm text-gray-500 dark:text-gray-500">Sponsored by: {{ prize.sponsor.organization.name }}</div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-gray-500 dark:text-gray-500 italic">No prizes have been announced yet.</p>
-                    {% endif %}
-                </div>
-            </div>
-            <!-- Right Column - Leaderboard and Sponsors -->
-            <div class="lg:col-span-1">
-                <!-- Leaderboard -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Leaderboard</h2>
-                    {% if leaderboard %}
-                        <div class="space-y-6">
-                            {% for entry in leaderboard %}
-                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <div class="flex items-center mb-3">
-                                        <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
-                                            {{ forloop.counter }}
-                                        </div>
-                                        <div class="w-8 h-8 mr-3">
-                                            {% if entry.is_contributor %}
-                                                {% if entry.contributor.avatar_url %}
-                                                    <img src="{{ entry.contributor.avatar_url }}"
-                                                         alt="{{ entry.user.username }}"
-                                                         class="w-8 h-8 rounded-full object-cover"
-                                                         width="32"
-                                                         height="32">
+                                            <div class="w-8 h-8 mr-3">
+                                                {% if entry.is_contributor %}
+                                                    {% if entry.contributor.avatar_url %}
+                                                        <img src="{{ entry.contributor.avatar_url }}"
+                                                             alt="Avatar for {{ entry.user.username }}"
+                                                             class="w-8 h-8 rounded-full object-cover"
+                                                             width="32"
+                                                             height="32">
+                                                    {% else %}
+                                                        <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                                            <i class="fab fa-github text-gray-600 dark:text-gray-400"
+                                                               aria-hidden="true"></i>
+                                                        </div>
+                                                    {% endif %}
                                                 {% else %}
-                                                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                                                        <i class="fab fa-github text-gray-600 dark:text-gray-400"></i>
+                                                    {% if entry.user.userprofile.user_avatar %}
+                                                        <img src="{{ entry.user.userprofile.user_avatar.url }}"
+                                                             alt="Avatar for {{ entry.user.username }}"
+                                                             class="w-8 h-8 rounded-full object-cover"
+                                                             width="32"
+                                                             height="32">
+                                                    {% else %}
+                                                        <div class="w-8 h-8 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                                                            <span class="text-white font-medium text-sm">{{ entry.user.username|slice:":1"|upper }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow">
+                                                <div class="font-medium">{{ entry.user.username }}</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-500">{{ entry.count }} review{{ entry.count|pluralize }}</div>
+                                            </div>
+                                        </div>
+                                        <!-- Reviews List -->
+                                        <div class="mt-2 pl-11">
+                                            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reviews:</div>
+                                            <div class="space-y-2 max-h-48 overflow-y-auto pr-2"
+                                                 role="list"
+                                                 aria-label="Reviews by reviewer">
+                                                {% for review in entry.reviews %}
+                                                    <a href="{{ review.url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="block p-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 rounded border-l-4 {% if review.state == 'APPROVED' %}border-green-500{% elif review.state == 'CHANGES_REQUESTED' %}border-red-500{% else %}border-blue-500{% endif %} transition">
+                                                        <div class="font-medium text-sm truncate">{{ review.pull_request.title }}</div>
+                                                        <div class="flex items-center text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                                            <span class="flex items-center">
+                                                                <i class="fas fa-code-branch mr-1"></i>
+                                                                {{ review.pull_request.repo.name }}
+                                                            </span>
+                                                            <span class="mx-2">•</span>
+                                                            <span class="flex items-center {% if review.state == 'APPROVED' %}text-green-600{% elif review.state == 'CHANGES_REQUESTED' %}text-red-600{% else %}text-blue-600{% endif %}">
+                                                                {% if review.state == 'APPROVED' %}
+                                                                    <i class="fas fa-check-circle mr-1"></i> Approved
+                                                                {% elif review.state == 'CHANGES_REQUESTED' %}
+                                                                    <i class="fas fa-times-circle mr-1"></i> Changes Requested
+                                                                {% elif review.state == 'COMMENTED' %}
+                                                                    <i class="fas fa-comment mr-1"></i> Commented
+                                                                {% else %}
+                                                                    <i class="fas fa-eye mr-1"></i> {{ review.state }}
+                                                                {% endif %}
+                                                            </span>
+                                                            <span class="mx-2">•</span>
+                                                            <span>
+                                                                <i class="far fa-calendar-alt mr-1"></i>
+                                                                {{ review.submitted_at|date:"M d, Y" }}
+                                                            </span>
+                                                        </div>
+                                                    </a>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 dark:text-gray-500 italic">No reviews yet. Be the first to review a PR!</p>
+                        {% endif %}
+                    </div>
+                    <!-- Sponsors -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Sponsors</h2>
+                        {% for level, sponsors in sponsors_by_level.items %}
+                            {% if sponsors %}
+                                <div class="mb-6 last:mb-0">
+                                    <h3 class="text-lg font-semibold mb-3 capitalize">{{ level }} Sponsors</h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        {% for sponsor in sponsors %}
+                                            <a href="{{ sponsor.website|default:'#' }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition">
+                                                {% if sponsor.logo %}
+                                                    <img src="{{ sponsor.logo.url }}"
+                                                         alt="{{ sponsor.organization.name }}"
+                                                         width="48"
+                                                         height="48"
+                                                         class="h-12 object-contain mb-2">
+                                                {% else %}
+                                                    <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mb-2">
+                                                        <span class="text-gray-500 dark:text-gray-500 font-bold">{{ sponsor.organization.name|slice:":1" }}</span>
                                                     </div>
                                                 {% endif %}
-                                            {% else %}
-                                                {% if entry.user.userprofile.user_avatar %}
-                                                    <img src="{{ entry.user.userprofile.user_avatar.url }}"
-                                                         alt="{{ entry.user.username }}"
-                                                         class="w-8 h-8 rounded-full object-cover"
-                                                         width="32"
-                                                         height="32">
-                                                {% else %}
-                                                    <div class="w-8 h-8 bg-[#e74c3c] rounded-full flex items-center justify-center">
-                                                        <span class="text-white font-medium text-sm">{{ entry.user.username|slice:":1"|upper }}</span>
-                                                    </div>
-                                                {% endif %}
-                                            {% endif %}
-                                        </div>
-                                        <div class="flex-grow">
-                                            <div class="font-medium">{{ entry.user.username }}</div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
-                                        </div>
-                                    </div>
-                                    <!-- Pull Requests List -->
-                                    <div class="mt-2 pl-11">
-                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contributions:</div>
-                                        <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                            {% for pr in entry.prs %}
-                                                <a href="{{ pr.url }}"
-                                                   target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   class="block p-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 rounded border-l-4 border-[#e74c3c] transition">
-                                                    <div class="font-medium text-sm truncate">{{ pr.title }}</div>
-                                                    <div class="flex items-center text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                                        <span class="flex items-center">
-                                                            <i class="fas fa-code-branch mr-1"></i>
-                                                            {{ pr.repo.name }}
-                                                        </span>
-                                                        <span class="mx-2">•</span>
-                                                        <span>
-                                                            <i class="far fa-calendar-alt mr-1"></i>
-                                                            {% if pr.merged_at %}
-                                                                {{ pr.merged_at|date:"M d, Y" }}
-                                                            {% else %}
-                                                                {{ pr.created_at|date:"M d, Y" }}
-                                                            {% endif %}
-                                                        </span>
-                                                    </div>
-                                                </a>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-gray-500 dark:text-gray-500 italic">No contributions yet. Be the first to contribute!</p>
-                    {% endif %}
-                </div>
-                <!-- Reviewer Leaderboard -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">PR Reviewer Leaderboard</h2>
-                    {% if reviewer_leaderboard %}
-                        <div class="space-y-6">
-                            {% for entry in reviewer_leaderboard %}
-                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50 dark:bg-gray-700{% endif %} rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <div class="flex items-center mb-3">
-                                        <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
-                                            {{ forloop.counter }}
-                                        </div>
-                                        <div class="w-8 h-8 mr-3">
-                                            {% if entry.is_contributor %}
-                                                {% if entry.contributor.avatar_url %}
-                                                    <img src="{{ entry.contributor.avatar_url }}"
-                                                         alt="Avatar for {{ entry.user.username }}"
-                                                         class="w-8 h-8 rounded-full object-cover"
-                                                         width="32"
-                                                         height="32">
-                                                {% else %}
-                                                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                                                        <i class="fab fa-github text-gray-600 dark:text-gray-400"
-                                                           aria-hidden="true"></i>
-                                                    </div>
-                                                {% endif %}
-                                            {% else %}
-                                                {% if entry.user.userprofile.user_avatar %}
-                                                    <img src="{{ entry.user.userprofile.user_avatar.url }}"
-                                                         alt="Avatar for {{ entry.user.username }}"
-                                                         class="w-8 h-8 rounded-full object-cover"
-                                                         width="32"
-                                                         height="32">
-                                                {% else %}
-                                                    <div class="w-8 h-8 bg-[#e74c3c] rounded-full flex items-center justify-center">
-                                                        <span class="text-white font-medium text-sm">{{ entry.user.username|slice:":1"|upper }}</span>
-                                                    </div>
-                                                {% endif %}
-                                            {% endif %}
-                                        </div>
-                                        <div class="flex-grow">
-                                            <div class="font-medium">{{ entry.user.username }}</div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-500">{{ entry.count }} review{{ entry.count|pluralize }}</div>
-                                        </div>
-                                    </div>
-                                    <!-- Reviews List -->
-                                    <div class="mt-2 pl-11">
-                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reviews:</div>
-                                        <div class="space-y-2 max-h-48 overflow-y-auto pr-2"
-                                             role="list"
-                                             aria-label="Reviews by reviewer">
-                                            {% for review in entry.reviews %}
-                                                <a href="{{ review.url }}"
-                                                   target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   class="block p-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 rounded border-l-4 {% if review.state == 'APPROVED' %}border-green-500{% elif review.state == 'CHANGES_REQUESTED' %}border-red-500{% else %}border-blue-500{% endif %} transition">
-                                                    <div class="font-medium text-sm truncate">{{ review.pull_request.title }}</div>
-                                                    <div class="flex items-center text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                                        <span class="flex items-center">
-                                                            <i class="fas fa-code-branch mr-1"></i>
-                                                            {{ review.pull_request.repo.name }}
-                                                        </span>
-                                                        <span class="mx-2">•</span>
-                                                        <span class="flex items-center {% if review.state == 'APPROVED' %}text-green-600{% elif review.state == 'CHANGES_REQUESTED' %}text-red-600{% else %}text-blue-600{% endif %}">
-                                                            {% if review.state == 'APPROVED' %}
-                                                                <i class="fas fa-check-circle mr-1"></i> Approved
-                                                            {% elif review.state == 'CHANGES_REQUESTED' %}
-                                                                <i class="fas fa-times-circle mr-1"></i> Changes Requested
-                                                            {% elif review.state == 'COMMENTED' %}
-                                                                <i class="fas fa-comment mr-1"></i> Commented
-                                                            {% else %}
-                                                                <i class="fas fa-eye mr-1"></i> {{ review.state }}
-                                                            {% endif %}
-                                                        </span>
-                                                        <span class="mx-2">•</span>
-                                                        <span>
-                                                            <i class="far fa-calendar-alt mr-1"></i>
-                                                            {{ review.submitted_at|date:"M d, Y" }}
-                                                        </span>
-                                                    </div>
-                                                </a>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-gray-500 dark:text-gray-500 italic">No reviews yet. Be the first to review a PR!</p>
-                    {% endif %}
-                </div>
-                <!-- Sponsors -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Sponsors</h2>
-                    {% for level, sponsors in sponsors_by_level.items %}
-                        {% if sponsors %}
-                            <div class="mb-6 last:mb-0">
-                                <h3 class="text-lg font-semibold mb-3 capitalize">{{ level }} Sponsors</h3>
-                                <div class="grid grid-cols-2 gap-4">
-                                    {% for sponsor in sponsors %}
-                                        <a href="{{ sponsor.website|default:'#' }}"
-                                           target="_blank"
-                                           rel="noopener noreferrer"
-                                           class="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition">
-                                            {% if sponsor.logo %}
-                                                <img src="{{ sponsor.logo.url }}"
-                                                     alt="{{ sponsor.organization.name }}"
-                                                     width="48"
-                                                     height="48"
-                                                     class="h-12 object-contain mb-2">
-                                            {% else %}
-                                                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mb-2">
-                                                    <span class="text-gray-500 dark:text-gray-500 font-bold">{{ sponsor.organization.name|slice:":1" }}</span>
+                                                <div class="text-center">
+                                                    <div class="text-sm font-medium">{{ sponsor.organization.name }}</div>
                                                 </div>
-                                            {% endif %}
-                                            <div class="text-center">
-                                                <div class="text-sm font-medium">{{ sponsor.organization.name }}</div>
-                                            </div>
-                                        </a>
-                                    {% endfor %}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
                                 </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not sponsors_by_level.platinum and not sponsors_by_level.gold and not sponsors_by_level.silver and not sponsors_by_level.bronze and not sponsors_by_level.partner %}
+                            <p class="text-gray-500 dark:text-gray-500 italic">No sponsors yet.</p>
+                        {% endif %}
+                        {% if hackathon.sponsor_note or hackathon.sponsor_link %}
+                            <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                                {% if hackathon.sponsor_note %}
+                                    <div class="mb-4">
+                                        <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Sponsorship Information</h3>
+                                        <div class="prose max-w-none text-gray-600 dark:text-gray-400">{{ hackathon.sponsor_note|linebreaks }}</div>
+                                    </div>
+                                {% endif %}
+                                {% if hackathon.sponsor_link %}
+                                    <a href="{{ hackathon.sponsor_link }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                        <i class="fas fa-handshake mr-2"></i> Become a Sponsor
+                                    </a>
+                                {% endif %}
                             </div>
                         {% endif %}
-                    {% endfor %}
-                    {% if not sponsors_by_level.platinum and not sponsors_by_level.gold and not sponsors_by_level.silver and not sponsors_by_level.bronze and not sponsors_by_level.partner %}
-                        <p class="text-gray-500 dark:text-gray-500 italic">No sponsors yet.</p>
-                    {% endif %}
-                    {% if hackathon.sponsor_note or hackathon.sponsor_link %}
-                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            {% if hackathon.sponsor_note %}
-                                <div class="mb-4">
-                                    <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Sponsorship Information</h3>
-                                    <div class="prose max-w-none text-gray-600 dark:text-gray-400">{{ hackathon.sponsor_note|linebreaks }}</div>
-                                </div>
-                            {% endif %}
-                            {% if hackathon.sponsor_link %}
-                                <a href="{{ hackathon.sponsor_link }}"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                    <i class="fas fa-handshake mr-2"></i> Become a Sponsor
-                                </a>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endwith %}
     </div>
 {% endblock content %}
 {% block scripts %}
@@ -602,6 +691,138 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Share button functionality
+    const shareButton = document.getElementById('shareButton');
+    const shareDropdown = document.getElementById('shareDropdown');
+    
+    // Toggle dropdown on button click
+    shareButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        shareDropdown.classList.toggle('hidden');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!shareButton.contains(e.target) && !shareDropdown.contains(e.target)) {
+            shareDropdown.classList.add('hidden');
+        }
+    });
 });
+
+// Helper function to show success toast
+function showCopySuccessToast() {
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-24 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
+    
+    const container = document.createElement('div');
+    container.className = 'flex items-center';
+    
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'w-5 h-5 text-green-400 mr-2');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('d', 'M5 13l4 4L19 7');
+    svg.appendChild(path);
+    
+    const text = document.createTextNode(' Link copied to clipboard!');
+    
+    container.appendChild(svg);
+    container.appendChild(text);
+    toast.appendChild(container);
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => {
+            toast.remove();
+        }, 500);
+    }, 3000);
+}
+
+// Helper function to show error toast
+function showCopyErrorToast(message) {
+    const errorToast = document.createElement('div');
+    errorToast.className = 'fixed bottom-24 left-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
+    
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'flex items-center';
+    
+    const errorSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    errorSvg.setAttribute('class', 'w-5 h-5 mr-2');
+    errorSvg.setAttribute('fill', 'none');
+    errorSvg.setAttribute('stroke', 'currentColor');
+    errorSvg.setAttribute('viewBox', '0 0 24 24');
+    const errorPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    errorPath.setAttribute('stroke-linecap', 'round');
+    errorPath.setAttribute('stroke-linejoin', 'round');
+    errorPath.setAttribute('stroke-width', '2');
+    errorPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+    errorSvg.appendChild(errorPath);
+    
+    const errorText = document.createTextNode(' ' + message);
+    
+    errorContainer.appendChild(errorSvg);
+    errorContainer.appendChild(errorText);
+    errorToast.appendChild(errorContainer);
+    document.body.appendChild(errorToast);
+    
+    setTimeout(() => {
+        errorToast.classList.add('opacity-0');
+        setTimeout(() => {
+            errorToast.remove();
+        }, 500);
+    }, 3000);
+}
+
+// Copy to clipboard function with fallback for insecure contexts
+function copyToClipboard() {
+    const url = window.location.href;
+    
+    // Check if clipboard API is available and we're in a secure context
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(function() {
+            showCopySuccessToast();
+            document.getElementById('shareDropdown').classList.add('hidden');
+        }).catch(function(err) {
+            console.error('Failed to copy: ', err);
+            showCopyErrorToast('Failed to copy link. Please try again.');
+            document.getElementById('shareDropdown').classList.add('hidden');
+        });
+    } else {
+        // Fallback for insecure context or unsupported Clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        // Avoid scrolling to bottom
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = '0';
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            // Using deprecated execCommand as fallback for older browsers and HTTP contexts
+            document.execCommand('copy');
+            showCopySuccessToast();
+            document.getElementById('shareDropdown').classList.add('hidden');
+        } catch (err) {
+            console.error('Fallback: Unable to copy', err);
+            showCopyErrorToast('Failed to copy link. Please try again.');
+            document.getElementById('shareDropdown').classList.add('hidden');
+        }
+        document.body.removeChild(textArea);
+    }
+}
     </script>
 {% endblock scripts %}
