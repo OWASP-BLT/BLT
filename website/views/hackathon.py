@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import time
 from datetime import timedelta
 
@@ -33,6 +34,9 @@ from website.models import (
 
 logger = logging.getLogger(__name__)
 REPO_REFRESH_DELAY_SECONDS = getattr(settings, "HACKATHON_REPO_REFRESH_DELAY", 1.0)
+GITHUB_API_PER_PAGE = getattr(settings, "GITHUB_API_PER_PAGE", 100)
+GITHUB_API_TIMEOUT = getattr(settings, "GITHUB_API_TIMEOUT", 30)
+GITHUB_API_RATE_LIMIT_DELAY = getattr(settings, "GITHUB_API_RATE_LIMIT_DELAY", 0.5)
 
 
 class HackathonListView(ListView):
@@ -693,8 +697,6 @@ def add_org_repos_to_hackathon(request, slug):
         github_org_name = organization.github_org
     # Otherwise try to extract from source_code URL
     elif organization.source_code:
-        import re
-
         github_url_pattern = r"https?://github\.com/([^/]+)/?.*"
         match = re.match(github_url_pattern, organization.source_code)
         if match:
@@ -735,9 +737,9 @@ def add_org_repos_to_hackathon(request, slug):
             repos_api_url = f"https://api.github.com/orgs/{github_org_name}/repos"
             response = requests.get(
                 repos_api_url,
-                params={"page": page, "per_page": 100, "type": "public"},
+                params={"page": page, "per_page": GITHUB_API_PER_PAGE, "type": "public"},
                 headers=headers,
-                timeout=30,
+                timeout=GITHUB_API_TIMEOUT,
             )
 
             if response.status_code == 404:
@@ -801,7 +803,7 @@ def add_org_repos_to_hackathon(request, slug):
 
             page += 1
             # Small delay to avoid hitting GitHub rate limits
-            time.sleep(0.5)
+            time.sleep(GITHUB_API_RATE_LIMIT_DELAY)
 
         # Build success message
         if repos_added_to_hackathon > 0:
