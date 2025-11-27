@@ -1,8 +1,10 @@
 name: Update All PRs and Check Conflicts
 
-# Manual workflow to update all open PRs and check for conflicts
+# Scheduled and manual workflow to update all open PRs and check for conflicts
 # 
-# This workflow can be triggered manually from the GitHub Actions tab.
+# This workflow runs every 5 minutes and can also be triggered manually.
+# Note: While GitHub Actions supports schedules as frequent as every minute,
+# 5 minutes is the practical minimum to avoid rate limiting issues.
 # It will:
 # 1. Fetch all open pull requests in the repository
 # 2. Attempt to update each PR's branch with the base branch
@@ -11,8 +13,13 @@ name: Update All PRs and Check Conflicts
 # 5. Add/remove the "has-conflicts" label based on conflict status
 # 6. Add/remove informative comments about conflict resolution
 #
-# Use this workflow to batch-check all PRs after significant changes to the main branch.
+# Use this workflow to keep all PRs up to date with the main branch automatically.
 on:
+  # Run every 5 minutes - practical minimum to avoid rate limiting
+  # (GitHub Actions supports as frequent as every minute, but 5 min is recommended)
+  schedule:
+    - cron: '*/5 * * * *'
+  # Also allow manual triggering
   workflow_dispatch:
 
 permissions:
