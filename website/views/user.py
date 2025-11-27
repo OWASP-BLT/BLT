@@ -3,11 +3,11 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from django.contrib.admin.views.decorators import staff_member_required
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -1681,7 +1681,7 @@ def user_activity_dashboard(request):
     User = get_user_model()
 
     # Annotate users with the count of issues they have reported.
-    # We use 'issue_set' which is the default reverse name for the Issue model.
+    # The FieldError tells us the correct reverse name is 'issue'.
     users = User.objects.annotate(
         issue_count=Count('issue', distinct=True)
     ).order_by('-date_joined')
@@ -1690,10 +1690,14 @@ def user_activity_dashboard(request):
     active_users = users.filter(issue_count__gt=0)
     inactive_users = users.filter(issue_count=0)
 
+    # Generate the admin URL name dynamically to support custom user models.
+    user_admin_url_name = f"admin:{User._meta.app_label}_{User._meta.model_name}_change"
+
     context = {
         'active_users': active_users,
         'inactive_users': inactive_users,
-        'title': 'User Activity Dashboard'
+        'title': 'User Activity Dashboard',
+        'user_admin_url_name': user_admin_url_name
     }
     
     return render(request, 'admin/user_activity_dashboard.html', context)

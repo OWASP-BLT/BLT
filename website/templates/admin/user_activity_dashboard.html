@@ -24,7 +24,7 @@
                     {% for user in active_users %}
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                            <a href="{% url 'admin:auth_user_change' user.id %}"><strong>{{ user.username }}</strong></a>
+                            <a href="{% url user_admin_url_name user.id %}"><strong>{{ user.username }}</strong></a>
                         </td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.email }}</td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.date_joined|date:"Y-m-d" }}</td>
@@ -56,7 +56,7 @@
                     {% for user in inactive_users %}
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                            <a href="{% url 'admin:auth_user_change' user.id %}"><strong>{{ user.username }}</strong></a>
+                            <a href="{% url user_admin_url_name user.id %}"><strong>{{ user.username }}</strong></a>
                         </td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.email }}</td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ user.date_joined|date:"Y-m-d" }}</td>

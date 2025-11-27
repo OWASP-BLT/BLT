@@ -348,10 +348,10 @@ from website.views.user import (
     set_public_key,
     start_thread,
     update_bch_address,
+    user_activity_dashboard,
     user_dashboard,
     users_view,
     view_thread,
-    user_activity_dashboard,
 )
 from website.views.video_call import video_call
 
