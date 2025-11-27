@@ -5,7 +5,7 @@ from website.models import Organization, Project, Repo, User
 
 
 class ProjectCompactViewTestCase(TestCase):
-    """Test cases for the project compact list view"""
+    """Test cases for the compact list view"""
 
     def setUp(self):
         """Set up test data"""
