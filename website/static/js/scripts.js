@@ -24,7 +24,7 @@
               window.location.reload();
             },
             error: function (response) {
-                // alert the error if any error occured
+                // alert the error if any error occurred
                 alert(response["responseJSON"]["error"]);
             }
         })
@@ -50,7 +50,7 @@
               window.location.reload();
             },
             error: function (response) {
-                // alert the error if any error occured
+                // alert the error if any error occurred
                 alert(response["responseJSON"]["error"]);
             }
         })
@@ -73,7 +73,7 @@
               window.location.reload();
             },
             error: function (response) {
-                // alert the error if any error occured
+                // alert the error if any error occurred
                 alert(response["responseJSON"]["error"]);
             }
         })
@@ -90,7 +90,7 @@
               window.location.reload();
             },
             error: function (response) {
-                // alert the error if any error occured
+                // alert the error if any error occurred
                 alert(response["responseJSON"]["error"]);
             }
         })
@@ -108,7 +108,7 @@
               window.location.reload();
             },
             error: function (response) {
-                // alert the error if any error occured
+                // alert the error if any error occurred
                 alert(response["responseJSON"]["error"]);
             }
         })
@@ -126,7 +126,7 @@
               window.location.reload();
             },
             error: function (response) {
-                // alert the error if any error occured
+                // alert the error if any error occurred
                 alert(response["responseJSON"]["error"]);
             }
         })

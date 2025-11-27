@@ -8,7 +8,7 @@ from calendar import monthrange
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 import requests
 import sentry_sdk
@@ -546,7 +546,8 @@ def create_project(request):
                 return response
 
         def get_issue_count(full_name, query):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = api_get(search_url)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
@@ -608,9 +609,9 @@ def create_project(request):
 
                 # Issues count - Fixed
                 full_name = repo_data.get("full_name")
-                open_issues = get_issue_count(full_name, "type:issue+state:open")
-                closed_issues = get_issue_count(full_name, "type:issue+state:closed")
-                open_pull_requests = get_issue_count(full_name, "type:pr+state:open")
+                open_issues = get_issue_count(full_name, "type:issue state:open")
+                closed_issues = get_issue_count(full_name, "type:issue state:closed")
+                open_pull_requests = get_issue_count(full_name, "type:pr state:open")
                 total_issues = open_issues + closed_issues
 
                 # Latest release
@@ -1445,7 +1446,8 @@ class RepoDetailView(DetailView):
                 return render(request, "includes/_contributor_stats_table.html", context)
 
         def get_issue_count(full_name, query, headers):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = requests.get(search_url, headers=headers)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
@@ -1613,9 +1615,9 @@ class RepoDetailView(DetailView):
                     commit_count = 0
 
                 # Get open issues and PRs
-                open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
-                closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
-                open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+                open_issues = get_issue_count(full_name, "type:issue state:open", headers)
+                closed_issues = get_issue_count(full_name, "type:issue state:closed", headers)
+                open_pull_requests = get_issue_count(full_name, "type:pr state:open", headers)
                 total_issues = open_issues + closed_issues
 
                 if (

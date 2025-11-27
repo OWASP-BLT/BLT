@@ -1,0 +1,131 @@
+name: Add Migrations Label
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+# Prevent multiple workflow runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  add_migrations_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Migrations and Add Label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request in context. Skipping.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = pr.number;
+
+            // Get all files changed in the PR (with pagination)
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            // Check if any migration files are present
+            // Migration files are in website/migrations/ or comments/migrations/
+            const migrationPattern = /^(website|comments)\/migrations\/.*\.py$/;
+            const hasMigrations = files.some(file => 
+              migrationPattern.test(file.filename) && 
+              !file.filename.endsWith('__init__.py')
+            );
+
+            const migrationsLabel = 'migrations';
+            const labelColor = 'fbca04'; // Yellow color for visibility
+            const description = 'PR contains database migration files';
+
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+
+            // Ensure the label exists (create if missing)
+            async function ensureLabelExists(labelName, color, desc) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: color,
+                    description: desc,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+            await ensureLabelExists(migrationsLabel, labelColor, description);
+
+            if (hasMigrations) {
+              // Log which migration files were found
+              const migrationFiles = files
+                .filter(file => migrationPattern.test(file.filename) && !file.filename.endsWith('__init__.py'))
+                .map(file => file.filename);
+              core.info(`Found migration files: ${migrationFiles.join(', ')}`);
+
+              // Add the label if it isn't already present
+              if (!currentNames.has(migrationsLabel)) {
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [migrationsLabel] 
+                });
+                core.info(`Applied label ${migrationsLabel} to PR #${pull_number}`);
+              } else {
+                core.info(`Label ${migrationsLabel} already present on PR #${pull_number}`);
+              }
+            } else {
+              // Remove the label if no migrations are present
+              if (currentNames.has(migrationsLabel)) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name: migrationsLabel 
+                  });
+                  core.info(`Removed label ${migrationsLabel} from PR #${pull_number}`);
+                } catch (err) {
+                  // Ignore error if label doesn't exist
+                  if (err.status !== 404) {
+                    core.warning(`Failed to remove label ${migrationsLabel}: ${err.message}`);
+                  }
+                }
+              } else {
+                core.info(`No migrations found - label ${migrationsLabel} not present on PR #${pull_number}`);
+              }
+            }
