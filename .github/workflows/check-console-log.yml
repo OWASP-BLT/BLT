@@ -1,9 +1,16 @@
 name: Check Console Statements
 
+# SECURITY NOTE:
+# - pull_request_target: Used to enable commenting/labeling on forked PRs
+#   When using pull_request_target, we explicitly checkout the PR head to scan the actual PR code
+#   SECURITY: This workflow only uses grep to scan for console statements - it does NOT execute
+#   any code from the PR. The scanning is read-only and safe even for untrusted fork PRs.
+#   Maintainers should still review PRs for any suspicious patterns.
+#
 # This workflow checks for any console statements in JavaScript files
 # All console methods are forbidden as the project has sufficient error tracking
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - synchronize
@@ -28,6 +35,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          # For pull_request_target, explicitly checkout the PR head from the fork
+          ref: ${{ github.event.pull_request.head.sha }}
+          # For forked PRs, checkout from the fork repository
+          # SECURITY: We only use grep to scan files - no code execution
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
 
       - name: Check for console statements
@@ -36,7 +48,7 @@ jobs:
           echo "Checking for console statements in JavaScript files..."
           
           # Get list of changed JavaScript files in this PR
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
+          if [ "${{ github.event_name }}" == "pull_request_target" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
             HEAD_SHA="${{ github.event.pull_request.head.sha }}"
             
