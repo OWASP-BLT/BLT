@@ -75,7 +75,7 @@ class UpdateGitHubIssuesCommandTest(TestCase):
         mock_reviews_response.raise_for_status.return_value = None
 
         # Set up the mock to return different responses based on URL
-        def get_side_effect(url, headers=None):
+        def get_side_effect(url, headers=None, timeout=None):
             if "search/issues" in url:
                 return mock_pr_response
             elif "/users/" in url:
@@ -129,7 +129,7 @@ class UpdateGitHubIssuesCommandTest(TestCase):
         mock_user_response.raise_for_status.return_value = None
 
         # Set up the mock to return different responses based on URL
-        def get_side_effect(url, headers=None):
+        def get_side_effect(url, headers=None, timeout=None):
             if "search/issues" in url:
                 return mock_pr_response
             elif "/users/" in url:

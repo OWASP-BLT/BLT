@@ -42,6 +42,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
     github_issue_badge,
+    trademark_search_api,
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
@@ -111,6 +112,7 @@ from website.views.core import (
     features_view,
     find_key,
     home,
+    invite_organization,
     management_commands,
     robots_txt,
     run_management_command,
@@ -280,12 +282,14 @@ from website.views.ossh import (
 )
 from website.views.project import (
     ProjectBadgeView,
+    ProjectCompactListView,
     ProjectsDetailView,
     ProjectView,
     RepoBadgeView,
     RepoDetailView,
     blt_tomato,
     create_project,
+    delete_project,
     distribute_bacon,
     repo_activity_data,
     select_contribution,
@@ -294,6 +298,7 @@ from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
+from website.views.slackbot import slack_landing_page
 from website.views.social import queue_social_view
 from website.views.staking_competitive import (
     create_staking_pool,
@@ -320,7 +325,6 @@ from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
     GlobalLeaderboardView,
-    InviteCreate,
     SpecificMonthLeaderboardView,
     UserChallengeListView,
     UserDeleteView,
@@ -424,6 +428,7 @@ urlpatterns = [
         SlackCallbackView.as_view(),
         name="slack_oauth_callback",
     ),
+    path("slack/", slack_landing_page, name="slack_landing_page"),
     path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
@@ -667,7 +672,7 @@ urlpatterns = [
     re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
     path("bounties/payouts/", BountyPayoutsView.as_view(), name="bounty_payouts"),
     path("api/load-more-issues/", load_more_issues, name="load_more_issues"),
-    re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"),
+    re_path(r"^invite/$", invite_organization, name="invite"),
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
     re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
@@ -680,6 +685,7 @@ urlpatterns = [
         name="googleplayapp",
     ),
     re_path(r"^projects/$", ProjectView.as_view(), name="project_list"),
+    re_path(r"^projects/compact/$", ProjectCompactListView.as_view(), name="project_compact_list"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -1083,6 +1089,7 @@ urlpatterns = [
     path("staking/leaderboard/", staking_leaderboard, name="staking_leaderboard"),
     path("staking/create/", create_staking_pool, name="create_staking_pool"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
+    path("project/<slug:slug>/delete/", delete_project, name="delete_project"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
@@ -1191,6 +1198,7 @@ urlpatterns = [
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
+    path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
 ]
 
 if settings.DEBUG:

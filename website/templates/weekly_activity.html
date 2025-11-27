@@ -95,6 +95,65 @@
                 </div>
             </div>
         {% endif %}
+        <!-- Weekly Leaderboard Section -->
+        {% if leaderboard %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                        <i class="fa fa-medal mr-2 text-[#e74c3c]"></i>
+                        Weekly Leaderboard - Top Contributors
+                    </h2>
+                    <p class="text-sm text-gray-600 mt-1">Recognizing our top contributors by points earned</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        {% for entry in leaderboard %}
+                            <div class="flex items-center justify-between p-4 rounded-lg {% if forloop.counter <= 3 %}bg-gradient-to-r {% if forloop.counter == 1 %}from-yellow-50 to-amber-50 border-2 border-yellow-300{% elif forloop.counter == 2 %}from-gray-50 to-slate-50 border-2 border-gray-300{% elif forloop.counter == 3 %}from-orange-50 to-yellow-50 border-2 border-orange-300{% endif %}{% else %}bg-gray-50 border border-gray-200{% endif %} transition-all hover:shadow-md">
+                                <div class="flex items-center space-x-4">
+                                    <!-- Rank Badge -->
+                                    <div class="flex-shrink-0">
+                                        {% if forloop.counter == 1 %}
+                                            <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg">
+                                                <i class="fa fa-trophy text-white text-xl"></i>
+                                            </div>
+                                        {% elif forloop.counter == 2 %}
+                                            <div class="w-12 h-12 bg-gradient-to-br from-gray-300 to-gray-500 rounded-full flex items-center justify-center shadow-lg">
+                                                <i class="fa fa-medal text-white text-xl"></i>
+                                            </div>
+                                        {% elif forloop.counter == 3 %}
+                                            <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
+                                                <i class="fa fa-award text-white text-xl"></i>
+                                            </div>
+                                        {% else %}
+                                            <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                                                <span class="text-lg font-bold text-gray-600">{{ forloop.counter }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <!-- User Info -->
+                                    <div class="flex items-center space-x-3">
+                                        <img class="h-10 w-10 rounded-full border-2 border-white shadow"
+                                             width="40"
+                                             height="40"
+                                             src="{{ entry.user_profile.user_avatar.url|default:'/static/images/default-avatar.png' }}"
+                                             alt="{{ entry.user.username }}">
+                                        <div>
+                                            <div class="font-semibold text-gray-900">{{ entry.user.username }}</div>
+                                            <div class="text-sm text-gray-500">{{ entry.user.get_full_name|default:entry.user.email }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Points Display -->
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold text-[#e74c3c]">{{ entry.total_points|default:0 }}</div>
+                                    <div class="text-sm text-gray-600">points</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <!-- Time Period Filter -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
             <div class="px-6 py-4">

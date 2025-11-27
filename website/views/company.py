@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -11,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
@@ -29,14 +30,17 @@ from website.models import (
     HuntPrize,
     Integration,
     IntegrationServices,
+    InviteOrganization,
     Issue,
     IssueScreenshot,
     Organization,
     OrganizationAdmin,
+    Points,
     SlackIntegration,
     Winner,
 )
 from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
+from website.views.core import SAMPLE_INVITE_EMAIL_PATTERN
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -135,6 +139,25 @@ class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
         recent_organizations = Organization.objects.filter(is_active=True).order_by("-created")[:5]
         context = {"recent_organizations": recent_organizations}
+
+        # Handle referral code parameter
+        ref_code = request.GET.get("ref")
+        if ref_code:
+            try:
+                # Validate that ref_code is a valid UUID
+                uuid.UUID(ref_code)
+                # Verify the referral code exists in the database
+                if not InviteOrganization.objects.filter(referral_code=ref_code, points_awarded=False).exists():
+                    messages.warning(request, "Invalid or expired referral code.")
+                    request.session.pop("org_ref", None)
+                    return render(request, "organization/register_organization.html", context)
+            except (ValueError, AttributeError):
+                messages.warning(request, "Invalid referral code.")
+                request.session.pop("org_ref", None)
+                return render(request, "organization/register_organization.html", context)
+            request.session["org_ref"] = ref_code
+            request.session.modified = True
+
         return render(request, "organization/register_organization.html", context)
 
     def post(self, request, *args, **kwargs):
@@ -195,8 +218,90 @@ class RegisterOrganizationView(View):
                 organization.managers.set(managers)
                 organization.save()
 
+                ref_code = request.session.get("org_ref")
+                success_message = "Organization registered successfully."
+
+                # Validate and process referral if present
+                if ref_code:
+                    referral_succeeded = False
+                    referral_error_type = None
+                    try:
+                        invite = InviteOrganization.objects.select_for_update().get(
+                            referral_code=ref_code, points_awarded=False
+                        )
+                        if not invite.sender:
+                            raise ValueError("Invalid invite sender")
+                        if re.match(SAMPLE_INVITE_EMAIL_PATTERN, invite.email):
+                            raise ValueError("Sample referral links cannot be used for registration")
+
+                        # Award points
+                        Points.objects.create(
+                            user=invite.sender,
+                            score=5,
+                            reason=f"Organization invite referral: {organization.name}",
+                        )
+                        invite.points_awarded = True
+                        invite.organization = organization
+                        invite.save()
+                        referral_succeeded = True
+                        success_message = f"Organization registered successfully! {invite.sender.username} earned 5 points for the referral."
+                    except InviteOrganization.DoesNotExist as e:
+                        referral_error_type = type(e).__name__
+                        logger.warning(f"Referral code {ref_code} not found or already used")
+                    except ValueError as e:
+                        referral_error_type = type(e).__name__
+                        logger.warning(f"Invalid referral: {e}")
+                    except IntegrityError as e:
+                        referral_error_type = type(e).__name__
+                        logger.exception(f"Database integrity error processing referral: {e}")
+                    except DatabaseError as e:
+                        referral_error_type = type(e).__name__
+                        logger.exception("Database error processing referral code")
+                    except Exception as e:
+                        referral_error_type = type(e).__name__
+                        logger.exception("Failed to process referral code during organization registration")
+                    finally:
+                        request.session.pop("org_ref", None)
+
+                    if not referral_succeeded:
+                        error_detail = referral_error_type if referral_error_type else "Unknown error"
+                        messages.warning(
+                            request,
+                            f"Referral code could not be applied ({error_detail}), but your organization was created successfully.",
+                        )
+                else:
+                    request.session.pop("org_ref", None)
+
+                messages.success(request, success_message)
+
         except ValidationError as e:
-            messages.error(request, f"Error saving organization: {e}")
+            # Construct a more specific error message based on validation errors
+            error_messages = []
+
+            if hasattr(e, "message_dict"):
+                # Field-specific validation errors
+                for field, messages_list in e.message_dict.items():
+                    if field == "name":
+                        error_messages.append("Organization name is invalid or already exists.")
+                    elif field == "url":
+                        error_messages.append("Organization URL is invalid or already exists.")
+                    elif field == "email":
+                        error_messages.append("Support email address is invalid.")
+                    else:
+                        error_messages.append(f"Invalid {field.replace('_', ' ')}: {', '.join(messages_list)}")
+            elif hasattr(e, "messages"):
+                # General validation errors
+                error_messages.extend(e.messages)
+            else:
+                # Fallback to generic message
+                error_messages.append(
+                    "Please check that all required fields are filled correctly and the organization name/URL are unique."
+                )
+
+            # Display all error messages
+            for error_msg in error_messages:
+                messages.error(request, error_msg)
+
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
@@ -212,7 +317,6 @@ class RegisterOrganizationView(View):
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
 
-        messages.success(request, "organization registered successfully.")
         return redirect("organization_detail", slug=organization.slug)
 
 
@@ -564,6 +668,110 @@ class OrganizationDashboardAnalyticsView(View):
             "is_traffic_increasing": week_over_week_change >= 0,
         }
 
+    def get_compliance_monitoring(self, organization):
+        """Collects compliance monitoring data for the organization."""
+        # Get all domains for the organization
+        domains = Domain.objects.filter(organization__id=organization)
+        total_domains = domains.count()
+
+        # Security.txt compliance
+        domains_with_security_txt = domains.filter(has_security_txt=True).count()
+        security_txt_compliance = (domains_with_security_txt / total_domains * 100) if total_domains > 0 else 0
+
+        # Issue resolution compliance (SLA: resolve security issues within 30 days)
+        security_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label=4,  # Security label
+        )
+
+        resolved_security_issues = security_issues.filter(status="closed", closed_date__isnull=False)
+
+        # Calculate issues resolved within 30 days
+        compliant_resolutions = 0
+        for issue in resolved_security_issues:
+            if issue.closed_date and issue.created:
+                resolution_time = (issue.closed_date - issue.created).days
+                if resolution_time <= 30:
+                    compliant_resolutions += 1
+
+        total_resolved = resolved_security_issues.count()
+        resolution_compliance = (compliant_resolutions / total_resolved * 100) if total_resolved > 0 else 0
+
+        # Open security issues older than 30 days (compliance risk)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        overdue_security_issues = security_issues.filter(
+            created__lt=thirty_days_ago, status__in=["open", "in_progress"]
+        ).count()
+
+        # Overall compliance score (weighted average)
+        # 40% security.txt, 40% resolution compliance, 20% no overdue issues
+        overdue_compliance = 100 if overdue_security_issues == 0 else max(0, 100 - (overdue_security_issues * 10))
+        overall_compliance = security_txt_compliance * 0.4 + resolution_compliance * 0.4 + overdue_compliance * 0.2
+
+        # Domain-level compliance status
+        domain_compliance = []
+        for domain in domains[:10]:  # Top 10 domains
+            domain_security_issues = security_issues.filter(domain=domain)
+            domain_overdue = domain_security_issues.filter(
+                created__lt=thirty_days_ago, status__in=["open", "in_progress"]
+            ).count()
+
+            domain_status = "compliant"
+            if domain_overdue > 5:
+                domain_status = "critical"
+            elif domain_overdue > 2:
+                domain_status = "warning"
+            elif not domain.has_security_txt:
+                domain_status = "warning"
+
+            domain_compliance.append(
+                {
+                    "name": domain.name,
+                    "has_security_txt": domain.has_security_txt,
+                    "overdue_issues": domain_overdue,
+                    "status": domain_status,
+                }
+            )
+
+        # Compliance metrics over time (last 6 months)
+        monthly_compliance = []
+        for i in range(6):
+            month_start = timezone.now() - timedelta(days=30 * (i + 1))
+            month_end = timezone.now() - timedelta(days=30 * i)
+
+            month_issues = security_issues.filter(created__gte=month_start, created__lt=month_end)
+            month_resolved = month_issues.filter(status="closed", closed_date__isnull=False)
+
+            month_compliant = 0
+            for issue in month_resolved:
+                if issue.closed_date and issue.created:
+                    resolution_time = (issue.closed_date - issue.created).days
+                    if resolution_time <= 30:
+                        month_compliant += 1
+
+            month_total = month_resolved.count()
+            month_compliance_rate = (month_compliant / month_total * 100) if month_total > 0 else 100
+
+            monthly_compliance.insert(
+                0, {"month": month_start.strftime("%b"), "compliance_rate": round(month_compliance_rate, 1)}
+            )
+
+        return {
+            "overall_compliance": round(overall_compliance, 1),
+            "security_txt_compliance": round(security_txt_compliance, 1),
+            "resolution_compliance": round(resolution_compliance, 1),
+            "total_domains": total_domains,
+            "domains_with_security_txt": domains_with_security_txt,
+            "overdue_security_issues": overdue_security_issues,
+            "total_security_issues": security_issues.count(),
+            "compliant_resolutions": compliant_resolutions,
+            "total_resolved": total_resolved,
+            "domain_compliance": domain_compliance,
+            "monthly_compliance": monthly_compliance,
+            "monthly_compliance_labels": json.dumps([m["month"] for m in monthly_compliance]),
+            "monthly_compliance_data": json.dumps([m["compliance_rate"] for m in monthly_compliance]),
+        }
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # For authenticated users, show all organizations they have access to
@@ -596,6 +804,7 @@ class OrganizationDashboardAnalyticsView(View):
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
             "security_incidents_summary": self.get_security_incidents_summary(id),
             "network_traffic_data": self.get_network_traffic_data(id),
+            "compliance_monitoring": self.get_compliance_monitoring(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
@@ -1517,8 +1726,12 @@ class OrganizationDashboardManageRolesView(View):
         # Handle both with and without scheme
         if "://" not in organization_url:
             organization_url = f"https://{organization_url}"
-        parsed_url = urlparse(organization_url)
-        organization_domain = parsed_url.netloc.replace("www.", "").strip()
+        try:
+            parsed_url = urlparse(organization_url)
+            organization_domain = parsed_url.netloc.replace("www.", "").strip()
+        except (TypeError, ValueError):
+            logger.warning(f"Failed to parse organization URL: {organization_obj.url}")
+            organization_domain = ""
 
         # Try to get users matching organization email domain
         if organization_domain:
@@ -1638,6 +1851,11 @@ class OrganizationDashboardManageRolesView(View):
 
                 if existing_role:
                     messages.error(request, f"{user.username} already has an active role in this organization")
+                    return redirect("organization_manage_roles", id=id)
+
+                # Prevent assigning role to organization owner
+                if user == organization_obj.admin:
+                    messages.error(request, "Cannot assign role to organization owner (already has full access)")
                     return redirect("organization_manage_roles", id=id)
 
                 # Check if user is trying to assign themselves
