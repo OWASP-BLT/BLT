@@ -2482,23 +2482,28 @@ def highlight_recommendation(request, recommendation_id):
         return redirect("profile", slug=request.user.username)
 
     if request.method == "POST":
-        if recommendation.is_highlighted:
-            # Unhighlight
-            recommendation.is_highlighted = False
-            recommendation.save(update_fields=["is_highlighted", "updated_at"])
-            messages.info(request, "Recommendation unhighlighted.")
-        else:
-            # Check max 3 highlighted
-            highlighted_count = Recommendation.objects.filter(
-                to_user=request.user, is_highlighted=True, is_approved=True, is_visible=True
-            ).count()
+        with transaction.atomic():
+            # Lock the specific recommendation row
+            recommendation = Recommendation.objects.select_for_update().get(id=recommendation_id)
 
-            if highlighted_count >= 3:
-                messages.error(request, "You can only highlight up to 3 recommendations.")
-            else:
-                recommendation.is_highlighted = True
+            if recommendation.is_highlighted:
+                # Unhighlight
+                recommendation.is_highlighted = False
                 recommendation.save(update_fields=["is_highlighted", "updated_at"])
-                messages.success(request, "Recommendation highlighted!")
+                messages.info(request, "Recommendation unhighlighted.")
+            else:
+                # Lock and count highlighted recommendations to prevent race conditions
+                highlighted_recommendations = Recommendation.objects.select_for_update().filter(
+                    to_user=request.user, is_highlighted=True, is_approved=True, is_visible=True
+                )
+                highlighted_count = highlighted_recommendations.count()
+
+                if highlighted_count >= 3:
+                    messages.error(request, "You can only highlight up to 3 recommendations.")
+                else:
+                    recommendation.is_highlighted = True
+                    recommendation.save(update_fields=["is_highlighted", "updated_at"])
+                    messages.success(request, "Recommendation highlighted!")
 
     return redirect("profile", slug=request.user.username)
 
