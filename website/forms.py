@@ -14,6 +14,9 @@ from website.models import (
     Job,
     Monitor,
     Organization,
+    Recommendation,
+    RecommendationRequest,
+    RecommendationSkill,
     ReminderSettings,
     Repo,
     Room,
@@ -603,3 +606,170 @@ class JobForm(forms.ModelForm):
             "application_url": "Optional: Link to external application page",
             "application_instructions": "Optional: Custom instructions for applicants",
         }
+
+
+class RecommendationForm(forms.ModelForm):
+    """
+    Form for creating/editing user recommendations.
+    """
+    skills_endorsed = forms.ModelMultipleChoiceField(
+        queryset=RecommendationSkill.objects.none(),  # Will be set in __init__
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+        help_text="Select up to 5 skills to endorse (optional)"
+    )
+
+    class Meta:
+        model = Recommendation
+        fields = ["relationship", "recommendation_text"]
+        # skills_endorsed is handled separately, not as a model field in the form
+        widgets = {
+            "relationship": forms.Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+            "recommendation_text": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 6,
+                    "placeholder": "Tell us about your experience working with this person... (minimum 200 characters)",
+                    "minlength": 200,
+                    "maxlength": 1000,
+                    "title": "Recommendation text must be between 200 and 1000 characters",
+                }
+            ),
+        }
+        help_texts = {
+            "relationship": "Select your relationship with this person",
+            "recommendation_text": "Write a detailed recommendation (200-1000 characters)",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set up relationship field with placeholder option (but still required)
+        self.fields["relationship"].required = True
+        self.fields["relationship"].empty_label = "None selected"
+        self.fields["relationship"].initial = None
+        
+        # Set up skills_endorsed field (not a model field, handled separately)
+        try:
+            skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
+            # Group skills by category for better organization
+            skills_by_category = {}
+            for skill in skills_queryset:
+                category = skill.category or "Other"
+                if category not in skills_by_category:
+                    skills_by_category[category] = []
+                skills_by_category[category].append((skill.name, skill.name))
+            
+            # Create choices with category grouping
+            choices = []
+            for category in sorted(skills_by_category.keys()):
+                choices.append((f"--- {category} ---", f"--- {category} ---"))  # Category header
+                choices.extend(skills_by_category[category])
+        except Exception:
+            choices = []
+        
+        self.fields["skills_endorsed"] = forms.MultipleChoiceField(
+            choices=choices,
+            required=False,
+            widget=forms.SelectMultiple(attrs={
+                "class": "form-control w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white",
+                "multiple": "multiple",
+                "size": "8",
+                "style": "min-height: 180px;"
+            }),
+            help_text="Select up to 5 skills to endorse (optional)"
+        )
+
+    def clean_recommendation_text(self):
+        """Validate recommendation text length"""
+        text = self.cleaned_data.get("recommendation_text", "")
+        if len(text) < 200:
+            raise forms.ValidationError("Recommendation text must be at least 200 characters long.")
+        if len(text) > 1000:
+            raise forms.ValidationError("Recommendation text must not exceed 1000 characters.")
+        return text
+
+    def clean_skills_endorsed(self):
+        """Limit skills to maximum of 5 and filter out category headers"""
+        skills = self.cleaned_data.get("skills_endorsed", [])
+        # Filter out category headers (they start with "---")
+        skills = [s for s in skills if not s.startswith("---")]
+        if len(skills) > 5:
+            raise forms.ValidationError("You can select a maximum of 5 skills.")
+        return skills
+
+    def save(self, commit=True):
+        """Override save to convert skills to list of names for JSON storage"""
+        recommendation = super().save(commit=False)
+        # Convert skills to list of skill names for JSON storage
+        skills = self.cleaned_data.get("skills_endorsed", [])
+        if skills:
+            recommendation.skills_endorsed = [skill.name for skill in skills]
+        else:
+            recommendation.skills_endorsed = []
+        if commit:
+            recommendation.save()
+        return recommendation
+
+
+class RecommendationRequestForm(forms.ModelForm):
+    """
+    Form for requesting a recommendation from another user.
+    NEW FORM - additive only.
+    """
+    class Meta:
+        model = RecommendationRequest
+        fields = ["message"]
+        widgets = {
+            "message": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Optional: Add a personal message to your request...",
+                    "maxlength": 500,
+                }
+            ),
+        }
+        help_texts = {
+            "message": "Optional message to include with your request (max 500 characters)",
+        }
+
+    def clean_message(self):
+        """Validate message length"""
+        message = self.cleaned_data.get("message", "")
+        if message and len(message) > 500:
+            raise forms.ValidationError("Message must not exceed 500 characters.")
+        return message
+
+
+class RecommendationBlurbForm(forms.ModelForm):
+    """
+    Form for editing the recommendation blurb/summary on profile.
+    NEW FORM - additive only, doesn't modify existing UserProfileForm.
+    """
+    class Meta:
+        model = UserProfile
+        fields = ["recommendation_blurb"]
+        widgets = {
+            "recommendation_blurb": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Write a short summary about yourself... (max 500 characters)",
+                    "maxlength": 500,
+                }
+            ),
+        }
+        help_texts = {
+            "recommendation_blurb": "Short summary/about section (max 500 characters)",
+        }
+
+    def clean_recommendation_blurb(self):
+        """Validate blurb length"""
+        blurb = self.cleaned_data.get("recommendation_blurb", "")
+        if blurb and len(blurb) > 500:
+            raise forms.ValidationError("Blurb must not exceed 500 characters.")
+        return blurb

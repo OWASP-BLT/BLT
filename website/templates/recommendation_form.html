@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}
+    Write Recommendation for {{ to_user.username }}
+{% endblock title %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="flex flex-col items-center justify-center min-h-screen p-4">
+        <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-6 text-black/90 dark:text-white/90">
+                {% trans "Write a Recommendation for" %} @{{ to_user.username }}
+            </h1>
+            
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <span class="text-red-500">*</span> {% trans "indicates required fields" %}
+            </p>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" action="{% url 'add_recommendation' to_user.username %}">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="{{ form.relationship.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {% trans "Relationship" %} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.relationship }}
+                    {% if form.relationship.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.relationship.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.skills_endorsed.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {% trans "Skills to Endorse" %} <span class="text-gray-400 text-xs">({% trans "Select up to 5, optional" %})</span>
+                    </label>
+                    <div class="relative">
+                        {{ form.skills_endorsed }}
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            {% trans "Hold Ctrl (Cmd on Mac) to select multiple skills" %}
+                        </p>
+                    </div>
+                    {% if form.skills_endorsed.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.skills_endorsed.errors.0 }}</p>
+                    {% endif %}
+                    <div id="selected-skills-count" class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        <span id="skills-count">0</span> / 5 {% trans "skills selected" %}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.recommendation_text.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {% trans "Your Recommendation" %} <span class="text-red-500" title="Required field">*</span>
+                    </label>
+                    {{ form.recommendation_text }}
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <span id="char-count">0</span> / 1000 {% trans "characters" %} 
+                        <span class="text-red-500" id="char-warning"></span>
+                        <br>
+                        <small>{% trans "Minimum 200 characters required" %}</small>
+                    </p>
+                    {% if form.recommendation_text.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.recommendation_text.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex gap-4 justify-end">
+                    <a href="{% url 'profile' slug=to_user.username %}"
+                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        {% trans "Cancel" %}
+                    </a>
+                    <button type="submit"
+                            class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">
+                        {% trans "Submit Recommendation" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* Style the placeholder option in relationship dropdown */
+        #{{ form.relationship.id_for_label }} option:first-child {
+            color: #9ca3af;
+            font-style: italic;
+        }
+        
+        /* When dropdown is in default state (no selection), make it gray */
+        #{{ form.relationship.id_for_label }}:invalid {
+            color: #9ca3af;
+        }
+        
+        /* When a value is selected, make it normal color */
+        #{{ form.relationship.id_for_label }}:valid {
+            color: inherit;
+        }
+    </style>
+    <script>
+        // Character counter
+        const textarea = document.getElementById('{{ form.recommendation_text.id_for_label }}');
+        const charCount = document.getElementById('char-count');
+        
+        if (textarea && charCount) {
+            function updateCharCount() {
+                const length = textarea.value.length;
+                const charWarning = document.getElementById('char-warning');
+                charCount.textContent = length;
+                
+                if (length < 200) {
+                    charCount.classList.add('text-red-500');
+                    charCount.classList.remove('text-gray-500');
+                    if (charWarning) {
+                        charWarning.textContent = ` (Need ${200 - length} more characters)`;
+                    }
+                    textarea.setCustomValidity('Recommendation text must be at least 200 characters long. You have ' + length + ' characters.');
+                } else if (length > 1000) {
+                    charCount.classList.add('text-red-500');
+                    charCount.classList.remove('text-gray-500');
+                    if (charWarning) {
+                        charWarning.textContent = ` (${length - 1000} characters over limit)`;
+                    }
+                    textarea.setCustomValidity('Recommendation text must not exceed 1000 characters. You have ' + length + ' characters.');
+                } else {
+                    charCount.classList.remove('text-red-500');
+                    charCount.classList.add('text-gray-500');
+                    if (charWarning) {
+                        charWarning.textContent = '';
+                    }
+                    textarea.setCustomValidity('');
+                }
+            }
+            
+            textarea.addEventListener('input', updateCharCount);
+            textarea.addEventListener('change', updateCharCount);
+            
+            // Initialize count
+            updateCharCount();
+        }
+
+        // Update skills count and enforce max 5 selection
+        const skillSelect = document.getElementById('{{ form.skills_endorsed.id_for_label }}');
+        const skillsCountDisplay = document.getElementById('skills-count');
+        
+        if (skillSelect && skillsCountDisplay) {
+            function updateSkillsCount() {
+                // Filter out category headers (they start with "---")
+                const selected = Array.from(skillSelect.selectedOptions).filter(opt => !opt.value.startsWith('---'));
+                const count = selected.length;
+                skillsCountDisplay.textContent = count;
+                
+                if (count > 5) {
+                    skillsCountDisplay.classList.add('text-red-500', 'font-semibold');
+                    skillsCountDisplay.classList.remove('text-gray-600', 'text-yellow-600');
+                    // Remove excess selections (keep first 5)
+                    const excess = selected.slice(5);
+                    excess.forEach(option => {
+                        option.selected = false;
+                    });
+                    // Update count again after removing excess
+                    const newCount = Array.from(skillSelect.selectedOptions).filter(opt => !opt.value.startsWith('---')).length;
+                    skillsCountDisplay.textContent = newCount;
+                    alert('{% trans "Maximum 5 skills allowed. Only the first 5 selections were kept." %}');
+                } else if (count === 5) {
+                    skillsCountDisplay.classList.add('text-yellow-600', 'font-semibold');
+                    skillsCountDisplay.classList.remove('text-red-500', 'text-gray-600');
+                } else {
+                    skillsCountDisplay.classList.remove('text-red-500', 'text-yellow-600', 'font-semibold');
+                    skillsCountDisplay.classList.add('text-gray-600');
+                }
+            }
+            
+            // Prevent selecting category headers
+            skillSelect.addEventListener('mousedown', function(e) {
+                if (e.target.value && e.target.value.startsWith('---')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            skillSelect.addEventListener('change', updateSkillsCount);
+            // Initialize count
+            updateSkillsCount();
+        }
+
+        // Handle relationship dropdown placeholder styling
+        const relationshipSelect = document.getElementById('{{ form.relationship.id_for_label }}');
+        if (relationshipSelect) {
+            function updateRelationshipStyle() {
+                if (!relationshipSelect.value || relationshipSelect.value === '') {
+                    relationshipSelect.style.color = '#9ca3af';
+                } else {
+                    relationshipSelect.style.color = '';
+                }
+            }
+            
+            relationshipSelect.addEventListener('change', updateRelationshipStyle);
+            updateRelationshipStyle(); // Set initial style
+        }
+    </script>
+{% endblock content %}
+
