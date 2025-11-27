@@ -35,6 +35,7 @@ from website.api.views import (
     OrganizationViewSet,
     ProjectViewSet,
     PublicJobListViewSet,
+    SecurityIncidentViewSet,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -293,6 +294,7 @@ from website.views.project import (
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
+from website.views.security import SecurityDashboardView
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
@@ -381,6 +383,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
+router.register(r"security-incidents", SecurityIncidentViewSet, basename="securityincident")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -1191,6 +1194,7 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
+    path("security/dashboard/", SecurityDashboardView.as_view(), name="security_dashboard"),
 ]
 
 if settings.DEBUG:

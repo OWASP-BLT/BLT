@@ -14,6 +14,7 @@ from website.models import (
     Points,
     Project,
     Repo,
+    SecurityIncident,
     Tag,
     TimeLog,
     Trademark,
@@ -293,3 +294,18 @@ class TrademarkSerializer(serializers.ModelSerializer):
             "description",
             "owners",
         ]
+
+
+class SecurityIncidentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecurityIncident
+        fields = [
+            "id",
+            "title",
+            "severity",
+            "status",
+            "affected_systems",
+            "created_at",
+            "resolved_at",
+        ]
+        read_only_fields = ["id", "created_at", "resolved_at"]

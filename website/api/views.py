@@ -16,8 +16,8 @@ from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
-from rest_framework import filters, status, viewsets
-from rest_framework.authentication import TokenAuthentication
+from rest_framework import filters, permissions, status, viewsets
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
@@ -39,6 +39,7 @@ from website.models import (
     Points,
     Project,
     Repo,
+    SecurityIncident,
     Tag,
     TimeLog,
     Token,
@@ -57,6 +58,7 @@ from website.serializers import (
     OrganizationSerializer,
     ProjectSerializer,
     RepoSerializer,
+    SecurityIncidentSerializer,
     TagSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
@@ -1314,3 +1316,28 @@ def trademark_search_api(request):
             {"error": "Failed to fetch trademark data due to an external service error."},
             status=status.HTTP_502_BAD_GATEWAY,
         )
+
+
+# Security Incident API
+class SecurityIncidentViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = SecurityIncidentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = SecurityIncident.objects.all().order_by("-created_at")
+
+        request = self.request
+        severity = request.query_params.get("severity")
+        status = request.query_params.get("status")
+
+        allowed_severities = [choice[0] for choice in SecurityIncident.Severity.choices]
+        allowed_statuses = [choice[0] for choice in SecurityIncident.Status.choices]
+
+        if severity in allowed_severities:
+            queryset = queryset.filter(severity=severity)
+
+        if status in allowed_severities:
+            queryset = queryset.filter(status=status)
+
+        return queryset
