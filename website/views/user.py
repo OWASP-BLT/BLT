@@ -1668,36 +1668,30 @@ def delete_notification(request, notification_id):
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
+
 @staff_member_required
 def user_activity_dashboard(request):
     """
     Custom Admin Dashboard to show Active vs Inactive users.
     Activity is defined as having reported at least one Issue.
     """
-    # Ensure only superusers can access this page
     if not request.user.is_superuser:
-        return redirect('admin:index')
+        return redirect("admin:index")
 
     User = get_user_model()
+    # Dynamically generate the admin URL name for the user model.
+    user_admin_url_name = f"admin:{User._meta.app_label}_{User._meta.model_name}_change"
 
-    # Annotate users with the count of issues they have reported.
-    # The FieldError tells us the correct reverse name is 'issue'.
-    users = User.objects.annotate(
-        issue_count=Count('issue', distinct=True)
-    ).order_by('-date_joined')
+    users = User.objects.annotate(issue_count=Count("issue", distinct=True)).order_by("-date_joined")
 
-    # Separate users into active (has issues) and inactive (0 issues)
     active_users = users.filter(issue_count__gt=0)
     inactive_users = users.filter(issue_count=0)
 
-    # Generate the admin URL name dynamically to support custom user models.
-    user_admin_url_name = f"admin:{User._meta.app_label}_{User._meta.model_name}_change"
-
     context = {
-        'active_users': active_users,
-        'inactive_users': inactive_users,
-        'title': 'User Activity Dashboard',
-        'user_admin_url_name': user_admin_url_name
+        "active_users": active_users,
+        "inactive_users": inactive_users,
+        "title": "User Activity Dashboard",
+        "user_admin_url_name": user_admin_url_name,
     }
-    
-    return render(request, 'admin/user_activity_dashboard.html', context)
+
+    return render(request, "admin/user_activity_dashboard.html", context)
