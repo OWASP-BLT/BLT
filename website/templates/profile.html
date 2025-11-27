@@ -624,11 +624,15 @@
                                             {% if rec.from_user.userprofile.avatar %}
                                                 <img src="{{ rec.from_user.userprofile.avatar }}"
                                                      class="w-10 h-10 rounded-full"
-                                                     alt="{{ rec.from_user.username }}">
+                                                     alt="{{ rec.from_user.username }}"
+                                                     width="40"
+                                                     height="40">
                                             {% else %}
                                                 <img src="{% gravatar_url rec.from_user.email 40 %}"
                                                      class="w-10 h-10 rounded-full"
-                                                     alt="{{ rec.from_user.username }}">
+                                                     alt="{{ rec.from_user.username }}"
+                                                     width="40"
+                                                     height="40">
                                             {% endif %}
                                             <div class="flex-1">
                                                 <a href="{% url 'profile' slug=rec.from_user.username %}"
@@ -684,11 +688,15 @@
                                                     {% if rec.to_user.userprofile.avatar %}
                                                         <img src="{{ rec.to_user.userprofile.avatar }}"
                                                              class="w-10 h-10 rounded-full"
-                                                             alt="{{ rec.to_user.username }}">
+                                                             alt="{{ rec.to_user.username }}"
+                                                             width="40"
+                                                             height="40">
                                                     {% else %}
                                                         <img src="{% gravatar_url rec.to_user.email 40 %}"
                                                              class="w-10 h-10 rounded-full"
-                                                             alt="{{ rec.to_user.username }}">
+                                                             alt="{{ rec.to_user.username }}"
+                                                             width="40"
+                                                             height="40">
                                                     {% endif %}
                                                     <div class="flex-1">
                                                         <a href="{% url 'profile' slug=rec.to_user.username %}"
@@ -749,11 +757,15 @@
                                                 {% if rec.from_user.userprofile.avatar %}
                                                     <img src="{{ rec.from_user.userprofile.avatar }}"
                                                          class="w-8 h-8 rounded-full"
-                                                         alt="{{ rec.from_user.username }}">
+                                                         alt="{{ rec.from_user.username }}"
+                                                         width="32"
+                                                         height="32">
                                                 {% else %}
                                                     <img src="{% gravatar_url rec.from_user.email 32 %}"
                                                          class="w-8 h-8 rounded-full"
-                                                         alt="{{ rec.from_user.username }}">
+                                                         alt="{{ rec.from_user.username }}"
+                                                         width="32"
+                                                         height="32">
                                                 {% endif %}
                                                 <div class="flex-1">
                                                     <a href="{% url 'profile' slug=rec.from_user.username %}"
@@ -802,11 +814,15 @@
                                                 {% if req.to_user.userprofile.avatar %}
                                                     <img src="{{ req.to_user.userprofile.avatar }}"
                                                          class="w-8 h-8 rounded-full"
-                                                         alt="{{ req.to_user.username }}">
+                                                         alt="{{ req.to_user.username }}"
+                                                         width="32"
+                                                         height="32">
                                                 {% else %}
                                                     <img src="{% gravatar_url req.to_user.email 32 %}"
                                                          class="w-8 h-8 rounded-full"
-                                                         alt="{{ req.to_user.username }}">
+                                                         alt="{{ req.to_user.username }}"
+                                                         width="32"
+                                                         height="32">
                                                 {% endif %}
                                                 <div class="flex-1">
                                                     <a href="{% url 'profile' slug=req.to_user.username %}"
@@ -856,11 +872,15 @@
                                                 {% if rec.to_user.userprofile.avatar %}
                                                     <img src="{{ rec.to_user.userprofile.avatar }}"
                                                          class="w-10 h-10 rounded-full"
-                                                         alt="{{ rec.to_user.username }}">
+                                                         alt="{{ rec.to_user.username }}"
+                                                         width="40"
+                                                         height="40">
                                                 {% else %}
                                                     <img src="{% gravatar_url rec.to_user.email 40 %}"
                                                          class="w-10 h-10 rounded-full"
-                                                         alt="{{ rec.to_user.username }}">
+                                                         alt="{{ rec.to_user.username }}"
+                                                         width="40"
+                                                         height="40">
                                                 {% endif %}
                                                 <div class="flex-1">
                                                     <a href="{% url 'profile' slug=rec.to_user.username %}"
@@ -1750,11 +1770,15 @@
                                                     {% if rec.from_user.userprofile.avatar %}
                                                         <img src="{{ rec.from_user.userprofile.avatar }}"
                                                              class="w-10 h-10 rounded-full"
-                                                             alt="{{ rec.from_user.username }}">
+                                                             alt="{{ rec.from_user.username }}"
+                                                             width="40"
+                                                             height="40">
                                                     {% else %}
                                                         <img src="{% gravatar_url rec.from_user.email 40 %}"
                                                              class="w-10 h-10 rounded-full"
-                                                             alt="{{ rec.from_user.username }}">
+                                                             alt="{{ rec.from_user.username }}"
+                                                             width="40"
+                                                             height="40">
                                                     {% endif %}
                                                     <div class="flex-1">
                                                         <a href="{% url 'profile' slug=rec.from_user.username %}"
@@ -1794,11 +1818,15 @@
                                                                 {% if rec.to_user.userprofile.avatar %}
                                                                     <img src="{{ rec.to_user.userprofile.avatar }}"
                                                                          class="w-10 h-10 rounded-full"
-                                                                         alt="{{ rec.to_user.username }}">
+                                                                         alt="{{ rec.to_user.username }}"
+                                                                         width="40"
+                                                                         height="40">
                                                                 {% else %}
                                                                     <img src="{% gravatar_url rec.to_user.email 40 %}"
                                                                          class="w-10 h-10 rounded-full"
-                                                                         alt="{{ rec.to_user.username }}">
+                                                                         alt="{{ rec.to_user.username }}"
+                                                                         width="40"
+                                                                         height="40">
                                                                 {% endif %}
                                                                 <div class="flex-1">
                                                                     <a href="{% url 'profile' slug=rec.to_user.username %}"
@@ -1849,11 +1877,15 @@
                                                                     {% if rec.to_user.userprofile.avatar %}
                                                                         <img src="{{ rec.to_user.userprofile.avatar }}"
                                                                              class="w-10 h-10 rounded-full"
-                                                                             alt="{{ rec.to_user.username }}">
+                                                                             alt="{{ rec.to_user.username }}"
+                                                                             width="40"
+                                                                             height="40">
                                                                     {% else %}
                                                                         <img src="{% gravatar_url rec.to_user.email 40 %}"
                                                                              class="w-10 h-10 rounded-full"
-                                                                             alt="{{ rec.to_user.username }}">
+                                                                             alt="{{ rec.to_user.username }}"
+                                                                             width="40"
+                                                                             height="40">
                                                                     {% endif %}
                                                                     <div class="flex-1">
                                                                         <a href="{% url 'profile' slug=rec.to_user.username %}"
