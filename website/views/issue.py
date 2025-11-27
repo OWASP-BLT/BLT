@@ -1029,6 +1029,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         "url": bug["issue"].url,
                                         "description": bug["issue"].description[:200],
                                         "similarity": bug["similarity"],
+                                        "similarity_percent": int(bug["similarity"] * 100),  # Convert to percentage
                                         "status": bug["issue"].status,
                                         "user": bug["issue"].user.username if bug["issue"].user else "Anonymous",
                                         "created": bug["issue"].created.strftime("%Y-%m-%d"),

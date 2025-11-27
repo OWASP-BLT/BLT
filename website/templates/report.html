@@ -113,8 +113,8 @@
                                                            class="text-blue-600 hover:text-blue-800 font-semibold">
                                                             Bug #{{ bug.id }}
                                                         </a>
-                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full {% if bug.similarity >= 0.7 %}bg-red-100 text-red-800{% elif bug.similarity >= 0.6 %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
-                                                            {{ bug.similarity|floatformat:0 }}% match
+                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full {% if bug.similarity_percent >= 70 %}bg-red-100 text-red-800{% elif bug.similarity_percent >= 60 %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                            {{ bug.similarity_percent }}% match
                                                         </span>
                                                         <span class="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                                                             {{ bug.status }}

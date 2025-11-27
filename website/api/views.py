@@ -1492,8 +1492,14 @@ class FindSimilarBugsApiView(APIView):
 
         # Find similar bugs
         try:
-            # Use a default value if one is missing
-            search_url = url or "https://example.com"
+            # Determine search URL: use provided URL, or domain URL if available, or None for no domain filter
+            search_url = None
+            if url:
+                search_url = url
+            elif domain:
+                search_url = domain.url
+            # If neither URL nor domain, search_url stays None (no domain filtering)
+
             search_description = description or "search query"
 
             similar_bugs = find_similar_bugs(
