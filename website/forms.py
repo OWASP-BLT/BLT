@@ -707,10 +707,11 @@ class RecommendationForm(forms.ModelForm):
     def save(self, commit=True):
         """Override save to convert skills to list of names for JSON storage"""
         recommendation = super().save(commit=False)
-        # Convert skills to list of skill names for JSON storage
+        # Convert skills to list of skill names for JSON storage (skills are already strings from MultipleChoiceField)
         skills = self.cleaned_data.get("skills_endorsed", [])
         if skills:
-            recommendation.skills_endorsed = [skill.name for skill in skills]
+            # Filter out any category headers and store as list of skill names
+            recommendation.skills_endorsed = [skill for skill in skills if not skill.startswith("---")]
         else:
             recommendation.skills_endorsed = []
         if commit:
