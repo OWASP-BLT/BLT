@@ -224,11 +224,9 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                console.log("Success");
                                 // Remove the row from the table if the delete was successful
                                 this.closest("tr").remove();
                             } else {
-                                console.log("Failed");
                                 alert("Failed to delete time entry.");
                             }
                         });

@@ -38,7 +38,6 @@
                     alert(data.error);
                 } else {
                     data.forEach(bid => {
-                        console.log('Data fetched:', bid.user);
                         const bidElement = document.createElement("div");
                         bidElement.classList.add("bg-red-500", "text-black", "p-4", "rounded", "text-center", "mb-2");
                         bidElement.innerHTML = `

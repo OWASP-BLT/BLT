@@ -139,7 +139,7 @@ function validateBitCoin(address) {
 //     '1Ch5cMc8s8QzCx9vjvcu6zG8gTNDzYf9ZT',
 // ]
 // for(var i=0; i<btc.length; i++){
-//     console.log(`${btc[i]} - ${validateBitCoin(btc[i])}`)
+//     validateBitCoin(btc[i])
 // }
 
 // BCH VALIDATOR:
@@ -158,7 +158,7 @@ function validateBitCoin(address) {
 // ];
 
 // for(var i=0; i<bch.length; i++){
-//     console.log(`${bch[i]} - ${validateBCH(bch[i])}`)
+//     validateBCH(bch[i])
 // }
 
 // Ethereum validator 
@@ -179,5 +179,5 @@ function validateBitCoin(address) {
 // ];
 
 // for(var i=0; i<ethAddresses.length; i++){
-//     console.log(`${ethAddresses[i]} - ${validateEthereum(ethAddresses[i])}`)
+//     validateEthereum(ethAddresses[i])
 // }

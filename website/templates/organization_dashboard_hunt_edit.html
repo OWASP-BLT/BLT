@@ -149,9 +149,6 @@
   var dateNow = new Date();
   var starts_on = new Date("{{ hunt.starts_on.isoformat }}")
   var end_on = new Date("{{ hunt.end_on.isoformat }}")
-  console.log(starts_on.getTimezoneOffset())
-  console.log(starts_on)
-  console.log(end_on)
   var Datepicker1 = MtrDatepickerDemo.init({
     target: 'datepicker-1',
     timestamp: starts_on.getTime() - 10 * 60000,

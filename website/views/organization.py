@@ -6,7 +6,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -2108,13 +2108,18 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
+    # Fetch the last check-in (most recent) for the user only if no yesterday report
+    last_checkin = None
+    if not yesterday_report:
+        last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+
     # Fetch all check-ins for the user, ordered by date
     all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
 
     return render(
         request,
         "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
+        {"yesterday_report": yesterday_report, "last_checkin": last_checkin, "all_checkins": all_checkins},
     )
 
 
@@ -2922,9 +2927,9 @@ class BountyPayoutsView(ListView):
             return cached_data
 
         # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
-        encoded_label = label.replace("$", "%24")
-        query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
-        url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+        query_params = f"repo:OWASP-BLT/BLT is:issue state:{issue_state} label:{label}"
+        encoded_query = quote_plus(query_params)
+        url = f"https://api.github.com/search/issues?q={encoded_query}&page={page}&per_page={per_page}"
         headers = {}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
