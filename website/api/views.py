@@ -1112,10 +1112,10 @@ def generate_issue_badge_image(view_count, bounty_amount):
 @api_view(["GET"])
 def github_issue_badge(request, issue_number):
     """
-    Generate dynamic SVG badge showing view count and bounty for a GitHub issue.
+    Generate dynamic PNG badge showing view count and bounty for a GitHub issue.
     GET /api/v1/badge/issue/{issue_number}/
 
-    Returns an SVG badge with:
+    Returns a PNG badge with:
     - View count for past 30 days (from IP logs)
     - Current bounty amount (from GitHubIssue model)
 
