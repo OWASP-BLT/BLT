@@ -1009,17 +1009,20 @@
                             <span>Report anonymously</span>
                         </label>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button id="capture-screenshot-btn"
-                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center justify-center gap-1.5">
-                            <i class="fas fa-camera"></i>
-                            <span>Capture Screenshot</span>
-                        </button>
-                        <button id="submit-report-btn"
-                                class="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center justify-center gap-1.5">
-                            <i class="fas fa-paper-plane"></i>
-                            <span>Submit</span>
-                        </button>
+                    <div class="space-y-2">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Screenshot (required):</p>
+                        <div class="flex items-center gap-2">
+                            <button id="capture-fullpage-btn"
+                                    class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1">
+                                <i class="fas fa-desktop"></i>
+                                <span>Full Page</span>
+                            </button>
+                            <button id="capture-selection-btn"
+                                    class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1">
+                                <i class="fas fa-crop-alt"></i>
+                                <span>Select Area</span>
+                            </button>
+                        </div>
                     </div>
                     <div id="screenshot-preview" class="hidden">
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Screenshot captured:</p>
@@ -1029,6 +1032,11 @@
                              width="350"
                              height="80">
                     </div>
+                    <button id="submit-report-btn"
+                            class="w-full bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center justify-center gap-1.5">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Submit Report</span>
+                    </button>
                 </div>
             </div>
             <div class="flex flex-row gap-4 items-center mt-1 w-full"
@@ -1182,7 +1190,8 @@
             const agentButtons = document.querySelectorAll('.agent-btn');
             const reportForm = document.querySelector('#report-issue-form');
             const closeReportForm = document.querySelector('#close-report-form');
-            const captureScreenshotBtn = document.querySelector('#capture-screenshot-btn');
+            const captureFullpageBtn = document.querySelector('#capture-fullpage-btn');
+            const captureSelectionBtn = document.querySelector('#capture-selection-btn');
             const submitReportBtn = document.querySelector('#submit-report-btn');
             const screenshotPreview = document.querySelector('#screenshot-preview');
             const screenshotImg = document.querySelector('#screenshot-img');
@@ -1283,51 +1292,165 @@
                 });
             }
             
-            // Capture screenshot using html2canvas
-            if (captureScreenshotBtn) {
-                captureScreenshotBtn.addEventListener('click', async function() {
-                    addSystemMessage('Capturing screenshot of current page...', 'info');
+            // Load html2canvas if not available
+            async function loadHtml2Canvas() {
+                if (typeof html2canvas === 'undefined') {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                    script.integrity = 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==';
+                    script.crossOrigin = 'anonymous';
+                    document.head.appendChild(script);
+                    await new Promise((resolve, reject) => {
+                        script.onload = resolve;
+                        script.onerror = reject;
+                    });
+                }
+            }
+            
+            // Capture full page screenshot
+            if (captureFullpageBtn) {
+                captureFullpageBtn.addEventListener('click', async function() {
+                    addSystemMessage('Capturing full page screenshot...', 'info');
                     
                     try {
-                        // Check if html2canvas is available, if not load it
-                        if (typeof html2canvas === 'undefined') {
-                            const script = document.createElement('script');
-                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-                            // Add integrity check for security
-                            script.integrity = 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==';
-                            script.crossOrigin = 'anonymous';
-                            document.head.appendChild(script);
-                            await new Promise((resolve, reject) => {
-                                script.onload = resolve;
-                                script.onerror = reject;
-                            });
-                        }
+                        await loadHtml2Canvas();
                         
-                        // Hide the chatbot temporarily for screenshot
                         const chatbot = document.getElementById('chatbot');
                         chatbot.style.display = 'none';
                         
-                        // Capture the screenshot
                         const canvas = await html2canvas(document.body, {
                             scale: 0.5,
                             logging: false,
                             useCORS: true
                         });
                         
-                        // Show chatbot again
                         chatbot.style.display = '';
-                        
-                        // Convert to base64
                         capturedScreenshot = canvas.toDataURL('image/png');
-                        
-                        // Show preview
                         screenshotImg.src = capturedScreenshot;
                         screenshotPreview.classList.remove('hidden');
                         
-                        addSystemMessage('Screenshot captured successfully!', 'success');
+                        addSystemMessage('Full page screenshot captured!', 'success');
                     } catch (error) {
                         console.error('Screenshot error:', error);
-                        addSystemMessage('Failed to capture screenshot. You can still submit without one.', 'error');
+                        addSystemMessage('Failed to capture screenshot.', 'error');
+                    }
+                });
+            }
+            
+            // Capture selected area screenshot
+            if (captureSelectionBtn) {
+                captureSelectionBtn.addEventListener('click', async function() {
+                    addSystemMessage('Click and drag to select an area...', 'info');
+                    
+                    try {
+                        await loadHtml2Canvas();
+                        
+                        const chatbot = document.getElementById('chatbot');
+                        chatbot.style.display = 'none';
+                        
+                        // Create selection overlay
+                        const overlay = document.createElement('div');
+                        overlay.id = 'screenshot-overlay';
+                        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);cursor:crosshair;z-index:99999;';
+                        
+                        const selectionBox = document.createElement('div');
+                        selectionBox.id = 'selection-box';
+                        selectionBox.style.cssText = 'position:fixed;border:2px dashed #e74c3c;background:rgba(231,76,60,0.1);display:none;z-index:100000;';
+                        
+                        const instructions = document.createElement('div');
+                        instructions.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#e74c3c;color:white;padding:10px 20px;border-radius:8px;z-index:100001;font-size:14px;';
+                        instructions.textContent = 'Click and drag to select area. Press ESC to cancel.';
+                        
+                        document.body.appendChild(overlay);
+                        document.body.appendChild(selectionBox);
+                        document.body.appendChild(instructions);
+                        
+                        let startX, startY, isSelecting = false;
+                        
+                        const cleanup = () => {
+                            overlay.remove();
+                            selectionBox.remove();
+                            instructions.remove();
+                            chatbot.style.display = '';
+                        };
+                        
+                        const handleKeydown = (e) => {
+                            if (e.key === 'Escape') {
+                                cleanup();
+                                document.removeEventListener('keydown', handleKeydown);
+                                addSystemMessage('Selection cancelled.', 'info');
+                            }
+                        };
+                        document.addEventListener('keydown', handleKeydown);
+                        
+                        overlay.addEventListener('mousedown', (e) => {
+                            isSelecting = true;
+                            startX = e.clientX;
+                            startY = e.clientY;
+                            selectionBox.style.left = startX + 'px';
+                            selectionBox.style.top = startY + 'px';
+                            selectionBox.style.width = '0';
+                            selectionBox.style.height = '0';
+                            selectionBox.style.display = 'block';
+                        });
+                        
+                        overlay.addEventListener('mousemove', (e) => {
+                            if (!isSelecting) return;
+                            const currentX = e.clientX;
+                            const currentY = e.clientY;
+                            const width = Math.abs(currentX - startX);
+                            const height = Math.abs(currentY - startY);
+                            selectionBox.style.left = Math.min(startX, currentX) + 'px';
+                            selectionBox.style.top = Math.min(startY, currentY) + 'px';
+                            selectionBox.style.width = width + 'px';
+                            selectionBox.style.height = height + 'px';
+                        });
+                        
+                        overlay.addEventListener('mouseup', async (e) => {
+                            if (!isSelecting) return;
+                            isSelecting = false;
+                            
+                            const rect = {
+                                x: parseInt(selectionBox.style.left),
+                                y: parseInt(selectionBox.style.top),
+                                width: parseInt(selectionBox.style.width),
+                                height: parseInt(selectionBox.style.height)
+                            };
+                            
+                            if (rect.width < 10 || rect.height < 10) {
+                                cleanup();
+                                document.removeEventListener('keydown', handleKeydown);
+                                addSystemMessage('Selection too small. Please try again.', 'error');
+                                return;
+                            }
+                            
+                            cleanup();
+                            document.removeEventListener('keydown', handleKeydown);
+                            
+                            // Capture full page first, then crop
+                            const fullCanvas = await html2canvas(document.body, {
+                                scale: 1,
+                                logging: false,
+                                useCORS: true
+                            });
+                            
+                            // Create cropped canvas
+                            const croppedCanvas = document.createElement('canvas');
+                            croppedCanvas.width = rect.width;
+                            croppedCanvas.height = rect.height;
+                            const ctx = croppedCanvas.getContext('2d');
+                            ctx.drawImage(fullCanvas, rect.x, rect.y, rect.width, rect.height, 0, 0, rect.width, rect.height);
+                            
+                            capturedScreenshot = croppedCanvas.toDataURL('image/png');
+                            screenshotImg.src = capturedScreenshot;
+                            screenshotPreview.classList.remove('hidden');
+                            
+                            addSystemMessage('Area screenshot captured!', 'success');
+                        });
+                        
+                    } catch (error) {
+                        console.error('Screenshot error:', error);
+                        addSystemMessage('Failed to capture screenshot.', 'error');
                     }
                 });
             }
@@ -1341,6 +1464,11 @@
                     
                     if (!description) {
                         addSystemMessage('Please provide a description of the issue.', 'error');
+                        return;
+                    }
+                    
+                    if (!capturedScreenshot) {
+                        addSystemMessage('Screenshot is required. Please capture a full page or select an area.', 'error');
                         return;
                     }
                     

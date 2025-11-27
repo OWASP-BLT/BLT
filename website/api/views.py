@@ -1548,6 +1548,9 @@ class ChatbotReportIssueView(APIView):
         if not url:
             return Response({"success": False, "error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+        if not screenshot_data or not screenshot_data.startswith("data:image"):
+            return Response({"success": False, "error": "Screenshot is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             # Clean and validate URL
             if not url.startswith(("http://", "https://")):
@@ -1588,21 +1591,23 @@ class ChatbotReportIssueView(APIView):
                     ip = request.META.get("REMOTE_ADDR")
                 issue.reporter_ip_address = ip
 
-            # Handle screenshot if provided
-            if screenshot_data and screenshot_data.startswith("data:image"):
-                try:
-                    # Parse base64 image data
-                    format_info, base64_data = screenshot_data.split(";base64,")
-                    image_data = base64.b64decode(base64_data)
+            # Handle screenshot (required)
+            try:
+                # Parse base64 image data
+                format_info, base64_data = screenshot_data.split(";base64,")
+                image_data = base64.b64decode(base64_data)
 
-                    # Generate unique filename with full UUID for uniqueness
-                    file_name = f"chatbot_screenshot_{uuid.uuid4().hex}.png"
+                # Generate unique filename with full UUID for uniqueness
+                file_name = f"chatbot_screenshot_{uuid.uuid4().hex}.png"
 
-                    # Save screenshot
-                    issue.screenshot.save(file_name, ContentFile(image_data), save=False)
-                except Exception as e:
-                    logger.warning(f"Failed to process screenshot: {e}")
-                    # Continue without screenshot
+                # Save screenshot
+                issue.screenshot.save(file_name, ContentFile(image_data), save=False)
+            except Exception as e:
+                logger.warning(f"Failed to process screenshot: {e}")
+                return Response(
+                    {"success": False, "error": "Failed to process screenshot"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             issue.save()
 
