@@ -15,6 +15,7 @@ from website.models import (
     Project,
     Repo,
     SearchHistory,
+    SecurityIncident,
     Tag,
     TimeLog,
     Trademark,
@@ -303,3 +304,16 @@ class SearchHistorySerializer(serializers.ModelSerializer):
         model = SearchHistory
         fields = ["id", "query", "search_type", "timestamp", "result_count"]
         read_only_fields = ["id", "timestamp"]
+class SecurityIncidentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecurityIncident
+        fields = [
+            "id",
+            "title",
+            "severity",
+            "status",
+            "affected_systems",
+            "created_at",
+            "resolved_at",
+        ]
+        read_only_fields = ["id", "created_at", "resolved_at"]
