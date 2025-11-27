@@ -22,7 +22,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
 from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -30,7 +30,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
@@ -317,6 +317,97 @@ class ProjectView(FilterView):
                     projects[repo.project] = []
                 projects[repo.project].append(repo)
         context["projects"] = projects
+
+        return context
+
+
+class ProjectCompactListView(ListView):
+    """Compact spreadsheet-like view for projects with sortable columns"""
+
+    model = Project
+    template_name = "projects/project_compact_list.html"
+    context_object_name = "projects"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = Project.objects.select_related("organization").exclude(slug="")
+
+        # Aggregate repo stats at the database level to avoid N+1 queries
+        queryset = queryset.annotate(
+            repo_count=Count("repos"),
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+            total_issues=Coalesce(Sum("repos__total_issues"), 0),
+        )
+
+        # Apply sorting
+        sort_by = self.request.GET.get("sort", "name")
+        order = self.request.GET.get("order", "asc")
+
+        # Handle organization sorting with explicit NULL placement
+        if sort_by == "organization":
+            if order == "desc":
+                queryset = queryset.order_by(F("organization__name").desc(nulls_last=True))
+            else:
+                queryset = queryset.order_by(F("organization__name").asc(nulls_last=True))
+        else:
+            # Map sort fields to actual model fields
+            sort_mapping = {
+                "name": "name",
+                "status": "status",
+                "repos_count": "repo_count",
+                "slack_channel": "slack_channel",
+                "slack_user_count": "slack_user_count",
+                "created": "created",
+                "modified": "modified",
+            }
+
+            field = sort_mapping.get(sort_by, "name")
+
+            if order == "desc":
+                field = f"-{field}"
+
+            queryset = queryset.order_by(field)
+
+        # Apply organization filter with validation
+        organization_id = self.request.GET.get("organization")
+        if organization_id:
+            try:
+                organization_id = int(organization_id)
+                queryset = queryset.filter(organization_id=organization_id)
+            except (ValueError, TypeError):
+                # Invalid organization_id, skip the filter
+                pass
+
+        # Apply search filter
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search))
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get organizations that have projects
+        context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
+
+        # Build projects_with_stats from annotated queryset - no additional queries needed
+        projects_with_stats = []
+        for project in context["projects"]:
+            projects_with_stats.append(
+                {
+                    "project": project,
+                    "repo_count": project.repo_count,
+                    "total_stars": project.total_stars,
+                    "total_forks": project.total_forks,
+                    "total_issues": project.total_issues,
+                }
+            )
+
+        context["projects_with_stats"] = projects_with_stats
+        context["sort_by"] = self.request.GET.get("sort", "name")
+        context["order"] = self.request.GET.get("order", "asc")
 
         return context
 
@@ -734,6 +825,18 @@ class ProjectsDetailView(DetailView):
         response = super().get(request, *args, **kwargs)
 
         return response
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+@require_http_methods(["POST"])
+def delete_project(request, slug):
+    """Delete a project. Only accessible by superusers."""
+    project = get_object_or_404(Project, slug=slug)
+    project_name = project.name
+    project.delete()
+    messages.success(request, f'Project "{project_name}" has been deleted successfully.')
+    return redirect("project_list")
 
 
 class RepoDetailView(DetailView):
