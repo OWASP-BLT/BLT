@@ -961,7 +961,7 @@ class UserProfile(models.Model):
         max_length=500,
         blank=True,
         null=True,
-        help_text="Short summary/about section for recommendations (max 500 characters). NEW FIELD - additive only.",
+        help_text="Short summary/about section for recommendations (max 500 characters).",
     )
 
     def check_team_membership(self):
@@ -3658,18 +3658,18 @@ class RecommendationSkill(models.Model):
     Model for structured skill endorsements that can be used in recommendations.
     """
 
-    SKILL_CATEGORY_CHOICES = [
+    SKILL_CATEGORY_CHOICES = (
         ("technical", "Technical"),
         ("soft_skills", "Soft Skills"),
         ("security", "Security"),
-    ]
+    )
 
     name = models.CharField(max_length=100, unique=True)
     category = models.CharField(max_length=20, choices=SKILL_CATEGORY_CHOICES, default="technical")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["category", "name"]
+        ordering = ("category", "name")
         verbose_name = "Recommendation Skill"
         verbose_name_plural = "Recommendation Skills"
 
@@ -3683,13 +3683,13 @@ class Recommendation(models.Model):
     Recommendations require approval from the recipient before being displayed.
     """
 
-    RELATIONSHIP_CHOICES = [
+    RELATIONSHIP_CHOICES = (
         ("colleague", "Colleague"),
         ("mentor", "Mentor"),
         ("bug_hunter", "Bug Hunter"),
         ("team_member", "Team Member"),
         ("other", "Other"),
-    ]
+    )
 
     from_user = models.ForeignKey(
         User,
@@ -3724,14 +3724,14 @@ class Recommendation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-created_at"]
-        unique_together = [("from_user", "to_user")]
+        ordering = ("-created_at",)
+        unique_together = (("from_user", "to_user"),)
         verbose_name = "Recommendation"
         verbose_name_plural = "Recommendations"
-        indexes = [
+        indexes = (
             models.Index(fields=["to_user", "is_approved", "is_visible"], name="rec_to_user_app_vis_idx"),
             models.Index(fields=["from_user"], name="rec_from_user_idx"),
-        ]
+        )
 
     def __str__(self):
         return f"Recommendation from {self.from_user.username} to {self.to_user.username}"
@@ -3765,13 +3765,13 @@ class RecommendationRequest(models.Model):
     This is a NEW model - additive only, doesn't modify existing code.
     """
 
-    STATUS_CHOICES = [
+    STATUS_CHOICES = (
         ("pending", "Pending"),
         ("accepted", "Accepted"),
         ("declined", "Declined"),
         ("completed", "Completed"),  # Recommendation was written after accepting request
         ("cancelled", "Cancelled"),  # Request was cancelled by sender
-    ]
+    )
 
     from_user = models.ForeignKey(
         User,
@@ -3794,14 +3794,14 @@ class RecommendationRequest(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)  # When recommendation was written
 
     class Meta:
-        ordering = ["-created_at"]
-        unique_together = [("from_user", "to_user")]  # One active request per pair
+        ordering = ("-created_at",)
+        unique_together = (("from_user", "to_user"),)  # One active request per pair
         verbose_name = "Recommendation Request"
         verbose_name_plural = "Recommendation Requests"
-        indexes = [
+        indexes = (
             models.Index(fields=["to_user", "status"], name="rec_req_to_user_status_idx"),
             models.Index(fields=["from_user"], name="rec_req_from_user_idx"),
-        ]
+        )
 
     def __str__(self):
         return f"Recommendation request from {self.from_user.username} to {self.to_user.username}"

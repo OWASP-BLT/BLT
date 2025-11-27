@@ -565,8 +565,7 @@ class UserProfileDetailView(DetailView):
                 # When viewing someone else's profile, ensure given_recommendations is not set
                 context["given_recommendations"] = None
                 context["given_recommendations_count"] = None
-                # In testing mode, always allow writing recommendations
-                context["has_recommended"] = False
+                # Keep the real has_recommended value (already computed above)
                 # Check if user has pending request (NEW - additive only)
                 context["has_pending_request"] = RecommendationRequest.objects.filter(
                     from_user=self.request.user, to_user=user, status="pending"
@@ -2221,23 +2220,26 @@ def list_recommendations(request, username):
             "from_user", "from_user__userprofile"
         )
 
-    recommendations_data = [
-        {
-            "id": rec.id,
-            "from_user": {
-                "id": rec.from_user.id,
-                "username": rec.from_user.username,
-                "avatar": rec.from_user.userprofile.avatar() if hasattr(rec.from_user, "userprofile") else None,
-            },
-            "relationship": rec.get_relationship_display(),
-            "recommendation_text": rec.recommendation_text,
-            "skills_endorsed": rec.skills_endorsed,
-            "is_approved": rec.is_approved,
-            "is_visible": rec.is_visible,
-            "created_at": rec.created_at.isoformat(),
-        }
-        for rec in recommendations.order_by("-created_at")
-    ]
+    recommendations_data = []
+    for rec in recommendations.order_by("-created_at"):
+        profile = getattr(rec.from_user, "userprofile", None)
+        avatar = profile.avatar() if profile is not None else None
+        recommendations_data.append(
+            {
+                "id": rec.id,
+                "from_user": {
+                    "id": rec.from_user.id,
+                    "username": rec.from_user.username,
+                    "avatar": avatar,
+                },
+                "relationship": rec.get_relationship_display(),
+                "recommendation_text": rec.recommendation_text,
+                "skills_endorsed": rec.skills_endorsed,
+                "is_approved": rec.is_approved,
+                "is_visible": rec.is_visible,
+                "created_at": rec.created_at.isoformat(),
+            }
+        )
 
     return JsonResponse({"recommendations": recommendations_data}, safe=False)
 
