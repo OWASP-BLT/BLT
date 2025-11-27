@@ -1594,7 +1594,7 @@ class IssueView(DetailView):
             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
+        ipdetails.user = self.request.user.username if self.request.user.is_authenticated else None
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
         ipdetails.path = request.path
@@ -1603,22 +1603,22 @@ class IssueView(DetailView):
 
         try:
             if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
+                # Check if IP record already exists for this authenticated user and issue
+                if not IP.objects.filter(user=self.request.user.username, issuenumber=self.object.id).exists():
+                    # First time this user is viewing this issue
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
             else:
-                try:
-                    objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
+                # Check if IP record already exists for this address and issue
+                if not IP.objects.filter(address=get_client_ip(request), issuenumber=self.object.id).exists():
+                    # First time this IP is viewing this issue
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-                except Exception as e:
-                    logger.error(f"Error: {e}")
-                    pass  # pass this temporarly to avoid error
         except Exception as e:
-            pass  # pass this temporarly to avoid error
+            logger.error(f"Error tracking IP view for issue {self.object.id}: {e}")
+            pass  # Continue loading the page even if view tracking fails
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -1651,6 +1651,17 @@ class IssueView(DetailView):
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
+
+        # Add CVE severity and suggested tip amount
+        if self.object.cve_id and self.object.cve_score:
+            context["cve_severity"] = self.object.get_cve_severity()
+            context["suggested_tip_amount"] = self.object.get_suggested_tip_amount()
+
+        # Add user score for the issue reporter
+        if self.object.user:
+            context["users_score"] = (
+                list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
+            )
 
         return context
 
