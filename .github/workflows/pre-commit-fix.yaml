@@ -48,7 +48,7 @@ jobs:
             echo "Changes detected by pre-commit."
             echo "changes_detected=true" >> $GITHUB_ENV
             # Capture the list of changed files for the summary
-            CHANGED_FILES=$(git status --porcelain | awk '{print $2}')
+            CHANGED_FILES=$(git diff --name-only HEAD)
             echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
             echo "$CHANGED_FILES" >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
@@ -87,7 +87,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const changedFiles = process.env.CHANGED_FILES || '';
-            const fileList = changedFiles.trim().split('\n').filter(f => f);
+            const trimmed = changedFiles.trim();
+            const fileList = trimmed ? trimmed.split('\n').filter(f => f) : [];
             const fileCount = fileList.length;
 
             let message = '## ✅ Pre-commit Fixes Applied\n\n';
