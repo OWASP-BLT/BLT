@@ -398,7 +398,7 @@ class OrganizationTests(TestCase):
             "organization_name": org_name,
             "organization_url": org_url,
             "support_email": "support@test-org.com",
-            "twitter_url": "https://twitter.com/testorg",
+            "twitter_url": "https://x.com/testorg",
             "facebook_url": "https://facebook.com/testorg",
             "email": "manager@test-org.com",
         }
@@ -412,7 +412,7 @@ class OrganizationTests(TestCase):
         self.assertIsNotNone(org)
         self.assertEqual(org.url, org_url)
         self.assertEqual(org.email, "support@test-org.com")
-        self.assertEqual(org.twitter, "https://twitter.com/testorg")
+        self.assertEqual(org.twitter, "https://x.com/testorg")
         self.assertEqual(org.facebook, "https://facebook.com/testorg")
         self.assertEqual(org.admin, self.user)
         self.assertTrue(org.is_active)
