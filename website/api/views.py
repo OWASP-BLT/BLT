@@ -1,5 +1,4 @@
 import hashlib
-import hmac
 import io
 import json
 import logging
@@ -1048,32 +1047,6 @@ class OwaspComplianceChecker(APIView):
         return Response(report, status=status.HTTP_200_OK)
 
 
-def hash_ip_address(ip_address, salt):
-    """
-    Hash an IP address using HMAC-SHA256 for privacy-preserving analytics.
-
-    This provides a one-way hash that:
-    - Anonymizes the IP address for GDPR/privacy compliance
-    - Allows consistent identification of the same IP across requests
-    - Prevents reverse lookup of the original IP address
-
-    Args:
-        ip_address (str): The client IP address to hash
-        salt (str): A unique salt per context (e.g., badge_path) for additional security
-
-    Returns:
-        str: Hexadecimal string representation of the HMAC hash (64 characters)
-    """
-    # Use Django's SECRET_KEY as the HMAC key
-    secret_key = settings.SECRET_KEY.encode("utf-8")
-
-    # Combine IP and salt for the message
-    message = f"{ip_address}:{salt}".encode("utf-8")
-
-    # Generate HMAC-SHA256 hash
-    return hmac.new(secret_key, message, hashlib.sha256).hexdigest()
-
-
 def generate_issue_badge_image(view_count, bounty_amount):
     """Generate PNG badge image with view count and bounty information."""
     # Image dimensions
@@ -1146,11 +1119,11 @@ def github_issue_badge(request, issue_number):
     - Current bounty amount (from GitHubIssue model)
 
     Security & Privacy:
-    - IP addresses are hashed using HMAC-SHA256 before storage for GDPR compliance
-    - The hash is salted with the badge path to prevent cross-context tracking
-    - Original IP addresses cannot be reverse-engineered from stored hashes
     - X-Forwarded-For header is used but can be spoofed; ensure trusted proxy configuration
     - Application must be behind a trusted reverse proxy (Nginx, AWS ALB, etc.)
+
+    Note: IP hashing with HMAC-SHA256 is available via hash_ip_address() function
+    but not currently applied. See future PR for IP privacy enhancements.
     """
     try:
         # Track badge view FIRST (before caching/counting) for accurate metrics
@@ -1159,14 +1132,11 @@ def github_issue_badge(request, issue_number):
         client_ip = get_client_ip(request)
         badge_path = f"/api/v1/badge/issue/{issue_number}/"
 
-        # Hash IP address for privacy compliance (GDPR/CCPA)
-        # Uses HMAC-SHA256 with Django SECRET_KEY and badge_path as salt
-        hashed_ip = hash_ip_address(client_ip, badge_path)
-
         # Update or create IP log entry atomically
-        # NOTE: IP is now stored as an irreversible hash for privacy protection
+        # NOTE: IP addresses are currently stored in plain text
+        # TODO: Future PR will implement IP hashing for privacy protection (GDPR/CCPA)
         ip_log, created = IP.objects.get_or_create(
-            address=hashed_ip,
+            address=client_ip,
             path=badge_path,
             defaults={
                 "method": "GET",
