@@ -553,6 +553,12 @@ class Issue(models.Model):
         (7, "Server Down"),
         (8, "Trademark Squatting"),
     )
+
+    GITHUB_STATE_CHOICES = [
+        ("open", "Open"),
+        ("closed", "Closed"),
+    ]
+
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
     hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
@@ -572,6 +578,18 @@ class Issue(models.Model):
     closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
+    github_comment_count = models.IntegerField(blank=True, default=0)
+    github_state = models.CharField(
+        max_length=10,
+        choices=[("open", "Open"), ("closed", "Closed")],
+        blank=True,
+        null=True,
+        help_text="Current state of the GitHub issue",
+    )
+    github_fetch_status = models.BooleanField(
+        default=False,
+        help_text="Indicates if fetching GitHub data failed",
+    )
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
@@ -639,6 +657,68 @@ class Issue(models.Model):
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
             logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
+
+    def fetch_github_data(self):
+        """
+        Fetches GitHub issue state and comment count from GitHub API.
+        Updates github_state, github_comment_count, and github_fetch_status fields.
+        """
+        if not self.github_url:
+            return
+
+        try:
+            # Parse URL properly to handle query strings and fragments
+            parsed_url = urlparse(self.github_url)
+
+            if not parsed_url.netloc.endswith(".github.com") and parsed_url.netloc != "github.com":
+                self.github_state = None
+                self.github_comment_count = 0
+                self.github_fetch_status = True
+                self.save(update_fields=["github_state", "github_comment_count", "github_fetch_status"])
+                return
+
+            path_parts = parsed_url.path.strip("/").split("/")
+            if len(path_parts) < 4 or path_parts[2] != "issues":
+                self.github_state = None
+                self.github_comment_count = 0
+                self.github_fetch_status = True
+                self.save(update_fields=["github_state", "github_comment_count", "github_fetch_status"])
+                return
+
+            owner = path_parts[0]
+            repo = path_parts[1]
+            issue_number = path_parts[3]
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
+
+            headers = {"Accept": "application/vnd.github.v3+json"}
+
+            from django.conf import settings
+
+            # Use Bearer format for modern GitHub tokens (OAuth, fine-grained PATs, JWTs)
+            if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN != "blank":
+                headers["Authorization"] = f"Bearer {settings.GITHUB_TOKEN}"
+
+            response = requests.get(api_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            # Map GitHub state to our choices - normalize to 'open' or 'closed'
+            raw_state = data.get("state", "")
+            if raw_state == "open":
+                self.github_state = "open"
+            else:
+                # Treat any other state (closed, merged, etc.) as closed
+                self.github_state = "closed"
+
+            self.github_comment_count = data.get("comments", 0)
+            self.github_fetch_status = False
+            self.save(update_fields=["github_state", "github_comment_count", "github_fetch_status"])
+
+        except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+            logger.warning(f"Error fetching GitHub data for issue {self.id}: {e}")
+            self.github_fetch_status = True
+            self.save(update_fields=["github_fetch_status"])
 
     class Meta:
         ordering = ["-created"]
@@ -1010,7 +1090,7 @@ class IP(models.Model):
     address = models.CharField(max_length=39, null=True, blank=True)
     user = models.CharField(max_length=150, null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
-    created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     agent = models.TextField(null=True, blank=True)
     count = models.BigIntegerField(default=1)
     path = models.CharField(max_length=255, null=True, blank=True)
