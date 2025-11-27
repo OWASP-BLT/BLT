@@ -1338,10 +1338,12 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
         if severity in allowed_severities:
             queryset = queryset.filter(severity=severity)
 
-        if status in allowed_severities:
+        if status in allowed_statuses:
             queryset = queryset.filter(status=status)
 
         return queryset
+
+
 class CheckDuplicateBugApiView(APIView):
     """
     API endpoint to check for duplicate bug reports before submission.
