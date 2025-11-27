@@ -1218,6 +1218,7 @@ class RecommendationRequestAdmin(admin.ModelAdmin):
     raw_id_fields = ("from_user", "to_user")
     readonly_fields = ("created_at", "responded_at", "completed_at")
 
+
 @admin.register(Recommendation)
 class RecommendationAdmin(admin.ModelAdmin):
     list_display = (

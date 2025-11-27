@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0259_alter_recommendation_id_alter_recommendationskill_id"),
     ]

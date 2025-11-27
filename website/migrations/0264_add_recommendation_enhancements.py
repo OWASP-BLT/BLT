@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0263_remove_unique_constraint_for_testing"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

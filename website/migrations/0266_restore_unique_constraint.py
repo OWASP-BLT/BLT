@@ -5,7 +5,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0265_alter_recommendationrequest_status"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
