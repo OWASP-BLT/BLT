@@ -181,7 +181,7 @@ class GitHubIssueForm(forms.Form):
                 "placeholder": "https://github.com/owner/repo/issues/123",
             }
         ),
-        help_text=("Enter the full URL to the GitHub issue with a bounty label " "(containing a $ sign)"),
+        help_text=("Enter the full URL to the GitHub issue with a bounty label (containing a $ sign)"),
     )
 
     def clean_github_url(self):
@@ -277,7 +277,7 @@ class HackathonForm(forms.ModelForm):
                 attrs={
                     "rows": 4,
                     "class": base_input_class,
-                    "placeholder": ("Provide information about sponsorship opportunities " "for this hackathon"),
+                    "placeholder": ("Provide information about sponsorship opportunities for this hackathon"),
                 }
             ),
             "sponsor_link": forms.URLInput(
@@ -312,7 +312,7 @@ class HackathonForm(forms.ModelForm):
             ),
             "registration_open": forms.CheckboxInput(
                 attrs={
-                    "class": ("h-5 w-5 text-[#e74c3c] focus:ring-[#e74c3c] " "border-gray-300 rounded"),
+                    "class": ("h-5 w-5 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"),
                 }
             ),
         }
@@ -488,7 +488,7 @@ class JobForm(forms.ModelForm):
 
         if not any([application_email, application_url, application_instructions]):
             raise forms.ValidationError(
-                "Please provide at least one way for candidates to apply " "(email, URL, or instructions)."
+                "Please provide at least one way for candidates to apply (email, URL, or instructions)."
             )
 
         return cleaned_data
@@ -612,11 +612,12 @@ class RecommendationForm(forms.ModelForm):
     """
     Form for creating/editing user recommendations.
     """
+
     skills_endorsed = forms.ModelMultipleChoiceField(
         queryset=RecommendationSkill.objects.none(),  # Will be set in __init__
         required=False,
         widget=forms.CheckboxSelectMultiple(),
-        help_text="Select up to 5 skills to endorse (optional)"
+        help_text="Select up to 5 skills to endorse (optional)",
     )
 
     class Meta:
@@ -651,7 +652,7 @@ class RecommendationForm(forms.ModelForm):
         self.fields["relationship"].required = True
         self.fields["relationship"].empty_label = "None selected"
         self.fields["relationship"].initial = None
-        
+
         # Set up skills_endorsed field (not a model field, handled separately)
         try:
             skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
@@ -662,7 +663,7 @@ class RecommendationForm(forms.ModelForm):
                 if category not in skills_by_category:
                     skills_by_category[category] = []
                 skills_by_category[category].append((skill.name, skill.name))
-            
+
             # Create choices with category grouping
             choices = []
             for category in sorted(skills_by_category.keys()):
@@ -670,17 +671,19 @@ class RecommendationForm(forms.ModelForm):
                 choices.extend(skills_by_category[category])
         except Exception:
             choices = []
-        
+
         self.fields["skills_endorsed"] = forms.MultipleChoiceField(
             choices=choices,
             required=False,
-            widget=forms.SelectMultiple(attrs={
-                "class": "form-control w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white",
-                "multiple": "multiple",
-                "size": "8",
-                "style": "min-height: 180px;"
-            }),
-            help_text="Select up to 5 skills to endorse (optional)"
+            widget=forms.SelectMultiple(
+                attrs={
+                    "class": "form-control w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white",
+                    "multiple": "multiple",
+                    "size": "8",
+                    "style": "min-height: 180px;",
+                }
+            ),
+            help_text="Select up to 5 skills to endorse (optional)",
         )
 
     def clean_recommendation_text(self):
@@ -720,6 +723,7 @@ class RecommendationRequestForm(forms.ModelForm):
     Form for requesting a recommendation from another user.
     NEW FORM - additive only.
     """
+
     class Meta:
         model = RecommendationRequest
         fields = ["message"]
@@ -750,6 +754,7 @@ class RecommendationBlurbForm(forms.ModelForm):
     Form for editing the recommendation blurb/summary on profile.
     NEW FORM - additive only, doesn't modify existing UserProfileForm.
     """
+
     class Meta:
         model = UserProfile
         fields = ["recommendation_blurb"]

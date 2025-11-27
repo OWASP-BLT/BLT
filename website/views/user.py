@@ -223,7 +223,7 @@ def profile_edit(request):
 
                 messages.info(
                     request,
-                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
+                    "A verification link has been sent to your new email. Please verify to complete the update.",
                 )
                 return redirect("profile", slug=request.user.username)
 
@@ -499,14 +499,18 @@ class UserProfileDetailView(DetailView):
         # Recommendations - only show approved and visible recommendations
         # Show highlighted recommendations first, then by date
         # Use single query with annotation for count to avoid duplicate queries
-        recommendations_qs = Recommendation.objects.filter(
-            to_user=user, is_approved=True, is_visible=True
-        ).select_related("from_user", "from_user__userprofile").order_by("-is_highlighted", "-created_at")
+        recommendations_qs = (
+            Recommendation.objects.filter(to_user=user, is_approved=True, is_visible=True)
+            .select_related("from_user", "from_user__userprofile")
+            .order_by("-is_highlighted", "-created_at")
+        )
         context["recommendations"] = recommendations_qs[:10]
         context["recommendations_count"] = recommendations_qs.count()
-        
+
         # Recommendation blurb (NEW - additive only)
-        context["recommendation_blurb"] = user.userprofile.recommendation_blurb if hasattr(user, "userprofile") else None
+        context["recommendation_blurb"] = (
+            user.userprofile.recommendation_blurb if hasattr(user, "userprofile") else None
+        )
 
         # Check if current user has already recommended this user
         if self.request.user.is_authenticated:
@@ -515,41 +519,45 @@ class UserProfileDetailView(DetailView):
             ).exists()
             # Get pending recommendations for the profile owner
             if self.request.user == user:
-                context["pending_recommendations"] = Recommendation.objects.filter(
-                    to_user=user, is_approved=False
-                ).select_related("from_user", "from_user__userprofile").order_by("-created_at")
+                context["pending_recommendations"] = (
+                    Recommendation.objects.filter(to_user=user, is_approved=False)
+                    .select_related("from_user", "from_user__userprofile")
+                    .order_by("-created_at")
+                )
                 # Get given recommendations for tabs (always set, even if 0)
                 # Include both approved and pending recommendations
-                given_recommendations_qs = Recommendation.objects.filter(
-                    from_user=self.request.user
-                ).select_related("to_user", "to_user__userprofile").order_by("-created_at")
+                given_recommendations_qs = (
+                    Recommendation.objects.filter(from_user=self.request.user)
+                    .select_related("to_user", "to_user__userprofile")
+                    .order_by("-created_at")
+                )
                 context["given_recommendations"] = given_recommendations_qs[:10]
                 context["given_recommendations_count"] = given_recommendations_qs.filter(
                     is_approved=True, is_visible=True
                 ).count()
                 # Separate pending recommendations given by user
-                context["given_pending_recommendations"] = given_recommendations_qs.filter(
-                    is_approved=False
-                )[:10]
-                context["given_pending_count"] = given_recommendations_qs.filter(
-                    is_approved=False
-                ).count()
-                
+                context["given_pending_recommendations"] = given_recommendations_qs.filter(is_approved=False)[:10]
+                context["given_pending_count"] = given_recommendations_qs.filter(is_approved=False).count()
+
                 # Get recommendation requests sent by user (NEW - additive only)
-                sent_requests_qs = RecommendationRequest.objects.filter(
-                    from_user=self.request.user
-                ).select_related("to_user", "to_user__userprofile").order_by("-created_at")
+                sent_requests_qs = (
+                    RecommendationRequest.objects.filter(from_user=self.request.user)
+                    .select_related("to_user", "to_user__userprofile")
+                    .order_by("-created_at")
+                )
                 context["sent_requests"] = sent_requests_qs
                 context["sent_requests_pending"] = sent_requests_qs.filter(status="pending")
                 context["sent_requests_pending_count"] = sent_requests_qs.filter(status="pending").count()
                 context["sent_requests_accepted"] = sent_requests_qs.filter(status="accepted")
                 context["sent_requests_declined"] = sent_requests_qs.filter(status="declined")
                 context["sent_requests_completed"] = sent_requests_qs.filter(status="completed")
-                
+
                 # Get recommendation requests received by user (NEW - additive only)
-                received_requests_qs = RecommendationRequest.objects.filter(
-                    to_user=user, status="pending"
-                ).select_related("from_user", "from_user__userprofile").order_by("-created_at")
+                received_requests_qs = (
+                    RecommendationRequest.objects.filter(to_user=user, status="pending")
+                    .select_related("from_user", "from_user__userprofile")
+                    .order_by("-created_at")
+                )
                 context["received_requests"] = received_requests_qs
                 context["received_requests_count"] = received_requests_qs.count()
             else:
@@ -2010,7 +2018,9 @@ def add_recommendation(request, username):
                         from_user=request.user, created_at__date=today
                     ).count()
                     if today_recommendations_count >= 5:
-                        messages.error(request, "You have reached the daily limit of 5 recommendations. Please try again tomorrow.")
+                        messages.error(
+                            request, "You have reached the daily limit of 5 recommendations. Please try again tomorrow."
+                        )
                         return redirect("profile", slug=username)
 
                     # Create recommendation (unique constraint will catch any race condition)
@@ -2033,7 +2043,7 @@ def add_recommendation(request, username):
                             {"form": form, "to_user": to_user},
                         )
                     recommendation.save()
-                    
+
                     # If this recommendation was written in response to a request, mark request as completed
                     # Check if there's a pending/accepted request from to_user to request.user
                     rec_request = RecommendationRequest.objects.filter(
@@ -2105,7 +2115,10 @@ def approve_recommendation(request, recommendation_id):
             recommendation.is_approved = True
             recommendation.is_visible = True
             recommendation.save(update_fields=["is_approved", "is_visible", "updated_at"])
-            messages.success(request, "Recommendation approved and is now visible on your profile. It has been solidified and cannot be modified.")
+            messages.success(
+                request,
+                "Recommendation approved and is now visible on your profile. It has been solidified and cannot be modified.",
+            )
         elif action == "delete":
             # CRITICAL: Can only delete if NOT approved (pending recommendations)
             if recommendation.is_approved:
@@ -2133,17 +2146,17 @@ def delete_recommendation(request, recommendation_id):
         if recommendation.is_approved:
             messages.error(request, "Cannot delete an approved recommendation. It has been solidified.")
             return redirect("profile", slug=recommendation.to_user.username)
-        
+
         # Only the recommender can delete pending recommendations (cancel before approval)
         if request.user != recommendation.from_user:
             messages.error(request, "You don't have permission to delete this recommendation.")
             return redirect("profile", slug=request.user.username)
-        
+
         # Additional safety check: ensure it's not approved
         if recommendation.is_approved:
             messages.error(request, "Cannot delete an approved recommendation.")
             return redirect("profile", slug=recommendation.to_user.username)
-        
+
         # Delete the recommendation
         recommendation.delete()
         messages.success(request, "Recommendation cancelled successfully.")
@@ -2167,9 +2180,9 @@ def list_recommendations(request, username):
             "from_user", "from_user__userprofile"
         )
     else:
-        recommendations = Recommendation.objects.filter(
-            to_user=user, is_approved=True, is_visible=True
-        ).select_related("from_user", "from_user__userprofile")
+        recommendations = Recommendation.objects.filter(to_user=user, is_approved=True, is_visible=True).select_related(
+            "from_user", "from_user__userprofile"
+        )
 
     recommendations_data = [
         {
@@ -2217,18 +2230,21 @@ def request_recommendation(request, username):
                         from_user=request.user, created_at__date=today
                     ).count()
                     if today_requests_count >= 10:
-                        messages.error(request, "You have reached the daily limit of 10 recommendation requests. Please try again tomorrow.")
+                        messages.error(
+                            request,
+                            "You have reached the daily limit of 10 recommendation requests. Please try again tomorrow.",
+                        )
                         return redirect("profile", slug=username)
-                    
+
                     # Check for existing pending request
                     existing_request = RecommendationRequest.objects.filter(
                         from_user=request.user, to_user=to_user, status="pending"
                     ).first()
-                    
+
                     if existing_request:
                         messages.warning(request, "You already have a pending request with this user.")
                         return redirect("profile", slug=username)
-                    
+
                     # Check for existing completed request (can't request again if already completed)
                     existing_completed = RecommendationRequest.objects.filter(
                         from_user=request.user, to_user=to_user, status="completed"
@@ -2286,49 +2302,51 @@ def respond_to_request(request, request_id):
 
     if request.method == "POST":
         action = request.POST.get("action")  # "accept", "decline", or "cancel"
-        
+
         # Validate action
         if action not in ["accept", "decline", "cancel"]:
             messages.error(request, "Invalid action.")
             return redirect("profile", slug=request.user.username)
-        
+
         # CANCEL: Only sender can cancel, and only if pending and not completed
         if action == "cancel":
             if request.user != rec_request.from_user:
                 messages.error(request, "You don't have permission to cancel this request.")
                 return redirect("profile", slug=request.user.username)
-            
+
             # Can only cancel if pending and not completed
             if rec_request.status != "pending":
                 messages.error(request, "You can only cancel pending requests.")
                 return redirect("profile", slug=request.user.username)
-            
+
             # Check if recommendation was already written (completed)
             if Recommendation.objects.filter(request=rec_request, is_approved=True).exists():
                 messages.error(request, "Cannot cancel request after recommendation has been approved.")
                 return redirect("profile", slug=request.user.username)
-            
+
             # Cancel the request
             rec_request.status = "cancelled"
             rec_request.responded_at = timezone.now()
             rec_request.save(update_fields=["status", "responded_at"])
             messages.success(request, "Request cancelled successfully.")
             return redirect("profile", slug=request.user.username)
-        
+
         # ACCEPT/DECLINE: Only recipient can respond
         if request.user != rec_request.to_user:
             messages.error(request, "You don't have permission to respond to this request.")
             return redirect("profile", slug=request.user.username)
-        
+
         # Can only accept/decline if pending
         if rec_request.status != "pending":
             messages.error(request, "This request has already been responded to.")
             return redirect("profile", slug=request.user.username)
-        
+
         if action == "accept":
             rec_request.accept()
             # Redirect to recommendation form
-            messages.success(request, f"Request accepted! Please write a recommendation for {rec_request.from_user.username}.")
+            messages.success(
+                request, f"Request accepted! Please write a recommendation for {rec_request.from_user.username}."
+            )
             return redirect("add_recommendation", username=rec_request.from_user.username)
         elif action == "decline":
             rec_request.decline()
@@ -2412,7 +2430,7 @@ def highlight_recommendation(request, recommendation_id):
             highlighted_count = Recommendation.objects.filter(
                 to_user=request.user, is_highlighted=True, is_approved=True, is_visible=True
             ).count()
-            
+
             if highlighted_count >= 3:
                 messages.error(request, "You can only highlight up to 3 recommendations.")
             else:

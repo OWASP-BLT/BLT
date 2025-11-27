@@ -10,11 +10,9 @@
             <h1 class="text-2xl font-bold mb-6 text-black/90 dark:text-white/90">
                 {% trans "Write a Recommendation for" %} @{{ to_user.username }}
             </h1>
-            
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 <span class="text-red-500">*</span> {% trans "indicates required fields" %}
             </p>
-            
             {% if messages %}
                 {% for message in messages %}
                     <div class="mb-4 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
@@ -22,22 +20,20 @@
                     </div>
                 {% endfor %}
             {% endif %}
-
-            <form method="post" action="{% url 'add_recommendation' to_user.username %}">
+            <form method="post"
+                  action="{% url 'add_recommendation' to_user.username %}">
                 {% csrf_token %}
-                
                 <div class="mb-4">
-                    <label for="{{ form.relationship.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label for="{{ form.relationship.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {% trans "Relationship" %} <span class="text-red-500">*</span>
                     </label>
                     {{ form.relationship }}
-                    {% if form.relationship.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.relationship.errors.0 }}</p>
-                    {% endif %}
+                    {% if form.relationship.errors %}<p class="text-red-500 text-sm mt-1">{{ form.relationship.errors.0 }}</p>{% endif %}
                 </div>
-
                 <div class="mb-4">
-                    <label for="{{ form.skills_endorsed.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label for="{{ form.skills_endorsed.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {% trans "Skills to Endorse" %} <span class="text-gray-400 text-xs">({% trans "Select up to 5, optional" %})</span>
                     </label>
                     <div class="relative">
@@ -49,18 +45,19 @@
                     {% if form.skills_endorsed.errors %}
                         <p class="text-red-500 text-sm mt-1">{{ form.skills_endorsed.errors.0 }}</p>
                     {% endif %}
-                    <div id="selected-skills-count" class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    <div id="selected-skills-count"
+                         class="text-sm text-gray-600 dark:text-gray-400 mt-2">
                         <span id="skills-count">0</span> / 5 {% trans "skills selected" %}
                     </div>
                 </div>
-
                 <div class="mb-4">
-                    <label for="{{ form.recommendation_text.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label for="{{ form.recommendation_text.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {% trans "Your Recommendation" %} <span class="text-red-500" title="Required field">*</span>
                     </label>
                     {{ form.recommendation_text }}
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        <span id="char-count">0</span> / 1000 {% trans "characters" %} 
+                        <span id="char-count">0</span> / 1000 {% trans "characters" %}
                         <span class="text-red-500" id="char-warning"></span>
                         <br>
                         <small>{% trans "Minimum 200 characters required" %}</small>
@@ -69,7 +66,6 @@
                         <p class="text-red-500 text-sm mt-1">{{ form.recommendation_text.errors.0 }}</p>
                     {% endif %}
                 </div>
-
                 <div class="flex gap-4 justify-end">
                     <a href="{% url 'profile' slug=to_user.username %}"
                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -83,7 +79,6 @@
             </form>
         </div>
     </div>
-
     <style>
         /* Style the placeholder option in relationship dropdown */
         #{{ form.relationship.id_for_label }} option:first-child {
@@ -204,4 +199,3 @@
         }
     </script>
 {% endblock content %}
-

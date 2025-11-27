@@ -1,8 +1,8 @@
 # Generated manually for recommendations feature
 
+import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
-import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
@@ -55,15 +55,21 @@ class Migration(migrations.Migration):
                 ("recommendation_text", models.TextField(help_text="The recommendation text (200-1000 characters)")),
                 (
                     "skills_endorsed",
-                    models.JSONField(blank=True, default=list, help_text="List of skill names endorsed in this recommendation"),
+                    models.JSONField(
+                        blank=True, default=list, help_text="List of skill names endorsed in this recommendation"
+                    ),
                 ),
                 (
                     "is_visible",
-                    models.BooleanField(default=True, help_text="Whether this recommendation is visible on the profile"),
+                    models.BooleanField(
+                        default=True, help_text="Whether this recommendation is visible on the profile"
+                    ),
                 ),
                 (
                     "is_approved",
-                    models.BooleanField(default=False, help_text="Whether the recipient has approved this recommendation"),
+                    models.BooleanField(
+                        default=False, help_text="Whether the recipient has approved this recommendation"
+                    ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -95,13 +101,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="recommendation",
-            index=models.Index(
-                fields=["to_user", "is_approved", "is_visible"], name="rec_to_user_app_vis_idx"
-            ),
+            index=models.Index(fields=["to_user", "is_approved", "is_visible"], name="rec_to_user_app_vis_idx"),
         ),
         migrations.AddIndex(
             model_name="recommendation",
             index=models.Index(fields=["from_user"], name="rec_from_user_idx"),
         ),
     ]
-

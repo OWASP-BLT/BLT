@@ -339,6 +339,11 @@ from website.views.teams import (
     leave_team,
     search_users,
 )
+from website.views.user import edit_recommendation  # NEW - additive only
+from website.views.user import edit_recommendation_blurb  # NEW - additive only
+from website.views.user import highlight_recommendation  # NEW - additive only
+from website.views.user import request_recommendation  # NEW - additive only
+from website.views.user import respond_to_request  # NEW - additive only
 from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
@@ -351,11 +356,6 @@ from website.views.user import (
     approve_recommendation,
     assign_badge,
     badge_user_list,
-    edit_recommendation,  # NEW - additive only
-    edit_recommendation_blurb,  # NEW - additive only
-    highlight_recommendation,  # NEW - additive only
-    request_recommendation,  # NEW - additive only
-    respond_to_request,  # NEW - additive only
     contributor_stats_view,
     contributors,
     contributors_view,
@@ -615,7 +615,9 @@ urlpatterns = [
     path("recommendations/<int:recommendation_id>/approve/", approve_recommendation, name="approve_recommendation"),
     path("recommendations/<int:recommendation_id>/delete/", delete_recommendation, name="delete_recommendation"),
     path("recommendations/<int:recommendation_id>/edit/", edit_recommendation, name="edit_recommendation"),  # NEW
-    path("recommendations/<int:recommendation_id>/highlight/", highlight_recommendation, name="highlight_recommendation"),  # NEW
+    path(
+        "recommendations/<int:recommendation_id>/highlight/", highlight_recommendation, name="highlight_recommendation"
+    ),  # NEW
     path("recommendations/request/<str:username>/", request_recommendation, name="request_recommendation"),  # NEW
     path("recommendations/request/<int:request_id>/respond/", respond_to_request, name="respond_to_request"),  # NEW
     path("recommendations/blurb/edit/", edit_recommendation_blurb, name="edit_recommendation_blurb"),  # NEW

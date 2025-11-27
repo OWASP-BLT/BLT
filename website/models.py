@@ -961,7 +961,7 @@ class UserProfile(models.Model):
         max_length=500,
         blank=True,
         null=True,
-        help_text="Short summary/about section for recommendations (max 500 characters). NEW FIELD - additive only."
+        help_text="Short summary/about section for recommendations (max 500 characters). NEW FIELD - additive only.",
     )
 
     def check_team_membership(self):
@@ -3657,6 +3657,7 @@ class RecommendationSkill(models.Model):
     """
     Model for structured skill endorsements that can be used in recommendations.
     """
+
     SKILL_CATEGORY_CHOICES = [
         ("technical", "Technical"),
         ("soft_skills", "Soft Skills"),
@@ -3681,6 +3682,7 @@ class Recommendation(models.Model):
     Model for user recommendations. Users can recommend other users on their profiles.
     Recommendations require approval from the recipient before being displayed.
     """
+
     RELATIONSHIP_CHOICES = [
         ("colleague", "Colleague"),
         ("mentor", "Mentor"),
@@ -3693,38 +3695,22 @@ class Recommendation(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="recommendations_given",
-        help_text="User who wrote the recommendation"
+        help_text="User who wrote the recommendation",
     )
     to_user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="recommendations_received",
-        help_text="User being recommended"
+        User, on_delete=models.CASCADE, related_name="recommendations_received", help_text="User being recommended"
     )
     relationship = models.CharField(
-        max_length=20,
-        choices=RELATIONSHIP_CHOICES,
-        help_text="Relationship between recommender and recipient"
+        max_length=20, choices=RELATIONSHIP_CHOICES, help_text="Relationship between recommender and recipient"
     )
-    recommendation_text = models.TextField(
-        help_text="The recommendation text (200-1000 characters)"
-    )
+    recommendation_text = models.TextField(help_text="The recommendation text (200-1000 characters)")
     skills_endorsed = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="List of skill names endorsed in this recommendation"
+        default=list, blank=True, help_text="List of skill names endorsed in this recommendation"
     )
-    is_visible = models.BooleanField(
-        default=True,
-        help_text="Whether this recommendation is visible on the profile"
-    )
-    is_approved = models.BooleanField(
-        default=False,
-        help_text="Whether the recipient has approved this recommendation"
-    )
+    is_visible = models.BooleanField(default=True, help_text="Whether this recommendation is visible on the profile")
+    is_approved = models.BooleanField(default=False, help_text="Whether the recipient has approved this recommendation")
     is_highlighted = models.BooleanField(
-        default=False,
-        help_text="Whether this recommendation is highlighted/pinned on the profile"
+        default=False, help_text="Whether this recommendation is highlighted/pinned on the profile"
     )
     request = models.ForeignKey(
         "RecommendationRequest",
@@ -3732,7 +3718,7 @@ class Recommendation(models.Model):
         null=True,
         blank=True,
         related_name="recommendation",
-        help_text="The recommendation request that led to this recommendation (if any)"
+        help_text="The recommendation request that led to this recommendation (if any)",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -3753,7 +3739,7 @@ class Recommendation(models.Model):
     def clean(self):
         """Validate recommendation text length"""
         from django.core.exceptions import ValidationError
-        
+
         # Validate text length only (from_user/to_user validation happens in view)
         if self.recommendation_text:
             if len(self.recommendation_text) < 200:
@@ -3767,9 +3753,9 @@ class Recommendation(models.Model):
         # Check using _state to avoid triggering database queries
         if not kwargs.get("skip_validation", False) and self.recommendation_text:
             # Only validate if both foreign keys are set (check IDs, not objects)
-            from_user_set = hasattr(self, 'from_user_id') and self.from_user_id is not None
-            to_user_set = hasattr(self, 'to_user_id') and self.to_user_id is not None
-            
+            from_user_set = hasattr(self, "from_user_id") and self.from_user_id is not None
+            to_user_set = hasattr(self, "to_user_id") and self.to_user_id is not None
+
             if from_user_set and to_user_set:
                 try:
                     self.full_clean()
@@ -3784,6 +3770,7 @@ class RecommendationRequest(models.Model):
     Model for recommendation requests. Users can request recommendations from others.
     This is a NEW model - additive only, doesn't modify existing code.
     """
+
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("accepted", "Accepted"),
@@ -3796,25 +3783,17 @@ class RecommendationRequest(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="recommendation_requests_sent",
-        help_text="User requesting the recommendation"
+        help_text="User requesting the recommendation",
     )
     to_user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="recommendation_requests_received",
-        help_text="User being asked to write the recommendation"
+        help_text="User being asked to write the recommendation",
     )
-    message = models.TextField(
-        blank=True,
-        null=True,
-        max_length=500,
-        help_text="Optional message from requester"
-    )
+    message = models.TextField(blank=True, null=True, max_length=500, help_text="Optional message from requester")
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="pending",
-        help_text="Status of the recommendation request"
+        max_length=20, choices=STATUS_CHOICES, default="pending", help_text="Status of the recommendation request"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     responded_at = models.DateTimeField(null=True, blank=True)
