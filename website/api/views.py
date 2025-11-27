@@ -1519,3 +1519,101 @@ class FindSimilarBugsApiView(APIView):
                 {"error": "An error occurred while searching for similar bugs"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class ChatbotReportIssueView(APIView):
+    """
+    API endpoint for reporting issues via the chatbot.
+    Supports anonymous issue reporting with optional screenshot.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        import base64
+        import uuid
+        from urllib.parse import urlparse
+
+        from django.core.files.base import ContentFile
+
+        url = request.data.get("url", "")
+        description = request.data.get("description", "")
+        screenshot_data = request.data.get("screenshot", "")
+        anonymous = request.data.get("anonymous", False)
+
+        # Validate required fields
+        if not description:
+            return Response({"success": False, "error": "Description is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not url:
+            return Response({"success": False, "error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Clean and validate URL
+            if not url.startswith(("http://", "https://")):
+                url = "https://" + url
+
+            parsed_url = urlparse(url)
+            clean_url = url.replace("https://", "").replace("http://", "").replace("www.", "")
+
+            # Find or create domain
+            domain_name = parsed_url.netloc.replace("www.", "").lower()
+            domain = Domain.objects.filter(Q(name__iexact=domain_name) | Q(url__icontains=domain_name)).first()
+
+            # Create issue
+            issue = Issue(
+                url=clean_url,
+                description=description[:500],  # Limit description length
+                domain=domain,
+                label=0,  # General
+            )
+
+            # Set user if authenticated and not anonymous
+            if request.user.is_authenticated and not anonymous:
+                issue.user = request.user
+            else:
+                # Get IP for anonymous reports
+                x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(",")[0].strip()
+                else:
+                    ip = request.META.get("REMOTE_ADDR")
+                issue.reporter_ip_address = ip
+
+            # Handle screenshot if provided
+            if screenshot_data and screenshot_data.startswith("data:image"):
+                try:
+                    # Parse base64 image data
+                    format_info, base64_data = screenshot_data.split(";base64,")
+                    image_data = base64.b64decode(base64_data)
+
+                    # Generate unique filename
+                    file_name = f"chatbot_screenshot_{uuid.uuid4().hex[:12]}.png"
+
+                    # Save screenshot
+                    issue.screenshot.save(file_name, ContentFile(image_data), save=False)
+                except Exception as e:
+                    logger.warning(f"Failed to process screenshot: {e}")
+                    # Continue without screenshot
+
+            issue.save()
+
+            # Return success response
+            issue_url = f"/issue/{issue.id}/"
+
+            return Response(
+                {
+                    "success": True,
+                    "issue_id": issue.id,
+                    "issue_url": issue_url,
+                    "message": "Issue reported successfully",
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            logger.error(f"Error creating chatbot issue report: {e}", exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to create issue report"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

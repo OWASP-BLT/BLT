@@ -920,7 +920,7 @@
 <!-- Chatbot -->
 <div class="bg-gray-100 dark:bg-gray-900 chat-Zindex z-[9999] transition-colors">
     <div id="chatbot"
-         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[520px] overflow-hidden hidden transition-colors">
+         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[600px] overflow-hidden hidden transition-colors">
         <div class="bg-[#e74c3c] dark:bg-[#e74c3c] text-white p-3 rounded-t-lg flex justify-between items-center">
             <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
             <button id="closeChatbot" class="text-white text-2xl">×</button>
@@ -930,7 +930,7 @@
                 <p class="text-base">We respond instantly!</p>
             </div>
             <div id="chat-log"
-                 class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg max-h-[295px] h-[295px] overflow-y-auto relative transition-colors">
+                 class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg max-h-[250px] h-[250px] overflow-y-auto relative transition-colors">
                 <div id="loading"
                      class="hidden absolute bottom-1 left-1 flex items-center justify-center bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg">
                     <svg class="animate-spin h-5 w-5 text-red-600"
@@ -944,22 +944,98 @@
                     <span class="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
                 </div>
             </div>
-            <!-- Quick Command Buttons -->
-            <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
-                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
-                        data-command="/help">/help</button>
-                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
-                        data-command="/stats">/stats</button>
-                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
-                        data-command="/bid">/bid</button>
-                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
-                        data-command="/bacon">/bacon</button>
+            <!-- Agents Section -->
+            <div id="agents-section" class="mb-2 mt-2">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Agents</p>
+                <div id="agent-buttons" class="flex flex-wrap gap-2">
+                    <button class="agent-btn bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5"
+                            data-agent="help"
+                            title="Help Agent">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Help</span>
+                    </button>
+                    <button class="agent-btn bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5"
+                            data-agent="stats"
+                            title="Stats Agent">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Stats</span>
+                    </button>
+                    <button class="agent-btn bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5"
+                            data-agent="bid"
+                            title="Bid Agent">
+                        <i class="fas fa-gavel"></i>
+                        <span>Bid</span>
+                    </button>
+                    <button class="agent-btn bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5"
+                            data-agent="bacon"
+                            title="Bacon Agent">
+                        <i class="fas fa-coins"></i>
+                        <span>Bacon</span>
+                    </button>
+                    <button class="agent-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5"
+                            data-agent="report"
+                            title="Report Issue Agent">
+                        <i class="fas fa-bug"></i>
+                        <span>Report Issue</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Report Issue Form (hidden by default) -->
+            <div id="report-issue-form"
+                 class="hidden mb-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                        <i class="fas fa-bug mr-1 text-red-500"></i> Report Issue
+                    </h4>
+                    <button id="close-report-form"
+                            class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-2">
+                    <input type="url"
+                           id="report-url"
+                           placeholder="URL (current page if empty)"
+                           class="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                    <textarea id="report-description"
+                              placeholder="Describe the issue..."
+                              class="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 resize-none"
+                              rows="2"></textarea>
+                    <div class="flex items-center gap-2">
+                        <label class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                            <input type="checkbox"
+                                   id="report-anonymous"
+                                   class="rounded border-gray-300 text-red-500 focus:ring-red-500">
+                            <span>Report anonymously</span>
+                        </label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="capture-screenshot-btn"
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center justify-center gap-1.5">
+                            <i class="fas fa-camera"></i>
+                            <span>Capture Screenshot</span>
+                        </button>
+                        <button id="submit-report-btn"
+                                class="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center justify-center gap-1.5">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Submit</span>
+                        </button>
+                    </div>
+                    <div id="screenshot-preview" class="hidden">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Screenshot captured:</p>
+                        <img id="screenshot-img"
+                             class="w-full h-20 object-cover rounded border border-gray-300 dark:border-gray-600"
+                             alt="Screenshot preview"
+                             width="350"
+                             height="80">
+                    </div>
+                </div>
             </div>
             <div class="flex flex-row gap-4 items-center mt-1 w-full"
                  id="chat-message-input-container">
                 <input id="chat-message-input"
                        type="text"
-                       class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 placeholder:text-base rounded-lg"
+                       class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 placeholder:text-base rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
                        placeholder="Enter your message...">
                 <div class="flex flex-row gap-2 items-center shrink-0">
                     <button id="chat-message-submit"
@@ -1103,48 +1179,206 @@
             const chatClear = document.querySelector('#chat-message-clear');
             const chatClose = document.querySelector('#closeChatbot');
             const loading = document.querySelector('#loading');
-            const quickCommands = document.querySelectorAll('.quick-command');
+            const agentButtons = document.querySelectorAll('.agent-btn');
+            const reportForm = document.querySelector('#report-issue-form');
+            const closeReportForm = document.querySelector('#close-report-form');
+            const captureScreenshotBtn = document.querySelector('#capture-screenshot-btn');
+            const submitReportBtn = document.querySelector('#submit-report-btn');
+            const screenshotPreview = document.querySelector('#screenshot-preview');
+            const screenshotImg = document.querySelector('#screenshot-img');
+            
+            let capturedScreenshot = null;
         
             function escapeHtml(text) {
                 return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
             }
-        
-            function handleSlashCommand(command, args) {
+            
+            function addBotMessage(message, isHtml = false) {
+                const content = isHtml ? message : escapeHtml(message);
+                chatLog.innerHTML += '<div class="bg-blue-300 dark:bg-blue-700 text-black dark:text-white p-2 rounded-lg mb-2"><strong>Bot:</strong> ' + content + '</div>';
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+            
+            function addUserMessage(message) {
+                chatLog.innerHTML += '<div class="bg-green-300 dark:bg-green-700 text-black dark:text-white p-2 rounded-lg mb-2"><strong>You:</strong> ' + escapeHtml(message) + '</div>';
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+            
+            function addSystemMessage(message, type = 'info') {
+                const bgColor = type === 'error' ? 'bg-red-300 dark:bg-red-700' : 
+                               type === 'success' ? 'bg-green-300 dark:bg-green-700' : 
+                               'bg-gray-300 dark:bg-gray-600';
+                chatLog.innerHTML += '<div class="' + bgColor + ' text-black dark:text-white p-2 rounded-lg mb-2 text-sm italic">' + escapeHtml(message) + '</div>';
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+            
+            // Agent handlers
+            function handleAgent(agentType) {
                 let response = '';
-                switch (command) {
-                    case '/help':
-                        response = '<strong>Available Commands:</strong><br>' +
-                            '/help - Show this message<br>' +
-                            '/report &lt;description&gt; - Report a bug<br>' +
-                            '/gsoc - Get GSoC info<br>' +
-                            '/stats - View platform stats<br>';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
-                    case '/report':
-                        if (!args) {
-                            response = 'Please provide a description. Usage: /report &lt;description&gt;';
-                            chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                            chatLog.scrollTop = chatLog.scrollHeight;
-                            return true;
-                        }
-                        return false;
-                    case '/gsoc':
-                        response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
-                            'Explore OWASP\'s GSoC participation:<br>' +
-                            '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
-                            'Get involved with open-source at OWASP!';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
-                    case '/stats':
-                        response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
+                switch (agentType) {
+                    case 'help':
+                        response = '<strong>🤖 Help Agent</strong><br><br>' +
+                            '<strong>Available Agents:</strong><br>' +
+                            '• <strong>Help</strong> - Show available agents and commands<br>' +
+                            '• <strong>Stats</strong> - View platform statistics<br>' +
+                            '• <strong>Bid</strong> - Learn about bidding on issues<br>' +
+                            '• <strong>Bacon</strong> - Learn about BACON tokens<br>' +
+                            '• <strong>Report Issue</strong> - Report a bug with screenshot (anonymous option available)<br><br>' +
+                            'You can also type messages directly to chat!';
+                        addBotMessage(response, true);
+                        break;
+                        
+                    case 'stats':
+                        response = '<strong>📊 Stats Agent</strong><br><br>' +
+                            'Platform statistics are available on the dashboard.<br>' +
+                            'Visit <a href="/stats/" class="text-blue-600 dark:text-blue-400 underline">Stats Page</a> for detailed analytics.';
+                        addBotMessage(response, true);
+                        break;
+                        
+                    case 'bid':
+                        response = '<strong>💰 Bid Agent</strong><br><br>' +
+                            'You can bid on open issues to earn rewards!<br>' +
+                            '• Visit <a href="/bidding/" class="text-blue-600 dark:text-blue-400 underline">Bidding Page</a> to see available issues<br>' +
+                            '• Place bids on issues you want to work on<br>' +
+                            '• Complete issues to earn BACON tokens';
+                        addBotMessage(response, true);
+                        break;
+                        
+                    case 'bacon':
+                        response = '<strong>🥓 Bacon Agent</strong><br><br>' +
+                            'BACON is our reward token system!<br>' +
+                            '• Earn BACON by reporting bugs and contributing<br>' +
+                            '• Visit <a href="/bacon/" class="text-blue-600 dark:text-blue-400 underline">Bacon Page</a> for more info<br>' +
+                            '• Track your earnings on your profile';
+                        addBotMessage(response, true);
+                        break;
+                        
+                    case 'report':
+                        addSystemMessage('Opening Report Issue form...', 'info');
+                        reportForm.classList.remove('hidden');
+                        document.querySelector('#report-url').value = window.location.href;
+                        break;
+                        
                     default:
-                        return false;
+                        addBotMessage('Unknown agent. Use the Help agent to see available options.');
                 }
+            }
+            
+            // Handle agent button clicks
+            agentButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const agent = this.getAttribute('data-agent');
+                    handleAgent(agent);
+                });
+            });
+            
+            // Close report form
+            if (closeReportForm) {
+                closeReportForm.addEventListener('click', function() {
+                    reportForm.classList.add('hidden');
+                    capturedScreenshot = null;
+                    screenshotPreview.classList.add('hidden');
+                    document.querySelector('#report-description').value = '';
+                    document.querySelector('#report-anonymous').checked = false;
+                });
+            }
+            
+            // Capture screenshot using html2canvas
+            if (captureScreenshotBtn) {
+                captureScreenshotBtn.addEventListener('click', async function() {
+                    addSystemMessage('Capturing screenshot of current page...', 'info');
+                    
+                    try {
+                        // Check if html2canvas is available, if not load it
+                        if (typeof html2canvas === 'undefined') {
+                            const script = document.createElement('script');
+                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                            document.head.appendChild(script);
+                            await new Promise((resolve, reject) => {
+                                script.onload = resolve;
+                                script.onerror = reject;
+                            });
+                        }
+                        
+                        // Hide the chatbot temporarily for screenshot
+                        const chatbot = document.getElementById('chatbot');
+                        chatbot.style.display = 'none';
+                        
+                        // Capture the screenshot
+                        const canvas = await html2canvas(document.body, {
+                            scale: 0.5,
+                            logging: false,
+                            useCORS: true
+                        });
+                        
+                        // Show chatbot again
+                        chatbot.style.display = '';
+                        
+                        // Convert to base64
+                        capturedScreenshot = canvas.toDataURL('image/png');
+                        
+                        // Show preview
+                        screenshotImg.src = capturedScreenshot;
+                        screenshotPreview.classList.remove('hidden');
+                        
+                        addSystemMessage('Screenshot captured successfully!', 'success');
+                    } catch (error) {
+                        console.error('Screenshot error:', error);
+                        addSystemMessage('Failed to capture screenshot. You can still submit without one.', 'error');
+                    }
+                });
+            }
+            
+            // Submit issue report
+            if (submitReportBtn) {
+                submitReportBtn.addEventListener('click', async function() {
+                    const url = document.querySelector('#report-url').value.trim() || window.location.href;
+                    const description = document.querySelector('#report-description').value.trim();
+                    const anonymous = document.querySelector('#report-anonymous').checked;
+                    
+                    if (!description) {
+                        addSystemMessage('Please provide a description of the issue.', 'error');
+                        return;
+                    }
+                    
+                    loading.classList.remove('hidden');
+                    addSystemMessage('Submitting issue report...', 'info');
+                    
+                    try {
+                        const response = await fetch('/api/chatbot/report-issue/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                url: url,
+                                description: description,
+                                screenshot: capturedScreenshot,
+                                anonymous: anonymous
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            addSystemMessage('Issue reported successfully! ' + (data.issue_url ? 'View it at: ' + data.issue_url : ''), 'success');
+                            // Reset form
+                            reportForm.classList.add('hidden');
+                            capturedScreenshot = null;
+                            screenshotPreview.classList.add('hidden');
+                            document.querySelector('#report-description').value = '';
+                            document.querySelector('#report-anonymous').checked = false;
+                        } else {
+                            addSystemMessage('Failed to report issue: ' + (data.error || 'Unknown error'), 'error');
+                        }
+                    } catch (error) {
+                        console.error('Report error:', error);
+                        addSystemMessage('Failed to submit report. Please try again.', 'error');
+                    } finally {
+                        loading.classList.add('hidden');
+                    }
+                });
             }
         
             chatSubmit.onclick = function () {
@@ -1152,15 +1386,22 @@
                 chatInput.value = '';
                 if (message === "") return;
         
-                const escapedMessage = escapeHtml(message);
-                chatLog.innerHTML += '<div class="bg-green-300 text-black dark:text-white p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
+                addUserMessage(message);
                 loading.classList.remove('hidden');
         
-                // Check for slash command
+                // Check for slash command (legacy support)
                 if (message.startsWith('/')) {
-                    const [command, ...argsArr] = message.split(' ');
-                    const args = argsArr.join(' ').trim();
-                    if (handleSlashCommand(command, args)) {
+                    const command = message.split(' ')[0].toLowerCase();
+                    const agentMap = {
+                        '/help': 'help',
+                        '/stats': 'stats',
+                        '/bid': 'bid',
+                        '/bacon': 'bacon',
+                        '/report': 'report'
+                    };
+                    
+                    if (agentMap[command]) {
+                        handleAgent(agentMap[command]);
                         loading.classList.add('hidden');
                         return;
                     }
@@ -1183,9 +1424,7 @@
                         return response.json();
                     })
                     .then(data => {
-                        const escapedAnswer = escapeHtml(data.answer);
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
+                        addBotMessage(data.answer);
                         loading.classList.add('hidden');
                     })
                     .catch((error) => {
@@ -1193,8 +1432,7 @@
                         if (error.message === 'Rate limit exceeded') {
                             errorMessage = 'The request limit has been reached. Please try again later.';
                         }
-                        chatLog.innerHTML += '<div class="bg-red-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
+                        addSystemMessage(errorMessage, 'error');
                         loading.classList.add('hidden');
                     });
             };
@@ -1215,6 +1453,7 @@
                     })
                     .catch((error) => {
                         console.error('Error:', error);
+                        chatLog.innerHTML = '';
                         loading.classList.add('hidden');
                     });
             }
@@ -1226,15 +1465,6 @@
                 if (event.keyCode === 13) {  // Enter key
                     chatSubmit.click();
                 }
-            });
-        
-            // Handle quick command button clicks
-            quickCommands.forEach(button => {
-                button.addEventListener('click', function () {
-                    const command = this.getAttribute('data-command');
-                    chatInput.value = command;
-                    chatSubmit.click();
-                });
             });
         });
 

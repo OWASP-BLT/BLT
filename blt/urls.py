@@ -24,6 +24,7 @@ from website.api.views import (
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
+    ChatbotReportIssueView,
     CheckDuplicateBugApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
@@ -1034,6 +1035,11 @@ urlpatterns = [
     # path(
     #     "api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"
     # ),
+    path(
+        "api/chatbot/report-issue/",
+        ChatbotReportIssueView.as_view(),
+        name="chatbot_report_issue",
+    ),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
