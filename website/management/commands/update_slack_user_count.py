@@ -1,7 +1,7 @@
 import logging
+import os
 
 import requests
-from django.conf import settings
 
 from website.management.base import LoggedBaseCommand
 from website.models import Project
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(LoggedBaseCommand):
-    help = "Update projects with Slack channel member counts"
+    help = "Update projects with Slack member counts"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -21,16 +21,19 @@ class Command(LoggedBaseCommand):
         parser.add_argument(
             "--slack_token",
             type=str,
-            help="Slack Bot Token (overrides settings.SLACK_BOT_TOKEN)",
+            help="Slack Bot Token (overrides SLACK_BOT_TOKEN environment variable)",
         )
 
     def handle(self, *args, **kwargs):
         project_id = kwargs.get("project_id")
-        slack_token = kwargs.get("slack_token") or getattr(settings, "SLACK_BOT_TOKEN", None)
+        slack_token = kwargs.get("slack_token") or os.environ.get("SLACK_BOT_TOKEN")
 
         if not slack_token:
             self.stdout.write(
-                self.style.ERROR("SLACK_BOT_TOKEN not configured. Please set it in settings or pass via --slack_token")
+                self.style.ERROR(
+                    "SLACK_BOT_TOKEN not configured. "
+                    "Please set the SLACK_BOT_TOKEN environment variable or pass via --slack_token"
+                )
             )
             return
 

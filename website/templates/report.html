@@ -355,6 +355,7 @@
     </div>
 {% endblock content %}
 {% block after_js %}
+    <script src="{% static 'js/clipboard.min.js' %}" type="text/javascript"></script>
     <script src="{% static 'js/issue.js' %}" type="text/javascript"></script>
     <script type="text/javascript">
     function isCVEValid(cveNumber) {
