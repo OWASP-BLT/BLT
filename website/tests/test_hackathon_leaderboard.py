@@ -199,6 +199,67 @@ class HackathonLeaderboardTestCase(TestCase):
         self.assertNotIn("PR outside timeframe", content)
         self.assertNotIn("Unmerged PR", content)
 
+    def test_merged_prs_url_generation(self):
+        """Test that the merged PRs URL is correctly generated for each repository."""
+        from urllib.parse import unquote
+
+        from website.views.hackathon import HackathonDetailView
+
+        view = HackathonDetailView()
+
+        # Test URL generation with the test repository
+        merged_prs_url = view._get_github_merged_prs_url(self.repo1, self.hackathon)
+
+        # Verify the URL is generated
+        self.assertIsNotNone(merged_prs_url)
+        self.assertIn("github.com/pulls", merged_prs_url)
+
+        # Decode the URL and check contents
+        decoded_url = unquote(merged_prs_url)
+        self.assertIn("is:pr", decoded_url)
+        self.assertIn("is:merged", decoded_url)
+        self.assertIn("repo:test/repo1", decoded_url)
+        self.assertIn("merged:", decoded_url)
+
+        # Test that the hackathon detail view includes merged_prs_url in repositories
+        response = self.client.get(reverse("hackathon_detail", kwargs={"slug": self.hackathon.slug}))
+        self.assertEqual(response.status_code, 200)
+
+        # Check that repositories have merged_prs_url
+        repositories = response.context["repositories"]
+        self.assertTrue(len(repositories) > 0)
+        for repo_data in repositories:
+            self.assertIn("merged_prs_url", repo_data)
+            self.assertIsNotNone(repo_data["merged_prs_url"])
+
+        # Check that the template contains the Merged PRs button
+        content = response.content.decode("utf-8")
+        self.assertIn("Merged PRs", content)
+
+    def test_merged_prs_url_with_language(self):
+        """Test that the merged PRs URL includes language filter when primary_language is set."""
+        from urllib.parse import unquote
+
+        from website.views.hackathon import HackathonDetailView
+
+        # Create a repo with primary language
+        repo_with_language = Repo.objects.create(
+            name="Python Repo",
+            slug="python-repo",
+            repo_url="https://github.com/test/pythonrepo",
+            organization=self.organization,
+            primary_language="Python",
+        )
+
+        view = HackathonDetailView()
+
+        # Test URL generation with language
+        merged_prs_url = view._get_github_merged_prs_url(repo_with_language, self.hackathon)
+
+        # Decode the URL and check for language filter
+        decoded_url = unquote(merged_prs_url)
+        self.assertIn("language:Python", decoded_url)
+
     def test_hackathon_leaderboard_empty(self):
         """Test that the hackathon leaderboard handles empty data correctly."""
         # Create a new hackathon with no PRs
