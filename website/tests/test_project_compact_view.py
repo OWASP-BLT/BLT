@@ -32,6 +32,7 @@ class ProjectCompactViewTestCase(TestCase):
             url="https://example.com/project1",
             slack="https://slack.com/test1",
             slack_channel="#general",
+            slack_user_count=150,
             twitter="@testproject",
         )
 
@@ -88,6 +89,12 @@ class ProjectCompactViewTestCase(TestCase):
         """Test that slack channels are displayed"""
         response = self.client.get(reverse("project_compact_list"))
         self.assertContains(response, "#general")
+
+    def test_compact_view_displays_slack_member_count(self):
+        """Test that slack member count is displayed"""
+        response = self.client.get(reverse("project_compact_list"))
+        # Project 1 has slack_user_count = 150
+        self.assertContains(response, "150 members")
 
     def test_compact_view_displays_stats(self):
         """Test that project stats are aggregated and displayed"""
