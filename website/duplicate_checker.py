@@ -44,8 +44,8 @@ def normalize_text(text):
         text = " ".join(text.split())
 
         return text
-    except Exception as e:
-        logger.warning(f"Error normalizing text: {e}")
+    except (TypeError, AttributeError, UnicodeError) as e:
+        logger.warning("Error normalizing text: %s", e)
         return ""
 
 
@@ -74,8 +74,8 @@ def extract_domain_from_url(url):
             domain = domain.replace("www.", "").lower()
         return domain or ""
     except Exception as e:
-        logger.warning(f"Error extracting domain from URL '{url}': {e}")
-        return url
+        logger.warning("Error extracting domain from URL '%s': %s", url, e)
+        return ""
 
 
 def calculate_similarity(text1, text2):
@@ -101,7 +101,7 @@ def calculate_similarity(text1, text2):
 
         return SequenceMatcher(None, normalized1, normalized2).ratio()
     except Exception as e:
-        logger.warning(f"Error calculating similarity: {e}")
+        logger.warning("Error calculating similarity: %s", e)
         return 0.0
 
 
@@ -222,7 +222,7 @@ def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, l
         # Get potential duplicate issues
         potential_duplicates = (
             Issue.objects.filter(query)
-            .exclude(status="closed")
+            .exclude(status__in=["closed", "close"])  # Exclude both "closed" and "close" status values
             .select_related("user", "domain")
             .order_by("-created")[:100]
         )
@@ -273,7 +273,7 @@ def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, l
                         }
                     )
             except Exception as e:
-                logger.warning(f"Error processing issue {issue.id}: {e}")
+                logger.warning("Error processing issue %s: %s", issue.id, e)
                 continue
 
         # Sort by similarity score (highest first)
@@ -282,7 +282,7 @@ def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, l
         return similar_bugs[:limit]
 
     except Exception as e:
-        logger.error(f"Error in find_similar_bugs: {e}", exc_info=True)
+        logger.error("Error in find_similar_bugs: %s", e, exc_info=True)
         return []
 
 
@@ -294,7 +294,7 @@ def check_for_duplicates(url, description, domain=None, threshold=0.7):
         url: The URL where the bug was found
         description: The bug description
         domain: Optional Domain object
-        threshold: Similarity threshold for considering something a duplicate
+        threshold: Similarity threshold for considering something a duplicate (default 0.7 for "high" confidence)
 
     Returns:
         Dictionary with:
@@ -302,6 +302,8 @@ def check_for_duplicates(url, description, domain=None, threshold=0.7):
         - similar_bugs: List of similar bugs found
         - confidence: Confidence level (high/medium/low)
     """
+    # Use a lower threshold (0.5) for initial search to catch medium confidence matches
+    # The threshold parameter is used to determine "high" vs "medium" confidence
     similar_bugs = find_similar_bugs(url, description, domain, similarity_threshold=0.5)
 
     if not similar_bugs:

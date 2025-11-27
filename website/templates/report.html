@@ -492,7 +492,8 @@
     // Cancel form function
     function cancelForm() {
         if (confirm('Are you sure you want to cancel? All entered data will be lost.')) {
-            window.location.href = '/';
+            // Use window.history.back() or redirect to home
+            window.location.href = '{% url "home" %}';
         }
     }
 
@@ -578,13 +579,20 @@
 
         // Updated add_duplicates function for new API response format
         let add_duplicates = (bug, confidence) => {
-            const similarityPercent = Math.round(bug.similarity * 100);
+            const similarityPercent = Math.round((bug.similarity || 0) * 100);
             const confidenceColor = confidence === 'high' ? 'bg-red-100 text-red-800' : 
                                     confidence === 'medium' ? 'bg-orange-100 text-orange-800' : 
                                     'bg-blue-100 text-blue-800';
             
             const createdDate = new Date(bug.created);
             const formattedDate = createdDate.toLocaleDateString();
+            
+            // Defensive defaults for potentially missing fields
+            const bugUser = bug.user || 'Anonymous';
+            const bugUpvotes = bug.upvotes || 0;
+            const bugStatus = bug.status || 'unknown';
+            const bugDescription = bug.description || 'No description';
+            const bugUrl = bug.url || '';
 
             $("#duplicate-list").append(`
                 <li class="py-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
@@ -598,19 +606,19 @@
                                     ${similarityPercent}% match
                                 </span>
                                 <span class="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
-                                    ${bug.status}
+                                    ${bugStatus}
                                 </span>
                             </div>
                             <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                                ${escapeHtml(bug.description)}
+                                ${escapeHtml(bugDescription)}
                             </p>
                             <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                                <span><i class="fas fa-user mr-1"></i>${escapeHtml(bug.user)}</span>
+                                <span><i class="fas fa-user mr-1"></i>${escapeHtml(bugUser)}</span>
                                 <span><i class="fas fa-calendar mr-1"></i>${formattedDate}</span>
-                                <span><i class="fas fa-thumbs-up mr-1"></i>${bug.upvotes} upvotes</span>
+                                <span><i class="fas fa-thumbs-up mr-1"></i>${bugUpvotes} upvotes</span>
                             </div>
                             <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
-                                <i class="fas fa-link mr-1"></i>${escapeHtml(bug.url)}
+                                <i class="fas fa-link mr-1"></i>${escapeHtml(bugUrl)}
                             </div>
                         </div>
                     </div>

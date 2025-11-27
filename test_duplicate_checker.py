@@ -13,6 +13,7 @@ Usage:
   In Docker:  docker exec app python test_duplicate_checker.py quick
   With Django: python manage.py test
 """
+import json
 import os
 import sys
 
@@ -90,7 +91,7 @@ class DuplicateCheckerIntegrationTests(TestCase):
             domain=self.domain,
             url="https://example.com/login",
             description="Login button not working",
-            label=2,
+            label=2,  # Functional bug
         )
 
     def test_find_exact_duplicate(self):
@@ -107,6 +108,8 @@ class DuplicateCheckerIntegrationTests(TestCase):
 
         # Should find the similar bug
         self.assertGreater(len(result["similar_bugs"]), 0)
+        # Verify the confidence level is appropriate for similar (not exact) matches
+        self.assertIn(result["confidence"], ["high", "medium", "low"])
 
     def test_no_duplicate_different_domain(self):
         """Test that different domain doesn't match"""
@@ -138,7 +141,7 @@ class DuplicateCheckerAPITests(TestCase):
         """Test the check duplicate API endpoint"""
         response = self.client.post(
             "/api/v1/bugs/check-duplicate/",
-            data={"url": "https://example.com/test", "description": "Test bug description"},
+            data=json.dumps({"url": "https://example.com/test", "description": "Test bug description"}),
             content_type="application/json",
         )
 
@@ -147,6 +150,10 @@ class DuplicateCheckerAPITests(TestCase):
         self.assertIn("is_duplicate", data)
         self.assertIn("confidence", data)
         self.assertIn("similar_bugs", data)
+        # Verify semantic correctness for exact match
+        self.assertTrue(data["is_duplicate"])
+        self.assertEqual(data["confidence"], "high")
+        self.assertGreater(len(data["similar_bugs"]), 0)
 
     def test_find_similar_api(self):
         """Test the find similar bugs API endpoint"""

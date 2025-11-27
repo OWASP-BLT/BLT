@@ -1382,7 +1382,7 @@ class CheckDuplicateBugApiView(APIView):
                 domain_id = int(domain_id)
                 domain = Domain.objects.get(id=domain_id)
             except (ValueError, TypeError, Domain.DoesNotExist):
-                logger.warning(f"Invalid domain_id provided: {domain_id}")
+                logger.warning("Invalid domain_id provided: %s", domain_id)
                 pass
 
         # Check for duplicates
@@ -1421,7 +1421,7 @@ class CheckDuplicateBugApiView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            logger.error(f"Error checking for duplicates: {str(e)}", exc_info=True)
+            logger.error("Error checking for duplicates: %s", e, exc_info=True)
             return Response(
                 {"error": "An error occurred while checking for duplicates"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1527,7 +1527,7 @@ class FindSimilarBugsApiView(APIView):
             return Response({"count": len(results), "results": results}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            logger.error(f"Error finding similar bugs: {str(e)}", exc_info=True)
+            logger.error("Error finding similar bugs: %s", e, exc_info=True)
             return Response(
                 {"error": "An error occurred while searching for similar bugs"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

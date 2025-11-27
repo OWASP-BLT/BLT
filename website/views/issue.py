@@ -1035,8 +1035,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         "created": bug["issue"].created.strftime("%Y-%m-%d"),
                                     }
                                 )
-                            except Exception as e:
-                                logger.warning(f"Error formatting similar bug: {e}")
+                            except (KeyError, AttributeError, ValueError, TypeError) as e:
+                                logger.warning("Error formatting similar bug: %s", e)
                                 continue
 
                         if similar_bugs_data:
@@ -1056,9 +1056,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                     "show_duplicate_warning": True,
                                 },
                             )
-            except Exception as e:
+            except (KeyError, AttributeError, ValueError, TypeError) as e:
                 # If duplicate check fails, log it but don't block submission
-                logger.warning(f"Duplicate check failed: {str(e)}", exc_info=True)
+                logger.warning("Duplicate check failed: %s", e, exc_info=True)
 
         @atomic
         def create_issue(self, form):
