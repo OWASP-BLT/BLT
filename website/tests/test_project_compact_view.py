@@ -131,3 +131,87 @@ class ProjectCompactViewTestCase(TestCase):
         response = self.client.get(reverse("project_compact_list"))
         self.assertContains(response, "Card View")
         self.assertContains(response, reverse("project_list"))
+
+
+class ProjectDeleteViewTestCase(TestCase):
+    """Test cases for the project delete functionality"""
+
+    def setUp(self):
+        """Set up test data"""
+        self.client = Client()
+
+        # Create regular user
+        self.regular_user = User.objects.create_user(username="regular_user", password="testpass123")
+
+        # Create superuser
+        self.superuser = User.objects.create_superuser(
+            username="superuser", password="superpass123", email="super@example.com"
+        )
+
+        # Create test organization
+        self.org = Organization.objects.create(
+            name="Test Organization",
+            slug="test-org-delete",
+            url="https://example.com",
+            admin=self.regular_user,
+        )
+
+        # Create test project
+        self.project = Project.objects.create(
+            name="Project To Delete",
+            slug="project-to-delete",
+            description="This project will be deleted in tests",
+            organization=self.org,
+            status="production",
+        )
+
+    def test_delete_project_url_exists(self):
+        """Test that the delete project URL exists"""
+        url = reverse("delete_project", kwargs={"slug": self.project.slug})
+        self.assertIsNotNone(url)
+
+    def test_delete_project_requires_login(self):
+        """Test that deleting a project requires login"""
+        url = reverse("delete_project", kwargs={"slug": self.project.slug})
+        response = self.client.post(url)
+        # Should redirect to login page
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response.url)
+
+    def test_delete_project_requires_superuser(self):
+        """Test that deleting a project requires superuser permission"""
+        self.client.login(username="regular_user", password="testpass123")
+        url = reverse("delete_project", kwargs={"slug": self.project.slug})
+        response = self.client.post(url)
+        # Regular user should be forbidden
+        self.assertEqual(response.status_code, 302)
+        # Project should still exist
+        self.assertTrue(Project.objects.filter(slug="project-to-delete").exists())
+
+    def test_delete_project_superuser_can_delete(self):
+        """Test that superuser can delete a project"""
+        self.client.login(username="superuser", password="superpass123")
+        url = reverse("delete_project", kwargs={"slug": self.project.slug})
+        response = self.client.post(url)
+        # Should redirect to project list
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("project_list"))
+        # Project should be deleted
+        self.assertFalse(Project.objects.filter(slug="project-to-delete").exists())
+
+    def test_delete_project_only_allows_post(self):
+        """Test that delete project only allows POST requests"""
+        self.client.login(username="superuser", password="superpass123")
+        url = reverse("delete_project", kwargs={"slug": self.project.slug})
+        response = self.client.get(url)
+        # GET should not be allowed
+        self.assertEqual(response.status_code, 405)
+        # Project should still exist
+        self.assertTrue(Project.objects.filter(slug="project-to-delete").exists())
+
+    def test_delete_nonexistent_project_returns_404(self):
+        """Test that deleting a non-existent project returns 404"""
+        self.client.login(username="superuser", password="superpass123")
+        url = reverse("delete_project", kwargs={"slug": "nonexistent-project"})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 404)

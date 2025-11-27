@@ -826,6 +826,18 @@ class ProjectsDetailView(DetailView):
         return response
 
 
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+@require_http_methods(["POST"])
+def delete_project(request, slug):
+    """Delete a project. Only accessible by superusers."""
+    project = get_object_or_404(Project, slug=slug)
+    project_name = project.name
+    project.delete()
+    messages.success(request, f'Project "{project_name}" has been deleted successfully.')
+    return redirect("project_list")
+
+
 class RepoDetailView(DetailView):
     model = Repo
     template_name = "projects/repo_detail.html"
