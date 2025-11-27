@@ -3142,6 +3142,8 @@ def newsletter_context_processor(request):
         pass
 
     return context
+
+
 def invite_organization(request):
     """
     View for inviting organizations to join BLT.

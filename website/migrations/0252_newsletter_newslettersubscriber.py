@@ -57,9 +57,12 @@ class Migration(migrations.Migration):
                 ("is_active", models.BooleanField(default=True)),
                 ("confirmation_token", models.UUIDField(default=uuid.uuid4, editable=False)),
                 ("confirmed", models.BooleanField(default=False)),
-                ("token_created_at", models.DateTimeField(
-                    default=django.utils.timezone.now, help_text="Timestamp when confirmation token was created"
-                )),
+                (
+                    "token_created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, help_text="Timestamp when confirmation token was created"
+                    ),
+                ),
                 ("wants_bug_reports", models.BooleanField(default=True)),
                 ("wants_leaderboard_updates", models.BooleanField(default=True)),
                 ("wants_security_news", models.BooleanField(default=True)),

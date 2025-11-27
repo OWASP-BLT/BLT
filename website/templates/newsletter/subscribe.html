@@ -10,10 +10,10 @@
     {% include "includes/sidenav.html" %}
     <div class="relative mt-9">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
                 <div class="p-6">
                     <div class="text-center">
-                        <svg class="mx-auto h-12 w-12 text-blue-600"
+                        <svg class="mx-auto h-12 w-12 text-blue-600 dark:text-blue-400"
                              xmlns="http://www.w3.org/2000/svg"
                              fill="none"
                              viewBox="0 0 24 24"
@@ -21,31 +21,39 @@
                              stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                         </svg>
-                        <h2 class="mt-2 text-2xl font-bold text-gray-900">Subscribe to Our Newsletter</h2>
-                        <p class="mt-1 text-sm text-gray-500">Stay updated with the latest security findings and community achievements</p>
+                        <h2 class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">Subscribe to Our Newsletter</h2>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Stay updated with the latest security findings and community achievements
+                        </p>
                     </div>
                     <div class="mt-8">
                         <form method="post" class="space-y-6">
                             {% csrf_token %}
                             <div>
-                                <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+                                <label for="email"
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Email address
+                                </label>
                                 <div class="mt-1">
                                     <input type="email"
                                            name="email"
                                            id="email"
-                                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                           class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                            placeholder="you@example.com"
                                            {% if request.user.is_authenticated %}value="{{ request.user.email }}"{% endif %}
                                            required>
                                 </div>
                             </div>
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700">Name (optional)</label>
+                                <label for="name"
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Name (optional)
+                                </label>
                                 <div class="mt-1">
                                     <input type="text"
                                            name="name"
                                            id="name"
-                                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                           class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                            placeholder="Your name"
                                            {% if request.user.is_authenticated %}value="{{ request.user.get_full_name }}"{% endif %}>
                                 </div>
@@ -55,12 +63,12 @@
                                     <input id="privacy"
                                            name="privacy"
                                            type="checkbox"
-                                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                           class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
                                            required>
                                 </div>
                                 <div class="ml-3 text-sm">
-                                    <label for="privacy" class="font-medium text-gray-700">I agree to the privacy policy</label>
-                                    <p class="text-gray-500">
+                                    <label for="privacy" class="font-medium text-gray-700 dark:text-gray-300">I agree to the privacy policy</label>
+                                    <p class="text-gray-500 dark:text-gray-400">
                                         We'll handle your data according to our privacy policy and will never share it with third parties.
                                     </p>
                                 </div>
@@ -76,14 +84,14 @@
                     <div class="mt-6">
                         <div class="relative">
                             <div class="absolute inset-0 flex items-center">
-                                <div class="w-full border-t border-gray-300"></div>
+                                <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
                             </div>
                             <div class="relative flex justify-center text-sm">
-                                <span class="bg-white px-2 text-gray-500">Newsletter benefits</span>
+                                <span class="bg-white dark:bg-gray-800 px-2 text-gray-500 dark:text-gray-400">Newsletter benefits</span>
                             </div>
                         </div>
                         <div class="mt-6">
-                            <div class="rounded-md bg-gray-50 p-4">
+                            <div class="rounded-md bg-gray-50 dark:bg-gray-700 p-4">
                                 <div class="flex">
                                     <div class="shrink-0">
                                         <svg class="h-5 w-5 text-blue-400"
@@ -95,14 +103,14 @@
                                         </svg>
                                     </div>
                                     <div class="ml-3">
-                                        <h3 class="text-sm font-medium text-gray-800">Latest Bug Reports</h3>
-                                        <div class="mt-1 text-sm text-gray-600">
+                                        <h3 class="text-sm font-medium text-gray-800 dark:text-gray-200">Latest Bug Reports</h3>
+                                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                                             <p>Stay informed about the latest security issues and vulnerabilities discovered in the wild.</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="rounded-md bg-gray-50 p-4 mt-3">
+                            <div class="rounded-md bg-gray-50 dark:bg-gray-700 p-4 mt-3">
                                 <div class="flex">
                                     <div class="shrink-0">
                                         <svg class="h-5 w-5 text-blue-400"
@@ -114,14 +122,14 @@
                                         </svg>
                                     </div>
                                     <div class="ml-3">
-                                        <h3 class="text-sm font-medium text-gray-800">Community Updates</h3>
-                                        <div class="mt-1 text-sm text-gray-600">
+                                        <h3 class="text-sm font-medium text-gray-800 dark:text-gray-200">Community Updates</h3>
+                                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                                             <p>Get updates on leaderboard changes, new features, and upcoming events in our community.</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="rounded-md bg-gray-50 p-4 mt-3">
+                            <div class="rounded-md bg-gray-50 dark:bg-gray-700 p-4 mt-3">
                                 <div class="flex">
                                     <div class="shrink-0">
                                         <svg class="h-5 w-5 text-blue-400"
@@ -133,8 +141,8 @@
                                         </svg>
                                     </div>
                                     <div class="ml-3">
-                                        <h3 class="text-sm font-medium text-gray-800">Expert Security Insights</h3>
-                                        <div class="mt-1 text-sm text-gray-600">
+                                        <h3 class="text-sm font-medium text-gray-800 dark:text-gray-200">Expert Security Insights</h3>
+                                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                                             <p>Gain insights from security experts and learn about best practices to protect your systems.</p>
                                         </div>
                                     </div>
@@ -143,11 +151,11 @@
                         </div>
                     </div>
                     {% if request.user.is_authenticated %}
-                        <div class="mt-6 border-t border-gray-200 pt-6">
-                            <p class="text-sm text-gray-600">
+                        <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
                                 Already have an account and want to manage your subscription preferences?
                                 <a href="{% url 'newsletter_preferences' %}"
-                                   class="text-blue-600 hover:text-blue-500">Manage your newsletter preferences</a>
+                                   class="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">Manage your newsletter preferences</a>
                             </p>
                         </div>
                     {% endif %}

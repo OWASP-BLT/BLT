@@ -12,22 +12,47 @@ register = template.Library()
 
 # Allowed tags and attributes for sanitizing markdown HTML
 ALLOWED_TAGS = [
-    'p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'blockquote',
-    'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'table',
-    'thead', 'tbody', 'tr', 'th', 'td', 'img', 'div', 'span'
+    "p",
+    "br",
+    "strong",
+    "em",
+    "u",
+    "a",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "code",
+    "pre",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "hr",
+    "table",
+    "thead",
+    "tbody",
+    "tr",
+    "th",
+    "td",
+    "img",
+    "div",
+    "span",
 ]
 
 ALLOWED_ATTRIBUTES = {
-    'a': ['href', 'title', 'rel'],
-    'img': ['src', 'alt', 'title', 'width', 'height'],
-    'code': ['class'],
-    'div': ['class'],
-    'span': ['class'],
-    'th': ['align'],
-    'td': ['align'],
+    "a": ["href", "title", "rel"],
+    "img": ["src", "alt", "title", "width", "height"],
+    "code": ["class"],
+    "div": ["class"],
+    "span": ["class"],
+    "th": ["align"],
+    "td": ["align"],
 }
 
-ALLOWED_PROTOCOLS = ['http', 'https', 'mailto']
+ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
 
 
 @register.filter
@@ -53,14 +78,10 @@ def markdown_filter(value):
     """Converts markdown text to HTML with XSS protection."""
     # Convert markdown to HTML
     html = markdown.markdown(value, extensions=["extra", "nl2br", "sane_lists"])
-    
+
     # Sanitize HTML to prevent XSS
     sanitized = bleach.clean(
-        html,
-        tags=ALLOWED_TAGS,
-        attributes=ALLOWED_ATTRIBUTES,
-        protocols=ALLOWED_PROTOCOLS,
-        strip=True
+        html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, protocols=ALLOWED_PROTOCOLS, strip=True
     )
-    
+
     return mark_safe(sanitized)
