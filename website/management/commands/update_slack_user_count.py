@@ -1,7 +1,7 @@
 import logging
+import os
 
 import requests
-from django.conf import settings
 
 from website.management.base import LoggedBaseCommand
 from website.models import Project
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(LoggedBaseCommand):
-    help = "Update projects with Slack channel member counts"
+    help = "Update projects with Slack member counts"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -21,16 +21,19 @@ class Command(LoggedBaseCommand):
         parser.add_argument(
             "--slack_token",
             type=str,
-            help="Slack Bot Token (overrides settings.SLACK_BOT_TOKEN)",
+            help="Slack Bot Token (overrides SLACK_BOT_TOKEN environment variable)",
         )
 
     def handle(self, *args, **kwargs):
         project_id = kwargs.get("project_id")
-        slack_token = kwargs.get("slack_token") or getattr(settings, "SLACK_BOT_TOKEN", None)
+        slack_token = kwargs.get("slack_token") or os.environ.get("SLACK_BOT_TOKEN")
 
         if not slack_token:
             self.stdout.write(
-                self.style.ERROR("SLACK_BOT_TOKEN not configured. Please set it in settings or pass via --slack_token")
+                self.style.ERROR(
+                    "SLACK_BOT_TOKEN not configured. "
+                    "Please set the SLACK_BOT_TOKEN environment variable or pass via --slack_token"
+                )
             )
             return
 
@@ -51,34 +54,56 @@ class Command(LoggedBaseCommand):
 
         for project in projects:
             try:
-                # Use Slack API conversations.info to get channel information including member count
-                url = "https://slack.com/api/conversations.info"
-                params = {"channel": project.slack_id}
+                # Use Slack API conversations.members to get accurate member count
+                # The conversations.info API's num_members field is unreliable and often returns 0
+                url = "https://slack.com/api/conversations.members"
+                member_count = 0
+                cursor = None
+                api_error = False
 
-                response = requests.get(url, headers=headers, params=params, timeout=10)
-                data = response.json()
+                # Paginate through all members
+                while True:
+                    params = {"channel": project.slack_id, "limit": 1000}
+                    if cursor:
+                        params["cursor"] = cursor
 
-                if data.get("ok"):
-                    channel = data.get("channel", {})
-                    member_count = channel.get("num_members", 0)
+                    response = requests.get(url, headers=headers, params=params, timeout=10)
+                    data = response.json()
 
-                    # Update the project
-                    project.slack_user_count = member_count
-                    project.save(update_fields=["slack_user_count"])
+                    if data.get("ok"):
+                        members = data.get("members", [])
+                        member_count += len(members)
 
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Updated {project.name} (#{project.slack_channel}): {member_count} members")
-                    )
-                    updated_count += 1
-                else:
-                    error_msg = data.get("error", "Unknown error")
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"Failed to fetch member count for {project.name} (#{project.slack_channel}): {error_msg}"
+                        # Check for more pages
+                        response_metadata = data.get("response_metadata", {})
+                        cursor = response_metadata.get("next_cursor")
+                        if not cursor:
+                            break
+                    else:
+                        error_msg = data.get("error", "Unknown error")
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"Failed to fetch member count for {project.name} (#{project.slack_channel}): {error_msg}"
+                            )
                         )
-                    )
-                    failed_count += 1
-                    logger.warning(f"Slack API error for project {project.id} ({project.slack_channel}): {error_msg}")
+                        failed_count += 1
+                        logger.warning(
+                            f"Slack API error for project {project.id} ({project.slack_channel}): {error_msg}"
+                        )
+                        api_error = True
+                        break
+
+                if api_error:
+                    continue
+
+                # Update the project after successful pagination
+                project.slack_user_count = member_count
+                project.save(update_fields=["slack_user_count"])
+
+                self.stdout.write(
+                    self.style.SUCCESS(f"Updated {project.name} (#{project.slack_channel}): {member_count} members")
+                )
+                updated_count += 1
 
             except requests.exceptions.RequestException as e:
                 self.stdout.write(
