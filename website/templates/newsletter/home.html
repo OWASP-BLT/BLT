@@ -15,12 +15,12 @@
             <div class="lg:flex lg:gap-8">
                 <!-- Main content area -->
                 <div class="lg:w-2/3">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-6">Newsletters</h1>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Newsletters</h1>
                     <!-- Status message banner -->
                     {% if messages %}
                         <div class="mb-6">
                             {% for message in messages %}
-                                <div class="p-4 {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-300{% elif message.tags == 'error' %}bg-red-50 text-red-800 border-red-300{% elif message.tags == 'info' %}bg-blue-50 text-blue-800 border-blue-300{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border-yellow-300{% endif %} border-l-4 rounded-md">
+                                <div class="p-4 {% if message.tags == 'success' %}bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700{% elif message.tags == 'error' %}bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700{% elif message.tags == 'info' %}bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700{% elif message.tags == 'warning' %}bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700{% endif %} border-l-4 rounded-md">
                                     {{ message }}
                                 </div>
                             {% endfor %}
@@ -28,7 +28,7 @@
                     {% endif %}
                     <!-- Featured newsletter section -->
                     {% if featured_newsletter %}
-                        <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
                             {% if featured_newsletter.featured_image %}
                                 <div class="aspect-w-16 aspect-h-9">
                                     <img src="{{ featured_newsletter.featured_image.url }}"
@@ -39,7 +39,7 @@
                                 </div>
                             {% endif %}
                             <div class="p-6">
-                                <div class="flex items-center text-gray-500 text-sm mb-2">
+                                <div class="flex items-center text-gray-500 dark:text-gray-400 text-sm mb-2">
                                     <span class="mr-4">
                                         <svg class="w-4 h-4 inline mr-1"
                                              fill="none"
@@ -64,29 +64,29 @@
                                         {{ featured_newsletter.view_count }} views
                                     </span>
                                 </div>
-                                <h2 class="text-2xl font-bold text-gray-900 mb-3">{{ featured_newsletter.title }}</h2>
-                                <div class="prose max-w-none mb-4 text-gray-600 line-clamp-3">
+                                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">{{ featured_newsletter.title }}</h2>
+                                <div class="prose dark:prose-invert max-w-none mb-4 text-gray-600 dark:text-gray-300 line-clamp-3">
                                     {{ featured_newsletter.content|markdown_filter|truncatewords_html:50 }}
                                 </div>
                                 <a href="{{ featured_newsletter.get_absolute_url }}"
-                                   class="text-blue-600 hover:text-blue-800 font-medium">Read more →</a>
+                                   class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">Read more →</a>
                             </div>
                         </div>
                     {% endif %}
                     <!-- Newsletter list -->
                     <div class="space-y-6">
-                        <h2 class="text-xl font-semibold text-gray-900">All Newsletters</h2>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">All Newsletters</h2>
                         {% if newsletters %}
-                            <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                                <ul class="divide-y divide-gray-200">
+                            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                                <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                                     {% for newsletter in newsletters %}
-                                        <li class="hover:bg-gray-50">
+                                        <li class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                             <a href="{{ newsletter.get_absolute_url }}"
                                                class="px-4 py-5 sm:px-6 block">
                                                 <div class="flex items-center justify-between">
                                                     <div class="flex-1 min-w-0">
-                                                        <p class="text-lg font-medium text-blue-600 truncate">{{ newsletter.title }}</p>
-                                                        <div class="flex mt-1 text-sm text-gray-500">
+                                                        <p class="text-lg font-medium text-blue-600 dark:text-blue-400 truncate">{{ newsletter.title }}</p>
+                                                        <div class="flex mt-1 text-sm text-gray-500 dark:text-gray-400">
                                                             <span class="mr-4">
                                                                 <svg class="w-4 h-4 inline mr-1"
                                                                      fill="none"
@@ -113,7 +113,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="flex-shrink-0">
-                                                        <svg class="h-5 w-5 text-gray-400"
+                                                        <svg class="h-5 w-5 text-gray-400 dark:text-gray-500"
                                                              xmlns="http://www.w3.org/2000/svg"
                                                              fill="none"
                                                              viewBox="0 0 24 24"
@@ -133,13 +133,13 @@
                                     <div class="flex flex-1 justify-between sm:justify-end">
                                         {% if newsletters.has_previous %}
                                             <a href="?page={{ newsletters.previous_page_number }}"
-                                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
                                                 Previous
                                             </a>
                                         {% endif %}
                                         {% if newsletters.has_next %}
                                             <a href="?page={{ newsletters.next_page_number }}"
-                                               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
                                                 Next
                                             </a>
                                         {% endif %}
@@ -147,21 +147,21 @@
                                 </div>
                             {% endif %}
                         {% else %}
-                            <div class="bg-white shadow-md rounded-lg p-6 text-center">
-                                <p class="text-gray-500">No newsletters available yet.</p>
+                            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 text-center">
+                                <p class="text-gray-500 dark:text-gray-400">No newsletters available yet.</p>
                             </div>
                         {% endif %}
                     </div>
                 </div>
                 <!-- Sidebar -->
                 <div class="lg:w-1/3 mt-8 lg:mt-0">
-                    <div class="bg-white shadow-lg rounded-lg overflow-hidden p-6 mb-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-4">Subscribe to Newsletter</h3>
-                        <p class="text-gray-600 mb-4">Stay updated with our latest security news and bug reports.</p>
+                    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden p-6 mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Subscribe to Newsletter</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">Stay updated with our latest security news and bug reports.</p>
                         {% if user.is_authenticated and newsletter_subscription.subscribed %}
                             {% if newsletter_subscription.is_active %}
                                 {% if newsletter_subscription.confirmed %}
-                                    <div class="mb-4 p-3 bg-green-50 text-green-800 rounded-md">
+                                    <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-md">
                                         <p>You're subscribed to our newsletter!</p>
                                     </div>
                                     <a href="{% url 'newsletter_preferences' %}"
@@ -169,7 +169,7 @@
                                         Manage Preferences
                                     </a>
                                 {% else %}
-                                    <div class="mb-4 p-3 bg-yellow-50 text-yellow-800 rounded-md">
+                                    <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-md">
                                         <p>Please confirm your subscription by checking your email.</p>
                                     </div>
                                 {% endif %}

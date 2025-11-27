@@ -93,7 +93,7 @@ class Command(BaseCommand):
 
         # Format newsletter content for email (converts markdown to sanitized HTML)
         formatted_content = newsletter.format_for_email()
-        
+
         # Newsletter context
         context = {
             "newsletter": newsletter,

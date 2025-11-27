@@ -12,24 +12,24 @@
             {% if messages %}
                 <div class="mb-6">
                     {% for message in messages %}
-                        <div class="p-4 {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-300{% elif message.tags == 'error' %}bg-red-50 text-red-800 border-red-300{% elif message.tags == 'info' %}bg-blue-50 text-blue-800 border-blue-300{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border-yellow-300{% endif %} border-l-4 rounded-md">
+                        <div class="p-4 {% if message.tags == 'success' %}bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700{% elif message.tags == 'error' %}bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700{% elif message.tags == 'info' %}bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700{% elif message.tags == 'warning' %}bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700{% endif %} border-l-4 rounded-md">
                             {{ message }}
                         </div>
                     {% endfor %}
                 </div>
             {% endif %}
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h1 class="text-2xl font-bold text-gray-900">Newsletter Preferences</h1>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Newsletter Preferences</h1>
                         <div class="flex items-center">
                             <div class="h-4 w-4 rounded-full {% if subscriber.is_active and subscriber.confirmed %}bg-green-500{% else %}bg-red-500{% endif %} mr-2">
                             </div>
-                            <span class="text-sm font-medium text-gray-700">{{ subscriber.subscription_status }}</span>
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ subscriber.subscription_status }}</span>
                         </div>
                     </div>
                     {% if not subscriber.confirmed and subscriber.is_active %}
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 mb-6">
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <svg class="h-5 w-5 text-yellow-400"
@@ -40,7 +40,7 @@
                                     </svg>
                                 </div>
                                 <div class="ml-3">
-                                    <p class="text-sm text-yellow-700">
+                                    <p class="text-sm text-yellow-700 dark:text-yellow-300">
                                         Your email address has not been confirmed yet. Please check your inbox for a confirmation email.
                                         <a href="#"
                                            class="font-medium underline"
@@ -54,7 +54,7 @@
                     <form method="post" class="space-y-6">
                         {% csrf_token %}
                         <div>
-                            <label class="text-base font-medium text-gray-900">Email Address</label>
+                            <label class="text-base font-medium text-gray-900 dark:text-gray-100">Email Address</label>
                             <div class="mt-1">
                                 <input type="email"
                                        name="email"
@@ -62,11 +62,11 @@
                                        value="{{ subscriber.email }}"
                                        placeholder="Your email address"
                                        disabled
-                                       class="block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm text-gray-500 sm:text-sm">
+                                       class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 shadow-sm text-gray-500 dark:text-gray-400 sm:text-sm">
                             </div>
                         </div>
                         <fieldset>
-                            <legend class="text-base font-medium text-gray-900">Content Preferences</legend>
+                            <legend class="text-base font-medium text-gray-900 dark:text-gray-100">Content Preferences</legend>
                             <div class="mt-4 space-y-4">
                                 <div class="relative flex items-start">
                                     <div class="flex items-center h-5">
@@ -74,11 +74,12 @@
                                                name="wants_bug_reports"
                                                type="checkbox"
                                                {% if subscriber.wants_bug_reports %}checked{% endif %}
-                                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                               class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
                                     </div>
                                     <div class="ml-3 text-sm">
-                                        <label for="wants_bug_reports" class="font-medium text-gray-700">Bug Reports</label>
-                                        <p class="text-gray-500">Receive updates about recently reported security issues</p>
+                                        <label for="wants_bug_reports"
+                                               class="font-medium text-gray-700 dark:text-gray-300">Bug Reports</label>
+                                        <p class="text-gray-500 dark:text-gray-400">Receive updates about recently reported security issues</p>
                                     </div>
                                 </div>
                                 <div class="relative flex items-start">
@@ -87,11 +88,14 @@
                                                name="wants_leaderboard_updates"
                                                type="checkbox"
                                                {% if subscriber.wants_leaderboard_updates %}checked{% endif %}
-                                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                               class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
                                     </div>
                                     <div class="ml-3 text-sm">
-                                        <label for="wants_leaderboard_updates" class="font-medium text-gray-700">Leaderboard Updates</label>
-                                        <p class="text-gray-500">Get notifications about changes in the community leaderboard</p>
+                                        <label for="wants_leaderboard_updates"
+                                               class="font-medium text-gray-700 dark:text-gray-300">
+                                            Leaderboard Updates
+                                        </label>
+                                        <p class="text-gray-500 dark:text-gray-400">Get notifications about changes in the community leaderboard</p>
                                     </div>
                                 </div>
                                 <div class="relative flex items-start">
@@ -100,22 +104,25 @@
                                                name="wants_security_news"
                                                type="checkbox"
                                                {% if subscriber.wants_security_news %}checked{% endif %}
-                                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                               class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
                                     </div>
                                     <div class="ml-3 text-sm">
-                                        <label for="wants_security_news" class="font-medium text-gray-700">Security News</label>
-                                        <p class="text-gray-500">Stay informed about important security news and analysis</p>
+                                        <label for="wants_security_news"
+                                               class="font-medium text-gray-700 dark:text-gray-300">
+                                            Security News
+                                        </label>
+                                        <p class="text-gray-500 dark:text-gray-400">Stay informed about important security news and analysis</p>
                                     </div>
                                 </div>
                             </div>
                         </fieldset>
-                        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                             <button type="submit"
                                     class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 Save Preferences
                             </button>
                             <a href="{% url 'newsletter_unsubscribe' token=subscriber.confirmation_token %}"
-                               class="text-sm font-medium text-red-600 hover:text-red-500"
+                               class="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
                                onclick="return confirm('Are you sure you want to unsubscribe from the newsletter?');">
                                 Unsubscribe
                             </a>
@@ -126,18 +133,18 @@
             <!-- Recent newsletters section -->
             {% if recent_newsletters %}
                 <div class="mt-10">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">Recent Newsletters</h2>
-                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                        <ul class="divide-y divide-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Recent Newsletters</h2>
+                    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                             {% for newsletter in recent_newsletters %}
                                 <li>
                                     <a href="{% url 'newsletter_detail' newsletter.slug %}"
-                                       class="block hover:bg-gray-50">
+                                       class="block hover:bg-gray-50 dark:hover:bg-gray-700">
                                         <div class="px-4 py-4 sm:px-6">
                                             <div class="flex items-center justify-between">
-                                                <p class="text-sm font-medium text-blue-600 truncate">{{ newsletter.title }}</p>
+                                                <p class="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">{{ newsletter.title }}</p>
                                                 <div class="ml-2 flex-shrink-0 flex">
-                                                    <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
                                                         {{ newsletter.published_at|date:"F j, Y" }}
                                                     </p>
                                                 </div>
@@ -152,7 +159,7 @@
             {% endif %}
             <div class="mt-6">
                 <a href="{% url 'newsletter_home' %}"
-                   class="text-sm font-medium text-blue-600 hover:text-blue-500">← Back to Newsletters</a>
+                   class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">← Back to Newsletters</a>
             </div>
         </div>
     </div>
