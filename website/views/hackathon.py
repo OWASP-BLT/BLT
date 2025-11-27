@@ -171,8 +171,14 @@ class HackathonDetailView(DetailView):
         # Parse the repo URL to get owner/repo
         # URL format: https://github.com/owner/repo
         parsed_url = urlparse(repo.repo_url)
+
+        # Validate it's a GitHub URL
+        if parsed_url.netloc not in ("github.com", "www.github.com"):
+            return None
+
         path_parts = parsed_url.path.strip("/").split("/")
 
+        # Extract owner and repo name (first two path segments)
         if len(path_parts) >= 2 and path_parts[0] and path_parts[1]:
             owner = path_parts[0]
             repo_name = path_parts[1]
@@ -184,7 +190,8 @@ class HackathonDetailView(DetailView):
         end_date = hackathon.end_time.strftime("%Y-%m-%d")
 
         # Build the search query
-        # Format: is:pr is:merged repo:owner/repo merged:>=start_date merged:<=end_date
+        # Format: is:pr is:merged repo:owner/repo merged:start_date..end_date
+        # The .. syntax is inclusive on both ends
         search_query = f"is:pr is:merged repo:{owner}/{repo_name} merged:{start_date}..{end_date}"
 
         # Add language filter if the repo has a primary language
