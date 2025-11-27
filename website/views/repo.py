@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import time
+from urllib.parse import quote_plus
 
 import psutil
 import requests
@@ -472,15 +473,16 @@ def add_repo(request):
 
         # Get issue counts
         def get_issue_count(full_name, query, headers):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = requests.get(search_url, headers=headers)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
             return 0
 
-        open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
-        closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
-        open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+        open_issues = get_issue_count(full_name, "type:issue state:open", headers)
+        closed_issues = get_issue_count(full_name, "type:issue state:closed", headers)
+        open_pull_requests = get_issue_count(full_name, "type:pr state:open", headers)
         total_issues = open_issues + closed_issues
 
         # Get contributors count and commit count
