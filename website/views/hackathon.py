@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from datetime import timedelta
+from urllib.parse import quote, urlparse
 
 import pytz
 import requests
@@ -165,6 +166,35 @@ class HackathonDetailView(DetailView):
         # Total participant count is the sum of both
         return user_profile_count + contributor_count
 
+    def _get_github_merged_prs_url(self, repo, hackathon):
+        """Generate a GitHub search URL for merged PRs during the hackathon timeframe."""
+        # Parse the repo URL to get owner/repo
+        # URL format: https://github.com/owner/repo
+        parsed_url = urlparse(repo.repo_url)
+        path_parts = parsed_url.path.strip("/").split("/")
+
+        if len(path_parts) >= 2 and path_parts[0] and path_parts[1]:
+            owner = path_parts[0]
+            repo_name = path_parts[1]
+        else:
+            return None
+
+        # Format dates as YYYY-MM-DD
+        start_date = hackathon.start_time.strftime("%Y-%m-%d")
+        end_date = hackathon.end_time.strftime("%Y-%m-%d")
+
+        # Build the search query
+        # Format: is:pr is:merged repo:owner/repo merged:>=start_date merged:<=end_date
+        search_query = f"is:pr is:merged repo:{owner}/{repo_name} merged:{start_date}..{end_date}"
+
+        # Add language filter if the repo has a primary language
+        if repo.primary_language:
+            search_query += f" language:{repo.primary_language}"
+
+        # URL encode the query and construct the GitHub search URL
+        encoded_query = quote(search_query)
+        return f"https://github.com/pulls?q={encoded_query}"
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         hackathon = self.get_object()
@@ -204,7 +234,16 @@ class HackathonDetailView(DetailView):
                 .count()
             )
 
-            repos_with_pr_counts.append({"repo": repo, "merged_pr_count": merged_pr_count})
+            # Generate the GitHub search URL for merged PRs
+            merged_prs_url = self._get_github_merged_prs_url(repo, hackathon)
+
+            repos_with_pr_counts.append(
+                {
+                    "repo": repo,
+                    "merged_pr_count": merged_pr_count,
+                    "merged_prs_url": merged_prs_url,
+                }
+            )
 
         context["repositories"] = repos_with_pr_counts
 

@@ -250,6 +250,21 @@
                                                     </svg>
                                                     GitHub
                                                 </a>
+                                                {% if repo_data.merged_prs_url %}
+                                                    <a href="{{ repo_data.merged_prs_url }}"
+                                                       target="_blank"
+                                                       class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                                        <svg class="w-4 h-4 mr-1"
+                                                             fill="none"
+                                                             stroke="currentColor"
+                                                             viewBox="0 0 24 24"
+                                                             xmlns="http://www.w3.org/2000/svg">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4">
+                                                            </path>
+                                                        </svg>
+                                                        Merged PRs
+                                                    </a>
+                                                {% endif %}
                                                 <a href="{% url 'repo_detail' repo_data.repo.slug %}"
                                                    class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                                                     <svg class="w-4 h-4 mr-1"
