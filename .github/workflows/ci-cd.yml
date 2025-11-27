@@ -294,10 +294,17 @@ jobs:
         id: run-tests
         run: |
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast 2>&1 | tee test-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: test-output.txt
+          retention-days: 1
       - name: Fail the job if tests failed
         if: steps.run-tests.outputs.exit_code != '0'
         run: exit 1
@@ -311,7 +318,86 @@ jobs:
       contents: read
       issues: write
       pull-requests: write
+      actions: read
     steps:
+      - name: Download test output
+        if: needs.test.outputs.test_result != '0'
+        uses: actions/download-artifact@v4
+        with:
+          name: test-output
+          path: .
+        continue-on-error: true
+      - name: Comment on PR if tests failed
+        if: needs.test.outputs.test_result != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const pull_number = context.issue.number;
+            
+            if (!pull_number) {
+              core.warning('No pull request number found in context. Skipping comment.');
+              return;
+            }
+            
+            let testOutput = 'Test output not available.';
+            try {
+              testOutput = fs.readFileSync('test-output.txt', 'utf8');
+            } catch (e) {
+              core.warning(`Could not read test output: ${e.message}`);
+            }
+            
+            // Get last 100 lines of output
+            const lines = testOutput.split('\n');
+            const last100Lines = lines.slice(-100).join('\n');
+            const truncated = lines.length > 100;
+            
+            const message = `## ❌ Tests failed
+            
+            The Django tests found issues that need to be fixed. Please review the test output below and fix the failing tests.
+            
+            ### How to run tests locally
+            
+            \`\`\`bash
+            # Install dependencies
+            poetry install --with dev
+            
+            # Run all tests
+            poetry run python manage.py test
+            
+            # Run tests with verbose output
+            poetry run python manage.py test -v 3
+            
+            # Run a specific test
+            poetry run python manage.py test app.tests.TestClass.test_method
+            \`\`\`
+            
+            <details>
+            <summary>Test output${truncated ? ' (last 100 lines)' : ''}</summary>
+            
+            \`\`\`
+            ${last100Lines}
+            \`\`\`
+            
+            </details>
+            
+            For more information, see the [Django testing documentation](https://docs.djangoproject.com/en/stable/topics/testing/).`;
+            
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pull_number,
+                body: message
+              });
+              core.info(`Added test failure comment to PR #${pull_number}`);
+            } catch (error) {
+              if (error.status === 403) {
+                core.warning('Permission denied: Cannot comment on PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.');
+              } else {
+                throw error;
+              }
+            }
       - name: Add test status label
         uses: actions/github-script@v7
         with:
