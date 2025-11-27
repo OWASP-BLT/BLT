@@ -1594,7 +1594,7 @@ class IssueView(DetailView):
             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
+        ipdetails.user = self.request.user.username if self.request.user.is_authenticated else None
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
         ipdetails.path = request.path
@@ -1604,7 +1604,7 @@ class IssueView(DetailView):
         try:
             if self.request.user.is_authenticated:
                 try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
+                    objectget = IP.objects.get(user=self.request.user.username, issuenumber=self.object.id)
                     self.object.save()
                 except:
                     ipdetails.save()
