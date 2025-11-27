@@ -640,6 +640,52 @@ class Issue(models.Model):
             logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
 
+    def get_cve_severity(self):
+        """
+        Get the severity level based on CVE score.
+        CVSS v3.0 Ratings:
+        - None: 0.0
+        - Low: 0.1-3.9
+        - Medium: 4.0-6.9
+        - High: 7.0-8.9
+        - Critical: 9.0-10.0
+        """
+        if self.cve_score is None:
+            return None
+
+        score = float(self.cve_score)
+        if score == 0.0:
+            return "None"
+        elif 0.1 <= score <= 3.9:
+            return "Low"
+        elif 4.0 <= score <= 6.9:
+            return "Medium"
+        elif 7.0 <= score <= 8.9:
+            return "High"
+        elif 9.0 <= score <= 10.0:
+            return "Critical"
+        return None
+
+    def get_suggested_tip_amount(self):
+        """
+        Get suggested tip amount based on CVE severity.
+        Returns amount in USD.
+        """
+        severity = self.get_cve_severity()
+        if severity is None:
+            return None
+
+        # Suggested tip amounts based on severity
+        tip_amounts = {
+            "None": 0,
+            "Low": 5,
+            "Medium": 10,
+            "High": 20,
+            "Critical": 50,
+        }
+
+        return tip_amounts.get(severity, 0)
+
     class Meta:
         ordering = ["-created"]
         indexes = [
