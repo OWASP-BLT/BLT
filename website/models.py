@@ -3762,7 +3762,6 @@ class Recommendation(models.Model):
 class RecommendationRequest(models.Model):
     """
     Model for recommendation requests. Users can request recommendations from others.
-    This is a NEW model - additive only, doesn't modify existing code.
     """
 
     STATUS_CHOICES = (

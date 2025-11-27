@@ -36,9 +36,9 @@ from rest_framework.response import Response
 
 from website.forms import (
     MonitorForm,
-    RecommendationBlurbForm,  # NEW - additive only
+    RecommendationBlurbForm,
     RecommendationForm,
-    RecommendationRequestForm,  # NEW - additive only
+    RecommendationRequestForm,
     UserDeleteForm,
     UserProfileForm,
 )
@@ -61,7 +61,7 @@ from website.models import (
     Notification,
     Points,
     Recommendation,
-    RecommendationRequest,  # NEW - additive only
+    RecommendationRequest,
     RecommendationSkill,
     Repo,
     Tag,
@@ -508,7 +508,7 @@ class UserProfileDetailView(DetailView):
         context["recommendations"] = recommendations_qs[:10]
         context["recommendations_count"] = recommendations_qs.count()
 
-        # Recommendation blurb (NEW - additive only)
+        # Recommendation blurb
         context["recommendation_blurb"] = (
             user.userprofile.recommendation_blurb if hasattr(user, "userprofile") else None
         )
@@ -540,7 +540,7 @@ class UserProfileDetailView(DetailView):
                 context["given_pending_recommendations"] = given_recommendations_qs.filter(is_approved=False)[:10]
                 context["given_pending_count"] = given_recommendations_qs.filter(is_approved=False).count()
 
-                # Get recommendation requests sent by user (NEW - additive only)
+                # Get recommendation requests sent by user
                 sent_requests_qs = (
                     RecommendationRequest.objects.filter(from_user=self.request.user)
                     .select_related("to_user", "to_user__userprofile")
@@ -553,7 +553,7 @@ class UserProfileDetailView(DetailView):
                 context["sent_requests_declined"] = sent_requests_qs.filter(status="declined")
                 context["sent_requests_completed"] = sent_requests_qs.filter(status="completed")
 
-                # Get recommendation requests received by user (NEW - additive only)
+                # Get recommendation requests received by user
                 received_requests_qs = (
                     RecommendationRequest.objects.filter(to_user=user, status="pending")
                     .select_related("from_user", "from_user__userprofile")
@@ -566,7 +566,7 @@ class UserProfileDetailView(DetailView):
                 context["given_recommendations"] = None
                 context["given_recommendations_count"] = None
                 # Keep the real has_recommended value (already computed above)
-                # Check if user has pending request (NEW - additive only)
+                # Check if user has pending request
                 context["has_pending_request"] = RecommendationRequest.objects.filter(
                     from_user=self.request.user, to_user=user, status="pending"
                 ).exists()
@@ -2248,7 +2248,6 @@ def list_recommendations(request, username):
 def request_recommendation(request, username):
     """
     Request a recommendation from another user.
-    NEW VIEW - additive only.
     POST /recommendations/request/<username>/
     """
     to_user = get_object_or_404(User, username=username)
@@ -2334,7 +2333,6 @@ def request_recommendation(request, username):
 def respond_to_request(request, request_id):
     """
     Accept, decline, or cancel a recommendation request.
-    NEW VIEW - additive only.
     POST /recommendations/request/<request_id>/respond/
     """
     rec_request = get_object_or_404(RecommendationRequest, id=request_id)
@@ -2400,7 +2398,6 @@ def respond_to_request(request, request_id):
 def edit_recommendation(request, recommendation_id):
     """
     Edit a pending recommendation (only recommender can edit, only if pending).
-    NEW VIEW - additive only.
     GET/POST /recommendations/<id>/edit/
     """
     recommendation = get_object_or_404(Recommendation, id=recommendation_id)
@@ -2468,7 +2465,6 @@ def edit_recommendation(request, recommendation_id):
 def highlight_recommendation(request, recommendation_id):
     """
     Toggle highlight status of a recommendation (only recipient can highlight, max 3).
-    NEW VIEW - additive only.
     POST /recommendations/<id>/highlight/
     """
     recommendation = get_object_or_404(Recommendation, id=recommendation_id)
@@ -2514,7 +2510,6 @@ def highlight_recommendation(request, recommendation_id):
 def edit_recommendation_blurb(request):
     """
     Edit the recommendation blurb on user's own profile.
-    NEW VIEW - additive only.
     POST /recommendations/blurb/edit/
     """
     if request.method == "POST":

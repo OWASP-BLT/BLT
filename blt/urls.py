@@ -339,11 +339,6 @@ from website.views.teams import (
     leave_team,
     search_users,
 )
-from website.views.user import edit_recommendation  # NEW - additive only
-from website.views.user import edit_recommendation_blurb  # NEW - additive only
-from website.views.user import highlight_recommendation  # NEW - additive only
-from website.views.user import request_recommendation  # NEW - additive only
-from website.views.user import respond_to_request  # NEW - additive only
 from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
@@ -364,11 +359,14 @@ from website.views.user import (
     delete_recommendation,
     delete_thread,
     deletions,
+    edit_recommendation,
+    edit_recommendation_blurb,
     fetch_notifications,
     follow_user,
     get_public_key,
     get_score,
     github_webhook,
+    highlight_recommendation,
     invite_friend,
     list_recommendations,
     mark_as_read,
@@ -376,6 +374,8 @@ from website.views.user import (
     profile,
     profile_edit,
     referral_signup,
+    request_recommendation,
+    respond_to_request,
     set_public_key,
     start_thread,
     update_bch_address,
@@ -614,13 +614,13 @@ urlpatterns = [
     path("recommendations/add/<str:username>/", add_recommendation, name="add_recommendation"),
     path("recommendations/<int:recommendation_id>/approve/", approve_recommendation, name="approve_recommendation"),
     path("recommendations/<int:recommendation_id>/delete/", delete_recommendation, name="delete_recommendation"),
-    path("recommendations/<int:recommendation_id>/edit/", edit_recommendation, name="edit_recommendation"),  # NEW
+    path("recommendations/<int:recommendation_id>/edit/", edit_recommendation, name="edit_recommendation"),
     path(
         "recommendations/<int:recommendation_id>/highlight/", highlight_recommendation, name="highlight_recommendation"
-    ),  # NEW
-    path("recommendations/request/<str:username>/", request_recommendation, name="request_recommendation"),  # NEW
-    path("recommendations/request/<int:request_id>/respond/", respond_to_request, name="respond_to_request"),  # NEW
-    path("recommendations/blurb/edit/", edit_recommendation_blurb, name="edit_recommendation_blurb"),  # NEW
+    ),
+    path("recommendations/request/<str:username>/", request_recommendation, name="request_recommendation"),
+    path("recommendations/request/<int:request_id>/respond/", respond_to_request, name="respond_to_request"),
+    path("recommendations/blurb/edit/", edit_recommendation_blurb, name="edit_recommendation_blurb"),
     path("api/recommendations/<str:username>/", list_recommendations, name="list_recommendations"),
     re_path(
         r"^unsave_issue/(?P<issue_pk>\d+)/$",

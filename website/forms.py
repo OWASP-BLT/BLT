@@ -722,7 +722,6 @@ class RecommendationForm(forms.ModelForm):
 class RecommendationRequestForm(forms.ModelForm):
     """
     Form for requesting a recommendation from another user.
-    NEW FORM - additive only.
     """
 
     class Meta:
@@ -753,7 +752,6 @@ class RecommendationRequestForm(forms.ModelForm):
 class RecommendationBlurbForm(forms.ModelForm):
     """
     Form for editing the recommendation blurb/summary on profile.
-    NEW FORM - additive only, doesn't modify existing UserProfileForm.
     """
 
     class Meta:
