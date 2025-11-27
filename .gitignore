@@ -21,4 +21,4 @@ requirements.txt
 .qodo
 ssl
 ansible/inventory.yml
-google-credentials.json
+google-credentials.json.env
