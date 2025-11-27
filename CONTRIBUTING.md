@@ -47,18 +47,36 @@ Before you start contributing, you'll need to set up your development environmen
 
 2. Configure environment variables:
 
+   **Linux/macOS/Git Bash:**
+
    ```bash
    cp .env.example .env
+   ```
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   **Windows (CMD):**
+
+   ```cmd
+   copy .env.example .env
    ```
 
    Modify the `.env` file as per your local setup.
 
 3. Ensure LF Line Endings:
-   If you're working on a Windows machine, ensure all files use LF line endings:
+   The repository includes a `.gitattributes` file that automatically enforces LF line endings for shell scripts and configuration files. For new clones, this should handle line endings automatically.
+
+   If you're working on a Windows machine, we recommend configuring Git to work with `.gitattributes`:
 
    ```bash
    git config --global core.autocrlf input
    ```
+
+   **Windows users:** For more detailed instructions on handling line endings, including when manual conversion is needed and PowerShell/VS Code methods, see the [Setup.md](docs/Setup.md#1-ensure-lf-line-endings) documentation.
 
 4. Build and start the Docker containers:
 
@@ -180,6 +198,16 @@ We also use pre-commit hooks to ensure code quality. Install them with:
 ```bash
 poetry run pre-commit install
 ```
+
+### JavaScript Code Standards
+
+For JavaScript code, please follow these guidelines:
+
+**Avoid all console statements:** Our CI/CD pipeline automatically checks for any console statements in JavaScript files (including console.log, console.error, console.warn, etc.). Remove them before submitting your PR.
+
+The project has sufficient error tracking systems in place, so console statements are not needed.
+
+For temporary debugging during development, comment out console statements before committing: `// console.log()`.
 
 ## Testing
 

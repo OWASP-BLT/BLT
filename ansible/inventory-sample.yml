@@ -1,0 +1,41 @@
+---
+all:
+  hosts:
+    blt_server:
+      ansible_host: your.server.ip.or.hostname
+      ansible_user: ubuntu
+      ansible_ssh_private_key_file: ~/.ssh/your_key.pem
+      ansible_python_interpreter: /usr/bin/python3
+
+  vars:
+    # Application settings
+    app_user: bltapp
+    app_dir: /opt/blt
+    venv_dir: "{{ app_dir }}/venv"
+    
+    # Repository
+    repo_url: https://github.com/OWASP-BLT/BLT.git
+    branch: main
+    
+    # Domain
+    domain: yourdomain.com
+    
+    # PostgreSQL settings
+    postgres_db_name: blt
+    postgres_db_user: blt_user
+    # CHANGE THIS PASSWORD! Use a strong password (min 12 chars, mix of upper/lowercase, numbers, special chars)
+    postgres_db_password: CHANGE_ME_TO_SECURE_PASSWORD_123!@#
+    postgres_host: 127.0.0.1
+    postgres_port: 5432
+    
+    # Enable remote PostgreSQL access (true/false)
+    # When false, PostgreSQL will only accept local connections (recommended for production)
+    # When true, PostgreSQL will listen on all interfaces and port 5432 will be opened in firewall
+    # WARNING: Remote access allows connections from any IP (0.0.0.0/0). Consider using SSH tunnels or VPN instead.
+    enable_remote_postgres: false
+    
+    # Uvicorn workers
+    uvicorn_workers: 4
+    
+    # Poetry version (use "latest" or specific version like "1.8.5")
+    poetry_version: "1.8.5"

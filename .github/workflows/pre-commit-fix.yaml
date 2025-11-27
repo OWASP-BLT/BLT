@@ -47,6 +47,11 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             echo "Changes detected by pre-commit."
             echo "changes_detected=true" >> $GITHUB_ENV
+            # Capture the list of changed files for the summary
+            CHANGED_FILES=$(git diff --name-only HEAD)
+            echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
+            echo "$CHANGED_FILES" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
           else
             echo "No changes made by pre-commit."
             echo "changes_detected=false" >> $GITHUB_ENV
@@ -74,3 +79,67 @@ jobs:
               workflow_id: 'ci-cd.yml',
               ref: context.ref
             });
+
+      - name: Comment on PR with summary
+        if: github.event_name == 'pull_request_target' && env.changes_detected == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const changedFiles = process.env.CHANGED_FILES || '';
+            const trimmed = changedFiles.trim();
+            const fileList = trimmed ? trimmed.split('\n').filter(f => f) : [];
+            const fileCount = fileList.length;
+
+            let message = '## ✅ Pre-commit Fixes Applied\n\n';
+            message += `Pre-commit hooks have automatically fixed **${fileCount}** file(s):\n\n`;
+            message += '```\n';
+            message += fileList.join('\n');
+            message += '\n```\n\n';
+            message += 'The changes have been committed and pushed to this PR.';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+      - name: Comment on PR if no changes
+        if: github.event_name == 'pull_request_target' && env.changes_detected == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = [
+              '## ℹ️ No Pre-commit Changes Required',
+              '',
+              'Pre-commit hooks ran successfully but no files needed to be fixed.',
+              'Your code already meets the formatting and linting standards.'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+      - name: Remove fix-pre-commit label
+        if: github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'fix-pre-commit'
+              });
+              console.log('Successfully removed fix-pre-commit label');
+            } catch (error) {
+              // Label might not exist or already removed
+              console.log('Could not remove label:', error.message);
+            }

@@ -401,7 +401,7 @@ function MtrDatepicker(inputConfig) {
 
 			var errorElement = document.createElement('div');
 			addClass(errorElement, 'mtr-error-message');
-			errorElement.appendChild(document.createTextNode('An error has occured during the initialization of the datepicker.'));
+			errorElement.appendChild(document.createTextNode('An error has occurred during the initialization of the datepicker.'));
 
 			targetElement.appendChild(errorElement);
 		}

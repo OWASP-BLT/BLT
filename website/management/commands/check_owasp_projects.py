@@ -2,6 +2,7 @@ import os
 import re
 import time
 from datetime import datetime
+from urllib.parse import quote_plus
 
 import requests
 from django.conf import settings
@@ -208,7 +209,8 @@ class Command(LoggedBaseCommand):
         while True:
             # Using GitHub Search API to specifically find www-project repos in OWASP org
             search_query = "org:OWASP www-project in:name"
-            url = f"https://api.github.com/search/repositories?q={search_query}&per_page={per_page}&page={page}"
+            encoded_query = quote_plus(search_query)
+            url = f"https://api.github.com/search/repositories?q={encoded_query}&per_page={per_page}&page={page}"
 
             try:
                 response = requests.get(url, headers=headers, timeout=10)
@@ -306,15 +308,16 @@ class Command(LoggedBaseCommand):
         }
 
         def get_issue_count(query):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = api_get(search_url)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
             return 0
 
-        data["open_issues"] = get_issue_count("type:issue+state:open")
-        data["closed_issues"] = get_issue_count("type:issue+state:closed")
-        data["open_pull_requests"] = get_issue_count("type:pr+state:open")
+        data["open_issues"] = get_issue_count("type:issue state:open")
+        data["closed_issues"] = get_issue_count("type:issue state:closed")
+        data["open_pull_requests"] = get_issue_count("type:pr state:open")
         data["total_issues"] = data["open_issues"] + data["closed_issues"]
 
         releases_url = f"https://api.github.com/repos/{full_name}/releases/latest"
