@@ -163,10 +163,16 @@ class Command(LoggedBaseCommand):
 
                     if channel_name in channels_map:
                         channel_id = channels_map[channel_name]
-                        # Update project with resolved slack_id and slack URL
+                        # Update project with resolved slack_id, slack URL, and link to SlackChannel
                         project.slack_id = channel_id
                         project.slack = f"https://owasp.slack.com/archives/{channel_id}"
-                        project.save(update_fields=["slack_id", "slack"])
+                        # Link to the SlackChannel model if it exists
+                        try:
+                            slack_channel_obj = SlackChannel.objects.get(channel_id=channel_id)
+                            project.slack_channel_link = slack_channel_obj
+                        except SlackChannel.DoesNotExist:
+                            pass
+                        project.save(update_fields=["slack_id", "slack", "slack_channel_link"])
                         self.stdout.write(
                             self.style.SUCCESS(f"Resolved channel for {project.name}: #{channel_name} -> {channel_id}")
                         )
@@ -227,8 +233,19 @@ class Command(LoggedBaseCommand):
                     continue
 
                 # Update the project after successful pagination
+                update_fields = ["slack_user_count"]
                 project.slack_user_count = member_count
-                project.save(update_fields=["slack_user_count"])
+
+                # Also link project to SlackChannel if not already linked
+                if not project.slack_channel_link_id:
+                    try:
+                        slack_channel_obj = SlackChannel.objects.get(channel_id=channel_id)
+                        project.slack_channel_link = slack_channel_obj
+                        update_fields.append("slack_channel_link")
+                    except SlackChannel.DoesNotExist:
+                        pass
+
+                project.save(update_fields=update_fields)
 
                 # Also update the SlackChannel table with accurate member count
                 SlackChannel.objects.filter(channel_id=channel_id).update(num_members=member_count)
