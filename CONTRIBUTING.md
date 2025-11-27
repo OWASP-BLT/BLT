@@ -199,6 +199,16 @@ We also use pre-commit hooks to ensure code quality. Install them with:
 poetry run pre-commit install
 ```
 
+### JavaScript Code Standards
+
+For JavaScript code, please follow these guidelines:
+
+**Avoid all console statements:** Our CI/CD pipeline automatically checks for any console statements in JavaScript files (including console.log, console.error, console.warn, etc.). Remove them before submitting your PR.
+
+The project has sufficient error tracking systems in place, so console statements are not needed.
+
+For temporary debugging during development, comment out console statements before committing: `// console.log()`.
+
 ## Testing
 
 When adding new features or fixing bugs, please include appropriate tests. Run the tests with:
