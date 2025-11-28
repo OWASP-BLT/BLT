@@ -788,21 +788,20 @@ class OrganizationSocialRedirectView(View):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
-        # Atomically increment the click counter using raw SQL for JSONField
-        from django.db import connection
-
-        # Increment counter atomically (COALESCE handles NULL case)
+        # Atomically increment the click counter using ORM (works on all DBs)
         with transaction.atomic():
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    UPDATE website_organization
-                    SET social_clicks = COALESCE(social_clicks, '{}'::jsonb) ||
-                        jsonb_build_object(%s, COALESCE((social_clicks->>%s)::int, 0) + 1)
-                    WHERE id = %s
-                """,
-                    [platform, platform, org_id],
-                )
+            # Lock the row for update to prevent race conditions
+            organization = Organization.objects.select_for_update().get(id=org_id)
+            
+            # Get current clicks dict (handle None case)
+            clicks = organization.social_clicks or {}
+            
+            # Increment the counter for this platform
+            clicks[platform] = clicks.get(platform, 0) + 1
+            
+            # Save only the social_clicks field
+            organization.social_clicks = clicks
+            organization.save(update_fields=["social_clicks"])
 
         # Redirect to the actual social media URL
         return redirect(target_url)
