@@ -19,7 +19,7 @@ class DomainViewTests(TestCase):
 
         # Create test organization
         self.organization = Organization.objects.create(
-            name="Test Organization", description="Test Description", slug="test-org"
+            name="Test Organization", description="Test Description", slug="test-org", url="https://test-org.com"
         )
 
         # Create test domain
@@ -174,3 +174,351 @@ class SizzleCheckInViewTests(TestCase):
         self.assertContains(response, "Last check-in was on")
         self.assertContains(response, "Fill from Last Check-in")
         self.assertContains(response, "fillFromLastCheckinBtn")
+
+
+class OrganizationSocialRedirectViewTests(TestCase):
+    """Tests for the OrganizationSocialRedirectView - social media click tracking"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+
+        self.organization = Organization.objects.create(
+            name="Test Org",
+            slug="test-org",
+            url="https://testorg.com",
+            twitter="https://twitter.com/testorg",
+            facebook="https://facebook.com/testorg",
+            linkedin="https://linkedin.com/company/testorg",
+            github_org="testorg",
+            social_clicks={},
+        )
+
+    def test_valid_twitter_redirect_increments_counter(self):
+        """Test that clicking Twitter link redirects and increments counter"""
+        url = reverse("organization_social_redirect", kwargs={"org_id": self.organization.id, "platform": "twitter"})
+        response = self.client.get(url)
+
+        # Should redirect
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, self.organization.twitter)
+
+        # Check click was tracked
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.social_clicks.get("twitter", 0), 1)
+
+    def test_valid_linkedin_redirect_increments_counter(self):
+        """Test that clicking LinkedIn link redirects and increments counter"""
+        url = reverse("organization_social_redirect", kwargs={"org_id": self.organization.id, "platform": "linkedin"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, self.organization.linkedin)
+
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.social_clicks.get("linkedin", 0), 1)
+
+    def test_valid_facebook_redirect_increments_counter(self):
+        """Test that clicking Facebook link redirects and increments counter"""
+        url = reverse("organization_social_redirect", kwargs={"org_id": self.organization.id, "platform": "facebook"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, self.organization.facebook)
+
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.social_clicks.get("facebook", 0), 1)
+
+    def test_valid_github_redirect_constructs_url(self):
+        """Test that clicking GitHub link constructs URL from github_org and redirects"""
+        url = reverse("organization_social_redirect", kwargs={"org_id": self.organization.id, "platform": "github"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, f"https://github.com/{self.organization.github_org}")
+
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.social_clicks.get("github", 0), 1)
+
+    def test_multiple_clicks_increment_counter(self):
+        """Test that multiple clicks increment the counter correctly"""
+        url = reverse("organization_social_redirect", kwargs={"org_id": self.organization.id, "platform": "twitter"})
+
+        # Click 3 times
+        for i in range(3):
+            self.client.get(url)
+
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.social_clicks.get("twitter", 0), 3)
+
+    def test_invalid_platform_returns_400(self):
+        """Test that invalid platform returns bad request"""
+        url = reverse("organization_social_redirect", kwargs={"org_id": self.organization.id, "platform": "invalid"})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 400)
+
+    def test_nonexistent_organization_returns_404(self):
+        """Test that non-existent organization returns 404"""
+        url = reverse("organization_social_redirect", kwargs={"org_id": 99999, "platform": "twitter"})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_prevents_open_redirect_attack_twitter(self):
+        """Test that malicious Twitter URLs are blocked"""
+        org = Organization.objects.create(
+            name="Evil Org",
+            slug="evil-org",
+            url="https://evil-org.com",
+            twitter="https://evil.com/phishing",
+            social_clicks={},
+        )
+
+        url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "twitter"})
+        response = self.client.get(url)
+
+        # Should redirect to dashboard with error, not to evil.com
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(f"/organization/{org.id}/dashboard/analytics/", response.url)
+
+    def test_prevents_open_redirect_attack_x_domain(self):
+        """Test that x.com domain is allowed for twitter"""
+        org = Organization.objects.create(
+            name="X Org", slug="x-org", url="https://x-org.com", twitter="https://x.com/testorg", social_clicks={}
+        )
+
+        url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "twitter"})
+        response = self.client.get(url)
+
+        # x.com should be allowed
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://x.com/testorg")
+
+    def test_prevents_open_redirect_attack_subdomain(self):
+        """Test that subdomains of allowed domains work"""
+        org = Organization.objects.create(
+            name="Subdomain Org",
+            slug="subdomain-org",
+            url="https://subdomain-org.com",
+            linkedin="https://www.linkedin.com/company/testorg",
+            social_clicks={},
+        )
+
+        url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "linkedin"})
+        response = self.client.get(url)
+
+        # Subdomain should be allowed
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://www.linkedin.com/company/testorg")
+
+    def test_missing_social_url_shows_error(self):
+        """Test that missing social URL shows error message"""
+        org = Organization.objects.create(
+            name="No Social Org", slug="no-social", url="https://no-social.com", linkedin=None, social_clicks={}
+        )
+
+        url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "linkedin"})
+        response = self.client.get(url)
+
+        # Should redirect back to dashboard
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(f"/organization/{org.id}/dashboard/analytics/", response.url)
+
+    def test_missing_github_org_shows_error(self):
+        """Test that missing github_org field shows error"""
+        org = Organization.objects.create(
+            name="No GitHub Org", slug="no-github", url="https://no-github.com", github_org=None, social_clicks={}
+        )
+
+        url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "github"})
+        response = self.client.get(url)
+
+        # Should redirect back to dashboard
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(f"/organization/{org.id}/dashboard/analytics/", response.url)
+
+
+class OrganizationProfileEditViewTests(TestCase):
+    """Tests for the OrganizationProfileEditView - profile editing functionality"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+        self.organization = Organization.objects.create(
+            name="Test Org",
+            slug="test-org",
+            url="https://test-org-profile.com",
+            admin=self.user,
+            description="Test description",
+        )
+        self.client.login(username="testuser", password="testpass123")
+
+    def test_edit_profile_page_loads(self):
+        """Test that edit profile page loads correctly"""
+        url = reverse("organization_profile_edit", kwargs={"id": self.organization.id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Org")
+        self.assertIn("form", response.context)
+
+    def test_edit_profile_requires_authentication(self):
+        """Test that unauthenticated users cannot access edit page"""
+        self.client.logout()
+        url = reverse("organization_profile_edit", kwargs={"id": self.organization.id})
+        response = self.client.get(url)
+
+        # Should redirect to login
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response.url)
+
+    def test_update_profile_with_valid_data(self):
+        """Test updating organization profile with valid data"""
+        url = reverse("organization_profile_edit", kwargs={"id": self.organization.id})
+        data = {
+            "name": "Updated Org Name",
+            "url": "https://updated-org.com",
+            "description": "New description",
+            "twitter": "https://twitter.com/newhandle",
+            "linkedin": "https://linkedin.com/company/neworg",
+            "github_org": "neworg",
+        }
+
+        response = self.client.post(url, data)
+
+        # Should redirect to analytics
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/dashboard/analytics/", response.url)
+
+        # Verify data was saved
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.name, "Updated Org Name")
+        self.assertEqual(self.organization.url, "https://updated-org.com")
+        self.assertEqual(self.organization.description, "New description")
+        self.assertEqual(self.organization.twitter, "https://twitter.com/newhandle")
+        self.assertEqual(self.organization.linkedin, "https://linkedin.com/company/neworg")
+        self.assertEqual(self.organization.github_org, "neworg")
+
+    def test_update_profile_with_invalid_url(self):
+        """Test that invalid URLs are rejected"""
+        url = reverse("organization_profile_edit", kwargs={"id": self.organization.id})
+        data = {"name": "Test Org", "url": "https://testorg.com", "twitter": "not-a-valid-url"}
+
+        response = self.client.post(url, data)
+
+        # Should not redirect (form errors)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("form", response.context)
+        self.assertTrue(response.context["form"].errors)
+
+    def test_manager_can_edit_organization(self):
+        """Test that organization managers can edit the profile"""
+        manager = User.objects.create_user(username="manager", password="managerpass", email="manager@example.com")
+        self.organization.managers.add(manager)
+
+        self.client.logout()
+        self.client.login(username="manager", password="managerpass")
+
+        url = reverse("organization_profile_edit", kwargs={"id": self.organization.id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_non_member_cannot_edit_organization(self):
+        """Test that non-members cannot edit the organization"""
+        other_user = User.objects.create_user(username="other", password="otherpass", email="other@example.com")
+
+        self.client.logout()
+        self.client.login(username="other", password="otherpass")
+
+        url = reverse("organization_profile_edit", kwargs={"id": self.organization.id})
+        response = self.client.get(url)
+
+        # Should be forbidden or redirect
+        self.assertIn(response.status_code, [302, 403])
+
+
+class OrganizationSocialStatsTests(TestCase):
+    """Tests for the get_social_stats method in OrganizationDashboardAnalyticsView"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+
+        self.organization = Organization.objects.create(
+            name="Test Org",
+            slug="test-org",
+            url="https://test-org-stats.com",
+            admin=self.user,
+            twitter="https://twitter.com/testorg",
+            facebook="https://facebook.com/testorg",
+            linkedin="https://linkedin.com/company/testorg",
+            github_org="testorg",
+            social_clicks={"twitter": 10, "facebook": 5, "linkedin": 3, "github": 8},
+        )
+        self.client.login(username="testuser", password="testpass123")
+
+    def test_get_social_stats_returns_correct_data(self):
+        """Test that social stats are correctly returned"""
+        url = reverse("organization_analytics", kwargs={"id": self.organization.id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("social_stats", response.context)
+
+        social_stats = response.context["social_stats"]
+
+        # Check has_* flags
+        self.assertTrue(social_stats["has_twitter"])
+        self.assertTrue(social_stats["has_facebook"])
+        self.assertTrue(social_stats["has_linkedin"])
+        self.assertTrue(social_stats["has_github"])
+
+        # Check click counts
+        self.assertEqual(social_stats["twitter_clicks"], 10)
+        self.assertEqual(social_stats["facebook_clicks"], 5)
+        self.assertEqual(social_stats["linkedin_clicks"], 3)
+        self.assertEqual(social_stats["github_clicks"], 8)
+
+    def test_get_social_stats_with_no_social_links(self):
+        """Test that stats show False for organizations without social links"""
+        org = Organization.objects.create(
+            name="No Social Org", slug="no-social", url="https://no-social-org.com", admin=self.user, social_clicks={}
+        )
+
+        url = reverse("organization_analytics", kwargs={"id": org.id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        social_stats = response.context["social_stats"]
+
+        # All should be False
+        self.assertFalse(social_stats["has_twitter"])
+        self.assertFalse(social_stats["has_facebook"])
+        self.assertFalse(social_stats["has_linkedin"])
+        self.assertFalse(social_stats["has_github"])
+
+        # All clicks should be 0
+        self.assertEqual(social_stats["twitter_clicks"], 0)
+        self.assertEqual(social_stats["facebook_clicks"], 0)
+        self.assertEqual(social_stats["linkedin_clicks"], 0)
+        self.assertEqual(social_stats["github_clicks"], 0)
+
+    def test_get_social_stats_with_empty_social_clicks(self):
+        """Test that stats handle empty social_clicks dict correctly"""
+        org = Organization.objects.create(
+            name="Empty Clicks Org",
+            slug="empty-clicks",
+            url="https://empty-clicks-org.com",
+            admin=self.user,
+            twitter="https://twitter.com/test",
+            social_clicks={},
+        )
+
+        url = reverse("organization_analytics", kwargs={"id": org.id})
+        response = self.client.get(url)
+
+        social_stats = response.context["social_stats"]
+
+        # Has twitter but no clicks yet
+        self.assertTrue(social_stats["has_twitter"])
+        self.assertEqual(social_stats["twitter_clicks"], 0)
