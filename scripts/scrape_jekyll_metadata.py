@@ -1,4 +1,3 @@
-
 import csv
 import os
 import re
@@ -28,9 +27,7 @@ MAX_REPOS = None
 # Usage: export GITHUB_TOKEN=your_token_here
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
-HEADERS = {
-    "Accept": "application/vnd.github.v3+json"
-}
+HEADERS = {"Accept": "application/vnd.github.v3+json"}
 
 if GITHUB_TOKEN:
     HEADERS["Authorization"] = f"token {GITHUB_TOKEN}"
@@ -130,7 +127,7 @@ def parse_front_matter(content):
 
     # Regex to capture content between the first two '---' lines.
     # Updated to handle various line endings (\r\n or \n).
-    match = re.search(r'^---\s*\r?\n(.*?)\r?\n---\s*\r?\n?', content, re.DOTALL)
+    match = re.search(r"^---\s*\r?\n(.*?)\r?\n---\s*\r?\n?", content, re.DOTALL)
 
     if match:
         yaml_block = match.group(1)
@@ -152,22 +149,22 @@ def generate_proposal(all_keys_counter, total_files):
     print(f"Analyzed {total_files} files with valid metadata.")
     print("Based on frequency analysis, we recommend the following structure:\n")
     print("---")
-    
+
     # List fields that appear in at least 10% of projects as 'Recommended'
     threshold = total_files * 0.1
-    
+
     # Always include layout/title as core fields
     print("layout: col-sidebar  # Standard OWASP layout")
     print("title: <Project Name>")
-    
+
     for key, count in all_keys_counter.most_common():
-        if key in ['layout', 'title']: 
+        if key in ["layout", "title"]:
             continue
-        
+
         usage_percent = (count / total_files) * 100
         if count > threshold:
             print(f"{key}: <value>  # Found in {usage_percent:.1f}% of projects")
-            
+
     print("---")
 
 
@@ -177,7 +174,7 @@ def main():
     repos = get_repositories(ORGANIZATION)
     results = []
     all_keys_counter = Counter()
-    
+
     print("\n[*] Scanning repositories for metadata...")
 
     for i, repo in enumerate(repos):
@@ -185,9 +182,9 @@ def main():
         if i > 0 and i % 10 == 0:
             print(f"    Processed {i}/{len(repos)} repositories...")
 
-        name = repo['name']
-        full_name = repo['full_name']
-        default_branch = repo.get('default_branch', 'master')
+        name = repo["name"]
+        full_name = repo["full_name"]
+        default_branch = repo.get("default_branch", "master")
 
         content, filename = get_index_content(full_name, default_branch)
 
@@ -197,9 +194,9 @@ def main():
             if metadata and isinstance(metadata, dict):
                 # Flatten data for CSV export
                 row = {
-                    'repo_name': name,
-                    'metadata_file': filename,
-                    'repo_url': repo['html_url']
+                    "repo_name": name,
+                    "metadata_file": filename,
+                    "repo_url": repo["html_url"],
                 }
 
                 # Clean up metadata values (convert lists to strings)
@@ -213,15 +210,15 @@ def main():
                 all_keys_counter.update(metadata.keys())
 
     # Sort CSV headers: Repo info first, then metadata keys alphabetically
-    static_headers = ['repo_name', 'metadata_file', 'repo_url']
+    static_headers = ["repo_name", "metadata_file", "repo_url"]
     dynamic_headers = sorted(list(all_keys_counter.keys()))
     fieldnames = static_headers + dynamic_headers
 
     print(f"\n[*] Writing report to {OUTPUT_FILE}...")
 
     try:
-        with open(OUTPUT_FILE, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
+        with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(results)
         print(f"    [+] Success! Report saved with {len(results)} entries.")
