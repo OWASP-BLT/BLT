@@ -783,8 +783,9 @@ class OrganizationSocialRedirectView(View):
         from urllib.parse import urlparse
 
         parsed = urlparse(target_url)
+        hostname = (parsed.hostname or "").lower()
         allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
-        if not any(parsed.netloc == domain or parsed.netloc.endswith(f".{domain}") for domain in allowed_domains):
+        if not any(hostname == domain or hostname.endswith(f".{domain}") for domain in allowed_domains):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
@@ -792,13 +793,13 @@ class OrganizationSocialRedirectView(View):
         with transaction.atomic():
             # Lock the row for update to prevent race conditions
             organization = Organization.objects.select_for_update().get(id=org_id)
-            
+
             # Get current clicks dict (handle None case)
             clicks = organization.social_clicks or {}
-            
+
             # Increment the counter for this platform
             clicks[platform] = clicks.get(platform, 0) + 1
-            
+
             # Save only the social_clicks field
             organization.social_clicks = clicks
             organization.save(update_fields=["social_clicks"])
