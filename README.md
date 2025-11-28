@@ -133,7 +133,7 @@ We welcome contributions from everyone! Whether you're fixing bugs, adding featu
 
 - 🌐 **Website**: [owaspblt.org](https://owaspblt.org)
 - 💬 **Slack**: [Join OWASP Slack](https://owasp.org/slack/invite)
-- 🐦 **Twitter**: [@OWASP_BLT](https://twitter.com/OWASP_BLT)
+- 🐦 **Twitter**: [@OWASP_BLT](https://x.com/OWASP_BLT)
 - 💰 **Sponsor**: [Support the project](https://github.com/sponsors/OWASP-BLT)
 - 📧 **Contact**: Reach out through GitHub issues
 
