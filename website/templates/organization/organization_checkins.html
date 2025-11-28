@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <link rel="stylesheet"
+          type="text/css"
+          href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <div class="container mx-auto p-6">
+        {% include "includes/sidenav.html" %}
+        <div class="main-content w-full">
+            <div class="flex justify-between items-center mb-8 mt-8">
+                <h1 class="text-4xl font-semibold text-gray-800">{{ organization.name }} - Daily Check-Ins</h1>
+                <div class="flex space-x-2">
+                    <a href="{% url 'organization_detail' organization.slug %}"
+                       class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        Back to Organization
+                    </a>
+                    <!-- Date Range Picker -->
+                    <input type="text"
+                           name="daterange"
+                           id="daterange"
+                           class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer"
+                           readonly />
+                </div>
+            </div>
+            <!-- if there is already data available then show the data -->
+            {% if data %}
+                <div id="report-container">
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400"
+                             id="report-title">
+                            Check-In Reports from {{ default_start_date }} to {{ default_end_date }}
+                        </div>
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Username</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Blockers</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Goal Accomplished</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Current Mood</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in data %}
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.username }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.previous_work }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.next_plan }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.blockers }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            {% if item.goal_accomplished %}
+                                                ✅ Yes
+                                            {% else %}
+                                                ❌ No
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.current_mood }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            <a href="{% url 'checkIN_detail' item.id %}"
+                                               class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Container for Reports -->
+                <div id="report-container">
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400"
+                             id="report-title">No check-ins available</div>
+                        <div class="p-4 text-gray-600">No members have submitted check-ins for this organization yet.</div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script>
+function initializeDaterangepicker(retryCount = 0) {
+    try {
+        if (typeof $.fn.daterangepicker === 'function') {
+            const defaultStart = "{{ default_start_date }}";
+            const defaultEnd = "{{ default_end_date }}";
+
+            $('#daterange').daterangepicker({
+                opens: 'left',
+                locale: {
+                    format: 'YYYY-MM-DD'
+                },
+                startDate: defaultStart,
+                endDate: defaultEnd
+            }, function(start, end) {
+                $('#report-title').text(`Check-In Reports from ${start.format('D MMM YYYY')} to ${end.format('D MMM YYYY')}`);
+
+                // AJAX call to fetch check-in details for the selected date range
+                $.ajax({
+                    url: window.location.pathname,
+                    data: {
+                        start_date: start.format('YYYY-MM-DD'),
+                        end_date: end.format('YYYY-MM-DD')
+                    },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function(data) {
+                        $('#report-container').empty();
+
+                        if (data.length === 0) {
+                            $('#report-container').append(`
+                                <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
+                                        No Data
+                                    </div>
+                                    <div class="p-4 text-gray-600">No check-in reports found for the selected range.</div>
+                                </div>
+                            `);
+                            return;
+                        }
+
+                        // Group data by date
+                        const reportsByDate = {};
+                        data.forEach(item => {
+                            if (!reportsByDate[item.date]) {
+                                reportsByDate[item.date] = [];
+                            }
+                            reportsByDate[item.date].push(item);
+                        });
+
+                        // Render each date's report
+                        for (const reportDate in reportsByDate) {
+                            const dayReports = reportsByDate[reportDate];
+
+                            let rows = '';
+                            dayReports.forEach(item => {
+                                const detailUrl = "/check-in/" + item.id + "/";
+                                rows += `
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-3 px-4 border-b border-gray-200">${item.username}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">${item.previous_work}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">${item.next_plan}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">${item.blockers}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            ${item.goal_accomplished ? '✅ Yes' : '❌ No'}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200">${item.current_mood}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            <a href="${detailUrl}" class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+
+                            $('#report-container').append(`
+                                <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
+                                        ${reportDate}
+                                    </div>
+                                    <table class="min-w-full bg-white">
+                                        <thead>
+                                            <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Username</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Blockers</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Goal Accomplished</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Current Mood</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${rows}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while fetching the check-in details.');
+                    }
+                });
+            });
+        } else {
+            if (retryCount < 5) {
+                setTimeout(() => initializeDaterangepicker(retryCount + 1), 500);
+            } else {
+                $('#daterange').prop('type', 'date').css('width', 'auto');
+            }
+        }
+    } catch (e) {
+        $('#daterange').prop('type', 'date').css('width', 'auto');
+    }
+}
+
+$(function() {
+    initializeDaterangepicker();
+});
+    </script>
+{% endblock content %}
