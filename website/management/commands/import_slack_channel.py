@@ -5,11 +5,11 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from website.models import Project
+from website.models import Project, SlackChannel  # CHANGED: import SlackChannel
 
 
 class Command(BaseCommand):
-    help = "Import Slack channels from CSV and associate them with projects"
+    help = "Import Slack channels from CSV or Slack API and associate them with projects and SlackChannel objects"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -23,6 +23,45 @@ class Command(BaseCommand):
             action="store_true",
             help="Fetch channels from Slack API instead of CSV",
         )
+
+    # helper to normalize channel name into a project-like name
+    def normalize_project_name(self, channel_name: str) -> str:
+        """
+        Convert a Slack channel name like 'project-owasp-blt' into
+        a project name like 'OWASP BLT'.
+        """
+        name = channel_name.lower().strip()
+
+        # strip known prefixes
+        if name.startswith("project-"):
+            name = name[len("project-") :]
+
+        # replace hyphens/underscores with spaces
+        name = name.replace("-", " ").replace("_", " ").strip()
+
+        # title-case for comparison with Project.name
+        return name.title()
+
+    # separate matching logic
+    def match_project_for_channel(self, channel_name: str):
+        """
+        Try to find a Project instance that corresponds to a given Slack channel name.
+        Returns (project, match_type) where match_type is 'exact', 'partial', or None.
+        """
+        normalized_name = self.normalize_project_name(channel_name)
+
+        # 1) Exact (case-insensitive) match on name
+        exact_qs = Project.objects.filter(name__iexact=normalized_name)
+        if exact_qs.exists():
+            return exact_qs.first(), "exact"
+
+        # 2) Partial match using icontains on normalized_name (lowercase)
+        partial_qs = Project.objects.filter(name__icontains=normalized_name.lower())
+        if partial_qs.count() == 1:
+            return partial_qs.first(), "partial"
+
+        # 3) No reliable match
+        return None, None
 
     def fetch_from_api(self):
         """Fetch Slack channels from API"""
@@ -56,97 +95,132 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"Request failed: {e}"))
                 break
 
-        return channels
+        # normalize API response into the same structure used by CSV
+        channels_data = []
+        for ch in channels:
+            channels_data.append(
+                {
+                    "name": ch.get("name", ""),
+                    "id": ch.get("id", ""),
+                    "url": f"https://OWASP.slack.com/archives/{ch.get('id')}",
+                }
+            )
+        return channels_data
 
     def import_from_csv(self, csv_path):
         """Import slack channels from CSV file"""
         if not os.path.exists(csv_path):
             self.stdout.write(self.style.ERROR(f"CSV file not found: {csv_path}"))
-            return
+            return []
 
         channels_data = []
         with open(csv_path, "r", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
+                # keep naming consistent with API struct
                 channels_data.append(
                     {
-                        "name": row["slack_channel"],
-                        "id": row["slack_id"],
-                        "url": row["slack_url"],
+                        "name": row.get("slack_channel", "").strip(),
+                        "id": row.get("slack_id", "").strip(),
+                        "url": row.get("slack_url", "").strip(),
                     }
                 )
 
-        self.process_channels(channels_data)
+        return channels_data
 
     def process_channels(self, channels_data):
-        """Process channel data and update projects"""
-        updated_count = 0
-        created_count = 0
+        """
+        Process channel data:
+        - create/update SlackChannel objects
+        - link them to Projects
+        - maintain backward compatibility with Project.slack fields
+        """
+        slack_created = 0
+        slack_updated = 0
+        projects_linked = 0
+        unmatched_channels = 0
+        ambiguous_matches = 0
 
         for channel in channels_data:
-            if channel["name"].startswith("project-"):
-                project_name = channel["name"].replace("project-", "").replace("-", " ").title()
+            name = channel.get("name") or ""
+            channel_id = channel.get("id") or ""
+            url = channel.get("url") or ""
 
-                # Try to find existing project by name (case-insensitive match)
-                project = None
-                # Try exact match first
-                projects = Project.objects.filter(name__iexact=project_name)
-                if projects.exists():
-                    project = projects.first()
-                else:
-                    # Try partial match
-                    projects = Project.objects.filter(name__icontains=project_name.lower())
-                    if projects.count() == 1:
-                        project = projects.first()
+            if not name or not channel_id:
+                self.stdout.write(self.style.WARNING(f"Skipping channel with missing name or id: {channel}"))
+                continue
 
-                if project:
-                    # Update existing project
-                    project.slack = channel.get("url") or f"https://OWASP.slack.com/archives/{channel['id']}"
-                    project.slack_channel = channel["name"]
-                    project.slack_id = channel["id"]
-                    project.save()
-                    self.stdout.write(self.style.SUCCESS(f"Updated project '{project.name}' with Slack channel"))
-                    updated_count += 1
+            # Default URL if not provided
+            if not url:
+                url = f"https://OWASP.slack.com/archives/{channel_id}"
+
+            # create or update SlackChannel object
+            slack_obj, created = SlackChannel.objects.update_or_create(
+                channel_id=channel_id,
+                defaults={
+                    "name": name,
+                    "slack_url": url,
+                },
+            )
+
+            if created:
+                slack_created += 1
+            else:
+                slack_updated += 1
+
+            # Match project using improved logic
+            project, match_type = self.match_project_for_channel(name)
+
+            if project and match_type:
+                # Link SlackChannel to Project
+                slack_obj.project = project
+                slack_obj.save(update_fields=["project"])
+
+                # Backward compatibility: also update Project fields
+                project.slack = url
+                project.slack_channel = name
+                project.slack_id = channel_id
+                project.save(update_fields=["slack", "slack_channel", "slack_id"])
+
+                projects_linked += 1
+
+                if match_type == "exact":
+                    self.stdout.write(self.style.SUCCESS(f"[EXACT] Linked channel '{name}' → project '{project.name}'"))
                 else:
-                    # Optionally create new project (commented out by default to avoid creating unwanted projects)
-                    # project = Project.objects.create(
-                    #     name=project_name,
-                    #     description=f"Project imported from Slack channel {channel['name']}",
-                    #     slack_channel=channel["name"],
-                    #     slack_id=channel["id"],
-                    #     slack=channel.get("url") or f"https://OWASP.slack.com/archives/{channel['id']}",
-                    # )
-                    # self.stdout.write(self.style.SUCCESS(f"Created new project: {project_name}"))
-                    # created_count += 1
                     self.stdout.write(
-                        self.style.WARNING(
-                            f"No matching project found for channel '{channel['name']}' (would be: {project_name})"
-                        )
+                        self.style.SUCCESS(f"[PARTIAL] Linked channel '{name}' → project '{project.name}'")
                     )
+            else:
+                # No reliable match found
+                unmatched_channels += 1
+                # Note: If there are multiple potential matches, we would count that as ambiguous
+                # here we just log no match.
+                self.stdout.write(
+                    self.style.WARNING(f"[UNMATCHED] No project found for channel '{name}' (id: {channel_id})")
+                )
 
-        self.stdout.write(
-            self.style.SUCCESS(f"\nProcessed Slack channels: {updated_count} updated, {created_count} created")
-        )
+        # Summary logging
+        self.stdout.write("")
+        self.stdout.write(self.style.SUCCESS("Slack channel import summary"))
+        self.stdout.write(self.style.SUCCESS(f"  SlackChannel created: {slack_created}"))
+        self.stdout.write(self.style.SUCCESS(f"  SlackChannel updated: {slack_updated}"))
+        self.stdout.write(self.style.SUCCESS(f"  Projects linked:      {projects_linked}"))
+        if ambiguous_matches:
+            self.stdout.write(self.style.WARNING(f"  Ambiguous matches:    {ambiguous_matches}"))
+        self.stdout.write(self.style.WARNING(f"  Unmatched channels:   {unmatched_channels}"))
 
     def handle(self, *args, **options):
         if options["fetch_api"]:
-            self.stdout.write("Fetching Slack channels from API...")
-            channels = self.fetch_from_api()
-            if channels:
-                channels_data = [
-                    {
-                        "name": ch["name"],
-                        "id": ch["id"],
-                        "url": f"https://OWASP.slack.com/archives/{ch['id']}",
-                    }
-                    for ch in channels
-                ]
-                self.process_channels(channels_data)
-            else:
-                self.stdout.write(self.style.WARNING("No channels fetched from API"))
+            self.stdout.write("Fetching Slack channels from Slack API...")
+            channels_data = self.fetch_from_api()
         else:
             csv_path = options["csv"]
             self.stdout.write(f"Importing Slack channels from CSV: {csv_path}")
-            self.import_from_csv(csv_path)
+            channels_data = self.import_from_csv(csv_path)
 
+        if not channels_data:
+            self.stdout.write(self.style.WARNING("No channels to process"))
+            return
+
+        self.process_channels(channels_data)
         self.stdout.write(self.style.SUCCESS("Import complete!"))
