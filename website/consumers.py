@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import tempfile
+import uuid
 import zipfile
 from pathlib import Path
 
@@ -395,20 +396,33 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def add_reaction(self, message_id, emoji, username):
-        """Adds or toggles a reaction on a message."""
+        """Adds or toggles a reaction on a message.
+
+        1. Multiple emoji reactions per user
+        2. Anonymous users via session keys
+        3. Users can only remove their own reactions
+        """
         try:
             message = Message.objects.get(id=message_id)
             reactions = message.reactions or {}
 
-            if emoji not in reactions:
-                reactions[emoji] = []
+            # Handle anonymous users
+            is_anonymous = username.startswith("anon_")
+            user_id = username if not is_anonymous else f"session_{username.split('_')[1]}"
 
-            if username in reactions[emoji]:
-                reactions[emoji].remove(username)
-                if not reactions[emoji]:
-                    del reactions[emoji]
+            # Check if user already has this emoji reaction
+            if emoji in reactions:
+                if user_id in reactions[emoji]:
+                    # User can only remove their own reaction
+                    reactions[emoji].remove(user_id)
+                    if not reactions[emoji]:
+                        del reactions[emoji]
+                else:
+                    # Add new reaction for this emoji
+                    reactions[emoji].append(user_id)
             else:
-                reactions[emoji] = reactions.get(emoji, []) + [username]
+                # Create new emoji reaction list
+                reactions[emoji] = [user_id]
 
             message.reactions = reactions
             message.save()
@@ -437,7 +451,35 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if message_type == "add_reaction":
                 message_id = data.get("message_id")
                 emoji = data.get("emoji")
-                username = self.scope["user"].username if self.scope["user"].is_authenticated else "Anonymous"
+
+                # Get username or generate anonymous session-based username
+                if self.scope["user"].is_authenticated:
+                    username = self.scope["user"].username
+                else:
+                    # Try to get existing session key or generate new one
+                    session_key = (
+                        self.scope.get("session", {}).get("session_key")
+                        or data.get("session_key")
+                        or str(uuid.uuid4())[:8]  # Generate new session key if none exists
+                    )
+
+                    # Store session key in scope for future use
+                    if "session" not in self.scope:
+                        self.scope["session"] = {}
+                    self.scope["session"]["session_key"] = session_key
+
+                    username = f"anon_{session_key}"
+
+                    # Send the session key back to the client
+                    await self.send(
+                        text_data=json.dumps(
+                            {
+                                "type": "session_key",
+                                "session_key": session_key,
+                                "message": "Store this session key for future reactions",
+                            }
+                        )
+                    )
 
                 if not message_id or not emoji:
                     await self.send(
@@ -462,7 +504,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # Handle new messages
             elif message_type == "message" or message_type == "chat_message":
                 message = data.get("message", "").strip()
-                username = data.get("username", "Anonymous")
+
+                # Get proper username for authenticated or anonymous users
+                if self.scope["user"].is_authenticated:
+                    username = self.scope["user"].username
+                else:
+                    # Try to get existing session key or generate new one
+                    session_key = (
+                        self.scope.get("session", {}).get("session_key")
+                        or data.get("session_key")
+                        or str(uuid.uuid4())[:8]  # Generate new session key if none exists
+                    )
+
+                    # Store session key in scope for future use
+                    if "session" not in self.scope:
+                        self.scope["session"] = {}
+                    self.scope["session"]["session_key"] = session_key
+
+                    username = f"anon_{session_key}"
 
                 if not message:
                     await self.send(
