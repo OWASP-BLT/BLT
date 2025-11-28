@@ -18,9 +18,6 @@
     Update the hunt "{{ hunt.name }}" details including name, description, start and end times in the {% env 'PROJECT_NAME' %} dashboard.
 {% endblock og_description %}
 {% block content %}
-    <section>
-        {% include "includes/organization_sidenav.html" %}
-    </section>
     <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
           rel="stylesheet">

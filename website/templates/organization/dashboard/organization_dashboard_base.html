@@ -104,6 +104,11 @@
                             <i class="fas fa-briefcase mr-2"></i>
                             Jobs
                         </a>
+                        <a href="{% url 'slack_channels_list' %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'slack_channels_list' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fab fa-slack mr-2"></i>
+                            Slack Channels
+                        </a>
                     </nav>
                 </div>
             </div>
