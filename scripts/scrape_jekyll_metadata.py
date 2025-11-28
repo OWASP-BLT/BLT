@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
 
 import csv
 import os
 import re
 import sys
-import time
+from collections import Counter
 from datetime import datetime
 
 # Third-party imports
@@ -17,10 +16,13 @@ except ImportError as e:
     sys.exit(1)
 
 # --- Configuration ---
-ORGANIZATION = "OWASP"
+# Target Organization (Defaults to OWASP, can be overridden via env var)
+ORGANIZATION = os.environ.get("TARGET_ORG", "OWASP")
 GITHUB_API_URL = "https://api.github.com"
-OUTPUT_FILE = f"owasp_project_metadata_{datetime.now().strftime('%Y%m%d')}.csv"
+OUTPUT_FILE = f"{ORGANIZATION.lower()}_project_metadata_{datetime.now().strftime('%Y%m%d')}.csv"
 TIMEOUT_SECONDS = 10
+# Set to None for full scan, or an integer for testing (e.g., 50)
+MAX_REPOS = None
 
 # Optional: GitHub Token to avoid rate limits
 # Usage: export GITHUB_TOKEN=your_token_here
@@ -47,34 +49,38 @@ def get_repositories(org):
     print(f"[*] Fetching repositories for organization: {org}...")
     repos = []
     page = 1
-    
+
     while True:
         url = f"{GITHUB_API_URL}/orgs/{org}/repos"
         params = {"per_page": 100, "page": page}
-        
+
         try:
-            response = requests.get(url, headers=HEADERS, params=params, timeout=TIMEOUT_SECONDS)
-            
+            response = requests.get(
+                url, headers=HEADERS, params=params, timeout=TIMEOUT_SECONDS
+            )
+
             if response.status_code != 200:
                 print(f"    [!] Error fetching repos (Status: {response.status_code})")
                 break
-                
+
             data = response.json()
             if not data:
                 break
-                
+
             repos.extend(data)
-            
-            # Safety break for testing purposes (Remove or increase for full scan)
-            if len(repos) >= 100: 
+
+            # Check configurable limit
+            if MAX_REPOS is not None and len(repos) >= MAX_REPOS:
+                print(f"    [!] Reached safety limit of {MAX_REPOS} repositories.")
+                repos = repos[:MAX_REPOS]
                 break
-                
+
             page += 1
-            
+
         except requests.RequestException as e:
             print(f"    [!] Connection error: {e}")
             break
-            
+
     print(f"    [+] Found {len(repos)} repositories.")
     return repos
 
@@ -92,16 +98,20 @@ def get_index_content(repo_full_name, default_branch):
     """
     # Priority list of files to check for metadata
     filenames = ["index.md", "index.html", "README.md", "readme.md"]
-    
+
     for filename in filenames:
-        raw_url = f"https://raw.githubusercontent.com/{repo_full_name}/{default_branch}/{filename}"
+        raw_url = (
+            f"https://raw.githubusercontent.com/{repo_full_name}/"
+            f"{default_branch}/{filename}"
+        )
         try:
-            response = requests.get(raw_url, timeout=5)
+            # Use shared headers and timeout settings
+            response = requests.get(raw_url, headers=HEADERS, timeout=TIMEOUT_SECONDS)
             if response.status_code == 200:
                 return response.text, filename
         except requests.RequestException:
             continue
-            
+
     return None, None
 
 
@@ -118,42 +128,72 @@ def parse_front_matter(content):
     if not content:
         return None
 
-    # Regex to capture content between the first two '---' lines
-    match = re.search(r'^---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
-    
+    # Regex to capture content between the first two '---' lines.
+    # Updated to handle various line endings (\r\n or \n).
+    match = re.search(r'^---\s*\r?\n(.*?)\r?\n---\s*\r?\n?', content, re.DOTALL)
+
     if match:
         yaml_block = match.group(1)
         try:
             return yaml.safe_load(yaml_block)
         except yaml.YAMLError:
             return None
-            
+
     return None
 
 
-def main():
-    print(f"--- OWASP Jekyll Metadata Scraper ---")
+def generate_proposal(all_keys_counter, total_files):
+    """
+    Generates a proposed standard based on the most common fields found.
+    """
+    print("\n" + "=" * 50)
+    print("PROPOSED METADATA STANDARD (Data-Driven)")
+    print("=" * 50)
+    print(f"Analyzed {total_files} files with valid metadata.")
+    print("Based on frequency analysis, we recommend the following structure:\n")
+    print("---")
     
+    # List fields that appear in at least 10% of projects as 'Recommended'
+    threshold = total_files * 0.1
+    
+    # Always include layout/title as core fields
+    print("layout: col-sidebar  # Standard OWASP layout")
+    print("title: <Project Name>")
+    
+    for key, count in all_keys_counter.most_common():
+        if key in ['layout', 'title']: 
+            continue
+        
+        usage_percent = (count / total_files) * 100
+        if count > threshold:
+            print(f"{key}: <value>  # Found in {usage_percent:.1f}% of projects")
+            
+    print("---")
+
+
+def main():
+    print("--- OWASP Jekyll Metadata Scraper ---")
+
     repos = get_repositories(ORGANIZATION)
     results = []
-    all_unique_keys = set()
+    all_keys_counter = Counter()
     
-    print(f"\n[*] Scanning repositories for metadata...")
-    
+    print("\n[*] Scanning repositories for metadata...")
+
     for i, repo in enumerate(repos):
         # Progress indicator every 10 repos
         if i > 0 and i % 10 == 0:
             print(f"    Processed {i}/{len(repos)} repositories...")
-        
+
         name = repo['name']
         full_name = repo['full_name']
         default_branch = repo.get('default_branch', 'master')
-        
+
         content, filename = get_index_content(full_name, default_branch)
-        
+
         if content:
             metadata = parse_front_matter(content)
-            
+
             if metadata and isinstance(metadata, dict):
                 # Flatten data for CSV export
                 row = {
@@ -161,24 +201,24 @@ def main():
                     'metadata_file': filename,
                     'repo_url': repo['html_url']
                 }
-                
+
                 # Clean up metadata values (convert lists to strings)
                 for k, v in metadata.items():
                     if isinstance(v, list):
                         row[k] = ", ".join(map(str, v))
                     else:
                         row[k] = str(v)
-                
+
                 results.append(row)
-                all_unique_keys.update(row.keys())
+                all_keys_counter.update(metadata.keys())
 
     # Sort CSV headers: Repo info first, then metadata keys alphabetically
     static_headers = ['repo_name', 'metadata_file', 'repo_url']
-    dynamic_headers = sorted([k for k in all_unique_keys if k not in static_headers])
+    dynamic_headers = sorted(list(all_keys_counter.keys()))
     fieldnames = static_headers + dynamic_headers
-    
+
     print(f"\n[*] Writing report to {OUTPUT_FILE}...")
-    
+
     try:
         with open(OUTPUT_FILE, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
@@ -188,20 +228,11 @@ def main():
     except IOError as e:
         print(f"    [!] Error writing CSV file: {e}")
 
-    # Display Proposed Standard based on common fields found
-    print("\n" + "="*50)
-    print("PROPOSED METADATA STANDARD")
-    print("="*50)
-    print("Based on the analysis, we recommend enforcing the following structure:")
-    print("---")
-    print("layout: col-sidebar")
-    print("title: <Project Name>")
-    print("tags: <tag1>, <tag2>")
-    print("level: <1-4>")
-    print("type: <tool|documentation|code>")
-    print("pitch: <Short description>")
-    print("region: <Region/Unknown>")
-    print("---")
+    # Display Proposed Standard based on data
+    if results:
+        generate_proposal(all_keys_counter, len(results))
+    else:
+        print("\n[!] No metadata found to generate a proposal.")
 
 
 if __name__ == "__main__":
