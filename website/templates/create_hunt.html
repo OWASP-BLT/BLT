@@ -22,17 +22,17 @@
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}" />
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
-    <form id="create-hunt"
-          class="fixed top-0 left-1/2 transform -translate-x-1/2 w-1/2">
-        {% csrf_token %}
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-            <div class="mb-6">
-                <h4 class="text-2xl font-bold">
-                    <span class="text-black dark:text-white">START A</span> Bug Bounty
-                </h4>
-                <h6 class="text-gray-600 dark:text-gray-400">Enter URL, App name or GPS location of issue</h6>
-            </div>
-            <div class="space-y-4">
+    <div class="flex justify-center items-start py-6 px-4">
+        <form id="create-hunt" class="w-full max-w-2xl">
+            {% csrf_token %}
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="mb-4">
+                    <h4 class="text-2xl font-bold">
+                        <span class="text-black dark:text-white">START A</span> Bug Bounty
+                    </h4>
+                    <h6 class="text-gray-600 dark:text-gray-400">Enter URL, App name or GPS location of issue</h6>
+                </div>
+                <div class="space-y-4">
                 <div class="form-group w-full">
                     <input type="text"
                            name="name"
@@ -101,7 +101,7 @@
                     <span>Publish (If Not Published, the Hunt Will be saved as a draft)</span>
                 </label>
             </div>
-            <div class="mt-6 flex space-x-4">
+            <div class="mt-4 flex space-x-4">
                 <input type="submit"
                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                        value="Save" />
@@ -109,8 +109,9 @@
                        class="bg-gray-500 dark:bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600"
                        value="Reset" />
             </div>
-        </div>
-    </form>
+            </div>
+        </form>
+    </div>
     <script type="text/javascript" src="{% static "js/mtr-datepicker-timezones.js" %}"></script>
     <script type="text/javascript" src="{% static "js/mtr-datepicker.js" %}"></script>
     <script type="text/javascript" src="{% static "js/dt.js" %}"></script>

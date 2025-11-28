@@ -21,27 +21,23 @@
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
     {% get_providers as socialaccount_providers %}
-    <div class="flex items-center min-h-screen p-4 bg-gray-100 dark:bg-gray-800 lg:justify-center">
-        <div class="flex flex-col overflow-hidden bg-white dark:bg-gray-800 rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
+    <div class="flex items-center justify-center h-[calc(100vh-70px)] p-4 bg-gray-100 dark:bg-gray-800">
+        <div class="flex flex-col overflow-hidden bg-white dark:bg-gray-800 rounded-md shadow-lg md:flex-row md:flex-1 lg:max-w-screen-sm">
             <!-- Left Side (Branding and Info) -->
-            <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
-                <div class="my-2 text-4xl font-bold tracking-wider text-center">
-                    <!-- Reduced margin-y -->
+            <div class="p-4 py-4 text-white bg-red-500 md:w-72 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+                <div class="my-1 text-3xl font-bold tracking-wider text-center">
                     <a href="{% url 'home' %}"
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
-                <p class="mt-4 font-normal text-center text-white text-xl md:mt-0">
-                    <!-- Reduced margin-top -->
+                <p class="mt-2 font-normal text-center text-white text-lg md:mt-0">
                     {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, Organizations are held accountable" %}.
                 </p>
-                <p class="flex flex-col items-center justify-center text-sm mt-6 text-center">
-                    <!-- Reduced margin-top -->
+                <p class="flex flex-col items-center justify-center text-sm mt-3 text-center">
                     <span>{% trans "Don't have an account" %}?</span>
                     <a href="{% url 'account_signup' %}{% if redirect_field_value %}?{{ redirect_field_name }}={{ redirect_field_value }}{% endif %}"
                        class="underline text-white">{% trans "Get Started" %}!</a>
                 </p>
-                <p class="mt-4 text-sm text-center text-white">
-                    <!-- Reduced margin-top -->
+                <p class="mt-2 text-sm text-center text-white">
                     {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "conditions" %}</a>
                 </p>
             </div>

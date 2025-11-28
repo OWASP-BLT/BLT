@@ -20,30 +20,30 @@
 {% load custom_tags %}
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 dark:bg-gray-800 h-full">
+    <div class="flex items-center justify-center w-full h-[calc(100vh-70px)] p-4 bg-gray-100 dark:bg-gray-800 overflow-auto">
         <div class="flex flex-col w-full max-w-md bg-white dark:bg-gray-800 rounded-md shadow-lg md:flex-row md:max-w-2xl lg:max-w-4xl">
             <!-- Left Section -->
-            <div class="p-4 py-6 text-white bg-red-500 md:w-96 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
-                <div class="my-3 text-4xl font-bold tracking-wider text-center">
+            <div class="p-4 py-4 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+                <div class="my-2 text-3xl font-bold tracking-wider text-center">
                     <a href="{% url 'home' %}"
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
-                <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
+                <p class="mt-3 font-normal text-center text-white text-lg md:mt-0">
                     {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, Organizations are held accountable" %}.
                 </p>
-                <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
+                <p class="flex flex-col items-center justify-center text-sm mt-4 text-center">
                     <span>{% trans "Already have an account" %}?</span>
                     <a href="{% url 'account_login' %}?next={{ request.path }}"
                        class="underline text-white">{% trans "Login" %}!</a>
                 </p>
-                <p class="mt-6 text-sm text-center text-white">
+                <p class="mt-3 text-sm text-center text-white">
                     {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline">{% trans "conditions" %}</a>
                 </p>
             </div>
             <!-- Right Section -->
             <div class="p-5 bg-white dark:bg-gray-800 md:flex-1">
-                <h3 class="my-4 text-2xl font-semibold text-gray-700 dark:text-gray-300">{% trans "Account SignUp" %}</h3>
-                <form class="flex flex-col space-y-5 login"
+                <h3 class="my-2 text-2xl font-semibold text-gray-700 dark:text-gray-300">{% trans "Account SignUp" %}</h3>
+                <form class="flex flex-col space-y-3 login"
                       method="post"
                       action="{% url 'account_signup' %}">
                     {% csrf_token %}

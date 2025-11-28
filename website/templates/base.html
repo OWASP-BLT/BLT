@@ -128,16 +128,13 @@
         {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
-        <main class="min-h-screen pb-[70px] mt-[20px]">
+        <main class="flex-1">
             {% block content %}
             {% endblock content %}
             {% block natural_content %}
             {% endblock natural_content %}
             {% include "includes/checkInModal.html" %}
         </main>
-        <div class="pb-[50px]">
-            <!-- Adding bottom padding to prevent content overlap with footer -->
-        </div>
         {% block scripts %}
         {% endblock scripts %}
         <!-- Messages container -->
