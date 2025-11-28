@@ -66,9 +66,31 @@ class MySeleniumTests(LiveServerTestCase):
             print(f"Error setting up Chrome: {e}")
             raise
 
+    def _ensure_verified_user(self, username: str, email: str, password: str) -> User:
+        from allauth.account.models import EmailAddress
+
+        user, _ = User.objects.get_or_create(
+            username=username,
+            defaults={"email": email or ""},
+        )
+        if email and user.email != email:
+            user.email = email
+        if password:
+            user.set_password(password)
+        user.save()
+        UserProfile.objects.get_or_create(user=user)
+        if user.email:
+            EmailAddress.objects.update_or_create(
+                user=user,
+                email=user.email,
+                defaults={"verified": True, "primary": True},
+            )
+        return user
+
     @classmethod
     def tearDownClass(cls):
         cls.selenium.quit()
+        User.objects.filter(username="bugbugbug").delete()
         super(MySeleniumTests, cls).tearDownClass()
 
     @override_settings(DEBUG=True)
@@ -132,16 +154,33 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
 
     @override_settings(DEBUG=True)
-    def test_login(self):
-        # Email verification is now handled in setUp
+    def test_login_email(self):
+        user_email = "bugbugbug@bugbug.com"
+        user_name = "bugbugbug"
+        self._ensure_verified_user(user_name, user_email, "secret")
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbug")
+        self.selenium.find_element("name", "login").send_keys(user_email)
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         # Check for current header format: @username and separate Points display
-        self.assertIn("@bugbug", body.text)
+        self.assertIn(f"@{user_name.split('_')[0]}", body.text)
+        self.assertIn("0 Points", body.text)
+
+    @override_settings(DEBUG=True)
+    def test_login_username(self):
+        user_email = "bugbugbug@bugbug.com"
+        user_name = "bugbugbug"
+        self._ensure_verified_user(user_name, user_email, "secret")
+        self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
+        self.selenium.find_element("name", "login").send_keys(user_name)
+        self.selenium.find_element("name", "password").send_keys("secret")
+        self.selenium.find_element("name", "login_button").click()
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        body = self.selenium.find_element("tag name", "body")
+        # Check for current header format: @username and separate Points display
+        self.assertIn(f"@{user_name.split('_')[0]}", body.text)
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True)
@@ -192,26 +231,18 @@ class MySeleniumTests(LiveServerTestCase):
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("XSS Attack on Google", body.text)
 
-    def setUp(self):
-        super().setUp()
-        # Verify emails for all test users
-        self.verify_user_emails()
-
     def verify_user_emails(self):
         """Helper method to verify emails for all test users"""
         from allauth.account.models import EmailAddress
 
-        # Get all users from the fixture
         for user in User.objects.all():
-            if user.email:  # Only process users with emails
+            if user.email:
                 email_address = EmailAddress.objects.filter(user=user, email=user.email).first()
                 if email_address:
-                    # If email address exists, just verify it
                     email_address.verified = True
                     email_address.primary = True
                     email_address.save()
                 else:
-                    # Create a new verified email address
                     EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
 
 
