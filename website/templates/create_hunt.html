@@ -33,82 +33,82 @@
                     <h6 class="text-gray-600 dark:text-gray-400">Enter URL, App name or GPS location of issue</h6>
                 </div>
                 <div class="space-y-4">
-                <div class="form-group w-full">
-                    <input type="text"
-                           name="name"
-                           required
-                           class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded"
-                           placeholder="Enter Name for the Bug Bounty"
-                           id="name"
-                           value="">
-                </div>
-                <div>
-                    {{ hunt_form.media }}
-                    {{ hunt_form.as_p }}
-                </div>
-                <div class="form-group w-1/2">
-                    <label for="name" class="block text-gray-700 dark:text-gray-300">
-                        Start Date/Time :
-                        <div id="datepicker-1-res" class="hidden"></div>
-                    </label>
-                    <div id="datepicker-1"></div>
-                </div>
-                <div class="form-group w-1/2">
-                    <label for="name" class="block text-gray-700 dark:text-gray-300">
-                        End Date/Time :
-                        <div id="datepicker-2-res" class="hidden"></div>
-                    </label>
-                    <div id="datepicker-2"></div>
-                </div>
-                <div class="form-group w-full">
-                    <select name="domain"
-                            class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded"
-                            id="domain">
-                        {% for domain in domains %}<option>{{ domain.id }} - {{ domain.name }}</option>{% endfor %}
-                    </select>
-                </div>
-                <div class="form-group w-full">
-                    <span class="block text-gray-700 dark:text-gray-300">Prizes</span>
-                    <div class="flex space-x-4">
-                        <label class="flex-1 relative">
-                            <input name="prize_winner"
-                                   type="number"
-                                   placeholder="Winner"
-                                   class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded pr-8" />
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-500">$</div>
-                        </label>
-                        <label class="flex-1 relative">
-                            <input placeholder="Runner's Up"
-                                   name="prize_runner"
-                                   type="number"
-                                   class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded pr-8" />
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-500">$</div>
-                        </label>
-                        <label class="flex-1 relative">
-                            <input placeholder="2nd Runner's Up"
-                                   name="prize_second_runner"
-                                   type="number"
-                                   class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded pr-8" />
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-500">$</div>
-                        </label>
+                    <div class="form-group w-full">
+                        <input type="text"
+                               name="name"
+                               required
+                               class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded"
+                               placeholder="Enter Name for the Bug Bounty"
+                               id="name"
+                               value="">
                     </div>
-                    <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                        (Your wallet must contain the total prize money, if not you can go to profile to add money to wallet)
-                    </p>
+                    <div>
+                        {{ hunt_form.media }}
+                        {{ hunt_form.as_p }}
+                    </div>
+                    <div class="form-group w-1/2">
+                        <label for="name" class="block text-gray-700 dark:text-gray-300">
+                            Start Date/Time :
+                            <div id="datepicker-1-res" class="hidden"></div>
+                        </label>
+                        <div id="datepicker-1"></div>
+                    </div>
+                    <div class="form-group w-1/2">
+                        <label for="name" class="block text-gray-700 dark:text-gray-300">
+                            End Date/Time :
+                            <div id="datepicker-2-res" class="hidden"></div>
+                        </label>
+                        <div id="datepicker-2"></div>
+                    </div>
+                    <div class="form-group w-full">
+                        <select name="domain"
+                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded"
+                                id="domain">
+                            {% for domain in domains %}<option>{{ domain.id }} - {{ domain.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group w-full">
+                        <span class="block text-gray-700 dark:text-gray-300">Prizes</span>
+                        <div class="flex space-x-4">
+                            <label class="flex-1 relative">
+                                <input name="prize_winner"
+                                       type="number"
+                                       placeholder="Winner"
+                                       class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded pr-8" />
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-500">$</div>
+                            </label>
+                            <label class="flex-1 relative">
+                                <input placeholder="Runner's Up"
+                                       name="prize_runner"
+                                       type="number"
+                                       class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded pr-8" />
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-500">$</div>
+                            </label>
+                            <label class="flex-1 relative">
+                                <input placeholder="2nd Runner's Up"
+                                       name="prize_second_runner"
+                                       type="number"
+                                       class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded pr-8" />
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-500">$</div>
+                            </label>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                            (Your wallet must contain the total prize money, if not you can go to profile to add money to wallet)
+                        </p>
+                    </div>
+                    <label class="flex items-center space-x-2">
+                        <input name="publish" type="checkbox" value="true" class="form-checkbox">
+                        <span>Publish (If Not Published, the Hunt Will be saved as a draft)</span>
+                    </label>
                 </div>
-                <label class="flex items-center space-x-2">
-                    <input name="publish" type="checkbox" value="true" class="form-checkbox">
-                    <span>Publish (If Not Published, the Hunt Will be saved as a draft)</span>
-                </label>
-            </div>
-            <div class="mt-4 flex space-x-4">
-                <input type="submit"
-                       class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                       value="Save" />
-                <input type="reset"
-                       class="bg-gray-500 dark:bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600"
-                       value="Reset" />
-            </div>
+                <div class="mt-4 flex space-x-4">
+                    <input type="submit"
+                           class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                           value="Save" />
+                    <input type="reset"
+                           class="bg-gray-500 dark:bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600"
+                           value="Reset" />
+                </div>
             </div>
         </form>
     </div>
