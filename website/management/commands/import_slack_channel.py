@@ -56,7 +56,7 @@ class Command(BaseCommand):
             return exact_qs.first(), "exact"
 
         # 2) Partial match using icontains on normalized_name (lowercase)
-        partial_qs = Project.objects.filter(name__icontains=normalized_name.lower())
+        partial_qs = Project.objects.filter(name__icontains=normalized_name)
         if partial_qs.count() == 1:
             return partial_qs.first(), "partial"
 
@@ -139,7 +139,6 @@ class Command(BaseCommand):
         slack_updated = 0
         projects_linked = 0
         unmatched_channels = 0
-        ambiguous_matches = 0
 
         for channel in channels_data:
             name = channel.get("name") or ""
@@ -193,8 +192,6 @@ class Command(BaseCommand):
             else:
                 # No reliable match found
                 unmatched_channels += 1
-                # Note: If there are multiple potential matches, we would count that as ambiguous
-                # here we just log no match.
                 self.stdout.write(
                     self.style.WARNING(f"[UNMATCHED] No project found for channel '{name}' (id: {channel_id})")
                 )
@@ -205,8 +202,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"  SlackChannel created: {slack_created}"))
         self.stdout.write(self.style.SUCCESS(f"  SlackChannel updated: {slack_updated}"))
         self.stdout.write(self.style.SUCCESS(f"  Projects linked:      {projects_linked}"))
-        if ambiguous_matches:
-            self.stdout.write(self.style.WARNING(f"  Ambiguous matches:    {ambiguous_matches}"))
         self.stdout.write(self.style.WARNING(f"  Unmatched channels:   {unmatched_channels}"))
 
     def handle(self, *args, **options):

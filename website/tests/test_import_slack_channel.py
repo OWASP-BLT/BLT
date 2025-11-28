@@ -35,7 +35,7 @@ class ImportSlackChannelTests(TestCase):
 
         csv_data.seek(0)
 
-        with patch("builtins.open", return_value=csv_data):
+        with patch("os.path.exists", return_value=True), patch("builtins.open", return_value=csv_data):
             call_command("import_slack_channel", "--csv", "dummy.csv")
 
     #  SlackChannel Creation Tests
@@ -105,4 +105,4 @@ class ImportSlackChannelTests(TestCase):
 
         # Confirm warning logged
         logged_text = "".join([call[0][0] for call in mocked_stdout.write.call_args_list])
-        self.assertIn("No matching project found", logged_text)
+        self.assertIn("No project found for channel", logged_text)
