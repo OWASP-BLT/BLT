@@ -13,6 +13,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info(f"Starting weekly scheduled tasks at {timezone.now()}")
 
+        # Send weekly stats report to organizations
+        try:
+            management.call_command("send_weekly_stats")
+            logger.info("Completed weekly stats delivery")
+        except Exception:
+            logger.exception("Error sending weekly stats")
+
         # Send weekly bug report digest to organization followers
         try:
             management.call_command("send_weekly_bug_digest")
