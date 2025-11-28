@@ -283,7 +283,7 @@ def UpdateIssue(request):
                     break
     except:
         tokenauth = False
-    if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
+    if request.method == "POST" and (request.user.is_superuser or (issue is not None and request.user == issue.user)):
         if request.POST.get("action") == "close":
             issue.status = "closed"
             issue.closed_by = request.user
@@ -2228,19 +2228,19 @@ class GitHubIssuesView(ListView):
 
         # Fetch all counts in a single query using aggregate to avoid N+1 query problem
         counts = GitHubIssue.objects.aggregate(
-            total_count=Count('id'),
-            open_count=Count('id', filter=Q(state='open')),
-            closed_count=Count('id', filter=Q(state='closed')),
-            pr_count=Count('id', filter=Q(type='pull_request')),
-            issue_count=Count('id', filter=Q(type='issue'))
+            total_count=Count("id"),
+            open_count=Count("id", filter=Q(state="open")),
+            closed_count=Count("id", filter=Q(state="closed")),
+            pr_count=Count("id", filter=Q(type="pull_request")),
+            issue_count=Count("id", filter=Q(type="issue")),
         )
-        
+
         # Add counts for filtering
-        context["total_count"] = counts['total_count']
-        context["open_count"] = counts['open_count']
-        context["closed_count"] = counts['closed_count']
-        context["pr_count"] = counts['pr_count']
-        context["issue_count"] = counts['issue_count']
+        context["total_count"] = counts["total_count"]
+        context["open_count"] = counts["open_count"]
+        context["closed_count"] = counts["closed_count"]
+        context["pr_count"] = counts["pr_count"]
+        context["issue_count"] = counts["issue_count"]
 
         # Add current filter states
         context["current_type"] = self.request.GET.get("type", "all")
