@@ -630,3 +630,6 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+# Bug Review Queue Settings
+BUG_REVIEW_QUEUE_NEW_USER_DAYS = int(os.environ.get("BUG_REVIEW_QUEUE_NEW_USER_DAYS", "7"))  # Days
