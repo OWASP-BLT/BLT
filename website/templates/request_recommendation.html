@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}
+    {% trans "Request Recommendation" %}
+{% endblock title %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4 py-8">
+        <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
+            <!-- Header Section -->
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-6">
+                <div class="flex items-center gap-3 mb-2">
+                    <i class="fas fa-envelope text-white text-2xl"></i>
+                    <h2 class="text-2xl font-bold text-white">{% trans "Request a Recommendation" %}</h2>
+                </div>
+                <p class="text-blue-50 text-sm">
+                    {% trans "Ask" %} <span class="font-semibold">@{{ to_user.username }}</span> {% trans "to write you a recommendation" %}
+                </p>
+            </div>
+            <!-- Form Content -->
+            <div class="p-8">
+                {% if messages %}
+                    <div class="mb-6">
+                        {% for message in messages %}
+                            <div class="p-4 rounded-lg flex items-start gap-3 {% if message.tags == 'error' %}bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800{% elif message.tags == 'success' %}bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800{% elif message.tags == 'warning' %}bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800{% else %}bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800{% endif %}">
+                                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'success' %}fa-check-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mt-0.5"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    {% trans "You can include an optional personal message to help" %} {{ to_user.username }} {% trans "understand what you'd like them to highlight in their recommendation." %}
+                </p>
+                <form method="post"
+                      action="{% url 'request_recommendation' to_user.username %}">
+                    {% csrf_token %}
+                    <div class="mb-6">
+                        <label for="{{ form.message.id_for_label }}"
+                               class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2.5">
+                            <i class="fas fa-comment-dots text-gray-400 mr-2"></i>
+                            {% trans "Message" %}
+                            <span class="text-gray-400 text-xs font-normal">({% trans "Optional" %})</span>
+                        </label>
+                        <div class="relative">{{ form.message }}</div>
+                        <div class="mt-2 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span id="char-count"
+                                      class="text-sm font-semibold px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 border border-transparent transition-colors duration-200">0</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">/ 500 {% trans "characters" %}</span>
+                            </div>
+                        </div>
+                        {% if form.message.errors %}
+                            <p class="text-red-500 text-sm mt-2 flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle text-xs"></i>
+                                {{ form.message.errors.0 }}
+                            </p>
+                        {% endif %}
+                    </div>
+                    <!-- Form Actions -->
+                    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex gap-3 justify-end">
+                        <a href="{% url 'profile' slug=to_user.username %}"
+                           class="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-gray-700 dark:text-gray-300 transition-colors duration-200">
+                            {% trans "Cancel" %}
+                        </a>
+                        <button type="submit"
+                                class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2">
+                            <i class="fas fa-paper-plane"></i>
+                            {% trans "Send Request" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <style>
+        /* Enhanced form field styling */
+        #{{ form.message.id_for_label }} {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+            color: #111827;
+            font-size: 0.875rem;
+            transition: all 0.2s ease-in-out;
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .dark #{{ form.message.id_for_label }} {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+        
+        #{{ form.message.id_for_label }}:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+    </style>
+    <script>
+        // Character counter for message field
+        const textarea = document.getElementById('{{ form.message.id_for_label }}');
+        const charCount = document.getElementById('char-count');
+        
+        if (textarea && charCount) {
+            function updateCharCount() {
+                const length = textarea.value.length;
+                charCount.textContent = length;
+                
+                if (length > 500) {
+                    charCount.classList.add('text-red-600', 'dark:text-red-400', 'bg-red-50', 'dark:bg-red-900/20', 'border-red-300', 'dark:border-red-700');
+                    charCount.classList.remove('text-gray-500', 'bg-gray-100', 'dark:bg-gray-700');
+                } else if (length > 0) {
+                    charCount.classList.remove('text-red-600', 'dark:text-red-400', 'bg-red-50', 'dark:bg-red-900/20', 'border-red-300', 'dark:border-red-700');
+                    charCount.classList.add('text-blue-600', 'dark:text-blue-400', 'bg-blue-50', 'dark:bg-blue-900/20', 'border-blue-300', 'dark:border-blue-700');
+                } else {
+                    charCount.classList.remove('text-red-600', 'dark:text-red-400', 'bg-red-50', 'dark:bg-red-900/20', 'border-red-300', 'dark:border-red-700', 'text-blue-600', 'dark:text-blue-400', 'bg-blue-50', 'dark:bg-blue-900/20', 'border-blue-300', 'dark:border-blue-700');
+                    charCount.classList.add('text-gray-500', 'bg-gray-100', 'dark:bg-gray-700');
+                }
+            }
+            
+            textarea.addEventListener('input', updateCharCount);
+            updateCharCount(); // Initialize count
+        }
+    </script>
+{% endblock content %}
