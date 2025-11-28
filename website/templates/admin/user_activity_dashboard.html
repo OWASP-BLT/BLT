@@ -1,0 +1,75 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/admin_dashboard.css' %}">
+<div id="content-main">
+    <h1>{{ title }}</h1>
+
+    <div class="dashboard-module">
+        <h2>Active Users ({{ active_users.count }})</h2>
+        <p class="help">Users who have reported at least one issue.</p>
+        <div class="module">
+            <table class="dashboard-table">
+                <thead>
+                    <tr class="table-header">
+                        <th class="table-header-cell">Username</th>
+                        <th class="table-header-cell">Email</th>
+                        <th class="table-header-cell">Date Joined</th>
+                        <th class="table-header-cell">Issues Reported</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in active_users %}
+                    <tr>
+                        <td class="table-cell">
+                            <a href="{% url user_admin_url_name user.id %}"><strong>{{ user.username }}</strong></a>
+                        </td>
+                        <td class="table-cell">{{ user.email }}</td>
+                        <td class="table-cell">{{ user.date_joined|date:"Y-m-d" }}</td>
+                        <td class="table-cell">{{ user.issue_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="table-cell-colspan">No active users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="dashboard-module">
+        <h2>Inactive Users ({{ inactive_users.count }})</h2>
+        <p class="help">Users who have never reported an issue.</p>
+        <div class="module">
+            <table class="dashboard-table">
+                <thead>
+                    <tr class="table-header">
+                        <th class="table-header-cell">Username</th>
+                        <th class="table-header-cell">Email</th>
+                        <th class="table-header-cell">Date Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in inactive_users %}
+                    <tr>
+                        <td class="table-cell">
+                            <a href="{% url user_admin_url_name user.id %}"><strong>{{ user.username }}</strong></a>
+                        </td>
+                        <td class="table-cell">{{ user.email }}</td>
+                        <td class="table-cell">{{ user.date_joined|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="table-cell-colspan">No inactive users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

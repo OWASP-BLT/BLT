@@ -355,6 +355,7 @@ from website.views.user import (
     set_public_key,
     start_thread,
     update_bch_address,
+    user_activity_dashboard,
     user_dashboard,
     users_view,
     view_thread,
@@ -567,6 +568,7 @@ urlpatterns = [
         user_dashboard,
         name="user",
     ),
+    path("admin/user-activity/", user_activity_dashboard, name="user_activity_dashboard"),
     path(settings.ADMIN_URL + "/", admin.site.urls),
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
     re_path(
