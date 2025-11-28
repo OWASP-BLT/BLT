@@ -2226,12 +2226,21 @@ class GitHubIssuesView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Fetch all counts in a single query using aggregate to avoid N+1 query problem
+        counts = GitHubIssue.objects.aggregate(
+            total_count=Count('id'),
+            open_count=Count('id', filter=Q(state='open')),
+            closed_count=Count('id', filter=Q(state='closed')),
+            pr_count=Count('id', filter=Q(type='pull_request')),
+            issue_count=Count('id', filter=Q(type='issue'))
+        )
+        
         # Add counts for filtering
-        context["total_count"] = GitHubIssue.objects.count()
-        context["open_count"] = GitHubIssue.objects.filter(state="open").count()
-        context["closed_count"] = GitHubIssue.objects.filter(state="closed").count()
-        context["pr_count"] = GitHubIssue.objects.filter(type="pull_request").count()
-        context["issue_count"] = GitHubIssue.objects.filter(type="issue").count()
+        context["total_count"] = counts['total_count']
+        context["open_count"] = counts['open_count']
+        context["closed_count"] = counts['closed_count']
+        context["pr_count"] = counts['pr_count']
+        context["issue_count"] = counts['issue_count']
 
         # Add current filter states
         context["current_type"] = self.request.GET.get("type", "all")
