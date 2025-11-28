@@ -3558,3 +3558,26 @@ class SecurityIncident(models.Model):
     affected_systems = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
+
+    #  NEW AUTO-FIELDS & ENHANCEMENTS
+    def __str__(self):
+        return f"{self.title} ({self.get_severity_display()}) - {self.get_status_display()}"
+
+    def save(self, *args, **kwargs):
+        """
+        Automatically set or clear resolved_at timestamp based on status.
+        """
+        if self.status == self.Status.RESOLVED and not self.resolved_at:
+            self.resolved_at = timezone.now()
+        elif self.status != self.Status.RESOLVED and self.resolved_at:
+            self.resolved_at = None
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["severity"], name="incident_severity_idx"),
+            models.Index(fields=["status"], name="incident_status_idx"),
+            models.Index(fields=["-created_at"], name="incident_created_idx"),
+        ]
