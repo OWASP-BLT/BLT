@@ -2854,7 +2854,18 @@ class Hackathon(models.Model):
 
         # Group by reviewer and count reviews
         leaderboard = {}
+        seen = set()
+
         for review in reviews:
+            reviewer_key = (
+                review.pull_request_id,
+                review.reviewer_id or review.reviewer_contributor_id,
+            )
+            # Skip duplicate reviews for same PR+reviewer
+            if reviewer_key in seen:
+                continue
+            seen.add(reviewer_key)
+
             if review.reviewer:
                 # Registered user reviewer
                 user_id = review.reviewer.user.id
@@ -2898,6 +2909,13 @@ class Hackathon(models.Model):
         leaderboard_list = list(leaderboard.values())
         leaderboard_list.sort(key=lambda x: x["count"], reverse=True)
 
+        def sort_key(item):
+            count = -item["count"]
+            user = item["user"]
+            user_id = user.id if not item["is_contributor"] else 999999
+            return (count, user_id)
+
+        leaderboard_list.sort(key=sort_key)
         return leaderboard_list
 
 
