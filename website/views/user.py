@@ -14,6 +14,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -41,6 +42,7 @@ from website.models import (
     Contributor,
     ContributorStats,
     Domain,
+    GitHubComment,
     GitHubIssue,
     GitHubReview,
     Hunt,
@@ -641,6 +643,48 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         context["top_visitors"] = top_visitors
 
+        # GitHub Comment Leaderboard - aggregated by commenter
+        github_comments_data = []
+        try:
+            github_comments_leaderboard = (
+                GitHubComment.objects.values("commenter_login")
+                .annotate(total_comments=Count("id"))
+                .order_by("-total_comments")[:10]
+            )
+
+            # Build leaderboard data with rank and formatted info
+            for rank, item in enumerate(github_comments_leaderboard, start=1):
+                commenter_login = item.get("commenter_login", "Unknown")
+                total_comments = item.get("total_comments", 0)
+
+                # Fetch the most recent comment for this user to get their current GitHub URL and avatar
+                recent_comment = (
+                    GitHubComment.objects.filter(commenter_login=commenter_login).select_related("commenter").first()
+                )
+                github_url = recent_comment.commenter.github_url if recent_comment and recent_comment.commenter else ""
+                avatar_url = recent_comment.commenter.avatar_url if recent_comment and recent_comment.commenter else ""
+
+                # Fallback to constructed URLs if not available
+                if not avatar_url:
+                    avatar_url = f"https://github.com/{commenter_login}.png"
+                if not github_url:
+                    github_url = f"https://github.com/{commenter_login}"
+
+                github_comments_data.append(
+                    {
+                        "username": commenter_login,
+                        "github_url": github_url,
+                        "avatar_url": avatar_url,
+                        "total_comments": total_comments,
+                    }
+                )
+        except Exception as e:
+            # Handle case where table doesn't exist (migration not run yet)
+            logger.warning(f"Could not fetch GitHub comments leaderboard: {str(e)}")
+            github_comments_data = []
+
+        context["github_comments_leaderboard"] = github_comments_data
+
         return context
 
 
@@ -1199,6 +1243,113 @@ def badge_user_list(request, badge_id):
     )
 
 
+def handle_issue_comment_event(payload):
+    """
+    Handle GitHub issue_comment webhook event to track comments for leaderboard.
+    This is triggered when comments are added to issues or pull requests.
+    """
+    try:
+        if payload.get("action") != "created":
+            return JsonResponse({"status": "success"}, status=200)
+
+        comment_data = payload.get("comment", {})
+        issue_data = payload.get("issue", {})
+        repository = payload.get("repository", {})
+
+        if not all([comment_data, issue_data, repository]):
+            return JsonResponse({"status": "error", "message": "Missing data"}, status=400)
+
+        comment_id = comment_data.get("id")
+        issue_number = issue_data.get("number")
+        commenter_login = comment_data.get("user", {}).get("login")
+        repo_name = repository.get("name")
+        repo_owner = repository.get("owner", {}).get("login")
+
+        # Skip if comment already exists
+        if GitHubComment.objects.filter(comment_id=comment_id).exists():
+            return JsonResponse({"status": "success", "message": "Comment already tracked"}, status=200)
+
+        # Get or create the Repo
+        repo_url = repository.get("html_url", "")
+        repo = Repo.objects.filter(repo_url=repo_url).first()
+
+        if not repo:
+            # Try to find by name and owner
+            repo = Repo.objects.filter(name=repo_name).first()
+
+        if not repo:
+            logger.warning(f"Repository not found for {repo_owner}/{repo_name}")
+            return JsonResponse({"status": "success", "message": "Repository not tracked"}, status=200)
+
+        # Get or create the GitHubIssue
+        github_issue = GitHubIssue.objects.filter(issue_id=issue_number, repo=repo).first()
+
+        if not github_issue:
+            logger.warning(f"GitHub issue {issue_number} not found in repo {repo.name}")
+            return JsonResponse({"status": "success", "message": "GitHub issue not tracked"}, status=200)
+
+        # Get or create Contributor
+        commenter = None
+        try:
+            commenter = Contributor.objects.get(github_url=comment_data["user"]["html_url"])
+        except Contributor.DoesNotExist:
+            try:
+                commenter = Contributor.objects.create(
+                    name=commenter_login,
+                    github_id=comment_data["user"].get("id", 0),
+                    github_url=comment_data["user"].get("html_url", ""),
+                    avatar_url=comment_data["user"].get("avatar_url", ""),
+                    contributor_type=comment_data["user"].get("type", "User"),
+                    contributions=0,
+                )
+            except Exception as e:
+                logger.warning(f"Could not create Contributor for {commenter_login}: {str(e)}")
+
+        # Try to link to UserProfile
+        commenter_profile = None
+        try:
+            commenter_profile = UserProfile.objects.get(github_url=comment_data["user"]["html_url"])
+        except UserProfile.DoesNotExist:
+            try:
+                commenter_profile = UserProfile.objects.filter(user__username__iexact=commenter_login).first()
+            except Exception:
+                pass
+
+        # Create the comment record and update count atomically
+        with transaction.atomic():
+            # Parse datetime fields with error handling
+            try:
+                created_at = datetime.fromisoformat(comment_data.get("created_at", "").replace("Z", "+00:00"))
+                updated_at = datetime.fromisoformat(comment_data.get("updated_at", "").replace("Z", "+00:00"))
+            except (ValueError, AttributeError):
+                created_at = timezone.now()
+                updated_at = timezone.now()
+                logger.warning(f"Invalid datetime in comment {comment_id}, using current time")
+
+            GitHubComment.objects.create(
+                comment_id=comment_id,
+                github_issue=github_issue,
+                repo=repo,
+                commenter_login=commenter_login,
+                commenter=commenter,
+                commenter_profile=commenter_profile,
+                body=comment_data.get("body", ""),
+                comment_url=comment_data.get("html_url", ""),
+                created_at=created_at,
+                updated_at=updated_at,
+            )
+
+            # Atomically increment the issue's comment count
+            GitHubIssue.objects.filter(pk=github_issue.pk).update(comments_count=F("comments_count") + 1)
+
+        logger.info(f"Tracked comment {comment_id} by {commenter_login} on issue {issue_number}")
+        return JsonResponse({"status": "success", "message": "Comment tracked"}, status=200)
+
+    except Exception as e:
+        logger.error(f"Error handling issue comment event: {str(e)}", exc_info=True)
+        return JsonResponse({"status": "error", "message": "Unable to process comment event"}, status=500)
+
+
 @csrf_exempt
 def github_webhook(request):
     if request.method == "POST":
@@ -1216,6 +1367,7 @@ def github_webhook(request):
             "push": handle_push_event,
             "pull_request_review": handle_review_event,
             "issues": handle_issue_event,
+            "issue_comment": handle_issue_comment_event,
             "status": handle_status_event,
             "fork": handle_fork_event,
             "create": handle_create_event,
