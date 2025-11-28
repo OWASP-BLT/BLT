@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0256_inviteorganization"),
+        ("website", "0258_add_slackchannel_model"),
     ]
 
     operations = [
