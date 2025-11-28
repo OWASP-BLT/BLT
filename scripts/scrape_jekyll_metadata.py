@@ -10,7 +10,9 @@ try:
     import requests
     import yaml
 except ImportError as e:
-    print(f"Error: Missing dependency '{e.name}'.")
+    # Fix for CodeRabbit Critical Issue: Robust error handling
+    missing = getattr(e, "name", "unknown")
+    print(f"Error: Missing dependency '{missing}'.")
     print("Please install required packages: pip install requests PyYAML")
     sys.exit(1)
 
@@ -18,7 +20,8 @@ except ImportError as e:
 # Target Organization (Defaults to OWASP, can be overridden via env var)
 ORGANIZATION = os.environ.get("TARGET_ORG", "OWASP")
 GITHUB_API_URL = "https://api.github.com"
-OUTPUT_FILE = f"{ORGANIZATION.lower()}_project_metadata_{datetime.now().strftime('%Y%m%d')}.csv"
+# Fix for CodeRabbit Minor Issue: Timestamp at runtime (Template)
+OUTPUT_FILE_TEMPLATE = "{org}_project_metadata_{date}.csv"
 TIMEOUT_SECONDS = 10
 # Set to None for full scan, or an integer for testing (e.g., 50)
 MAX_REPOS = None
@@ -169,6 +172,11 @@ def generate_proposal(all_keys_counter, total_files):
 
 
 def main():
+    # Fix for CodeRabbit Minor Issue: Calculate filename at runtime
+    output_file = OUTPUT_FILE_TEMPLATE.format(
+        org=ORGANIZATION.lower(), date=datetime.now().strftime("%Y%m%d")
+    )
+
     print("--- OWASP Jekyll Metadata Scraper ---")
 
     repos = get_repositories(ORGANIZATION)
@@ -184,7 +192,8 @@ def main():
 
         name = repo["name"]
         full_name = repo["full_name"]
-        default_branch = repo.get("default_branch", "master")
+        # Fix for CodeRabbit Minor Issue: Change default branch fallback to "main"
+        default_branch = repo.get("default_branch", "main")
 
         content, filename = get_index_content(full_name, default_branch)
 
@@ -214,10 +223,10 @@ def main():
     dynamic_headers = sorted(list(all_keys_counter.keys()))
     fieldnames = static_headers + dynamic_headers
 
-    print(f"\n[*] Writing report to {OUTPUT_FILE}...")
+    print(f"\n[*] Writing report to {output_file}...")
 
     try:
-        with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
+        with open(output_file, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(results)
