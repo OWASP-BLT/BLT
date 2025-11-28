@@ -170,6 +170,34 @@
             </div>
             <!-- Project Metrics -->
             <div class="p-6 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                {% if project.slack_channels.exists %}
+                    <div class="mt-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700">
+                        <h3 class="text-lg font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                            <i class="fab fa-slack text-blue-700 dark:text-blue-300 text-xl"></i>
+                            Slack Channel
+                        </h3>
+                        {% for channel in project.slack_channels.all %}
+                            <div class="mt-2 flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-700 dark:text-blue-300 font-medium">
+                                        #{{ channel.name }}
+                                        {% if channel.is_private %}
+                                            <span class="text-xs ml-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded">
+                                                Private
+                                            </span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-sm text-blue-600 dark:text-blue-400">Members: {{ channel.num_members }}</p>
+                                </div>
+                                <a href="{{ channel.slack_url }}"
+                                   target="_blank"
+                                   class="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
+                                    Open in Slack →
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                         <div class="text-sm text-gray-500 dark:text-gray-500">Total Stars</div>
