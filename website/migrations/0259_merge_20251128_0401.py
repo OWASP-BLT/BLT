@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0249_issue_spam_reason_issue_spam_score"),
         ("website", "0258_add_slackchannel_model"),
