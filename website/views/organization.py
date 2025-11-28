@@ -57,9 +57,11 @@ from website.models import (
     Message,
     Organization,
     OrganizationAdmin,
+    Project,
     Repo,
     Room,
     SlackIntegration,
+    SlackChannel,
     Subscription,
     Tag,
     TimeLog,
@@ -191,6 +193,63 @@ def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_o
         return render(request, template, {"organization": organization})
     else:
         return redirect("/")
+
+
+@login_required(login_url="/accounts/login")
+def slack_channels_list(request, template="slack_channels.html"):
+    """View to display all Slack channels with ability to link them to projects."""
+    user = request.user
+
+    # Get all slack channels ordered by member count
+    channels = SlackChannel.objects.all().order_by("-num_members")
+
+    # Get unlinked projects for the autocomplete dropdown (superusers only)
+    unlinked_projects = []
+    if user.is_superuser:
+        # Get projects that don't have any slack channel linked to them
+        linked_project_ids = SlackChannel.objects.filter(project__isnull=False).values_list("project_id", flat=True)
+        unlinked_projects = Project.objects.exclude(id__in=linked_project_ids).order_by("name")
+
+    context = {
+        "channels": channels,
+        "unlinked_projects": unlinked_projects,
+        "is_superuser": user.is_superuser,
+    }
+    return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def link_slack_channel_to_project(request):
+    """API endpoint to link a Slack channel to a project (superusers only)."""
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    channel_id = request.POST.get("channel_id")
+    project_id = request.POST.get("project_id")
+
+    if not channel_id or not project_id:
+        return JsonResponse({"error": "Missing channel_id or project_id"}, status=400)
+
+    try:
+        channel = SlackChannel.objects.get(channel_id=channel_id)
+        project = Project.objects.get(id=project_id)
+
+        # Link the channel to the project
+        channel.project = project
+        channel.save(update_fields=["project"])
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Channel #{channel.name} linked to {project.name}",
+                "project_name": project.name,
+            }
+        )
+    except SlackChannel.DoesNotExist:
+        return JsonResponse({"error": "Channel not found"}, status=404)
+    except Project.DoesNotExist:
+        return JsonResponse({"error": "Project not found"}, status=404)
 
 
 def weekly_report(request):

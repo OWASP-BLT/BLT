@@ -11,8 +11,9 @@ from urllib.parse import quote_plus
 
 import requests
 import yaml
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
@@ -31,6 +32,53 @@ client = WebClient(token=SLACK_TOKEN)
 
 # Add at the top with other environment variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+
+
+def get_project_with_least_members():
+    """Get the project channel name with the least members (excluding project-blt)."""
+    try:
+        project = (
+            Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
+            .exclude(slack_channel="project-blt")
+            .order_by("slack_user_count")
+            .first()
+        )
+        return project.slack_channel if project else None
+    except Exception as e:
+        logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
+        return None
+
+
+def _build_owasp_welcome_message(user_id):
+    """Build the OWASP Slack welcome message with dynamic project examples."""
+    least_members_channel = get_project_with_least_members()
+    project_examples = "*#project-blt*"
+    if least_members_channel:
+        project_examples += f" or *#{least_members_channel}*"
+
+    return (
+        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
+        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
+        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
+        ":small_blue_diamond: *Get Involved:*\n"
+        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
+        f"• Explore project channels like {project_examples} to dive into specific projects.\n"
+        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
+        ":small_blue_diamond: *Stay Updated:*\n"
+        "• Visit *#newsroom* for the latest updates and announcements.\n"
+        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
+        ":small_blue_diamond: *Connect and Learn:*\n"
+        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
+        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
+        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
+        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
+        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
+        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
+        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
+        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
+        "Welcome aboard! :rocket:"
+    )
+
 
 # Replace GSoC cache with hardcoded project data
 GSOC_PROJECTS = [
@@ -235,28 +283,7 @@ def _handle_team_join(user_id, request):
                 # If no welcome message but it's OWASP workspace
                 if team_id == "T04T40NHX":
                     workspace_client = WebClient(token=SLACK_TOKEN)
-                    welcome_message = (
-                        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-                        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-                        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-                        ":small_blue_diamond: *Get Involved:*\n"
-                        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                        "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
-                        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-                        ":small_blue_diamond: *Stay Updated:*\n"
-                        "• Visit *#newsroom* for the latest updates and announcements.\n"
-                        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-                        ":small_blue_diamond: *Connect and Learn:*\n"
-                        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-                        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-                        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-                        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-                        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-                        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-                        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-                        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-                        "Welcome aboard! :rocket:"
-                    )
+                    welcome_message = _build_owasp_welcome_message(user_id)
                 else:
                     workspace_client = WebClient(token=slack_integration.bot_access_token)
                     welcome_message = (
@@ -270,28 +297,7 @@ def _handle_team_join(user_id, request):
             if team_id == "T04T40NHX":
                 workspace_client = WebClient(token=SLACK_TOKEN)
                 # Use the default OWASP welcome message
-                welcome_message = (
-                    f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-                    "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-                    "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-                    ":small_blue_diamond: *Get Involved:*\n"
-                    "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                    "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
-                    "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-                    ":small_blue_diamond: *Stay Updated:*\n"
-                    "• Visit *#newsroom* for the latest updates and announcements.\n"
-                    "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-                    ":small_blue_diamond: *Connect and Learn:*\n"
-                    "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-                    "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-                    "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-                    "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-                    "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-                    "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-                    "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-                    "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-                    "Welcome aboard! :rocket:"
-                )
+                welcome_message = _build_owasp_welcome_message(user_id)
             else:
                 return
 
@@ -904,7 +910,7 @@ def slack_commands(request):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats\n`/installed_apps` - List installed apps",
+                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats\n`/installed_apps` - List installed apps\n`/sweep` - Post project status to #project-sweeper",
                             },
                             {
                                 "type": "mrkdwn",
@@ -1109,6 +1115,10 @@ def slack_commands(request):
                 activity.error_message = f"Error creating issue: {str(e)}"
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error reporting bug. Please try again."})
+
+        elif command == "/sweep":
+            # Post project status update to #project-sweeper channel
+            return post_project_sweep_update(workspace_client, user_id, activity, team_id)
 
     return HttpResponse(status=405)
 
@@ -2777,6 +2787,169 @@ def get_committee_details(repo_name, headers, workspace_client, user_id):
         logger.error(f"Error getting committee details: {str(e)}")
         return JsonResponse(
             {"response_type": "ephemeral", "text": "❌ An error occurred while fetching committee details."}
+        )
+
+
+def post_project_sweep_update(workspace_client, user_id, activity, team_id):
+    """
+    Post a sweep update about projects needing attention to the #project-sweeper channel.
+    This includes projects without Slack channels, inactive projects, and projects without descriptions.
+    """
+    try:
+        # Get the project-sweeper channel ID
+        sweeper_channel_id = "C0607RP8MS8"  # from project_channels.csv
+
+        # Gather project statistics using optimized aggregation query
+        stats = Project.objects.aggregate(
+            total=Count("id"),
+            inactive=Count("id", filter=Q(status="inactive")),
+            no_slack=Count("id", filter=Q(slack_channel__isnull=True)),
+            no_description=Count("id", filter=Q(description="") | Q(description__isnull=True)),
+        )
+        total_projects = stats["total"]
+        inactive_projects = stats["inactive"]
+        projects_without_slack = stats["no_slack"]
+        projects_without_description = stats["no_description"]
+
+        # Get some example projects needing attention
+        inactive_list = Project.objects.filter(status="inactive")[:5]
+        no_slack_list = Project.objects.filter(slack_channel__isnull=True).exclude(status="inactive")[:5]
+
+        # Build the message blocks
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": "🧹 Project Sweep Report", "emoji": True},
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {"type": "mrkdwn", "text": f"Generated at {timezone.now().strftime('%Y-%m-%d %H:%M UTC')}"}
+                ],
+            },
+            {"type": "divider"},
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*📊 Project Statistics*\n"
+                    f"• Total Projects: *{total_projects}*\n"
+                    f"• Inactive Projects: *{inactive_projects}*\n"
+                    f"• Projects without Slack: *{projects_without_slack}*\n"
+                    f"• Projects without Description: *{projects_without_description}*",
+                },
+            },
+        ]
+
+        # Add inactive projects section
+        if inactive_list:
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": "*🔴 Inactive Projects*"},
+                    },
+                ]
+            )
+            for proj in inactive_list:
+                proj_text = f"• *{proj.name}*"
+                if proj.url:
+                    proj_text += f" - <{proj.url}|View>"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": proj_text},
+                    }
+                )
+
+        # Add projects without Slack channels section
+        if no_slack_list:
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": "*📢 Projects Without Slack Channels*"},
+                    },
+                ]
+            )
+            for proj in no_slack_list:
+                proj_text = f"• *{proj.name}* (Status: {proj.status})"
+                if proj.url:
+                    proj_text += f" - <{proj.url}|View>"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": proj_text},
+                    }
+                )
+
+        # Add footer
+        blocks.extend(
+            [
+                {"type": "divider"},
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "💡 Use `/sweep` to generate this report. Contact project leaders to update inactive projects or add Slack channels.",
+                        }
+                    ],
+                },
+            ]
+        )
+
+        # Post to the project-sweeper channel
+        try:
+            # Join the channel first (in case bot is not a member)
+            workspace_client.conversations_join(channel=sweeper_channel_id)
+        except SlackApiError as e:
+            # Bot might already be a member or lack permissions - log but continue
+            logger.debug(f"Could not join channel {sweeper_channel_id}: {str(e)}")
+
+        # Post the message
+        response = workspace_client.chat_postMessage(
+            channel=sweeper_channel_id,
+            blocks=blocks,
+            text="Project Sweep Report",  # Fallback text
+        )
+
+        if response["ok"]:
+            activity.success = True
+            activity.save()
+
+            # Send confirmation to user
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"✅ Project sweep report posted to <#{sweeper_channel_id}>!",
+                }
+            )
+        else:
+            activity.success = False
+            activity.error_message = f"Failed to post message: {response.get('error', 'Unknown error')}"
+            activity.save()
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ Failed to post sweep report to the channel."}
+            )
+
+    except SlackApiError as e:
+        logger.error(f"Slack API error in sweep command: {str(e)}")
+        activity.success = False
+        activity.error_message = f"Slack API error: {str(e)}"
+        activity.save()
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ Error posting to Slack. Please try again later."}
+        )
+    except Exception as e:
+        logger.error(f"Error in post_project_sweep_update: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while generating the sweep report."}
         )
 
 
