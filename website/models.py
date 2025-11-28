@@ -627,6 +627,15 @@ class Issue(models.Model):
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
+    blockchain_tx_hash = models.CharField(
+        max_length=66,
+        blank=True,
+        null=True,
+        help_text="Ethereum transaction hash for reward distribution (0x + 64 hex chars)",
+    )
+    reward_distributed_at = models.DateTimeField(
+        blank=True, null=True, help_text="Timestamp when reward was distributed via blockchain"
+    )
 
     def __unicode__(self):
         return self.description
@@ -938,6 +947,16 @@ class UserProfile(models.Model):
     btc_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_btc_address])
     bch_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_bch_address])
     eth_address = models.CharField(max_length=100, blank=True, null=True)
+    preferred_cryptocurrency = models.CharField(
+        max_length=10,
+        choices=[
+            ("ETH", "Ethereum (ETH)"),
+            ("BTC", "Bitcoin (BTC)"),
+            ("BCH", "Bitcoin Cash (BCH)"),
+        ],
+        default="ETH",
+        help_text="Preferred cryptocurrency for receiving rewards",
+    )
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
     x_username = models.CharField(max_length=50, blank=True, null=True)

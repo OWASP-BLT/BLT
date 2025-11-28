@@ -25,6 +25,13 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
 
+# Blockchain configuration for automatic reward distribution
+ETHEREUM_NODE_URL = os.environ.get("ETHEREUM_NODE_URL", "")
+CONTRACT_ADDRESS = os.environ.get("CONTRACT_ADDRESS", "")
+ETHEREUM_PRIVATE_KEY = os.environ.get("ETHEREUM_PRIVATE_KEY", "")
+ETH_PRICE_USD = os.environ.get("ETH_PRICE_USD", "2000")  # Placeholder, use price oracle in production
+BLOCKCHAIN_TX_TIMEOUT = int(os.environ.get("BLOCKCHAIN_TX_TIMEOUT", "120"))
+
 
 PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
