@@ -739,7 +739,7 @@
         <section class="py-12">
             <div class="max-w-7xl mx-auto px-4">
                 <h2 class="text-3xl font-bold text-center mb-12">Latest Activity</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     <!-- Latest Repositories -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                         <div class="p-6">
@@ -806,6 +806,46 @@
                                    class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium flex items-center">
                                     <i class="fas fa-plus mr-1"></i>
                                     New Discussion
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Activity Feed -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Activity Feed</h3>
+                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ recent_activities|length }} recent)</span>
+                            </div>
+                            <div class="space-y-4">
+                                {% for activity in recent_activities %}
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full {% if activity.action_type == 'create' %}bg-green-500{% elif activity.action_type == 'update' %}bg-blue-500{% elif activity.action_type == 'delete' %}bg-red-500{% else %}bg-gray-500{% endif %}"></span>
+                                            <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ activity.title|truncatechars:40 }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500 ml-4">
+                                            <span class="flex items-center gap-1">
+                                                <i class="fas fa-user"></i>
+                                                {{ activity.user.username|default:"Anonymous" }}
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <i class="fas fa-clock"></i>
+                                                {{ activity.timestamp|timesince }} ago
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-sm text-gray-500 dark:text-gray-500">No activities yet</p>
+                                {% endfor %}
+                            </div>
+                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                <a href="{% url 'feed' %}"
+                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">View All</a>
+                                <a href="{% url 'activity_feed_rss' %}"
+                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium flex items-center">
+                                    <i class="fas fa-rss mr-1"></i>
+                                    RSS Feed
                                 </a>
                             </div>
                         </div>
