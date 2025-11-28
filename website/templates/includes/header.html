@@ -259,13 +259,6 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'staking_home' %}"
-                                           class="flex items-center transition-colors {% if request.resolver_match.url_name == 'staking_home' %} text-[#e74c3c] bg-[#feeae9] dark:bg-red-900/30 hover:bg-[#feeae9] dark:hover:bg-red-900/30 hover:text-[#e74c3c] cursor-default {% else %} text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] hover:bg-gray-100 dark:hover:bg-gray-800 {% endif %} ">
-                                            <i class="fas fa-coins w-5 mr-2 {% if request.resolver_match.url_name == 'staking_home' %} text-[#e74c3c] {% else %} text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] {% endif %} "></i>
-                                            Staking
-                                        </a>
-                                    </li>
-                                    <li>
                                         <a href="{% url 'leaderboard_global' %}"
                                            class="flex items-center transition-colors {% if request.resolver_match.url_name == 'leaderboard_global' %} text-[#e74c3c] bg-[#feeae9] dark:bg-red-900/30 hover:bg-[#feeae9] dark:hover:bg-red-900/30 hover:text-[#e74c3c] cursor-default {% else %} text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] hover:bg-gray-100 dark:hover:bg-gray-800 {% endif %} ">
                                             <i class="fas fa-medal w-5 mr-2 {% if request.resolver_match.url_name == 'leaderboard_global' %} text-[#e74c3c] {% else %} text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] {% endif %} "></i>

@@ -1435,11 +1435,6 @@ class UserChallengeListView(View):
 
                     giveBacon(request.user, amt=challenge.bacon_reward)
 
-                    # Handle staking pool completion
-                    from website.challenge_signals import handle_staking_pool_completion
-
-                    handle_staking_pool_completion(request.user, challenge)
-
                     return JsonResponse(
                         {
                             "success": True,
@@ -1469,11 +1464,6 @@ class UserChallengeListView(View):
                     from website.feed_signals import giveBacon
 
                     giveBacon(request.user, amt=challenge.bacon_reward)
-
-                    # Handle staking pool completion
-                    from website.challenge_signals import handle_staking_pool_completion
-
-                    handle_staking_pool_completion(request.user, challenge)
 
                     return JsonResponse(
                         {
