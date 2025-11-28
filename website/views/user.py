@@ -7,7 +7,6 @@ from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -1669,7 +1668,7 @@ def delete_notification(request, notification_id):
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 
-@staff_member_required
+@user_passes_test(lambda u: u.is_superuser, login_url="/admin/login/")
 def user_activity_dashboard(request):
     """
     Custom Admin Dashboard to show Active vs Inactive users.

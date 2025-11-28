@@ -1,0 +1,27 @@
+.dashboard-module {
+    margin-bottom: 30px;
+}
+
+.dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dashboard-table .table-header {
+    background: #f8f8f8;
+    text-align: left;
+}
+
+.dashboard-table .table-header-cell {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.dashboard-table .table-cell {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.dashboard-table .table-cell-colspan {
+    padding: 10px;
+}
