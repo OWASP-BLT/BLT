@@ -1,6 +1,7 @@
 import ast
 import difflib
 import hashlib
+import json
 import logging
 import os
 import re
@@ -1129,3 +1130,135 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
+
+
+def send_spam_notification_email(spam_detection, content_type, content_id, user, text_preview, confidence, reason):
+    """
+    Helper function to send spam notification emails to admins.
+
+    Args:
+        spam_detection: SpamDetection object
+        content_type: "issue" or "comment"
+        content_id: ID of the content
+        user: User object who created the content
+        text_preview: Preview of the flagged content
+        confidence: Confidence score
+        reason: Detection reason
+    """
+    try:
+        from django.core.mail import send_mail
+
+        admin_emails = [admin[1] for admin in settings.ADMINS]
+        content_url = f"https://{settings.FQDN}/{content_type}/{content_id}"
+        admin_panel_url = f"https://{settings.FQDN}/admin/website/spamdetection/{spam_detection.id}/change/"
+
+        email_subject = f"Spam Detected - {content_type.title()} #{content_id} needs review"
+        email_body = f"""A potential spam {content_type} has been detected and flagged for review.
+
+{content_type.title()} ID: {content_id}
+{content_type.title()} URL: {content_url}
+Admin Panel: {admin_panel_url}
+User: {user.username if user else 'Anonymous'}
+Confidence: {confidence:.2%}
+Reason: {reason}
+
+Content preview:
+{text_preview[:500]}...
+
+Please review this content in the admin panel.
+"""
+
+        send_mail(
+            email_subject,
+            email_body,
+            settings.DEFAULT_FROM_EMAIL,
+            admin_emails,
+            fail_silently=False,
+        )
+        logging.info(f"Spam notification email sent to admins for {content_type} #{content_id}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send spam notification email: {str(e)}")
+        return False
+
+
+def check_for_spam_llm(text, user=None, request=None):
+    """
+    Check if the provided text appears to be spam using LLM (OpenAI).
+
+    Returns:
+        tuple: (is_spam, reason, confidence) where is_spam is a boolean,
+               reason is a string, and confidence is a float (0-1)
+    """
+    if not text or not isinstance(text, str):
+        return False, None, 0.0
+
+    # If OpenAI client is not available, fall back to not flagging as spam
+    if client is None:
+        logging.warning("OpenAI client not available, skipping spam check")
+        return False, "OpenAI client not available", 0.0
+
+    try:
+        # Prepare the prompt for spam detection
+        prompt = f"""Analyze the following text and determine if it is spam. 
+Consider the following as spam indicators:
+- Unsolicited commercial content
+- Phishing attempts
+- Scam messages
+- Irrelevant promotional content
+- Malicious links or suspicious URLs
+- Get-rich-quick schemes
+- Fake prizes or lottery wins
+
+Legitimate content includes:
+- Bug reports and security vulnerability reports
+- Technical discussions
+- Questions and answers about software issues
+- Comments on open source projects
+
+Text to analyze:
+{text}
+
+Respond with a JSON object containing:
+- "is_spam": true or false
+- "reason": brief explanation (max 200 chars)
+- "confidence": float between 0 and 1
+
+Example response format:
+{{"is_spam": false, "reason": "Legitimate bug report about a security issue", "confidence": 0.15}}
+"""
+
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a spam detection expert for a bug bounty platform. Be conservative - only flag obvious spam.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=150,
+        )
+
+        # Parse the response
+        result_text = response.choices[0].message.content.strip()
+
+        # Remove markdown code blocks if present
+        if "```json" in result_text:
+            result_text = result_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in result_text:
+            result_text = result_text.split("```")[1].split("```")[0].strip()
+
+        result = json.loads(result_text)
+
+        is_spam = result.get("is_spam", False)
+        reason = result.get("reason", "No reason provided")
+        confidence = float(result.get("confidence", 0.5))
+
+        return is_spam, reason, confidence
+
+    except Exception as e:
+        logging.error(f"Error in LLM spam detection: {str(e)}")
+        # On error, don't flag as spam to avoid false positives
+        return False, f"Error in spam detection: {str(e)}", 0.0
