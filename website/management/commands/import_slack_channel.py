@@ -24,6 +24,23 @@ class Command(BaseCommand):
             help="Fetch channels from Slack API instead of CSV",
         )
 
+    def normalize_project_name(self, channel_name: str) -> str:
+        """
+        Convert a Slack channel name like 'project-owasp-blt' into
+        a project name like 'OWASP BLT'.
+        """
+        name = channel_name.lower().strip()
+
+        # strip known prefixes
+        if name.startswith("project-"):
+            name = name[len("project-") :]
+
+        # replace hyphens/underscores with spaces
+        name = name.replace("-", " ").replace("_", " ").strip()
+
+        # title-case for comparison with Project.name
+        return name.title()
+
     # helper to normalize channel name into a project-like name
     def match_project_for_channel(self, channel_name: str):
         """
