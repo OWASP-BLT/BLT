@@ -1,5 +1,6 @@
 import csv
 import io
+from io import StringIO
 from unittest.mock import patch
 
 from django.core.management import call_command
@@ -94,17 +95,28 @@ class ImportSlackChannelTests(TestCase):
         self.assertEqual(p.slack, "https://slack.com/z")
 
     #  Error Handling Tests
-    @patch("website.management.commands.import_slack_channel.OutputWrapper.write")
-    def test_unmatched_project_logged(self, mocked_stdout):
+    def test_unmatched_project_logged(self):
         """
         When a channel can't be matched, a warning should be logged.
         """
-        self.run_import_with_rows([["project-unknown", "C404", "https://nope"]])
+        out = StringIO()
+
+        # Create CSV data
+        csv_data = io.StringIO()
+        writer = csv.writer(csv_data)
+        writer.writerow(["slack_channel", "slack_id", "slack_url"])
+        writer.writerow(["project-unknown", "C404", "https://nope"])
+        csv_data.seek(0)
+
+        with patch("os.path.exists", return_value=True), patch(
+            "website.management.commands.import_slack_channel.open", return_value=csv_data
+        ):
+            call_command("import_slack_channel", "--csv", "dummy.csv", stdout=out)
 
         # SlackChannel should still be created but without project
         ch = SlackChannel.objects.get(channel_id="C404")
         self.assertIsNone(ch.project)
 
-        # Confirm warning logged
-        logged_text = "".join([call[0][0] for call in mocked_stdout.write.call_args_list])
-        self.assertIn("No project found for channel", logged_text)
+        # Check the captured output
+        output = out.getvalue()
+        self.assertIn("No project found for channel", output)
