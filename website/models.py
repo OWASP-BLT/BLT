@@ -2857,10 +2857,14 @@ class Hackathon(models.Model):
         seen = set()
 
         for review in reviews:
-            reviewer_key = (
-                review.pull_request_id,
-                review.reviewer_id or review.reviewer_contributor_id,
-            )
+            if review.reviewer_id:
+                # Registered user → unique ID
+                reviewer_identity = f"user_{review.reviewer_id}"
+            else:
+                # Contributor → unique ID even if names match
+                reviewer_identity = f"contrib_{review.reviewer_contributor_id}"
+
+            reviewer_key = (review.pull_request_id, reviewer_identity)
             # Skip duplicate reviews for same PR+reviewer
             if reviewer_key in seen:
                 continue
