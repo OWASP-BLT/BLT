@@ -2799,7 +2799,18 @@ class Hackathon(models.Model):
 
         # Group by reviewer and count reviews
         leaderboard = {}
+        seen = set()
+
         for review in reviews:
+            reviewer_key = (
+                review.pull_request_id,
+                review.reviewer_id or review.reviewer_contributor_id,
+            )
+            # Skip duplicate reviews for same PR+reviewer
+            if reviewer_key in seen:
+                continue
+            seen.add(reviewer_key)
+
             if review.reviewer:
                 # Registered user reviewer
                 user_id = review.reviewer.user.id
@@ -2843,6 +2854,13 @@ class Hackathon(models.Model):
         leaderboard_list = list(leaderboard.values())
         leaderboard_list.sort(key=lambda x: x["count"], reverse=True)
 
+        def sort_key(item):
+            count = -item["count"]
+            user = item["user"]
+            user_id = user.id if not item["is_contributor"] else 999999
+            return (count, user_id)
+
+        leaderboard_list.sort(key=sort_key)
         return leaderboard_list
 
 
@@ -3457,3 +3475,54 @@ class StakingTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
+
+
+class SecurityIncident(models.Model):
+    class Severity(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+        CRITICAL = "critical", "Critical"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        INVESTIGATING = "investigating", "Investigating"
+        RESOLVED = "resolved", "Resolved"
+
+    title = models.CharField(max_length=255)
+    severity = models.CharField(
+        max_length=20,
+        choices=Severity.choices,
+        default=Severity.MEDIUM,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+    )
+    affected_systems = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    #  NEW AUTO-FIELDS & ENHANCEMENTS
+    def __str__(self):
+        return f"{self.title} ({self.get_severity_display()}) - {self.get_status_display()}"
+
+    def save(self, *args, **kwargs):
+        """
+        Automatically set or clear resolved_at timestamp based on status.
+        """
+        if self.status == self.Status.RESOLVED and not self.resolved_at:
+            self.resolved_at = timezone.now()
+        elif self.status != self.Status.RESOLVED and self.resolved_at:
+            self.resolved_at = None
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["severity"], name="incident_severity_idx"),
+            models.Index(fields=["status"], name="incident_status_idx"),
+            models.Index(fields=["-created_at"], name="incident_created_idx"),
+        ]
