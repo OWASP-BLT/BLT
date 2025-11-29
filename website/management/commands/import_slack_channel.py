@@ -48,19 +48,24 @@ class Command(BaseCommand):
         Try to find a Project instance that corresponds to a given Slack channel name.
         Returns (project, match_type) where match_type is 'exact', 'partial', or None.
         """
-        normalized_name = self.normalize_project_name(channel_name)
 
-        # 1) Exact (case-insensitive) match on name
-        exact_qs = Project.objects.filter(name__iexact=normalized_name)
+        # 1) Try exact match with original channel name (case-insensitive)
+        exact_qs = Project.objects.filter(name__iexact=channel_name)
         if exact_qs.exists():
             return exact_qs.first(), "exact"
 
-        # 2) Partial match using icontains on normalized_name (lowercase)
+        # 2) Try exact match with normalized name
+        normalized_name = self.normalize_project_name(channel_name)
+        exact_normalized_qs = Project.objects.filter(name__iexact=normalized_name)
+        if exact_normalized_qs.exists():
+            return exact_normalized_qs.first(), "exact"
+
+        # 3) Partial match using icontains on normalized_name
         partial_qs = Project.objects.filter(name__icontains=normalized_name)
         if partial_qs.count() == 1:
             return partial_qs.first(), "partial"
 
-        # 3) No reliable match
+        # 4) No reliable match
         return None, None
 
     def fetch_from_api(self):
