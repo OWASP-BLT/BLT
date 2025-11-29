@@ -72,9 +72,7 @@
                                        class="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-gray-100 dark:border-gray-700">
                                         <div class="flex justify-between items-start">
                                             <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                                    {{ bug.description|truncatechars:60 }}
-                                                </p>
+                                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ bug.description|truncatechars:60 }}</p>
                                                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                     <i class="fas fa-globe mr-1"></i>{{ bug.domain_name|default:"Unknown" }}
                                                     <span class="mx-2">•</span>
@@ -121,10 +119,14 @@
                                             {% if leader.userprofile.avatar %}
                                                 <img src="{{ leader.userprofile.avatar }}"
                                                      class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-600"
+                                                     width="40"
+                                                     height="40"
                                                      alt="{{ leader.username }}">
                                             {% else %}
                                                 <img src="{% gravatar_url leader.email 40 %}"
                                                      class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-600"
+                                                     width="40"
+                                                     height="40"
                                                      alt="{{ leader.username }}">
                                             {% endif %}
                                             <a href="{% url 'profile' slug=leader.username %}"
@@ -178,9 +180,7 @@
                                                     <p class="text-sm text-[#e74c3c] font-medium">{{ release.release_name }}</p>
                                                 </div>
                                             </div>
-                                            <span class="text-xs text-gray-500 dark:text-gray-400">
-                                                {{ release.release_datetime|timesince }} ago
-                                            </span>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ release.release_datetime|timesince }} ago</span>
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -213,6 +213,8 @@
                                             {% if leader.contributor__avatar_url %}
                                                 <img src="{{ leader.contributor__avatar_url }}"
                                                      class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-600"
+                                                     width="40"
+                                                     height="40"
                                                      alt="{{ leader.contributor__name }}">
                                             {% else %}
                                                 <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
@@ -251,6 +253,59 @@
                         {% endif %}
                     </div>
                 </div>
+                <!-- Code Review Leaderboard -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="bg-[#e74c3c] text-white px-6 py-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-eye mr-3"></i>Top Code Reviewers
+                            <span class="ml-2 text-sm font-normal text-red-200">(Last 6 months)</span>
+                        </h2>
+                    </div>
+                    <div class="p-4">
+                        {% if code_review_leaderboard %}
+                            <div class="space-y-3">
+                                {% for leader in code_review_leaderboard %}
+                                    <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <span class="w-6 h-6 flex items-center justify-center rounded-full {% if forloop.counter == 1 %}bg-yellow-400 text-yellow-900{% elif forloop.counter == 2 %}bg-gray-300 text-gray-700{% elif forloop.counter == 3 %}bg-orange-400 text-orange-900{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %} text-sm font-bold">
+                                                {{ forloop.counter }}
+                                            </span>
+                                            {% if leader.reviewer_contributor__avatar_url %}
+                                                <img src="{{ leader.reviewer_contributor__avatar_url }}"
+                                                     class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-600"
+                                                     width="40"
+                                                     height="40"
+                                                     alt="{{ leader.reviewer_contributor__name }}">
+                                            {% else %}
+                                                <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                                                    <i class="fas fa-user text-gray-400"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ leader.reviewer_contributor__name }}</span>
+                                                {% if leader.reviewer_contributor__github_url %}
+                                                    <a href="{{ leader.reviewer_contributor__github_url }}"
+                                                       target="_blank"
+                                                       class="ml-2 text-gray-400 hover:text-gray-600">
+                                                        <i class="fab fa-github"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded-full text-sm font-medium text-blue-700 dark:text-blue-300">
+                                            {{ leader.total_reviews }} Reviews
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <i class="fas fa-eye text-4xl mb-3 block"></i>
+                                No code review data available
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             <!-- Active Bug Hunts Section -->
             <div class="mt-8">
@@ -266,6 +321,8 @@
                                     {% if hunt.domain.logo %}
                                         <img src="{{ hunt.domain.logo.url }}"
                                              class="w-12 h-12 rounded-lg object-cover"
+                                             width="48"
+                                             height="48"
                                              alt="{{ hunt.domain.name }}">
                                     {% else %}
                                         <div class="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -279,7 +336,7 @@
                                 </div>
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-gray-500 dark:text-gray-400">
-                                        <i class="fas fa-clock mr-1"></i>Ends {{ hunt.end_on|timesince }} from now
+                                        <i class="fas fa-clock mr-1"></i>Ends in {{ hunt.end_on|timeuntil }}
                                     </span>
                                     {% if hunt.prize %}
                                         <span class="px-2 py-1 bg-green-100 dark:bg-green-900 rounded text-green-700 dark:text-green-300 font-medium">
@@ -337,10 +394,14 @@
                                 {% if profile.avatar %}
                                     <img src="{{ profile.avatar }}"
                                          class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-orange-400"
+                                         width="64"
+                                         height="64"
                                          alt="{{ profile.user.username }}">
                                 {% else %}
                                     <img src="{% gravatar_url profile.user.email 64 %}"
                                          class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-orange-400"
+                                         width="64"
+                                         height="64"
                                          alt="{{ profile.user.username }}">
                                 {% endif %}
                                 <p class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ profile.user.username }}</p>
