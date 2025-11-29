@@ -1,10 +1,10 @@
 import csv
 import json
 import logging
-import time
 from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Case, Count, IntegerField, Value, When
 from django.http import HttpResponse
@@ -14,13 +14,8 @@ from django.views.generic import TemplateView
 
 from website.models import Issue, SecurityIncident
 
-csv_rate_limit = {
-    "calls": 0,
-    "reset_time": time.time() + 60,
-}
-
-CSV_RATE_LIMIT_MAX_CALLS = 5  # 5 CSV exports per minute
-CSV_RATE_LIMIT_WINDOW = 60  # window in seconds
+CSV_RATE_LIMIT_MAX_CALLS = 5  # max CSV downloads
+CSV_RATE_LIMIT_WINDOW = 60  # per 60 seconds
 
 logger = logging.getLogger(__name__)
 
@@ -35,20 +30,22 @@ SEVERITY_ORDER = Case(
 )
 
 
-def is_csv_rate_limited():
-    now = time.time()
+def is_csv_rate_limited(user_id):
+    """Rate limit CSV exports per user using cache (thread-safe + process-safe)."""
+    cache_key = f"csv_export_limit_{user_id}"
 
-    # Reset window if expired
-    if now >= csv_rate_limit["reset_time"]:
-        csv_rate_limit["calls"] = 0
-        csv_rate_limit["reset_time"] = now + CSV_RATE_LIMIT_WINDOW
+    # Atomically increment
+    count = cache.get(cache_key)
 
-    # Block if limit reached
-    if csv_rate_limit["calls"] >= CSV_RATE_LIMIT_MAX_CALLS:
+    if count is None:
+        # first call → initialize with TTL
+        cache.set(cache_key, 1, CSV_RATE_LIMIT_WINDOW)
+        return False
+
+    if count >= CSV_RATE_LIMIT_MAX_CALLS:
         return True
 
-    # Count this call
-    csv_rate_limit["calls"] += 1
+    cache.incr(cache_key)  # atomic increment
     return False
 
 
@@ -57,6 +54,7 @@ def _escape_csv_formula(value):
     if not isinstance(value, str):
         return value
 
+    original = value
     value = value.strip()
 
     if not value:
@@ -64,10 +62,8 @@ def _escape_csv_formula(value):
 
     dangerous_chars = "=+-@\t\r\n"
     if value and value[0] in dangerous_chars:
-        logger.warning("CSV formula injection attempt detected. Value started with a dangerous character: %r", original)
-
-    while value and value[0] in dangerous_chars:
-        value = value[1:]
+        logger.warning("CSV formula injection attempt detected. Value: %r", original)
+        return "'" + value
     return value
 
 
@@ -81,8 +77,8 @@ class SecurityDashboardView(LoginRequiredMixin, TemplateView):
 
     def export_csv(self):
         # Check rate limit
-        if is_csv_rate_limited():
-            return HttpResponseTooManyRequests("CSV export rate limit exceeded. Please try again later.")
+        if is_csv_rate_limited(request.user.id):
+            return HttpResponse("Rate limit exceeded", status=429)
 
         queryset = SecurityIncident.objects.all().order_by("-created_at")
         queryset = self.apply_filters(queryset)
