@@ -1112,7 +1112,7 @@ class DomainDetailView(ListView):
             }
 
             # Add Twitter URL
-            context["twitter_url"] = f"https://x.com/{domain.get_or_set_x_url(domain.get_name)}"
+            context["twitter_url"] = f"https://x.com/{domain.get_or_set_x_url(domain.get_name())}"
 
             return context
         except Http404:
