@@ -25,47 +25,33 @@ class Command(BaseCommand):
         )
 
     # helper to normalize channel name into a project-like name
-    def normalize_project_name(self, channel_name: str) -> str:
-        """
-        Convert a Slack channel name like 'project-owasp-blt' into
-        a project name like 'OWASP BLT'.
-        """
-        name = channel_name.lower().strip()
-
-        # strip known prefixes
-        if name.startswith("project-"):
-            name = name[len("project-") :]
-
-        # replace hyphens/underscores with spaces
-        name = name.replace("-", " ").replace("_", " ").strip()
-
-        # title-case for comparison with Project.name
-        return name.title()
-
-    # separate matching logic
     def match_project_for_channel(self, channel_name: str):
         """
         Try to find a Project instance that corresponds to a given Slack channel name.
         Returns (project, match_type) where match_type is 'exact', 'partial', or None.
         """
 
-        # 1) Try exact match with original channel name (case-insensitive)
+        # 1) Try exact match with original channel name
         exact_qs = Project.objects.filter(name__iexact=channel_name)
         if exact_qs.exists():
             return exact_qs.first(), "exact"
 
-        # 2) Try exact match with normalized name
+        # 2) Try exact match with normalized channel name
         normalized_name = self.normalize_project_name(channel_name)
         exact_normalized_qs = Project.objects.filter(name__iexact=normalized_name)
         if exact_normalized_qs.exists():
             return exact_normalized_qs.first(), "exact"
 
-        # 3) Partial match using icontains on normalized_name
-        partial_qs = Project.objects.filter(name__icontains=normalized_name)
+        # 3) Normalize project names too (handles: project-zap → www-project-zap)
+        for project in Project.objects.all():
+            if self.normalize_project_name(project.name) == normalized_name:
+                return project, "exact"
+
+        # 4) Partial match
+        partial_qs = Project.objects.filter(name__icontains=normalized_name.lower())
         if partial_qs.count() == 1:
             return partial_qs.first(), "partial"
 
-        # 4) No reliable match
         return None, None
 
     def fetch_from_api(self):

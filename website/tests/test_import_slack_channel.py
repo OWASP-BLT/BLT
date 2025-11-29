@@ -35,7 +35,9 @@ class ImportSlackChannelTests(TestCase):
 
         csv_data.seek(0)
 
-        with patch("os.path.exists", return_value=True), patch("builtins.open", return_value=csv_data):
+        with patch("os.path.exists", return_value=True), patch(
+            "website.management.commands.import_slack_channel.open", return_value=csv_data
+        ):
             call_command("import_slack_channel", "--csv", "dummy.csv")
 
     #  SlackChannel Creation Tests
