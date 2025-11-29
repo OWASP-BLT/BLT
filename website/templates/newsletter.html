@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+{% load static %}
+{% load gravatar %}
+{% load humanize %}
+{% block title %}
+    Newsletter | OWASP BLT
+{% endblock title %}
+{% block description %}
+    Stay updated with the latest bugs, top contributors, new releases, and project statistics from OWASP BLT.
+{% endblock description %}
+{% block keywords %}
+    Newsletter, OWASP BLT, Bug Bounty, Security, Top Contributors, Releases, Statistics
+{% endblock keywords %}
+{% block og_title %}
+    OWASP BLT Newsletter - Project Updates and Statistics
+{% endblock og_title %}
+{% block og_description %}
+    Get the latest updates from OWASP BLT including recent bugs, top contributors, new releases, and project statistics.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-[#e74c3c] to-[#c0392b] text-white py-12 px-4">
+            <div class="max-w-7xl mx-auto text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                    <i class="fas fa-newspaper mr-3"></i>BLT Newsletter
+                </h1>
+                <p class="text-xl text-red-100 max-w-2xl mx-auto">
+                    Your monthly digest of bugs, contributors, releases, and project statistics
+                </p>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Statistics Overview -->
+            <div class="mb-10">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
+                    <i class="fas fa-chart-bar mr-3 text-[#e74c3c]"></i>Platform Statistics
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-3xl font-bold text-[#e74c3c]">{{ total_bugs|intcomma }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Bugs</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-3xl font-bold text-green-500">{{ bugs_this_month|intcomma }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Bugs This Month</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-3xl font-bold text-blue-500">{{ total_users|intcomma }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Users</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-3xl font-bold text-purple-500">{{ active_hunts_count }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Active Bug Hunts</div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Recent Bugs Section -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="bg-[#e74c3c] text-white px-6 py-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-bug mr-3"></i>Recent Bugs
+                        </h2>
+                    </div>
+                    <div class="p-4 max-h-96 overflow-y-auto">
+                        {% if recent_bugs %}
+                            <div class="space-y-3">
+                                {% for bug in recent_bugs %}
+                                    <a href="{% url 'issue_view' slug=bug.id %}"
+                                       class="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-gray-100 dark:border-gray-700">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                    {{ bug.description|truncatechars:60 }}
+                                                </p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    <i class="fas fa-globe mr-1"></i>{{ bug.domain_name|default:"Unknown" }}
+                                                    <span class="mx-2">•</span>
+                                                    <i class="fas fa-clock mr-1"></i>{{ bug.created|timesince }} ago
+                                                </p>
+                                            </div>
+                                            <span class="ml-2 px-2 py-1 text-xs rounded-full {% if bug.status == 'open' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                                                {{ bug.status|default:"open" }}
+                                            </span>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <i class="fas fa-inbox text-4xl mb-3 block"></i>
+                                No recent bugs found
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                        <a href="{% url 'all_activity' %}"
+                           class="text-[#e74c3c] hover:text-red-700 text-sm font-medium">
+                            View all bugs <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+                <!-- Top Contributors Section -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="bg-[#e74c3c] text-white px-6 py-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-trophy mr-3"></i>Top Contributors
+                        </h2>
+                    </div>
+                    <div class="p-4">
+                        {% if leaderboard %}
+                            <div class="space-y-3">
+                                {% for leader in leaderboard %}
+                                    <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <span class="w-6 h-6 flex items-center justify-center rounded-full {% if forloop.counter == 1 %}bg-yellow-400 text-yellow-900{% elif forloop.counter == 2 %}bg-gray-300 text-gray-700{% elif forloop.counter == 3 %}bg-orange-400 text-orange-900{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %} text-sm font-bold">
+                                                {{ forloop.counter }}
+                                            </span>
+                                            {% if leader.userprofile.avatar %}
+                                                <img src="{{ leader.userprofile.avatar }}"
+                                                     class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-600"
+                                                     alt="{{ leader.username }}">
+                                            {% else %}
+                                                <img src="{% gravatar_url leader.email 40 %}"
+                                                     class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-600"
+                                                     alt="{{ leader.username }}">
+                                            {% endif %}
+                                            <a href="{% url 'profile' slug=leader.username %}"
+                                               class="font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c]">
+                                                {{ leader.username }}
+                                            </a>
+                                        </div>
+                                        <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {{ leader.total_score|intcomma }} pts
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <i class="fas fa-users text-4xl mb-3 block"></i>
+                                No leaderboard data available
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                        <a href="{% url 'leaderboard_global' %}"
+                           class="text-[#e74c3c] hover:text-red-700 text-sm font-medium">
+                            View full leaderboard <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+                <!-- New Releases Section -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="bg-[#e74c3c] text-white px-6 py-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-rocket mr-3"></i>New Releases
+                        </h2>
+                    </div>
+                    <div class="p-4 max-h-96 overflow-y-auto">
+                        {% if recent_releases %}
+                            <div class="space-y-3">
+                                {% for release in recent_releases %}
+                                    <div class="p-3 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-tag text-[#e74c3c]"></i>
+                                                </div>
+                                                <div>
+                                                    <a href="{{ release.repo_url }}"
+                                                       target="_blank"
+                                                       class="font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c]">
+                                                        {{ release.name }}
+                                                    </a>
+                                                    <p class="text-sm text-[#e74c3c] font-medium">{{ release.release_name }}</p>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">
+                                                {{ release.release_datetime|timesince }} ago
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <i class="fas fa-box-open text-4xl mb-3 block"></i>
+                                No recent releases found
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Pull Request Leaderboard -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="bg-[#e74c3c] text-white px-6 py-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-code-branch mr-3"></i>Top PR Contributors
+                            <span class="ml-2 text-sm font-normal text-red-200">(Last 6 months)</span>
+                        </h2>
+                    </div>
+                    <div class="p-4">
+                        {% if pr_leaderboard %}
+                            <div class="space-y-3">
+                                {% for leader in pr_leaderboard %}
+                                    <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <span class="w-6 h-6 flex items-center justify-center rounded-full {% if forloop.counter == 1 %}bg-yellow-400 text-yellow-900{% elif forloop.counter == 2 %}bg-gray-300 text-gray-700{% elif forloop.counter == 3 %}bg-orange-400 text-orange-900{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %} text-sm font-bold">
+                                                {{ forloop.counter }}
+                                            </span>
+                                            {% if leader.contributor__avatar_url %}
+                                                <img src="{{ leader.contributor__avatar_url }}"
+                                                     class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-600"
+                                                     alt="{{ leader.contributor__name }}">
+                                            {% else %}
+                                                <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                                                    <i class="fas fa-user text-gray-400"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                {% if leader.user_profile__user__username %}
+                                                    <a href="{% url 'profile' slug=leader.user_profile__user__username %}"
+                                                       class="font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c]">
+                                                        {{ leader.user_profile__user__username }}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="font-medium text-gray-500 dark:text-gray-400">{{ leader.contributor__name }}</span>
+                                                {% endif %}
+                                                {% if leader.contributor__github_url %}
+                                                    <a href="{{ leader.contributor__github_url }}"
+                                                       target="_blank"
+                                                       class="ml-2 text-gray-400 hover:text-gray-600">
+                                                        <i class="fab fa-github"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <span class="px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full text-sm font-medium text-green-700 dark:text-green-300">
+                                            {{ leader.total_prs }} PRs
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <i class="fas fa-code-branch text-4xl mb-3 block"></i>
+                                No PR data available
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- Active Bug Hunts Section -->
+            <div class="mt-8">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
+                    <i class="fas fa-crosshairs mr-3 text-[#e74c3c]"></i>Active Bug Hunts
+                </h2>
+                {% if active_hunts %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% for hunt in active_hunts %}
+                            <a href="{% url 'show_bughunt' hunt.id %}"
+                               class="block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
+                                <div class="flex items-center gap-4 mb-3">
+                                    {% if hunt.domain.logo %}
+                                        <img src="{{ hunt.domain.logo.url }}"
+                                             class="w-12 h-12 rounded-lg object-cover"
+                                             alt="{{ hunt.domain.name }}">
+                                    {% else %}
+                                        <div class="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-globe text-gray-400 text-xl"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h3 class="font-bold text-gray-900 dark:text-gray-100">{{ hunt.name }}</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ hunt.domain.name }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-clock mr-1"></i>Ends {{ hunt.end_on|timesince }} from now
+                                    </span>
+                                    {% if hunt.prize %}
+                                        <span class="px-2 py-1 bg-green-100 dark:bg-green-900 rounded text-green-700 dark:text-green-300 font-medium">
+                                            ${{ hunt.prize }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+                        <i class="fas fa-search text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                        <p class="text-gray-500 dark:text-gray-400">No active bug hunts at the moment</p>
+                        <a href="{% url 'hunts' %}"
+                           class="mt-4 inline-block text-[#e74c3c] hover:text-red-700 font-medium">
+                            View all bounties <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Bug Categories This Month -->
+            <div class="mt-8">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
+                    <i class="fas fa-tags mr-3 text-[#e74c3c]"></i>Bug Categories This Month
+                </h2>
+                {% if bug_categories %}
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex flex-wrap gap-3">
+                            {% for category in bug_categories %}
+                                <div class="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ category.name }}</span>
+                                    <span class="ml-2 px-2 py-0.5 bg-[#e74c3c] text-white rounded-full text-sm">{{ category.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+                        <i class="fas fa-chart-pie text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                        <p class="text-gray-500 dark:text-gray-400">No bug category data available this month</p>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Top Streakers -->
+            <div class="mt-8">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
+                    <i class="fas fa-fire mr-3 text-[#e74c3c]"></i>Top Streakers
+                </h2>
+                {% if top_streakers %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        {% for profile in top_streakers %}
+                            <a href="{% url 'profile' slug=profile.user.username %}"
+                               class="block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center hover:shadow-md transition-shadow">
+                                {% if profile.avatar %}
+                                    <img src="{{ profile.avatar }}"
+                                         class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-orange-400"
+                                         alt="{{ profile.user.username }}">
+                                {% else %}
+                                    <img src="{% gravatar_url profile.user.email 64 %}"
+                                         class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-orange-400"
+                                         alt="{{ profile.user.username }}">
+                                {% endif %}
+                                <p class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ profile.user.username }}</p>
+                                <div class="flex items-center justify-center gap-1 text-orange-500 mt-2">
+                                    <i class="fas fa-fire"></i>
+                                    <span class="font-bold">{{ profile.current_streak }}</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">day streak</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+                        <i class="fas fa-fire text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                        <p class="text-gray-500 dark:text-gray-400">No streak data available</p>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Call to Action -->
+            <div class="mt-12 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-xl p-8 text-center text-white">
+                <h2 class="text-2xl font-bold mb-3">Want to Contribute?</h2>
+                <p class="text-red-100 mb-6 max-w-2xl mx-auto">
+                    Join our community of security researchers and developers. Report bugs, earn rewards, and help make the web safer!
+                </p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="{% url 'issue' %}"
+                       class="px-6 py-3 bg-white text-[#e74c3c] rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-bug mr-2"></i>Report a Bug
+                    </a>
+                    <a href="{% url 'hunts' %}"
+                       class="px-6 py-3 bg-transparent border-2 border-white text-white rounded-lg font-medium hover:bg-white hover:text-[#e74c3c] transition-colors">
+                        <i class="fas fa-crosshairs mr-2"></i>View Bug Bounties
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

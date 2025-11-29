@@ -210,6 +210,7 @@ from website.views.issue import (
     update_content_comment,
     vote_count,
 )
+from website.views.newsletter import NewsletterView
 from website.views.organization import (
     BountyPayoutsView,
     CreateHunt,
@@ -621,6 +622,7 @@ urlpatterns = [
         EachmonthLeaderboardView.as_view(),
         name="leaderboard_eachmonth",
     ),
+    re_path(r"^newsletter/$", NewsletterView.as_view(), name="newsletter"),
     re_path(
         r"^api/v1/issue/like/(?P<id>\w+)/$",
         LikeIssueApiView.as_view(),
