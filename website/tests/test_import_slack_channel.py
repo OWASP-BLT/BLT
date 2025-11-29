@@ -94,7 +94,7 @@ class ImportSlackChannelTests(TestCase):
         self.assertEqual(p.slack, "https://slack.com/z")
 
     #  Error Handling Tests
-    @patch("django.core.management.base.BaseCommand.stdout")
+    @patch("website.management.commands.import_slack_channel.Command.stdout")
     def test_unmatched_project_logged(self, mocked_stdout):
         """
         When a channel can't be matched, a warning should be logged.
