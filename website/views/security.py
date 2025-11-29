@@ -77,7 +77,7 @@ class SecurityDashboardView(LoginRequiredMixin, TemplateView):
 
     def export_csv(self):
         # Check rate limit
-        if is_csv_rate_limited(request.user.id):
+        if is_csv_rate_limited(self.request.user.id):
             return HttpResponse("Rate limit exceeded", status=429)
 
         queryset = SecurityIncident.objects.all().order_by("-created_at")
