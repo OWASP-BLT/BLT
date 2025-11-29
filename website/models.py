@@ -667,6 +667,8 @@ class Issue(models.Model):
             return
 
         try:
+            from website.utils import fetch_github_data as fetch_github_api_data
+
             # Parse URL properly to handle query strings and fragments
             parsed_url = urlparse(self.github_url)
 
@@ -689,19 +691,14 @@ class Issue(models.Model):
             repo = path_parts[1]
             issue_number = path_parts[3]
 
-            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
+            # Use the existing utility function
+            data = fetch_github_api_data(owner, repo, "issues", issue_number)
 
-            headers = {"Accept": "application/vnd.github.v3+json"}
-
-            from django.conf import settings
-
-            # Use Bearer format for modern GitHub tokens (OAuth, fine-grained PATs, JWTs)
-            if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN != "blank":
-                headers["Authorization"] = f"Bearer {settings.GITHUB_TOKEN}"
-
-            response = requests.get(api_url, headers=headers, timeout=10)
-            response.raise_for_status()
-            data = response.json()
+            if isinstance(data, dict) and "error" in data:
+                logger.warning(f"Error fetching GitHub data for issue {self.id}: {data['error']}")
+                self.github_fetch_status = True
+                self.save(update_fields=["github_fetch_status"])
+                return
 
             # Map GitHub state to our choices - normalize to 'open' or 'closed'
             raw_state = data.get("state", "")
@@ -715,7 +712,7 @@ class Issue(models.Model):
             self.github_fetch_status = False
             self.save(update_fields=["github_state", "github_comment_count", "github_fetch_status"])
 
-        except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+        except (KeyError, IndexError) as e:
             logger.warning(f"Error fetching GitHub data for issue {self.id}: {e}")
             self.github_fetch_status = True
             self.save(update_fields=["github_fetch_status"])
@@ -1099,7 +1096,7 @@ class IP(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["path", "created"], name="ip_path_created_idx"),
+            models.Index(fields=["path", "created_at"], name="ip_path_created_idx"),
         ]
 
 
