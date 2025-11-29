@@ -1,5 +1,7 @@
 import csv
 import json
+import logging
+import time
 from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -12,6 +14,17 @@ from django.views.generic import TemplateView
 
 from website.models import Issue, SecurityIncident
 
+csv_rate_limit = {
+    "calls": 0,
+    "reset_time": time.time() + 60,
+}
+
+CSV_RATE_LIMIT_MAX_CALLS = 5  # 5 CSV exports per minute
+CSV_RATE_LIMIT_WINDOW = 60  # window in seconds
+
+logger = logging.getLogger(__name__)
+
+
 # Severity ranking for correct sorting
 SEVERITY_ORDER = Case(
     When(severity="critical", then=Value(4)),
@@ -22,12 +35,39 @@ SEVERITY_ORDER = Case(
 )
 
 
+def is_csv_rate_limited():
+    now = time.time()
+
+    # Reset window if expired
+    if now >= csv_rate_limit["reset_time"]:
+        csv_rate_limit["calls"] = 0
+        csv_rate_limit["reset_time"] = now + CSV_RATE_LIMIT_WINDOW
+
+    # Block if limit reached
+    if csv_rate_limit["calls"] >= CSV_RATE_LIMIT_MAX_CALLS:
+        return True
+
+    # Count this call
+    csv_rate_limit["calls"] += 1
+    return False
+
+
 def _escape_csv_formula(value):
     """Escape leading formula characters to mitigate CSV formula injection."""
     if not isinstance(value, str):
         return value
-    if value and value[0] in ("=", "+", "-", "@"):
-        return "'" + value
+
+    value = value.strip()
+
+    if not value:
+        return value
+
+    dangerous_chars = "=+-@\t\r\n"
+    if value and value[0] in dangerous_chars:
+        logger.warning("CSV formula injection attempt detected. Value started with a dangerous character: %r", original)
+
+    while value and value[0] in dangerous_chars:
+        value = value[1:]
     return value
 
 
@@ -40,6 +80,10 @@ class SecurityDashboardView(LoginRequiredMixin, TemplateView):
         return super().get(request, *args, **kwargs)
 
     def export_csv(self):
+        # Check rate limit
+        if is_csv_rate_limited():
+            return HttpResponseTooManyRequests("CSV export rate limit exceeded. Please try again later.")
+
         queryset = SecurityIncident.objects.all().order_by("-created_at")
         queryset = self.apply_filters(queryset)
 
