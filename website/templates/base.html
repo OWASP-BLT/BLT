@@ -108,6 +108,17 @@
                 }
             })();
         </script>
+        <!-- Fix for mobile browser viewport height (handles address bar show/hide) -->
+        <script>
+            (function() {
+                function setVh() {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', vh + 'px');
+                }
+                setVh();
+                window.addEventListener('resize', setVh);
+            })();
+        </script>
         <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
         <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>

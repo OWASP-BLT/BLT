@@ -21,7 +21,8 @@
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
     {% get_providers as socialaccount_providers %}
-    <div class="flex items-center justify-center h-[calc(100vh-70px)] p-4 bg-gray-100 dark:bg-gray-800">
+    <div class="flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-800"
+         style="min-height: calc(var(--vh, 1vh) * 100 - 70px);">
         <div class="flex flex-col overflow-hidden bg-white dark:bg-gray-800 rounded-md shadow-lg md:flex-row md:flex-1 lg:max-w-screen-sm">
             <!-- Left Side (Branding and Info) -->
             <div class="p-4 py-4 text-white bg-red-500 md:w-72 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">

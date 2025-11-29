@@ -2,7 +2,8 @@
 {% load static %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="h-[calc(100vh-70px)] bg-gray-50 dark:bg-gray-900 py-6 overflow-auto">
+    <div class="bg-gray-50 dark:bg-gray-900 py-6 overflow-auto"
+         style="min-height: calc(var(--vh, 1vh) * 100 - 70px);">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-6 text-center sm:text-left">
