@@ -1,15 +1,89 @@
 # Generated migration to make email field unique
+import json
+import logging
+from datetime import datetime
+
 from django.db import migrations
 from django.db.models import Count
+from django.db.models.deletion import Collector
+
+logger = logging.getLogger(__name__)
+
+
+def analyze_related_objects(user, using):
+    """
+    Use Django's Collector to enumerate all related objects for a user.
+    Returns a dictionary of related objects grouped by model.
+    """
+    collector = Collector(using=using)
+    collector.collect([user])
+
+    related_objects = {}
+    for model, instances in collector.data.items():
+        model_name = f"{model._meta.app_label}.{model._meta.model_name}"
+        related_objects[model_name] = [
+            {
+                "id": obj.pk,
+                "repr": str(obj)[:100],  # Truncate long representations
+            }
+            for obj in instances
+        ]
+
+    return related_objects
+
+
+def log_audit_entry(user, related_objects, action, reason):
+    """
+    Create an audit log entry for user deletion/archival.
+    Logs using Django logger for production compatibility.
+    """
+    audit_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "action": action,
+        "reason": reason,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "date_joined": user.date_joined.isoformat() if hasattr(user, "date_joined") else None,
+        },
+        "related_objects": related_objects,
+        "related_object_count": sum(len(objs) for objs in related_objects.values()),
+    }
+
+    logger.info("=" * 80)
+    logger.info(f"AUDIT LOG - {action.upper()}")
+    logger.info("=" * 80)
+    logger.info(json.dumps(audit_entry, indent=2))
+    logger.info("=" * 80)
+
+    return audit_entry
 
 
 def remove_duplicate_emails(apps, schema_editor):
     """
-    Remove users with duplicate non-empty emails, keeping only the first user (lowest ID).
-    Empty emails are preserved and not deduplicated since the partial unique index allows them.
+    Safely handle users with duplicate non-empty emails.
+
+    Strategy:
+    1. Identify duplicate emails (keeping user with lowest ID)
+    2. For each duplicate user, use Collector to enumerate related objects
+    3. Log all related objects in audit trail
+    4. Anonymize user data instead of hard delete (soft-delete approach)
+    5. Clear email to allow unique constraint
+
+    This prevents cascade deletion and data loss while still allowing
+    the unique constraint to be applied.
+
+    WARNING: This migration uses soft-delete (anonymization). Users are NOT
+    permanently deleted but are marked inactive with cleared emails. This
+    preserves all related data and foreign key relationships. The reverse
+    migration cannot restore the original user data.
     """
     User = apps.get_model("auth", "User")
     db_alias = schema_editor.connection.alias
+
+    # Configuration: Set to True to perform actual operations, False for dry-run
+    DRY_RUN = False
 
     # Find all duplicate non-empty emails (exclude empty emails)
     duplicate_emails = (
@@ -21,24 +95,75 @@ def remove_duplicate_emails(apps, schema_editor):
         .values_list("email", flat=True)
     )
 
-    deleted_count = 0
+    processed_count = 0
+    audit_logs = []
+
+    if DRY_RUN:
+        logger.warning("=" * 80)
+        logger.warning("DRY RUN MODE - No changes will be made")
+        logger.warning("=" * 80)
+
     for email in duplicate_emails:
         # Get all users with this email, ordered by ID
         users_with_email = User.objects.using(db_alias).filter(email=email).order_by("id")
 
-        # Keep the first user (lowest ID), delete the rest
-        users_to_delete = list(users_with_email[1:])
+        # Keep the first user (lowest ID), process the rest
+        users_to_process = list(users_with_email[1:])
 
-        for user in users_to_delete:
-            email_display = f"'{user.email}'" if user.email else "(empty)"
-            print(f"Deleting duplicate user: {user.username} (ID: {user.id}, Email: {email_display})")
-            user.delete()
-            deleted_count += 1
+        for user in users_to_process:
+            # Analyze all related objects before making changes
+            related_objects = analyze_related_objects(user, db_alias)
 
-    if deleted_count > 0:
-        print(f"Total duplicate users deleted: {deleted_count}")
+            # Log the audit entry
+            audit_log = log_audit_entry(
+                user,
+                related_objects,
+                action="dry_run_anonymize" if DRY_RUN else "anonymize",
+                reason=f"Duplicate email: {email}",
+            )
+            audit_logs.append(audit_log)
+
+            if not DRY_RUN:
+                # Soft-delete approach: Anonymize the user instead of deleting
+                # This preserves all related objects and foreign key relationships
+                user.email = ""  # Clear email to resolve duplicate
+                user.username = f"deleted_user_{user.id}_{datetime.now().timestamp()}"
+                user.is_active = False
+
+                # Mark as archived if the field exists
+                if hasattr(user, "is_deleted"):
+                    user.is_deleted = True
+                if hasattr(user, "archived"):
+                    user.archived = True
+
+                user.save()
+
+                logger.info(f"✓ Anonymized user ID {user.id} (was: {email})")
+            else:
+                logger.info(f"[DRY RUN] Would anonymize user ID {user.id} (email: {email})")
+                logger.info(
+                    f"  - Related objects: {sum(len(objs) for objs in related_objects.values())} across {len(related_objects)} models"
+                )
+
+            processed_count += 1
+
+    # Summary
+    logger.info("=" * 80)
+    logger.info("MIGRATION SUMMARY")
+    logger.info("=" * 80)
+    if DRY_RUN:
+        logger.warning(f"DRY RUN: Would process {processed_count} duplicate users")
+        logger.warning("Set DRY_RUN = False in the migration to apply changes")
     else:
-        print("No duplicate non-empty emails found.")
+        logger.info(f"Successfully processed {processed_count} duplicate users")
+        logger.info("All users have been anonymized (soft-deleted) to preserve related data")
+
+    if processed_count == 0:
+        logger.info("No duplicate non-empty emails found.")
+
+    logger.info("=" * 80)
+
+    return audit_logs
 
 
 def verify_no_duplicates(apps, schema_editor):
@@ -61,7 +186,7 @@ def verify_no_duplicates(apps, schema_editor):
     )
 
     if duplicate_count > 0:
-        raise Exception(
+        raise RuntimeError(
             f"Migration aborted: {duplicate_count} duplicate non-empty email(s) still exist. "
             "This should not happen. Please investigate and run remove_duplicate_emails again."
         )
@@ -69,9 +194,20 @@ def verify_no_duplicates(apps, schema_editor):
 
 def reverse_migration(apps, schema_editor):
     """
-    Reverse migration - cannot restore deleted users, so this is a no-op.
+    Reverse migration - cannot restore anonymized users, so this is a no-op.
+
+    WARNING: Users anonymized by this migration cannot be recovered. Their
+    original usernames and emails have been permanently modified. While the
+    user records still exist in the database (soft-delete), the original
+    data cannot be restored through migration reversal.
     """
-    pass
+    logger.warning(
+        "=" * 80 + "\n"
+        "WARNING: Reversing migration 0259_make_email_unique\n"
+        "Anonymized users CANNOT be restored to their original state.\n"
+        "User records remain in database but original usernames/emails are lost.\n"
+        "=" * 80
+    )
 
 
 class Migration(migrations.Migration):
