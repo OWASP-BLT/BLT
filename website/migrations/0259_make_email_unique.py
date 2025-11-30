@@ -211,6 +211,8 @@ def reverse_migration(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    atomic = False
+
     dependencies = [
         ("website", "0258_add_slackchannel_model"),
         ("auth", "0012_alter_user_first_name_max_length"),
