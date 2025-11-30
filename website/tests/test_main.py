@@ -160,7 +160,24 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(DEBUG=True)
     def test_post_bug_full_url(self):
-        # Email verification is now handled in setUp
+        # Ensure bugbug user exists and has verified email
+        from allauth.account.models import EmailAddress
+
+        # Get or create the bugbug user
+        bugbug_user, created = User.objects.get_or_create(username="bugbug", defaults={"email": "bugbug@bugbug.com"})
+        if created:
+            bugbug_user.set_password("secret")
+            bugbug_user.save()
+
+        # Verify the email
+        email_address, created = EmailAddress.objects.get_or_create(
+            user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
+        )
+        if not created:
+            email_address.verified = True
+            email_address.primary = True
+            email_address.save()
+
         self.selenium.set_page_load_timeout(70)
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element("name", "login").send_keys("bugbug")
@@ -185,7 +202,24 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(DEBUG=True)
     def test_post_bug_domain_url(self):
-        # Email verification is now handled in setUp
+        # Ensure bugbug user exists and has verified email
+        from allauth.account.models import EmailAddress
+
+        # Get or create the bugbug user
+        bugbug_user, created = User.objects.get_or_create(username="bugbug", defaults={"email": "bugbug@bugbug.com"})
+        if created:
+            bugbug_user.set_password("secret")
+            bugbug_user.save()
+
+        # Verify the email
+        email_address, created = EmailAddress.objects.get_or_create(
+            user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
+        )
+        if not created:
+            email_address.verified = True
+            email_address.primary = True
+            email_address.save()
+
         self.selenium.set_page_load_timeout(70)
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element("name", "login").send_keys("bugbug")
