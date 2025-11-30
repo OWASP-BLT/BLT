@@ -630,10 +630,15 @@ class Issue(models.Model):
         max_length=10,
         choices=GITHUB_STATE_CHOICES,
         blank=True,
-        null=True,
-        help_text="Current state of the GitHub issue",
+        default="",
+        help_text="Current state of the GitHub issue (open/closed) as reported by GitHub API",
     )
-    github_fetch_status = models.BooleanField(default=False, help_text="Whether GitHub data was successfully fetched")
+    github_fetch_status = models.BooleanField(
+        default=False, help_text="Whether GitHub data was successfully fetched from the API"
+    )
+    github_last_fetched_at = models.DateTimeField(
+        null=True, blank=True, help_text="Timestamp of when GitHub data was last fetched"
+    )
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)

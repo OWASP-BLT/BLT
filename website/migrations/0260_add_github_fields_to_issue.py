@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0259_add_domain_slug"),
+        ("website", "0258_add_slackchannel_model"),
     ]
 
     operations = [
@@ -19,15 +19,27 @@ class Migration(migrations.Migration):
             name="github_state",
             field=models.CharField(
                 blank=True,
+                default="",
                 choices=[("open", "Open"), ("closed", "Closed")],
-                help_text="Current state of the GitHub issue",
+                help_text="Current state of the GitHub issue (open/closed) as reported by GitHub API",
                 max_length=10,
-                null=True,
             ),
         ),
         migrations.AddField(
             model_name="issue",
             name="github_fetch_status",
-            field=models.BooleanField(default=False, help_text="Whether GitHub data was successfully fetched"),
+            field=models.BooleanField(
+                default=False,
+                help_text="Whether GitHub data was successfully fetched from the API",
+            ),
+        ),
+        migrations.AddField(
+            model_name="issue",
+            name="github_last_fetched_at",
+            field=models.DateTimeField(
+                blank=True,
+                help_text="Timestamp of when GitHub data was last fetched",
+                null=True,
+            ),
         ),
     ]
