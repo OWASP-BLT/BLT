@@ -115,7 +115,7 @@ class GitHubIntegrationFieldsTests(TestCase):
 
         # Check default values
         self.assertEqual(issue.github_comment_count, 0)
-        self.assertIsNone(issue.github_state)
+        self.assertEqual(issue.github_state, "")  # Default is empty string, not None
         self.assertFalse(issue.github_fetch_status)
         self.assertEqual(issue.github_url, "")
 
@@ -184,7 +184,7 @@ class GitHubIntegrationFieldsTests(TestCase):
         )
 
         self.assertFalse(issue.github_fetch_status)
-        self.assertIsNone(issue.github_state)
+        self.assertEqual(issue.github_state, "")  # Default is empty string, not None
         self.assertEqual(issue.github_comment_count, 0)
 
     def test_issue_update_github_fields(self):
@@ -197,7 +197,7 @@ class GitHubIntegrationFieldsTests(TestCase):
 
         # Initially no GitHub data
         self.assertEqual(issue.github_comment_count, 0)
-        self.assertIsNone(issue.github_state)
+        self.assertEqual(issue.github_state, "")  # Default is empty string, not None
         self.assertFalse(issue.github_fetch_status)
 
         # Update with GitHub data
@@ -287,24 +287,10 @@ class GitHubIntegrationFieldsTests(TestCase):
         # Verify all issues maintain their states
         self.assertEqual(Issue.objects.get(pk=issue1.pk).github_state, "open")
         self.assertEqual(Issue.objects.get(pk=issue2.pk).github_state, "closed")
-        self.assertIsNone(Issue.objects.get(pk=issue3.pk).github_state)
-
-    def test_issue_github_state_null_allowed(self):
-        """Test that github_state can be null"""
-        issue = Issue.objects.create(
-            url="http://example.com",
-            description="Test Issue Null State",
-            user=self.user,
-            github_url="https://github.com/test/repo/issues/12",
-            github_state=None,
-            github_fetch_status=False,
-        )
-
-        self.assertIsNone(issue.github_state)
-        self.assertFalse(issue.github_fetch_status)
+        self.assertEqual(Issue.objects.get(pk=issue3.pk).github_state, "")  # Default is empty string
 
     def test_issue_github_state_blank_string(self):
-        """Test that github_state can be blank"""
+        """Test that github_state defaults to blank string"""
         issue = Issue.objects.create(
             url="http://example.com",
             description="Test Issue Blank State",
