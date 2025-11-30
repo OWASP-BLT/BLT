@@ -192,11 +192,6 @@ class MySeleniumTests(LiveServerTestCase):
         self._ensure_bugbug_user_verified()
 
         self.selenium.set_page_load_timeout(70)
-
-        # Force transaction commit by accessing the database
-        User.objects.get(username="bugbug")
-
-        self.selenium.set_page_load_timeout(70)
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
@@ -222,11 +217,6 @@ class MySeleniumTests(LiveServerTestCase):
     def test_post_bug_domain_url(self):
         # Create and verify the bugbug user
         self._ensure_bugbug_user_verified()
-
-        self.selenium.set_page_load_timeout(70)
-
-        # Force transaction commit by accessing the database
-        User.objects.get(username="bugbug")
 
         self.selenium.set_page_load_timeout(70)
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
