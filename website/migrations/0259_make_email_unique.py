@@ -40,7 +40,7 @@ def remove_duplicate_users(apps, schema_editor):
                 f"Deleting duplicate user '{user.username}' (ID: {user.id}, email: '{email}'). "
                 f"Keeping user '{kept_user.username}' (ID: {kept_user.id})"
             )
-            user.delete()
+            user.delete(using=db_alias)
             total_deleted += 1
 
     if total_deleted > 0:
