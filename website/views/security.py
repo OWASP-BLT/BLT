@@ -179,7 +179,7 @@ class SecurityDashboardView(LoginRequiredMixin, TemplateView):
         context["incidents"] = page_obj.object_list
 
         # Related Issues (label=4)
-        context["security_issues"] = Issue.objects.filter(label=4).order_by("-created")[:10]
+        context["security_issues"] = Issue.objects.filter(label=Issue.LabelChoices.SECURITY).order_by("-created")[:10]
 
         # Summary
         context["incident_count"] = filtered_queryset.count()
