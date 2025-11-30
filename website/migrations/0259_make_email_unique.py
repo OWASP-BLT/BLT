@@ -136,7 +136,7 @@ def remove_duplicate_emails(apps, schema_editor):
                 if hasattr(user, "archived"):
                     user.archived = True
 
-                user.save()
+                user.save(using=db_alias)
 
                 logger.info(f"✓ Anonymized user ID {user.id} (was: {email})")
             else:
