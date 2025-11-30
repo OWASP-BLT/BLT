@@ -38,6 +38,14 @@
                     {% if confirmation.email_address.verified %}
                         <!-- Already Verified -->
                         <div class="text-green-600 mb-6">
+                            <div class="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-green-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
                             <p class="text-lg font-semibold mb-2">{% trans "Email Already Verified" %}</p>
                             <p class="text-gray-600 dark:text-gray-400">
                                 {% blocktrans with confirmation.email_address.email as email %}Your email address {{ email }} has already been confirmed.{% endblocktrans %}
@@ -53,6 +61,24 @@
                             <p class="mb-4">
                                 {% blocktrans with confirmation.email_address.email as email %}Please confirm that <strong class="text-gray-900 dark:text-gray-100">{{ email }}</strong> is an email address for user {{ confirmation.email_address.user }}.{% endblocktrans %}
                             </p>
+                            <!-- Spam Folder Reminder -->
+                            <div class="mt-4 p-4 bg-blue-50 dark:bg-gray-700 border border-blue-200 dark:border-gray-600 rounded-md">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3 flex-shrink-0"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">{% trans "Can't find the email?" %}</p>
+                                        <p class="text-xs text-blue-800 dark:text-blue-400">
+                                            {% trans "Check your spam or junk folder. Sometimes our emails get filtered there." %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <form method="post"
                               action="{% url 'account_confirm_email' confirmation.key %}">
@@ -63,7 +89,7 @@
                             </button>
                         </form>
                         <a href="{% url 'home' %}"
-                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
+                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
                             {% trans "Cancel" %}
                         </a>
                     {% endif %}
@@ -83,14 +109,34 @@
                         <p class="text-gray-600 dark:text-gray-400 mb-4">
                             {% trans "This email confirmation link expired or is invalid. Please request a new verification email." %}
                         </p>
+                        <!-- Spam Folder Reminder for invalid links -->
+                        <div class="mt-4 p-4 bg-blue-50 dark:bg-gray-700 border border-blue-200 dark:border-gray-600 rounded-md text-left">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3 flex-shrink-0"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">{% trans "Helpful Tips" %}</p>
+                                    <ul class="text-xs text-blue-800 dark:text-blue-400 list-disc list-inside space-y-1">
+                                        <li>{% trans "Check your spam or junk folder for verification emails" %}</li>
+                                        <li>{% trans "Verification links expire after a certain time for security" %}</li>
+                                        <li>{% trans "You can request a new verification email anytime" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="space-y-3">
                         <a href="{% url 'account_email' %}"
                            class="w-full inline-block px-4 py-2 text-lg font-semibold text-white bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4 transition-colors duration-300 text-center">
-                            {% trans "Request New Verification Email" %}
+                            {% trans "Resend Verification Email" %}
                         </a>
                         <a href="{% url 'home' %}"
-                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
+                           class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
                             {% trans "Return to Home" %}
                         </a>
                     </div>
