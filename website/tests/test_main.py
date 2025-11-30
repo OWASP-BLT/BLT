@@ -66,31 +66,9 @@ class MySeleniumTests(LiveServerTestCase):
             print(f"Error setting up Chrome: {e}")
             raise
 
-    def _ensure_verified_user(self, username: str, email: str, password: str) -> User:
-        from allauth.account.models import EmailAddress
-
-        user, _ = User.objects.get_or_create(
-            username=username,
-            defaults={"email": email or ""},
-        )
-        if email and user.email != email:
-            user.email = email
-        if password:
-            user.set_password(password)
-        user.save()
-        UserProfile.objects.get_or_create(user=user)
-        if user.email:
-            EmailAddress.objects.update_or_create(
-                user=user,
-                email=user.email,
-                defaults={"verified": True, "primary": True},
-            )
-        return user
-
     @classmethod
     def tearDownClass(cls):
         cls.selenium.quit()
-        User.objects.filter(username="bugbugbug").delete()
         super(MySeleniumTests, cls).tearDownClass()
 
     @override_settings(DEBUG=True)
@@ -154,10 +132,9 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
 
     @override_settings(DEBUG=True)
-    def test_login_email(self):
-        user_email = "bugbugbug@bugbug.com"
-        user_name = "bugbugbug"
-        self._ensure_verified_user(user_name, user_email, "secret")
+    def test_login_email(self):        
+        user_email = "bugbug@bugbug.com"
+        user_name = "bugbug"
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element("name", "login").send_keys(user_email)
         self.selenium.find_element("name", "password").send_keys("secret")
@@ -170,9 +147,7 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(DEBUG=True)
     def test_login_username(self):
-        user_email = "bugbugbug@bugbug.com"
-        user_name = "bugbugbug"
-        self._ensure_verified_user(user_name, user_email, "secret")
+        user_name = "bugbug"
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element("name", "login").send_keys(user_name)
         self.selenium.find_element("name", "password").send_keys("secret")
@@ -287,18 +262,26 @@ class MySeleniumTests(LiveServerTestCase):
         bug_exists = Issue.objects.filter(user__username="bugbug", description="XSS Attack on Google").exists()
         self.assertTrue(bug_exists, "Bug report was not found in database after submission")
 
+    def setUp(self):
+        super().setUp()
+        # Verify emails for all test users
+        self.verify_user_emails()
+
     def verify_user_emails(self):
         """Helper method to verify emails for all test users"""
         from allauth.account.models import EmailAddress
 
+        # Get all users from the fixture
         for user in User.objects.all():
-            if user.email:
+            if user.email:  # Only process users with emails
                 email_address = EmailAddress.objects.filter(user=user, email=user.email).first()
                 if email_address:
+                    # If email address exists, just verify it
                     email_address.verified = True
                     email_address.primary = True
                     email_address.save()
                 else:
+                    # Create a new verified email address
                     EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
 
 
