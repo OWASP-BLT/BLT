@@ -159,6 +159,34 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True)
+    def test_login_unverified_email_fails(self):
+        """Test that unverified users cannot log in"""
+        from allauth.account.models import EmailAddress
+
+        # Create a new user without verifying their email
+        unverified_user = User.objects.create_user(
+            username="unverified_user", email="unverified@example.com", password="testpassword123"
+        )
+
+        # Create an unverified email address
+        EmailAddress.objects.create(user=unverified_user, email="unverified@example.com", verified=False, primary=True)
+
+        # Attempt to log in with unverified email
+        self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
+        self.selenium.find_element("name", "login").send_keys("unverified@example.com")
+        self.selenium.find_element("name", "password").send_keys("testpassword123")
+        self.selenium.find_element("name", "login_button").click()
+
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        body = self.selenium.find_element("tag name", "body")
+
+        # The user should still be on the login page or see an error message
+        self.assertIn("email", body.text.lower())
+
+        # Verify user is not logged in by checking they don't see their username in the header
+        self.assertNotIn("@unverified_user", body.text)
+
+    @override_settings(DEBUG=True)
     def test_post_bug_full_url(self):
         # Ensure bugbug user exists and has verified email
         from allauth.account.models import EmailAddress
