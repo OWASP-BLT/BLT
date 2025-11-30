@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="issue",
             name="github_comment_count",
-            field=models.IntegerField(default=0, help_text="Number of comments on the GitHub issue"),
+            field=models.PositiveIntegerField(default=0, help_text="Number of comments on the GitHub issue"),
         ),
         migrations.AddField(
             model_name="issue",
