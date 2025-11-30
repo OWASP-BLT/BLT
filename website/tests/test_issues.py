@@ -229,20 +229,25 @@ class GitHubIntegrationFieldsTests(TestCase):
         self.assertEqual(issue.github_comment_count, 0)
         self.assertTrue(issue.github_fetch_status)
 
-    def test_issue_github_comment_count_allows_negative(self):
-        """Test that negative comment counts are stored without validation"""
-        # Django IntegerField allows negative values by default
-        # In a production system, consider adding validators or using PositiveIntegerField
-        issue = Issue.objects.create(
+    def test_issue_github_comment_count_rejects_negative(self):
+        """Test that negative comment counts are rejected"""
+        from django.core.exceptions import ValidationError
+
+        # Attempt to create an issue with negative comment count
+        issue = Issue(
             url="http://example.com",
             description="Test Issue",
             user=self.user,
-            github_comment_count=-1,  # This will be stored (not recommended but allowed)
+            github_comment_count=-1,
         )
 
-        # The value will be stored - demonstrates current behavior
-        # Note: In practice, comment counts should be non-negative
-        self.assertEqual(issue.github_comment_count, -1)
+        # Django's full_clean() should raise ValidationError for negative value
+        # PositiveIntegerField validates that value must be >= 0
+        with self.assertRaises(ValidationError) as context:
+            issue.full_clean()
+
+        # Verify that the error is specifically about the github_comment_count field
+        self.assertIn("github_comment_count", context.exception.error_dict)
 
     def test_issue_without_github_url_but_with_state(self):
         """Test that an issue can have GitHub state without URL (edge case)"""
@@ -302,3 +307,66 @@ class GitHubIntegrationFieldsTests(TestCase):
 
         self.assertEqual(issue.github_state, "")
         self.assertFalse(issue.github_fetch_status)
+
+    def test_issue_github_last_fetched_at(self):
+        """Test github_last_fetched_at timestamp field"""
+        from django.utils import timezone
+
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue",
+            user=self.user,
+        )
+
+        # Initially None
+        self.assertIsNone(issue.github_last_fetched_at)
+
+        # Set when data is fetched
+        fetch_time = timezone.now()
+        issue.github_url = "https://github.com/test/repo/issues/1"
+        issue.github_state = "open"
+        issue.github_fetch_status = True
+        issue.github_last_fetched_at = fetch_time
+        issue.save()
+
+        issue.refresh_from_db()
+        self.assertEqual(issue.github_last_fetched_at, fetch_time)
+        self.assertEqual(issue.github_url, "https://github.com/test/repo/issues/1")
+        self.assertEqual(issue.github_state, "open")
+        self.assertTrue(issue.github_fetch_status)
+
+        # Update timestamp on subsequent fetch
+        import time
+
+        time.sleep(0.01)  # Ensure timestamp is different
+        later_fetch_time = timezone.now()
+        issue.github_state = "closed"
+        issue.github_comment_count = 5
+        issue.github_last_fetched_at = later_fetch_time
+        issue.save()
+
+        issue.refresh_from_db()
+        self.assertEqual(issue.github_last_fetched_at, later_fetch_time)
+        self.assertGreater(issue.github_last_fetched_at, fetch_time)
+        self.assertEqual(issue.github_state, "closed")
+        self.assertEqual(issue.github_comment_count, 5)
+
+    def test_issue_github_state_invalid_choice(self):
+        """Test that github_state rejects invalid choices"""
+        from django.core.exceptions import ValidationError
+
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue",
+            user=self.user,
+        )
+
+        # Attempt to set an invalid state
+        issue.github_state = "invalid_state"
+
+        # Django's full_clean() should raise ValidationError for invalid choice
+        with self.assertRaises(ValidationError) as context:
+            issue.full_clean()
+
+        # Verify that the error is specifically about the github_state field
+        self.assertIn("github_state", context.exception.error_dict)

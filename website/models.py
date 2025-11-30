@@ -625,7 +625,7 @@ class Issue(models.Model):
     closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
-    github_comment_count = models.IntegerField(default=0, help_text="Number of comments on the GitHub issue")
+    github_comment_count = models.PositiveIntegerField(default=0, help_text="Number of comments on the GitHub issue")
     github_state = models.CharField(
         max_length=10,
         choices=GITHUB_STATE_CHOICES,
