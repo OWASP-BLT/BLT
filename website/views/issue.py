@@ -285,7 +285,7 @@ def UpdateIssue(request):
                     break
     except:
         tokenauth = False
-    if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
+    if request.method == "POST" and (request.user.is_superuser or (issue is not None and request.user == issue.user)):
         if request.POST.get("action") == "close":
             issue.status = "closed"
             issue.closed_by = request.user
