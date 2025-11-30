@@ -142,7 +142,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         # Check for current header format: @username and separate Points display
-        self.assertIn(f"@{user_name.split('_')[0]}", body.text)
+        self.assertIn(f"@{user_name}", body.text)
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True)
@@ -155,7 +155,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         # Check for current header format: @username and separate Points display
-        self.assertIn(f"@{user_name.split('_')[0]}", body.text)
+        self.assertIn(f"@{user_name}", body.text)
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True)
@@ -188,23 +188,31 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(DEBUG=True)
     def test_post_bug_full_url(self):
-        # Ensure bugbug user exists and has verified email
+        # Use transaction.atomic to ensure changes are committed
         from allauth.account.models import EmailAddress
+        from django.db import transaction
 
-        # Get or create the bugbug user
-        bugbug_user, created = User.objects.get_or_create(username="bugbug", defaults={"email": "bugbug@bugbug.com"})
-        if created:
-            bugbug_user.set_password("secret")
-            bugbug_user.save()
+        # Wrap user setup in atomic block and force commit
+        with transaction.atomic():
+            # Get or create the bugbug user
+            bugbug_user, created = User.objects.get_or_create(
+                username="bugbug", defaults={"email": "bugbug@bugbug.com"}
+            )
+            if created:
+                bugbug_user.set_password("secret")
+                bugbug_user.save()
 
-        # Verify the email
-        email_address, created = EmailAddress.objects.get_or_create(
-            user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
-        )
-        if not created:
-            email_address.verified = True
-            email_address.primary = True
-            email_address.save()
+            # Verify the email
+            email_address, created = EmailAddress.objects.get_or_create(
+                user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
+            )
+            if not created:
+                email_address.verified = True
+                email_address.primary = True
+                email_address.save()
+
+        # Force transaction commit by accessing the database
+        User.objects.get(username="bugbug")
 
         self.selenium.set_page_load_timeout(70)
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
@@ -230,23 +238,31 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(DEBUG=True)
     def test_post_bug_domain_url(self):
-        # Ensure bugbug user exists and has verified email
+        # Use transaction.atomic to ensure changes are committed
         from allauth.account.models import EmailAddress
+        from django.db import transaction
 
-        # Get or create the bugbug user
-        bugbug_user, created = User.objects.get_or_create(username="bugbug", defaults={"email": "bugbug@bugbug.com"})
-        if created:
-            bugbug_user.set_password("secret")
-            bugbug_user.save()
+        # Wrap user setup in atomic block and force commit
+        with transaction.atomic():
+            # Get or create the bugbug user
+            bugbug_user, created = User.objects.get_or_create(
+                username="bugbug", defaults={"email": "bugbug@bugbug.com"}
+            )
+            if created:
+                bugbug_user.set_password("secret")
+                bugbug_user.save()
 
-        # Verify the email
-        email_address, created = EmailAddress.objects.get_or_create(
-            user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
-        )
-        if not created:
-            email_address.verified = True
-            email_address.primary = True
-            email_address.save()
+            # Verify the email
+            email_address, created = EmailAddress.objects.get_or_create(
+                user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
+            )
+            if not created:
+                email_address.verified = True
+                email_address.primary = True
+                email_address.save()
+
+        # Force transaction commit by accessing the database
+        User.objects.get(username="bugbug")
 
         self.selenium.set_page_load_timeout(70)
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
