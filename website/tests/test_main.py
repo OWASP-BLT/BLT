@@ -142,7 +142,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         # Check for current header format: @username and separate Points display
-        self.assertIn(f"@{user_name.split('_')[0]}", body.text)
+        self.assertIn(f"@{user_name}", body.text)
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True)
@@ -155,7 +155,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         # Check for current header format: @username and separate Points display
-        self.assertIn(f"@{user_name.split('_')[0]}", body.text)
+        self.assertIn(f"@{user_name}", body.text)
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True, IS_TEST=True)
