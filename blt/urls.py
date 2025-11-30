@@ -24,7 +24,9 @@ from website.api.views import (
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
+    CheckDuplicateBugApiView,
     DomainViewSet,
+    FindSimilarBugsApiView,
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
@@ -250,6 +252,7 @@ from website.views.organization import (
     hunt_results,
     join_room,
     like_activity,
+    link_slack_channel_to_project,
     load_more_issues,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -261,6 +264,7 @@ from website.views.organization import (
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
+    slack_channels_list,
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
@@ -537,6 +541,16 @@ urlpatterns = [
         name="ongoing_hunts",
     ),
     re_path(r"^dashboard/organization/domains$", DomainList.as_view(), name="domain_list"),
+    re_path(
+        r"^dashboard/organization/slack-channels$",
+        slack_channels_list,
+        name="slack_channels_list",
+    ),
+    path(
+        "dashboard/organization/slack-channels/link",
+        link_slack_channel_to_project,
+        name="link_slack_channel_to_project",
+    ),
     re_path(
         r"^dashboard/organization/settings$",
         OrganizationSettings.as_view(),
@@ -1197,6 +1211,14 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
+    # Duplicate Bug Checking API
+    path(
+        "duplicate-check-example/",
+        TemplateView.as_view(template_name="duplicate_check_example.html"),
+        name="duplicate_check_example",
+    ),
+    path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
+    path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
 ]
 
 if settings.DEBUG:
