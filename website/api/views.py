@@ -70,7 +70,6 @@ from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
 # API's
-from rest_framework.authentication import SessionAuthentication
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
@@ -81,7 +80,7 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
     """
 
     def enforce_csrf(self, request):
-        return  #  CSRF disabled to support API testing and non-browser clients
+        return  # CSRF disabled to support API testing and non-browser clients
 
 
 class UserIssueViewSet(viewsets.ModelViewSet):

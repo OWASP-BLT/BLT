@@ -14,14 +14,14 @@ class LeaderboardScoringService:
         from website.models import DailyStatusReport
 
         reports = DailyStatusReport.objects.filter(
-            user=user, created_at__gte=timezone.now() - timedelta(days=30)
+            user=user, created__gte=timezone.now() - timedelta(days=30)
         ).order_by("created")
 
         if not reports.exists():
             return 0, {"frequency": 0, "streak": 0, "goals": 0, "completeness": 0}
 
         # Frequency score (0–100)
-        active_days = 22  # Approx business days
+        active_days = 22  # Approximate business days in a 30-day period
         check_in_days = reports.count()
         frequency_score = (check_in_days / active_days) * 100
 
