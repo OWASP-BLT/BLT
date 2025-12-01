@@ -70,6 +70,18 @@ from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
 # API's
+from rest_framework.authentication import SessionAuthentication
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """
+    Session authentication without CSRF enforcement.
+    Used for API endpoints that need to support both browser sessions
+    and programmatic access without CSRF tokens.
+    """
+
+    def enforce_csrf(self, request):
+        return  #  CSRF disabled to support API testing and non-browser clients
 
 
 class UserIssueViewSet(viewsets.ModelViewSet):
@@ -1562,14 +1574,6 @@ class FindSimilarBugsApiView(APIView):
                 {"error": "An error occurred while searching for similar bugs"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-
-from rest_framework.authentication import SessionAuthentication
-
-
-class CsrfExemptSessionAuthentication(SessionAuthentication):
-    def enforce_csrf(self, request):
-        return  # Disable CSRF
 
 
 class TeamMemberLeaderboardAPIView(APIView):

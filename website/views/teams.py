@@ -366,9 +366,14 @@ class TeamMemberLeaderboardView(LoginRequiredMixin, ListView):
 
         members = context["members"]
         ranked = []
+        # Calculate offset based on pagination
+        page_obj = context.get("page_obj")
+        start_rank = 1
+        if page_obj:
+            start_rank = (page_obj.number - 1) * self.paginate_by + 1
 
         # Assign rank numbers
-        for idx, member in enumerate(members, start=1):
+        for idx, member in enumerate(members, start=start_rank):
             ranked.append(
                 {
                     "rank": idx,

@@ -15,7 +15,7 @@ class LeaderboardScoringService:
 
         reports = DailyStatusReport.objects.filter(
             user=user, created_at__gte=timezone.now() - timedelta(days=30)
-        ).order_by("created_at")
+        ).order_by("created")
 
         if not reports.exists():
             return 0, {"frequency": 0, "streak": 0, "goals": 0, "completeness": 0}
@@ -28,11 +28,11 @@ class LeaderboardScoringService:
         # Streak score
         streak_score = min(user.userprofile.current_streak * 2, 30)
 
-        # Goal completion score
-        goal_reports = reports.filter(has_goals=True)
-        if goal_reports.exists():
-            accomplished = goal_reports.filter(goals_accomplished=True).count()
-            goal_score = (accomplished / goal_reports.count()) * 100
+        # Count reports where goal was accomplished
+        total_reports = reports.count()
+        if total_reports > 0:
+            accomplished = reports.filter(goal_accomplished=True).count()
+            goal_score = (accomplished / total_reports) * 100
         else:
             goal_score = 0
 
@@ -43,7 +43,7 @@ class LeaderboardScoringService:
                 (1 if r.previous_work else 0)
                 + (1 if r.next_plan else 0)
                 + (0.5 if r.blockers else 0)
-                + (0.5 if r.mood else 0)
+                + (0.5 if r.current_mood else 0)
             ) / 3
             completeness_values.append(c)
 
