@@ -37,7 +37,7 @@
                 <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
                     <i class="fas fa-chart-bar mr-3 text-[#e74c3c]"></i>Platform Statistics
                 </h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
                         <div class="text-3xl font-bold text-[#e74c3c]">{{ total_bugs|intcomma }}</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Bugs</div>
@@ -53,6 +53,24 @@
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
                         <div class="text-3xl font-bold text-purple-500">{{ active_hunts_count }}</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Active Bug Hunts</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-3xl font-bold text-emerald-500">{{ open_bugs|intcomma }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Open Bugs</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-3xl font-bold text-gray-500">{{ closed_bugs|intcomma }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Closed Bugs</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-3xl font-bold text-indigo-500">{{ total_domains|intcomma }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Domains</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-3xl font-bold text-orange-500">{{ total_organizations|intcomma }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Organizations</div>
                     </div>
                 </div>
             </div>
