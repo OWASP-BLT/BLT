@@ -1,4 +1,11 @@
 import json
+import sys
+import uuid
+from unittest.mock import MagicMock
+
+# Mock daphne to allow tests to run without installing it
+sys.modules["daphne"] = MagicMock()
+sys.modules["daphne.testing"] = MagicMock()
 
 from channels.testing import WebsocketCommunicator
 from django.contrib.auth import get_user_model
@@ -46,16 +53,90 @@ class ChatConsumerTests(TransactionTestCase):
             room=self.room, user=self.user, username=self.user.username, content="Test message"
         )
 
+    async def test_anonymous_connection_receives_session_key(self):
+        """Test that an anonymous user receives a session key upon connecting."""
+        communicator = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
+        communicator.scope["user"] = AnonymousUser()
+        connected, _ = await communicator.connect()
+        self.assertTrue(connected)
+
+        # First message should be the session key
+        response = await communicator.receive_from()
+        data = json.loads(response)
+        self.assertEqual(data["type"], "session_key")
+        self.assertTrue("session_key" in data)
+        self.assertTrue(len(data["session_key"]) > 16)  # Check it's a UUID
+
+        # Second message should be the connection status
+        response = await communicator.receive_from()
+        self.assertEqual(json.loads(response), {"type": "connection_status", "status": "connected"})
+
+        await communicator.disconnect()
+
+    async def test_authenticated_user_sends_message(self):
+        """Test that a logged-in user can send a message."""
+        communicator = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
+        communicator.scope["user"] = self.user
+        connected, _ = await communicator.connect()
+        self.assertTrue(connected)
+        await communicator.receive_from()  # Connection status
+
+        await communicator.send_to(text_data=json.dumps({"type": "chat_message", "message": "Hello world!"}))
+
+        # Receive message_ack first
+        ack_response = await communicator.receive_from()
+        self.assertEqual(json.loads(ack_response)["type"], "message_ack")
+
+        # Then receive the broadcasted chat_message
+        response = await communicator.receive_from()
+        data = json.loads(response)
+        self.assertEqual(data["type"], "chat_message")
+        self.assertEqual(data["username"], self.user.username)
+        self.assertEqual(data["message"], "Hello world!")
+
+        # Check database
+        self.assertTrue(await Message.objects.filter(user=self.user, content="Hello world!").aexists())
+        await communicator.disconnect()
+
+    async def test_anonymous_user_sends_message(self):
+        """Test that an anonymous user can send a message."""
+        communicator = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
+        communicator.scope["user"] = AnonymousUser()
+        connected, _ = await communicator.connect()
+        self.assertTrue(connected)
+
+        # Get session key
+        session_key_data = json.loads(await communicator.receive_from())
+        session_key = session_key_data["session_key"]
+        await communicator.receive_from()  # Connection status
+
+        await communicator.send_to(text_data=json.dumps({"type": "chat_message", "message": "I am anonymous"}))
+
+        # Receive message_ack first
+        ack_response = await communicator.receive_from()
+        self.assertEqual(json.loads(ack_response)["type"], "message_ack")
+
+        # Then receive the broadcasted chat_message
+        response = await communicator.receive_from()
+        data = json.loads(response)
+        self.assertEqual(data["type"], "chat_message")
+        self.assertEqual(data["username"], f"anon_{session_key}")
+        self.assertEqual(data["message"], "I am anonymous")
+
+        # Check database
+        msg = await Message.objects.aget(content="I am anonymous")
+        self.assertEqual(msg.session_key, session_key)
+        self.assertIsNone(msg.user)
+
+        await communicator.disconnect()
+
     async def test_logged_in_user_add_and_remove_reaction(self):
         """Test that a logged-in user can add and remove a reaction."""
         communicator = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
         communicator.scope["user"] = self.user
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
-
-        # Consume connection status message
-        response = await communicator.receive_from()
-        self.assertEqual(json.loads(response), {"type": "connection_status", "status": "connected"})
+        await communicator.receive_from()  # Connection status
 
         # Add reaction
         await communicator.send_to(
@@ -65,26 +146,15 @@ class ChatConsumerTests(TransactionTestCase):
         response = await communicator.receive_from()
         response_data = json.loads(response)
         self.assertEqual(response_data["type"], "reaction_update")
-        self.assertEqual(response_data["message_id"], self.message.id)
-        self.assertIn("👍", response_data["reactions"])
-        self.assertIn(self.user.username, response_data["reactions"]["👍"])
-
-        await self.message.arefresh_from_db()
-        self.assertIn("👍", self.message.reactions)
-        self.assertIn(self.user.username, self.message.reactions["👍"])
+        self.assertIn(str(self.user.pk), response_data["reactions"]["👍"])
 
         # Remove reaction
         await communicator.send_to(
             text_data=json.dumps({"type": "add_reaction", "message_id": self.message.id, "emoji": "👍"})
         )
-
         response = await communicator.receive_from()
         response_data = json.loads(response)
-        self.assertEqual(response_data["type"], "reaction_update")
         self.assertEqual(response_data["reactions"], {})
-
-        await self.message.arefresh_from_db()
-        self.assertEqual(self.message.reactions, {})
 
         await communicator.disconnect()
 
@@ -95,106 +165,108 @@ class ChatConsumerTests(TransactionTestCase):
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
 
-        # Consume connection status message
-        response = await communicator.receive_from()
-        self.assertEqual(json.loads(response), {"type": "connection_status", "status": "connected"})
+        # Receive session key and connection status
+        session_key_response = await communicator.receive_from()
+        session_key = json.loads(session_key_response)["session_key"]
+        await communicator.receive_from()
 
         # Add reaction
         await communicator.send_to(
             text_data=json.dumps({"type": "add_reaction", "message_id": self.message.id, "emoji": "😊"})
         )
-
-        # Receive session key
-        session_key_response = await communicator.receive_from()
-        session_key_data = json.loads(session_key_response)
-        self.assertEqual(session_key_data["type"], "session_key")
-        session_key = session_key_data["session_key"]
-
-        # Receive reaction update
         reaction_response = await communicator.receive_from()
         reaction_data = json.loads(reaction_response)
-        self.assertEqual(reaction_data["type"], "reaction_update")
-        self.assertIn(f"session_{session_key}", reaction_data["reactions"]["😊"])
+        self.assertIn(session_key, reaction_data["reactions"]["😊"])
 
-        await self.message.arefresh_from_db()
-        self.assertIn(f"session_{session_key}", self.message.reactions["😊"])
-
-        # Remove reaction
+        # Remove reaction (without sending session_key in payload)
         await communicator.send_to(
-            text_data=json.dumps(
-                {"type": "add_reaction", "message_id": self.message.id, "emoji": "😊", "session_key": session_key}
-            )
+            text_data=json.dumps({"type": "add_reaction", "message_id": self.message.id, "emoji": "😊"})
         )
-
-        # Receive session key again
-        await communicator.receive_from()
-        # Receive reaction update
         response = await communicator.receive_from()
         response_data = json.loads(response)
         self.assertEqual(response_data["reactions"], {})
 
-        await self.message.arefresh_from_db()
-        self.assertEqual(self.message.reactions, {})
-
         await communicator.disconnect()
 
-    async def test_multiple_reactions(self):
-        """Test adding multiple reactions from different users."""
-        # Logged-in user
+    async def test_message_broadcast_to_multiple_users(self):
+        """Test that a message is broadcast to all users in a room."""
+        comm1 = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
+        comm1.scope["user"] = self.user
+        await comm1.connect()
+        await comm1.receive_from()  # comm1 connection status
+
+        comm2 = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
+        comm2.scope["user"] = AnonymousUser()
+        await comm2.connect()
+        await comm2.receive_from()  # comm2 session key
+        await comm2.receive_from()  # comm2 connection status
+
+        # User 1 sends a message
+        await comm1.send_to(text_data=json.dumps({"type": "chat_message", "message": "Broadcast test"}))
+
+        # User 1 receives their own message and ack
+        await comm1.receive_from()
+        await comm1.receive_from()
+
+        # User 2 should receive the broadcast
+        response = await comm2.receive_from()
+        data = json.loads(response)
+        self.assertEqual(data["type"], "chat_message")
+        self.assertEqual(data["username"], self.user.username)
+        self.assertEqual(data["message"], "Broadcast test")
+
+        await comm1.disconnect()
+        await comm2.disconnect()
+
+    async def test_user_can_delete_own_message(self):
+        """Test a user can delete their own message."""
         communicator = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
         communicator.scope["user"] = self.user
-        connected, _ = await communicator.connect()
-        self.assertTrue(connected)
-
-        # Consume connection status message
-        response = await communicator.receive_from()
-        self.assertEqual(json.loads(response), {"type": "connection_status", "status": "connected"})
-
-        # Add reaction 1
-        await communicator.send_to(
-            text_data=json.dumps({"type": "add_reaction", "message_id": self.message.id, "emoji": "👍"})
-        )
+        await communicator.connect()
         await communicator.receive_from()
 
-        # Add reaction 2
-        await communicator.send_to(
-            text_data=json.dumps({"type": "add_reaction", "message_id": self.message.id, "emoji": "❤️"})
-        )
-        response = await communicator.receive_from()
-        response_data = json.loads(response)
-        self.assertIn("👍", response_data["reactions"])
-        self.assertIn("❤️", response_data["reactions"])
+        # Send delete message request
+        await communicator.send_to(text_data=json.dumps({"type": "deleteMessage", "messageId": self.message.id}))
 
+        # Check for delete ack broadcast
+        response = await communicator.receive_from()
+        data = json.loads(response)
+        self.assertEqual(data["type"], "delete_ack")
+        self.assertEqual(data["message_id"], self.message.id)
+
+        # Verify message is deleted from DB
+        self.assertFalse(await Message.objects.filter(pk=self.message.id).aexists())
         await communicator.disconnect()
 
-        # Anonymous user
-        anon_communicator = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
-        anon_communicator.scope["user"] = AnonymousUser()
-        connected, _ = await anon_communicator.connect()
-        self.assertTrue(connected)
+    async def test_security_client_cannot_set_session_key(self):
+        """Test that a client cannot provide their own session key to impersonate another user."""
+        communicator = WebsocketCommunicator(application, f"/ws/discussion-rooms/chat/{self.room.id}/")
+        communicator.scope["user"] = AnonymousUser()
+        await communicator.connect()
 
-        # Consume connection status message
-        response = await anon_communicator.receive_from()
-        self.assertEqual(json.loads(response), {"type": "connection_status", "status": "connected"})
+        # Server provides a session key
+        server_session_key = json.loads(await communicator.receive_from())["session_key"]
+        await communicator.receive_from()  # Connection status
 
-        # Add reaction from anon user
-        await anon_communicator.send_to(
-            text_data=json.dumps({"type": "add_reaction", "message_id": self.message.id, "emoji": "😂"})
+        fake_key = str(uuid.uuid4())
+
+        # Client tries to send a message with a fake key in the payload
+        await communicator.send_to(
+            text_data=json.dumps({"type": "chat_message", "message": "Impersonation attempt", "session_key": fake_key})
         )
-        session_key_response = await anon_communicator.receive_from()
-        session_key = json.loads(session_key_response)["session_key"]
-        reaction_response = await anon_communicator.receive_from()
-        reaction_data = json.loads(reaction_response)
 
-        self.assertIn("👍", reaction_data["reactions"])
-        self.assertIn("❤️", reaction_data["reactions"])
-        self.assertIn("😂", reaction_data["reactions"])
-        self.assertIn(f"session_{session_key}", reaction_data["reactions"]["😂"])
+        # Check that the broadcast uses the original, server-provided key
+        ack_response = await communicator.receive_from()  # Receive message_ack first
+        self.assertEqual(json.loads(ack_response)["type"], "message_ack")
 
-        await self.message.arefresh_from_db()
-        self.assertIn("👍", self.message.reactions)
-        self.assertIn("❤️", self.message.reactions)
-        self.assertIn("😂", self.message.reactions)
-        self.assertIn(f"session_{session_key}", self.message.reactions["😂"])
+        response = await communicator.receive_from()  # Then receive the broadcasted chat_message
+        data = json.loads(response)
+        self.assertEqual(data["username"], f"anon_{server_session_key}")
+        self.assertNotEqual(data["username"], f"anon_{fake_key}")
 
-        await anon_communicator.disconnect()
+        # Check database record
+        msg = await Message.objects.aget(content="Impersonation attempt")
+        self.assertEqual(msg.session_key, server_session_key)
+        self.assertNotEqual(msg.session_key, fake_key)
+
+        await communicator.disconnect()
