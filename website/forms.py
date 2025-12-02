@@ -608,6 +608,64 @@ class JobForm(forms.ModelForm):
 class OrganizationProfileForm(forms.ModelForm):
     """Form for editing organization profile and social media links"""
 
+    def clean_twitter(self):
+        """Validate Twitter URL to prevent open redirect vulnerabilities"""
+        twitter_url = self.cleaned_data.get("twitter")
+        if twitter_url:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(twitter_url)
+            hostname = (parsed.hostname or "").lower()
+            # Only allow twitter.com and x.com domains (and their subdomains)
+            if not (
+                hostname in ["twitter.com", "x.com"] or hostname.endswith(".twitter.com") or hostname.endswith(".x.com")
+            ):
+                raise forms.ValidationError("Twitter URL must be from twitter.com or x.com domain")
+        return twitter_url
+
+    def clean_facebook(self):
+        """Validate Facebook URL to prevent open redirect vulnerabilities"""
+        facebook_url = self.cleaned_data.get("facebook")
+        if facebook_url:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(facebook_url)
+            hostname = (parsed.hostname or "").lower()
+            # Only allow facebook.com and fb.com domains (and their subdomains)
+            if not (
+                hostname in ["facebook.com", "fb.com"]
+                or hostname.endswith(".facebook.com")
+                or hostname.endswith(".fb.com")
+            ):
+                raise forms.ValidationError("Facebook URL must be from facebook.com or fb.com domain")
+        return facebook_url
+
+    def clean_linkedin(self):
+        """Validate LinkedIn URL to prevent open redirect vulnerabilities"""
+        linkedin_url = self.cleaned_data.get("linkedin")
+        if linkedin_url:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(linkedin_url)
+            hostname = (parsed.hostname or "").lower()
+            # Only allow linkedin.com domain (and its subdomains)
+            if not (hostname == "linkedin.com" or hostname.endswith(".linkedin.com")):
+                raise forms.ValidationError("LinkedIn URL must be from linkedin.com domain")
+        return linkedin_url
+
+    def clean_discord_url(self):
+        """Validate Discord URL to prevent open redirect vulnerabilities"""
+        discord_url = self.cleaned_data.get("discord_url")
+        if discord_url:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(discord_url)
+            hostname = (parsed.hostname or "").lower()
+            # Only allow discord.gg and discord.com domains
+            if not (hostname in ["discord.gg", "discord.com"] or hostname.endswith(".discord.com")):
+                raise forms.ValidationError("Discord URL must be from discord.gg or discord.com domain")
+        return discord_url
+
     class Meta:
         model = Organization
         fields = [

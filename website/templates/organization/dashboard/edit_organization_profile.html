@@ -131,6 +131,46 @@
                         </div>
                     </div>
                 </div>
+                <!-- Social Media Stats Section -->
+                {% if social_stats and social_stats.total_clicks > 0 %}
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                <i class="fas fa-chart-line mr-2 text-[#e74c3c]"></i>Social Media Performance
+                            </h2>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Track engagement with your social media links</p>
+                        </div>
+                        <div class="px-6 py-6">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <i class="fab fa-twitter text-2xl text-[#1DA1F2] mb-2"></i>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ social_stats.twitter_clicks }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Twitter Clicks</p>
+                                </div>
+                                <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <i class="fab fa-facebook text-2xl text-[#1877F2] mb-2"></i>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ social_stats.facebook_clicks }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Facebook Clicks</p>
+                                </div>
+                                <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <i class="fab fa-linkedin text-2xl text-[#0A66C2] mb-2"></i>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ social_stats.linkedin_clicks }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">LinkedIn Clicks</p>
+                                </div>
+                                <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <i class="fab fa-github text-2xl text-gray-900 dark:text-white mb-2"></i>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ social_stats.github_clicks }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">GitHub Clicks</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    Total Clicks: <span class="font-bold text-[#e74c3c]">{{ social_stats.total_clicks }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <!-- Social Media Links Section -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">

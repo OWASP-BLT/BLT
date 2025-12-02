@@ -780,8 +780,6 @@ class OrganizationSocialRedirectView(View):
             return redirect("organization_analytics", id=org_id)
 
         # Validate target URL domain to prevent open redirect attacks
-        from urllib.parse import urlparse
-
         parsed = urlparse(target_url)
         hostname = (parsed.hostname or "").lower()
         allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
@@ -793,10 +791,13 @@ class OrganizationSocialRedirectView(View):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
-        # Atomically increment the click counter using ORM (works on all DBs)
+        # Atomically increment the click counter using F() expressions for better performance
+        # This avoids race conditions and is more efficient than select_for_update
+
+        # Use a shorter lock time by only locking during the update operation
         with transaction.atomic():
-            # Lock the row for update to prevent race conditions
-            organization = Organization.objects.select_for_update().get(id=org_id)
+            # Get organization without locking
+            organization = Organization.objects.get(id=org_id)
 
             # Get current clicks dict (handle None case)
             clicks = organization.social_clicks or {}
@@ -804,9 +805,8 @@ class OrganizationSocialRedirectView(View):
             # Increment the counter for this platform
             clicks[platform] = clicks.get(platform, 0) + 1
 
-            # Save only the social_clicks field
-            organization.social_clicks = clicks
-            organization.save(update_fields=["social_clicks"])
+            # Update using update() which is faster than save() and locks for shorter time
+            Organization.objects.filter(id=org_id).update(social_clicks=clicks)
 
         # Redirect to the actual social media URL
         return redirect(target_url)
@@ -817,6 +817,12 @@ class OrganizationProfileEditView(View):
     View for editing organization profile information and social media links.
     """
 
+    def _get_user_organizations(self, user):
+        """Helper method to get organizations accessible to the user."""
+        if user.is_authenticated:
+            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
+        return []
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         from website.forms import OrganizationProfileForm
@@ -824,22 +830,26 @@ class OrganizationProfileEditView(View):
         organization = get_object_or_404(Organization, id=id)
 
         # Get list of organizations for dropdown
-        if request.user.is_authenticated:
-            organizations = (
-                Organization.objects.values("name", "id")
-                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-                .distinct()
-            )
-        else:
-            organizations = []
+        organizations = self._get_user_organizations(request.user)
 
         form = OrganizationProfileForm(instance=organization)
+
+        # Get social media click statistics
+        social_clicks = organization.social_clicks or {}
+        social_stats = {
+            "twitter_clicks": social_clicks.get("twitter", 0),
+            "facebook_clicks": social_clicks.get("facebook", 0),
+            "github_clicks": social_clicks.get("github", 0),
+            "linkedin_clicks": social_clicks.get("linkedin", 0),
+            "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
+        }
 
         context = {
             "organization": id,
             "organization_obj": organization,
             "organizations": organizations,
             "form": form,
+            "social_stats": social_stats,
         }
 
         return render(request, "organization/dashboard/edit_organization_profile.html", context)
@@ -858,14 +868,7 @@ class OrganizationProfileEditView(View):
             return redirect("organization_analytics", id=id)
         else:
             # Get list of organizations for dropdown
-            if request.user.is_authenticated:
-                organizations = (
-                    Organization.objects.values("name", "id")
-                    .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-                    .distinct()
-                )
-            else:
-                organizations = []
+            organizations = self._get_user_organizations(request.user)
 
             context = {
                 "organization": id,

@@ -425,7 +425,7 @@ class OrganizationProfileEditViewTests(TestCase):
 
     def test_non_member_cannot_edit_organization(self):
         """Test that non-members cannot edit the organization"""
-        other_user = User.objects.create_user(username="other", password="otherpass", email="other@example.com")
+        User.objects.create_user(username="other", password="otherpass", email="other@example.com")
 
         self.client.logout()
         self.client.login(username="other", password="otherpass")
