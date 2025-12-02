@@ -312,8 +312,9 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         # Check that description ends with "..."
         self.assertIn("...", message_text)
         # Extract description part and verify length
+        # Note: Slack API uses literal backslash-n sequences ("\\n") in the message
         desc_start = message_text.find("*Description:*") + len("*Description:*")
-        desc_end = message_text.find("\n", desc_start)
+        desc_end = message_text.find("\\n", desc_start)
         if desc_end == -1:
             desc_end = len(message_text)
         description_part = message_text[desc_start:desc_end].strip()
