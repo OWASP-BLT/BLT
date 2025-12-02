@@ -3281,10 +3281,6 @@ def newsletter_context_processor(request):
     """
     Adds newsletter subscription data to the template context
     """
-    import logging
-
-    logger = logging.getLogger(__name__)
-
     context = {}
 
     if request.user.is_authenticated:
@@ -3316,6 +3312,5 @@ def newsletter_context_processor(request):
         context["latest_newsletter"] = Newsletter.objects.filter(status="published").order_by("-published_at").first()
     except Exception as e:
         logger.error(f"Error fetching latest newsletter: {str(e)}")
-        pass
 
     return context

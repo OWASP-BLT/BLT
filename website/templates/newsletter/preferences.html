@@ -45,7 +45,8 @@
                                         <a href="#"
                                            class="font-medium underline"
                                            id="resend-confirmation"
-                                           data-email="{{ subscriber.email }}">Resend confirmation email</a>
+                                           data-email="{{ subscriber.email }}"
+                                           data-resend-url="{% url 'newsletter_resend_confirmation' %}">Resend confirmation email</a>
                                     </p>
                                 </div>
                             </div>
@@ -163,49 +164,5 @@
             </div>
         </div>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Handle resend confirmation email click
-            const resendLink = document.getElementById('resend-confirmation');
-            if (resendLink) {
-                const subscriberEmail = resendLink.getAttribute('data-email');
-                resendLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Show loading state
-                    const originalText = resendLink.textContent;
-                    resendLink.textContent = 'Sending...';
-                    resendLink.style.pointerEvents = 'none';
-                    
-                    // Make AJAX request to resend confirmation
-                    fetch('{% url "newsletter_resend_confirmation" %}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': '{{ csrf_token }}',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            email: subscriberEmail
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            window.createMessage('Confirmation email has been sent.', 'success');
-                        } else {
-                            window.createMessage('Failed to send confirmation email. Please try again.', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        window.createMessage('An error occurred. Please try again.', 'error');
-                    })
-                    .finally(() => {
-                        // Reset button state
-                        resendLink.textContent = originalText;
-                        resendLink.style.pointerEvents = 'auto';
-                    });
-                });
-            }
-        });
-    </script>
+    <script src="{% static 'js/newsletter_preferences.js' %}"></script>
 {% endblock %}

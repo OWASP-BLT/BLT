@@ -22,6 +22,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
+from django.core.validators import validate_email
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -1786,7 +1787,9 @@ def newsletter_subscribe(request):
             messages.error(request, "Email address is required.")
             return redirect("newsletter_subscribe")
 
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        try:
+            validate_email(email)
+        except ValidationError:
             messages.error(request, "Please enter a valid email address.")
             return redirect("newsletter_subscribe")
 
@@ -1841,7 +1844,7 @@ def newsletter_subscribe(request):
 
         except ValidationError as e:
             logger.error(f"Validation error in newsletter subscription: {str(e)}")
-            messages.error(request, f"There was an error processing your subscription: {str(e)}")
+            messages.error(request, "There was an error processing your subscription. Please try again later.")
         except ConnectionError as e:
             logger.error(f"Connection error sending confirmation email: {str(e)}")
             messages.error(request, "We couldn't send a confirmation email right now. Please try again later.")
@@ -1866,7 +1869,7 @@ def send_confirmation_email(subscriber):
     # Use site framework or ALLOWED_HOSTS for better domain management
     try:
         domain = Site.objects.get_current().domain
-    except:
+    except Exception:
         domain = settings.DOMAIN_NAME
 
     if settings.DEBUG:
@@ -2072,7 +2075,12 @@ def newsletter_resend_confirmation(request):
         data = json.loads(request.body)
         email = data.get("email")
 
-        if not email or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        if not email:
+            return JsonResponse({"success": False, "error": "Valid email address is required"})
+
+        try:
+            validate_email(email)
+        except ValidationError:
             return JsonResponse({"success": False, "error": "Valid email address is required"})
 
         # Use the same error message and timing regardless of whether the email exists
