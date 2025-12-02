@@ -31,22 +31,27 @@ SEVERITY_ORDER = Case(
 
 
 def is_csv_rate_limited(user_id):
-    """Rate limit CSV exports per user using cache (thread-safe + process-safe)."""
-    cache_key = f"csv_export_limit_{user_id}"
+    """
+    Rate limit CSV exports per user using atomic cache operations.
+    Prevents race conditions between get()/set()/incr().
+    """
+    key = f"csv_export_limit_{user_id}"
 
-    # Atomically increment
-    count = cache.get(cache_key)
+    # Atomic operation: returns True only if key was newly created
+    # and sets initial count=1 with TTL.
+    added = cache.add(key, 1, CSV_RATE_LIMIT_WINDOW)
+    if added:
+        return False  # first request in window
 
-    if count is None:
-        # first call → initialize with TTL
-        cache.set(cache_key, 1, CSV_RATE_LIMIT_WINDOW)
+    # Key exists → safe atomic increment
+    try:
+        count = cache.incr(key)
+    except ValueError:
+        # Extremely rare: key expired between add() and incr()
+        cache.set(key, 1, CSV_RATE_LIMIT_WINDOW)
         return False
 
-    if count >= CSV_RATE_LIMIT_MAX_CALLS:
-        return True
-
-    cache.incr(cache_key)  # atomic increment
-    return False
+    return count > CSV_RATE_LIMIT_MAX_CALLS
 
 
 def _escape_csv_formula(value):
@@ -171,7 +176,15 @@ class SecurityDashboardView(LoginRequiredMixin, TemplateView):
         context["end_date"] = self.request.GET.get("end_date")
 
         # Pagination
-        page_number = self.request.GET.get("page", 1)
+        page_raw = self.request.GET.get("page", "1")
+
+        try:
+            page_number = int(page_raw)
+            if page_number < 1:
+                page_number = 1
+        except (ValueError, TypeError):
+            page_number = 1
+
         paginator = Paginator(filtered_queryset, 9)
         page_obj = paginator.get_page(page_number)
 
