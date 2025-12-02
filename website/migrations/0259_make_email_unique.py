@@ -1,7 +1,7 @@
 # Generated migration to make email field unique
 import logging
 
-from django.db import connection, migrations
+from django.db import migrations
 from django.db.models import Count
 
 logger = logging.getLogger(__name__)
@@ -73,16 +73,18 @@ def reverse_migration(apps, schema_editor):
     logger.warning("Reversing migration 0259_make_email_unique: Deleted users cannot be restored.")
 
 
-# Determine SQL based on database vendor at migration import time
-def get_create_index_sql():
+def get_create_index_sql(apps, schema_editor):
     """
     Returns appropriate SQL for creating unique index based on database vendor.
 
     Only PostgreSQL and SQLite support partial unique indexes with WHERE clauses.
     For other databases (MySQL, MariaDB, etc.), this returns a no-op to avoid
     incompatible SQL syntax.
+
+    This function is called at migration execution time (not import time) to ensure
+    the correct database connection is used in multi-database setups.
     """
-    vendor = connection.vendor
+    vendor = schema_editor.connection.vendor
 
     if vendor == "postgresql":
         # PostgreSQL supports partial indexes with WHERE clause
@@ -118,14 +120,17 @@ def get_create_index_sql():
         return "SELECT 1;"  # No-op SQL that does nothing
 
 
-def get_drop_index_sql():
+def get_drop_index_sql(apps, schema_editor):
     """
     Returns appropriate SQL for dropping the unique index.
 
     Only attempts to drop the index on PostgreSQL and SQLite where it was created.
     Returns no-op for other databases.
+
+    This function is called at migration execution time (not import time) to ensure
+    the correct database connection is used in multi-database setups.
     """
-    vendor = connection.vendor
+    vendor = schema_editor.connection.vendor
 
     if vendor in ("postgresql", "sqlite"):
         return "DROP INDEX IF EXISTS auth_user_email_unique;"
@@ -156,7 +161,7 @@ class Migration(migrations.Migration):
         # For MySQL/MariaDB and other databases, this is a no-op
         # SQL is selected based on database vendor at migration import time
         migrations.RunSQL(
-            sql=get_create_index_sql(),
-            reverse_sql=get_drop_index_sql(),
+            sql=get_create_index_sql,
+            reverse_sql=get_drop_index_sql,
         ),
     ]
