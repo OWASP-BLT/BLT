@@ -143,29 +143,32 @@ class IPRestrictMiddleware:
         """
         Helper method to record IP information
         """
-        with transaction.atomic():
-            # create unique entry for every unique (ip,path) tuple
-            # if this tuple already exists, we just increment the count.
-            ip_records = IP.objects.select_for_update().filter(address=ip, path=path)
-            if ip_records.exists():
-                ip_record = ip_records.first()
+        try:
+            with transaction.atomic():
+                # create unique entry for every unique (ip,path) tuple
+                # if this tuple already exists, we just increment the count.
+                ip_records = IP.objects.select_for_update().filter(address=ip, path=path)
+                if ip_records.exists():
+                    ip_record = ip_records.first()
 
-                # Calculate the new count and ensure it doesn't exceed the MAX_COUNT
-                new_count = ip_record.count + 1
-                if new_count > MAX_COUNT:
-                    new_count = MAX_COUNT
+                    # Calculate the new count and ensure it doesn't exceed the MAX_COUNT
+                    new_count = ip_record.count + 1
+                    if new_count > MAX_COUNT:
+                        new_count = MAX_COUNT
 
-                ip_record.agent = agent
-                ip_record.count = new_count
-                if ip_record.pk:
-                    ip_record.save(update_fields=["agent", "count"])
+                    ip_record.agent = agent
+                    ip_record.count = new_count
+                    if ip_record.pk:
+                        ip_record.save(update_fields=["agent", "count"])
 
-                # Check if a transaction is already active before starting a new one
-                if not transaction.get_autocommit():
+                    # Delete duplicate records within the same atomic block
                     ip_records.exclude(pk=ip_record.pk).delete()
-            else:
-                # If no record exists, create a new one
-                IP.objects.create(address=ip, agent=agent, count=1, path=path)
+                else:
+                    # If no record exists, create a new one
+                    IP.objects.create(address=ip, agent=agent, count=1, path=path)
+        except Exception as e:
+            # Log the error but don't let it break the request
+            logger.error(f"Error recording IP {ip}: {str(e)}")
 
     def __call__(self, request):
         return self.process_request_sync(request)
