@@ -77,6 +77,10 @@ def reverse_migration(apps, schema_editor):
 def get_create_index_sql():
     """
     Returns appropriate SQL for creating unique index based on database vendor.
+
+    Only PostgreSQL and SQLite support partial unique indexes with WHERE clauses.
+    For other databases (MySQL, MariaDB, etc.), this returns a no-op to avoid
+    incompatible SQL syntax.
     """
     vendor = connection.vendor
 
@@ -97,26 +101,37 @@ def get_create_index_sql():
         """
     elif vendor == "sqlite":
         # SQLite 3.8.0+ supports partial indexes
-        # For older versions, this will fail gracefully and we fall back to no index
         return """
             CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
             ON auth_user (email) 
             WHERE email != '' AND email IS NOT NULL;
         """
-    elif vendor == "mysql":
-        # MySQL doesn't support partial indexes with WHERE clause
-        # Create a regular unique index (duplicates/empty strings already removed)
-        # Note: This allows multiple empty strings, which is acceptable
-        return """
-            CREATE UNIQUE INDEX auth_user_email_unique 
-            ON auth_user (email(255));
-        """
     else:
-        # Fallback for other databases - attempt standard unique index
-        return """
-            CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
-            ON auth_user (email);
-        """
+        # MySQL/MariaDB and other databases do not support partial indexes
+        # Return no-op SQL with a warning
+        # The deduplication still runs, but no unique constraint is enforced
+        logger.warning(
+            f"Database vendor '{vendor}' does not support partial unique indexes. "
+            "Email uniqueness constraint will not be enforced. "
+            "Consider using PostgreSQL or SQLite for full support."
+        )
+        return "SELECT 1;"  # No-op SQL that does nothing
+
+
+def get_drop_index_sql():
+    """
+    Returns appropriate SQL for dropping the unique index.
+
+    Only attempts to drop the index on PostgreSQL and SQLite where it was created.
+    Returns no-op for other databases.
+    """
+    vendor = connection.vendor
+
+    if vendor in ("postgresql", "sqlite"):
+        return "DROP INDEX IF EXISTS auth_user_email_unique;"
+    else:
+        # No index was created, so no need to drop anything
+        return "SELECT 1;"  # No-op SQL
 
 
 class Migration(migrations.Migration):
@@ -132,14 +147,16 @@ class Migration(migrations.Migration):
     operations = [
         # Step 1: Delete duplicate users (keep first user)
         # This runs in a transaction, so if it fails, no changes are committed
+        # This step runs on ALL databases (deduplication is database-agnostic)
         migrations.RunPython(
             remove_duplicate_users,
             reverse_code=reverse_migration,
         ),
-        # Step 2: Add unique index (database-aware)
+        # Step 2: Add unique index (PostgreSQL and SQLite only)
+        # For MySQL/MariaDB and other databases, this is a no-op
         # SQL is selected based on database vendor at migration import time
         migrations.RunSQL(
             sql=get_create_index_sql(),
-            reverse_sql="DROP INDEX IF EXISTS auth_user_email_unique;",
+            reverse_sql=get_drop_index_sql(),
         ),
     ]
