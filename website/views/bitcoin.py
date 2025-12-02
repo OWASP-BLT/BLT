@@ -125,7 +125,10 @@ class BaconSubmissionView(View):
             # Send Slack notification to #project-blt-bacon channel
             try:
                 # Find OWASP BLT organization
-                owasp_org = Organization.objects.filter(name__icontains="OWASP BLT").first()
+                # Use exact match first, fallback to case-insensitive contains for flexibility
+                owasp_org = Organization.objects.filter(name="OWASP BLT").first()
+                if not owasp_org:
+                    owasp_org = Organization.objects.filter(name__icontains="OWASP BLT").first()
 
                 if owasp_org:
                     # Get Slack integration for the organization
@@ -177,9 +180,11 @@ class BaconSubmissionView(View):
                         if channel_id:
                             # Sanitize description for Slack markdown (escape special characters)
                             # Slack markdown uses *, _, `, ~, <, >, & for formatting
+                            # IMPORTANT: Escape '&' first to avoid corrupting HTML entities
                             sanitized_description = description[:200]
                             sanitized_description = (
-                                sanitized_description.replace("*", "\\*")
+                                sanitized_description.replace("&", "&amp;")
+                                .replace("*", "\\*")
                                 .replace("_", "\\_")
                                 .replace("`", "\\`")
                                 .replace("~", "\\~")
