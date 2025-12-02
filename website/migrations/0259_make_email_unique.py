@@ -12,19 +12,25 @@ def remove_duplicate_users(apps, schema_editor):
     Remove users with duplicate emails.
     Keeps the user with the lowest ID (first created) and deletes the rest.
 
-    Email is required for all users (including OAuth), so this migration enforces
-    that all users have unique, non-empty email addresses.
+    Only non-empty emails are checked for duplicates. Multiple users can have
+    empty or NULL emails (which is valid per Django's User model where email
+    has blank=True).
 
     Note: This function deletes users one-by-one rather than using bulk_delete()
-    to ensure Django signals are fired and cascade deletions are handled properly.
+    to ensure database-level CASCADE behavior and maintain referential integrity.
+    Historical models retrieved via apps.get_model() do not have project signal
+    handlers attached, so Django signals will NOT be fired during this migration.
     """
     User = apps.get_model("auth", "User")
     db_alias = schema_editor.connection.alias
 
-    # Find all duplicate emails (including empty/NULL which shouldn't exist)
-    # Email is required for all users, so we check all email values
+    # Find all duplicate emails
+    # IMPORTANT: Exclude empty strings and NULL values to avoid treating
+    # multiple users with empty/NULL emails as duplicates
     duplicate_emails = (
         User.objects.using(db_alias)
+        .exclude(email="")
+        .exclude(email__isnull=True)
         .values("email")
         .annotate(email_count=Count("id"))
         .filter(email_count__gt=1)
@@ -52,7 +58,7 @@ def remove_duplicate_users(apps, schema_editor):
                 f"Deleting duplicate user '{user.username}' (ID: {user.id}, email: '{email}'). "
                 f"Keeping user '{kept_user.username}' (ID: {kept_user.id})"
             )
-            # Delete one-by-one to ensure signals fire and cascades work properly
+            # Delete one-by-one to ensure database-level CASCADE behavior
             # This is intentionally not using bulk_delete() for data integrity
             # Use db_alias to ensure deletion happens on the correct database in multi-DB setups
             user.delete(using=db_alias)
@@ -77,8 +83,9 @@ def get_create_index_sql(apps, schema_editor):
     """
     Returns appropriate SQL for creating unique index based on database vendor.
 
-    Creates a full unique constraint on email since email is required for all users
-    (including OAuth users). No empty or NULL emails are allowed.
+    Creates a partial unique constraint on non-empty emails. Multiple users can
+    have empty or NULL emails (which is valid per Django's User model), but each
+    non-empty email must be unique.
 
     This function is called at migration execution time (not import time) to ensure
     the correct database connection is used in multi-database setups.
@@ -86,36 +93,38 @@ def get_create_index_sql(apps, schema_editor):
     vendor = schema_editor.connection.vendor
 
     if vendor == "postgresql":
-        # PostgreSQL - full unique constraint on email
+        # PostgreSQL - partial unique constraint excluding empty strings
         return """
-            DO $$
+            DO $$$
             BEGIN
                 IF NOT EXISTS (
                     SELECT 1 FROM pg_indexes 
                     WHERE indexname = 'auth_user_email_unique'
                 ) THEN
                     CREATE UNIQUE INDEX auth_user_email_unique 
-                    ON auth_user (email);
+                    ON auth_user (email) WHERE email != '';
                 END IF;
             END $$;
         """
     elif vendor == "sqlite":
-        # SQLite - full unique constraint on email
+        # SQLite - partial unique constraint excluding empty strings
         return """
             CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
-            ON auth_user (email);
+            ON auth_user (email) WHERE email != '';
         """
     elif vendor == "mysql":
-        # MySQL - full unique constraint on email
+        # MySQL doesn't support partial indexes with WHERE clause
+        # We create a full unique index, but the application must handle empty emails
+        # Note: This means on MySQL, only one user can have an empty email
         return """
             CREATE UNIQUE INDEX auth_user_email_unique 
             ON auth_user (email(255));
         """
     else:
-        # Fallback for other databases - full unique constraint
+        # Fallback - attempt partial unique constraint
         return """
             CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
-            ON auth_user (email);
+            ON auth_user (email) WHERE email != '';
         """
 
 
@@ -123,7 +132,7 @@ def get_drop_index_sql(apps, schema_editor):
     """
     Returns appropriate SQL for dropping the unique index.
 
-    Only attempts to drop the index on PostgreSQL and SQLite where it was created.
+    Handles PostgreSQL, SQLite, and MySQL properly.
     Returns no-op for other databases.
 
     This function is called at migration execution time (not import time) to ensure
@@ -131,10 +140,13 @@ def get_drop_index_sql(apps, schema_editor):
     """
     vendor = schema_editor.connection.vendor
 
-    if vendor in ("postgresql", "sqlite"):
+    if vendor == "postgresql":
         return "DROP INDEX IF EXISTS auth_user_email_unique;"
+    elif vendor == "sqlite":
+        return "DROP INDEX IF EXISTS auth_user_email_unique;"
+    elif vendor == "mysql":
+        return "DROP INDEX auth_user_email_unique ON auth_user;"
     else:
-        # No index was created, so no need to drop anything
         return "SELECT 1;"  # No-op SQL
 
 
@@ -156,8 +168,9 @@ class Migration(migrations.Migration):
             remove_duplicate_users,
             reverse_code=reverse_migration,
         ),
-        # Step 2: Add unique constraint on email (all databases)
-        # Email is required for all users including OAuth, so full unique constraint is enforced
+        # Step 2: Add unique constraint on non-empty emails
+        # Partial unique constraint allows multiple users with empty emails (valid per Django's User model)
+        # but enforces uniqueness for non-empty emails
         # SQL is selected at migration execution time based on the active database connection,
         # ensuring correct behavior in multi-database setups
         migrations.RunSQL(
