@@ -475,11 +475,7 @@ class TopEarnersTests(TestCase):
     """Test suite for top earners calculation on homepage"""
 
     def setUp(self):
-        from datetime import datetime
-
         from django.utils import timezone
-
-        from website.models import Contributor
 
         self.client = Client()
 

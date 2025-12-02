@@ -2329,7 +2329,6 @@ def template_list(request):
     """View function to display templates with optimized pagination."""
     import os
     from concurrent.futures import ThreadPoolExecutor
-    from datetime import datetime
 
     from django.core.cache import cache
     from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -2570,7 +2569,6 @@ def website_stats(request):
     """View to show view counts for each URL route"""
     import json
     from collections import defaultdict
-    from datetime import timedelta
 
     from django.db.models import Sum
     from django.urls import get_resolver
