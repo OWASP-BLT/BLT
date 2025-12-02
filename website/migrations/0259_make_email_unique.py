@@ -54,7 +54,8 @@ def remove_duplicate_users(apps, schema_editor):
             )
             # Delete one-by-one to ensure signals fire and cascades work properly
             # This is intentionally not using bulk_delete() for data integrity
-            user.delete()
+            # Use db_alias to ensure deletion happens on the correct database in multi-DB setups
+            user.delete(using=db_alias)
             total_deleted += 1
 
     if total_deleted > 0:
