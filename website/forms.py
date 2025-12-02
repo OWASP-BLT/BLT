@@ -616,9 +616,10 @@ class OrganizationProfileForm(forms.ModelForm):
 
             parsed = urlparse(twitter_url)
             hostname = (parsed.hostname or "").lower()
-            # Only allow twitter.com and x.com domains (and their subdomains)
-            if not (
-                hostname in ["twitter.com", "x.com"] or hostname.endswith(".twitter.com") or hostname.endswith(".x.com")
+            # Only allow twitter.com and x.com domains (and their subdomains, prevent suffix attacks)
+            if not any(
+                hostname == domain or (hostname.endswith(f".{domain}") and not hostname.endswith(f"..{domain}"))
+                for domain in ["twitter.com", "x.com"]
             ):
                 raise forms.ValidationError("Twitter URL must be from twitter.com or x.com domain")
         return twitter_url
@@ -631,11 +632,10 @@ class OrganizationProfileForm(forms.ModelForm):
 
             parsed = urlparse(facebook_url)
             hostname = (parsed.hostname or "").lower()
-            # Only allow facebook.com and fb.com domains (and their subdomains)
-            if not (
-                hostname in ["facebook.com", "fb.com"]
-                or hostname.endswith(".facebook.com")
-                or hostname.endswith(".fb.com")
+            # Only allow facebook.com and fb.com domains (and their subdomains, prevent suffix attacks)
+            if not any(
+                hostname == domain or (hostname.endswith(f".{domain}") and not hostname.endswith(f"..{domain}"))
+                for domain in ["facebook.com", "fb.com"]
             ):
                 raise forms.ValidationError("Facebook URL must be from facebook.com or fb.com domain")
         return facebook_url
@@ -648,8 +648,11 @@ class OrganizationProfileForm(forms.ModelForm):
 
             parsed = urlparse(linkedin_url)
             hostname = (parsed.hostname or "").lower()
-            # Only allow linkedin.com domain (and its subdomains)
-            if not (hostname == "linkedin.com" or hostname.endswith(".linkedin.com")):
+            # Only allow linkedin.com domain (and its subdomains, prevent suffix and double-dot attacks)
+            if not (
+                hostname == "linkedin.com"
+                or (hostname.endswith(".linkedin.com") and not hostname.endswith("..linkedin.com"))
+            ):
                 raise forms.ValidationError("LinkedIn URL must be from linkedin.com domain")
         return linkedin_url
 
@@ -661,10 +664,44 @@ class OrganizationProfileForm(forms.ModelForm):
 
             parsed = urlparse(discord_url)
             hostname = (parsed.hostname or "").lower()
-            # Only allow discord.gg and discord.com domains
-            if not (hostname in ["discord.gg", "discord.com"] or hostname.endswith(".discord.com")):
+            # Only allow discord.gg and discord.com domains (and their subdomains, prevent suffix attacks)
+            if not any(
+                hostname == domain or (hostname.endswith(f".{domain}") and not hostname.endswith(f"..{domain}"))
+                for domain in ["discord.gg", "discord.com"]
+            ):
                 raise forms.ValidationError("Discord URL must be from discord.gg or discord.com domain")
         return discord_url
+
+    def clean_slack_url(self):
+        """Validate Slack URL to prevent open redirect vulnerabilities"""
+        slack_url = self.cleaned_data.get("slack_url")
+        if slack_url:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(slack_url)
+            hostname = (parsed.hostname or "").lower()
+            # Only allow slack.com domain (and its subdomains, prevent suffix attacks)
+            if not (
+                hostname == "slack.com" or (hostname.endswith(".slack.com") and not hostname.endswith("..slack.com"))
+            ):
+                raise forms.ValidationError("Slack URL must be from slack.com domain")
+        return slack_url
+
+    def clean_matrix_url(self):
+        """Validate Matrix URL to prevent open redirect vulnerabilities"""
+        matrix_url = self.cleaned_data.get("matrix_url")
+        if matrix_url:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(matrix_url)
+            hostname = (parsed.hostname or "").lower()
+            # Only allow matrix.to and matrix.org domains (and their subdomains, prevent suffix attacks)
+            if not any(
+                hostname == domain or (hostname.endswith(f".{domain}") and not hostname.endswith(f"..{domain}"))
+                for domain in ["matrix.to", "matrix.org"]
+            ):
+                raise forms.ValidationError("Matrix URL must be from matrix.to or matrix.org domain")
+        return matrix_url
 
     class Meta:
         model = Organization

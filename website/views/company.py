@@ -859,8 +859,8 @@ class OrganizationSocialRedirectView(View):
     }
 
     def get(self, request, org_id, platform):
-        # Validate platform
-        valid_platforms = ["twitter", "facebook", "github", "linkedin"]
+        # Validate platform - derive from ALLOWED_DOMAINS for single source of truth
+        valid_platforms = list(self.ALLOWED_DOMAINS.keys())
         if platform not in valid_platforms:
             return HttpResponseBadRequest("Invalid social platform")
 
@@ -896,10 +896,9 @@ class OrganizationSocialRedirectView(View):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
-        # Atomically increment the click counter using F() expressions for better performance
-        # This avoids race conditions and is more efficient than select_for_update
-
-        # Use a shorter lock time by only locking during the update operation
+        # Atomically increment the click counter
+        # Note: This uses read-modify-write which may have minor race conditions under high concurrency,
+        # but is acceptable for click tracking. For strict atomicity, use select_for_update() or database-level operations.
         with transaction.atomic():
             # Get organization without locking
             organization = Organization.objects.get(id=org_id)
@@ -975,11 +974,22 @@ class OrganizationProfileEditView(View):
             # Get list of organizations for dropdown
             organizations = self._get_user_organizations(request.user)
 
+            # Get social media click statistics for error case
+            social_clicks = organization.social_clicks or {}
+            social_stats = {
+                "twitter_clicks": social_clicks.get("twitter", 0),
+                "facebook_clicks": social_clicks.get("facebook", 0),
+                "github_clicks": social_clicks.get("github", 0),
+                "linkedin_clicks": social_clicks.get("linkedin", 0),
+                "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
+            }
+
             context = {
                 "organization": id,
                 "organization_obj": organization,
                 "organizations": organizations,
                 "form": form,
+                "social_stats": social_stats,
             }
 
             messages.error(request, "Please correct the errors below.")
