@@ -336,7 +336,8 @@ class RepoDetailView(DetailView):
                 logger.warning(f"Invalid repository path format: {repo_path}")
                 return []
             
-            owner, repo_name = parts[0], parts[1]
+            owner = parts[0]
+            repo_name = parts[1].rstrip('/').removesuffix('.git')
             
             # GraphQL query to fetch projects
             # Fetch first 10 items to display, limiting API overhead
@@ -380,7 +381,7 @@ class RepoDetailView(DetailView):
             """
             
             headers = {
-                "Authorization": f"token {settings.GITHUB_TOKEN}",
+                "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
                 "Content-Type": "application/json",
             }
             
@@ -398,6 +399,9 @@ class RepoDetailView(DetailView):
             
             if response.status_code == 200:
                 data = response.json()
+                if "errors" in data:
+                    logger.error(f"GraphQL errors: {data['errors']}")
+                    return []
                 if "data" in data and data["data"] and "repository" in data["data"]:
                     projects = data["data"]["repository"]["projectsV2"]["nodes"]
                     
