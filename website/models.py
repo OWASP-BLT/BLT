@@ -126,6 +126,52 @@ class SlackIntegration(models.Model):
         return f"Slack Integration for {self.integration.organization.name}"
 
 
+class SlackChannel(models.Model):
+    """
+    Stores Slack channel data fetched from the Slack API.
+    This table captures all channels from the OWASP Slack workspace.
+    """
+
+    channel_id = models.CharField(max_length=50, unique=True, primary_key=True)
+    name = models.CharField(max_length=255, db_index=True)
+    topic = models.TextField(blank=True, default="")
+    purpose = models.TextField(blank=True, default="")
+    num_members = models.IntegerField(default=0)
+    is_private = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
+    is_general = models.BooleanField(default=False)
+    creator = models.CharField(max_length=50, blank=True, default="")
+    created_at = models.DateTimeField(null=True, blank=True)
+    slack_url = models.URLField(max_length=255, blank=True, default="")
+    last_synced = models.DateTimeField(auto_now=True)
+    organization = models.ForeignKey(
+        "Organization",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="slack_channels",
+        help_text="Organization this Slack channel belongs to",
+    )
+    project = models.ForeignKey(
+        "Project",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="slack_channels",
+        help_text="Project this Slack channel is linked to",
+    )
+
+    class Meta:
+        ordering = ["-num_members", "name"]
+        indexes = [
+            models.Index(fields=["name"], name="slackchannel_name_idx"),
+            models.Index(fields=["num_members"], name="slackchannel_members_idx"),
+        ]
+
+    def __str__(self):
+        return f"#{self.name} ({self.num_members} members)"
+
+
 class OrganisationType(Enum):
     ORGANIZATION = "organization"
     INDIVIDUAL = "individual"
@@ -641,6 +687,52 @@ class Issue(models.Model):
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
             logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
+
+    def get_cve_severity(self):
+        """
+        Get the severity level based on CVE score.
+        CVSS v3.0 Ratings:
+        - None: 0.0
+        - Low: 0.1-3.9
+        - Medium: 4.0-6.9
+        - High: 7.0-8.9
+        - Critical: 9.0-10.0
+        """
+        if self.cve_score is None:
+            return None
+
+        score = float(self.cve_score)
+        if score == 0.0:
+            return "None"
+        elif 0.1 <= score <= 3.9:
+            return "Low"
+        elif 4.0 <= score <= 6.9:
+            return "Medium"
+        elif 7.0 <= score <= 8.9:
+            return "High"
+        elif 9.0 <= score <= 10.0:
+            return "Critical"
+        return None
+
+    def get_suggested_tip_amount(self):
+        """
+        Get suggested tip amount based on CVE severity.
+        Returns amount in USD.
+        """
+        severity = self.get_cve_severity()
+        if severity is None:
+            return None
+
+        # Suggested tip amounts based on severity
+        tip_amounts = {
+            "None": 0,
+            "Low": 5,
+            "Medium": 10,
+            "High": 20,
+            "Critical": 50,
+        }
+
+        return tip_amounts.get(severity, 0)
 
     class Meta:
         ordering = ["-created"]
@@ -1247,6 +1339,7 @@ class Project(models.Model):
     slack = models.URLField(null=True, blank=True)
     slack_channel = models.CharField(max_length=255, blank=True, null=True)
     slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
+    slack_user_count = models.IntegerField(default=0)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
@@ -2030,19 +2123,26 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        # URL format: https://github.com/owner/repo/issues/number
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for comments
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return []
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for comments (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
             response = requests.get(api_url, headers=headers)
             response.raise_for_status()
             comments = response.json()
@@ -2063,10 +2163,20 @@ class GitHubIssue(models.Model):
                 )
 
             return formatted_comments
-        except (requests.exceptions.RequestException, KeyError) as e:
-            # Log the error but don't raise it to avoid breaking the site
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
+        except requests.exceptions.HTTPError as e:
+            # Handle HTTP errors with specific status codes
+            if e.response.status_code == 403:
+                logger.warning(
+                    f"GitHub API 403 Forbidden for issue ({self.url}). "
+                    f"This may indicate an invalid/expired GitHub token, rate limiting, or insufficient permissions. "
+                    f"Check GITHUB_TOKEN configuration."
+                )
+            else:
+                logger.error(f"GitHub API HTTP {e.response.status_code} error for issue ({self.url}): {str(e)}")
+            return []
+        except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+            # Log other request errors or data parsing errors
+            logger.error(f"Error fetching comments for issue ({self.url}): {str(e)}")
             return []
 
     def add_comment(self, comment_text):
@@ -2079,27 +2189,33 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        # URL format: https://github.com/owner/repo/issues/number
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for adding comments
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-
-        data = {"body": comment_text}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return False
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for adding comments (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            data = {"body": comment_text}
+
             response = requests.post(api_url, headers=headers, json=data)
             response.raise_for_status()
             return True
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, IndexError) as e:
             # Log the error but don't raise it
-            logger = logging.getLogger(__name__)
             logger.error(f"Error adding comment to issue {self.issue_id}: {str(e)}")
             return False
 
@@ -2115,26 +2231,33 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for adding labels
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-
-        data = {"labels": labels}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return False
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for adding labels (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            data = {"labels": labels}
+
             response = requests.post(api_url, headers=headers, json=data)
             response.raise_for_status()
             return True
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, IndexError) as e:
             # Log the error but don't raise it
-            logger = logging.getLogger(__name__)
             logger.error(f"Error adding labels to issue {self.issue_id}: {str(e)}")
             return False
 
@@ -2646,6 +2769,76 @@ class Hackathon(models.Model):
                         "prs": [pr],
                         "is_contributor": True,
                         "contributor": pr.contributor,  # Include the contributor object
+                    }
+
+        # Convert to list and sort by count (descending)
+        leaderboard_list = list(leaderboard.values())
+        leaderboard_list.sort(key=lambda x: x["count"], reverse=True)
+
+        return leaderboard_list
+
+    def get_reviewer_leaderboard(self):
+        """
+        Generate a leaderboard of reviewers based on PR reviews
+        during the hackathon timeframe.
+        """
+
+        # Get all merged pull requests from the hackathon's repositories within the timeframe
+        pull_requests = GitHubIssue.objects.filter(
+            repo__in=self.repositories.all(),
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=self.start_time,
+            merged_at__lte=self.end_time,
+        )
+
+        # Get all reviews for these pull requests within the hackathon timeframe
+        reviews = GitHubReview.objects.filter(
+            pull_request__in=pull_requests,
+            submitted_at__gte=self.start_time,
+            submitted_at__lte=self.end_time,
+        ).select_related("reviewer", "reviewer_contributor", "pull_request", "pull_request__repo")
+
+        # Group by reviewer and count reviews
+        leaderboard = {}
+        for review in reviews:
+            if review.reviewer:
+                # Registered user reviewer
+                user_id = review.reviewer.user.id
+                if user_id in leaderboard:
+                    leaderboard[user_id]["count"] += 1
+                    leaderboard[user_id]["reviews"].append(review)
+                else:
+                    leaderboard[user_id] = {
+                        "user": review.reviewer.user,
+                        "count": 1,
+                        "reviews": [review],
+                        "is_contributor": False,
+                    }
+            elif review.reviewer_contributor:
+                # Skip bot accounts - check contributor_type field (primary) and name patterns (fallback)
+                if review.reviewer_contributor.contributor_type == "Bot":
+                    continue
+                github_username = review.reviewer_contributor.name
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
+                    continue
+
+                # GitHub contributor reviewer
+                contributor_id = f"contributor_{review.reviewer_contributor.id}"
+                if contributor_id in leaderboard:
+                    leaderboard[contributor_id]["count"] += 1
+                    leaderboard[contributor_id]["reviews"].append(review)
+                else:
+                    leaderboard[contributor_id] = {
+                        "user": {
+                            "username": review.reviewer_contributor.name or review.reviewer_contributor.github_id,
+                            "email": "",
+                            "id": contributor_id,
+                        },
+                        "count": 1,
+                        "reviews": [review],
+                        "is_contributor": True,
+                        "contributor": review.reviewer_contributor,
                     }
 
         # Convert to list and sort by count (descending)
