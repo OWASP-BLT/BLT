@@ -28,9 +28,10 @@ class Command(BaseCommand):
         self.stdout.write("DUPLICATE EMAIL ANALYSIS")
         self.stdout.write("=" * 80 + "\n")
 
-        # Find duplicate non-empty emails
+        # Find duplicate non-empty, non-null emails
         duplicate_emails = (
             User.objects.exclude(email="")
+            .exclude(email__isnull=True)
             .values("email")
             .annotate(email_count=Count("id"))
             .filter(email_count__gt=1)
@@ -65,13 +66,13 @@ class Command(BaseCommand):
 
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"  ✓ KEEP: {kept_user.username} (ID: {kept_user.id}, " f"joined: {kept_user.date_joined})"
+                        f"  ✓ KEEP: {kept_user.username} (ID: {kept_user.id}, joined: {kept_user.date_joined})"
                     )
                 )
 
                 for user in users[1:]:
                     self.stdout.write(
-                        self.style.ERROR(f"  ✗ DELETE: {user.username} (ID: {user.id}, " f"joined: {user.date_joined})")
+                        self.style.ERROR(f"  ✗ DELETE: {user.username} (ID: {user.id}, joined: {user.date_joined})")
                     )
 
         self.stdout.write("\n" + "=" * 80)

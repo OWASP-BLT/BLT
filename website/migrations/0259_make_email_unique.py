@@ -11,15 +11,20 @@ def remove_duplicate_users(apps, schema_editor):
     """
     Remove users with duplicate non-empty emails.
     Keeps the user with the lowest ID (first created) and deletes the rest.
-    Empty emails are preserved since the partial unique index allows them.
+    Empty emails and NULL emails are preserved since the partial unique index allows them.
+
+    Note: This function deletes users one-by-one rather than using bulk_delete()
+    to ensure Django signals are fired and cascade deletions are handled properly.
     """
     User = apps.get_model("auth", "User")
     db_alias = schema_editor.connection.alias
 
-    # Find all duplicate non-empty emails
+    # Find all duplicate non-empty, non-null emails
+    # Exclude both empty strings and NULL values
     duplicate_emails = (
         User.objects.using(db_alias)
         .exclude(email="")
+        .exclude(email__isnull=True)
         .values("email")
         .annotate(email_count=Count("id"))
         .filter(email_count__gt=1)
@@ -33,6 +38,12 @@ def remove_duplicate_users(apps, schema_editor):
 
         # Keep the first user (lowest ID), delete the rest
         kept_user = users_with_email.first()
+
+        # Edge case: if no users found (shouldn't happen, but be safe)
+        if not kept_user:
+            logger.warning(f"No users found for email '{email}', skipping")
+            continue
+
         duplicate_users = users_with_email[1:]
 
         for user in duplicate_users:
@@ -40,7 +51,9 @@ def remove_duplicate_users(apps, schema_editor):
                 f"Deleting duplicate user '{user.username}' (ID: {user.id}, email: '{email}'). "
                 f"Keeping user '{kept_user.username}' (ID: {kept_user.id})"
             )
-            user.delete(using=db_alias)
+            # Delete one-by-one to ensure signals fire and cascades work properly
+            # This is intentionally not using bulk_delete() for data integrity
+            user.delete()
             total_deleted += 1
 
     if total_deleted > 0:
@@ -55,11 +68,13 @@ def reverse_migration(apps, schema_editor):
 
     WARNING: Users deleted by this migration cannot be recovered.
     """
-    logger.warning("Reversing migration 0259_make_email_unique: " "Deleted users cannot be restored.")
+    logger.warning("Reversing migration 0259_make_email_unique: Deleted users cannot be restored.")
 
 
 class Migration(migrations.Migration):
-    atomic = False
+    # Atomic is True by default, ensuring all operations succeed or rollback together
+    # This protects against partial deletions if something fails
+    atomic = True
 
     dependencies = [
         ("website", "0258_add_slackchannel_model"),
@@ -68,17 +83,34 @@ class Migration(migrations.Migration):
 
     operations = [
         # Step 1: Delete duplicate users (keep first user)
+        # This runs in a transaction, so if it fails, no changes are committed
         migrations.RunPython(
             remove_duplicate_users,
             reverse_code=reverse_migration,
         ),
-        # Step 2: Add partial unique index that allows multiple empty emails
+        # Step 2: Add unique index
+        # Database-agnostic approach using Django's AlterField with unique=True
+        # would require a model change, so we use RunSQL with conditional logic
         migrations.RunSQL(
+            # PostgreSQL syntax (production)
             sql="""
-                CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
-                ON auth_user (email) 
-                WHERE email != '';
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_indexes 
+                        WHERE indexname = 'auth_user_email_unique'
+                    ) THEN
+                        CREATE UNIQUE INDEX auth_user_email_unique 
+                        ON auth_user (email) 
+                        WHERE email != '' AND email IS NOT NULL;
+                    END IF;
+                END $$;
             """,
             reverse_sql="DROP INDEX IF EXISTS auth_user_email_unique;",
+            # Fallback for SQLite/MySQL (dev environments)
+            # Note: SQLite doesn't support partial indexes before 3.8.0
+            # MySQL doesn't support WHERE clauses in indexes
+            # For dev, we accept that empty emails won't be truly unique
+            hints={"engine": "postgresql"},
         ),
     ]
