@@ -785,7 +785,11 @@ class OrganizationSocialRedirectView(View):
         parsed = urlparse(target_url)
         hostname = (parsed.hostname or "").lower()
         allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
-        if not any(hostname == domain or hostname.endswith(f".{domain}") for domain in allowed_domains):
+        # Validate hostname is either exact match or proper subdomain (not just string suffix)
+        if not any(
+            hostname == domain or (hostname.endswith(f".{domain}") and not hostname.endswith(f"..{domain}"))
+            for domain in allowed_domains
+        ):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
