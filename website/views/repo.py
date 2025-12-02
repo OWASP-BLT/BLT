@@ -325,7 +325,18 @@ class RepoDetailView(DetailView):
         try:
             # Extract owner and repo name from repo_url
             repo_path = repo.repo_url.split('github.com/')[-1]
-            owner, repo_name = repo_path.split('/')
+            
+            # Validate repo path format
+            if '/' not in repo_path:
+                logger.warning(f"Invalid repository URL format: {repo.repo_url}")
+                return []
+            
+            parts = repo_path.split('/')
+            if len(parts) < 2:
+                logger.warning(f"Invalid repository path format: {repo_path}")
+                return []
+            
+            owner, repo_name = parts[0], parts[1]
             
             # GraphQL query to fetch projects
             query = """
@@ -368,7 +379,7 @@ class RepoDetailView(DetailView):
             """
             
             headers = {
-                "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
+                "Authorization": f"token {settings.GITHUB_TOKEN}",
                 "Content-Type": "application/json",
             }
             
@@ -424,7 +435,7 @@ class RepoDetailView(DetailView):
                     
                     return processed_projects
             
-            logger.warning(f"Failed to fetch GitHub projects: {response.status_code}")
+            logger.warning(f"Failed to fetch GitHub projects for {owner}/{repo_name}: {response.status_code}")
             return []
             
         except Exception as e:
