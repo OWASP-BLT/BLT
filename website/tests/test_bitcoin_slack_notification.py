@@ -1,4 +1,5 @@
 import json
+import re
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth.models import User
@@ -394,8 +395,16 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         self.assertIn("\\`code\\`", message_text)
         # Verify original unescaped version is NOT present (use regex to check for unescaped markdown)
         # Negative lookbehind ensures the markdown is not preceded by a backslash
-        self.assertNotRegex(message_text, r"(?<!\\)\*bold\*", "Unescaped *bold* should not appear")
-        self.assertNotRegex(message_text, r"(?<!\\)_underscore_", "Unescaped _underscore_ should not appear")
+        unescaped_bold_pattern = r"(?<!\\)\*bold\*"
+        unescaped_underscore_pattern = r"(?<!\\)_underscore_"
+        self.assertIsNone(
+            re.search(unescaped_bold_pattern, message_text),
+            "Unescaped *bold* should not appear in message",
+        )
+        self.assertIsNone(
+            re.search(unescaped_underscore_pattern, message_text),
+            "Unescaped _underscore_ should not appear in message",
+        )
 
     @patch("website.views.bitcoin.WebClient")
     def test_slack_api_error_does_not_fail_submission(self, mock_webclient_class):
