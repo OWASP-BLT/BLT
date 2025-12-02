@@ -1691,13 +1691,13 @@ def newsletter_home(request):
 
     featured_newsletter = Newsletter.objects.filter(status="published").order_by("-published_at").first()
 
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and featured_newsletter:
         Activity.objects.create(
             user=request.user,
             action_type="view",
             title="Viewed newsletters",
             content_type=ContentType.objects.get_for_model(Newsletter),
-            object_id=featured_newsletter.id if featured_newsletter else None,
+            object_id=featured_newsletter.id,
         )
 
     return render(

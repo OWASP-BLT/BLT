@@ -26,9 +26,19 @@
                 <h1 class="text-4xl md:text-5xl font-bold mb-4">
                     <i class="fas fa-newspaper mr-3"></i>BLT Newsletter
                 </h1>
-                <p class="text-xl text-red-100 max-w-2xl mx-auto">
+                <p class="text-xl text-red-100 max-w-2xl mx-auto mb-6">
                     Your monthly digest of bugs, contributors, releases, and project statistics
                 </p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="{% url 'newsletter_subscribe' %}"
+                       class="inline-flex items-center px-6 py-3 bg-white text-[#e74c3c] font-semibold rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-envelope mr-2"></i>Subscribe to Newsletter
+                    </a>
+                    <a href="{% url 'newsletter_home' %}"
+                       class="inline-flex items-center px-6 py-3 bg-transparent border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-[#e74c3c] transition-colors">
+                        <i class="fas fa-archive mr-2"></i>View Past Issues
+                    </a>
+                </div>
             </div>
         </div>
         <div class="max-w-7xl mx-auto px-4 py-8">
@@ -37,7 +47,7 @@
                 <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
                     <i class="fas fa-chart-bar mr-3 text-[#e74c3c]"></i>Platform Statistics
                 </h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
                         <div class="text-3xl font-bold text-[#e74c3c]">{{ total_bugs|intcomma }}</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Bugs</div>
@@ -53,24 +63,6 @@
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
                         <div class="text-3xl font-bold text-purple-500">{{ active_hunts_count }}</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Active Bug Hunts</div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
-                        <div class="text-3xl font-bold text-emerald-500">{{ open_bugs|intcomma }}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Open Bugs</div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
-                        <div class="text-3xl font-bold text-gray-500">{{ closed_bugs|intcomma }}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Closed Bugs</div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
-                        <div class="text-3xl font-bold text-indigo-500">{{ total_domains|intcomma }}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Domains</div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center">
-                        <div class="text-3xl font-bold text-orange-500">{{ total_organizations|intcomma }}</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Organizations</div>
                     </div>
                 </div>
             </div>

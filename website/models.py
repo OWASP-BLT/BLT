@@ -3458,9 +3458,6 @@ class StakingTransaction(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
 
-    class Meta:
-        ordering = ["is_read", "-created_at"]
-
 
 class Newsletter(models.Model):
     PUBLICATION_STATUS = (
