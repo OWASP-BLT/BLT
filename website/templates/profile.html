@@ -425,8 +425,7 @@
                 <ul class="top-findings select-none w-full flex flex-wrap gap-4">
                     {% if websites %}
                         {% for website in websites %}
-                            <li href="{% url 'domain' slug=website.name %}"
-                                class="flex gap-3 justify-between items-center border border-blue-500 bg-blue-100/20 py-2 px-4 rounded-lg">
+                            <li class="flex gap-3 justify-between items-center border border-blue-500 bg-blue-100/20 py-2 px-4 rounded-lg">
                                 <div class="flex items-center gap-2 w-full">
                                     <a href="{% url 'domain' slug=website.name %}">
                                         <img src="https://www.{{ website.name }}/favicon.ico"
@@ -455,7 +454,7 @@
             </div>
             <div class="flex flex-col gap-3 b">
                 <h1 class="text-xl font-semibold text-black/90 dark:text-white/90 flex items-center gap-4 justify-between">
-                    <span>{% trans "Badges" %} <a href="/badges"
+                    <span>{% trans "Badges" %} <a href="{% url 'badges' %}"
     title="View Badges"
     class="hover:text-red-600 text-black/80 dark:text-white/80"><i class="fas fa-info-circle"></i></a></span>
                     {% if is_mentor %}
@@ -907,7 +906,7 @@
                 </div>
             </div>
             <div class="font-bold mb-3 mt-4 flex justify-between items-center">
-                <span>Badges <a href="/badges" title="View Badges" class="text-info"><i class="fas fa-info-circle"></i></a></span>
+                <span>Badges <a href="{% url 'badges' %}" title="View Badges" class="text-info"><i class="fas fa-info-circle"></i></a></span>
                 {% if is_mentor %}
                     <button id="add-badge-button" class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">
                         Assign a Badge
