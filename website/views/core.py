@@ -1435,84 +1435,103 @@ def home(request):
     # The new approach rewards contributors based on merged PRs that solve $5 issues,
     # regardless of whether actual payment transactions were recorded.
     
-    # Step 1 & 2: Find all merged PRs linked to issues with $5 label
-    # We query PRs (type='pull_request') that are merged and linked to issues with has_dollar_tag=True
-    dollar_five_prs = (
+    # Step 1 & 2: Find all merged PRs linked to issues with $5 label, and aggregate by contributor
+    # Use database-level aggregation for better performance
+    BOUNTY_AMOUNT = 5  # $5 per issue
+    
+    contributor_stats = (
         GitHubIssue.objects.filter(
             type="pull_request",
             is_merged=True,
             linked_issues__has_dollar_tag=True,  # PR is linked to an issue with $5 label
+            contributor__isnull=False,  # Only count PRs with contributors
         )
         .distinct()  # Avoid counting the same PR multiple times if linked to multiple $5 issues
+        .values("contributor")  # Group by contributor
+        .annotate(
+            pr_count=Count("id"),  # Count PRs per contributor
+        )
+        .order_by("-pr_count")[:5]  # Get top 5 contributors by PR count
     )
     
-    # Step 3 & 4: Group by contributor and count PRs
-    contributor_earnings = {}
-    BOUNTY_AMOUNT = 5  # $5 per issue
+    # Step 3: Get contributor IDs and prefetch UserProfiles to avoid N+1 queries
+    contributor_ids = [stat["contributor"] for stat in contributor_stats]
     
-    for pr in dollar_five_prs:
-        if pr.contributor:
-            contributor_id = pr.contributor.id
-            if contributor_id not in contributor_earnings:
-                contributor_earnings[contributor_id] = {
-                    'contributor': pr.contributor,
-                    'pr_count': 0,
-                    'total_earned': 0,
-                }
-            contributor_earnings[contributor_id]['pr_count'] += 1
-            contributor_earnings[contributor_id]['total_earned'] += BOUNTY_AMOUNT
+    # Prefetch contributors and their associated UserProfiles in a single query
+    contributors_dict = {
+        c.id: c for c in Contributor.objects.filter(id__in=contributor_ids).select_related()
+    }
     
-    # Step 5: Convert to list and sort by earnings, then take top 5
-    top_earners_list = sorted(
-        contributor_earnings.values(),
-        key=lambda x: x['total_earned'],
-        reverse=True
-    )[:5]
+    # Prefetch UserProfiles that have GitHubIssues associated with these contributors
+    # This avoids N+1 query problem
+    user_profiles_dict = {}
+    if contributor_ids:
+        user_profiles = UserProfile.objects.filter(
+            github_issues__contributor__id__in=contributor_ids
+        ).select_related("user").distinct()
+        
+        for profile in user_profiles:
+            # Map contributor to user profile
+            contributor_id = profile.github_issues.filter(
+                contributor__id__in=contributor_ids
+            ).values_list("contributor_id", flat=True).first()
+            if contributor_id:
+                user_profiles_dict[contributor_id] = profile
     
-    # Convert to a format compatible with the template
-    # The template expects objects with 'user' and 'total_earnings' attributes
-    # We'll create simple objects that match the expected structure
-    
-    # Helper class to create objects for non-user contributors
+    # Step 4: Build the top earners list with proper structure
+    # Helper classes to match template expectations
     class SimpleUser:
+        """Simple user object for contributors without registered accounts"""
         def __init__(self, username, email=''):
             self.username = username
             self.email = email
-            # Create empty socialaccount_set mock
-            self.socialaccount_set = type('obj', (object,), {'all': lambda: []})()
+            
+        @property
+        def socialaccount_set(self):
+            """Mock socialaccount_set for template compatibility"""
+            class EmptyManager:
+                def all(self):
+                    return []
+            return EmptyManager()
     
     class EarnerProfile:
+        """Profile object that matches template expectations"""
         def __init__(self, user, total_earnings, avatar):
             self.user = user
             self.total_earnings = total_earnings
             self.avatar = avatar
     
     top_earners = []
-    for earner_data in top_earners_list:
-        contributor = earner_data['contributor']
-        # Try to find associated UserProfile via github_issues relationship
-        user_profile = UserProfile.objects.filter(
-            github_issues__contributor=contributor
-        ).first()
+    for stat in contributor_stats:
+        contributor_id = stat["contributor"]
+        pr_count = stat["pr_count"]
+        total_earned = pr_count * BOUNTY_AMOUNT
+        
+        contributor = contributors_dict.get(contributor_id)
+        if not contributor:
+            continue
+        
+        # Check if contributor has an associated UserProfile
+        user_profile = user_profiles_dict.get(contributor_id)
         
         if user_profile:
             # Use the actual UserProfile and User
             earner_obj = EarnerProfile(
                 user=user_profile.user,
-                total_earnings=earner_data['total_earned'],
+                total_earnings=total_earned,
                 avatar=user_profile.avatar,
             )
-            top_earners.append(earner_obj)
         else:
             # If no UserProfile found, create an object with contributor info
             # This allows us to display contributors who aren't registered users
             simple_user = SimpleUser(username=contributor.name)
             earner_obj = EarnerProfile(
                 user=simple_user,
-                total_earnings=earner_data['total_earned'],
+                total_earnings=total_earned,
                 avatar=contributor.avatar_url,
             )
-            top_earners.append(earner_obj)
+        
+        top_earners.append(earner_obj)
 
     # Get top referrals
     top_referrals = (
