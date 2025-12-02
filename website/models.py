@@ -2125,18 +2125,18 @@ class GitHubIssue(models.Model):
 
         try:
             # Extract owner and repo from the URL
-            # URL format: https://github.com/owner/repo/issues/number
-            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues', 'number']
-            # Minimum 7 parts needed to access parts[6] (issue number)
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
             parts = self.url.split("/")
-            if len(parts) < 7 or parts[5] != "issues":
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
                 logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
                 return []
             owner = parts[3]
             repo = parts[4]
             issue_number = parts[6]
 
-            # GitHub API endpoint for comments
+            # GitHub API endpoint for comments (works for both issues and PRs)
             api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
 
             headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
@@ -2191,18 +2191,18 @@ class GitHubIssue(models.Model):
 
         try:
             # Extract owner and repo from the URL
-            # URL format: https://github.com/owner/repo/issues/number
-            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues', 'number']
-            # Minimum 7 parts needed to access parts[6] (issue number)
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
             parts = self.url.split("/")
-            if len(parts) < 7 or parts[5] != "issues":
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
                 logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
                 return False
             owner = parts[3]
             repo = parts[4]
             issue_number = parts[6]
 
-            # GitHub API endpoint for adding comments
+            # GitHub API endpoint for adding comments (works for both issues and PRs)
             api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
 
             headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
@@ -2233,18 +2233,18 @@ class GitHubIssue(models.Model):
 
         try:
             # Extract owner and repo from the URL
-            # URL format: https://github.com/owner/repo/issues/number
-            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues', 'number']
-            # Minimum 7 parts needed to access parts[6] (issue number)
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
             parts = self.url.split("/")
-            if len(parts) < 7 or parts[5] != "issues":
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
                 logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
                 return False
             owner = parts[3]
             repo = parts[4]
             issue_number = parts[6]
 
-            # GitHub API endpoint for adding labels
+            # GitHub API endpoint for adding labels (works for both issues and PRs)
             api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
 
             headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}

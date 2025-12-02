@@ -1846,10 +1846,29 @@ def issue_count(request):
 
 @login_required(login_url="/accounts/login")
 def delete_content_comment(request):
-    content_type = request.POST.get("content_type")
-    content_pk = int(request.POST.get("content_pk"))
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    try:
+        content_pk = int(request.POST.get("content_pk"))
+    except (ValueError, TypeError):
+        raise Http404("Invalid content ID")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
 
     if request.method == "POST":
         comment = Comment.objects.get(pk=int(request.POST["comment_pk"]), author=request.user.username)
@@ -1860,14 +1879,31 @@ def delete_content_comment(request):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
     return render(request, "comments2.html", context)
 
 
 def update_content_comment(request, content_pk, comment_pk):
-    content_type = request.POST.get("content_type")
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
+
     comment = Comment.objects.filter(pk=comment_pk).first()
 
     if request.method == "POST" and isinstance(request.user, User):
@@ -1879,14 +1915,30 @@ def update_content_comment(request, content_pk, comment_pk):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
     return render(request, "comments2.html", context)
 
 
 def comment_on_content(request, content_pk):
-    content_type = request.POST.get("content_type")
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
 
     VALID_CONTENT_TYPES = ["issue", "post"]
 
@@ -1937,6 +1989,7 @@ def comment_on_content(request, content_pk):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
 
     return render(request, "comments2.html", context)
