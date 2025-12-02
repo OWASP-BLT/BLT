@@ -86,6 +86,10 @@ def create_email_unique_index(apps, schema_editor):
     Creates a partial unique constraint on non-empty emails. Multiple users can
     have empty or NULL emails (which is valid per Django's User model), but each
     non-empty email must be unique.
+
+    Note: On MySQL, empty string emails are converted to NULL before creating
+    the index, since MySQL doesn't support partial indexes but allows multiple
+    NULLs in unique indexes.
     """
     vendor = schema_editor.connection.vendor
 
@@ -111,8 +115,8 @@ def create_email_unique_index(apps, schema_editor):
         """
     elif vendor == "mysql":
         # MySQL doesn't support partial indexes with WHERE clause
-        # We create a full unique index, but the application must handle empty emails
-        # Note: This means on MySQL, only one user can have an empty email
+        # Convert empty emails to NULL first (MySQL allows multiple NULLs in unique indexes)
+        schema_editor.execute("UPDATE auth_user SET email = NULL WHERE email = '';")
         sql = """
             CREATE UNIQUE INDEX auth_user_email_unique 
             ON auth_user (email(254));
@@ -157,6 +161,9 @@ def drop_email_unique_index(apps, schema_editor):
 
         if index_exists:
             sql = "DROP INDEX auth_user_email_unique ON auth_user;"
+            # After dropping index, convert NULL emails back to empty strings
+            # to restore original state
+            schema_editor.execute("UPDATE auth_user SET email = '' WHERE email IS NULL;")
         else:
             sql = None
     else:
