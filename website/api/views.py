@@ -1576,7 +1576,7 @@ class FindSimilarBugsApiView(APIView):
 
 
 class TeamMemberLeaderboardAPIView(APIView):
-    authentication_classes = [BasicAuthentication, CsrfExemptSessionAuthentication]
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -1584,7 +1584,11 @@ class TeamMemberLeaderboardAPIView(APIView):
         if not team:
             return Response({"detail": "User has no team"}, status=400)
 
-        members = UserProfile.objects.filter(team=team).order_by("-leaderboard_score", "-current_streak")
+        members = (
+            UserProfile.objects.filter(team=team)
+            .select_related("user")
+            .order_by("-leaderboard_score", "-current_streak")
+        )
 
         serializer = TeamMemberLeaderboardSerializer(members, many=True)
         return Response(serializer.data)
