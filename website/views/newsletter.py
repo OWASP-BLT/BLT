@@ -8,18 +8,7 @@ from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from django.views.generic import TemplateView
 
-from website.models import (
-    Domain,
-    GitHubIssue,
-    GitHubReview,
-    Hunt,
-    Issue,
-    Organization,
-    Project,
-    Repo,
-    User,
-    UserProfile,
-)
+from website.models import GitHubIssue, GitHubReview, Hunt, Issue, Project, Repo, User, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +28,7 @@ class NewsletterView(TemplateView):
         # Stats overview
         context["total_bugs"] = Issue.objects.count()
         context["bugs_this_month"] = Issue.objects.filter(created__gte=last_30_days).count()
-        context["open_bugs"] = Issue.objects.filter(status="open").count()
-        context["closed_bugs"] = Issue.objects.filter(status="closed").count()
         context["total_users"] = User.objects.count()
-        context["total_domains"] = Domain.objects.count()
-        context["total_organizations"] = Organization.objects.count()
         context["active_hunts_count"] = Hunt.objects.filter(is_published=True, end_on__gte=now).count()
 
         # Recent bug reports
