@@ -132,7 +132,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
 
     @override_settings(DEBUG=True)
-    def test_login_email(self):
+    def test_login(self):
         user_email = "bugbug@bugbug.com"
         user_name = "bugbug"
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
