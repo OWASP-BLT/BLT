@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from website.models import Contributor, ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile
 
@@ -475,8 +476,6 @@ class TopEarnersTests(TestCase):
     """Test suite for top earners calculation on homepage"""
 
     def setUp(self):
-        from django.utils import timezone
-
         self.client = Client()
 
         # Create test repository
