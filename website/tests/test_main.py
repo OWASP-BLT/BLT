@@ -132,24 +132,11 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
 
     @override_settings(DEBUG=True)
-    def test_login_email(self):
+    def test_login(self):
         user_email = "bugbug@bugbug.com"
         user_name = "bugbug"
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element("name", "login").send_keys(user_email)
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
-        # Check for current header format: @username and separate Points display
-        self.assertIn(f"@{user_name}", body.text)
-        self.assertIn("0 Points", body.text)
-
-    @override_settings(DEBUG=True)
-    def test_login_username(self):
-        user_name = "bugbug"
-        self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys(user_name)
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
