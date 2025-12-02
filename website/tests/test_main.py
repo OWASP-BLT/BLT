@@ -265,28 +265,21 @@ class MySeleniumTests(LiveServerTestCase):
     def _ensure_bugbug_user_verified(self):
         """Helper method to create and verify the bugbug test user."""
         from allauth.account.models import EmailAddress
-        from django.db import transaction
 
-        with transaction.atomic():
-            # Get or create the bugbug user
-            bugbug_user, created = User.objects.get_or_create(
-                username="bugbug", defaults={"email": "bugbug@bugbug.com"}
-            )
-            if created:
-                bugbug_user.set_password("secret")
-                bugbug_user.save()
+        # Get or create the bugbug user
+        bugbug_user, created = User.objects.get_or_create(username="bugbug", defaults={"email": "bugbug@bugbug.com"})
+        if created:
+            bugbug_user.set_password("secret")
+            bugbug_user.save()
 
-            # Verify the email
-            email_address, created = EmailAddress.objects.get_or_create(
-                user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
-            )
-            if not created:
-                email_address.verified = True
-                email_address.primary = True
-                email_address.save()
-
-        # Force transaction commit by accessing the database
-        User.objects.get(username="bugbug")
+        # Verify the email
+        email_address, created = EmailAddress.objects.get_or_create(
+            user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
+        )
+        if not created:
+            email_address.verified = True
+            email_address.primary = True
+            email_address.save()
 
     def setUp(self):
         super().setUp()
