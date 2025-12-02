@@ -83,6 +83,34 @@ logger = logging.getLogger(__name__)
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
 
 
+# Helper classes for top earners display
+class SimpleUser:
+    """Simple user object for contributors without registered accounts"""
+
+    def __init__(self, username, email=""):
+        self.username = username
+        self.email = email
+
+    @property
+    def socialaccount_set(self):
+        """Mock socialaccount_set for template compatibility"""
+
+        class EmptyManager:
+            def all(self):
+                return []
+
+        return EmptyManager()
+
+
+class EarnerProfile:
+    """Profile object that matches template expectations"""
+
+    def __init__(self, user, total_earnings, avatar):
+        self.user = user
+        self.total_earnings = total_earnings
+        self.avatar = avatar
+
+
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
 # ----------------------------------------------------------------------------------
@@ -1457,49 +1485,40 @@ def home(request):
     # Step 3: Get contributor IDs and prefetch UserProfiles to avoid N+1 queries
     contributor_ids = [stat["contributor"] for stat in contributor_stats]
     
-    # Prefetch contributors and their associated UserProfiles in a single query
-    contributors_dict = {
-        c.id: c for c in Contributor.objects.filter(id__in=contributor_ids).select_related()
-    }
+    # Prefetch contributors in a single query (Contributor model has no FK relationships to select)
+    contributors_dict = {c.id: c for c in Contributor.objects.filter(id__in=contributor_ids)}
     
     # Prefetch UserProfiles that have GitHubIssues associated with these contributors
-    # This avoids N+1 query problem
+    # We need to find which UserProfile is associated with each Contributor
+    # The relationship is: Contributor -> GitHubIssue -> UserProfile
     user_profiles_dict = {}
     if contributor_ids:
-        user_profiles = UserProfile.objects.filter(
-            github_issues__contributor__id__in=contributor_ids
-        ).select_related("user").distinct()
+        # Get all GitHubIssues that link contributors to user_profiles
+        # Use values to get the mapping efficiently in a single query
+        contributor_to_profile_mappings = (
+            GitHubIssue.objects.filter(contributor__id__in=contributor_ids, user_profile__isnull=False)
+            .values("contributor_id", "user_profile_id")
+            .distinct()
+        )
         
-        for profile in user_profiles:
-            # Map contributor to user profile
-            contributor_id = profile.github_issues.filter(
-                contributor__id__in=contributor_ids
-            ).values_list("contributor_id", flat=True).first()
-            if contributor_id:
-                user_profiles_dict[contributor_id] = profile
-    
-    # Step 4: Build the top earners list with proper structure
-    # Helper classes to match template expectations
-    class SimpleUser:
-        """Simple user object for contributors without registered accounts"""
-        def __init__(self, username, email=''):
-            self.username = username
-            self.email = email
+        # Get unique user_profile_ids
+        profile_ids = list(set(m["user_profile_id"] for m in contributor_to_profile_mappings))
+        
+        # Fetch all needed UserProfiles in one query
+        profiles = {
+            p.id: p for p in UserProfile.objects.filter(id__in=profile_ids).select_related("user")
+        }
+        
+        # Build the contributor -> user_profile mapping
+        for mapping in contributor_to_profile_mappings:
+            contributor_id = mapping["contributor_id"]
+            profile_id = mapping["user_profile_id"]
             
-        @property
-        def socialaccount_set(self):
-            """Mock socialaccount_set for template compatibility"""
-            class EmptyManager:
-                def all(self):
-                    return []
-            return EmptyManager()
+            # Only map if we haven't already (take first match)
+            if contributor_id not in user_profiles_dict and profile_id in profiles:
+                user_profiles_dict[contributor_id] = profiles[profile_id]
     
-    class EarnerProfile:
-        """Profile object that matches template expectations"""
-        def __init__(self, user, total_earnings, avatar):
-            self.user = user
-            self.total_earnings = total_earnings
-            self.avatar = avatar
+    # Step 4: Build the top earners list with proper structure using module-level helper classes
     
     top_earners = []
     for stat in contributor_stats:
