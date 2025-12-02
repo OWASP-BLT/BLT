@@ -16,46 +16,6 @@ from website.models import Monitor
 EMAIL_REGEX = re.compile(r"(?:mailto:)?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.IGNORECASE)
 
 
-class SSRFProtectionAdapter(HTTPAdapter):
-    """Custom HTTPAdapter that validates the resolved IP after connection to prevent DNS rebinding."""
-
-    def send(self, request, **kwargs):
-        # Get the hostname from the request URL
-        parsed = urlparse(request.url)
-        hostname = parsed.hostname
-
-        # Perform the connection
-        response = super().send(request, **kwargs)
-
-        # After connection, validate the actual IP that was connected to
-        try:
-            # Get the socket from the response connection
-            if hasattr(response.raw, "_connection") and hasattr(response.raw._connection, "sock"):
-                sock = response.raw._connection.sock
-                if sock:
-                    peer_ip = sock.getpeername()[0]
-                    ip_obj = ipaddress.ip_address(peer_ip)
-
-                    # Block private IP ranges
-                    if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
-                        response.close()
-                        raise requests.exceptions.ConnectionError(
-                            f"DNS rebinding detected: connected to private/reserved IP {peer_ip}"
-                        )
-
-                    # Block cloud metadata endpoints
-                    if peer_ip in ("169.254.169.254", "fd00:ec2::254"):
-                        response.close()
-                        raise requests.exceptions.ConnectionError(
-                            f"DNS rebinding detected: connected to cloud metadata endpoint {peer_ip}"
-                        )
-        except (AttributeError, OSError):
-            # If we can't get the peer IP, allow the request but log a warning
-            pass
-
-        return response
-
-
 class Command(LoggedBaseCommand):
     help = "Checks for keywords in monitored URLs"
 
