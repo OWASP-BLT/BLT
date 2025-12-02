@@ -1580,7 +1580,12 @@ class TeamMemberLeaderboardAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        team = request.user.userprofile.team
+        try:
+            userprofile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            return Response({"detail": "User profile not found"}, status=404)
+
+        team = userprofile.team
         if not team:
             return Response({"detail": "User has no team"}, status=400)
 
