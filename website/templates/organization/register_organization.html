@@ -29,7 +29,8 @@
                     </p>
                     <div class="mt-4 inline-flex items-center px-4 py-2 bg-red-50 text-[#e74c3c] rounded-full text-sm">
                         <i class="fas fa-gift mr-2"></i>
-                        Earn <a href="/bacon" class="font-bold hover:text-red-700 underline mx-1">10 BACON</a> tokens on registration!
+                        Earn <a href="{% url 'bacon' %}"
+    class="font-bold hover:text-red-700 underline mx-1">10 BACON</a> tokens on registration!
                     </div>
                 </div>
                 <!-- Registration Form -->
@@ -219,7 +220,7 @@
                             <div class="absolute hidden group-hover:block -top-12 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gray-900 dark:bg-gray-50 text-white text-xs rounded">
                                 <div class="flex items-center whitespace-nowrap">
                                     <i class="fas fa-bacon mr-2"></i>
-                                    <a href="/bacon" class="hover:text-red-300">+10 BACON</a>
+                                    <a href="{% url 'bacon' %}" class="hover:text-red-300">+10 BACON</a>
                                 </div>
                                 <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-50 rotate-45">
                                 </div>
