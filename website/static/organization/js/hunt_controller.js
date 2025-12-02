@@ -2,8 +2,6 @@
 (function() {
     'use strict';
     
-    console.log('[Hunt Controller] Script loading...');
-    
     // Add escapeHTML function to prevent XSS attacks
     function escapeHTML(str) {
         const div = document.createElement('div');
@@ -17,8 +15,6 @@ let prize_array = [];
     
     // Main functions
     function add_prize() {
-        console.log('[add_prize] Function called');
-        
         try {
             // Initialize list_prize_container if not already done
             if (!list_prize_container) {
@@ -85,8 +81,6 @@ let prize_array = [];
                 organization_id: window.organizationId || null
             };
             
-            console.log('[add_prize] Prize data:', prize_data);
-            
             // Add to array
             prize_array.push(prize_data);
             
@@ -108,7 +102,6 @@ let prize_array = [];
             }
             
             alert("Prize added successfully!");
-            console.log('[add_prize] Prize added successfully. Total prizes:', prize_array.length);
             
         } catch (error) {
             console.error('[add_prize] Error:', error);
@@ -227,10 +220,6 @@ list_prize_container.appendChild(prizeContainer);
 }
 
 function remove_prize(prize_id) {
-        console.log('[remove_prize] Removing prize:', prize_id);
-        
-        // Remove from array (mutate in place to keep window.prize_array in sync)
-        
         // Remove from array (mutate in place to keep window.prize_array in sync)
        const idx = prize_array.findIndex(prize => prize.id === prize_id);
         if (idx !== -1) {
@@ -241,13 +230,9 @@ function remove_prize(prize_id) {
         if (prize_container) {
             prize_container.remove();
         }
-        
-        console.log('[remove_prize] Prize removed. Remaining prizes:', prize_array.length);
     }
     
     function PublishBughunt(is_published) {
-        console.log('[PublishBughunt] Function called with is_published:', is_published);
-        
         try {
             const bughuntForm = document.getElementById("add_bughunt_form");
             if (!bughuntForm) {
@@ -269,8 +254,6 @@ function remove_prize(prize_id) {
                 return;
             }
             
-            console.log('[PublishBughunt] Validation passed. Prizes to submit:', prize_array);
-            
             // Check if CSRF token exists
             const csrfToken = bughuntForm.querySelector('input[name="csrfmiddlewaretoken"]');
             if (!csrfToken) {
@@ -278,7 +261,6 @@ function remove_prize(prize_id) {
                 alert('CSRF token missing. Please refresh the page and try again.');
                 return;
             }
-            console.log('[PublishBughunt] CSRF token found:', csrfToken.value.substring(0, 10) + '...');
             
             // Create hidden inputs for form submission
         const prizeArrayInput = document.createElement('input');
@@ -301,10 +283,6 @@ function remove_prize(prize_id) {
         bughuntForm.appendChild(prizeArrayInput);
         bughuntForm.appendChild(publishHunt);
 
-            console.log('[PublishBughunt] Form elements:', bughuntForm.elements.length);
-            console.log('[PublishBughunt] Form action:', bughuntForm.action);
-            console.log('[PublishBughunt] Form method:', bughuntForm.method);
-            console.log('[PublishBughunt] Submitting form...');
         bughuntForm.submit();
             
         } catch (error) {
@@ -368,8 +346,6 @@ function remove_prize(prize_id) {
     
     // Initialize event listeners when DOM is ready
     function initializeEventListeners() {
-        console.log('[initializeEventListeners] Setting up event listeners...');
-        
         const valid_s = document.getElementById("every_valid_submissions");
         const winning_projects = document.getElementById("number_of_winning_projects");
         
@@ -384,7 +360,6 @@ function remove_prize(prize_id) {
                     winning_projects.style.display = "block";
                 }
             });
-            console.log('[initializeEventListeners] Checkbox listener added');
         }
     }
     
@@ -481,13 +456,10 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
             organization_id: organizationId
         };
         
-        console.log('[updatePrize] Updating prize:', prize_data);
-        
         // Update the prize in the prize_array (client-side only for new bounties)
         const prizeIndex = prize_array.findIndex(p => p.id == prizeId);
         if (prizeIndex !== -1) {
             prize_array[prizeIndex] = prize_data;
-            console.log('[updatePrize] Updated prize_array:', prize_array);
         }
         
         // Remove the old prize element and create a new one with updated data
@@ -518,8 +490,6 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
         
         // Show success message
         alert('Prize updated successfully!');
-        
-        console.log('[updatePrize] Prize updated successfully');
     }
     
      // Image preview functions for logo/banner uploads
@@ -656,12 +626,5 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
         // DOM is already loaded
         initializeEventListeners();
     }
-    
-    console.log('[Hunt Controller] Script loaded successfully');
-    console.log('[Hunt Controller] Functions available:', {
-        add_prize: typeof window.add_prize,
-        PublishBughunt: typeof window.PublishBughunt,
-        cancelForm: typeof window.cancelForm
-    });
     
 })();

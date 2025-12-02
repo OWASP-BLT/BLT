@@ -239,7 +239,6 @@ function parse(content) {
                 return currentValue;
             }).join('');
 
-            console.log(formattedList);
             content = content.replace(list, formattedList);
         });
     }

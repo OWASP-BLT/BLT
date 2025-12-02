@@ -148,8 +148,29 @@ class SizzleCheckInViewTests(TestCase):
         self.assertContains(response, "Fill from Previous Check-in")
         self.assertContains(response, "fillFromPreviousBtn")
 
-    def test_fill_from_previous_button_not_shown_without_yesterday_report(self):
-        """Test that the Fill from Previous Check-in button is not shown when no yesterday report exists"""
+    def test_fill_from_previous_button_not_shown_without_any_checkins(self):
+        """Test that no Fill button is shown when there are no check-ins at all"""
         response = self.client.get(reverse("add_sizzle_checkin"))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Fill from Previous Check-in")
+        self.assertContains(response, "No previous check-ins available")
+        self.assertNotContains(response, "fillFromLastCheckinBtn")
+        self.assertNotContains(response, "fillFromPreviousBtn")
+
+    def test_fill_from_last_checkin_shown_without_yesterday_report(self):
+        """Test that Fill from Last Check-in button appears when no yesterday report but has older check-in"""
+        # Create a check-in from 3 days ago
+        three_days_ago = now().date() - timedelta(days=3)
+        DailyStatusReport.objects.create(
+            user=self.user,
+            date=three_days_ago,
+            previous_work="Previous work from 3 days ago",
+            next_plan="This should be filled in today's previous work",
+            blockers="No blockers",
+        )
+
+        response = self.client.get(reverse("add_sizzle_checkin"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No report available for yesterday")
+        self.assertContains(response, "Last check-in was on")
+        self.assertContains(response, "Fill from Last Check-in")
+        self.assertContains(response, "fillFromLastCheckinBtn")

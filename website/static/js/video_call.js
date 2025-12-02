@@ -161,26 +161,21 @@ class VideoCall {
                     case 'join':
                         if (this.isInitiator && this.hasJoinedRoom) {
                             this.updateConnectionStatus('Peer joined, starting call...');
-                            console.log('New peer joined, starting call');
                             await this.startCall();
                         } else {
                             this.hasJoinedRoom = true;
                             this.updateConnectionStatus('Joined call, waiting for connection...');
-                            console.log('Joined as peer');
                         }
                         break;
                     case 'offer':
                         this.updateConnectionStatus('Receiving call...');
-                        console.log('Received offer, handling...');
                         await this.handleOffer(data);
                         break;
                     case 'answer':
                         this.updateConnectionStatus('Call connected!');
-                        console.log('Received answer, handling...');
                         await this.handleAnswer(data);
                         break;
                     case 'ice-candidate':
-                        console.log('Received ICE candidate');
                         await this.handleIceCandidate(data);
                         break;
                     case 'peer_disconnected':
@@ -201,7 +196,6 @@ class VideoCall {
         };
 
         this.ws.onopen = () => {
-            console.log('WebSocket connected, joining room:', this.roomName);
             this.ws.send(JSON.stringify({
                 type: 'join',
                 room: this.roomName
@@ -216,7 +210,6 @@ class VideoCall {
         };
 
         this.ws.onclose = (event) => {
-            console.log('WebSocket closed with code:', event.code);
             if (event.code === 4000) {
                 alert('Room is full. Please try again later.');
                 window.location.href = window.location.pathname;
@@ -228,7 +221,6 @@ class VideoCall {
 
     async setupLocalStream() {
         try {
-            console.log('Requesting media permissions...');
             this.localStream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     width: { ideal: 1280 },
@@ -242,24 +234,10 @@ class VideoCall {
                 }
             });
 
-            console.log('Media access granted:', {
-                video: this.localStream.getVideoTracks().length > 0,
-                audio: this.localStream.getAudioTracks().length > 0
-            });
-
             const localVideo = document.getElementById('localVideo');
             if (localVideo) {
                 localVideo.srcObject = this.localStream;
                 await localVideo.play().catch(e => console.error('Error playing local video:', e));
-
-                // Monitor local tracks
-                this.localStream.getTracks().forEach(track => {
-                    console.log(`Local ${track.kind} track:`, {
-                        enabled: track.enabled,
-                        muted: track.muted,
-                        readyState: track.readyState
-                    });
-                });
             }
 
             // Set up audio analysis for local stream
@@ -272,7 +250,6 @@ class VideoCall {
     }
 
     setupPeerConnection() {
-        console.log('Setting up peer connection...');
         this.peerConnection = new RTCPeerConnection({
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -286,13 +263,7 @@ class VideoCall {
 
         // Add local stream tracks to peer connection
         if (this.localStream) {
-            console.log('Adding local tracks to peer connection...');
             this.localStream.getTracks().forEach(track => {
-                console.log(`Adding ${track.kind} track to peer connection:`, {
-                    enabled: track.enabled,
-                    muted: track.muted,
-                    readyState: track.readyState
-                });
                 this.peerConnection.addTrack(track, this.localStream);
             });
         } else {
@@ -302,16 +273,8 @@ class VideoCall {
 
         // Handle remote stream
         this.peerConnection.ontrack = (event) => {
-            console.log('Received remote track:', {
-                kind: event.track.kind,
-                enabled: event.track.enabled,
-                muted: event.track.muted,
-                readyState: event.track.readyState
-            });
-
             const remoteVideo = document.getElementById('remoteVideo');
             if (remoteVideo && event.streams[0]) {
-                console.log('Setting remote stream');
                 this.remoteStream = event.streams[0];
                 remoteVideo.srcObject = this.remoteStream;
 
@@ -320,24 +283,15 @@ class VideoCall {
 
                 // Monitor remote stream
                 this.remoteStream.getTracks().forEach(track => {
-                    console.log(`Remote ${track.kind} track:`, {
-                        enabled: track.enabled,
-                        muted: track.muted,
-                        readyState: track.readyState
-                    });
-
                     track.onended = () => {
-                        console.log(`Remote ${track.kind} track ended`);
                         this.updateConnectionStatus('Remote peer\'s camera/microphone was disconnected');
                     };
 
                     track.onmute = () => {
-                        console.log(`Remote ${track.kind} track muted`);
                         this.updateConnectionStatus('Remote peer muted their camera/microphone');
                     };
 
                     track.onunmute = () => {
-                        console.log(`Remote ${track.kind} track unmuted`);
                         this.updateConnectionStatus('Remote peer unmuted their camera/microphone');
                     };
                 });
@@ -354,7 +308,6 @@ class VideoCall {
         // Handle ICE candidates
         this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                console.log('Sending ICE candidate');
                 this.ws.send(JSON.stringify({
                     type: 'ice-candidate',
                     candidate: event.candidate
@@ -364,15 +317,12 @@ class VideoCall {
 
         this.peerConnection.oniceconnectionstatechange = () => {
             const state = this.peerConnection.iceConnectionState;
-            console.log('ICE Connection State:', state);
 
             switch (state) {
                 case 'checking':
-                    console.log('Connecting to peer...');
                     this.updateServerStatus('checking');
                     break;
                 case 'connected':
-                    console.log('Connection established.');
                     // Check which server is being used
                     setTimeout(() => this.checkServerConnection(), 1000);
 
@@ -380,7 +330,6 @@ class VideoCall {
                     this.startServerChecks();
                     break;
                 case 'completed':
-                    console.log('Connection completed.');
                     // Check again after completion to get the final server
                     setTimeout(() => this.checkServerConnection(), 1000);
                     break;
@@ -391,23 +340,13 @@ class VideoCall {
                     this.endCall();
                     break;
                 case 'disconnected':
-                    console.log('Peer disconnected');
                     this.updateServerStatus('disconnected');
                     alert('Peer disconnected');
                     break;
                 case 'closed':
-                    console.log('Connection closed');
                     this.updateServerStatus('disconnected');
                     break;
             }
-        };
-
-        this.peerConnection.onconnectionstatechange = () => {
-            console.log('Connection state:', this.peerConnection.connectionState);
-        };
-
-        this.peerConnection.onsignalingstatechange = () => {
-            console.log('Signaling state:', this.peerConnection.signalingState);
         };
     }
 
@@ -432,7 +371,6 @@ class VideoCall {
     async startCall() {
         try {
             if (!this.peerConnection) {
-                console.log('Creating new peer connection for call start');
                 this.setupPeerConnection();
             }
 
@@ -447,16 +385,13 @@ class VideoCall {
                 streams: [this.localStream]
             });
 
-            console.log('Creating offer...');
             const offer = await this.peerConnection.createOffer({
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: true
             });
 
-            console.log('Setting local description...');
             await this.peerConnection.setLocalDescription(offer);
 
-            console.log('Sending offer...');
             this.ws.send(JSON.stringify({
                 type: 'offer',
                 offer: offer
@@ -478,16 +413,12 @@ class VideoCall {
                 return;
             }
 
-            console.log('Setting remote description from offer...');
             await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
 
-            console.log('Creating answer...');
             const answer = await this.peerConnection.createAnswer();
 
-            console.log('Setting local description...');
             await this.peerConnection.setLocalDescription(answer);
 
-            console.log('Sending answer...');
             this.ws.send(JSON.stringify({
                 type: 'answer',
                 answer: answer
@@ -507,13 +438,9 @@ class VideoCall {
 
             const description = new RTCSessionDescription(data.answer);
             const signalingState = this.peerConnection.signalingState;
-            console.log('Current signaling state:', signalingState);
 
             if (signalingState === "have-local-offer") {
-                console.log('Setting remote description from answer...');
                 await this.peerConnection.setRemoteDescription(description);
-            } else {
-                console.warn('Received answer in wrong signaling state:', signalingState);
             }
         } catch (error) {
             console.error('Error handling answer:', error);
@@ -615,8 +542,6 @@ class VideoCall {
 
                 // Create data array for waveform
                 this.localWaveformData = new Uint8Array(this.localAnalyser.frequencyBinCount);
-
-                console.log('Local audio analysis set up successfully');
             } catch (error) {
                 console.error('Error setting up local audio analysis:', error);
             }
@@ -639,8 +564,6 @@ class VideoCall {
 
                 // Create data array for waveform
                 this.remoteWaveformData = new Uint8Array(this.remoteAnalyser.frequencyBinCount);
-
-                console.log('Remote audio analysis set up successfully');
             } catch (error) {
                 console.error('Error setting up remote audio analysis:', error);
             }
@@ -745,21 +668,15 @@ class VideoCall {
             let remoteCandidate = null;
 
             stats.forEach(report => {
-                if (report.type === 'transport') {
-                    console.log('Transport stats:', report);
-                }
-
                 // Find the active candidate pair
                 if (report.type === 'candidate-pair' && report.state === 'succeeded') {
                     activeCandidatePair = report;
-                    console.log('Active candidate pair:', report);
                 }
 
                 // Collect local candidates
                 if (report.type === 'local-candidate') {
                     if (activeCandidatePair && report.id === activeCandidatePair.localCandidateId) {
                         localCandidate = report;
-                        console.log('Local candidate:', report);
                     }
                 }
 
@@ -767,7 +684,6 @@ class VideoCall {
                 if (report.type === 'remote-candidate') {
                     if (activeCandidatePair && report.id === activeCandidatePair.remoteCandidateId) {
                         remoteCandidate = report;
-                        console.log('Remote candidate:', report);
                     }
                 }
             });
@@ -786,18 +702,6 @@ class VideoCall {
 
                 // Update server status with the determined type
                 this.updateServerStatus('connected', serverType);
-
-                // Log connection details
-                console.log(`Connection type: ${serverType}`);
-                console.log(`Local candidate type: ${localCandidate.candidateType}`);
-                console.log(`Remote candidate type: ${remoteCandidate.candidateType}`);
-
-                if (localCandidate.ip) {
-                    console.log(`Local IP: ${this.maskIP(localCandidate.ip)}`);
-                }
-                if (remoteCandidate.ip) {
-                    console.log(`Remote IP: ${this.maskIP(remoteCandidate.ip)}`);
-                }
             } else {
                 this.updateServerStatus('checking');
             }

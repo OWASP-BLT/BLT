@@ -63,10 +63,6 @@ var windowIsDefined = (typeof window === "undefined" ? "undefined" : _typeof(win
     if (windowIsDefined && !window.console) {
         window.console = {};
     }
-    if (windowIsDefined && !window.console.log) {
-        window.console.log = function () {
-        };
-    }
     if (windowIsDefined && !window.console.warn) {
         window.console.warn = function () {
         };

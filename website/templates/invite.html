@@ -5,66 +5,175 @@
     Invite an Organization
 {% endblock title %}
 {% block description %}
-    Invite an organization to join and earn +5 points when they do. Provide their email address to send an invitation.
+    Invite an organization to join our platform and earn +5 points when they do. Generate a professional invitation email with detailed information about our platform's benefits.
 {% endblock description %}
 {% block keywords %}
-    Invite Organization, Send Invitation, Earn Points, Organization Join, Email Invitation
+    Invite Organization, Send Invitation, Earn Points, Organization Join, Email Invitation, Platform Benefits, Security Testing
 {% endblock keywords %}
 {% block og_title %}
     Invite an Organization - Earn Points for Invites
 {% endblock og_title %}
 {% block og_description %}
-    Invite an organization to join and earn +5 points when they do. Provide their email address to send an invitation.
+    Invite an organization to join our platform and earn +5 points when they do. Generate a professional invitation email with detailed information about our platform's benefits.
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="flex w-full flex-col items-center justify-between md:py-5 py-3 px-4 md:px-0">
-        <div class="border rounded-md md:w-[800px] w-full flex flex-col gap-7 items-center justify-center shadow-lg md:py-10 p-4">
+        <div class="border rounded-md md:w-[900px] w-full flex flex-col gap-7 items-center justify-center shadow-lg md:py-10 p-4">
             <div class="flex flex-col gap-3.5 items-center justify-center text-center text-sm md:text-base">
                 <h1 class="text-3xl font-extrabold text-black/90 dark:text-white/90 border-b-2 border-red-500/70 pb-1">
                     {% trans "Invite an Organization" %}
                 </h1>
                 <div class="flex flex-col gap-3 text-black/65 dark:text-white/65">
                     <div class="flex flex-col items-center justify-center">
-                        <p>
-                            {% trans "Invite an organization to join and earn" %} <span class="font-bold text-red-500/70">{% trans "+5 points" %}</span> {% trans "when they do." %}
-                        </p>
-                        <p>{% trans "Provide their email address to send an invitation." %}</p>
-                    </div>
-                    {% if exists %}
-                        <div class="flex flex-col items-center justify-center">
+                        {% if user_logged_in %}
                             <p>
-                                Click <a target="_blank"
-    href="mailto:{{ email }}?subject=A bug on {{ domain.name }}&body=first line\nsecond line\nthird line %3Cimg+src%3D%27newiibwhite.gif%27++%2F%3E">this
-                                link</a> to open the email in your mail program.
+                                {% trans "Invite an organization to join our platform and earn" %} <span class="font-bold text-red-500/70">{% trans "+5 points" %}</span> {% trans "when they do." %}
                             </p>
-                            <p>If you use Gmail, you can use this extension.</p>
-                        </div>
-                    {% endif %}
+                        {% else %}
+                            <p>
+                                {% trans "Invite an organization to join our platform." %} <a href="{% url 'account_login' %}"
+    class="font-bold text-red-500/70 hover:underline">{% trans "Login" %}</a> {% trans "to earn +5 points when they register via your referral link." %}
+                            </p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-            <form role="form"
-                  action="{% url 'invite' %}"
-                  method="post"
-                  class="flex flex-col gap-4 w-full md:w-fit items-center justify-center">
-                {% csrf_token %}
-                <input class="md:w-[400px] w-full border-2 border-black/30 focus:outline-none focus:border-red-500 rounded-md p-2 placeholder:text-base"
-                       placeholder=" Email address"
-                       type="text"
-                       name="email">
-                <button type="submit"
-                        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md w-full transition-all duration-200">
-                    Invite
-                </button>
-            </form>
+            {% if not exists and user_logged_in %}
+                <form role="form"
+                      action="{% url 'invite' %}"
+                      method="post"
+                      class="flex flex-col gap-4 w-full md:w-fit items-center justify-center">
+                    {% csrf_token %}
+                    <div class="flex flex-col gap-4 w-full md:w-[500px]">
+                        <input class="w-full border-2 border-black/30 focus:outline-none focus:border-[#e74c3c] rounded-md p-2 placeholder:text-base"
+                               placeholder="Organization name (required)"
+                               type="text"
+                               name="organization_name"
+                               value="{{ organization_name|default:'' }}"
+                               required>
+                        <input class="w-full border-2 border-black/30 focus:outline-none focus:border-[#e74c3c] rounded-md p-2 placeholder:text-base"
+                               placeholder="Email address"
+                               type="email"
+                               name="email"
+                               value="{{ email|default:'' }}"
+                               required>
+                    </div>
+                    <button type="submit"
+                            class="px-6 py-3 bg-[#e74c3c] hover:bg-red-600 text-white rounded-md w-full md:w-[500px] transition-all duration-200 font-medium">
+                        Generate Invitation Email
+                    </button>
+                </form>
+            {% endif %}
+            {% if exists and email %}
+                <div class="w-full flex flex-col gap-6">
+                    <!-- Referral Link Section -->
+                    {% if referral_link %}
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h3 class="text-lg font-medium text-blue-900 mb-2">Your Referral Link:</h3>
+                            <div class="flex gap-2 items-center">
+                                <input type="text"
+                                       id="referral-link"
+                                       value="{{ referral_link }}"
+                                       readonly
+                                       class="flex-1 px-3 py-2 border border-blue-300 rounded-md bg-white text-sm">
+                                <button onclick="copyToClipboard('referral-link', this)"
+                                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 text-sm whitespace-nowrap">
+                                    Copy Link
+                                </button>
+                            </div>
+                            <p class="text-blue-700 text-sm mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                {% if is_sample_link %}
+                                    This is a sample referral link. Fill out the form above to generate a real referral link for a specific organization.
+                                {% else %}
+                                    Share this link with the organization. When they register using this link, you'll earn 5 points!
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% else %}
+                        {% if not user_logged_in %}
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <h3 class="text-lg font-medium text-yellow-900 mb-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Want to earn points?
+                                </h3>
+                                <p class="text-yellow-800 text-sm">
+                                    <a href="{% url 'account_login' %}"
+                                       class="font-bold text-[#e74c3c] hover:underline">Login</a> or
+                                    <a href="{% url 'account_signup' %}"
+                                       class="font-bold text-[#e74c3c] hover:underline">sign up</a>
+                                    to get a unique referral link and earn 5 points when the organization registers!
+                                </p>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    <!-- Email Preview Section -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold text-gray-800">Generated Invitation Email</h2>
+                            <button onclick="copyEmailContent()"
+                                    class="px-4 py-2 bg-[#e74c3c] hover:bg-red-600 text-white rounded-md transition-all duration-200 text-sm">
+                                Copy All Content
+                            </button>
+                        </div>
+                        <!-- Subject Line -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Subject:</label>
+                            <div class="bg-white border border-gray-300 rounded-md p-3 flex justify-between items-center">
+                                <span class="text-gray-800" id="email-subject">{{ email_subject }}</span>
+                                <button onclick="copyToClipboard('email-subject', this)"
+                                        class="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Email Body -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Body:</label>
+                            <div class="bg-white border border-gray-300 rounded-md p-4 relative">
+                                <button onclick="copyToClipboard('email-body', this)"
+                                        class="absolute top-2 right-2 px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs">
+                                    Copy
+                                </button>
+                                <pre class="text-sm text-gray-800 whitespace-pre-wrap font-sans leading-relaxed"
+                                     id="email-body">{{ email_body }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col md:flex-row gap-4 justify-center">
+                        <a href="mailto:{{ email }}?subject={{ email_subject|urlencode }}&body={{ email_body|urlencode }}"
+                           class="inline-flex items-center justify-center px-6 py-3 bg-[#e74c3c] hover:bg-red-600 text-white rounded-md transition-all duration-200 font-medium">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Open in Email Client
+                        </a>
+                        <button onclick="window.location.href='{% url 'invite' %}'"
+                                class="inline-flex items-center justify-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-all duration-200 font-medium">
+                            <i class="fas fa-plus mr-2"></i>
+                            Create Another Invitation
+                        </button>
+                    </div>
+                    <!-- Instructions -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 class="text-lg font-medium text-blue-900 mb-2">How to Use This Invitation:</h3>
+                        <ol class="list-decimal list-inside text-blue-800 space-y-1 text-sm">
+                            <li>Copy the subject and body content using the copy buttons above</li>
+                            <li>Paste into your preferred email client (Gmail, Outlook, etc.)</li>
+                            <li>Or click "Open in Email Client" to auto-populate your default email app</li>
+                            <li>Review and customize the content if needed</li>
+                            <li>Send the invitation to {{ email }}</li>
+                        </ol>
+                        <p class="text-blue-700 text-sm mt-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <strong>Tip:</strong> You can edit the email content before sending to add any personal touches or organization-specific information.
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
-    {% comment %} <div class="bottom-right">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/invite.html">
-            <i class="fab fa-github"></i>
-        </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1346&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma"></i>
-        </a>
-    </div> {% endcomment %}
 {% endblock content %}
+{% block extra_js %}
+    <script src="{% static 'js/invite.js' %}"></script>
+{% endblock extra_js %}

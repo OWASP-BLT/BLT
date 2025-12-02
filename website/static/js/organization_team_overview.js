@@ -17,8 +17,6 @@ function toggleRow(row) {
 
 // Main initialization
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Team Overview: Initializing...');
-    
     const tableBody = document.getElementById('statusTableBody');
     const tabButtons = document.querySelectorAll('.tab-button');
     const filterPanels = document.querySelectorAll('.filter-panel');
@@ -30,20 +28,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const initialReportCount = tableBody.dataset.initialCount || 0;
     
-    console.log('Found elements:', {
-        tableBody: !!tableBody,
-        tabButtons: tabButtons.length,
-        filterPanels: filterPanels.length,
-        initialReports: initialReportCount
-    });
-    
     let currentTab = null;
     let taskSearchTimeout = null;
     let requestIdCounter = 0;
     let currentRequestId = 0;
 
     function updateTable(data) {
-        console.log('Updating table with data:', data);
         tableBody.innerHTML = '';
         
         if (!data || data.length === 0) {
@@ -66,7 +56,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         data.forEach((report, index) => {
-            console.log(`Adding row ${index}:`, report);
             const row = document.createElement('tr');
             row.className = 'hover:bg-gray-50 transition-colors duration-150 cursor-pointer';
             row.onclick = () => toggleRow(row);
@@ -130,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             tableBody.appendChild(row);
         });
-        console.log(`Table updated with ${data.length} rows`);
     }
 
     function fetchFilteredData(filterType, filterValue) {
@@ -142,8 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const url = new URL(window.location.href);
         url.searchParams.set('filter_type', filterType);
         url.searchParams.set('filter_value', filterValue);
-
-        console.log('Fetching data:', { requestId: thisRequestId, filterType, filterValue, url: url.toString() });
         
         // Show loading indicator
         tableBody.innerHTML = `
@@ -165,11 +151,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => {
             // Guard against stale responses
             if (thisRequestId !== currentRequestId) {
-                console.log(`Discarding stale response (request ${thisRequestId}, current ${currentRequestId})`);
                 return null;
             }
             
-            console.log('Response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -178,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             // Guard against stale responses
             if (thisRequestId !== currentRequestId) {
-                console.log(`Discarding stale data (request ${thisRequestId}, current ${currentRequestId})`);
                 return;
             }
             
@@ -187,7 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            console.log('Received data:', data);
             if (data && data.data !== undefined) {
                 updateTable(data.data);
             } else {
@@ -198,7 +180,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             // Guard against stale error handlers
             if (thisRequestId !== currentRequestId) {
-                console.log(`Discarding stale error (request ${thisRequestId}, current ${currentRequestId})`);
                 return;
             }
             
@@ -222,8 +203,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function switchTab(tabName) {
-        console.log('Switching to tab:', tabName);
-        
         tabButtons.forEach(button => {
             if (button.dataset.tab === tabName) {
                 button.classList.add('border-[#e74c3c]', 'text-[#e74c3c]', 'bg-[#e74c3c]/5');
@@ -277,7 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (userFilter) {
         userFilter.addEventListener('change', function() {
-            console.log('User filter changed:', this.value);
             if (this.value) {
                 fetchFilteredData('user', this.value);
             } else {
@@ -288,7 +266,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (dateFilter) {
         dateFilter.addEventListener('change', function() {
-            console.log('Date filter changed:', this.value);
             if (this.value) {
                 fetchFilteredData('date', this.value);
             } else {
@@ -299,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (goalFilter) {
         goalFilter.addEventListener('change', function() {
-            console.log('Goal filter changed:', this.value);
             if (this.value) {
                 fetchFilteredData('goal', this.value);
             } else {
@@ -311,7 +287,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (taskFilter) {
         taskFilter.addEventListener('input', function() {
             const searchValue = this.value.trim();
-            console.log('Task filter input:', searchValue);
             
             clearTimeout(taskSearchTimeout);
             taskSearchTimeout = setTimeout(() => {
@@ -325,6 +300,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize by showing user tab
-    console.log('Initializing with user tab');
     switchTab('user');
 });

@@ -86,12 +86,13 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     permissions:
-      issues: write
-      pull-requests: write
-      contents: write
-      actions: write
+      contents: read
+    outputs:
+      test_result: ${{ steps.run-tests.outputs.exit_code }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
@@ -104,7 +105,209 @@ jobs:
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
-        run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+        id: run-tests
+        shell: bash
+        run: |
+          set +e
+          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast 2>&1 | tee test-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+          exit 0
+        continue-on-error: true
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: test-output.txt
+          retention-days: 1
+      - name: Fail the job if tests failed
+        if: steps.run-tests.outputs.exit_code != '0'
+        run: exit 1
+
+  label-test-result:
+    name: Label Test Result
+    needs: test
+    if: always() && github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      actions: read
+    steps:
+      - name: Download test output
+        if: needs.test.outputs.test_result != '0'
+        uses: actions/download-artifact@v4
+        with:
+          name: test-output
+          path: .
+        continue-on-error: true
+      - name: Comment on PR if tests failed
+        if: needs.test.outputs.test_result != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const pull_number = context.issue.number;
+            
+            if (!pull_number) {
+              core.warning('No pull request number found in context. Skipping comment.');
+              return;
+            }
+            
+            let testOutput = 'Test output not available.';
+            try {
+              testOutput = fs.readFileSync('test-output.txt', 'utf8');
+            } catch (e) {
+              core.warning(`Could not read test output: ${e.message}`);
+            }
+            
+            // Get last 100 lines of output
+            const lines = testOutput.split('\n');
+            const last100Lines = lines.slice(-100).join('\n');
+            const truncated = lines.length > 100;
+            
+            const message = `## ❌ Tests failed
+            
+            The Django tests found issues that need to be fixed. Please review the test output below and fix the failing tests.
+            
+            ### How to run tests locally
+            
+            \`\`\`bash
+            # Install dependencies
+            poetry install --with dev
+            
+            # Run all tests
+            poetry run python manage.py test
+            
+            # Run tests with verbose output
+            poetry run python manage.py test -v 3
+            
+            # Run a specific test
+            poetry run python manage.py test app.tests.TestClass.test_method
+            \`\`\`
+            
+            <details>
+            <summary>Test output${truncated ? ' (last 100 lines)' : ''}</summary>
+            
+            \`\`\`text
+            ${last100Lines}
+            \`\`\`
+            
+            </details>
+            
+            For more information, see the [Django testing documentation](https://docs.djangoproject.com/en/stable/topics/testing/).`;
+            
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pull_number,
+                body: message
+              });
+              core.info(`Added test failure comment to PR #${pull_number}`);
+            } catch (error) {
+              if (error.status === 403) {
+                core.warning('Permission denied: Cannot comment on PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.');
+              } else {
+                throw error;
+              }
+            }
+      - name: Add test status label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            // Validate PR context exists
+            if (!pull_number) {
+              core.warning('No pull request number found in context. Skipping label.');
+              return;
+            }
+            
+            core.info(`Processing test result label for PR #${pull_number}`);
+            
+            // Determine label based on test exit code
+            const testExitCode = '${{ needs.test.outputs.test_result }}';
+            core.info(`Test exit code from job output: ${testExitCode}`);
+            
+            const newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
+            const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
+            const description = testExitCode === '0' ? 'Django tests passed' : 'Django tests failed';
+            
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+            
+            // Remove any existing test labels
+            const testRegex = /^tests:/i;
+            for (const name of currentNames) {
+              if (testRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+            
+            // Ensure the new label exists (create if missing)
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            await ensureLabelExists(newLabel);
+            
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
+              try {
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [newLabel] 
+                });
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                } else {
+                  throw error;
+                }
+              }
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+            }
+            
+            core.info(`Test exit code: ${testExitCode}`)
 
   docker-test:
     runs-on: ubuntu-latest

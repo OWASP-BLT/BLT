@@ -6,7 +6,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -54,8 +54,10 @@ from website.models import (
     Message,
     Organization,
     OrganizationAdmin,
+    Project,
     Repo,
     Room,
+    SlackChannel,
     Subscription,
     Tag,
     TimeLog,
@@ -172,6 +174,63 @@ def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_o
         return render(request, template, {"organization": organization})
     else:
         return redirect("/")
+
+
+@login_required(login_url="/accounts/login")
+def slack_channels_list(request, template="slack_channels.html"):
+    """View to display all Slack channels with ability to link them to projects."""
+    user = request.user
+
+    # Get all slack channels ordered by member count
+    channels = SlackChannel.objects.all().order_by("-num_members")
+
+    # Get unlinked projects for the autocomplete dropdown (superusers only)
+    unlinked_projects = []
+    if user.is_superuser:
+        # Get projects that don't have any slack channel linked to them
+        linked_project_ids = SlackChannel.objects.filter(project__isnull=False).values_list("project_id", flat=True)
+        unlinked_projects = Project.objects.exclude(id__in=linked_project_ids).order_by("name")
+
+    context = {
+        "channels": channels,
+        "unlinked_projects": unlinked_projects,
+        "is_superuser": user.is_superuser,
+    }
+    return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def link_slack_channel_to_project(request):
+    """API endpoint to link a Slack channel to a project (superusers only)."""
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    channel_id = request.POST.get("channel_id")
+    project_id = request.POST.get("project_id")
+
+    if not channel_id or not project_id:
+        return JsonResponse({"error": "Missing channel_id or project_id"}, status=400)
+
+    try:
+        channel = SlackChannel.objects.get(channel_id=channel_id)
+        project = Project.objects.get(id=project_id)
+
+        # Link the channel to the project
+        channel.project = project
+        channel.save(update_fields=["project"])
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Channel #{channel.name} linked to {project.name}",
+                "project_name": project.name,
+            }
+        )
+    except SlackChannel.DoesNotExist:
+        return JsonResponse({"error": "Channel not found"}, status=404)
+    except Project.DoesNotExist:
+        return JsonResponse({"error": "Project not found"}, status=404)
 
 
 def weekly_report(request):
@@ -2108,13 +2167,18 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
+    # Fetch the last check-in (most recent) for the user only if no yesterday report
+    last_checkin = None
+    if not yesterday_report:
+        last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+
     # Fetch all check-ins for the user, ordered by date
     all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
 
     return render(
         request,
         "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
+        {"yesterday_report": yesterday_report, "last_checkin": last_checkin, "all_checkins": all_checkins},
     )
 
 
@@ -2922,9 +2986,9 @@ class BountyPayoutsView(ListView):
             return cached_data
 
         # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
-        encoded_label = label.replace("$", "%24")
-        query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
-        url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+        query_params = f"repo:OWASP-BLT/BLT is:issue state:{issue_state} label:{label}"
+        encoded_query = quote_plus(query_params)
+        url = f"https://api.github.com/search/issues?q={encoded_query}&page={page}&per_page={per_page}"
         headers = {}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
