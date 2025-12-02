@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from website.models import ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile
+from website.models import Contributor, ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile
 
 
 class ForumTests(TestCase):
@@ -469,3 +469,197 @@ class StatusPageTests(TestCase):
         # Check for essential status data keys
         self.assertIn("management_commands", status)
         self.assertIn("available_commands", status)
+
+
+class TopEarnersTests(TestCase):
+    """Test suite for top earners calculation on homepage"""
+
+    def setUp(self):
+        from datetime import datetime
+
+        from django.utils import timezone
+
+        from website.models import Contributor
+
+        self.client = Client()
+
+        # Create test repository
+        self.repo = Repo.objects.create(
+            name="TestRepo", url="https://github.com/test/repo", description="Test repository"
+        )
+
+        # Create test contributors
+        self.contributor1 = Contributor.objects.create(
+            name="testuser1",
+            github_id=12345,
+            github_url="https://github.com/testuser1",
+            avatar_url="https://avatars.githubusercontent.com/u/12345",
+            contributor_type="User",
+            contributions=10,
+        )
+
+        self.contributor2 = Contributor.objects.create(
+            name="testuser2",
+            github_id=67890,
+            github_url="https://github.com/testuser2",
+            avatar_url="https://avatars.githubusercontent.com/u/67890",
+            contributor_type="User",
+            contributions=5,
+        )
+
+        # Create test issues with $5 label
+        self.issue1 = GitHubIssue.objects.create(
+            issue_id=1,
+            title="Test Issue 1",
+            state="closed",
+            type="issue",
+            has_dollar_tag=True,  # $5 label
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/test/repo/issues/1",
+            repo=self.repo,
+        )
+
+        self.issue2 = GitHubIssue.objects.create(
+            issue_id=2,
+            title="Test Issue 2",
+            state="closed",
+            type="issue",
+            has_dollar_tag=True,  # $5 label
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/test/repo/issues/2",
+            repo=self.repo,
+        )
+
+        # Create test PRs linked to issues
+        self.pr1 = GitHubIssue.objects.create(
+            issue_id=101,
+            title="Test PR 1",
+            state="closed",
+            type="pull_request",
+            is_merged=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            merged_at=timezone.now(),
+            url="https://github.com/test/repo/pull/101",
+            repo=self.repo,
+            contributor=self.contributor1,
+        )
+
+        self.pr2 = GitHubIssue.objects.create(
+            issue_id=102,
+            title="Test PR 2",
+            state="closed",
+            type="pull_request",
+            is_merged=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            merged_at=timezone.now(),
+            url="https://github.com/test/repo/pull/102",
+            repo=self.repo,
+            contributor=self.contributor1,
+        )
+
+        self.pr3 = GitHubIssue.objects.create(
+            issue_id=103,
+            title="Test PR 3",
+            state="closed",
+            type="pull_request",
+            is_merged=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            merged_at=timezone.now(),
+            url="https://github.com/test/repo/pull/103",
+            repo=self.repo,
+            contributor=self.contributor2,
+        )
+
+        # Link PRs to issues (contributor1 has 2 PRs, contributor2 has 1 PR)
+        self.pr1.linked_issues.add(self.issue1)
+        self.pr2.linked_issues.add(self.issue2)
+        self.pr3.linked_issues.add(self.issue2)
+
+    def test_top_earners_calculation(self):
+        """Test that top earners are calculated correctly based on $5 issues and linked PRs"""
+        response = self.client.get(reverse("index"))
+        self.assertEqual(response.status_code, 200)
+
+        # Check if top_earners is in context
+        self.assertIn("top_earners", response.context)
+        top_earners = response.context["top_earners"]
+
+        # Should have 2 earners
+        self.assertEqual(len(top_earners), 2)
+
+        # contributor1 should be first with $10 (2 PRs × $5)
+        self.assertEqual(top_earners[0].user.username, "testuser1")
+        self.assertEqual(float(top_earners[0].total_earnings), 10.0)
+
+        # contributor2 should be second with $5 (1 PR × $5)
+        self.assertEqual(top_earners[1].user.username, "testuser2")
+        self.assertEqual(float(top_earners[1].total_earnings), 5.0)
+
+    def test_top_earners_only_counts_merged_prs(self):
+        """Test that only merged PRs are counted for earnings"""
+        # Create an unmerged PR linked to a $5 issue
+        unmerged_pr = GitHubIssue.objects.create(
+            issue_id=104,
+            title="Test PR 4 (not merged)",
+            state="open",
+            type="pull_request",
+            is_merged=False,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/test/repo/pull/104",
+            repo=self.repo,
+            contributor=self.contributor1,
+        )
+        unmerged_pr.linked_issues.add(self.issue1)
+
+        response = self.client.get(reverse("index"))
+        top_earners = response.context["top_earners"]
+
+        # contributor1 should still have $10 (only 2 merged PRs counted)
+        contributor1_earnings = next((e for e in top_earners if e.user.username == "testuser1"), None)
+        self.assertIsNotNone(contributor1_earnings)
+        self.assertEqual(float(contributor1_earnings.total_earnings), 10.0)
+
+    def test_top_earners_only_counts_dollar_five_issues(self):
+        """Test that only issues with $5 label are counted"""
+        # Create an issue without $5 label
+        non_dollar_issue = GitHubIssue.objects.create(
+            issue_id=3,
+            title="Test Issue 3 (no $5 label)",
+            state="closed",
+            type="issue",
+            has_dollar_tag=False,  # No $5 label
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/test/repo/issues/3",
+            repo=self.repo,
+        )
+
+        # Create a PR linked to the non-$5 issue
+        pr_for_non_dollar = GitHubIssue.objects.create(
+            issue_id=105,
+            title="Test PR 5",
+            state="closed",
+            type="pull_request",
+            is_merged=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            merged_at=timezone.now(),
+            url="https://github.com/test/repo/pull/105",
+            repo=self.repo,
+            contributor=self.contributor1,
+        )
+        pr_for_non_dollar.linked_issues.add(non_dollar_issue)
+
+        response = self.client.get(reverse("index"))
+        top_earners = response.context["top_earners"]
+
+        # contributor1 should still have $10 (only $5 labeled issues counted)
+        contributor1_earnings = next((e for e in top_earners if e.user.username == "testuser1"), None)
+        self.assertIsNotNone(contributor1_earnings)
+        self.assertEqual(float(contributor1_earnings.total_earnings), 10.0)

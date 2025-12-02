@@ -1471,7 +1471,22 @@ def home(request):
     
     # Convert to a format compatible with the template
     # The template expects objects with 'user' and 'total_earnings' attributes
-    # We'll create a list of dictionaries that match the expected structure
+    # We'll create simple objects that match the expected structure
+    
+    # Helper class to create objects for non-user contributors
+    class SimpleUser:
+        def __init__(self, username, email=''):
+            self.username = username
+            self.email = email
+            # Create empty socialaccount_set mock
+            self.socialaccount_set = type('obj', (object,), {'all': lambda: []})()
+    
+    class EarnerProfile:
+        def __init__(self, user, total_earnings, avatar):
+            self.user = user
+            self.total_earnings = total_earnings
+            self.avatar = avatar
+    
     top_earners = []
     for earner_data in top_earners_list:
         contributor = earner_data['contributor']
@@ -1481,25 +1496,22 @@ def home(request):
         ).first()
         
         if user_profile:
-            # Create a dictionary that matches the template expectations
-            earner_obj = type('obj', (object,), {
-                'user': user_profile.user,
-                'total_earnings': earner_data['total_earned'],
-                'avatar': user_profile.avatar,
-            })()
+            # Use the actual UserProfile and User
+            earner_obj = EarnerProfile(
+                user=user_profile.user,
+                total_earnings=earner_data['total_earned'],
+                avatar=user_profile.avatar,
+            )
             top_earners.append(earner_obj)
         else:
             # If no UserProfile found, create an object with contributor info
             # This allows us to display contributors who aren't registered users
-            earner_obj = type('obj', (object,), {
-                'user': type('obj', (object,), {
-                    'username': contributor.name,
-                    'socialaccount_set': type('obj', (object,), {'all': lambda: []})(),
-                    'email': '',  # No email for non-user contributors
-                })(),
-                'total_earnings': earner_data['total_earned'],
-                'avatar': contributor.avatar_url,
-            })()
+            simple_user = SimpleUser(username=contributor.name)
+            earner_obj = EarnerProfile(
+                user=simple_user,
+                total_earnings=earner_data['total_earned'],
+                avatar=contributor.avatar_url,
+            )
             top_earners.append(earner_obj)
 
     # Get top referrals
