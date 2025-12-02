@@ -1396,6 +1396,9 @@ def home(request):
     # Get recent forum posts
     recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
 
+    # Get recent activities for the feed
+    recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
+
     # Get top bug reporters for current month
     current_time = timezone.now()
     top_bug_reporters = (
@@ -1562,6 +1565,7 @@ def home(request):
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_posts": recent_posts,
+            "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
             "latest_blog_posts": latest_blog_posts,
@@ -1940,10 +1944,15 @@ def management_commands(request):
             command_args = []
             if hasattr(command_class, "add_arguments"):
                 # Create a parser to capture arguments
+                import inspect
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                command_instance = command_class()
+                # Check if command_class is already an instance or a class
+                if inspect.isclass(command_class):
+                    command_instance = command_class()
+                else:
+                    command_instance = command_class
                 command_instance.add_arguments(parser)
 
                 # Extract argument information
@@ -2082,10 +2091,15 @@ def run_management_command(request):
 
             # Create a parser to capture arguments
             if hasattr(command_class, "add_arguments"):
+                import inspect
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                command_instance = command_class()
+                # Check if command_class is already an instance or a class
+                if inspect.isclass(command_class):
+                    command_instance = command_class()
+                else:
+                    command_instance = command_class
                 command_instance.add_arguments(parser)
 
                 # Extract argument information and collect values from POST
