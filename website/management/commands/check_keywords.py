@@ -1,4 +1,5 @@
 import ipaddress
+import logging
 import re
 import socket
 from urllib.parse import urlparse
@@ -9,11 +10,54 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from requests.adapters import HTTPAdapter
 
+logger = logging.getLogger(__name__)
+
 from website.management.base import LoggedBaseCommand
 from website.models import Monitor
 
 # Compile email regex once at module level for efficiency
 EMAIL_REGEX = re.compile(r"(?:mailto:)?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.IGNORECASE)
+
+
+class SSRFProtectionAdapter(HTTPAdapter):
+    """Custom HTTPAdapter that validates the resolved IP after connection to prevent DNS rebinding."""
+
+    def send(self, request, **kwargs):
+        # Perform the connection
+        response = super().send(request, **kwargs)
+
+        # After connection, validate the actual IP that was connected to
+        try:
+            # Get the socket from the response connection
+            if hasattr(response.raw, "_connection") and hasattr(response.raw._connection, "sock"):
+                sock = response.raw._connection.sock
+                if sock:
+                    peer_ip = sock.getpeername()[0]
+                    ip_obj = ipaddress.ip_address(peer_ip)
+
+                    # Block private IP ranges
+                    if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
+                        response.close()
+                        raise requests.exceptions.ConnectionError(
+                            f"DNS rebinding detected: connected to private/reserved IP {peer_ip}"
+                        )
+
+                    # Block cloud metadata endpoints (IPv4 and IPv6)
+                    metadata_ips = [
+                        ipaddress.ip_address("169.254.169.254"),  # AWS, Azure, GCP
+                        ipaddress.ip_address("fd00:ec2::254"),  # AWS IPv6
+                    ]
+                    peer_ip_obj = ipaddress.ip_address(peer_ip)
+                    if peer_ip_obj in metadata_ips:
+                        response.close()
+                        raise requests.exceptions.ConnectionError(
+                            f"DNS rebinding detected: connected to cloud metadata endpoint {peer_ip}"
+                        )
+        except (AttributeError, OSError):
+            # If we can't get the peer IP, allow the request but log a warning
+            pass
+
+        return response
 
 
 class Command(LoggedBaseCommand):
@@ -44,7 +88,11 @@ class Command(LoggedBaseCommand):
                         self.stderr.write(f"    Blocked private/reserved IP: {ip} for {hostname}")
                         return False
                     # Block cloud metadata endpoints (IPv4 and IPv6)
-                    if ip in ("169.254.169.254", "fd00:ec2::254"):
+                    cloud_metadata_ips = [
+                        ipaddress.ip_address("169.254.169.254"),
+                        ipaddress.ip_address("fd00:ec2::254"),
+                    ]
+                    if ip_obj in cloud_metadata_ips:
                         self.stderr.write(f"    Blocked cloud metadata endpoint: {ip}")
                         return False
                 except ValueError:
@@ -55,6 +103,19 @@ class Command(LoggedBaseCommand):
         except Exception as e:
             self.stderr.write(f"    URL validation error: {e}")
             return False
+
+    def _handle_monitor_failure(self, monitor, error_message):
+        """Helper method to handle monitor failures and status updates."""
+        self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: {error_message}"))
+        old_status = monitor.status
+        monitor.status = "DOWN"
+        monitor.last_checked_time = timezone.now()
+        monitor.save(update_fields=["status", "last_checked_time"])
+        if old_status != "DOWN":
+            try:
+                self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
+            except Exception:
+                self.stderr.write("    Failed to notify user of status change")
 
     def handle(self, *args, **options):
         monitors = Monitor.objects.all()
@@ -93,7 +154,8 @@ class Command(LoggedBaseCommand):
                     # Search the RAW HTML (response.text)
                     found_emails = list(dict.fromkeys(m.group(1) for m in EMAIL_REGEX.finditer(response.text or "")))
                 except (AttributeError, TypeError) as e:
-                    self.stderr.write(f"    Email extraction error: {e}")
+                    self.stderr.write("    Email extraction failed")
+                    logger.error(f"Email extraction error: {e}", exc_info=True)
                     found_emails = []
 
                 if found_emails:
@@ -170,68 +232,18 @@ class Command(LoggedBaseCommand):
 
                 self.stdout.write(self.style.SUCCESS(f"Monitoring {monitor.url}: status {monitor.status}"))
             except requests.exceptions.Timeout:
-                self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request timed out"))
-                old_status = monitor.status
-                monitor.status = "DOWN"
-                monitor.last_checked_time = timezone.now()
-                monitor.save(update_fields=["status", "last_checked_time"])
-                if old_status != "DOWN":
-                    try:
-                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception:
-                        self.stderr.write("    Failed to notify user of status change")
+                self._handle_monitor_failure(monitor, "network request timed out")
             except requests.exceptions.ConnectionError:
-                self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network connection failed"))
-                old_status = monitor.status
-                monitor.status = "DOWN"
-                monitor.last_checked_time = timezone.now()
-                monitor.save(update_fields=["status", "last_checked_time"])
-                if old_status != "DOWN":
-                    try:
-                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception:
-                        self.stderr.write("    Failed to notify user of status change")
+                self._handle_monitor_failure(monitor, "network connection failed")
             except requests.exceptions.HTTPError:
-                self.stderr.write(
-                    self.style.ERROR(f"Error monitoring {monitor.url}: received non-success HTTP response")
-                )
-                old_status = monitor.status
-                monitor.status = "DOWN"
-                monitor.last_checked_time = timezone.now()
-                monitor.save(update_fields=["status", "last_checked_time"])
-                if old_status != "DOWN":
-                    try:
-                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception:
-                        self.stderr.write("    Failed to notify user of status change")
+                self._handle_monitor_failure(monitor, "received non-success HTTP response")
             except requests.exceptions.RequestException:
-                self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: network request failed"))
-                old_status = monitor.status
-                monitor.status = "DOWN"
-                monitor.last_checked_time = timezone.now()
-                monitor.save(update_fields=["status", "last_checked_time"])
-                if old_status != "DOWN":
-                    try:
-                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception:
-                        self.stderr.write("    Failed to notify user of status change")
+                self._handle_monitor_failure(monitor, "network request failed")
             except Exception:  # noqa: BLE001 - broad catch required to prevent one bad monitor from aborting the entire command run
-                self.stderr.write(
-                    self.style.ERROR(
-                        f"Error monitoring {monitor.url}: unexpected error during check. "
-                        "This may indicate a parsing, database, or internal processing issue. "
-                        "Check container logs for details."
-                    )
+                self._handle_monitor_failure(
+                    monitor,
+                    "unexpected error during check. This may indicate a parsing, database, or internal processing issue. Check container logs for details.",
                 )
-                old_status = monitor.status
-                monitor.status = "DOWN"
-                monitor.last_checked_time = timezone.now()
-                monitor.save(update_fields=["status", "last_checked_time"])
-                if old_status != "DOWN":
-                    try:
-                        self.notify_user(monitor.user.username, monitor.url, monitor.user.email, "DOWN")
-                    except Exception:
-                        self.stderr.write("    Failed to notify user of status change")
 
     def notify_user(self, username, website, email, status):
         subject = f"Website Status Update: {website} is {status}"

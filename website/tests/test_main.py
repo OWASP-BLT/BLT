@@ -6,7 +6,7 @@ import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import send_mail
-from django.test import Client, LiveServerTestCase, TestCase
+from django.test import Client, StaticLiveServerTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -37,8 +37,9 @@ from ..models import (
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
 
-class MySeleniumTests(LiveServerTestCase):
+class MySeleniumTests(StaticLiveServerTestCase):
     fixtures = ["initial_data.json"]
+    serialized_rollback = True
 
     @classmethod
     def setUpClass(cls):
@@ -165,6 +166,7 @@ class MySeleniumTests(LiveServerTestCase):
             try:
                 self.selenium.save_screenshot("ci_failure_test_post_bug_full_url.png")
             except Exception:
+                # Ignore screenshot failures; screenshot is for debugging only and should not block test failure reporting
                 pass
             print("DEBUG - page source at failure:\n", self.selenium.page_source)
             raise
@@ -202,6 +204,7 @@ class MySeleniumTests(LiveServerTestCase):
             try:
                 self.selenium.save_screenshot("ci_failure_test_post_bug_domain_url.png")
             except Exception:
+                # Ignore screenshot failures; screenshot is for debugging only and should not block test failure reporting
                 pass
             print("DEBUG - page source at failure:\n", self.selenium.page_source)
             raise

@@ -697,8 +697,7 @@ class IssueBaseCreate(object):
                 # Open file using normalized hash
                 original_filename = original_hash if "." in original_hash else f"{original_hash}.png"
                 screenshot_path = os.path.join("uploads", original_filename)
-                try:
-                    reopen = default_storage.open(screenshot_path, "rb")
+                with default_storage.open(screenshot_path, "rb") as reopen:
                     django_file = File(reopen)
                     # Save with unique_hash to avoid collisions
                     obj.screenshot.save(
@@ -706,13 +705,13 @@ class IssueBaseCreate(object):
                         django_file,
                         save=True,
                     )
-                finally:
-                    if "reopen" in locals():
-                        reopen.close()
             except ValidationError:
                 messages.error(self.request, "Invalid screenshot hash provided")
             except FileNotFoundError:
-                messages.error(self.request, "Screenshot file not found. Please upload again.")
+                messages.error(
+                    self.request,
+                    "Screenshot file could not be found. The file may have been deleted or the upload did not complete. Please try uploading the screenshot again.",
+                )
             except (OSError, IOError):
                 messages.error(self.request, "Failed to process screenshot file. Please try again.")
 
