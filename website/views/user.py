@@ -595,6 +595,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
+            .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
             .select_related("contributor", "user_profile__user")
             .values(
                 "contributor__name",
@@ -1644,7 +1645,7 @@ def mark_as_read(request):
         except Exception as e:
             logger.error(f"Error marking notifications as read: {e}")
             return JsonResponse(
-                {"status": "error", "message": "An error occured while marking notifications as read"}, status=400
+                {"status": "error", "message": "An error occurred while marking notifications as read"}, status=400
             )
 
 
@@ -1661,7 +1662,7 @@ def delete_notification(request, notification_id):
         except Exception as e:
             logger.error(f"Error deleting notification: {e}")
             return JsonResponse(
-                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                {"status": "error", "message": "An error occurred while deleting notification, please try again."},
                 status=400,
             )
     else:

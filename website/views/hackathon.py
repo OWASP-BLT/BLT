@@ -1,7 +1,9 @@
 import json
 import logging
+import re
 import time
 from datetime import timedelta
+from urllib.parse import quote, urlparse
 
 import pytz
 import requests
@@ -14,6 +16,7 @@ from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from website.forms import HackathonForm, HackathonPrizeForm, HackathonSponsorForm
@@ -26,11 +29,15 @@ from website.models import (
     HackathonSponsor,
     Organization,
     Repo,
+    Tag,
     UserProfile,
 )
 
 logger = logging.getLogger(__name__)
 REPO_REFRESH_DELAY_SECONDS = getattr(settings, "HACKATHON_REPO_REFRESH_DELAY", 1.0)
+GITHUB_API_PER_PAGE = getattr(settings, "GITHUB_API_PER_PAGE", 100)
+GITHUB_API_TIMEOUT = getattr(settings, "GITHUB_API_TIMEOUT", 30)
+GITHUB_API_RATE_LIMIT_DELAY = getattr(settings, "GITHUB_API_RATE_LIMIT_DELAY", 0.5)
 
 
 class HackathonListView(ListView):
@@ -165,6 +172,42 @@ class HackathonDetailView(DetailView):
         # Total participant count is the sum of both
         return user_profile_count + contributor_count
 
+    def _get_github_merged_prs_url(self, repo, hackathon):
+        """Generate a GitHub search URL for merged PRs during the hackathon timeframe."""
+        # Parse the repo URL to get owner/repo
+        # URL format: https://github.com/owner/repo
+        parsed_url = urlparse(repo.repo_url)
+
+        # Validate it's a GitHub URL
+        if parsed_url.netloc not in ("github.com", "www.github.com"):
+            return None
+
+        path_parts = parsed_url.path.strip("/").split("/")
+
+        # Extract owner and repo name (first two path segments)
+        if len(path_parts) >= 2 and path_parts[0] and path_parts[1]:
+            owner = path_parts[0]
+            repo_name = path_parts[1]
+        else:
+            return None
+
+        # Format dates as YYYY-MM-DD
+        start_date = hackathon.start_time.strftime("%Y-%m-%d")
+        end_date = hackathon.end_time.strftime("%Y-%m-%d")
+
+        # Build the search query
+        # Format: is:pr is:merged repo:owner/repo merged:start_date..end_date
+        # The .. syntax is inclusive on both ends
+        search_query = f"is:pr is:merged repo:{owner}/{repo_name} merged:{start_date}..{end_date}"
+
+        # Add language filter if the repo has a primary language
+        if repo.primary_language:
+            search_query += f" language:{repo.primary_language}"
+
+        # URL encode the query and construct the GitHub search URL
+        encoded_query = quote(search_query)
+        return f"https://github.com/pulls?q={encoded_query}"
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         hackathon = self.get_object()
@@ -177,6 +220,9 @@ class HackathonDetailView(DetailView):
 
         # Get the leaderboard
         context["leaderboard"] = hackathon.get_leaderboard()
+
+        # Get the reviewer leaderboard
+        context["reviewer_leaderboard"] = hackathon.get_reviewer_leaderboard()
 
         # Get repositories with merged PR counts
         repositories = hackathon.repositories.all()
@@ -201,7 +247,16 @@ class HackathonDetailView(DetailView):
                 .count()
             )
 
-            repos_with_pr_counts.append({"repo": repo, "merged_pr_count": merged_pr_count})
+            # Generate the GitHub search URL for merged PRs
+            merged_prs_url = self._get_github_merged_prs_url(repo, hackathon)
+
+            repos_with_pr_counts.append(
+                {
+                    "repo": repo,
+                    "merged_pr_count": merged_pr_count,
+                    "merged_prs_url": merged_prs_url,
+                }
+            )
 
         context["repositories"] = repos_with_pr_counts
 
@@ -669,51 +724,155 @@ def _process_pull_request(pr_data, hackathon, repo):
 
 @login_required
 def add_org_repos_to_hackathon(request, slug):
-    """View to add all organization repositories to a hackathon."""
+    """View to add all organization repositories to a hackathon by fetching fresh from GitHub."""
     hackathon = get_object_or_404(Hackathon, slug=slug)
 
     # Check if user has permission to manage this hackathon
     user = request.user
     if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
         messages.error(request, "You don't have permission to manage this hackathon.")
-        return redirect("hackathons")
+        return redirect("hackathon_detail", slug=slug)
+
+    organization = hackathon.organization
+
+    # Determine the GitHub organization name
+    github_org_name = None
+
+    # First check if the organization has a github_org field set
+    if organization.github_org:
+        github_org_name = organization.github_org
+    # Otherwise try to extract from source_code URL
+    elif organization.source_code:
+        github_url_pattern = r"https?://github\.com/([^/]+)/?.*"
+        match = re.match(github_url_pattern, organization.source_code)
+        if match:
+            github_org_name = match.group(1)
+
+    if not github_org_name:
+        messages.error(
+            request,
+            f"No GitHub organization configured for {organization.name}. "
+            "Please set the GitHub organization name in the organization settings.",
+        )
+        return redirect("hackathon_detail", slug=slug)
+
+    # Check if GitHub token is set
+    if not hasattr(settings, "GITHUB_TOKEN") or not settings.GITHUB_TOKEN:
+        logger.error("GitHub token not set in settings")
+        messages.error(
+            request,
+            "GitHub API token not configured. Please contact the administrator.",
+        )
+        return redirect("hackathon_detail", slug=slug)
 
     try:
-        # Get all repos from the hackathon's organization
-        org_repos = Repo.objects.filter(organization=hackathon.organization)
+        # Fetch all repositories from the GitHub organization
+        headers = {
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json",
+        }
 
-        if not org_repos.exists():
-            messages.warning(
-                request,
-                f"No repositories found for organization {hackathon.organization.name}. "
-                "Please sync the organization's repositories first.",
+        page = 1
+        repos_fetched = 0
+        repos_created = 0
+        repos_updated = 0
+        repos_added_to_hackathon = 0
+        already_in_hackathon = 0
+
+        while True:
+            repos_api_url = f"https://api.github.com/orgs/{github_org_name}/repos"
+            response = requests.get(
+                repos_api_url,
+                params={"page": page, "per_page": GITHUB_API_PER_PAGE, "type": "public"},
+                headers=headers,
+                timeout=GITHUB_API_TIMEOUT,
             )
-            return redirect("hackathons")
 
-        # Add all org repos to the hackathon
-        added_count = 0
-        already_added_count = 0
+            if response.status_code == 404:
+                messages.error(request, f"GitHub organization '{github_org_name}' not found.")
+                return redirect("hackathon_detail", slug=slug)
+            elif response.status_code == 401:
+                messages.error(request, "GitHub authentication failed. Please contact the administrator.")
+                return redirect("hackathon_detail", slug=slug)
+            elif response.status_code == 403:
+                if "rate limit" in response.text.lower():
+                    messages.error(request, "GitHub API rate limit exceeded. Please try again later.")
+                else:
+                    messages.error(request, "GitHub API access forbidden.")
+                return redirect("hackathon_detail", slug=slug)
+            elif response.status_code != 200:
+                messages.error(request, "Unable to fetch repositories from GitHub. Please try again later.")
+                return redirect("hackathon_detail", slug=slug)
 
-        for repo in org_repos:
-            if hackathon.repositories.filter(id=repo.id).exists():
-                already_added_count += 1
-            else:
-                hackathon.repositories.add(repo)
-                added_count += 1
+            repos_data = response.json()
+            if not repos_data:
+                break
 
-        if added_count > 0:
+            for repo_data in repos_data:
+                repos_fetched += 1
+
+                # Create or update the repository in the database
+                repo, created = Repo.objects.update_or_create(
+                    repo_url=repo_data["html_url"],
+                    defaults={
+                        "name": repo_data.get("name", "Unknown"),
+                        "description": repo_data.get("description") or "",
+                        "primary_language": repo_data.get("language") or "",
+                        "organization": organization,
+                        "stars": repo_data.get("stargazers_count", 0),
+                        "forks": repo_data.get("forks_count", 0),
+                        "open_issues": repo_data.get("open_issues_count", 0),
+                        "watchers": repo_data.get("watchers_count", 0),
+                        "is_archived": repo_data.get("archived", False),
+                        "size": repo_data.get("size", 0),
+                    },
+                )
+
+                if created:
+                    repos_created += 1
+                else:
+                    repos_updated += 1
+
+                # Add topics as tags
+                if repo_data.get("topics"):
+                    for topic in repo_data["topics"]:
+                        tag_slug = slugify(topic)
+                        tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": topic})
+                        repo.tags.add(tag)
+
+                # Add repo to hackathon if not already added
+                if hackathon.repositories.filter(id=repo.id).exists():
+                    already_in_hackathon += 1
+                else:
+                    hackathon.repositories.add(repo)
+                    repos_added_to_hackathon += 1
+
+            page += 1
+            # Small delay to avoid hitting GitHub rate limits
+            time.sleep(GITHUB_API_RATE_LIMIT_DELAY)
+
+        # Build success message
+        if repos_added_to_hackathon > 0:
             messages.success(
                 request,
-                f"Successfully added {added_count} repositories to {hackathon.name}. "
-                f"({already_added_count} were already added)",
+                f"Successfully fetched {repos_fetched} repositories from GitHub. "
+                f"Added {repos_added_to_hackathon} new repositories to {hackathon.name}. "
+                f"({already_in_hackathon} were already added, "
+                f"{repos_created} new repos created, {repos_updated} existing repos updated)",
             )
         else:
             messages.info(
                 request,
-                f"All {already_added_count} repositories from {hackathon.organization.name} "
-                "are already part of this hackathon.",
+                f"Fetched {repos_fetched} repositories from GitHub. "
+                f"All repositories from {github_org_name} are already part of this hackathon. "
+                f"({repos_updated} existing repos updated)",
             )
-    except Exception:
-        messages.error(request, "An error occurred while adding repositories to the hackathon.")
 
-    return redirect("hackathons")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Network error while fetching GitHub repos: {e}")
+        messages.error(request, "Network error while fetching repositories from GitHub. Please try again later.")
+    except Exception:
+        logger.exception("Unexpected error while adding org repos to hackathon")
+        messages.error(request, "An unexpected error occurred. Please try again later.")
+
+    return redirect("hackathon_detail", slug=slug)
