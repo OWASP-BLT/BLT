@@ -79,75 +79,91 @@ def reverse_migration(apps, schema_editor):
     logger.warning("Reversing migration 0259_make_email_unique: Deleted users cannot be restored.")
 
 
-def get_create_index_sql(apps, schema_editor):
+def create_email_unique_index(apps, schema_editor):
     """
-    Returns appropriate SQL for creating unique index based on database vendor.
+    Create unique index on email field based on database vendor.
 
     Creates a partial unique constraint on non-empty emails. Multiple users can
     have empty or NULL emails (which is valid per Django's User model), but each
     non-empty email must be unique.
-
-    This function is called at migration execution time (not import time) to ensure
-    the correct database connection is used in multi-database setups.
     """
     vendor = schema_editor.connection.vendor
 
     if vendor == "postgresql":
-        # PostgreSQL - partial unique constraint excluding empty strings
-        return """
-            DO $$$
+        # PostgreSQL - partial unique constraint excluding empty strings and NULLs
+        sql = """
+            DO $$
             BEGIN
                 IF NOT EXISTS (
                     SELECT 1 FROM pg_indexes 
                     WHERE indexname = 'auth_user_email_unique'
                 ) THEN
                     CREATE UNIQUE INDEX auth_user_email_unique 
-                    ON auth_user (email) WHERE email != '';
+                    ON auth_user (email) WHERE email IS NOT NULL AND email != '';
                 END IF;
             END $$;
         """
     elif vendor == "sqlite":
-        # SQLite - partial unique constraint excluding empty strings
-        return """
+        # SQLite - partial unique constraint excluding empty strings and NULLs
+        sql = """
             CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
-            ON auth_user (email) WHERE email != '';
+            ON auth_user (email) WHERE email IS NOT NULL AND email != '';
         """
     elif vendor == "mysql":
         # MySQL doesn't support partial indexes with WHERE clause
         # We create a full unique index, but the application must handle empty emails
         # Note: This means on MySQL, only one user can have an empty email
-        return """
+        sql = """
             CREATE UNIQUE INDEX auth_user_email_unique 
-            ON auth_user (email(255));
+            ON auth_user (email(254));
         """
     else:
         # Fallback - attempt partial unique constraint
-        return """
+        sql = """
             CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
-            ON auth_user (email) WHERE email != '';
+            ON auth_user (email) WHERE email IS NOT NULL AND email != '';
         """
 
+    schema_editor.execute(sql)
 
-def get_drop_index_sql(apps, schema_editor):
+
+def drop_email_unique_index(apps, schema_editor):
     """
-    Returns appropriate SQL for dropping the unique index.
+    Drop the unique index on email field.
 
     Handles PostgreSQL, SQLite, and MySQL properly.
     Returns no-op for other databases.
-
-    This function is called at migration execution time (not import time) to ensure
-    the correct database connection is used in multi-database setups.
     """
     vendor = schema_editor.connection.vendor
 
     if vendor == "postgresql":
-        return "DROP INDEX IF EXISTS auth_user_email_unique;"
+        sql = "DROP INDEX IF EXISTS auth_user_email_unique;"
     elif vendor == "sqlite":
-        return "DROP INDEX IF EXISTS auth_user_email_unique;"
+        sql = "DROP INDEX IF EXISTS auth_user_email_unique;"
     elif vendor == "mysql":
-        return "DROP INDEX auth_user_email_unique ON auth_user;"
+        # MySQL doesn't support IF EXISTS in DROP INDEX
+        # Check if index exists before dropping
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT COUNT(1) 
+                FROM information_schema.statistics 
+                WHERE table_schema = DATABASE() 
+                AND table_name = 'auth_user' 
+                AND index_name = 'auth_user_email_unique'
+            """
+            )
+            index_exists = cursor.fetchone()[0] > 0
+
+        if index_exists:
+            sql = "DROP INDEX auth_user_email_unique ON auth_user;"
+        else:
+            sql = None
     else:
-        return "SELECT 1;"  # No-op SQL
+        sql = None
+
+    if sql:
+        schema_editor.execute(sql)
 
 
 class Migration(migrations.Migration):
@@ -171,10 +187,10 @@ class Migration(migrations.Migration):
         # Step 2: Add unique constraint on non-empty emails
         # Partial unique constraint allows multiple users with empty emails (valid per Django's User model)
         # but enforces uniqueness for non-empty emails
-        # SQL is selected at migration execution time based on the active database connection,
+        # SQL is generated and executed at runtime based on the active database connection,
         # ensuring correct behavior in multi-database setups
-        migrations.RunSQL(
-            sql=get_create_index_sql,
-            reverse_sql=get_drop_index_sql,
+        migrations.RunPython(
+            code=create_email_unique_index,
+            reverse_code=drop_email_unique_index,
         ),
     ]
