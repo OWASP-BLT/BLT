@@ -339,6 +339,7 @@ class RepoDetailView(DetailView):
             owner, repo_name = parts[0], parts[1]
             
             # GraphQL query to fetch projects
+            # Fetch first 10 items to display, limiting API overhead
             query = """
             query($owner: String!, $repo: String!) {
                 repository(owner: $owner, name: $repo) {
@@ -351,7 +352,7 @@ class RepoDetailView(DetailView):
                             public
                             closed
                             number
-                            items(first: 20) {
+                            items(first: 10) {
                                 totalCount
                                 nodes {
                                     id
@@ -428,7 +429,7 @@ class RepoDetailView(DetailView):
                             "is_closed": project.get("closed", False),
                             "number": project.get("number"),
                             "total_items": total_items,
-                            "issues": issues[:10],  # Limit to first 10 for display
+                            "issues": issues,  # Already limited by GraphQL query
                             "status": "Closed" if project.get("closed") else "Open"
                         }
                         processed_projects.append(processed_project)

@@ -1094,7 +1094,15 @@
                                                 <div class="space-y-2">
                                                     {% for issue in project.issues %}
                                                         <div class="flex items-center text-sm">
-                                                            <span class="inline-block w-2 h-2 rounded-full mr-2 {% if issue.state == 'OPEN' %}bg-green-500{% else %}bg-purple-500{% endif %}"></span>
+                                                            {% if issue.state == 'OPEN' %}
+                                                                <span class="inline-block w-2 h-2 rounded-full mr-2 bg-green-500"></span>
+                                                            {% elif issue.state == 'MERGED' %}
+                                                                <span class="inline-block w-2 h-2 rounded-full mr-2 bg-purple-500"></span>
+                                                            {% elif issue.state == 'CLOSED' %}
+                                                                <span class="inline-block w-2 h-2 rounded-full mr-2 bg-red-500"></span>
+                                                            {% else %}
+                                                                <span class="inline-block w-2 h-2 rounded-full mr-2 bg-gray-500"></span>
+                                                            {% endif %}
                                                             <a href="{{ issue.url }}"
                                                                target="_blank"
                                                                class="text-[#e74c3c] hover:underline flex-1">
@@ -1106,9 +1114,9 @@
                                                         </div>
                                                     {% endfor %}
                                                 </div>
-                                                {% if project.total_items > 10 %}
+                                                {% if project.total_items > project.issues|length %}
                                                     <div class="mt-2 text-xs text-gray-500 dark:text-gray-500">
-                                                        Showing 10 of {{ project.total_items }} items
+                                                        Showing {{ project.issues|length }} of {{ project.total_items }} items
                                                     </div>
                                                 {% endif %}
                                             </div>
