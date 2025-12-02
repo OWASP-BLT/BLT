@@ -145,7 +145,8 @@ def get_drop_index_sql(apps, schema_editor):
     elif vendor == "sqlite":
         return "DROP INDEX IF EXISTS auth_user_email_unique;"
     elif vendor == "mysql":
-        return "DROP INDEX auth_user_email_unique ON auth_user;"
+        # MySQL 8.0.1+ supports IF EXISTS; for older versions this may error if index doesn't exist
+        return "DROP INDEX IF EXISTS auth_user_email_unique ON auth_user;"
     else:
         return "SELECT 1;"  # No-op SQL
 
