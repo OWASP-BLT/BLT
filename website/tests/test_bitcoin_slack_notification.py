@@ -168,6 +168,54 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         call_args = mock_client.chat_postMessage.call_args
         self.assertEqual(call_args.kwargs["channel"], "C222")
 
+    @patch("website.views.bitcoin.WebClient")
+    def test_slack_notification_channel_not_found(self, mock_webclient_class):
+        """Test that submission succeeds when #project-blt-bacon channel doesn't exist"""
+        # Remove default channel ID
+        self.slack_integration.default_channel_id = None
+        self.slack_integration.save()
+
+        # Mock Slack WebClient - channel not found in any page
+        mock_client = MagicMock()
+        mock_webclient_class.return_value = mock_client
+        mock_client.conversations_list.side_effect = [
+            {
+                "ok": True,
+                "channels": [{"id": "C111", "name": "general"}, {"id": "C222", "name": "other"}],
+                "response_metadata": {"next_cursor": "cursor123"},
+            },
+            {
+                "ok": True,
+                "channels": [{"id": "C333", "name": "random"}],
+                "response_metadata": {"next_cursor": ""},
+            },
+        ]
+
+        # Create submission
+        data = {
+            "github_url": "https://github.com/OWASP-BLT/BLT/pull/123",
+            "contribution_type": "security",
+            "description": "Fixed a security vulnerability",
+            "bacon_amount": 100,
+            "status": "in_review",
+        }
+
+        response = self.client.post(
+            reverse("bacon_submit"),
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+
+        # Verify submission was created successfully
+        self.assertEqual(response.status_code, 201)
+        submission = BaconSubmission.objects.first()
+        self.assertIsNotNone(submission)
+
+        # Verify channel lookup was attempted (pagination handled)
+        self.assertEqual(mock_client.conversations_list.call_count, 2)
+        # Verify chat_postMessage was never called since channel wasn't found
+        mock_client.chat_postMessage.assert_not_called()
+
     def test_submission_succeeds_when_slack_fails(self):
         """Test that submission creation succeeds even if Slack notification fails"""
         # Remove Slack integration to simulate failure
