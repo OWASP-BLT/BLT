@@ -152,9 +152,7 @@ class BaconSubmissionView(View):
 
                 if owasp_org:
                     # Get Slack integration for the organization
-                    slack_integration = SlackIntegration.objects.filter(
-                        integration__organization=owasp_org
-                    ).first()
+                    slack_integration = SlackIntegration.objects.filter(integration__organization=owasp_org).first()
 
                     if slack_integration and slack_integration.bot_access_token:
                         # Get credentials from database
@@ -170,9 +168,7 @@ class BaconSubmissionView(View):
                             try:
                                 cursor = None
                                 while True:
-                                    channels_response = client.conversations_list(
-                                        types="public_channel", cursor=cursor
-                                    )
+                                    channels_response = client.conversations_list(types="public_channel", cursor=cursor)
                                     if channels_response.get("ok"):
                                         for channel in channels_response.get("channels", []):
                                             if channel.get("name") == "project-blt-bacon":
@@ -181,10 +177,7 @@ class BaconSubmissionView(View):
                                         if channel_id:
                                             break
                                         # Check for next page
-                                        cursor = (
-                                            channels_response.get("response_metadata", {})
-                                            .get("next_cursor")
-                                        )
+                                        cursor = channels_response.get("response_metadata", {}).get("next_cursor")
                                         if not cursor:
                                             break
                                     else:

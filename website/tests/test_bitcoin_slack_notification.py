@@ -356,7 +356,9 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         mock_client = MagicMock()
         mock_webclient_class.return_value = mock_client
         # Simulate Slack API error
-        mock_client.chat_postMessage.side_effect = SlackApiError("Invalid channel", response={"error": "channel_not_found"})
+        mock_client.chat_postMessage.side_effect = SlackApiError(
+            "Invalid channel", response={"error": "channel_not_found"}
+        )
 
         data = {
             "github_url": "https://github.com/OWASP-BLT/BLT/pull/123",
@@ -376,4 +378,3 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         self.assertEqual(response.status_code, 201)
         submission = BaconSubmission.objects.first()
         self.assertIsNotNone(submission)
-
