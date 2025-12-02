@@ -168,7 +168,7 @@ class IPRestrictMiddleware:
                     IP.objects.create(address=ip, agent=agent, count=1, path=path)
         except Exception as e:
             # Log the error but don't let it break the request
-            logger.error(f"Error recording IP {ip}: {str(e)}")
+            logger.error(f"Error recording IP {ip}: {str(e)}", exc_info=True)
 
     def __call__(self, request):
         return self.process_request_sync(request)
