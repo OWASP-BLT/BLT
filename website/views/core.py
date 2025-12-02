@@ -49,6 +49,7 @@ from website.models import (
     IP,
     Activity,
     Badge,
+    Contributor,
     DailyStats,
     Domain,
     ForumCategory,
@@ -1421,29 +1422,85 @@ def home(request):
         .order_by("-total_prs")[:5]
     )
 
-    # Get top earners - calculate from GitHub issues payments if they have linked GitHub issues,
-    # otherwise use the existing winnings field
-    # Annotate each UserProfile with total GitHub issue payments
-    top_earners = (
-        UserProfile.objects.annotate(
-            github_earnings=Coalesce(
-                Sum("github_issues__p2p_amount_usd", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-                Value(0),
-                output_field=DecimalField(),
-            ),
-            has_github_issues=Count("github_issues", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
-            total_earnings=Case(
-                # If user has GitHub issues with payments, use those
-                When(has_github_issues__gt=0, then=F("github_earnings")),
-                # Otherwise fall back to the existing winnings field
-                default=Coalesce(F("winnings"), Value(0), output_field=DecimalField()),
-                output_field=DecimalField(),
-            ),
+    # Get top earners - calculate based on Issues with $5 label and their linked PRs
+    # 
+    # CALCULATION METHODOLOGY:
+    # 1. Find all Issues (not PRs) that have the $5 label (has_dollar_tag=True)
+    # 2. Find all merged Pull Requests that are linked to those $5 issues
+    # 3. Group by the PR contributor (the person who created the PR)
+    # 4. Count the number of linked PRs per contributor
+    # 5. Calculate earnings: number of linked PRs × $5
+    #
+    # This differs from the old calculation which used p2p_amount_usd payments.
+    # The new approach rewards contributors based on merged PRs that solve $5 issues,
+    # regardless of whether actual payment transactions were recorded.
+    
+    # Step 1 & 2: Find all merged PRs linked to issues with $5 label
+    # We query PRs (type='pull_request') that are merged and linked to issues with has_dollar_tag=True
+    dollar_five_prs = (
+        GitHubIssue.objects.filter(
+            type="pull_request",
+            is_merged=True,
+            linked_issues__has_dollar_tag=True,  # PR is linked to an issue with $5 label
         )
-        .filter(total_earnings__gt=0)
-        .select_related("user")
-        .order_by("-total_earnings")[:5]
+        .distinct()  # Avoid counting the same PR multiple times if linked to multiple $5 issues
     )
+    
+    # Step 3 & 4: Group by contributor and count PRs
+    contributor_earnings = {}
+    BOUNTY_AMOUNT = 5  # $5 per issue
+    
+    for pr in dollar_five_prs:
+        if pr.contributor:
+            contributor_id = pr.contributor.id
+            if contributor_id not in contributor_earnings:
+                contributor_earnings[contributor_id] = {
+                    'contributor': pr.contributor,
+                    'pr_count': 0,
+                    'total_earned': 0,
+                }
+            contributor_earnings[contributor_id]['pr_count'] += 1
+            contributor_earnings[contributor_id]['total_earned'] += BOUNTY_AMOUNT
+    
+    # Step 5: Convert to list and sort by earnings, then take top 5
+    top_earners_list = sorted(
+        contributor_earnings.values(),
+        key=lambda x: x['total_earned'],
+        reverse=True
+    )[:5]
+    
+    # Convert to a format compatible with the template
+    # The template expects objects with 'user' and 'total_earnings' attributes
+    # We'll create a list of dictionaries that match the expected structure
+    top_earners = []
+    for earner_data in top_earners_list:
+        contributor = earner_data['contributor']
+        # Try to find associated UserProfile via github_issues relationship
+        user_profile = UserProfile.objects.filter(
+            github_issues__contributor=contributor
+        ).first()
+        
+        if user_profile:
+            # Create a dictionary that matches the template expectations
+            earner_obj = type('obj', (object,), {
+                'user': user_profile.user,
+                'total_earnings': earner_data['total_earned'],
+                'avatar': user_profile.avatar,
+            })()
+            top_earners.append(earner_obj)
+        else:
+            # If no UserProfile found, create an object with contributor info
+            # This allows us to display contributors who aren't registered users
+            earner_obj = type('obj', (object,), {
+                'user': type('obj', (object,), {
+                    'username': contributor.name,
+                    'socialaccount_set': type('obj', (object,), {'all': lambda: []})(),
+                    'email': '',  # No email for non-user contributors
+                })(),
+                'total_earnings': earner_data['total_earned'],
+                'avatar': contributor.avatar_url,
+            })()
+            top_earners.append(earner_obj)
 
     # Get top referrals
     top_referrals = (
