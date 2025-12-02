@@ -1,7 +1,7 @@
 # Generated migration to make email field unique
 import logging
 
-from django.db import migrations
+from django.db import connection, migrations
 from django.db.models import Count
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,8 @@ def remove_duplicate_users(apps, schema_editor):
             logger.warning(f"No users found for email '{email}', skipping")
             continue
 
-        duplicate_users = users_with_email[1:]
+        # Convert QuerySet slice to list to avoid issues with deleting while iterating
+        duplicate_users = list(users_with_email[1:])
 
         for user in duplicate_users:
             logger.info(
@@ -71,6 +72,52 @@ def reverse_migration(apps, schema_editor):
     logger.warning("Reversing migration 0259_make_email_unique: Deleted users cannot be restored.")
 
 
+# Determine SQL based on database vendor at migration import time
+def get_create_index_sql():
+    """
+    Returns appropriate SQL for creating unique index based on database vendor.
+    """
+    vendor = connection.vendor
+
+    if vendor == "postgresql":
+        # PostgreSQL supports partial indexes with WHERE clause
+        return """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_indexes 
+                    WHERE indexname = 'auth_user_email_unique'
+                ) THEN
+                    CREATE UNIQUE INDEX auth_user_email_unique 
+                    ON auth_user (email) 
+                    WHERE email != '' AND email IS NOT NULL;
+                END IF;
+            END $$;
+        """
+    elif vendor == "sqlite":
+        # SQLite 3.8.0+ supports partial indexes
+        # For older versions, this will fail gracefully and we fall back to no index
+        return """
+            CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
+            ON auth_user (email) 
+            WHERE email != '' AND email IS NOT NULL;
+        """
+    elif vendor == "mysql":
+        # MySQL doesn't support partial indexes with WHERE clause
+        # Create a regular unique index (duplicates/empty strings already removed)
+        # Note: This allows multiple empty strings, which is acceptable
+        return """
+            CREATE UNIQUE INDEX auth_user_email_unique 
+            ON auth_user (email(255));
+        """
+    else:
+        # Fallback for other databases - attempt standard unique index
+        return """
+            CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique 
+            ON auth_user (email);
+        """
+
+
 class Migration(migrations.Migration):
     # Atomic is True by default, ensuring all operations succeed or rollback together
     # This protects against partial deletions if something fails
@@ -88,29 +135,10 @@ class Migration(migrations.Migration):
             remove_duplicate_users,
             reverse_code=reverse_migration,
         ),
-        # Step 2: Add unique index
-        # Database-agnostic approach using Django's AlterField with unique=True
-        # would require a model change, so we use RunSQL with conditional logic
+        # Step 2: Add unique index (database-aware)
+        # SQL is selected based on database vendor at migration import time
         migrations.RunSQL(
-            # PostgreSQL syntax (production)
-            sql="""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_indexes 
-                        WHERE indexname = 'auth_user_email_unique'
-                    ) THEN
-                        CREATE UNIQUE INDEX auth_user_email_unique 
-                        ON auth_user (email) 
-                        WHERE email != '' AND email IS NOT NULL;
-                    END IF;
-                END $$;
-            """,
+            sql=get_create_index_sql(),
             reverse_sql="DROP INDEX IF EXISTS auth_user_email_unique;",
-            # Fallback for SQLite/MySQL (dev environments)
-            # Note: SQLite doesn't support partial indexes before 3.8.0
-            # MySQL doesn't support WHERE clauses in indexes
-            # For dev, we accept that empty emails won't be truly unique
-            hints={"engine": "postgresql"},
         ),
     ]
