@@ -1180,6 +1180,7 @@ class Monitor(models.Model):
         ],
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    notes = models.TextField(blank=True, default="", help_text="Notes about detected emails and other monitoring details")
 
     def __str__(self):
         return f"Monitor for {self.url} by {self.user}"

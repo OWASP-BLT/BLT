@@ -27,8 +27,13 @@ if not SLACK_BOT_TOKEN or not SLACK_SIGNING_SECRET:
     app = None
     handler = None
 else:
-    app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
-    handler = SlackRequestHandler(app)
+    try:
+        app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
+        handler = SlackRequestHandler(app)
+    except Exception as e:
+        logger.warning(f"Failed to initialize Slack app: {e}. Slack integration disabled.")
+        app = None
+        handler = None
 
 pagination_data = {}
 
