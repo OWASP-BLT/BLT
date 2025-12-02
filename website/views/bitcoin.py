@@ -20,6 +20,26 @@ from website.models import BaconEarning, BaconSubmission, Badge, Organization, S
 logger = logging.getLogger(__name__)
 
 
+def slack_escape(text):
+    """
+    Escape Slack markdown characters in text to prevent formatting issues.
+    Escapes: _, *, `, ~, &, <, >
+    IMPORTANT: Escape '&' first to avoid corrupting HTML entities.
+    """
+    if not text:
+        return text
+    return (
+        str(text)
+        .replace("&", "&amp;")
+        .replace("*", "\\*")
+        .replace("_", "\\_")
+        .replace("`", "\\`")
+        .replace("~", "\\~")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+
+
 # @login_required
 def batch_send_bacon_tokens_view(request):
     # Get all users with non-zero tokens_earned
@@ -180,29 +200,25 @@ class BaconSubmissionView(View):
                         if channel_id:
                             # Sanitize description for Slack markdown (escape special characters)
                             # Slack markdown uses *, _, `, ~, <, >, & for formatting
-                            # IMPORTANT: Escape '&' first to avoid corrupting HTML entities
                             sanitized_description = description[:200]
-                            sanitized_description = (
-                                sanitized_description.replace("&", "&amp;")
-                                .replace("*", "\\*")
-                                .replace("_", "\\_")
-                                .replace("`", "\\`")
-                                .replace("~", "\\~")
-                                .replace("<", "&lt;")
-                                .replace(">", "&gt;")
-                            )
+                            sanitized_description = slack_escape(sanitized_description)
                             if len(description) > 200:
                                 sanitized_description += "..."
+
+                            # Escape username and other user-provided fields for Slack markdown
+                            escaped_username = slack_escape(request.user.username)
+                            escaped_type = slack_escape(contribution_type)
+                            escaped_status = slack_escape(status)
 
                             # Build the message
                             message = (
                                 f"*New BACON Claim Submitted!*\n\n"
-                                f"• *User:* {request.user.username}\n"
-                                f"• *Type:* {contribution_type}\n"
+                                f"• *User:* {escaped_username}\n"
+                                f"• *Type:* {escaped_type}\n"
                                 f"• *PR:* {github_url}\n"
                                 f"• *Description:* {sanitized_description}\n"
                                 f"• *Amount:* {bacon_amount} BACON\n"
-                                f"• *Status:* {status}"
+                                f"• *Status:* {escaped_status}"
                             )
 
                             # Send to Slack

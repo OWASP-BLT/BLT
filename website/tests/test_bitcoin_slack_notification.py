@@ -306,6 +306,49 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         self.assertIn("accepted", message_text)  # Status
 
     @patch("website.views.bitcoin.WebClient")
+    def test_slack_notification_escapes_username_markdown(self, mock_webclient_class):
+        """Test that username with Slack markdown characters is properly escaped"""
+        # Create user with markdown characters in username
+        user_with_markdown = User.objects.create_user(
+            username="user_with_*bold*_underscore_`code`",
+            password="testpass123",
+        )
+        self.client.login(username=user_with_markdown.username, password="testpass123")
+
+        mock_client = MagicMock()
+        mock_webclient_class.return_value = mock_client
+        mock_client.chat_postMessage.return_value = {"ok": True}
+
+        data = {
+            "github_url": "https://github.com/OWASP-BLT/BLT/pull/123",
+            "contribution_type": "security",
+            "description": "Test description",
+            "bacon_amount": 100,
+            "status": "in_review",
+        }
+
+        response = self.client.post(
+            reverse("bacon_submit"),
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+
+        # Verify username was escaped in Slack message
+        mock_client.chat_postMessage.assert_called_once()
+        call_args = mock_client.chat_postMessage.call_args
+        message_text = call_args.kwargs["text"]
+
+        # Check that markdown characters are escaped
+        self.assertIn("\\*bold\\*", message_text)
+        self.assertIn("\\_underscore\\_", message_text)
+        self.assertIn("\\`code\\`", message_text)
+        # Verify original unescaped version is NOT present
+        self.assertNotIn("*bold*", message_text)
+        self.assertNotIn("_underscore_", message_text)
+
+    @patch("website.views.bitcoin.WebClient")
     def test_slack_api_error_does_not_fail_submission(self, mock_webclient_class):
         """Test that Slack API errors don't prevent submission creation"""
         from slack_sdk.errors import SlackApiError
