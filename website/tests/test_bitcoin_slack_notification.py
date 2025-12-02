@@ -176,15 +176,22 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         self.slack_integration.default_channel_id = None
         self.slack_integration.save()
 
-        # Mock Slack WebClient - channel not found in any page
+        # Mock Slack WebClient - channel not found in any page (tests pagination)
         mock_client = MagicMock()
         mock_webclient_class.return_value = mock_client
-        # Use return_value instead of side_effect to prevent infinite loop if called more than expected
-        mock_client.conversations_list.return_value = {
-            "ok": True,
-            "channels": [{"id": "C111", "name": "general"}, {"id": "C222", "name": "other"}],
-            "response_metadata": {"next_cursor": ""},  # Empty cursor to stop pagination
-        }
+        # Use side_effect with enough responses to test pagination, but return empty cursor on final call
+        mock_client.conversations_list.side_effect = [
+            {
+                "ok": True,
+                "channels": [{"id": "C111", "name": "general"}, {"id": "C222", "name": "other"}],
+                "response_metadata": {"next_cursor": "cursor123"},
+            },
+            {
+                "ok": True,
+                "channels": [{"id": "C333", "name": "random"}],
+                "response_metadata": {"next_cursor": ""},  # Empty cursor stops pagination
+            },
+        ]
 
         # Create submission
         data = {
@@ -206,8 +213,8 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         submission = BaconSubmission.objects.first()
         self.assertIsNotNone(submission)
 
-        # Verify channel lookup was attempted (should be called once since cursor is empty)
-        self.assertEqual(mock_client.conversations_list.call_count, 1)
+        # Verify channel lookup was attempted (pagination handled - called twice)
+        self.assertEqual(mock_client.conversations_list.call_count, 2)
         # Verify chat_postMessage was never called since channel wasn't found
         mock_client.chat_postMessage.assert_not_called()
 
