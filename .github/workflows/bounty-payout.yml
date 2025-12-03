@@ -107,7 +107,7 @@ jobs:
             const prCreatedAt = new Date(pr.created_at);
 
             if (bountyLabelDetails.durationHours) {
-              const events = await github.paginate(github.rest.issues.listEvents, {
+              const events = await github.paginate(github.rest.issues.listTimelineEvents, {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: bountyIssue.number,
@@ -115,7 +115,7 @@ jobs:
               });
 
               const labelEvent = events
-                .filter(event => event.event === 'labeled' && event.label && event.label.name === bountyLabelDetails.labelName)
+                .filter(e => e.event === "labeled" && e.label?.name === bountyLabelDetails.labelName)
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
 
               const labelAttachedAt = labelEvent ? new Date(labelEvent.created_at) : new Date(bountyIssue.created_at);
