@@ -1,8 +1,11 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 
 class UserProfileUpdateTest(TestCase):
@@ -246,16 +249,11 @@ class UserProfileVisitCounterTest(TestCase):
 
     def test_update_visit_counter_different_days(self):
         """Test that visits on different days increment both counters"""
-        from datetime import timedelta
-
-        from django.utils import timezone
-
         # First visit
         self.profile.update_visit_counter()
         self.profile.refresh_from_db()
         first_daily_count = self.profile.daily_visit_count
         first_visit_count = self.profile.visit_count
-        first_visit_day = self.profile.last_visit_day
 
         # Manually set the last_visit_day to yesterday to simulate a different day visit
         yesterday = timezone.now().date() - timedelta(days=1)
@@ -274,8 +272,6 @@ class UserProfileVisitCounterTest(TestCase):
 
     def test_update_visit_counter_atomic_operations(self):
         """Test that update_visit_counter uses atomic operations to prevent transaction errors"""
-        from django.db import transaction
-
         # This test ensures the method works within a transaction without calling save()
         # which would cause TransactionManagementError in certain scenarios
 
@@ -295,7 +291,6 @@ class UserProfileVisitCounterTest(TestCase):
 
     def test_update_visit_counter_no_transaction_error(self):
         """Test that update_visit_counter doesn't raise TransactionManagementError"""
-        from django.db import transaction
 
         # This test ensures the method doesn't raise TransactionManagementError
         # when called multiple times within the same transaction
