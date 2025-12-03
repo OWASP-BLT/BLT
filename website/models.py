@@ -986,13 +986,15 @@ class UserProfile(models.Model):
         """
         Update daily visit counter if last visit was on a different day
         """
-        from django.db import connection
-
         today = timezone.now().date()
 
         # Skip if we're in a broken transaction to avoid TransactionManagementError
-        if connection.in_atomic_block and connection.needs_rollback:
-            return self.daily_visit_count
+        try:
+            if transaction.get_rollback():
+                return self.daily_visit_count
+        except transaction.TransactionManagementError:
+            # Not in a transaction, proceed normally
+            pass
 
         # Use atomic database operations to avoid transaction errors
         # If no previous visit or last visit was on a different day
