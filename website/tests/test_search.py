@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
-from website.models import Domain, Issue, Organization, Project, Repo
+from website.models import Domain, Issue, Organization, Project, Repo, SearchHistory
 from website.views.core import search
 
 
@@ -57,3 +57,102 @@ class SearchViewTests(TestCase):
         request.user = self.user
         response = search(request)
         self.assertEqual(response.status_code, 200)
+
+    def test_search_logs_history_for_authenticated_user(self):
+        """Test that search queries are logged for authenticated users"""
+        request = self.factory.get(reverse("search") + "?query=test&type=all")
+        request.user = self.user
+        response = search(request)
+        self.assertEqual(response.status_code, 200)
+
+        # Check that search history was created
+        search_history = SearchHistory.objects.filter(user=self.user, query="test", search_type="all")
+        self.assertEqual(search_history.count(), 1)
+        self.assertEqual(search_history.first().query, "test")
+        self.assertEqual(search_history.first().search_type, "all")
+
+    def test_search_does_not_log_duplicate_consecutive_searches(self):
+        """Test that duplicate consecutive searches are not logged"""
+        request1 = self.factory.get(reverse("search") + "?query=test&type=all")
+        request1.user = self.user
+        search(request1)
+
+        request2 = self.factory.get(reverse("search") + "?query=test&type=all")
+        request2.user = self.user
+        search(request2)
+
+        # Should only have one entry
+        search_history = SearchHistory.objects.filter(user=self.user, query="test", search_type="all")
+        self.assertEqual(search_history.count(), 1)
+
+    def test_search_logs_different_queries(self):
+        """Test that different queries are logged separately"""
+        request1 = self.factory.get(reverse("search") + "?query=test1&type=all")
+        request1.user = self.user
+        search(request1)
+
+        request2 = self.factory.get(reverse("search") + "?query=test2&type=all")
+        request2.user = self.user
+        search(request2)
+
+        # Should have two entries
+        search_history = SearchHistory.objects.filter(user=self.user)
+        self.assertEqual(search_history.count(), 2)
+
+    def test_search_logs_different_search_types(self):
+        """Test that different search types are logged separately"""
+        request1 = self.factory.get(reverse("search") + "?query=test&type=all")
+        request1.user = self.user
+        search(request1)
+
+        request2 = self.factory.get(reverse("search") + "?query=test&type=issues")
+        request2.user = self.user
+        search(request2)
+
+        # Should have two entries
+        search_history = SearchHistory.objects.filter(user=self.user, query="test")
+        self.assertEqual(search_history.count(), 2)
+
+    def test_search_history_limit_per_user(self):
+        """Test that only last 50 searches are kept per user"""
+        # Create 55 searches
+        for i in range(55):
+            request = self.factory.get(reverse("search") + f"?query=test{i}&type=all")
+            request.user = self.user
+            search(request)
+
+        # Should only have 50 entries
+        search_history = SearchHistory.objects.filter(user=self.user)
+        self.assertEqual(search_history.count(), 50)
+
+    def test_recent_searches_in_context(self):
+        """Test that recent_searches is included in context for authenticated users"""
+        # Create some search history
+        SearchHistory.objects.create(user=self.user, query="test1", search_type="all")
+        SearchHistory.objects.create(user=self.user, query="test2", search_type="issues")
+
+        # Use test client to access context properly
+        from django.test import Client
+
+        client = Client()
+        client.force_login(self.user)
+        response = client.get(reverse("search") + "?query=new&type=all")
+        self.assertEqual(response.status_code, 200)
+
+        # Check that recent_searches is in context
+        self.assertIn("recent_searches", response.context)
+        recent_searches = response.context["recent_searches"]
+        self.assertGreaterEqual(len(recent_searches), 2)
+
+    def test_search_does_not_log_for_anonymous_user(self):
+        """Test that search history is not logged for anonymous users"""
+        from django.contrib.auth.models import AnonymousUser
+
+        request = self.factory.get(reverse("search") + "?query=test&type=all")
+        request.user = AnonymousUser()
+        response = search(request)
+        self.assertEqual(response.status_code, 200)
+
+        # Should not have any search history (no user to filter by)
+        search_history = SearchHistory.objects.all()
+        self.assertEqual(search_history.count(), 0)
