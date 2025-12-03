@@ -18,7 +18,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.files.storage import default_storage
+from django.core.files.storage import default_storage, storages
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
 from django.db.models import Count, F
@@ -845,19 +845,53 @@ else:
 
 @receiver(post_save, sender=Issue)
 def update_issue_image_access(sender, instance, **kwargs):
+    """
+    Keep Issue.screenshot in the right place when is_hidden changes.
+
+    - Hidden issues  -> private-screenshots/ (and, when using GCS, in the private bucket)
+    - Public issues  -> screenshots/
+    """
+    screenshot_field = instance.screenshot
+    if not screenshot_field:
+        return
+
+    current_name = screenshot_field.name or ""
+    filename = os.path.basename(current_name)
+
+    if not filename:
+        return
+
+    # Decide target prefix based on visibility
     if instance.is_hidden:
-        issue_screenshot_list = IssueScreenshot.objects.filter(issue=instance.id)
-        for screenshot in issue_screenshot_list:
-            old_name = screenshot.image.name
-            if "hidden" not in old_name:
-                filename = screenshot.image.name
-                extension = filename.split(".")[-1]
-                name = filename[:20] + "hidden" + str(uuid.uuid4())[:40] + "." + extension
-                default_storage.save(f"screenshots/{name}", screenshot.image)
-                default_storage.delete(old_name)
-                screenshot.image = f"screenshots/{name}"
-                screenshot.image.name = f"screenshots/{name}"
-                screenshot.save()
+        target_prefix = "private-screenshots"
+    else:
+        target_prefix = "screenshots"
+
+    # If the screenshot is already under the right prefix, do nothing
+    if current_name.startswith(target_prefix + "/"):
+        return
+
+    # Decide which storage to use
+    target_storage = default_storage
+    if instance.is_hidden and hasattr(settings, "STORAGES") and "private" in settings.STORAGES:
+        # Use the private storage backend when configured (GCS)
+        target_storage = storages["private"]
+
+    # Copy file to new location
+    with screenshot_field.open("rb") as f:
+        new_name = target_storage.save(f"{target_prefix}/{filename}", f)
+
+    # Delete old file if it's different
+    old_storage = screenshot_field.storage
+    if new_name != current_name:
+        try:
+            old_storage.delete(current_name)
+        except Exception:
+            # Best-effort delete; don't break the request
+            pass
+
+    # Update DB without re-triggering this signal
+    Issue.objects.filter(pk=instance.pk).update(screenshot=new_name)
 
 
 TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 280)

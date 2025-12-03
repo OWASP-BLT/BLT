@@ -10,7 +10,7 @@ from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
-from django.urls import include, path, re_path
+from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
@@ -794,7 +794,7 @@ urlpatterns = [
         name="screenshot-url",
     ),
     path(
-        "api/v1/screenshots/<int:pk>/screenshot-url/",
+        "api/v1/issues/<int:pk>/screenshot-url/",
         issue_screenshot_signed_url_view,
         name="issue-screenshot-url",
     ),

@@ -15,6 +15,7 @@ from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
@@ -216,7 +217,7 @@ def issue_screenshot_signed_url_view(request, pk: int):
         )
 
     if is_using_gcs():
-        url = generate_signed_url(issue.screenshot, request=request, expiration=3600)
+        url = generate_signed_url(issue.screenshot.name, expiration=3600)
     else:
         url = request.build_absolute_uri(issue.screenshot.url)
 
