@@ -1157,7 +1157,8 @@
                                                              class="w-6 h-6 rounded shadow-sm"
                                                              alt="{{ i.domain_name }} icon"
                                                              width="24"
-                                                             height="24">
+                                                             height="24"
+                                                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                                         <div class="flex items-center justify-between w-full">
                                                             <div class="flex flex-col">
                                                                 <a href="{{ i.get_absolute_url }}"
