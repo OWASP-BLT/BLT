@@ -984,16 +984,20 @@ class UserProfile(models.Model):
 
     def update_visit_counter(self):
         """
-        Update daily visit counter if last visit was on a different day
+        Update daily visit counter if last visit was on a different day.
+
+        Note: This method uses atomic database updates and does not refresh
+        the instance. Call refresh_from_db() after this method if you need
+        the updated values.
         """
         today = timezone.now().date()
 
         # Skip if we're in a broken transaction to avoid TransactionManagementError
         try:
             if transaction.get_rollback():
-                return self.daily_visit_count
+                return None
         except transaction.TransactionManagementError:
-            # Not in a transaction, proceed normally
+            # Called outside transaction context, proceed normally
             pass
 
         # Use atomic database operations to avoid transaction errors
@@ -1005,15 +1009,11 @@ class UserProfile(models.Model):
                 last_visit_day=today,
                 visit_count=F("visit_count") + 1,
             )
-            # Refresh from database to get updated values
-            self.refresh_from_db(fields=["daily_visit_count", "last_visit_day", "visit_count"])
         else:
             # Only increment the general visit_count
             UserProfile.objects.filter(pk=self.pk).update(visit_count=F("visit_count") + 1)
-            # Refresh from database to get updated value
-            self.refresh_from_db(fields=["visit_count"])
 
-        return self.daily_visit_count
+        return None
 
     def update_streak_and_award_points(self, check_in_date=None):
         """
