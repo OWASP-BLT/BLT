@@ -1844,14 +1844,14 @@ def newsletter_subscribe(request):
                 logger.info(f"Subscription reactivated for {email}")
                 messages.success(request, "Your subscription has been reactivated. Please confirm your email.")
 
-        except ValidationError as e:
-            logger.error(f"Validation error in newsletter subscription: {str(e)}")
+        except ValidationError:
+            logger.exception("Validation error in newsletter subscription")
             messages.error(request, "There was an error processing your subscription. Please try again later.")
-        except ConnectionError as e:
-            logger.error(f"Connection error sending confirmation email: {str(e)}")
+        except ConnectionError:
+            logger.exception("Connection error sending confirmation email")
             messages.error(request, "We couldn't send a confirmation email right now. Please try again later.")
-        except Exception as e:
-            logger.error(f"Error in newsletter subscription: {str(e)}", exc_info=True)
+        except Exception:
+            logger.exception("Error in newsletter subscription")
             messages.error(
                 request,
                 "There was an error processing your subscription. Please try again later.",
@@ -1870,7 +1870,7 @@ def send_confirmation_email(subscriber):
     # Use site framework or ALLOWED_HOSTS for better domain management
     try:
         domain = Site.objects.get_current().domain
-    except Exception:
+    except Site.DoesNotExist:
         domain = settings.DOMAIN_NAME
 
     if settings.DEBUG:
@@ -1901,14 +1901,14 @@ def send_confirmation_email(subscriber):
             fail_silently=False,
         )
         logger.info(f"Confirmation email sent to: {subscriber.email}")
-    except ConnectionRefusedError as e:
-        logger.error(f"Email server connection refused when sending to {subscriber.email}: {str(e)}")
-        raise RuntimeError("Could not connect to email server")
-    except smtplib.SMTPException as e:
-        logger.error(f"SMTP error when sending to {subscriber.email}: {str(e)}")
-        raise RuntimeError("Email server rejected the message")
-    except Exception as e:
-        logger.error(f"Failed to send confirmation email to {subscriber.email}: {str(e)}")
+    except ConnectionRefusedError:
+        logger.exception(f"Email server connection refused when sending to {subscriber.email}")
+        raise RuntimeError("Could not connect to email server") from None
+    except smtplib.SMTPException:
+        logger.exception(f"SMTP error when sending to {subscriber.email}")
+        raise RuntimeError("Email server rejected the message") from None
+    except Exception:
+        logger.exception(f"Failed to send confirmation email to {subscriber.email}")
         raise
 
 
@@ -1928,9 +1928,9 @@ def newsletter_confirm(request, token):
                     request, "Your confirmation link has expired. We've sent a new confirmation email to your address."
                 )
                 return redirect("newsletter_home")
-        except AttributeError as e:
+        except AttributeError:
             # This would happen if is_token_expired method doesn't exist or implementation changed
-            logger.error(f"Token expiration check failed due to AttributeError: {str(e)}")
+            logger.exception("Token expiration check failed due to AttributeError")
             messages.error(request, "There was a system error processing your request. Our team has been notified.")
             return redirect("newsletter_home")
 
@@ -1948,13 +1948,11 @@ def newsletter_confirm(request, token):
         logger.warning(f"Invalid confirmation token used: {token}")
         messages.error(request, "The confirmation link is invalid or has already been used.")
         return redirect("newsletter_home")
-    except Exception as e:
-        error_id = uuid.uuid4()
-        logger.error(f"Error ID: {error_id} - Unexpected error in newsletter confirmation: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("Unexpected error in newsletter confirmation")
         messages.error(
             request,
-            f"There was an unexpected error confirming your subscription (Error ID: {error_id}). "
-            "Please try again or contact support with this Error ID.",
+            "There was an unexpected error confirming your subscription. Please try again or contact support.",
         )
         return redirect("newsletter_home")
 
@@ -2019,8 +2017,8 @@ def newsletter_unsubscribe(request, token):
         logger.warning(f"Invalid token used for unsubscribe: {token}")
         messages.error(request, "Invalid unsubscribe link. Please contact support if you need assistance.")
         return redirect("home")
-    except Exception as e:
-        logger.error(f"Error in newsletter unsubscribe: {str(e)}", exc_info=True)
+    except Exception:
+        logger.exception("Error in newsletter unsubscribe")
         messages.error(request, "An error occurred while processing your request. Please try again later.")
         return redirect("home")
 
@@ -2113,8 +2111,8 @@ def newsletter_resend_confirmation(request):
             return JsonResponse({"success": True})  # Return success even if email doesn't exist
 
         return JsonResponse({"success": True})
-    except Exception as e:
-        logger.error(f"Error in newsletter_resend_confirmation: {str(e)}")
+    except Exception:
+        logger.exception("Error in newsletter_resend_confirmation")
         return JsonResponse(
             {"success": False, "error": "An error occurred while processing your request. Please try again later."}
         )
