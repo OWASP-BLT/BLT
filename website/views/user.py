@@ -1917,7 +1917,13 @@ def newsletter_confirm(request, token):
     try:
         logger.info(f"Newsletter confirmation attempt with token: {token}")
 
-        subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
+        try:
+            subscriber = NewsletterSubscriber.objects.get(confirmation_token=token)
+        except NewsletterSubscriber.DoesNotExist:
+            logger.warning(f"Invalid confirmation token used: {token}")
+            messages.error(request, "The confirmation link is invalid or has already been used.")
+            return redirect("newsletter_home")
+
         logger.info(f"Found subscriber with email: {subscriber.email}")
 
         try:
@@ -1948,10 +1954,6 @@ def newsletter_confirm(request, token):
         else:
             messages.info(request, "Your subscription is already confirmed.")
 
-        return redirect("newsletter_home")
-    except NewsletterSubscriber.DoesNotExist:
-        logger.warning(f"Invalid confirmation token used: {token}")
-        messages.error(request, "The confirmation link is invalid or has already been used.")
         return redirect("newsletter_home")
     except Exception:
         logger.exception("Unexpected error in newsletter confirmation")
@@ -2108,7 +2110,8 @@ def newsletter_resend_confirmation(request):
             if last_sent:
                 time_since_last = time.time() - last_sent
                 if time_since_last < 300:
-                    time.sleep(max(0, min(2, 2 - (time.time() - start_time))))
+                    remaining = max(0, 2 - (time.time() - start_time))
+                    time.sleep(remaining)
                     return JsonResponse(
                         {"success": False, "error": "Please wait at least 5 minutes before requesting another email."}
                     )
@@ -2121,7 +2124,8 @@ def newsletter_resend_confirmation(request):
         except NewsletterSubscriber.DoesNotExist:
             # Sleep to maintain consistent timing even if email doesn't exist
             # This prevents timing attacks
-            time.sleep(max(0, min(2, 2 - (time.time() - start_time))))
+            remaining = max(0, 2 - (time.time() - start_time))
+            time.sleep(remaining)
             logger.info(f"Confirmation resend attempted for non-existent subscription: {email}")
             return JsonResponse({"success": True})  # Return success even if email doesn't exist
 
