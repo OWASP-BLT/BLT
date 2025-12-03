@@ -1,0 +1,71 @@
+name: Timed Bounty Label
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  record-timed-bounty:
+    if: >-
+      ${{ github.event.label && github.event.label.name &&
+          startsWith(github.event.label.name, '$') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Capture timed bounty expiry
+        uses: actions/github-script@v6.1.1
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          BLT_API_TOKEN: ${{ secrets.BLT_API_TOKEN }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owasp.org' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const label = context.payload.label;
+            const labelName = (label?.name || '').trim();
+
+            if (!labelName) {
+              console.log('No label name found on event payload.');
+              return;
+            }
+
+            const timedMatch = labelName.match(/^\$(\d+(?:\.\d{2})?)\s+(\d+)$/);
+
+            if (!timedMatch) {
+              console.log(`Label "${labelName}" is not a timed bounty label.`);
+              return;
+            }
+
+            const durationHours = parseInt(timedMatch[2], 10);
+            if (Number.isNaN(durationHours) || durationHours <= 0) {
+              console.log(`Invalid duration detected in label "${labelName}".`);
+              return;
+            }
+
+            const now = new Date();
+            const expiry = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
+
+            const payload = {
+              issue_number: parseInt(process.env.ISSUE_NUMBER, 10),
+              repo: context.repo.repo,
+              owner: context.repo.owner,
+              bounty_amount: parseFloat(timedMatch[1]),
+              bounty_label: labelName,
+              bounty_expiry_date: expiry.toISOString()
+            };
+
+            const response = await fetch(`${process.env.API_BASE_URL}/timed_bounty/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
+              },
+              body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Timed bounty update failed: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Timed bounty expiry stored:', result);
