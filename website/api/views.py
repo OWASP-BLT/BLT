@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
@@ -1575,9 +1576,6 @@ class FindSimilarBugsApiView(APIView):
             )
 
 
-from django.core.cache import cache
-
-
 class TeamMemberLeaderboardAPIView(APIView):
     authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1602,8 +1600,15 @@ class TeamMemberLeaderboardAPIView(APIView):
         ordering = ordering_map.get(sort_param, "-leaderboard_score")
 
         # -------- Pagination --------
-        page = int(request.GET.get("page", 1))
-        page_size = int(request.GET.get("page_size", 20))
+        try:
+            page = int(request.GET.get("page", 1))
+            page_size = int(request.GET.get("page_size", 20))
+        except (ValueError, TypeError):
+            return Response({"detail": "Invalid pagination parameters"}, status=400)
+
+        # Validate ranges
+        if page < 1 or page_size < 1 or page_size > 100:
+            return Response({"detail": "Invalid pagination parameters"}, status=400)
 
         # -------- Cache Key --------
         cache_key = f"team_lb:{team.id}:{sort_param}:{page}:{page_size}"

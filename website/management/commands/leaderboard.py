@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.signals import post_save
@@ -5,6 +7,8 @@ from django.dispatch import receiver
 
 from website.management.base import LoggedBaseCommand
 from website.models import DailyStatusReport, Issue, UserProfile
+
+logger = logging.getLogger(__name__)
 
 
 class Command(LoggedBaseCommand):
@@ -59,8 +63,8 @@ def update_leaderboard_on_dsr_save(sender, instance, created, **kwargs):
     # Recalculate the score
     try:
         profile.calculate_leaderboard_score()
-    except Exception:
-        pass  # never break DSR flow
+    except Exception as e:
+        logger.exception("Failed to recalculate leaderboard score for user %s: %s", user.id, e)
 
     # -------- CACHE INVALIDATION --------
     team = profile.team

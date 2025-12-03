@@ -107,12 +107,17 @@ class TeamMemberLeaderboardAPITest(TestCase):
 
         data = response.json()
 
-        self.assertEqual(len(data), 3)  # 3 members
+        # Validate new structured response
+        self.assertIn("results", data)
+        self.assertEqual(data["count"], 3)
+        self.assertEqual(len(data["results"]), 3)
 
-        # Verify ordering
-        self.assertEqual(data[0]["username"], "m1")
-        self.assertEqual(data[1]["username"], "m2")
-        self.assertEqual(data[2]["username"], "apiuser")
+        results = data["results"]
+
+        # Verify ordering by score: m1 (90), m2 (70), apiuser (default)
+        self.assertEqual(results[0]["username"], "m1")
+        self.assertEqual(results[1]["username"], "m2")
+        self.assertEqual(results[2]["username"], "apiuser")
 
     def test_api_no_team(self):
         lonely = User.objects.create_user("lonely", "l@example.com", "pass")
