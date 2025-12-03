@@ -537,6 +537,25 @@ def validate_image(fieldfile_obj):
         raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
 
+def issue_screenshot_upload_path(instance, filename):
+    """
+    Route screenshots to `private-screenshots` when the related issue is hidden,
+    otherwise to `screenshots`.
+
+    Works for both:
+      - Issue.screenshot         (instance is Issue)
+      - IssueScreenshot.image    (instance is IssueScreenshot with .issue FK)
+    """
+    # If the instance has an `.issue` FK (IssueScreenshot), use that.
+    # Otherwise assume instance *is* the Issue object itself.
+    related_issue = getattr(instance, "issue", instance)
+
+    is_hidden = bool(getattr(related_issue, "is_hidden", False))
+
+    prefix = "private-screenshots" if is_hidden else "screenshots"
+    return f"{prefix}/{filename}"
+
+
 class Hunt(models.Model):
     class Meta:
         ordering = ["-id"]
@@ -614,7 +633,12 @@ class Issue(models.Model):
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
-    screenshot = models.ImageField(upload_to="screenshots", null=True, blank=True, validators=[validate_image])
+    screenshot = models.ImageField(
+        upload_to=issue_screenshot_upload_path,
+        null=True,
+        blank=True,
+        validators=[validate_image],
+    )
     closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
@@ -778,9 +802,19 @@ else:
 
 
 class IssueScreenshot(models.Model):
-    image = models.ImageField(upload_to="screenshots", validators=[validate_image])
-    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
+    image = models.ImageField(
+        upload_to=issue_screenshot_upload_path,
+        validators=[validate_image],
+    )
+    issue = models.ForeignKey(
+        "Issue",
+        on_delete=models.CASCADE,
+        related_name="screenshots",
+    )
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"IssueScreenshot(id={self.pk}, issue={self.issue_id})"
 
 
 if is_using_gcs():
