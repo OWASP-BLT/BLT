@@ -87,25 +87,28 @@
                                             <span class="font-semibold text-gray-700 dark:text-gray-300">Member</span>
                                         </div>
                                     </th>
-                                    <th class="py-4 px-6 text-left">
+                                    <th class="py-4 px-6 text-left cursor-pointer sort-col"
+                                        data-sort="leaderboard_score">
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-chart-line text-gray-500"></i>
                                             <span class="font-semibold text-gray-700 dark:text-gray-300">Score</span>
-                                            <i class="fas fa-sort-down text-[#e74c3c]"></i>
+                                            <i class="fas fa-sort text-gray-400" data-icon="leaderboard_score"></i>
                                         </div>
                                     </th>
-                                    <th class="py-4 px-6 text-left">
+                                    <th class="py-4 px-6 text-left cursor-pointer sort-col"
+                                        data-sort="quality_score">
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-star text-gray-500"></i>
                                             <span class="font-semibold text-gray-700 dark:text-gray-300">Quality</span>
-                                            <i class="fas fa-sort-down text-[#e74c3c]"></i>
+                                            <i class="fas fa-sort text-gray-400" data-icon="quality_score"></i>
                                         </div>
                                     </th>
-                                    <th class="py-4 px-6 text-left">
+                                    <th class="py-4 px-6 text-left cursor-pointer sort-col"
+                                        data-sort="current_streak">
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-fire text-gray-500"></i>
                                             <span class="font-semibold text-gray-700 dark:text-gray-300">Streak</span>
-                                            <i class="fas fa-sort-down text-[#e74c3c]"></i>
+                                            <i class="fas fa-sort text-gray-400" data-icon="current_streak"></i>
                                         </div>
                                     </th>
                                 </tr>
@@ -292,11 +295,42 @@
                             <table class="w-full">
                                 <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                                     <tr>
-                                        <th class="py-4 px-6 text-left">Rank</th>
-                                        <th class="py-4 px-6 text-left">Member</th>
-                                        <th class="py-4 px-6 text-left">Score</th>
-                                        <th class="py-4 px-6 text-left">Quality</th>
-                                        <th class="py-4 px-6 text-left">Streak</th>
+                                        <th class="py-4 px-6 text-left">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-hashtag text-gray-500"></i>
+                                                <span class="font-semibold text-gray-700 dark:text-gray-300">Rank</span>
+                                            </div>
+                                        </th>
+                                        <th class="py-4 px-6 text-left">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-user text-gray-500"></i>
+                                                <span class="font-semibold text-gray-700 dark:text-gray-300">Member</span>
+                                            </div>
+                                        </th>
+                                        <th class="py-4 px-6 text-left cursor-pointer api-sort-col"
+                                            data-sort="leaderboard_score">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-chart-line text-gray-500"></i>
+                                                <span class="font-semibold text-gray-700 dark:text-gray-300">Score</span>
+                                                <i class="fas fa-sort text-gray-400" data-icon="leaderboard_score"></i>
+                                            </div>
+                                        </th>
+                                        <th class="py-4 px-6 text-left cursor-pointer api-sort-col"
+                                            data-sort="quality_score">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-star text-gray-500"></i>
+                                                <span class="font-semibold text-gray-700 dark:text-gray-300">Quality</span>
+                                                <i class="fas fa-sort text-gray-400" data-icon="quality_score"></i>
+                                            </div>
+                                        </th>
+                                        <th class="py-4 px-6 text-left cursor-pointer api-sort-col"
+                                            data-sort="current_streak">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-fire text-gray-500"></i>
+                                                <span class="font-semibold text-gray-700 dark:text-gray-300">Streak</span>
+                                                <i class="fas fa-sort text-gray-400" data-icon="current_streak"></i>
+                                            </div>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody id="leaderboard-body">
@@ -343,6 +377,20 @@
                                 </tbody>
                             </table>
                         </div>
+                        <!-- Pagination for Desktop -->
+                        <div id="api-pagination"
+                             class="flex justify-center items-center gap-4 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                            <button id="api-prev"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                                <i class="fas fa-chevron-left mr-1"></i> Prev
+                            </button>
+                            <span id="api-page"
+                                  class="text-sm font-medium text-gray-700 dark:text-gray-300">Page 1</span>
+                            <button id="api-next"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                                Next <i class="fas fa-chevron-right ml-1"></i>
+                            </button>
+                        </div>
                     </div>
                     <!-- Mobile Cards View for API -->
                     <div id="api-mobile-view" class="lg:hidden p-6">
@@ -377,6 +425,19 @@
                                 </div>
                             {% endfor %}
                         </div>
+                        <!-- Mobile Pagination -->
+                        <div class="flex justify-center items-center gap-4 mt-4">
+                            <button id="mobile-prev"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                                <i class="fas fa-chevron-left mr-1"></i> Prev
+                            </button>
+                            <span id="mobile-page"
+                                  class="text-sm font-medium text-gray-700 dark:text-gray-300">Page 1</span>
+                            <button id="mobile-next"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                                Next <i class="fas fa-chevron-right ml-1"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             {% endif %}
@@ -388,48 +449,224 @@
 document.addEventListener("DOMContentLoaded", function () {
     const apiDesktopView = document.getElementById("api-desktop-view");
     const apiMobileView = document.getElementById("api-mobile-view");
+    const currentUsername = "{{ request.user.username }}";
     
-    fetch("/api/team/member-leaderboard/", {
-        method: "GET",
-        credentials: "include",
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+    // State management
+    let currentPage = 1;
+    let currentSortField = 'leaderboard_score';
+    let currentSortOrder = 'desc';
+    let totalPages = 1;
+    
+    // DOM Elements
+    const apiPrevBtn = document.getElementById("api-prev");
+    const apiNextBtn = document.getElementById("api-next");
+    const apiPageSpan = document.getElementById("api-page");
+    const mobilePrevBtn = document.getElementById("mobile-prev");
+    const mobileNextBtn = document.getElementById("mobile-next");
+    const mobilePageSpan = document.getElementById("mobile-page");
+    
+    // Initialize pagination buttons
+    if (apiPrevBtn) apiPrevBtn.disabled = true;
+    if (mobilePrevBtn) mobilePrevBtn.disabled = true;
+    if (apiPageSpan) apiPageSpan.textContent = `Page ${currentPage}`;
+    if (mobilePageSpan) mobilePageSpan.textContent = `Page ${currentPage}`;
+    
+    // Sort column click handlers for server-rendered table
+    document.querySelectorAll(".sort-col").forEach(col => {
+        col.addEventListener("click", function () {
+            const field = this.dataset.sort;
+            const icon = this.querySelector("[data-icon]");
+            
+            // Update visual state
+            document.querySelectorAll(".sort-col").forEach(c => {
+                c.classList.remove("text-[#e74c3c]");
+                const ic = c.querySelector("[data-icon]");
+                if (ic) ic.className = "fas fa-sort text-gray-400";
+            });
+            
+            this.classList.add("text-[#e74c3c]");
+            
+            // Update icon
+            if (icon) {
+                if (field === currentSortField && currentSortOrder === 'desc') {
+                    currentSortOrder = 'asc';
+                    icon.className = "fas fa-sort-up text-[#e74c3c]";
+                } else {
+                    currentSortField = field;
+                    currentSortOrder = 'desc';
+                    icon.className = "fas fa-sort-down text-[#e74c3c]";
+                }
+            }
+            
+            // Reload API data with new sorting
+            loadPage(1, true);
+        });
+    });
+    
+    // Sort column click handlers for API table
+    document.querySelectorAll(".api-sort-col").forEach(col => {
+        col.addEventListener("click", function () {
+            const field = this.dataset.sort;
+            const icon = this.querySelector("[data-icon]");
+            
+            // Update visual state
+            document.querySelectorAll(".api-sort-col").forEach(c => {
+                c.classList.remove("text-[#e74c3c]");
+                const ic = c.querySelector("[data-icon]");
+                if (ic) ic.className = "fas fa-sort text-gray-400";
+            });
+            
+            this.classList.add("text-[#e74c3c]");
+            
+            // Update icon
+            if (icon) {
+                if (field === currentSortField && currentSortOrder === 'desc') {
+                    currentSortOrder = 'asc';
+                    icon.className = "fas fa-sort-up text-[#e74c3c]";
+                } else {
+                    currentSortField = field;
+                    currentSortOrder = 'desc';
+                    icon.className = "fas fa-sort-down text-[#e74c3c]";
+                }
+            }
+            
+            // Reload API data with new sorting
+            loadPage(1, true);
+        });
+    });
+    
+    // Pagination button handlers
+    if (apiPrevBtn) {
+        apiPrevBtn.addEventListener("click", () => loadPage(currentPage - 1));
+    }
+    
+    if (apiNextBtn) {
+        apiNextBtn.addEventListener("click", () => loadPage(currentPage + 1));
+    }
+    
+    if (mobilePrevBtn) {
+        mobilePrevBtn.addEventListener("click", () => loadPage(currentPage - 1));
+    }
+    
+    if (mobileNextBtn) {
+        mobileNextBtn.addEventListener("click", () => loadPage(currentPage + 1));
+    }
+    
+    // Load initial data
+    loadPage(1);
+    
+    function loadPage(page, forceReload = false) {
+        if (page < 1 || (!forceReload && page > totalPages)) return;
+        
+        // Show loading state
+        const tbody = document.querySelector("#leaderboard-body");
+        const cardsContainer = document.querySelector("#leaderboard-cards");
+        
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr><td colspan="5" class="py-10 text-center text-gray-500">
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2 text-[#e74c3c]"></i>
+                        <div>Loading leaderboard data...</div>
+                    </div>
+                </td></tr>`;
         }
-    })
-    .then(res => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-    })
-    .then(data => {
+        
+        if (cardsContainer) {
+            cardsContainer.innerHTML = `
+                <div class="text-center py-10 text-gray-500">
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2 text-[#e74c3c]"></i>
+                        <div>Loading leaderboard data...</div>
+                    </div>
+                </div>`;
+        }
+        
+        // Build query parameters
+        const params = new URLSearchParams({
+            page: page,
+            sort: currentSortField,
+            order: currentSortOrder
+        });
+        
+        fetch(`/api/team/member-leaderboard/?${params.toString()}`, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+        })
+        .then(data => {
+            currentPage = page;
+            totalPages = data.total_pages || 1;
+            
+            // Update pagination UI
+            updatePaginationUI();
+            
+            // Update table content
+            updateTable(data.results || []);
+        })
+        .catch(err => {
+            console.error("Leaderboard API error:", err);
+            showErrorState();
+        });
+    }
+    
+    function updatePaginationUI() {
+        // Update page numbers
+        if (apiPageSpan) apiPageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+        if (mobilePageSpan) mobilePageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+        
+        // Update button states
+        const isFirstPage = currentPage === 1;
+        const isLastPage = currentPage === totalPages;
+        
+        if (apiPrevBtn) apiPrevBtn.disabled = isFirstPage;
+        if (apiNextBtn) apiNextBtn.disabled = isLastPage;
+        if (mobilePrevBtn) mobilePrevBtn.disabled = isFirstPage;
+        if (mobileNextBtn) mobileNextBtn.disabled = isLastPage;
+    }
+    
+    function updateTable(members) {
         const tbody = document.querySelector("#leaderboard-body");
         const cardsContainer = document.querySelector("#leaderboard-cards");
         
         if (!tbody && !cardsContainer) return;
-
-        // Clear loading skeletons
+        
+        // Clear content
         if (tbody) tbody.innerHTML = "";
         if (cardsContainer) cardsContainer.innerHTML = "";
-
-        if (data.length === 0) {
-            const emptyMessage = `<tr><td colspan="5" class="text-center py-8 text-gray-500 dark:text-gray-400">
-                                    <i class="fas fa-users text-2xl mb-2"></i>
-                                    <div>No data available</div>
+        
+        if (!members || members.length === 0) {
+            const emptyMessage = `<tr><td colspan="5" class="py-12 text-center text-gray-500 dark:text-gray-400">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fas fa-users text-3xl mb-3"></i>
+                                        <div class="text-lg font-medium mb-2">No team members found</div>
+                                        <div class="text-sm">No activity recorded yet</div>
+                                    </div>
                                   </td></tr>`;
             if (tbody) tbody.innerHTML = emptyMessage;
             if (cardsContainer) cardsContainer.innerHTML = `
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <i class="fas fa-users text-2xl mb-2"></i>
-                    <div>No data available</div>
+                <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-users text-3xl mb-3"></i>
+                        <div class="text-lg font-medium mb-2">No team members found</div>
+                        <div class="text-sm">No activity recorded yet</div>
+                    </div>
                 </div>`;
             return;
         }
-
+        
         // Desktop table rows
         if (tbody) {
-            data.forEach((member, index) => {
-                const rank = index + 1;
-                const isCurrentUser = member.username === "{{ request.user.username }}";
+            members.forEach((member, index) => {
+                const rank = (currentPage - 1) * 10 + index + 1; // Assuming 10 items per page
+                const isCurrentUser = member.username === currentUsername;
                 
                 // Get avatar URL with fallback
                 let avatarUrl = member.user_avatar || member.social_avatar || '';
@@ -446,8 +683,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // Quality color
                 let qualityColor = "text-red-500";
-                if (parseFloat(quality) >= 70) qualityColor = "text-yellow-500";
-                if (parseFloat(quality) >= 90) qualityColor = "text-green-500";
+                let qualityBarColor = "bg-red-500";
+                if (parseFloat(quality) >= 70) {
+                    qualityColor = "text-yellow-500";
+                    qualityBarColor = "bg-yellow-500";
+                }
+                if (parseFloat(quality) >= 90) {
+                    qualityColor = "text-green-500";
+                    qualityBarColor = "bg-green-500";
+                }
 
                 // Streak fires
                 let streakFires = "";
@@ -492,7 +736,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <div class="flex items-center gap-3">
                             <div class="text-lg font-semibold ${qualityColor}">${quality}</div>
                             <div class="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                <div class="h-full ${parseFloat(quality) >= 90 ? 'bg-green-500' : parseFloat(quality) >= 70 ? 'bg-yellow-500' : 'bg-red-500'}" style="width: ${parseFloat(quality)}%"></div>
+                                <div class="h-full ${qualityBarColor}" style="width: ${Math.min(parseFloat(quality), 100)}%"></div>
                             </div>
                         </div>
                     </td>
@@ -514,9 +758,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Mobile cards
         if (cardsContainer) {
-            data.forEach((member, index) => {
-                const rank = index + 1;
-                const isCurrentUser = member.username === "{{ request.user.username }}";
+            members.forEach((member, index) => {
+                const rank = (currentPage - 1) * 10 + index + 1; // Assuming 10 items per page
+                const isCurrentUser = member.username === currentUsername;
                 
                 // Get avatar URL with fallback
                 let avatarUrl = member.user_avatar || member.social_avatar || '';
@@ -601,26 +845,40 @@ document.addEventListener("DOMContentLoaded", function () {
                 cardsContainer.appendChild(card);
             });
         }
-    })
-    .catch(err => {
-        console.error("Leaderboard API error:", err);
-        const errorMessage = `<tr><td colspan="5" class="text-center py-8 text-[#e74c3c]">
-                                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                                <div>Failed to load leaderboard data</div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">Please try again later</div>
-                              </td></tr>`;
-        
+    }
+    
+    function showErrorState() {
         const tbody = document.querySelector("#leaderboard-body");
         const cardsContainer = document.querySelector("#leaderboard-cards");
         
+        const errorMessage = `<tr><td colspan="5" class="py-12 text-center text-[#e74c3c]">
+                                <div class="flex flex-col items-center">
+                                    <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                                    <div class="text-lg font-medium mb-2">Failed to load leaderboard data</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">Please try again later</div>
+                                    <button onclick="loadPage(1)" class="mt-4 px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] transition-colors duration-200">
+                                        <i class="fas fa-redo mr-2"></i>Retry
+                                    </button>
+                                </div>
+                              </td></tr>`;
+        
         if (tbody) tbody.innerHTML = errorMessage;
         if (cardsContainer) cardsContainer.innerHTML = `
-            <div class="text-center py-8 text-[#e74c3c]">
-                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                <div>Failed to load leaderboard data</div>
-                <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">Please try again later</div>
+            <div class="text-center py-12 text-[#e74c3c]">
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                    <div class="text-lg font-medium mb-2">Failed to load leaderboard data</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Please try again later</div>
+                    <button onclick="loadPage(1)" class="mt-4 px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] transition-colors duration-200">
+                        <i class="fas fa-redo mr-2"></i>Retry
+                    </button>
+                </div>
             </div>`;
-    });
+    }
+    
+    // Show API table by default
+    if (apiDesktopView) apiDesktopView.classList.remove("hidden");
+    if (apiMobileView) apiMobileView.classList.remove("hidden");
 });
     </script>
 {% endblock %}

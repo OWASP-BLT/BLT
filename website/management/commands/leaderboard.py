@@ -30,6 +30,7 @@ class Command(LoggedBaseCommand):
         return str("All users updated.")
 
 
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -40,27 +41,37 @@ from website.models import DailyStatusReport, UserProfile
 @receiver(post_save, sender=DailyStatusReport)
 def update_leaderboard_on_dsr_save(sender, instance, created, **kwargs):
     """
-    Automatically recalculate a user's leaderboard score whenever a
-    DailyStatusReport is created or updated.
+    Recalculate leaderboard score when a DSR is created/updated.
+    Also invalidate team leaderboard caches.
     """
     user = instance.user
-
     try:
         profile = user.userprofile
     except ObjectDoesNotExist:
-        # Prevent blowing up if profile is missing
         return
 
-    # Prevent recursive save loops
     if getattr(instance, "_skip_leaderboard_update", False):
         return
 
-    # Update streak BEFORE leaderboard score
+    # Update streak BEFORE score recalculation
     profile.update_streak_and_award_points()
 
-    # Recalculate the leaderboard score
+    # Recalculate the score
     try:
         profile.calculate_leaderboard_score()
     except Exception:
-        # Never break DSR creation flow
-        pass
+        pass  # never break DSR flow
+
+    # -------- CACHE INVALIDATION --------
+    team = profile.team
+    if team:
+        pattern = f"team_lb:{team.id}:*"
+        try:
+            cache.delete_pattern(pattern)
+        except Exception:
+            # LocMemCache doesn't support delete_pattern
+            # Manual brute force: iterate all possible pages
+            for order in ("score", "streak", "quality"):
+                for page in range(1, 20):
+                    cache_key = f"team_lb:{team.id}:{order}:{page}:20"
+                    cache.delete(cache_key)
