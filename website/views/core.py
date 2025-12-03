@@ -736,15 +736,16 @@ def search(request, template="search.html"):
             # Avoid logging duplicate consecutive searches
             last_search = SearchHistory.objects.filter(user=request.user).order_by("-timestamp").first()
             if not last_search or last_search.query != query or last_search.search_type != search_type:
-                SearchHistory.objects.create(
-                    user=request.user,
-                    query=query[:255],  # Ensure query doesn't exceed max_length
-                    search_type=search_type,
-                    result_count=result_count,
-                )
-
-                # Keep only last 50 searches per user (atomic operation to prevent race conditions)
+                # Atomic operation: create entry and cleanup excess entries in same transaction
                 with transaction.atomic():
+                    SearchHistory.objects.create(
+                        user=request.user,
+                        query=query[:255],  # Ensure query doesn't exceed max_length
+                        search_type=search_type,
+                        result_count=result_count,
+                    )
+
+                    # Keep only last 50 searches per user (within same atomic block)
                     excess_ids = list(
                         SearchHistory.objects.filter(user=request.user)
                         .order_by("-timestamp")
