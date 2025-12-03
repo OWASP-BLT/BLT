@@ -19,7 +19,7 @@ paths = [
 # Regexes to exclude
 regexes = [
     # Example private keys with asterisks (placeholders in documentation)
-    '''-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----\s*\*+\s*-----END (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----''',
+    '''-----BEGIN .* PRIVATE KEY-----\s*\*+\s*-----END .* PRIVATE KEY-----''',
 ]
 
 # Stop words that indicate false positives

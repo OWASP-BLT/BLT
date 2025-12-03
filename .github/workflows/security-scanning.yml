@@ -105,7 +105,7 @@ jobs:
           retention-days: 30
 
   gitleaks:
-    name: GitLeaks Secret Scanning
+    name: Gitleaks Secret Scanning
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -219,7 +219,7 @@ jobs:
           echo "| Bandit | ${{ needs.bandit.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Dependency Check | ${{ needs.dependency-check.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Semgrep | ${{ needs.semgrep.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GitLeaks | ${{ needs.gitleaks.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gitleaks | ${{ needs.gitleaks.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy Repo | ${{ needs.trivy-repo.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy Docker | ${{ needs.trivy-docker.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| OSV Scanner | ${{ needs.osv-scanner.result }} |" >> $GITHUB_STEP_SUMMARY

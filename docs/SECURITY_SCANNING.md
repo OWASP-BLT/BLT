@@ -192,7 +192,7 @@ trivy fs --severity CRITICAL,HIGH .
 1. **Bandit**: Python security linting
 2. **Dependency Check**: pip-audit vulnerability scanning
 3. **Semgrep**: SAST analysis
-4. **GitLeaks**: Secret scanning
+4. **Gitleaks**: Secret scanning
 5. **Trivy Repo**: Repository vulnerability scan
 6. **Trivy Docker**: Docker image vulnerability scan
 7. **OSV Scanner**: Cross-ecosystem vulnerability detection
