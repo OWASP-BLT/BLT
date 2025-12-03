@@ -161,7 +161,7 @@ class IPRestrictMiddleware:
                     if ip_record.pk:
                         ip_record.save(update_fields=["agent", "count"])
 
-                    # Delete duplicate records within the same atomic block
+                    # Clean up any duplicate records that may exist from before locking was implemented
                     ip_records.exclude(pk=ip_record.pk).delete()
                 else:
                     # If no record exists, create a new one

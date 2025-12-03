@@ -23,6 +23,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.core.validators import validate_email
+from django.db import transaction
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -1796,26 +1797,30 @@ def newsletter_subscribe(request):
         cache.set(rate_key, rate_attempts + 1, 3600)
 
         try:
-            # Update any existing active subscriptions for this email to inactive
-            NewsletterSubscriber.objects.filter(email=email).exclude(is_active=False).update(is_active=False)
+            with transaction.atomic():
+                # Update any existing active subscriptions for this email to inactive
+                # Use select_for_update() to prevent race conditions
+                NewsletterSubscriber.objects.select_for_update().filter(email=email).exclude(is_active=False).update(
+                    is_active=False
+                )
 
-            subscriber, created = NewsletterSubscriber.objects.get_or_create(
-                email=email,
-                defaults={
-                    "name": name,
-                    "user": request.user if request.user.is_authenticated else None,
-                    "is_active": True,
-                    "confirmed": False,
-                    "token_created_at": timezone.now(),
-                },
-            )
+                subscriber, created = NewsletterSubscriber.objects.get_or_create(
+                    email=email,
+                    defaults={
+                        "name": name,
+                        "user": request.user if request.user.is_authenticated else None,
+                        "is_active": True,
+                        "confirmed": False,
+                        "token_created_at": timezone.now(),
+                    },
+                )
 
-            if not created:
-                subscriber.is_active = True
-                subscriber.name = name if name else subscriber.name
-                subscriber.confirmation_token = uuid.uuid4()
-                subscriber.token_created_at = timezone.now()
-                subscriber.save(update_fields=["is_active", "name", "confirmation_token", "token_created_at"])
+                if not created:
+                    subscriber.is_active = True
+                    subscriber.name = name if name else subscriber.name
+                    subscriber.confirmation_token = uuid.uuid4()
+                    subscriber.token_created_at = timezone.now()
+                    subscriber.save(update_fields=["is_active", "name", "confirmation_token", "token_created_at"])
 
             last_sent_key = f"last_subscribe_email_{email}"
             last_sent = cache.get(last_sent_key)
@@ -1849,11 +1854,10 @@ def newsletter_subscribe(request):
             logger.error(f"Connection error sending confirmation email: {str(e)}")
             messages.error(request, "We couldn't send a confirmation email right now. Please try again later.")
         except Exception as e:
-            error_id = uuid.uuid4()
-            logger.error(f"Error ID: {error_id} - Error in newsletter subscription: {str(e)}", exc_info=True)
+            logger.error(f"Error in newsletter subscription: {str(e)}", exc_info=True)
             messages.error(
                 request,
-                f"There was an error processing your subscription (Error ID: {error_id}). Please try again later.",
+                "There was an error processing your subscription. Please try again later.",
             )
 
         return redirect("newsletter_home")
@@ -2019,11 +2023,8 @@ def newsletter_unsubscribe(request, token):
         messages.error(request, "Invalid unsubscribe link. Please contact support if you need assistance.")
         return redirect("home")
     except Exception as e:
-        error_id = uuid.uuid4()
-        logger.error(f"Error ID: {error_id} - Error in newsletter unsubscribe: {str(e)}", exc_info=True)
-        messages.error(
-            request, f"An error occurred while processing your request (Error ID: {error_id}). Please try again later."
-        )
+        logger.error(f"Error in newsletter unsubscribe: {str(e)}", exc_info=True)
+        messages.error(request, "An error occurred while processing your request. Please try again later.")
         return redirect("home")
 
 
