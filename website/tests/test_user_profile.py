@@ -271,29 +271,19 @@ class UserProfileVisitCounterTest(TestCase):
         self.assertEqual(self.profile.last_visit_day, timezone.now().date())
 
     def test_update_visit_counter_atomic_operations(self):
-        """Test that update_visit_counter uses QuerySet.update() with F() expressions"""
-        # This test ensures the method uses atomic database-level updates (QuerySet.update with F())
-        # instead of calling save(), which would cause TransactionManagementError in certain scenarios
-
+        """Test that update_visit_counter uses QuerySet.update() with F() expressions instead of save()"""
         initial_visit_count = self.profile.visit_count
 
-        # Test that the method works within a transaction
         with transaction.atomic():
-            # Mock the save method to ensure it's not called
             with patch.object(self.profile, "save") as mock_save:
                 self.profile.update_visit_counter()
-                # save() should not be called - we use atomic QuerySet.update() instead
                 mock_save.assert_not_called()
 
-        # Verify the counters were still updated using atomic database operations
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.visit_count, initial_visit_count + 1)
 
     def test_update_visit_counter_no_transaction_error(self):
-        """Test that update_visit_counter doesn't raise TransactionManagementError"""
-
-        # This test ensures the method doesn't raise TransactionManagementError
-        # when called multiple times within the same transaction
+        """Test that update_visit_counter doesn't raise TransactionManagementError when called multiple times"""
         try:
             with transaction.atomic():
                 self.profile.update_visit_counter()
