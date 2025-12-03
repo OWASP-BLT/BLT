@@ -735,29 +735,37 @@ def search(request, template="search.html"):
             # Atomic operation: check for duplicates, create entry, and cleanup excess entries
             # Use select_for_update to prevent race conditions in concurrent requests
             truncated_query = query[:255]  # Ensure query doesn't exceed max_length
-            with transaction.atomic():
-                # Check for duplicate consecutive searches within transaction
-                # Use select_for_update to lock the row and prevent concurrent modifications
-                last_search = (
-                    SearchHistory.objects.filter(user=request.user).select_for_update().order_by("-timestamp").first()
-                )
-                # Compare truncated query to stored query (which is also truncated)
-                if not last_search or last_search.query != truncated_query or last_search.search_type != search_type:
-                    SearchHistory.objects.create(
-                        user=request.user,
-                        query=truncated_query,
-                        search_type=search_type,
-                        result_count=result_count,
+            try:
+                with transaction.atomic():
+                    # Check for duplicate consecutive searches within transaction
+                    # Use select_for_update to lock the row and prevent concurrent modifications
+                    last_search = (
+                        SearchHistory.objects.filter(user=request.user).select_for_update().order_by("-timestamp").first()
                     )
+                    # Compare truncated query to stored query (which is also truncated)
+                    if not last_search or last_search.query != truncated_query or last_search.search_type != search_type:
+                        SearchHistory.objects.create(
+                            user=request.user,
+                            query=truncated_query,
+                            search_type=search_type,
+                            result_count=result_count,
+                        )
 
-                    # Keep only last 50 searches per user (within same atomic block)
-                    excess_ids = list(
-                        SearchHistory.objects.filter(user=request.user)
-                        .order_by("-timestamp")
-                        .values_list("id", flat=True)[50:]
-                    )
-                    if excess_ids:
-                        SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
+                        # Keep only last 50 searches per user (within same atomic block)
+                        excess_ids = list(
+                            SearchHistory.objects.filter(user=request.user)
+                            .order_by("-timestamp")
+                            .values_list("id", flat=True)[50:]
+                        )
+                        if excess_ids:
+                            SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
+            except Exception:
+                logger.exception(
+                    f"Error saving search history - user_id: {request.user.id}, "
+                    f"truncated_query: {truncated_query[:50] if truncated_query else None}, "
+                    f"search_type: {search_type}"
+                )
+                # Suppress exception to allow search to proceed normally
 
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
     return render(request, template, context)
