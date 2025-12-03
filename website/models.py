@@ -843,55 +843,79 @@ else:
             instance.image.delete(save=False)
 
 
-@receiver(post_save, sender=Issue)
-def update_issue_image_access(sender, instance, **kwargs):
+def _move_image(name, storage, is_hidden):
     """
-    Keep Issue.screenshot in the right place when is_hidden changes.
+    Move a file referenced by `name` in `storage` to the correct prefix.
 
-    - Hidden issues  -> private-screenshots/ (and, when using GCS, in the private bucket)
-    - Public issues  -> screenshots/
+    Returns the new name, or None if nothing was done.
     """
-    screenshot_field = instance.screenshot
-    if not screenshot_field:
-        return
+    if not name:
+        return None
 
-    current_name = screenshot_field.name or ""
-    filename = os.path.basename(current_name)
-
+    filename = os.path.basename(name)
     if not filename:
-        return
+        return None
 
     # Decide target prefix based on visibility
-    if instance.is_hidden:
-        target_prefix = "private-screenshots"
-    else:
-        target_prefix = "screenshots"
+    target_prefix = "private-screenshots" if is_hidden else "screenshots"
 
-    # If the screenshot is already under the right prefix, do nothing
-    if current_name.startswith(target_prefix + "/"):
-        return
+    # Already under the right prefix -> nothing to do
+    if name.startswith(target_prefix + "/"):
+        return None
 
-    # Decide which storage to use
-    target_storage = default_storage
-    if instance.is_hidden and hasattr(settings, "STORAGES") and "private" in settings.STORAGES:
-        # Use the private storage backend when configured (GCS)
+    # By default, use the current field storage
+    target_storage = storage
+
+    # If hiding and a private backend is configured, use that
+    if (
+        is_hidden
+        and hasattr(settings, "STORAGES")
+        and "private" in settings.STORAGES
+    ):
         target_storage = storages["private"]
 
     # Copy file to new location
-    with screenshot_field.open("rb") as f:
+    with storage.open(name, "rb") as f:
         new_name = target_storage.save(f"{target_prefix}/{filename}", f)
 
-    # Delete old file if it's different
-    old_storage = screenshot_field.storage
-    if new_name != current_name:
+    # Delete old file (best effort)
+    if new_name != name:
         try:
-            old_storage.delete(current_name)
+            storage.delete(name)
         except Exception:
-            # Best-effort delete; don't break the request
             pass
 
-    # Update DB without re-triggering this signal
-    Issue.objects.filter(pk=instance.pk).update(screenshot=new_name)
+    return new_name
+
+
+@receiver(post_save, sender=Issue)
+def update_issue_image_access(sender, instance, **kwargs):
+    """
+    Keep Issue.screenshot and related IssueScreenshot.image in the right place
+    when the Issue is saved (especially when is_hidden changes).
+
+    - Hidden issues  -> private-screenshots/
+    - Public issues  -> screenshots/
+    """
+
+    # 1) Move the single Issue.screenshot, if present
+    if instance.screenshot:
+        current_name = instance.screenshot.name or ""
+        new_name = _move_image(current_name, instance.screenshot.storage, instance.is_hidden)
+        if new_name and new_name != current_name:
+            # Update DB without re-triggering field saves
+            Issue.objects.filter(pk=instance.pk).update(screenshot=new_name)
+
+    # 2) Move all IssueScreenshot images for this issue
+    for screenshot in instance.screenshots.all():
+        if not screenshot.image:
+            continue
+
+        current_name = screenshot.image.name or ""
+        new_name = _move_image(current_name, screenshot.image.storage, instance.is_hidden)
+        if new_name and new_name != current_name:
+            # Update DB without calling screenshot.save() (avoids extra logic)
+            IssueScreenshot.objects.filter(pk=screenshot.pk).update(image=new_name)
 
 
 TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 280)
