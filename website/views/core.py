@@ -32,7 +32,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
-from django.db import connection, models
+from django.db import connection, models, transaction
 from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -744,12 +744,15 @@ def search(request, template="search.html"):
                     result_count=result_count,
                 )
 
-                # Keep only last 50 searches per user
-                user_searches = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")
-                if user_searches.count() > 50:
-                    SearchHistory.objects.filter(
-                        user=request.user, id__in=user_searches[50:].values_list("id", flat=True)
-                    ).delete()
+                # Keep only last 50 searches per user (atomic operation to prevent race conditions)
+                with transaction.atomic():
+                    excess_ids = list(
+                        SearchHistory.objects.filter(user=request.user)
+                        .order_by("-timestamp")
+                        .values_list("id", flat=True)[50:]
+                    )
+                    if excess_ids:
+                        SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
 
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
     return render(request, template, context)

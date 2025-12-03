@@ -643,10 +643,15 @@
                                    class="w-full pl-12 pr-4 py-2 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 placeholder:select-none placeholder:text-base bg-transparent outline-none">
                             <!-- Recent Searches Dropdown -->
                             {% if user.is_authenticated %}
-                                <div id="recent-searches-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                                <div id="recent-searches-dropdown"
+                                     class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
                                     <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                                         <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Searches</span>
-                                        <button type="button" id="clear-search-history-header" class="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">Clear</button>
+                                        <button type="button"
+                                                id="clear-search-history-header"
+                                                class="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                            Clear
+                                        </button>
                                     </div>
                                     <div id="recent-searches-list" class="py-2">
                                         <!-- Populated via JavaScript -->
@@ -1324,24 +1329,25 @@
             recentSearchesList.innerHTML = recentSearches.slice(0, 10).map(search => {
                 const searchTypeDisplay = search.search_type === 'all' ? 'All' : 
                     search.search_type.charAt(0).toUpperCase() + search.search_type.slice(1);
+                // Ensure search.id is a number to prevent XSS
+                const searchId = parseInt(search.id, 10);
+                if (isNaN(searchId)) {
+                    return ''; // Skip invalid entries
+                }
                 return `
                     <div class="flex items-center justify-between px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                        <a href="{% url 'search' %}?query=${encodeURIComponent(search.query)}&type=${encodeURIComponent(search.search_type)}"
-                           class="flex-1 text-gray-700 dark:text-gray-300 text-sm">
+                        <a href="{% url 'search' %}?query=${encodeURIComponent(search.query)}&type=${encodeURIComponent(search.search_type)}" class="flex-1 text-gray-700 dark:text-gray-300 text-sm">
                             <div class="flex items-center justify-between">
                                 <span>${escapeHtml(search.query)}</span>
                                 <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">${searchTypeDisplay}</span>
                             </div>
                         </a>
-                        <button type="button" 
-                                class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
-                                onclick="deleteSearchItem(event, ${search.id})"
-                                title="Delete this search">
+                        <button type="button" class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" onclick="deleteSearchItem(event, ${searchId})" title="Delete this search">
                             <i class="fa fa-times text-xs"></i>
                         </button>
                     </div>
                 `;
-            }).join('');
+            }).filter(html => html !== '').join('');
         }
         
         // Escape HTML to prevent XSS
@@ -1371,8 +1377,15 @@
             e.preventDefault();
             e.stopPropagation();
             
+            // Validate searchId is a number
+            const id = parseInt(searchId, 10);
+            if (isNaN(id) || id <= 0) {
+                alert("Invalid search item ID.");
+                return;
+            }
+            
             try {
-                const response = await fetch("{% url 'search_history_api' %}?id=" + searchId, {
+                const response = await fetch("{% url 'search_history_api' %}?id=" + id, {
                     method: "DELETE",
                     headers: {
                         "X-CSRFToken": "{{ csrf_token }}",
@@ -1382,7 +1395,7 @@
                 
                 if (response.ok) {
                     // Remove from local array and refresh display
-                    recentSearches = recentSearches.filter(s => s.id !== searchId);
+                    recentSearches = recentSearches.filter(s => s.id !== id);
                     displayRecentSearches();
                 } else {
                     alert("Failed to delete search item.");

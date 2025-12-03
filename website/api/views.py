@@ -937,7 +937,15 @@ class SearchHistoryApiView(APIView):
         """Clear user's entire search history or a single item if id is provided."""
         search_id = request.data.get("id") or request.query_params.get("id")
         if search_id:
-            # Delete single item
+            # Validate search_id is an integer
+            try:
+                search_id = int(search_id)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid search history item ID"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # Delete single item - filter by user to prevent unauthorized access
             search_item = SearchHistory.objects.filter(user=request.user, id=search_id).first()
             if search_item:
                 search_item.delete()
