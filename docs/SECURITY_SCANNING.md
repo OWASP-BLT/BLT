@@ -304,4 +304,4 @@ For questions or issues with security scanning:
 
 ---
 
-Last updated: 2025-12-03
+*This documentation is maintained alongside the security scanning workflows and configurations.*

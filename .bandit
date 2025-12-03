@@ -2,14 +2,14 @@
 # https://bandit.readthedocs.io/en/latest/config.html
 
 # Exclude directories from scanning
+# Using glob patterns for consistency
 exclude_dirs:
-  - /website/tests/
-  - /website/migrations/
-  - /*/migrations/
-  - /node_modules/
-  - /.venv/
-  - /venv/
-  - /static/
+  - '**/tests/'
+  - '**/migrations/'
+  - 'node_modules/'
+  - '.venv/'
+  - 'venv/'
+  - 'static/'
 
 # Specific tests to skip (if needed)
 # skips:
