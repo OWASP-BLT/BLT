@@ -103,34 +103,7 @@ jobs:
               return;
             }
 
-            const prCreatedAt = new Date(pr.created_at);
-
-            if (bountyLabelDetails.durationHours) {
-              const events = await github.paginate(github.rest.issues.listTimelineEvents, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: bountyIssue.number,
-                per_page: 100
-              });
-
-              const labelEvent = events
-                .filter(e => e.event === "labeled" && e.label?.name === bountyLabelDetails.labelName)
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-
-              const labelAttachedAt = labelEvent ? new Date(labelEvent.created_at) : new Date(bountyIssue.created_at);
-
-              if (!labelEvent) {
-                console.log('Timed bounty label timestamp not found; falling back to issue creation time.');
-              }
-
-              const expiryTime = new Date(labelAttachedAt.getTime() + bountyLabelDetails.durationHours * 60 * 60 * 1000);
-
-              if (prCreatedAt > expiryTime) {
-                console.log(`PR was opened after timed bounty expired (${expiryTime.toISOString()}); skipping payout.`);
-                return;
-              }
-            }
-
+            const isTimedBounty = Boolean(bountyLabelDetails.durationHours);
             let bountyAmount = bountyLabelDetails.amount;
 
             // Convert to cents for API (e.g., "25.50" -> 2550, "50" -> 5000)
@@ -147,6 +120,7 @@ jobs:
             core.setOutput('issue-number', bountyIssue.number.toString());
             core.setOutput('bounty-amount', bountyAmount);
             core.setOutput('contributor-username', pr.user.login);
+            core.setOutput('is-timed-bounty', isTimedBounty ? 'true' : 'false');
 
       - name: Send bounty data to BLT
         if: steps.check-issues.outputs['has-bounty'] == 'true'
@@ -155,6 +129,7 @@ jobs:
           BOUNTY_AMOUNT: ${{ steps.check-issues.outputs.bounty-amount }}
           CONTRIBUTOR_USERNAME: ${{ steps.check-issues.outputs.contributor-username }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          IS_TIMED_BOUNTY: ${{ steps.check-issues.outputs.is-timed-bounty }}
           BLT_API_TOKEN: ${{ secrets.BLT_API_TOKEN }}
           API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owasp.org' }}
         uses: actions/github-script@v6.1.1
@@ -173,7 +148,8 @@ jobs:
                 owner: context.repo.owner,
                 bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
                 contributor_username: process.env.CONTRIBUTOR_USERNAME,
-                pr_number: parseInt(process.env.PR_NUMBER)
+                pr_number: parseInt(process.env.PR_NUMBER),
+                is_timed_bounty: process.env.IS_TIMED_BOUNTY === 'true'
               })
             });
 

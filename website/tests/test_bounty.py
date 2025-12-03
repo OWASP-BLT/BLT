@@ -1,9 +1,11 @@
 import json
 import os
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.test import Client, TestCase
 from django.test.utils import override_settings
+from django.utils import timezone
 
 from website.models import GitHubIssue, Organization, Repo
 
@@ -80,6 +82,48 @@ class BountyPayoutTestCase(TestCase):
         call_args = mock_payment.call_args
         self.assertEqual(call_args[1]["username"], "testuser")
         self.assertEqual(call_args[1]["amount"], 5000)
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_timed_bounty_endpoint_records_expiry(self):
+        expiry = (timezone.now() + timedelta(hours=5)).isoformat()
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "bounty_expiry_date": expiry,
+        }
+
+        response = self.client.post(
+            "/timed_bounty/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.issue.refresh_from_db()
+        self.assertIsNotNone(self.issue.bounty_expiry_date)
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_timed_bounty_endpoint_invalid_datetime(self):
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "bounty_expiry_date": "not-a-date",
+        }
+
+        response = self.client.post(
+            "/timed_bounty/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid bounty_expiry_date", response.json()["message"])
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
     @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
@@ -238,3 +282,84 @@ class BountyPayoutTestCase(TestCase):
         # Verify database was NOT updated
         self.issue.refresh_from_db()
         self.assertIsNone(self.issue.sponsors_tx_id)
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch("website.views.bounty.process_github_sponsors_payment")
+    def test_bounty_payout_timed_not_expired(self, mock_payment):
+        mock_payment.return_value = "SPONSORSHIP_ID_67890"
+        self.issue.bounty_expiry_date = timezone.now() + timedelta(hours=2)
+        self.issue.save()
+
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+            "is_timed_bounty": True,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        mock_payment.assert_called_once()
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch("website.views.bounty.process_github_sponsors_payment")
+    def test_bounty_payout_timed_expired(self, mock_payment):
+        self.issue.bounty_expiry_date = timezone.now() - timedelta(hours=1)
+        self.issue.save()
+
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+            "is_timed_bounty": True,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Timed bounty has expired", response.json()["message"])
+        mock_payment.assert_not_called()
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    @patch("website.views.bounty.process_github_sponsors_payment")
+    def test_bounty_payout_timed_missing_expiry(self, mock_payment):
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+            "is_timed_bounty": True,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Timed bounty metadata missing", response.json()["message"])
+        mock_payment.assert_not_called()

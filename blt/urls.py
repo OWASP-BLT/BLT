@@ -60,7 +60,7 @@ from website.views.bitcoin import (
     update_submission_status,
 )
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
-from website.views.bounty import bounty_payout
+from website.views.bounty import bounty_payout, timed_bounty
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -1211,6 +1211,7 @@ urlpatterns = [
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
+    path("timed_bounty/", timed_bounty, name="timed_bounty"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
     # Duplicate Bug Checking API
     path(
