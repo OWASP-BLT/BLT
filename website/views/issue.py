@@ -1561,7 +1561,8 @@ class AllIssuesView(ListView):
         page = self.request.GET.get("page")
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            wallet, _ = Wallet.objects.get_or_create(user=self.request.user)
+            context["wallet"] = wallet
         try:
             activities_paginated = paginator.page(page)
         except PageNotAnInteger:
