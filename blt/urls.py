@@ -1225,6 +1225,7 @@ urlpatterns = [
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
     path("api/team/member-leaderboard/", TeamMemberLeaderboardAPIView.as_view(), name="api_team_leaderboard"),
     path("teams/member-leaderboard/", TeamMemberLeaderboardView.as_view(), name="team_member_leaderboard"),
+    path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_points_leaderboard"),
 ]
 
 if settings.DEBUG:

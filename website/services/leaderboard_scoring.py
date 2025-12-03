@@ -11,6 +11,11 @@ class LeaderboardScoringService:
             score (float)
             breakdown (dict)
         """
+        try:
+            profile = user.userprofile
+        except UserProfile.DoesNotExist:
+            return Decimal("0"), {"goals": 0, "frequency": 0}
+
         from website.models import DailyStatusReport
 
         reports = DailyStatusReport.objects.filter(
@@ -43,7 +48,7 @@ class LeaderboardScoringService:
                 (1 if r.previous_work else 0)
                 + (1 if r.next_plan else 0)
                 + (0.5 if r.blockers else 0)
-                + (0.5 if r.current_mood else 0)
+                + (0.5 if r.current_mood and r.current_mood.strip() else 0)
             ) / 3
             completeness_values.append(c)
 

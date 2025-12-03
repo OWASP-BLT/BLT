@@ -263,6 +263,9 @@ class Organization(models.Model):
         """Check if the user is a manager of the organization."""
         return self.managers.filter(id=user.id).exists()
 
+    def compute_team_score(self):
+        return self.managers.aggregate(total=models.Sum("userprofile__leaderboard_score"))["total"] or 0
+
     class Meta:
         ordering = ["-created"]
         indexes = [
@@ -1109,6 +1112,15 @@ class UserProfile(models.Model):
             return False
 
         return True
+
+    def compute_score_breakdown(self):
+        return {
+            "daily_reports": self.daily_reports_score,
+            "bugs_fixed": self.bug_fix_score,
+            "reviews_done": self.review_score,
+            "other": self.other_score,
+            "total": self.leaderboard_score,
+        }
 
     def award_streak_badges(self):
         """

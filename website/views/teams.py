@@ -298,54 +298,47 @@ class TeamChallenges(TemplateView):
 
 
 class TeamLeaderboard(TemplateView):
-    """View to display the team leaderboard based on total points with pagination."""
+    template_name = "teams/team_leaderboard.html"
 
     def get(self, request):
-        # Get all teams and their points
-        teams = Organization.objects.all()
+        teams = Organization.objects.annotate(member_count=Count("managers"))
         leaderboard_data = []
 
         for team in teams:
-            team_points = team.team_points
+            team_points = team.compute_team_score()
             leaderboard_data.append((team, team_points))
 
-        # Sort by points in descending order
+        # Sort teams by points descending
         leaderboard_data.sort(key=lambda x: x[1], reverse=True)
 
-        # Create a paginator object with 20 items per page
+        # Paginate (20 teams per page)
         paginator = Paginator(leaderboard_data, 20)
-
-        # Get the page number from the request
         page = request.GET.get("page", 1)
 
         try:
-            # Get the Page object for the requested page
             leaderboard = paginator.page(page)
         except PageNotAnInteger:
-            # If page is not an integer, deliver first page
             leaderboard = paginator.page(1)
         except EmptyPage:
-            # If page is out of range, deliver last page of results
             leaderboard = paginator.page(paginator.num_pages)
 
-        # Add rank information based on overall position
+        # Rank + tier calculation
         for index, (team, points) in enumerate(leaderboard, start=(leaderboard.number - 1) * 20 + 1):
             if points >= 1000:
-                team.rank = "PLATINUM"
+                rank = "PLATINUM"
             elif points >= 500:
-                team.rank = "GOLD"
+                rank = "GOLD"
             elif points >= 250:
-                team.rank = "SILVER"
+                rank = "SILVER"
             elif points >= 100:
-                team.rank = "BRONZE"
+                rank = "BRONZE"
             else:
-                team.rank = "UNRATED"
+                rank = "UNRATED"
 
-        context = {
-            "leaderboard": leaderboard,
-        }
+            team.rank_display = rank
+            team.rank_position = index
 
-        return render(request, "team_leaderboard.html", context)
+        return render(request, self.template_name, {"leaderboard": leaderboard})
 
 
 class TeamMemberLeaderboardView(LoginRequiredMixin, ListView):

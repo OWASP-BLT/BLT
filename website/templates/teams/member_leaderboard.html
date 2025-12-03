@@ -1,33 +1,626 @@
 {% extends "base.html" %}
 {% load static %}
+{% block title %}
+    Team Member Leaderboard
+{% endblock title %}
+{% block description %}
+    Check out the top performing team members on the leaderboard. View their scores, streaks, and rankings.
+{% endblock description %}
+{% block keywords %}
+    Member Leaderboard, Team Members, Scores, Rankings, Streaks, Quality Score
+{% endblock keywords %}
+{% block og_title %}
+    Team Member Leaderboard - Top Performing Members
+{% endblock og_title %}
+{% block og_description %}
+    Explore the leaderboard to see the top performing team members and their rankings.
+{% endblock og_description %}
 {% block content %}
-    <div class="container mt-4">
-        <h2 class="mb-4">Team Member Leaderboard</h2>
-        {% if not members %}
-            <div class="alert alert-info">No team members found.</div>
-        {% else %}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>User</th>
-                        <th>Score</th>
-                        <th>Streak</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for m in members %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>
-                                <a href="{% url 'profile' m.user.username %}">{{ m.user.username }}</a>
-                            </td>
-                            <td>{{ m.leaderboard_score }}</td>
-                            <td>{{ m.current_streak }} days</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endif %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div class="flex items-center gap-6">
+                        <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                            <i class="fas fa-users text-2xl text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Member Leaderboard</h1>
+                            <p class="text-gray-600 dark:text-gray-400 mt-2">Track individual performance and achievements within your team</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="/team/overview"
+                           class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                            <i class="fas fa-search mr-2"></i>Join a Team
+                        </a>
+                        <a href="/team/create"
+                           class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            <i class="fas fa-plus-circle mr-2"></i>Create Team
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% if not ranked_members %}
+                <!-- Empty State -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-friends text-2xl text-gray-400 dark:text-gray-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">You are not in any team yet</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">Join a team to start competing on the leaderboard</p>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <a href="/team/overview"
+                           class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            <i class="fas fa-search mr-2"></i>Find a Team
+                        </a>
+                        <a href="/team/create"
+                           class="px-6 py-2 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                            <i class="fas fa-plus-circle mr-2"></i>Create Team
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <!-- SERVER-RENDERED TABLE -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-8">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                            <i class="fas fa-trophy text-[#D4AF37] mr-2"></i>
+                            Team Member Rankings
+                        </h2>
+                    </div>
+                    <div class="hidden lg:block overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                                <tr>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-hashtag text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Rank</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-user text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Member</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-chart-line text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Score</span>
+                                            <i class="fas fa-sort-down text-[#e74c3c]"></i>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-star text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Quality</span>
+                                            <i class="fas fa-sort-down text-[#e74c3c]"></i>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-fire text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Streak</span>
+                                            <i class="fas fa-sort-down text-[#e74c3c]"></i>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in ranked_members %}
+                                    <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 {% if row.profile.user == request.user %}bg-[#e74c3c] bg-opacity-5{% endif %}">
+                                        <!-- Rank -->
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg {% if row.rank == 1 %}bg-[#D4AF37] text-white {% elif row.rank == 2 %}bg-[#C0C0C0] text-gray-800 dark:text-gray-200 {% elif row.rank == 3 %}bg-[#be7225] text-white {% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
+                                                    {{ row.rank }}
+                                                </div>
+                                                {% if row.rank <= 3 %}
+                                                    <i class="fas fa-trophy {% if row.rank == 1 %}text-[#D4AF37]{% elif row.rank == 2 %}text-[#C0C0C0]{% else %}text-[#be7225]{% endif %}"></i>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <!-- Avatar & Username -->
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-4">
+                                                <!-- Avatar -->
+                                                {% if row.profile.user_avatar %}
+                                                    <img src="{{ row.profile.user_avatar }}"
+                                                         height="20px"
+                                                         width="20px"
+                                                         alt="{{ row.profile.user.username }}"
+                                                         class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% elif row.profile.social_avatar %}
+                                                    <img src="{{ row.profile.social_avatar }}"
+                                                         height="20px"
+                                                         width="20px"
+                                                         alt="{{ row.profile.user.username }}"
+                                                         class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% else %}
+                                                    <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-[#e74c3c]">
+                                                        <i class="fas fa-user text-gray-400 dark:text-gray-500"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <div class="font-semibold text-gray-800 dark:text-gray-200">{{ row.profile.user.username }}</div>
+                                                    {% if row.profile.user == request.user %}
+                                                        <div class="flex items-center gap-1 text-sm text-[#e74c3c] mt-1">
+                                                            <i class="fas fa-user-check"></i>
+                                                            <span>You</span>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <!-- Score -->
+                                        <td class="py-4 px-6">
+                                            <div class="text-2xl font-bold text-[#e74c3c]">{{ row.score|floatformat:2 }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">points</div>
+                                        </td>
+                                        <!-- Quality Score -->
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-3">
+                                                <div class="text-lg font-semibold {% if row.quality_score >= 90 %}text-green-500{% elif row.quality_score >= 70 %}text-yellow-500{% else %}text-red-500{% endif %}">
+                                                    {{ row.quality_score|default:"0.00"|floatformat:2 }}
+                                                </div>
+                                                <div class="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                    <div class="h-full {% if row.quality_score >= 90 %}bg-green-500{% elif row.quality_score >= 70 %}bg-yellow-500{% else %}bg-red-500{% endif %}"
+                                                         style="width: {{ row.quality_score|default:0 }}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <!-- Streak -->
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-3">
+                                                <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ row.streak }}</div>
+                                                <div class="flex flex-col">
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">day{{ row.streak|pluralize }}</span>
+                                                    <div class="flex items-center gap-1">
+                                                        {% for i in "12345" %}
+                                                            {% if forloop.counter <= row.streak %}
+                                                                <i class="fas fa-fire text-[#e74c3c] text-xs"></i>
+                                                            {% else %}
+                                                                <i class="fas fa-fire text-gray-300 dark:text-gray-600 text-xs"></i>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Mobile Cards View for Server-rendered -->
+                    <div class="lg:hidden p-6">
+                        {% for row in ranked_members %}
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 mb-4 {% if row.profile.user == request.user %}border-l-4 border-[#e74c3c]{% endif %}">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex items-start gap-4">
+                                        <!-- Rank -->
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg mb-1 {% if row.rank == 1 %}bg-[#D4AF37] text-white {% elif row.rank == 2 %}bg-[#C0C0C0] text-gray-800 dark:text-gray-200 {% elif row.rank == 3 %}bg-[#be7225] text-white {% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
+                                                {{ row.rank }}
+                                            </div>
+                                            {% if row.rank <= 3 %}
+                                                <i class="fas fa-trophy text-xs {% if row.rank == 1 %}text-[#D4AF37]{% elif row.rank == 2 %}text-[#C0C0C0]{% else %}text-[#be7225]{% endif %}"></i>
+                                            {% endif %}
+                                        </div>
+                                        <!-- User Info -->
+                                        <div>
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <!-- Avatar -->
+                                                {% if row.profile.user_avatar %}
+                                                    <img src="{{ row.profile.user_avatar }}"
+                                                         height="20px"
+                                                         width="20px"
+                                                         alt="{{ row.profile.user.username }}"
+                                                         class="w-10 h-10 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% elif row.profile.social_avatar %}
+                                                    <img src="{{ row.profile.social_avatar }}"
+                                                         height="20px"
+                                                         width="20px"
+                                                         alt="{{ row.profile.user.username }}"
+                                                         class="w-10 h-10 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% else %}
+                                                    <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-[#e74c3c]">
+                                                        <i class="fas fa-user text-gray-400 dark:text-gray-500 text-sm"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <h3 class="font-bold text-gray-800 dark:text-gray-200">{{ row.profile.user.username }}</h3>
+                                                    {% if row.profile.user == request.user %}
+                                                        <div class="flex items-center gap-1 text-xs text-[#e74c3c] mt-1">
+                                                            <i class="fas fa-user-check"></i>
+                                                            <span>You</span>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Stats Row -->
+                                <div class="grid grid-cols-3 gap-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                                    <div class="text-center">
+                                        <div class="text-xl font-bold text-[#e74c3c]">{{ row.score|floatformat:2 }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">Score</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-lg font-semibold {% if row.quality_score >= 90 %}text-green-500{% elif row.quality_score >= 70 %}text-yellow-500{% else %}text-red-500{% endif %}">
+                                            {{ row.quality_score|default:"0.00"|floatformat:2 }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">Quality</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="flex flex-col items-center">
+                                            <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ row.streak }}</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">Day{{ row.streak|pluralize }}</div>
+                                            <div class="flex items-center gap-0.5 mt-1">
+                                                {% for i in "123" %}
+                                                    {% if forloop.counter <= row.streak %}
+                                                        <i class="fas fa-fire text-[#e74c3c] text-xs"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-fire text-gray-300 dark:text-gray-600 text-xs"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- API-DRIVEN TABLE -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                            <i class="fas fa-bolt text-[#e74c3c] mr-2"></i>
+                            Live Leaderboard
+                            <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">Updates in real-time</span>
+                        </h2>
+                    </div>
+                    <!-- Desktop Table for API -->
+                    <div id="api-desktop-view" class="hidden lg:block">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                                    <tr>
+                                        <th class="py-4 px-6 text-left">Rank</th>
+                                        <th class="py-4 px-6 text-left">Member</th>
+                                        <th class="py-4 px-6 text-left">Score</th>
+                                        <th class="py-4 px-6 text-left">Quality</th>
+                                        <th class="py-4 px-6 text-left">Streak</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-body">
+                                    <!-- Loading Skeleton for desktop -->
+                                    {% for i in "12345" %}
+                                        <tr class="border-b border-gray-100 dark:border-gray-700">
+                                            <td class="py-4 px-6">
+                                                <div class="animate-pulse flex items-center gap-3">
+                                                    <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4"></div>
+                                                </div>
+                                            </td>
+                                            <td class="py-4 px-6">
+                                                <div class="animate-pulse flex items-center gap-4">
+                                                    <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                                                    <div>
+                                                        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-2"></div>
+                                                        <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="py-4 px-6">
+                                                <div class="animate-pulse">
+                                                    <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div>
+                                                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+                                                </div>
+                                            </td>
+                                            <td class="py-4 px-6">
+                                                <div class="animate-pulse">
+                                                    <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12 mb-1"></div>
+                                                    <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
+                                                </div>
+                                            </td>
+                                            <td class="py-4 px-6">
+                                                <div class="animate-pulse">
+                                                    <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-8 mb-1"></div>
+                                                    <div class="flex gap-1">
+                                                        {% for j in "12345" %}<div class="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded-full"></div>{% endfor %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Mobile Cards View for API -->
+                    <div id="api-mobile-view" class="lg:hidden p-6">
+                        <div id="leaderboard-cards">
+                            <!-- Loading Skeleton for mobile -->
+                            {% for i in "12345" %}
+                                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-4 animate-pulse">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="flex items-start gap-4">
+                                            <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                                            <div>
+                                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-2"></div>
+                                                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+                                            </div>
+                                        </div>
+                                        <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                                        <div>
+                                            <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12 mx-auto mb-1"></div>
+                                            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto"></div>
+                                        </div>
+                                        <div>
+                                            <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-10 mx-auto mb-1"></div>
+                                            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto"></div>
+                                        </div>
+                                        <div>
+                                            <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto mb-1"></div>
+                                            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-10 mx-auto"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     </div>
+{% endblock content %}
+{% block extra_js %}
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const apiDesktopView = document.getElementById("api-desktop-view");
+    const apiMobileView = document.getElementById("api-mobile-view");
+    
+    fetch("/api/team/member-leaderboard/", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+    })
+    .then(data => {
+        const tbody = document.querySelector("#leaderboard-body");
+        const cardsContainer = document.querySelector("#leaderboard-cards");
+        
+        if (!tbody && !cardsContainer) return;
+
+        // Clear loading skeletons
+        if (tbody) tbody.innerHTML = "";
+        if (cardsContainer) cardsContainer.innerHTML = "";
+
+        if (data.length === 0) {
+            const emptyMessage = `<tr><td colspan="5" class="text-center py-8 text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-users text-2xl mb-2"></i>
+                                    <div>No data available</div>
+                                  </td></tr>`;
+            if (tbody) tbody.innerHTML = emptyMessage;
+            if (cardsContainer) cardsContainer.innerHTML = `
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-users text-2xl mb-2"></i>
+                    <div>No data available</div>
+                </div>`;
+            return;
+        }
+
+        // Desktop table rows
+        if (tbody) {
+            data.forEach((member, index) => {
+                const rank = index + 1;
+                const isCurrentUser = member.username === "{{ request.user.username }}";
+                
+                // Get avatar URL with fallback
+                let avatarUrl = member.user_avatar || member.social_avatar || '';
+                const avatarHtml = avatarUrl 
+                    ? `<img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]" alt="${member.username}">`
+                    : `<div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-[#e74c3c]">
+                          <i class="fas fa-user text-gray-400 dark:text-gray-500"></i>
+                       </div>`;
+
+                // Format numbers
+                const score = parseFloat(member.leaderboard_score || 0).toFixed(2);
+                const quality = parseFloat(member.quality_score || 0).toFixed(2);
+                const streak = member.current_streak || 0;
+
+                // Quality color
+                let qualityColor = "text-red-500";
+                if (parseFloat(quality) >= 70) qualityColor = "text-yellow-500";
+                if (parseFloat(quality) >= 90) qualityColor = "text-green-500";
+
+                // Streak fires
+                let streakFires = "";
+                for (let i = 1; i <= 5; i++) {
+                    if (i <= streak) {
+                        streakFires += `<i class="fas fa-fire text-[#e74c3c] text-xs"></i>`;
+                    } else {
+                        streakFires += `<i class="fas fa-fire text-gray-300 dark:text-gray-600 text-xs"></i>`;
+                    }
+                }
+
+                const row = document.createElement('tr');
+                row.className = `border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${isCurrentUser ? 'bg-[#e74c3c] bg-opacity-5' : ''}`;
+                
+                row.innerHTML = `
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${rank == 1 ? 'bg-[#D4AF37] text-white' : rank == 2 ? 'bg-[#C0C0C0] text-gray-800 dark:text-gray-200' : rank == 3 ? 'bg-[#be7225] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}">
+                                ${rank}
+                            </div>
+                            ${rank <= 3 ? `<i class="fas fa-trophy ${rank == 1 ? 'text-[#D4AF37]' : rank == 2 ? 'text-[#C0C0C0]' : 'text-[#be7225]'}"></i>` : ''}
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-4">
+                            ${avatarHtml}
+                            <div>
+                                <div class="font-semibold text-gray-800 dark:text-gray-200">${member.username}</div>
+                                ${isCurrentUser ? 
+                                    `<div class="flex items-center gap-1 text-sm text-[#e74c3c] mt-1">
+                                        <i class="fas fa-user-check"></i>
+                                        <span>You</span>
+                                    </div>` : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="text-2xl font-bold text-[#e74c3c]">${score}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">points</div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="text-lg font-semibold ${qualityColor}">${quality}</div>
+                            <div class="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full ${parseFloat(quality) >= 90 ? 'bg-green-500' : parseFloat(quality) >= 70 ? 'bg-yellow-500' : 'bg-red-500'}" style="width: ${parseFloat(quality)}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">${streak}</div>
+                            <div class="flex flex-col">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">day${streak !== 1 ? 's' : ''}</span>
+                                <div class="flex items-center gap-0.5">
+                                    ${streakFires}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Mobile cards
+        if (cardsContainer) {
+            data.forEach((member, index) => {
+                const rank = index + 1;
+                const isCurrentUser = member.username === "{{ request.user.username }}";
+                
+                // Get avatar URL with fallback
+                let avatarUrl = member.user_avatar || member.social_avatar || '';
+                const avatarHtml = avatarUrl 
+                    ? `<img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border-2 border-[#e74c3c]" alt="${member.username}">`
+                    : `<div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-[#e74c3c]">
+                          <i class="fas fa-user text-gray-400 dark:text-gray-500 text-sm"></i>
+                       </div>`;
+
+                // Format numbers
+                const score = parseFloat(member.leaderboard_score || 0).toFixed(2);
+                const quality = parseFloat(member.quality_score || 0).toFixed(2);
+                const streak = member.current_streak || 0;
+
+                // Quality color
+                let qualityColor = "text-red-500";
+                if (parseFloat(quality) >= 70) qualityColor = "text-yellow-500";
+                if (parseFloat(quality) >= 90) qualityColor = "text-green-500";
+
+                // Rank colors
+                let rankColor = rank == 1 ? 'bg-[#D4AF37] text-white' : 
+                               rank == 2 ? 'bg-[#C0C0C0] text-gray-800 dark:text-gray-200' :
+                               rank == 3 ? 'bg-[#be7225] text-white' :
+                               'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400';
+
+                const card = document.createElement('div');
+                card.className = `bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 mb-4 ${isCurrentUser ? 'border-l-4 border-[#e74c3c]' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-start gap-4">
+                            <!-- Rank -->
+                            <div class="flex flex-col items-center">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg mb-1 ${rankColor}">
+                                    ${rank}
+                                </div>
+                                ${rank <= 3 ? `<i class="fas fa-trophy text-xs ${rank == 1 ? 'text-[#D4AF37]' : rank == 2 ? 'text-[#C0C0C0]' : 'text-[#be7225]'}"></i>` : ''}
+                            </div>
+                            
+                            <!-- User Info -->
+                            <div>
+                                <div class="flex items-center gap-3 mb-2">
+                                    ${avatarHtml}
+                                    <div>
+                                        <h3 class="font-bold text-gray-800 dark:text-gray-200">${member.username}</h3>
+                                        ${isCurrentUser ? 
+                                            `<div class="flex items-center gap-1 text-xs text-[#e74c3c] mt-1">
+                                                <i class="fas fa-user-check"></i>
+                                                <span>You</span>
+                                            </div>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Row -->
+                    <div class="grid grid-cols-3 gap-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <div class="text-center">
+                            <div class="text-xl font-bold text-[#e74c3c]">${score}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Score</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-semibold ${qualityColor}">${quality}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Quality</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">${streak}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Day${streak !== 1 ? 's' : ''}</div>
+                                <div class="flex items-center gap-0.5 mt-1">
+                                    ${Array.from({length: 3}).map((_, i) => 
+                                        i < streak ? 
+                                        `<i class="fas fa-fire text-[#e74c3c] text-xs"></i>` :
+                                        `<i class="fas fa-fire text-gray-300 dark:text-gray-600 text-xs"></i>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
+            });
+        }
+    })
+    .catch(err => {
+        console.error("Leaderboard API error:", err);
+        const errorMessage = `<tr><td colspan="5" class="text-center py-8 text-[#e74c3c]">
+                                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                                <div>Failed to load leaderboard data</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">Please try again later</div>
+                              </td></tr>`;
+        
+        const tbody = document.querySelector("#leaderboard-body");
+        const cardsContainer = document.querySelector("#leaderboard-cards");
+        
+        if (tbody) tbody.innerHTML = errorMessage;
+        if (cardsContainer) cardsContainer.innerHTML = `
+            <div class="text-center py-8 text-[#e74c3c]">
+                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                <div>Failed to load leaderboard data</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">Please try again later</div>
+            </div>`;
+    });
+});
+    </script>
 {% endblock %}

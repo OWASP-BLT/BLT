@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block title %}
+    Team Leaderboard
+{% endblock title %}
+{% block description %}
+    Check out the top performing teams on the leaderboard. View their scores, names, and rankings.
+{% endblock description %}
+{% block keywords %}
+    Team Leaderboard, Top Teams, Scores, Rankings, Team Performance
+{% endblock keywords %}
+{% block og_title %}
+    Team Leaderboard - Top Performing Teams
+{% endblock og_title %}
+{% block og_description %}
+    Explore the leaderboard to see the top performing teams and their rankings.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div class="flex items-center gap-6">
+                        <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                            <i class="fas fa-trophy text-2xl text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Global Teams Leaderboard</h1>
+                            <p class="text-gray-600 dark:text-gray-400 mt-2">Discover the top-performing teams and their achievements</p>
+                        </div>
+                    </div>
+                    {% if request.user.userprofile.team %}
+                        <div class="bg-[#e74c3c] bg-opacity-10 border border-[#e74c3c] border-opacity-30 rounded-xl px-4 py-3">
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Your team</p>
+                            <p class="font-semibold text-[#e74c3c]">{{ request.user.userprofile.team.name }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% if not leaderboard %}
+                <!-- No Teams State -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-2xl text-gray-400 dark:text-gray-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">No Teams Available</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">There are no teams registered in the leaderboard yet.</p>
+                    {% if not request.user.userprofile.team %}
+                        <div class="flex justify-center gap-4">
+                            <a href="/team/overview"
+                               class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                                <i class="fas fa-search mr-2"></i>Browse Teams
+                            </a>
+                            <a href="/team/create"
+                               class="px-6 py-2 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                                <i class="fas fa-plus mr-2"></i>Create Team
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <!-- Desktop Table View -->
+                <div class="hidden lg:block bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-8">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                                <tr>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-hashtag text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Rank</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-users text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Team</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-chart-line text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Points</span>
+                                            <i class="fas fa-sort-down text-[#e74c3c]"></i>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-medal text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Rank Badge</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-user-friends text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Members</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <span class="font-semibold text-gray-700 dark:text-gray-300">Actions</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for team, points in leaderboard %}
+                                    {% with rank=forloop.counter %}
+                                        <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 {% if request.user.userprofile.team == team %}bg-[#e74c3c] bg-opacity-5{% endif %}">
+                                            <!-- Rank -->
+                                            <td class="py-4 px-6">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg {% if rank == 1 %}bg-[#D4AF37] text-white {% elif rank == 2 %}bg-[#C0C0C0] text-gray-800 dark:text-gray-200 {% elif rank == 3 %}bg-[#be7225] text-white {% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
+                                                        {{ rank }}
+                                                    </div>
+                                                    {% if rank <= 3 %}
+                                                        <i class="fas fa-trophy {% if rank == 1 %}text-[#D4AF37]{% elif rank == 2 %}text-[#C0C0C0]{% else %}text-[#be7225]{% endif %}"></i>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <!-- Team Logo & Name -->
+                                            <td class="py-4 px-6">
+                                                <div class="flex items-center gap-4">
+                                                    <!-- Logo -->
+                                                    {% if team.logo and team.logo.url %}
+                                                        <img src="{{ team.logo.url }}"
+                                                             height="20px"
+                                                             width="20px"
+                                                             alt="{{ team.name }}"
+                                                             class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                    {% else %}
+                                                        <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-[#e74c3c]">
+                                                            <i class="fas fa-users text-gray-400 dark:text-gray-500"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <div class="font-semibold text-gray-800 dark:text-gray-200">{{ team.name }}</div>
+                                                        {% if request.user.userprofile.team == team %}
+                                                            <div class="flex items-center gap-1 text-sm text-[#e74c3c] mt-1">
+                                                                <i class="fas fa-map-marker-alt"></i>
+                                                                <span>You are here</span>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <!-- Points -->
+                                            <td class="py-4 px-6">
+                                                <div class="text-2xl font-bold text-[#e74c3c]">{{ points|intcomma }}</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">points</div>
+                                            </td>
+                                            <!-- Rank Badge -->
+                                            <td class="py-4 px-6">
+                                                {% if points >= 1000 %}
+                                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#E5E4E2] to-[#d7d7d7]">
+                                                        <i class="fas fa-gem"></i>
+                                                        <span class="font-semibold text-gray-800">PLATINUM</span>
+                                                    </div>
+                                                {% elif points >= 500 %}
+                                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700] to-[#DAA520]">
+                                                        <i class="fas fa-award"></i>
+                                                        <span class="font-semibold text-gray-800">GOLD</span>
+                                                    </div>
+                                                {% elif points >= 250 %}
+                                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#C0C0C0] to-[#a0a0a0]">
+                                                        <i class="fas fa-medal"></i>
+                                                        <span class="font-semibold text-gray-800">SILVER</span>
+                                                    </div>
+                                                {% elif points >= 100 %}
+                                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#cd7f32] to-[#b5651d]">
+                                                        <i class="fas fa-shield-alt"></i>
+                                                        <span class="font-semibold text-white">BRONZE</span>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700">
+                                                        <i class="fas fa-star text-gray-400"></i>
+                                                        <span class="font-semibold text-gray-600 dark:text-gray-400">UNRATED</span>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <!-- Members Count -->
+                                            <td class="py-4 px-6">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ team.member_count|default:"0" }}</div>
+                                                    <div class="text-sm text-gray-500 dark:text-gray-400">members</div>
+                                                </div>
+                                            </td>
+                                            <!-- View Button -->
+                                            <td class="py-4 px-6">
+                                                <a href="/team/{{ team.url }}/"
+                                                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                                                    <i class="fas fa-eye"></i>
+                                                    View Team
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination for Desktop -->
+                    {% if page_obj.paginator.num_pages > 1 %}
+                        <div class="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                    Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    {% if page_obj.has_previous %}
+                                        <a href="?page={{ page_obj.previous_page_number }}"
+                                           class="flex items-center px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                                            <i class="fas fa-chevron-left mr-2"></i>
+                                            Previous
+                                        </a>
+                                    {% else %}
+                                        <span class="flex items-center px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-chevron-left mr-2"></i>
+                                            Previous
+                                        </span>
+                                    {% endif %}
+                                    <div class="flex items-center gap-1">
+                                        {% for num in page_obj.paginator.page_range %}
+                                            {% if page_obj.number == num %}
+                                                <span class="px-3 py-1 text-sm font-medium text-white bg-[#e74c3c] rounded-lg">{{ num }}</span>
+                                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                                <a href="?page={{ num }}"
+                                                   class="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300">
+                                                    {{ num }}
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% if page_obj.has_next %}
+                                        <a href="?page={{ page_obj.next_page_number }}"
+                                           class="flex items-center px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                                            Next
+                                            <i class="fas fa-chevron-right ml-2"></i>
+                                        </a>
+                                    {% else %}
+                                        <span class="flex items-center px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+                                            Next
+                                            <i class="fas fa-chevron-right ml-2"></i>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Mobile Card View -->
+                <div class="lg:hidden space-y-4">
+                    {% for team, points in leaderboard %}
+                        {% with rank=forloop.counter %}
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 {% if request.user.userprofile.team == team %}border-l-4 border-[#e74c3c]{% endif %}">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex items-start gap-4">
+                                        <!-- Rank -->
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mb-2 {% if rank == 1 %}bg-[#D4AF37] text-white {% elif rank == 2 %}bg-[#C0C0C0] text-gray-800 dark:text-gray-200 {% elif rank == 3 %}bg-[#be7225] text-white {% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
+                                                {{ rank }}
+                                            </div>
+                                            {% if rank <= 3 %}
+                                                <i class="fas fa-trophy text-sm {% if rank == 1 %}text-[#D4AF37]{% elif rank == 2 %}text-[#C0C0C0]{% else %}text-[#be7225]{% endif %}"></i>
+                                            {% endif %}
+                                        </div>
+                                        <!-- Team Info -->
+                                        <div>
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <!-- Logo -->
+                                                {% if team.logo and team.logo.url %}
+                                                    <img src="{{ team.logo.url }}"
+                                                         height="20px"
+                                                         width="20px"
+                                                         alt="{{ team.name }}"
+                                                         class="w-10 h-10 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% else %}
+                                                    <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-[#e74c3c]">
+                                                        <i class="fas fa-users text-gray-400 dark:text-gray-500"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <h3 class="font-bold text-gray-800 dark:text-gray-200">{{ team.name }}</h3>
+                                                    {% if request.user.userprofile.team == team %}
+                                                        <div class="flex items-center gap-1 text-xs text-[#e74c3c] mt-1">
+                                                            <i class="fas fa-map-marker-alt"></i>
+                                                            <span>Your team</span>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <!-- Rank Badge -->
+                                            <div class="mt-2">
+                                                {% if points >= 1000 %}
+                                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full bg-gradient-to-r from-[#E5E4E2] to-[#d7d7d7]">
+                                                        <i class="fas fa-gem text-xs"></i>
+                                                        <span class="font-semibold text-gray-800">PLATINUM</span>
+                                                    </span>
+                                                {% elif points >= 500 %}
+                                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full bg-gradient-to-r from-[#FFD700] to-[#DAA520]">
+                                                        <i class="fas fa-award text-xs"></i>
+                                                        <span class="font-semibold text-gray-800">GOLD</span>
+                                                    </span>
+                                                {% elif points >= 250 %}
+                                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full bg-gradient-to-r from-[#C0C0C0] to-[#a0a0a0]">
+                                                        <i class="fas fa-medal text-xs"></i>
+                                                        <span class="font-semibold text-gray-800">SILVER</span>
+                                                    </span>
+                                                {% elif points >= 100 %}
+                                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full bg-gradient-to-r from-[#cd7f32] to-[#b5651d]">
+                                                        <i class="fas fa-shield-alt text-xs"></i>
+                                                        <span class="font-semibold text-white">BRONZE</span>
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700">
+                                                        <i class="fas fa-star text-xs text-gray-400"></i>
+                                                        <span class="font-semibold text-gray-600 dark:text-gray-400">UNRATED</span>
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Stats and Action -->
+                                <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-4">
+                                    <div class="flex items-center gap-6">
+                                        <div>
+                                            <div class="text-2xl font-bold text-[#e74c3c]">{{ points|intcomma }}</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">Points</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ team.member_count|default:"0" }}</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">Members</div>
+                                        </div>
+                                    </div>
+                                    <a href="/team/{{ team.url }}/"
+                                       class="inline-flex items-center gap-2 px-3 py-1 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                                        <i class="fas fa-eye text-xs"></i>
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        {% endwith %}
+                    {% endfor %}
+                    <!-- Pagination for Mobile -->
+                    {% if page_obj.paginator.num_pages > 1 %}
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mt-4">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    {% if page_obj.has_previous %}
+                                        <a href="?page={{ page_obj.previous_page_number }}"
+                                           class="flex items-center px-3 py-1 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    {% else %}
+                                        <span class="flex items-center px-3 py-1 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </span>
+                                    {% endif %}
+                                    {% if page_obj.has_next %}
+                                        <a href="?page={{ page_obj.next_page_number }}"
+                                           class="flex items-center px-3 py-1 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    {% else %}
+                                        <span class="flex items-center px-3 py-1 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!-- Skeleton Loader (for JS-based loading) -->
+            <div id="skeleton-loader" class="hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-4">
+                    <div class="animate-pulse">
+                        {% for i in "12345" %}
+                            <div class="flex items-center justify-between mb-6 last:mb-0">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                                    <div>
+                                        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-2"></div>
+                                        <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12 mb-1"></div>
+                                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_js %}
+    <script>
+// This would be used if we load leaderboard via API
+function showSkeletonLoader() {
+    document.getElementById('skeleton-loader').classList.remove('hidden');
+}
+
+function hideSkeletonLoader() {
+    document.getElementById('skeleton-loader').classList.add('hidden');
+}
+
+    </script>
+{% endblock %}
