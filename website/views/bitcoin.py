@@ -40,132 +40,6 @@ def slack_escape(text):
     )
 
 
-def send_bacon_submission_slack_notification(submission, username, contribution_type, github_url, description, status):
-    """
-    Send Slack notification for BACON submission to #project-blt-bacon channel.
-
-    Args:
-        submission: The BaconSubmission instance
-        username: The username of the submitter
-        contribution_type: Type of contribution (security/non-security)
-        github_url: URL to the GitHub PR
-        description: Description of the contribution
-        status: Current status of the submission
-    """
-    try:
-        # Find OWASP BLT organization
-        # Use exact match first, fallback to case-insensitive contains for flexibility
-        owasp_org = Organization.objects.filter(name="OWASP BLT").first()
-        if not owasp_org:
-            owasp_org = Organization.objects.filter(name__icontains="OWASP BLT").first()
-
-        if not owasp_org:
-            logger.warning("OWASP BLT organization not found")
-            return
-
-        # Get Slack integration for the organization
-        slack_integration = SlackIntegration.objects.filter(integration__organization=owasp_org).first()
-
-        if not slack_integration or not slack_integration.bot_access_token:
-            logger.warning("Slack integration not configured for OWASP BLT")
-            return
-
-        # Get credentials from database
-        bot_token = slack_integration.bot_access_token
-        channel_id = slack_integration.default_channel_id
-
-        # Create WebClient once for reuse
-        client = WebClient(token=bot_token)
-
-        # If no default channel ID is set, try to find #project-blt-bacon specifically
-        # Handle pagination to ensure we check all channels
-        if not channel_id:
-            channel_id = _find_slack_channel(client, "project-blt-bacon")
-
-        # Send notification if we have a channel ID
-        if not channel_id:
-            logger.warning("Slack channel #project-blt-bacon not found and no default channel configured")
-            return
-
-        # Sanitize description for Slack markdown (escape special characters)
-        # Slack markdown uses *, _, `, ~, <, >, & for formatting
-        sanitized_description = description[:200]
-        sanitized_description = slack_escape(sanitized_description)
-        if len(description) > 200:
-            sanitized_description += "..."
-
-        # Escape username and other user-provided fields for Slack markdown
-        escaped_username = slack_escape(username)
-        escaped_type = slack_escape(contribution_type)
-        escaped_status = slack_escape(status)
-
-        # Build the message
-        message = (
-            f"*New BACON Claim Submitted!*\n\n"
-            f"• *User:* {escaped_username}\n"
-            f"• *Type:* {escaped_type}\n"
-            f"• *PR:* {github_url}\n"
-            f"• *Description:* {sanitized_description}\n"
-            f"• *Amount:* {submission.bacon_amount} BACON\n"
-            f"• *Status:* {escaped_status}"
-        )
-
-        # Send to Slack
-        try:
-            client.chat_postMessage(
-                channel=channel_id,
-                text=message,
-                unfurl_links=False,
-            )
-            logger.info("Slack notification sent for submission %s", submission.id)
-        except SlackApiError as e:
-            logger.error(
-                "Failed to send Slack message to channel %s: %s",
-                channel_id,
-                e,
-                exc_info=True,
-            )
-
-    except Exception as e:
-        # Don't fail the submission if Slack fails
-        logger.error("Failed to send Slack notification: %s", e, exc_info=True)
-
-
-def _find_slack_channel(client, channel_name):
-    """
-    Find a Slack channel by name, handling pagination.
-
-    Args:
-        client: Slack WebClient instance
-        channel_name: Name of the channel to find (without #)
-
-    Returns:
-        Channel ID if found, None otherwise
-    """
-    try:
-        cursor = None
-        while True:
-            channels_response = client.conversations_list(types="public_channel", cursor=cursor)
-            if channels_response.get("ok"):
-                for channel in channels_response.get("channels", []):
-                    if channel.get("name") == channel_name:
-                        return channel.get("id")
-                # Check for next page
-                cursor = channels_response.get("response_metadata", {}).get("next_cursor")
-                if not cursor:
-                    break
-            else:
-                logger.warning(
-                    "Failed to list Slack channels: %s",
-                    channels_response.get("error"),
-                )
-                break
-    except SlackApiError as e:
-        logger.warning("Failed to find #%s channel: %s", channel_name, e)
-
-    return None
-
-
 # @login_required
 def batch_send_bacon_tokens_view(request):
     # Get all users with non-zero tokens_earned
@@ -269,14 +143,104 @@ class BaconSubmissionView(View):
             )
 
             # Send Slack notification to #project-blt-bacon channel
-            send_bacon_submission_slack_notification(
-                submission=submission,
-                username=request.user.username,
-                contribution_type=contribution_type,
-                github_url=github_url,
-                description=description,
-                status=status,
-            )
+            try:
+                # Find OWASP BLT organization
+                # Use exact match first, fallback to case-insensitive contains for flexibility
+                owasp_org = Organization.objects.filter(name="OWASP BLT").first()
+                if not owasp_org:
+                    owasp_org = Organization.objects.filter(name__icontains="OWASP BLT").first()
+
+                if owasp_org:
+                    # Get Slack integration for the organization
+                    slack_integration = SlackIntegration.objects.filter(integration__organization=owasp_org).first()
+
+                    if slack_integration and slack_integration.bot_access_token:
+                        # Get credentials from database
+                        bot_token = slack_integration.bot_access_token
+                        channel_id = slack_integration.default_channel_id
+
+                        # Create WebClient once for reuse
+                        client = WebClient(token=bot_token)
+
+                        # If no default channel ID is set, try to find #project-blt-bacon specifically
+                        # Handle pagination to ensure we check all channels
+                        if not channel_id:
+                            try:
+                                cursor = None
+                                while True:
+                                    channels_response = client.conversations_list(types="public_channel", cursor=cursor)
+                                    if channels_response.get("ok"):
+                                        for channel in channels_response.get("channels", []):
+                                            if channel.get("name") == "project-blt-bacon":
+                                                channel_id = channel.get("id")
+                                                break
+                                        if channel_id:
+                                            break
+                                        # Check for next page
+                                        cursor = channels_response.get("response_metadata", {}).get("next_cursor")
+                                        if not cursor:
+                                            break
+                                    else:
+                                        logger.warning(
+                                            "Failed to list Slack channels: %s",
+                                            channels_response.get("error"),
+                                        )
+                                        break
+                            except SlackApiError as e:
+                                logger.warning("Failed to find #project-blt-bacon channel: %s", e)
+
+                        # Send notification if we have a channel ID
+                        if channel_id:
+                            # Sanitize description for Slack markdown (escape special characters)
+                            # Slack markdown uses *, _, `, ~, <, >, & for formatting
+                            sanitized_description = description[:200]
+                            sanitized_description = slack_escape(sanitized_description)
+                            if len(description) > 200:
+                                sanitized_description += "..."
+
+                            # Escape username and other user-provided fields for Slack markdown
+                            escaped_username = slack_escape(request.user.username)
+                            escaped_type = slack_escape(contribution_type)
+                            escaped_status = slack_escape(status)
+
+                            # Build the message
+                            message = (
+                                f"*New BACON Claim Submitted!*\n\n"
+                                f"• *User:* {escaped_username}\n"
+                                f"• *Type:* {escaped_type}\n"
+                                f"• *PR:* {github_url}\n"
+                                f"• *Description:* {sanitized_description}\n"
+                                f"• *Amount:* {bacon_amount} BACON\n"
+                                f"• *Status:* {escaped_status}"
+                            )
+
+                            # Send to Slack
+                            try:
+                                client.chat_postMessage(
+                                    channel=channel_id,
+                                    text=message,
+                                    unfurl_links=False,
+                                )
+                                logger.info("Slack notification sent for submission %s", submission.id)
+                            except SlackApiError as e:
+                                logger.error(
+                                    "Failed to send Slack message to channel %s: %s",
+                                    channel_id,
+                                    e,
+                                    exc_info=True,
+                                )
+                        else:
+                            logger.warning(
+                                "Slack channel #project-blt-bacon not found and no default channel configured"
+                            )
+                    else:
+                        logger.warning("Slack integration not configured for OWASP BLT")
+                else:
+                    logger.warning("OWASP BLT organization not found")
+
+            except Exception as e:
+                # Don't fail the submission if Slack fails
+                logger.error("Failed to send Slack notification: %s", e, exc_info=True)
 
             return JsonResponse({"message": "Submission created", "submission_id": submission.id}, status=201)
 
