@@ -1,0 +1,33 @@
+# Gitleaks configuration for OWASP BLT
+# https://github.com/gitleaks/gitleaks
+
+title = "Gitleaks config for OWASP BLT"
+
+# Paths to exclude from scanning
+[allowlist]
+paths = [
+    '''\.env\.example$''',
+    '''node_modules/''',
+    '''\.venv/''',
+    '''venv/''',
+    '''static/''',
+    '''\.git/''',
+    '''poetry\.lock$''',
+    '''package-lock\.json$''',
+]
+
+# Regexes to exclude
+regexes = [
+    # Example public keys, tokens
+    '''-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----\s*\*+\s*-----END''',
+]
+
+# Stop words that indicate false positives
+stopwords = [
+    'example',
+    'sample',
+    'test',
+    'dummy',
+    'fake',
+    'placeholder',
+]

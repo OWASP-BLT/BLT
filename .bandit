@@ -1,0 +1,28 @@
+# Bandit configuration file for OWASP BLT
+# https://bandit.readthedocs.io/en/latest/config.html
+
+[bandit]
+# Exclude test files and migrations
+exclude_dirs = 
+    /website/tests/,
+    /website/migrations/,
+    /*/migrations/,
+    /node_modules/,
+    /.venv/,
+    /venv/,
+    /static/
+
+# Specific tests to skip (if needed)
+# skips = B101,B601
+
+# Define confidence levels to report
+# Options: LOW, MEDIUM, HIGH
+# confidence: HIGH
+
+# Define severity levels to report
+# Options: LOW, MEDIUM, HIGH
+# severity: MEDIUM
+
+tests:
+    # Include all default tests
+    # List: https://bandit.readthedocs.io/en/latest/plugins/index.html
