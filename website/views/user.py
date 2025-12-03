@@ -1935,11 +1935,16 @@ def newsletter_confirm(request, token):
             return redirect("newsletter_home")
 
         if not subscriber.confirmed:
-            subscriber.confirmed = True
-            subscriber.save(update_fields=["confirmed"])
-            messages.success(request, "Thank you! Your newsletter subscription has been confirmed.")
+            # Use atomic update to prevent race conditions with concurrent confirmation requests
+            # This ensures only one request can successfully confirm the subscription
+            updated = NewsletterSubscriber.objects.filter(pk=subscriber.pk, confirmed=False).update(confirmed=True)
 
-            logger.info(f"Successfully confirmed subscription for: {subscriber.email}")
+            if updated:
+                messages.success(request, "Thank you! Your newsletter subscription has been confirmed.")
+                logger.info(f"Successfully confirmed subscription for: {subscriber.email}")
+            else:
+                # Another request confirmed it between our check and update
+                messages.info(request, "Your subscription is already confirmed.")
         else:
             messages.info(request, "Your subscription is already confirmed.")
 
@@ -1962,15 +1967,20 @@ def newsletter_unsubscribe(request, token):
     try:
         client_ip = get_client_ip(request)
         cache_key = f"unsubscribe_attempts_{client_ip}"
-        attempts = cache.get(cache_key, 0)
+
+        # Use atomic increment for rate limiting to prevent race conditions
+        try:
+            attempts = cache.incr(cache_key)
+        except ValueError:
+            # Key doesn't exist, initialize it
+            cache.set(cache_key, 1, 3600)
+            attempts = 1
 
         # Limit to 10 unsubscribe attempts per hour from the same IP
-        if attempts >= 10:
+        if attempts > 10:
             logger.warning(f"Unsubscribe rate limit exceeded from IP: {client_ip}")
             messages.error(request, "Too many unsubscribe attempts. Please try again later.")
             return redirect("home")
-
-        cache.set(cache_key, attempts + 1, 3600)
 
         subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
 
@@ -2059,12 +2069,18 @@ def newsletter_preferences(request):
 def newsletter_resend_confirmation(request):
     """AJAX view to resend newsletter confirmation email"""
     try:
-        # Rate limiting check
+        # Rate limiting check - use atomic increment to prevent race conditions
         client_ip = get_client_ip(request)
         cache_key = f"resend_confirm_rate_{client_ip}"
-        attempts = cache.get(cache_key, 0)
 
-        if attempts >= 3:
+        try:
+            attempts = cache.incr(cache_key)
+        except ValueError:
+            # Key doesn't exist, initialize it
+            cache.set(cache_key, 1, 1800)
+            attempts = 1
+
+        if attempts > 3:
             logger.warning(f"Rate limit exceeded for confirmation resend from IP: {client_ip}")
             return JsonResponse({"success": False, "error": "Too many attempts. Please try again later."}, status=429)
 
@@ -2097,8 +2113,7 @@ def newsletter_resend_confirmation(request):
                         {"success": False, "error": "Please wait at least 5 minutes before requesting another email."}
                     )
 
-            # Record this attempt
-            cache.set(cache_key, attempts + 1, 1800)
+            # Record email send timestamp
             cache.set(last_sent_key, time.time(), 3600)
 
             send_confirmation_email(subscriber)
