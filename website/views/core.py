@@ -693,6 +693,8 @@ def search(request, template="search.html"):
         if query:
             search_type = stype if stype else "all"
             # Calculate total result count based on search type
+            # Note: When query is truthy, the page shows generic results (from if query block),
+            # so we use generic counts to match what's displayed
             result_count = 0
             if search_type == "all":
                 result_count = (
@@ -718,21 +720,17 @@ def search(request, template="search.html"):
             elif search_type == "repos":
                 result_count = repos.count()
             elif search_type == "tags":
-                tags = Tag.objects.filter(name__icontains=query)
-                matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
-                matching_domains = Domain.objects.filter(tags__in=tags).distinct()
-                matching_issues = Issue.objects.filter(tags__in=tags).distinct()
-                matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
-                matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+                # When query is present, page shows generic results, so use generic count
                 result_count = (
-                    matching_organizations.count()
-                    + matching_domains.count()
-                    + matching_issues.count()
-                    + matching_user_profiles.count()
-                    + matching_repos.count()
+                    organizations.count()
+                    + issues.count()
+                    + domains.count()
+                    + users.count()
+                    + projects.count()
+                    + repos.count()
                 )
             elif search_type == "languages":
-                repos = Repo.objects.filter(primary_language__icontains=query)
+                # When query is present, page shows generic results, so use generic repos count
                 result_count = repos.count()
 
             # Avoid logging duplicate consecutive searches
