@@ -204,3 +204,56 @@ class UserProfileVerifierTest(TestCase):
         self.user.userprofile.save()
         self.user.userprofile.refresh_from_db()
         self.assertFalse(self.user.userprofile.is_verifier)
+
+
+class UserProfileVisitCounterTest(TestCase):
+    def setUp(self):
+        """Create test user with profile"""
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        # UserProfile is created automatically by signal
+        self.profile = self.user.userprofile
+
+    def test_update_visit_counter_first_visit(self):
+        """Test that first visit increments both counters"""
+        initial_visit_count = self.profile.visit_count
+        initial_daily_count = self.profile.daily_visit_count
+
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        self.assertEqual(self.profile.visit_count, initial_visit_count + 1)
+        self.assertEqual(self.profile.daily_visit_count, initial_daily_count + 1)
+        self.assertIsNotNone(self.profile.last_visit_day)
+
+    def test_update_visit_counter_same_day(self):
+        """Test that multiple visits on same day only increment general counter"""
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+        first_daily_count = self.profile.daily_visit_count
+        first_visit_count = self.profile.visit_count
+
+        # Second visit on same day
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Daily count should stay the same
+        self.assertEqual(self.profile.daily_visit_count, first_daily_count)
+        # General visit count should increment
+        self.assertEqual(self.profile.visit_count, first_visit_count + 1)
+
+    def test_update_visit_counter_atomic_operations(self):
+        """Test that update_visit_counter uses atomic operations to prevent transaction errors"""
+        # This test ensures the method doesn't use multiple save() calls
+        # which can cause TransactionManagementError
+        from unittest.mock import patch
+
+        # Mock the save method to ensure it's not called
+        with patch.object(self.profile, "save") as mock_save:
+            self.profile.update_visit_counter()
+            # save() should not be called - we use atomic update instead
+            mock_save.assert_not_called()
+
+        # Verify the counters were still updated
+        self.profile.refresh_from_db()
+        self.assertGreater(self.profile.visit_count, 0)
