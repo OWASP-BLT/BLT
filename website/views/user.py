@@ -1799,10 +1799,7 @@ def newsletter_subscribe(request):
         try:
             with transaction.atomic():
                 # Update any existing active subscriptions for this email to inactive
-                # Use select_for_update() to prevent race conditions
-                NewsletterSubscriber.objects.select_for_update().filter(email=email).exclude(is_active=False).update(
-                    is_active=False
-                )
+                NewsletterSubscriber.objects.filter(email=email).exclude(is_active=False).update(is_active=False)
 
                 subscriber, created = NewsletterSubscriber.objects.get_or_create(
                     email=email,
