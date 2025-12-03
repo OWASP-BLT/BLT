@@ -18,7 +18,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.files.storage import default_storage, storages
+from django.core.files.storage import storages
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
 from django.db.models import Count, F
@@ -867,11 +867,7 @@ def _move_image(name, storage, is_hidden):
     target_storage = storage
 
     # If hiding and a private backend is configured, use that
-    if (
-        is_hidden
-        and hasattr(settings, "STORAGES")
-        and "private" in settings.STORAGES
-    ):
+    if is_hidden and hasattr(settings, "STORAGES") and "private" in settings.STORAGES:
         target_storage = storages["private"]
 
     # Copy file to new location

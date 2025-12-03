@@ -169,10 +169,7 @@ def screenshot_signed_url_view(request, pk: int):
         is_owner = user.is_authenticated and issue.user_id == user.id
         is_staff = user.is_authenticated and user.is_staff
         # if team_members is a M2M, you can also add:
-        is_team_member = (
-            request.user.is_authenticated
-            and issue.team_members.filter(id=request.user.id).exists()
-        )
+        is_team_member = request.user.is_authenticated and issue.team_members.filter(id=request.user.id).exists()
 
         if not (is_owner or is_staff or is_team_member):
             return Response(
@@ -205,10 +202,7 @@ def issue_screenshot_signed_url_view(request, pk: int):
         user = request.user
         is_owner = user.is_authenticated and issue.user_id == user.id
         is_staff = user.is_authenticated and user.is_staff
-        is_team_member = (
-            request.user.is_authenticated
-            and issue.team_members.filter(id=request.user.id).exists()
-        )
+        is_team_member = request.user.is_authenticated and issue.team_members.filter(id=request.user.id).exists()
 
         if not (is_owner or is_staff or is_team_member):
             return Response(
@@ -362,7 +356,6 @@ class IssueViewSet(viewsets.ModelViewSet):
             filename = uploaded.name
             uploaded.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
             IssueScreenshot.objects.create(image=uploaded, issue=issue)
-
 
 
 class LikeIssueApiView(APIView):
