@@ -42,8 +42,36 @@ jobs:
               return;
             }
 
+            const parseBountyLabel = (labelName) => {
+              if (!labelName || !labelName.includes('$')) {
+                return null;
+              }
+
+              const trimmed = labelName.trim();
+              const timedMatch = trimmed.match(/^\$(\d+(?:\.\d{2})?)\s+(\d+)$/);
+              if (timedMatch) {
+                return {
+                  amount: timedMatch[1],
+                  durationHours: parseInt(timedMatch[2], 10),
+                  labelName: labelName
+                };
+              }
+
+              const bountyMatch = trimmed.match(/\$(\d+(?:\.\d{2})?)/);
+              if (bountyMatch) {
+                return {
+                  amount: bountyMatch[1],
+                  durationHours: null,
+                  labelName: labelName
+                };
+              }
+
+              return null;
+            };
+
             // Check each issue for bounty labels
             let bountyIssue = null;
+            let bountyLabelDetails = null;
             for (const issueNumber of issueNumbers) {
               const issue = await github.rest.issues.get({
                 owner: context.repo.owner,
@@ -52,12 +80,16 @@ jobs:
               });
 
               // Check for dollar sign labels
-              const hasBountyLabel = issue.data.labels.some(label => {
-                return label.name.includes('$');
-              });
+              for (const label of issue.data.labels) {
+                const parsed = parseBountyLabel(label.name);
+                if (parsed) {
+                  bountyIssue = issue.data;
+                  bountyLabelDetails = parsed;
+                  break;
+                }
+              }
 
-              if (hasBountyLabel) {
-                bountyIssue = issue.data;
+              if (bountyIssue) {
                 break;
               }
             }
@@ -67,11 +99,40 @@ jobs:
               return;
             }
 
-            // Find the bounty amount from the label
-            // Support both integer ($50) and decimal ($25.50) amounts
-            const bountyLabel = bountyIssue.labels.find(label => label.name.includes('$'));
-            const bountyMatch = bountyLabel ? bountyLabel.name.match(/\$(\d+(?:\.\d{2})?)/) : null;
-            let bountyAmount = bountyMatch ? bountyMatch[1] : null;
+            if (!bountyLabelDetails) {
+              console.log('Bounty label details missing');
+              return;
+            }
+
+            const prCreatedAt = new Date(pr.created_at);
+
+            if (bountyLabelDetails.durationHours) {
+              const events = await github.paginate(github.rest.issues.listEvents, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: bountyIssue.number,
+                per_page: 100
+              });
+
+              const labelEvent = events
+                .filter(event => event.event === 'labeled' && event.label && event.label.name === bountyLabelDetails.labelName)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
+              const labelAttachedAt = labelEvent ? new Date(labelEvent.created_at) : new Date(bountyIssue.created_at);
+
+              if (!labelEvent) {
+                console.log('Timed bounty label timestamp not found; falling back to issue creation time.');
+              }
+
+              const expiryTime = new Date(labelAttachedAt.getTime() + bountyLabelDetails.durationHours * 60 * 60 * 1000);
+
+              if (prCreatedAt > expiryTime) {
+                console.log(`PR was opened after timed bounty expired (${expiryTime.toISOString()}); skipping payout.`);
+                return;
+              }
+            }
+
+            let bountyAmount = bountyLabelDetails.amount;
 
             // Convert to cents for API (e.g., "25.50" -> 2550, "50" -> 5000)
             if (bountyAmount) {
