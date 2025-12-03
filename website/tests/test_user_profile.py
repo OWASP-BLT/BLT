@@ -244,6 +244,34 @@ class UserProfileVisitCounterTest(TestCase):
         # General visit count should increment
         self.assertEqual(self.profile.visit_count, first_visit_count + 1)
 
+    def test_update_visit_counter_different_days(self):
+        """Test that visits on different days increment both counters"""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+        first_daily_count = self.profile.daily_visit_count
+        first_visit_count = self.profile.visit_count
+        first_visit_day = self.profile.last_visit_day
+
+        # Manually set the last_visit_day to yesterday to simulate a different day visit
+        yesterday = timezone.now().date() - timedelta(days=1)
+        self.profile.last_visit_day = yesterday
+        self.profile.save()
+
+        # Visit on current day (which is different from yesterday)
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Both counters should increment since it's a different day
+        self.assertEqual(self.profile.daily_visit_count, first_daily_count + 1)
+        self.assertEqual(self.profile.visit_count, first_visit_count + 1)
+        # Last visit day should be updated to today
+        self.assertEqual(self.profile.last_visit_day, timezone.now().date())
+
     def test_update_visit_counter_atomic_operations(self):
         """Test that update_visit_counter uses atomic operations to prevent transaction errors"""
         from django.db import transaction
