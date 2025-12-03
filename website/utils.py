@@ -1134,6 +1134,13 @@ def get_default_bacon_score(model_name, is_security=False):
 
 
 def generate_signed_url(blob_name: str, expiration: int = 3600) -> str:
+    """
+    Generate a time-limited signed URL for the given blob name.
+
+    When GCS is configured, this returns a signed URL valid for the
+    specified number of seconds. If GCS is not configured, a RuntimeError
+    is raised and callers should fall back to the normal media URL.
+    """
     client = storage.Client()
     bucket_name = getattr(
         settings,
