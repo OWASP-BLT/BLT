@@ -687,94 +687,69 @@ def search(request, template="search.html"):
             "repos": Repo.objects.filter(primary_language__icontains=query),
         }
     if request.user.is_authenticated:
-        try:
-            context["wallet"] = Wallet.objects.get(user=request.user)
-        except Wallet.DoesNotExist:
-            # Wallet might not exist for some users, handle gracefully
-            pass
+        context["wallet"] = Wallet.objects.get(user=request.user)
         # Log search history for authenticated users
         if query:
             search_type = stype if stype else "all"
             # Calculate total result count based on search type
             result_count = 0
-            try:
-                if search_type == "all":
-                    # Variables are always defined in the if query block above
-                    result_count = (
-                        organizations.count()
-                        + issues.count()
-                        + domains.count()
-                        + users.count()
-                        + projects.count()
-                        + repos.count()
-                    )
-                elif search_type == "issues":
-                    # Use context value if available (from elif block), otherwise use local variable
-                    issues_qs = context.get("issues", issues) if "issues" in context else issues
-                    result_count = issues_qs.count() if hasattr(issues_qs, "count") else 0
-                elif search_type == "domains":
-                    domains_qs = context.get("domains", domains) if "domains" in context else domains
-                    result_count = domains_qs.count() if hasattr(domains_qs, "count") else 0
-                elif search_type == "users":
-                    users_qs = context.get("users", users) if "users" in context else users
-                    result_count = users_qs.count() if hasattr(users_qs, "count") else 0
-                elif search_type == "labels":
-                    issues_qs = context.get("issues", issues) if "issues" in context else issues
-                    result_count = issues_qs.count() if hasattr(issues_qs, "count") else 0
-                elif search_type == "organizations":
-                    orgs_qs = context.get("organizations", organizations) if "organizations" in context else organizations
-                    result_count = orgs_qs.count() if hasattr(orgs_qs, "count") else 0
-                elif search_type == "projects":
-                    projects_qs = context.get("projects", projects) if "projects" in context else projects
-                    result_count = projects_qs.count() if hasattr(projects_qs, "count") else 0
-                elif search_type == "repos":
-                    repos_qs = context.get("repos", repos) if "repos" in context else repos
-                    result_count = repos_qs.count() if hasattr(repos_qs, "count") else 0
-                elif search_type == "tags":
-                    tags = Tag.objects.filter(name__icontains=query)
-                    matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
-                    matching_domains = Domain.objects.filter(tags__in=tags).distinct()
-                    matching_issues = Issue.objects.filter(tags__in=tags).distinct()
-                    matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
-                    matching_repos = Repo.objects.filter(tags__in=tags).distinct()
-                    result_count = (
-                        matching_organizations.count()
-                        + matching_domains.count()
-                        + matching_issues.count()
-                        + matching_user_profiles.count()
-                        + matching_repos.count()
-                    )
-                elif search_type == "languages":
-                    repos_qs = context.get("repos", repos) if "repos" in context else Repo.objects.filter(primary_language__icontains=query)
-                    result_count = repos_qs.count() if hasattr(repos_qs, "count") else 0
-            except (AttributeError, NameError, TypeError) as e:
-                # Fallback in case of unexpected errors
-                logger.warning("Error calculating result_count for search_type %s: %s", search_type, e)
-                result_count = 0
+            if search_type == "all":
+                result_count = (
+                    organizations.count()
+                    + issues.count()
+                    + domains.count()
+                    + users.count()
+                    + projects.count()
+                    + repos.count()
+                )
+            elif search_type == "issues":
+                result_count = issues.count()
+            elif search_type == "domains":
+                result_count = domains.count()
+            elif search_type == "users":
+                result_count = users.count()
+            elif search_type == "labels":
+                result_count = issues.count()
+            elif search_type == "organizations":
+                result_count = organizations.count()
+            elif search_type == "projects":
+                result_count = projects.count()
+            elif search_type == "repos":
+                result_count = repos.count()
+            elif search_type == "tags":
+                tags = Tag.objects.filter(name__icontains=query)
+                matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
+                matching_domains = Domain.objects.filter(tags__in=tags).distinct()
+                matching_issues = Issue.objects.filter(tags__in=tags).distinct()
+                matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
+                matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+                result_count = (
+                    matching_organizations.count()
+                    + matching_domains.count()
+                    + matching_issues.count()
+                    + matching_user_profiles.count()
+                    + matching_repos.count()
+                )
+            elif search_type == "languages":
+                repos = Repo.objects.filter(primary_language__icontains=query)
+                result_count = repos.count()
 
             # Avoid logging duplicate consecutive searches
             last_search = SearchHistory.objects.filter(user=request.user).order_by("-timestamp").first()
             if not last_search or last_search.query != query or last_search.search_type != search_type:
-                try:
-                    SearchHistory.objects.create(
-                        user=request.user,
-                        query=query[:255],  # Ensure query doesn't exceed max_length
-                        search_type=search_type,
-                        result_count=result_count,
-                    )
+                SearchHistory.objects.create(
+                    user=request.user,
+                    query=query[:255],  # Ensure query doesn't exceed max_length
+                    search_type=search_type,
+                    result_count=result_count,
+                )
 
-                    # Keep only last 50 searches per user (atomic operation to prevent race conditions)
-                    # Use a subquery to get IDs to delete, then delete in one operation
-                    excess_ids = list(
-                        SearchHistory.objects.filter(user=request.user)
-                        .order_by("-timestamp")
-                        .values_list("id", flat=True)[50:]
-                    )
-                    if excess_ids:
-                        SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
-                except Exception:
-                    # Log error but don't break search functionality
-                    logger.exception("Error logging search history")
+                # Keep only last 50 searches per user
+                user_searches = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")
+                if user_searches.count() > 50:
+                    SearchHistory.objects.filter(
+                        user=request.user, id__in=user_searches[50:].values_list("id", flat=True)
+                    ).delete()
 
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
     return render(request, template, context)

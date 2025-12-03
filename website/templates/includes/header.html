@@ -629,16 +629,31 @@
             </div>
             <!-- Search Bar -->
             <div class="flex-1 max-w-xl mx-4 hidden sm:block">
-                <div class="relative flex items-center rounded-lg overflow-hidden bg-white dark:bg-gray-800 border-2 border-[#e74c3c] dark:border-[#e74c3c] hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                <div class="relative flex items-center rounded-lg overflow-visible bg-white dark:bg-gray-800 border-2 border-[#e74c3c] dark:border-[#e74c3c] hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <form class="w-full flex items-center"
                           action="{% url 'search' %}"
                           method="get">
                         <input type="hidden" name="type" id="filter-type" value="all">
-                        <input type="text"
-                               name="query"
-                               id="query-input"
-                               placeholder="Search here..."
-                               class="w-full pl-12 pr-4 py-2 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 placeholder:select-none placeholder:text-base bg-transparent outline-none">
+                        <div class="relative w-full">
+                            <input type="text"
+                                   name="query"
+                                   id="query-input"
+                                   placeholder="Search here..."
+                                   autocomplete="off"
+                                   class="w-full pl-12 pr-4 py-2 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 placeholder:select-none placeholder:text-base bg-transparent outline-none">
+                            <!-- Recent Searches Dropdown -->
+                            {% if user.is_authenticated %}
+                                <div id="recent-searches-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                                    <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Searches</span>
+                                        <button type="button" id="clear-search-history-header" class="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">Clear</button>
+                                    </div>
+                                    <div id="recent-searches-list" class="py-2">
+                                        <!-- Populated via JavaScript -->
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
                         {% with request.resolver_match.url_name as url_name %}
                             {% if url_name != 'home' %}
                                 <div class="relative border-l-2 border-red-500 flex">
@@ -1266,6 +1281,152 @@
             mobileSearch.classList.toggle('hidden');
             mobileSearch.classList.toggle('active');
         }
+</script>
+<script>
+    // Recent Searches Dropdown Functionality
+    {% if user.is_authenticated %}
+    document.addEventListener("DOMContentLoaded", function () {
+        const queryInput = document.getElementById("query-input");
+        const recentSearchesDropdown = document.getElementById("recent-searches-dropdown");
+        const recentSearchesList = document.getElementById("recent-searches-list");
+        const clearHistoryBtn = document.getElementById("clear-search-history-header");
+        
+        if (!queryInput || !recentSearchesDropdown) return;
+        
+        let recentSearches = [];
+        
+        // Fetch recent searches
+        async function fetchRecentSearches() {
+            try {
+                const response = await fetch("{% url 'search_history_api' %}", {
+                    method: "GET",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                });
+                
+                if (response.ok) {
+                    recentSearches = await response.json();
+                    displayRecentSearches();
+                }
+            } catch (error) {
+                console.error("Error fetching recent searches:", error);
+            }
+        }
+        
+        // Display recent searches in dropdown
+        function displayRecentSearches() {
+            if (recentSearches.length === 0) {
+                recentSearchesList.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No recent searches</div>';
+                return;
+            }
+            
+            recentSearchesList.innerHTML = recentSearches.slice(0, 10).map(search => {
+                const searchTypeDisplay = search.search_type === 'all' ? 'All' : 
+                    search.search_type.charAt(0).toUpperCase() + search.search_type.slice(1);
+                return `
+                    <div class="flex items-center justify-between px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <a href="{% url 'search' %}?query=${encodeURIComponent(search.query)}&type=${encodeURIComponent(search.search_type)}"
+                           class="flex-1 text-gray-700 dark:text-gray-300 text-sm">
+                            <div class="flex items-center justify-between">
+                                <span>${escapeHtml(search.query)}</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">${searchTypeDisplay}</span>
+                            </div>
+                        </a>
+                        <button type="button" 
+                                class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
+                                onclick="deleteSearchItem(event, ${search.id})"
+                                title="Delete this search">
+                            <i class="fa fa-times text-xs"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Show dropdown on focus
+        queryInput.addEventListener("focus", function() {
+            if (recentSearches.length === 0) {
+                fetchRecentSearches();
+            }
+            recentSearchesDropdown.classList.remove("hidden");
+        });
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener("click", function(e) {
+            if (!queryInput.contains(e.target) && !recentSearchesDropdown.contains(e.target)) {
+                recentSearchesDropdown.classList.add("hidden");
+            }
+        });
+        
+        // Delete single search item
+        window.deleteSearchItem = async function(e, searchId) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            try {
+                const response = await fetch("{% url 'search_history_api' %}?id=" + searchId, {
+                    method: "DELETE",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json",
+                    },
+                });
+                
+                if (response.ok) {
+                    // Remove from local array and refresh display
+                    recentSearches = recentSearches.filter(s => s.id !== searchId);
+                    displayRecentSearches();
+                } else {
+                    alert("Failed to delete search item.");
+                }
+            } catch (error) {
+                console.error("Error deleting search item:", error);
+                alert("Failed to delete search item.");
+            }
+        };
+        
+        // Clear history handler
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener("click", async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                try {
+                    const response = await fetch("{% url 'search_history_api' %}", {
+                        method: "DELETE",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    
+                    if (response.ok) {
+                        recentSearches = [];
+                        displayRecentSearches();
+                    } else {
+                        alert("Failed to clear search history.");
+                    }
+                } catch (error) {
+                    console.error("Error clearing search history:", error);
+                    alert("Failed to clear search history.");
+                }
+            });
+        }
+        
+        // Initial fetch if input is already focused
+        if (document.activeElement === queryInput) {
+            fetchRecentSearches();
+        }
+    });
+    {% endif %}
 </script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {

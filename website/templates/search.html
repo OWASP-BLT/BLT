@@ -36,27 +36,6 @@
             <hr>
         </div>
     </div>
-    {% if user.is_authenticated and recent_searches %}
-        <div class="container mt-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Recent Searches</h2>
-                    <button id="clear-search-history"
-                            class="px-3 py-1 text-sm font-medium text-red-600 hover:text-red-800 focus:outline-none">
-                        Clear History
-                    </button>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    {% for search_item in recent_searches %}
-                        <a href="{% url 'search' %}?query={{ search_item.query|urlencode }}&type={{ search_item.search_type|urlencode }}"
-                           class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                            {{ search_item.query }} ({{ search_item.get_search_type_display }})
-                        </a>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    {% endif %}
     {% if query %}
         <div class="container mt-4">
             <div class="flex">
@@ -849,29 +828,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return cookieValue;
     }
 
-    const clearHistoryButton = document.getElementById("clear-search-history");
-    if (clearHistoryButton) {
-        clearHistoryButton.addEventListener("click", function () {
-            if (confirm("Are you sure you want to clear your search history?")) {
-                fetch("{% url 'search_history_api' %}", {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRFToken": getCookie("csrftoken"),
-                        "Content-Type": "application/json",
-                    },
-                })
-                .then(response => {
-                    if (response.ok) {
-                        alert("Search history cleared!");
-                        window.location.reload();
-                    } else {
-                        alert("Failed to clear search history.");
-                    }
-                })
-                .catch(error => console.error("Error clearing search history:", error));
-            }
-        });
-    }
 });
     </script>
 {% endblock content %}

@@ -17,7 +17,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
@@ -924,33 +924,33 @@ class TimeLogViewSet(viewsets.ModelViewSet):
 class SearchHistoryApiView(APIView):
     """API view for retrieving and clearing user search history"""
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         """Retrieve user's search history, limited to last 50 searches."""
-        try:
-            search_history = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:50]
-            serializer = SearchHistorySerializer(search_history, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error("Error retrieving search history: %s", e, exc_info=True)
-            return Response(
-                {"error": "An error occurred while retrieving search history"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        search_history = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:50]
+        serializer = SearchHistorySerializer(search_history, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
-        """Clear user's entire search history."""
-        try:
+        """Clear user's entire search history or a single item if id is provided."""
+        search_id = request.data.get("id") or request.query_params.get("id")
+        if search_id:
+            # Delete single item
+            search_item = SearchHistory.objects.filter(user=request.user, id=search_id).first()
+            if search_item:
+                search_item.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response(
+                    {"error": "Search history item not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            # Delete all items
             SearchHistory.objects.filter(user=request.user).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            logger.error("Error clearing search history: %s", e, exc_info=True)
-            return Response(
-                {"error": "An error occurred while clearing search history"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
 
 class ActivityLogViewSet(viewsets.ModelViewSet):
