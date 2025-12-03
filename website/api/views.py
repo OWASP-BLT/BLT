@@ -40,6 +40,7 @@ from website.models import (
     Points,
     Project,
     Repo,
+    SearchHistory,
     Tag,
     TimeLog,
     Token,
@@ -58,6 +59,7 @@ from website.serializers import (
     OrganizationSerializer,
     ProjectSerializer,
     RepoSerializer,
+    SearchHistorySerializer,
     TagSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
@@ -917,6 +919,26 @@ class TimeLogViewSet(viewsets.ModelViewSet):
                 {"detail": "An unexpected error occurred while stopping the time log."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class SearchHistoryApiView(APIView):
+    """API view for retrieving and clearing user search history"""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """Retrieve user's search history, limited to last 50 searches."""
+        search_history = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:50]
+        serializer = SearchHistorySerializer(search_history, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        """Clear user's entire search history."""
+        SearchHistory.objects.filter(user=request.user).delete()
+        return Response(
+            {"message": "Search history cleared successfully"}, status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class ActivityLogViewSet(viewsets.ModelViewSet):

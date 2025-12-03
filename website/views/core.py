@@ -65,6 +65,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    SearchHistory,
     SlackBotActivity,
     Tag,
     User,
@@ -687,6 +688,70 @@ def search(request, template="search.html"):
         }
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
+        # Log search history for authenticated users
+        if query:
+            search_type = stype if stype else "all"
+            # Calculate total result count based on search type
+            result_count = 0
+            if search_type == "all":
+                result_count = (
+                    organizations.count()
+                    + issues.count()
+                    + domains.count()
+                    + users.count()
+                    + projects.count()
+                    + repos.count()
+                )
+            elif search_type == "issues":
+                result_count = issues.count()
+            elif search_type == "domains":
+                result_count = domains.count()
+            elif search_type == "users":
+                result_count = users.count()
+            elif search_type == "labels":
+                result_count = issues.count()
+            elif search_type == "organizations":
+                result_count = organizations.count()
+            elif search_type == "projects":
+                result_count = projects.count()
+            elif search_type == "repos":
+                result_count = repos.count()
+            elif search_type == "tags":
+                tags = Tag.objects.filter(name__icontains=query)
+                matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
+                matching_domains = Domain.objects.filter(tags__in=tags).distinct()
+                matching_issues = Issue.objects.filter(tags__in=tags).distinct()
+                matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
+                matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+                result_count = (
+                    matching_organizations.count()
+                    + matching_domains.count()
+                    + matching_issues.count()
+                    + matching_user_profiles.count()
+                    + matching_repos.count()
+                )
+            elif search_type == "languages":
+                repos = Repo.objects.filter(primary_language__icontains=query)
+                result_count = repos.count()
+
+            # Avoid logging duplicate consecutive searches
+            last_search = SearchHistory.objects.filter(user=request.user).order_by("-timestamp").first()
+            if not last_search or last_search.query != query or last_search.search_type != search_type:
+                SearchHistory.objects.create(
+                    user=request.user,
+                    query=query,
+                    search_type=search_type,
+                    result_count=result_count,
+                )
+
+            # Keep only last 50 searches per user
+            user_searches = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")
+            if user_searches.count() > 50:
+                SearchHistory.objects.filter(
+                    user=request.user, id__in=user_searches[50:].values_list("id", flat=True)
+                ).delete()
+
+        context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
     return render(request, template, context)
 
 
