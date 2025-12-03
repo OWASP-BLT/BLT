@@ -17,15 +17,15 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-[calc(100vh-72px)] flex items-center justify-center bg-gray-50">
+    <div class="min-h-[calc(100vh-72px)] flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div class="w-full max-w-4xl mx-auto p-6">
-            <div class="flex flex-col gap-8 bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
+            <div class="flex flex-col gap-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
                 <!-- Header Section -->
                 <div class="relative overflow-hidden bg-gradient-to-r from-red-50 to-white px-8 pt-8 pb-4">
                     <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div class="flex-1">
-                            <h1 class="text-3xl font-bold text-gray-800 mb-2">Trademark Search</h1>
-                            <p class="text-gray-600 mb-4">Search for trademark information from the USPTO database</p>
+                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-2">Trademark Search</h1>
+                            <p class="text-gray-600 dark:text-gray-400 mb-4">Search for trademark information from the USPTO database</p>
                         </div>
                         <div class="flex-shrink-0 w-32 md:w-48 transform transition-transform duration-500 hover:scale-105">
                             <img class="w-full object-contain"
@@ -46,7 +46,7 @@
                         {% csrf_token %}
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-500"
+                                <svg class="w-5 h-5 text-gray-500 dark:text-gray-500"
                                      fill="none"
                                      stroke="currentColor"
                                      viewBox="0 0 24 24"
@@ -55,7 +55,7 @@
                                     </path>
                                 </svg>
                             </div>
-                            <input class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent text-base shadow-sm transition-all duration-300"
+                            <input class="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent text-base shadow-sm transition-all duration-300"
                                    type="search"
                                    id="query"
                                    name="query"
@@ -74,7 +74,7 @@
                             </svg>
                             Search Trademarks
                         </button>
-                        <div class="flex items-center justify-center gap-2 text-center text-sm text-gray-500 mt-2">
+                        <div class="flex items-center justify-center gap-2 text-center text-sm text-gray-500 dark:text-gray-500 mt-2">
                             <svg class="w-4 h-4 text-[#e74c3c]"
                                  fill="currentColor"
                                  viewBox="0 0 20 20"

@@ -2,8 +2,6 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-# UserProfile is created automatically by signal, so we don't need to import it
-
 
 class UserProfileUpdateTest(TestCase):
     def setUp(self):
@@ -149,3 +147,60 @@ class UserProfileUpdateTest(TestCase):
         # Verify the email was not updated
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, "test@example.com")
+
+
+class UserProfileVerifierTest(TestCase):
+    def setUp(self):
+        # Create test users
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.verifier_user = User.objects.create_user(
+            username="verifieruser", email="verifier@example.com", password="testpass123"
+        )
+        # UserProfile is created automatically by signal
+
+    def test_default_is_verifier_false(self):
+        """Test that new users are not verifiers by default"""
+        self.assertFalse(self.user.userprofile.is_verifier)
+
+    def test_set_user_as_verifier(self):
+        """Test setting a user as a verifier"""
+        self.user.userprofile.is_verifier = True
+        self.user.userprofile.save()
+        self.user.userprofile.refresh_from_db()
+        self.assertTrue(self.user.userprofile.is_verifier)
+
+    def test_check_verifier_permission_method(self):
+        """Test the check_verifier_permission method"""
+        # Test with non-verifier user
+        self.assertFalse(self.user.userprofile.check_verifier_permission())
+
+        # Set user as verifier
+        self.user.userprofile.is_verifier = True
+        self.user.userprofile.save()
+
+        # Test with verifier user
+        self.assertTrue(self.user.userprofile.check_verifier_permission())
+
+    def test_verifier_permission_independent_of_role(self):
+        """Test that verifier permission is independent of role field"""
+        # Set a role and verify permission
+        self.user.userprofile.role = "Developer"
+        self.user.userprofile.is_verifier = True
+        self.user.userprofile.save()
+        self.user.userprofile.refresh_from_db()
+
+        self.assertEqual(self.user.userprofile.role, "Developer")
+        self.assertTrue(self.user.userprofile.is_verifier)
+
+    def test_remove_verifier_permission(self):
+        """Test removing verifier permission from a user"""
+        # First set as verifier
+        self.user.userprofile.is_verifier = True
+        self.user.userprofile.save()
+        self.assertTrue(self.user.userprofile.is_verifier)
+
+        # Then remove verifier permission
+        self.user.userprofile.is_verifier = False
+        self.user.userprofile.save()
+        self.user.userprofile.refresh_from_db()
+        self.assertFalse(self.user.userprofile.is_verifier)

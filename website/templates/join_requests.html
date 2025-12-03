@@ -4,14 +4,14 @@
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto">
             <!-- Header Section -->
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
                 <div class="flex items-center gap-6 mb-6">
                     <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
                         <i class="fas fa-bell text-2xl text-white"></i>
                     </div>
                     <div>
-                        <h2 class="text-3xl font-bold text-gray-800">Team Invitations</h2>
-                        <p class="text-gray-600 mt-2">
+                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Invitations</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">
                             {% if user.userprofile.team %}
                                 You are currently in the team:
                                 <span class="font-semibold text-[#e74c3c]">{{ user.userprofile.team.name }}</span>
@@ -26,7 +26,7 @@
             {% if join_requests %}
                 <div class="space-y-4">
                     {% for request in join_requests %}
-                        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-4">
                                     {% if request.team.logo %}
@@ -36,13 +36,13 @@
                                              height="48"
                                              class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
                                     {% else %}
-                                        <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center border-2 border-[#e74c3c]">
-                                            <i class="fas fa-users text-gray-400"></i>
+                                        <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center border-2 border-[#e74c3c]">
+                                            <i class="fas fa-users text-gray-400 dark:text-gray-600"></i>
                                         </div>
                                     {% endif %}
                                     <div>
-                                        <h3 class="text-lg font-semibold text-gray-800">{{ request.team.name }}</h3>
-                                        <p class="text-sm text-gray-600">Invited by {{ request.team.admin.username }}</p>
+                                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ request.team.name }}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Invited by {{ request.team.admin.username }}</p>
                                     </div>
                                 </div>
                                 <form method="post"
@@ -62,12 +62,12 @@
                 </div>
             {% else %}
                 <!-- No Requests State -->
-                <div class="bg-white rounded-xl shadow-md p-8 text-center">
-                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-inbox text-2xl text-gray-400"></i>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-inbox text-2xl text-gray-400 dark:text-gray-600"></i>
                     </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">No Team Invitations</h3>
-                    <p class="text-gray-600">
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">No Team Invitations</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
                         You don't have any pending team invitations at the moment.
                         {% if not user.userprofile.team %}
                             <br>

@@ -18,12 +18,12 @@
 {% block body %}
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <!-- Header Section -->
-        <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Manage Bugs</h1>
-                        <p class="mt-1 text-sm text-gray-500">Track and manage all reported security issues</p>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Manage Bugs</h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">Track and manage all reported security issues</p>
                     </div>
                     <a href="{% url 'report' %}"
                        class="inline-flex items-center px-4 py-2.5 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 select-none">
@@ -42,47 +42,47 @@
         <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
             <!-- Bugs List -->
             {% if issues %}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-900">All Bugs</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">All Bugs</h2>
                     </div>
                     <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+                        <thead class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Description</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Created</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                                <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900">Action</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Description</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Created</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Type</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Status</th>
+                                <th class="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">Action</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             {% if issues %}
                                 {% for issue in issues %}
                                     <tr class="hover:bg-gray-50 transition-colors duration-150">
                                         <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-gray-900">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                 {{ issue.description|slice:":50" }}
                                                 {% if issue.description|length > 50 %}...{% endif %}
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-600">{{ issue.created|date:"M j, Y" }}</div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">{{ issue.created|date:"M j, Y" }}</div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-600">{{ issue.get_label_display }}</div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">{{ issue.get_label_display }}</div>
                                         </td>
                                         <td class="px-6 py-4">
                                             {% if issue.status == 'open' %}
                                                 <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Open</span>
                                             {% else %}
-                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">{{ issue.get_status_display }}</span>
+                                                <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full">{{ issue.get_status_display }}</span>
                                             {% endif %}
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <div class="flex items-center justify-end space-x-2">
                                                 <a href="{% url 'issue_view' issue.pk %}"
-                                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
+                                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
                                                    title="View Bug Details">
                                                     <svg class="w-4 h-4 mr-1.5"
                                                          fill="none"
@@ -104,17 +104,17 @@
                 </div>
             {% else %}
                 <!-- Empty State -->
-                <div class="bg-white rounded-lg border border-gray-200 p-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8">
                     <div class="text-center">
-                        <svg class="mx-auto h-16 w-16 text-gray-400"
+                        <svg class="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600"
                              fill="none"
                              stroke="currentColor"
                              viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z">
                             </path>
                         </svg>
-                        <h3 class="mt-4 text-xl font-semibold text-gray-900">No bugs yet</h3>
-                        <p class="mt-2 text-gray-500">Get started by reporting your first security issue.</p>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900 dark:text-gray-100">No bugs yet</h3>
+                        <p class="mt-2 text-gray-500 dark:text-gray-500">Get started by reporting your first security issue.</p>
                         <div class="mt-6">
                             <a href="{% url 'report' %}"
                                class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-red-600">

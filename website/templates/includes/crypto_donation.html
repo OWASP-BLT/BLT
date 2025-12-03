@@ -4,7 +4,7 @@
         <!-- Crypto currency selection buttons -->
         <div class="flex flex-row gap-2 flex-wrap justify-center">
             <button id="btn-btc"
-                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.btc_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.btc_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
                     {% if not user.userprofile.btc_address %}disabled{% endif %}>
                 <svg width="16"
                      height="16"
@@ -16,7 +16,7 @@
                 BTC
             </button>
             <button id="btn-bch"
-                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.bch_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.bch_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
                     {% if not user.userprofile.bch_address %}disabled{% endif %}>
                 <svg width="16"
                      height="16"
@@ -28,7 +28,7 @@
                 BCH
             </button>
             <button id="btn-eth"
-                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.eth_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.eth_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
                     {% if not user.userprofile.eth_address %}disabled{% endif %}>
                 <svg width="16"
                      height="16"

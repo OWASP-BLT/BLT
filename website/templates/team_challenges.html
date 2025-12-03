@@ -4,14 +4,14 @@
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto">
             <!-- Header Section -->
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
                 <div class="flex items-center gap-6">
                     <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
                         <i class="fas fa-flag-checkered text-2xl text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">Team Challenges</h1>
-                        <p class="text-gray-600 mt-2">
+                        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Challenges</h1>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">
                             Complete challenges with your team to earn points, BACON tokens, and climb the leaderboard
                         </p>
                     </div>
@@ -20,7 +20,7 @@
             {% if team_challenges %}
                 <div class="space-y-4">
                     {% for challenge in team_challenges %}
-                        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
                              x-data="{ open: false }">
                             <!-- Challenge Header -->
                             <div class="p-6 cursor-pointer" @click="open = !open">
@@ -30,7 +30,7 @@
                                             <i class="fas fa-trophy text-[#e74c3c] text-xl"></i>
                                         </div>
                                         <div>
-                                            <h3 class="text-lg font-bold text-gray-800">{{ challenge.title }}</h3>
+                                            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">{{ challenge.title }}</h3>
                                             <div class="flex items-center gap-4 mt-1">
                                                 <span class="text-sm font-medium text-[#e74c3c]">{{ challenge.points }} points</span>
                                                 <div class="flex items-center gap-1">
@@ -50,14 +50,14 @@
                                         <!-- Progress Circle -->
                                         <div class="relative w-12 h-12">
                                             <svg class="w-12 h-12 transform -rotate-90">
-                                                <circle class="text-gray-200" stroke-width="3" stroke="currentColor" fill="transparent" r="20" cx="24" cy="24" />
+                                                <circle class="text-gray-200 dark:text-gray-800" stroke-width="3" stroke="currentColor" fill="transparent" r="20" cx="24" cy="24" />
                                                 <circle class="text-[#e74c3c]" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="transparent" r="20" cx="24" cy="24" style="stroke-dasharray: {{ challenge.stroke_dasharray }}; stroke-dashoffset: {{ challenge.stroke_dashoffset }}" />
                                             </svg>
                                             <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium">
                                                 {{ challenge.progress|floatformat:0 }}%
                                             </span>
                                         </div>
-                                        <i class="fas fa-chevron-down text-gray-400 transform transition-transform duration-300"
+                                        <i class="fas fa-chevron-down text-gray-400 dark:text-gray-600 transform transition-transform duration-300"
                                            :class="{ 'rotate-180': open }"></i>
                                     </div>
                                 </div>
@@ -66,15 +66,15 @@
                             <div class="overflow-hidden transition-all duration-300 max-h-0"
                                  x-ref="content"
                                  x-bind:style="open ? 'max-height: ' + $refs.content.scrollHeight + 'px' : ''">
-                                <div class="p-6 pt-0 border-t border-gray-100">
-                                    <p class="text-gray-600">{{ challenge.description }}</p>
+                                <div class="p-6 pt-0 border-t border-gray-100 dark:border-gray-800">
+                                    <p class="text-gray-600 dark:text-gray-400">{{ challenge.description }}</p>
                                     {% if user.userprofile.team %}
                                         <div class="mt-4 flex items-center justify-between">
                                             <div class="flex items-center gap-2">
-                                                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <i class="fas fa-users text-gray-400"></i>
+                                                <div class="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-users text-gray-400 dark:text-gray-600"></i>
                                                 </div>
-                                                <span class="text-sm font-medium text-gray-700">{{ user.userprofile.team.name }}</span>
+                                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ user.userprofile.team.name }}</span>
                                             </div>
                                             {% if challenge.progress < 100 %}
                                                 <button class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
@@ -83,8 +83,8 @@
                                             {% endif %}
                                         </div>
                                     {% else %}
-                                        <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                                            <p class="text-sm text-gray-600">Join a team to participate in this challenge!</p>
+                                        <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Join a team to participate in this challenge!</p>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -94,12 +94,12 @@
                 </div>
             {% else %}
                 <!-- No Challenges State -->
-                <div class="bg-white rounded-xl shadow-md p-8 text-center">
-                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-clipboard-list text-2xl text-gray-400"></i>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-clipboard-list text-2xl text-gray-400 dark:text-gray-600"></i>
                     </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">No Challenges Available</h3>
-                    <p class="text-gray-600">There are no team challenges available at the moment. Check back later!</p>
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">No Challenges Available</h3>
+                    <p class="text-gray-600 dark:text-gray-400">There are no team challenges available at the moment. Check back later!</p>
                 </div>
             {% endif %}
         </div>

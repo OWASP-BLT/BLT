@@ -10,9 +10,9 @@
         </div>
     {% endif %}
     {% if item.txid %}
-        <div class="text-xs text-gray-400 mb-2">ID: {{ item.txid }}</div>
+        <div class="text-xs text-gray-400 dark:text-gray-600 mb-2">ID: {{ item.txid }}</div>
     {% else %}
-        <div class="text-xs text-gray-400 mb-2">Transaction ID: Not available</div>
+        <div class="text-xs text-gray-400 dark:text-gray-600 mb-2">Transaction ID: Not available</div>
     {% endif %}
     <form hx-post="{% url 'queue_update_txid' item.id %}"
           hx-target="#launch-transaction-details-{{ item.id }}"

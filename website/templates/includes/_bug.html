@@ -1,9 +1,9 @@
 {% load gravatar %}
 {% load static %}
 {% load custom_tags %}
-<div class="flex flex-col bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+<div class="flex flex-col bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
     <!-- Header with user info and label -->
-    <div class="p-4 flex items-center justify-between border-b border-gray-100">
+    <div class="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
         <div class="flex items-center gap-3">
             <!-- User Avatar -->
             <div class="flex-shrink-0">
@@ -41,13 +41,13 @@
             <div class="flex-1 min-w-0">
                 {% if bug.user.username is not None %}
                     <a href="{% url 'profile' slug=bug.user.username %}"
-                       class="text-sm font-medium text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                       class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors truncate">
                         {{ bug.user }}
                     </a>
                 {% else %}
-                    <span class="text-sm font-medium text-gray-900">Anonymous</span>
+                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Anonymous</span>
                 {% endif %}
-                <p class="text-xs text-gray-500">{{ bug.created|timesince }} ago</p>
+                <p class="text-xs text-gray-500 dark:text-gray-500">{{ bug.created|timesince }} ago</p>
             </div>
             <!-- Label -->
             <div class="flex-shrink-0">
@@ -96,9 +96,9 @@
             </div>
             <div class="flex-1">
                 <a href="{% url 'domain' slug=bug.domain_name %}"
-                   class="text-sm text-gray-600 hover:text-[#e74c3c] transition-colors">{{ bug.domain_name }}</a>
+                   class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] transition-colors">{{ bug.domain_name }}</a>
                 {% if bug.domain.organization %}
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
                         Organization:
                         <a href="{% url 'organization_detail' bug.domain.organization.slug %}"
                            class="text-[#e74c3c] hover:underline">{{ bug.domain.organization.name }}</a>
@@ -108,27 +108,27 @@
         </div>
         <!-- Bug Title -->
         <a href="{% url 'issue_view' slug=bug.id %}"
-           class="block text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors line-clamp-3">
+           class="block text-lg font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors line-clamp-3">
             {{ bug.description|truncatechars:150 }}
         </a>
         <!-- URL -->
-        <span class="text-xs text-gray-600">
+        <span class="text-xs text-gray-600 dark:text-gray-400">
             <i class="fas fa-eye mr-1"></i>{{ bug.views }}
         </span>
         <!-- URL -->
         <a href="{{ bug.url }}"
            target="_blank"
            rel="noopener noreferrer"
-           class="mt-1 ml-1 text-sm text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block">
+           class="mt-1 ml-1 text-sm text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block">
             {{ bug.url|truncatechars:60 }}
         </a>
     </div>
     <!-- Screenshot -->
     {% if bug.screenshot or bugs_screenshots %}
-        <div class="border-t border-gray-100">
+        <div class="border-t border-gray-100 dark:border-gray-800">
             {% if bug.screenshot %}
                 <a href="{% url 'issue_view' slug=bug.id %}"
-                   class="block relative h-48 bg-gray-50">
+                   class="block relative h-48 bg-gray-50 dark:bg-gray-900">
                     <img src="{{ bug.screenshot.url }}"
                          alt="Bug Screenshot"
                          class="w-full h-full object-contain"
@@ -138,7 +138,7 @@
             {% else %}
                 {% for bug_key, bug_screenshots in bugs_screenshots.items %}
                     {% if bug == bug_key and bug_screenshots %}
-                        <div class="relative h-48 bg-gray-50">
+                        <div class="relative h-48 bg-gray-50 dark:bg-gray-900">
                             {% if bug_screenshots|length == 1 %}
                                 <a href="{% url 'issue_view' slug=bug.id %}" class="block h-full">
                                     <img src="{{ bug_screenshots.0.image.url }}"
@@ -157,12 +157,14 @@
                                          height="600">
                                     <!-- Navigation Buttons -->
                                     <button onclick="prevImage({{ bug.id }})"
-                                            class="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors">
-                                        <i class="fas fa-chevron-left"></i>
+                                            aria-label="View previous screenshot"
+                                            class="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2">
+                                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
                                     </button>
                                     <button onclick="nextImage({{ bug.id }})"
-                                            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors">
-                                        <i class="fas fa-chevron-right"></i>
+                                            aria-label="View next screenshot"
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2">
+                                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             {% endif %}
@@ -173,45 +175,51 @@
         </div>
     {% endif %}
     <!-- Footer -->
-    <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
         <div class="flex justify-between items-center">
             <!-- Actions -->
             <div class="flex items-center space-x-4">
                 <!-- Like -->
                 <button onclick="like_unlike_handler(event, {{ bug.id }})"
-                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        aria-label="Like this bug report"
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded">
                     <svg id="likeSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
-                         stroke-width="2">
+                         stroke-width="2"
+                         aria-hidden="true">
                         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3">
                         </path>
                     </svg>
                 </button>
                 <!-- Dislike -->
                 <button onclick="dislike_handler(event, {{ bug.id }})"
-                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        aria-label="Dislike this bug report"
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded">
                     <svg id="dislikeSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
-                         stroke-width="2">
+                         stroke-width="2"
+                         aria-hidden="true">
                         <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3">
                         </path>
                     </svg>
                 </button>
                 <!-- Flag -->
                 <button onclick="flag_unflag_handler(event, {{ bug.id }})"
-                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        aria-label="Flag this bug report"
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded">
                     <svg id="flagSvg{{ bug.id }}"
                          class="w-5 h-5"
                          viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
-                         stroke-width="2">
+                         stroke-width="2"
+                         aria-hidden="true">
                         <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                         <line x1="4" y1="22" x2="4" y2="15"></line>
                     </svg>
@@ -219,7 +227,7 @@
             </div>
             <!-- View Details -->
             <a href="{{ bug.get_absolute_url }}"
-               class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:text-[#e74c3c] hover:border-[#e74c3c] transition-colors">
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:text-[#e74c3c] hover:border-[#e74c3c] transition-colors">
                 View Details
             </a>
         </div>

@@ -3,8 +3,125 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from website.models import Integration, Organization, SlackBotActivity, SlackIntegration
-from website.views.slack_handlers import slack_commands, slack_events
+from website.models import Integration, Organization, Project, SlackBotActivity, SlackIntegration
+from website.views.slack_handlers import get_project_with_least_members, slack_commands, slack_events
+
+
+class GetProjectWithLeastMembersTests(TestCase):
+    def setUp(self):
+        """Set up test data for project tests."""
+        self.organization = Organization.objects.create(name="Test Org", url="https://test.org")
+
+    def test_returns_project_with_least_members(self):
+        """Test that it returns the project with the least members."""
+        Project.objects.create(
+            organization=self.organization,
+            name="Project A",
+            slug="project-a",
+            description="Test project A",
+            slack_channel="project-a",
+            slack_user_count=50,
+        )
+        Project.objects.create(
+            organization=self.organization,
+            name="Project B",
+            slug="project-b",
+            description="Test project B",
+            slack_channel="project-b",
+            slack_user_count=10,
+        )
+        Project.objects.create(
+            organization=self.organization,
+            name="Project C",
+            slug="project-c",
+            description="Test project C",
+            slack_channel="project-c",
+            slack_user_count=30,
+        )
+
+        result = get_project_with_least_members()
+        self.assertEqual(result, "project-b")
+
+    def test_excludes_project_blt(self):
+        """Test that project-blt is excluded from results."""
+        Project.objects.create(
+            organization=self.organization,
+            name="BLT Project",
+            slug="blt-project",
+            description="BLT project",
+            slack_channel="project-blt",
+            slack_user_count=5,
+        )
+        Project.objects.create(
+            organization=self.organization,
+            name="Other Project",
+            slug="other-project",
+            description="Other project",
+            slack_channel="project-other",
+            slack_user_count=20,
+        )
+
+        result = get_project_with_least_members()
+        self.assertEqual(result, "project-other")
+
+    def test_returns_none_when_no_eligible_projects(self):
+        """Test that None is returned when no eligible projects exist."""
+        # Create only project-blt which should be excluded
+        Project.objects.create(
+            organization=self.organization,
+            name="BLT Project",
+            slug="blt-project",
+            description="BLT project",
+            slack_channel="project-blt",
+            slack_user_count=5,
+        )
+
+        result = get_project_with_least_members()
+        self.assertIsNone(result)
+
+    def test_filters_out_null_slack_channel(self):
+        """Test that projects with null slack_channel are filtered out."""
+        Project.objects.create(
+            organization=self.organization,
+            name="No Channel",
+            slug="no-channel",
+            description="No channel project",
+            slack_channel=None,
+            slack_user_count=5,
+        )
+        Project.objects.create(
+            organization=self.organization,
+            name="With Channel",
+            slug="with-channel",
+            description="With channel project",
+            slack_channel="project-with-channel",
+            slack_user_count=20,
+        )
+
+        result = get_project_with_least_members()
+        self.assertEqual(result, "project-with-channel")
+
+    def test_filters_out_zero_user_count(self):
+        """Test that projects with slack_user_count=0 are filtered out."""
+        Project.objects.create(
+            organization=self.organization,
+            name="Zero Users",
+            slug="zero-users",
+            description="Zero users project",
+            slack_channel="project-zero",
+            slack_user_count=0,
+        )
+        Project.objects.create(
+            organization=self.organization,
+            name="Some Users",
+            slug="some-users",
+            description="Some users project",
+            slack_channel="project-some",
+            slack_user_count=15,
+        )
+
+        result = get_project_with_least_members()
+        self.assertEqual(result, "project-some")
 
 
 class SlackHandlerTests(TestCase):
@@ -22,7 +139,7 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_team_join_with_custom_message(self, mock_webclient, mock_verify):
-        # Mock the Slack client
+        # Mock the Slack client here
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
@@ -129,3 +246,55 @@ class SlackHandlerTests(TestCase):
         # Verify contribute message was sent
         mock_client.chat_postMessage.assert_called_once()
         self.assertEqual(response.status_code, 200)
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_slack_command_apps(self, mock_webclient, _mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.team_info.return_value = {"ok": True, "team": {"name": "Test Workspace"}}
+
+        # Mock admin API response - simulating permission error
+        from slack_sdk.errors import SlackApiError
+
+        mock_client.api_call.side_effect = SlackApiError(
+            "Insufficient permissions", response={"error": "missing_scope"}
+        )
+
+        # Create test request
+        request = MagicMock()
+        request.method = "POST"
+        request.POST = {
+            "command": "/installed_apps",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test",
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+
+        # Verify team info was requested
+        mock_client.team_info.assert_called_once()
+
+        # Verify DM was opened
+        mock_client.conversations_open.assert_called_once_with(users=["U123"])
+
+        # Verify apps message was sent
+        mock_client.chat_postMessage.assert_called_once()
+
+        # Check that the response is correct
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertIn("apps", response_data["text"].lower())
+
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details["command"], "/installed_apps")

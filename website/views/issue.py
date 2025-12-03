@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import os
 import smtplib
 import socket
@@ -55,6 +56,7 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
+from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
     IP,
@@ -85,6 +87,8 @@ from website.utils import (
 )
 
 from .constants import GSOC25_PROJECTS
+
+logger = logging.getLogger(__name__)
 
 
 @login_required(login_url="/accounts/login")
@@ -279,7 +283,7 @@ def UpdateIssue(request):
                     break
     except:
         tokenauth = False
-    if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
+    if request.method == "POST" and (request.user.is_superuser or (issue is not None and request.user == issue.user)):
         if request.POST.get("action") == "close":
             issue.status = "closed"
             issue.closed_by = request.user
@@ -800,6 +804,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
     fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
     template_name = "report.html"
 
+    # Duplicate detection threshold - can be adjusted without code changes
+    DUPLICATE_CHECK_THRESHOLD = 0.65
+
     def get_initial(self):
         try:
             json_data = json.loads(self.request.body)
@@ -858,7 +865,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         if not settings.IS_TEST:
             try:
                 if settings.DOMAIN_NAME in url:
-                    print("Web site exists")
+                    logger.debug("Web site exists")
 
                 elif request.POST["label"] == "7":
                     pass
@@ -870,7 +877,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         try:
                             response = requests.get(safe_url, timeout=5)
                             if response.status_code == 200:
-                                print("Web site exists")
+                                logger.debug("Web site exists")
                             else:
                                 raise Exception
                         except Exception:
@@ -879,9 +886,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise Exception
             except Exception as e:
                 # Add debugging to understand URL validation issues
-                import logging
 
-                logger = logging.getLogger(__name__)
                 logger.warning(f"URL accessibility check failed for {url}: {str(e)}")
 
                 # Check if domain exists in our database before rejecting
@@ -986,6 +991,72 @@ class IssueCreate(IssueBaseCreate, CreateView):
             return render(self.request, "report.html", {"form": self.get_form()})
         form.instance.reporter_ip_address = reporter_ip
 
+        # Check for duplicate bugs before creating the issue
+        url = form.cleaned_data.get("url", "")
+        title = form.cleaned_data.get("description", "")  # This is the bug title
+        markdown_description = form.cleaned_data.get("markdown_description", "")
+
+        # Combine title and detailed description for better duplicate detection
+        full_description = title
+        if markdown_description:
+            full_description = f"{title}. {markdown_description}"
+
+        # Only check for duplicates if we have both URL and title
+        if url and title:
+            # Add https:// if not present for duplicate checking
+            check_url = url if url.startswith(("http://", "https://")) else f"https://{url}"
+
+            try:
+                # Get domain object if available for more accurate matching
+                parsed_url = urlparse(check_url)
+                clean_domain = parsed_url.netloc.replace("www.", "").lower()
+                domain_obj = Domain.objects.filter(Q(name__iexact=clean_domain) | Q(url__iexact=clean_domain)).first()
+
+                duplicate_result = check_for_duplicates(
+                    check_url,
+                    full_description,  # Use combined title + description
+                    domain=domain_obj,
+                    threshold=self.DUPLICATE_CHECK_THRESHOLD,
+                )
+
+                if duplicate_result["is_duplicate"] and duplicate_result["confidence"] in ["high", "medium"]:
+                    # Check if user wants to proceed anyway
+                    if not self.request.POST.get("confirm_not_duplicate"):
+                        # Store similar bugs for display using shared helper
+                        similar_bugs_data = []
+                        for bug in duplicate_result["similar_bugs"][:5]:
+                            try:
+                                similar_bugs_data.append(format_similar_bug(bug, truncate_description=200))
+                            except (KeyError, AttributeError, ValueError, TypeError) as e:
+                                logger.warning("Error formatting similar bug: %s", e)
+                                continue
+
+                        if similar_bugs_data:
+                            messages.warning(
+                                self.request,
+                                f"Similar bugs found ({duplicate_result['confidence']} confidence). Please review them before submitting.",
+                            )
+                            captcha_form = CaptchaForm(self.request.POST)
+                            return render(
+                                self.request,
+                                "report.html",
+                                {
+                                    "form": self.get_form(),
+                                    "captcha_form": captcha_form,
+                                    "similar_bugs": similar_bugs_data,
+                                    "duplicate_confidence": duplicate_result["confidence"],
+                                    "show_duplicate_warning": True,
+                                },
+                            )
+            except (KeyError, AttributeError, ValueError, TypeError) as e:
+                # If duplicate check fails, log it but don't block submission
+                logger.warning(
+                    "Duplicate check failed for URL %s: %s. Proceeding with submission.",
+                    url,
+                    e,
+                    exc_info=True,
+                )
+
         @atomic
         def create_issue(self, form):
             # Validate screenshots first before any database operations
@@ -1045,9 +1116,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             clean_domain_no_www = clean_domain.replace("www.", "")
 
             # Debug logging to help identify the issue
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.info(f"Bug creation - Looking for domain: netloc={clean_domain}, no_www={clean_domain_no_www}")
 
             # Try multiple domain lookup strategies to match domain creation logic
@@ -1101,7 +1169,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     dest_email = getattr(domain.organization, "email", None)
 
                 if dest_email:
-                    import logging
                     import secrets
                     import string
                     import tempfile
@@ -1110,8 +1177,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     import pyzipper
                     from django.core.exceptions import ValidationError
                     from django.core.mail import EmailMessage
-
-                    logger = logging.getLogger(__name__)
 
                     try:
                         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1599,7 +1664,7 @@ class IssueView(DetailView):
             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
+        ipdetails.user = self.request.user.username if self.request.user.is_authenticated else None
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
         ipdetails.path = request.path
@@ -1608,22 +1673,22 @@ class IssueView(DetailView):
 
         try:
             if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
+                # Check if IP record already exists for this authenticated user and issue
+                if not IP.objects.filter(user=self.request.user.username, issuenumber=self.object.id).exists():
+                    # First time this user is viewing this issue
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
             else:
-                try:
-                    objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
+                # Check if IP record already exists for this address and issue
+                if not IP.objects.filter(address=get_client_ip(request), issuenumber=self.object.id).exists():
+                    # First time this IP is viewing this issue
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-                except Exception as e:
-                    print(e)
-                    pass  # pass this temporarly to avoid error
         except Exception as e:
-            pass  # pass this temporarly to avoid error
+            logger.error(f"Error tracking IP view for issue {self.object.id}: {e}")
+            pass  # Continue loading the page even if view tracking fails
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -1637,9 +1702,18 @@ class IssueView(DetailView):
             context["os_version"] = user_agent.os.version_string
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
-        context["total_score"] = list(
-            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
-        )[0]
+
+        # Calculate user's total score
+        # Both total_score and users_score are set for backward compatibility
+        if self.object.user:
+            total_score = (
+                Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score"))["total_score"] or 0
+            )
+            context["total_score"] = total_score
+            context["users_score"] = total_score
+        else:
+            context["total_score"] = 0
+            context["users_score"] = 0
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1656,6 +1730,26 @@ class IssueView(DetailView):
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
+
+        # Add email-related data from domain
+        if self.object.domain:
+            context["email_clicks"] = self.object.domain.clicks
+            context["email_events"] = self.object.domain.email_event
+
+            # Generate GitHub issues URL from the domain's github field
+            if self.object.domain.github:
+                github_url = self.object.domain.github.rstrip("/")
+                context["github_issues_url"] = f"{github_url}/issues"
+        # Add CVE severity and suggested tip amount
+        if self.object.cve_id and self.object.cve_score:
+            context["cve_severity"] = self.object.get_cve_severity()
+            context["suggested_tip_amount"] = self.object.get_suggested_tip_amount()
+
+        # Add user score for the issue reporter
+        if self.object.user:
+            context["users_score"] = (
+                list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
+            )
 
         return context
 
@@ -1752,10 +1846,29 @@ def issue_count(request):
 
 @login_required(login_url="/accounts/login")
 def delete_content_comment(request):
-    content_type = request.POST.get("content_type")
-    content_pk = int(request.POST.get("content_pk"))
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    try:
+        content_pk = int(request.POST.get("content_pk"))
+    except (ValueError, TypeError):
+        raise Http404("Invalid content ID")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
 
     if request.method == "POST":
         comment = Comment.objects.get(pk=int(request.POST["comment_pk"]), author=request.user.username)
@@ -1766,14 +1879,31 @@ def delete_content_comment(request):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
     return render(request, "comments2.html", context)
 
 
 def update_content_comment(request, content_pk, comment_pk):
-    content_type = request.POST.get("content_type")
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
+
     comment = Comment.objects.filter(pk=comment_pk).first()
 
     if request.method == "POST" and isinstance(request.user, User):
@@ -1785,14 +1915,30 @@ def update_content_comment(request, content_pk, comment_pk):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
     return render(request, "comments2.html", context)
 
 
 def comment_on_content(request, content_pk):
-    content_type = request.POST.get("content_type")
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
 
     VALID_CONTENT_TYPES = ["issue", "post"]
 
@@ -1843,6 +1989,7 @@ def comment_on_content(request, content_pk):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
 
     return render(request, "comments2.html", context)
@@ -1971,7 +2118,7 @@ class GithubIssueView(TemplateView):
         try:
             access_token = SocialToken.objects.get(account__user=request.user, account__provider="github")
         except SocialToken.DoesNotExist:
-            print("Access token not found")
+            logger.warning("Access token not found")
             return redirect("github_login")
 
         token = access_token.token
@@ -2132,12 +2279,21 @@ class GitHubIssuesView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Fetch all counts in a single query using aggregate to avoid N+1 query problem
+        counts = GitHubIssue.objects.aggregate(
+            total_count=Count("id"),
+            open_count=Count("id", filter=Q(state="open")),
+            closed_count=Count("id", filter=Q(state="closed")),
+            pr_count=Count("id", filter=Q(type="pull_request")),
+            issue_count=Count("id", filter=Q(type="issue")),
+        )
+
         # Add counts for filtering
-        context["total_count"] = GitHubIssue.objects.count()
-        context["open_count"] = GitHubIssue.objects.filter(state="open").count()
-        context["closed_count"] = GitHubIssue.objects.filter(state="closed").count()
-        context["pr_count"] = GitHubIssue.objects.filter(type="pull_request").count()
-        context["issue_count"] = GitHubIssue.objects.filter(type="issue").count()
+        context["total_count"] = counts["total_count"]
+        context["open_count"] = counts["open_count"]
+        context["closed_count"] = counts["closed_count"]
+        context["pr_count"] = counts["pr_count"]
+        context["issue_count"] = counts["issue_count"]
 
         # Add current filter states
         context["current_type"] = self.request.GET.get("type", "all")

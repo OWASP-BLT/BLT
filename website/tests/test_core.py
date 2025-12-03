@@ -113,6 +113,124 @@ class ForumTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, comment_data["content"])
 
+    def test_forum_post_with_repo_link(self):
+        # Create a test repo
+        from website.models import Organization, Project
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+        repo = Repo.objects.create(
+            name="Test Repo", description="Test repo desc", repo_url="https://github.com/test/repo"
+        )
+
+        # Create a forum post with repo link
+        post_data = {
+            "title": "Test Post with Repo",
+            "category": self.category.id,
+            "description": "Test Description with repo link",
+            "repo": repo.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Verify post has repo link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.repo)
+        self.assertEqual(post.repo.id, repo.id)
+
+    def test_forum_post_with_project_link(self):
+        # Create a test project
+        from website.models import Project
+
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+
+        # Create a forum post with project link
+        post_data = {
+            "title": "Test Post with Project",
+            "category": self.category.id,
+            "description": "Test Description with project link",
+            "project": project.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Verify post has project link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.project)
+        self.assertEqual(post.project.id, project.id)
+
+    def test_forum_post_with_organization_link(self):
+        # Create a test organization
+        from website.models import Organization
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+
+        # Create a forum post with organization link
+        post_data = {
+            "title": "Test Post with Organization",
+            "category": self.category.id,
+            "description": "Test Description with organization link",
+            "organization": organization.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Verify post has organization link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.organization)
+        self.assertEqual(post.organization.id, organization.id)
+
+    def test_forum_post_with_all_links(self):
+        # Create test entities
+        from website.models import Organization, Project
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+        repo = Repo.objects.create(
+            name="Test Repo", description="Test repo desc", repo_url="https://github.com/test/repo"
+        )
+
+        # Create a forum post with all links
+        post_data = {
+            "title": "Test Post with All Links",
+            "category": self.category.id,
+            "description": "Test Description with all links",
+            "repo": repo.id,
+            "project": project.id,
+            "organization": organization.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+        # Verify post has all links
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.repo)
+        self.assertIsNotNone(post.project)
+        self.assertIsNotNone(post.organization)
+        self.assertEqual(post.repo.id, repo.id)
+        self.assertEqual(post.project.id, project.id)
+        self.assertEqual(post.organization.id, organization.id)
+
 
 class TopEarnersTests(TestCase):
     def setUp(self):
@@ -275,3 +393,79 @@ class TopEarnersTests(TestCase):
         user3_earner = next((e for e in top_earners_list if e.user == self.user3), None)
         self.assertIsNotNone(user3_earner)
         self.assertEqual(user3_earner.total_earnings, Decimal("40.00"))
+
+
+class DarkModeTests(TestCase):
+    """Test suite for dark mode functionality"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_set_theme_endpoint_accepts_dark(self):
+        """Test that the set-theme endpoint accepts and saves dark theme"""
+        response = self.client.post(
+            reverse("set_theme"), data=json.dumps({"theme": "dark"}), content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["theme"], "dark")
+
+    def test_set_theme_endpoint_accepts_light(self):
+        """Test that the set-theme endpoint accepts and saves light theme"""
+        response = self.client.post(
+            reverse("set_theme"), data=json.dumps({"theme": "light"}), content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["theme"], "light")
+
+    def test_set_theme_invalid_method(self):
+        """Test that GET request to set-theme endpoint returns error"""
+        response = self.client.get(reverse("set_theme"))
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+
+    def test_dark_mode_toggle_in_base_template(self):
+        """Test that dark mode toggle is present in base template"""
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        # Check for dark mode JS and CSS references (may be hashed in production)
+        self.assertTrue(
+            "darkMode" in response.content.decode() or "dark-mode" in response.content.decode(),
+            "Dark mode script reference not found in response",
+        )
+        self.assertContains(response, "custom-scrollbar")
+
+    def test_dark_mode_script_loads(self):
+        """Test that dark mode JS script is included in pages"""
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        # Check for dark mode related content (script tag with darkMode reference)
+        content = response.content.decode()
+        self.assertTrue("darkMode.js" in content or "darkMode" in content, "Dark mode script not found in response")
+
+
+class StatusPageTests(TestCase):
+    """Test suite for status page functionality"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_status_page_loads(self):
+        """Test that the status page loads without errors"""
+        response = self.client.get(reverse("status_page"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("status", response.context)
+
+    def test_status_page_has_required_context(self):
+        """Test that status page provides expected context data"""
+        response = self.client.get(reverse("status_page"))
+        self.assertEqual(response.status_code, 200)
+        status = response.context["status"]
+
+        # Check for essential status data keys
+        self.assertIn("management_commands", status)
+        self.assertIn("available_commands", status)
