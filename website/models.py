@@ -3520,7 +3520,7 @@ class Newsletter(models.Model):
     )
 
     title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=True, blank=False)
     content = MDTextField(help_text="Write newsletter content in Markdown format")
     featured_image = models.ImageField(upload_to="newsletter_images", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -3550,7 +3550,19 @@ class Newsletter(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            # Generate base slug from title
+            base_slug = slugify(self.title)
+            if not base_slug:
+                # If title doesn't produce a valid slug, use a UUID-based slug
+                base_slug = f"newsletter-{uuid.uuid4().hex[:8]}"
+
+            # Ensure uniqueness by appending a counter if needed
+            slug = base_slug
+            counter = 1
+            while Newsletter.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
 
         if self.status == "published" and not self.published_at:
             self.published_at = timezone.now()

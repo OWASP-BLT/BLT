@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("title", models.CharField(max_length=255)),
-                ("slug", models.SlugField(blank=True, unique=True)),
+                ("slug", models.SlugField(unique=True)),
                 ("content", mdeditor.fields.MDTextField(help_text="Write newsletter content in Markdown format")),
                 ("featured_image", models.ImageField(blank=True, null=True, upload_to="newsletter_images")),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
