@@ -766,7 +766,7 @@ def search(request, template="search.html"):
                         )
                         if excess_ids:
                             SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
-            except Exception as e:
+            except Exception:
                 # Log the error but don't re-raise - allow search to proceed normally
                 # Transaction will be rolled back automatically by Django
                 logger.exception(
@@ -774,8 +774,6 @@ def search(request, template="search.html"):
                     f"truncated_query: {truncated_query[:50] if truncated_query else None}, "
                     f"search_type: {search_type}"
                 )
-                # Explicitly mark transaction for rollback to prevent TransactionManagementError
-                transaction.set_rollback(True)
 
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
     return render(request, template, context)
