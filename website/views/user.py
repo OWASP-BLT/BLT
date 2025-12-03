@@ -1984,7 +1984,12 @@ def newsletter_unsubscribe(request, token):
             messages.error(request, "Too many unsubscribe attempts. Please try again later.")
             return redirect("home")
 
-        subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
+        try:
+            subscriber = NewsletterSubscriber.objects.get(confirmation_token=token)
+        except NewsletterSubscriber.DoesNotExist:
+            logger.warning(f"Invalid token used for unsubscribe: {token}")
+            messages.error(request, "Invalid unsubscribe link. Please contact support if you need assistance.")
+            return redirect("home")
 
         # Add token creation time validation for extra security
         if subscriber.token_created_at:
@@ -2024,10 +2029,6 @@ def newsletter_unsubscribe(request, token):
         else:
             messages.info(request, "You are already unsubscribed.")
 
-        return redirect("home")
-    except NewsletterSubscriber.DoesNotExist:
-        logger.warning(f"Invalid token used for unsubscribe: {token}")
-        messages.error(request, "Invalid unsubscribe link. Please contact support if you need assistance.")
         return redirect("home")
     except Exception:
         logger.exception("Error in newsletter unsubscribe")
