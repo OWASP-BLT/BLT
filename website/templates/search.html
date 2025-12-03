@@ -48,7 +48,7 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     {% for search_item in recent_searches %}
-                        <a href="{% url 'search' %}?query={{ search_item.query }}&type={{ search_item.search_type }}"
+                        <a href="{% url 'search' %}?query={{ search_item.query|urlencode }}&type={{ search_item.search_type|urlencode }}"
                            class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                             {{ search_item.query }} ({{ search_item.get_search_type_display }})
                         </a>
