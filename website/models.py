@@ -984,21 +984,42 @@ class UserProfile(models.Model):
 
     def update_visit_counter(self):
         """
-        Update daily visit counter if last visit was on a different day
+        Update daily visit counter if last visit was on a different day.
+
+        Note: This method uses atomic database updates and does not refresh
+        the instance. Call refresh_from_db() after this method if you need
+        the updated values.
+
+        Returns:
+            None (previously returned daily_visit_count, but that value would
+            be stale after the atomic update)
         """
         today = timezone.now().date()
 
+        # Skip if transaction is marked for rollback to avoid TransactionManagementError
+        # This commonly occurs during Django test teardown when a transaction has
+        # encountered an error and is being rolled back
+        try:
+            if transaction.get_rollback():
+                return None
+        except transaction.TransactionManagementError:
+            # Called outside transaction context, proceed normally
+            pass
+
+        # Use atomic database operations to avoid transaction errors
         # If no previous visit or last visit was on a different day
         if not self.last_visit_day or today > self.last_visit_day:
-            self.daily_visit_count += 1
-            self.last_visit_day = today
-            self.save()
+            # Update both daily count, last visit day, and general visit count in one atomic operation
+            UserProfile.objects.filter(pk=self.pk).update(
+                daily_visit_count=F("daily_visit_count") + 1,
+                last_visit_day=today,
+                visit_count=F("visit_count") + 1,
+            )
+        else:
+            # Only increment the general visit_count
+            UserProfile.objects.filter(pk=self.pk).update(visit_count=F("visit_count") + 1)
 
-        # Always increment the general visit_count regardless of day
-        self.visit_count += 1
-        self.save(update_fields=["visit_count"])
-
-        return self.daily_visit_count
+        return None
 
     def update_streak_and_award_points(self, check_in_date=None):
         """
