@@ -169,7 +169,10 @@ def screenshot_signed_url_view(request, pk: int):
         is_owner = user.is_authenticated and issue.user_id == user.id
         is_staff = user.is_authenticated and user.is_staff
         # if team_members is a M2M, you can also add:
-        is_team_member = user.is_authenticated and user in issue.team_members.all()
+        is_team_member = (
+            request.user.is_authenticated
+            and issue.team_members.filter(id=request.user.id).exists()
+        )
 
         if not (is_owner or is_staff or is_team_member):
             return Response(
@@ -202,7 +205,10 @@ def issue_screenshot_signed_url_view(request, pk: int):
         user = request.user
         is_owner = user.is_authenticated and issue.user_id == user.id
         is_staff = user.is_authenticated and user.is_staff
-        is_team_member = user.is_authenticated and user in issue.team_members.all()
+        is_team_member = (
+            request.user.is_authenticated
+            and issue.team_members.filter(id=request.user.id).exists()
+        )
 
         if not (is_owner or is_staff or is_team_member):
             return Response(
@@ -343,15 +349,20 @@ class IssueViewSet(viewsets.ModelViewSet):
         if tags:
             issue.tags.add(*tags)
 
-        for screenshot in self.request.FILES.getlist("screenshots"):
-            if image_validator(screenshot):
-                filename = screenshot.name
-                screenshot.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
-                IssueScreenshot.objects.create(image=screenshot, issue=issue)
-            else:
-                return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
+        for uploaded in self.request.FILES.getlist("screenshots"):
+            result = image_validator(uploaded)
 
-        return Response(self.get_issue_info(request, issue))
+            # image_validator returns True or an error string
+            if result is not True:
+                # Either use the specific error or a generic one
+                msg = result or "Invalid image"
+                return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+
+            # If we got here, validation passed
+            filename = uploaded.name
+            uploaded.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
+            IssueScreenshot.objects.create(image=uploaded, issue=issue)
+
 
 
 class LikeIssueApiView(APIView):
