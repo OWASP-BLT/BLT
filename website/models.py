@@ -989,10 +989,15 @@ class UserProfile(models.Model):
         Note: This method uses atomic database updates and does not refresh
         the instance. Call refresh_from_db() after this method if you need
         the updated values.
+
+        Returns:
+            None (previously returned daily_visit_count, but that value would
+            be stale after the atomic update)
         """
         today = timezone.now().date()
 
-        # Skip if we're in a broken transaction to avoid TransactionManagementError
+        # Skip if transaction is marked for rollback to avoid TransactionManagementError
+        # This commonly occurs during test teardown when a transaction has encountered an error
         try:
             if transaction.get_rollback():
                 return None
