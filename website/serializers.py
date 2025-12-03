@@ -1,4 +1,5 @@
 from django.db.models import Sum
+from django.urls import reverse
 from rest_framework import serializers
 
 from website.models import (
@@ -79,22 +80,53 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IssueScreenshotSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
     class Meta:
         model = IssueScreenshot
-        fields = "__all__"
+        # only expose safe fields
+        fields = ("id", "url", "created")
+
+    def get_url(self, obj):
+        request = self.context.get("request")
+
+        if obj.issue.is_hidden:
+            # logical endpoint; front-end calls this to get signed URL
+            logical = reverse("screenshot-url", args=[obj.id])
+            return request.build_absolute_uri(logical) if request else logical
+
+        # public issue ⇒ direct URL OK
+        if request:
+            return request.build_absolute_uri(obj.image.url)
+        return obj.image.url
 
 
 class IssueSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Issue Model
-    """
-
     user = UserSerializer(read_only=True)
     screenshots = IssueScreenshotSerializer(many=True, required=False)
+    screenshot = serializers.SerializerMethodField()
 
     class Meta:
         model = Issue
         fields = "__all__"
+
+    def get_screenshot(self, obj):
+        request = self.context.get("request")
+
+        # If there is no single-file screenshot at all, just return None
+        if not obj.screenshot:
+            return None
+
+        # 🔐 Hidden issue ⇒ do NOT expose raw image path.
+        # Instead, point to an endpoint that you’ll use to return a signed URL
+        if obj.is_hidden:
+            logical = reverse("issue-screenshot-url", args=[obj.pk])
+            return request.build_absolute_uri(logical) if request else logical
+
+        # 🌐 Public issue ⇒ keep old behaviour (direct media URL)
+        if request:
+            return request.build_absolute_uri(obj.screenshot.url)
+        return obj.screenshot.url
 
 
 class DomainSerializer(serializers.ModelSerializer):

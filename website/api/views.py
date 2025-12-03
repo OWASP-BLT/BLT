@@ -10,9 +10,9 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -46,6 +46,7 @@ from website.models import (
     Token,
     User,
     UserProfile,
+    is_using_gcs,
 )
 from website.serializers import (
     ActivityLogSerializer,
@@ -53,6 +54,7 @@ from website.serializers import (
     BugHuntSerializer,
     ContributorSerializer,
     DomainSerializer,
+    IssueScreenshotSerializer,
     IssueSerializer,
     JobPublicSerializer,
     JobSerializer,
@@ -64,7 +66,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import image_validator
+from website.utils import generate_signed_url, image_validator
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -143,6 +145,84 @@ class DomainViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head"]
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def screenshot_signed_url_view(request, pk: int):
+    """
+    Return a signed (or direct) URL for a single IssueScreenshot.
+
+    - If the issue is hidden, only allow:
+      * the issue reporter
+      * staff/superuser
+      * team members (if used)
+    - If GCS is in use, return a time-limited signed URL.
+    - Otherwise (local filesystem), return the normal media URL.
+    """
+    screenshot = get_object_or_404(IssueScreenshot, pk=pk)
+    issue = screenshot.issue
+
+    # Basic permission check for hidden issues
+    if issue.is_hidden:
+        user = request.user
+
+        is_owner = user.is_authenticated and issue.user_id == user.id
+        is_staff = user.is_authenticated and user.is_staff
+        # if team_members is a M2M, you can also add:
+        is_team_member = user.is_authenticated and user in issue.team_members.all()
+
+        if not (is_owner or is_staff or is_team_member):
+            return Response(
+                {"detail": "You do not have permission to view this screenshot."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+    # Decide what URL to return
+    if is_using_gcs():
+        # GCS: generate a time-limited signed URL
+        url = generate_signed_url(screenshot.image.name, expiration=3600)
+    else:
+        # Local/dev: just give the normal media URL
+        url = request.build_absolute_uri(screenshot.image.url)
+
+    return Response({"url": url}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def issue_screenshot_signed_url_view(request, pk: int):
+    """
+    Return a signed (or direct) URL for the *Issue.screenshot* field.
+    Used by the single `screenshot` field on the Issue.
+    """
+    issue = get_object_or_404(Issue, pk=pk)
+
+    # same permission logic as above
+    if issue.is_hidden:
+        user = request.user
+        is_owner = user.is_authenticated and issue.user_id == user.id
+        is_staff = user.is_authenticated and user.is_staff
+        is_team_member = user.is_authenticated and user in issue.team_members.all()
+
+        if not (is_owner or is_staff or is_team_member):
+            return Response(
+                {"detail": "You do not have permission to view this screenshot."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+    if not issue.screenshot:
+        return Response(
+            {"detail": "Issue has no screenshot."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if is_using_gcs():
+        url = generate_signed_url(issue.screenshot, request=request, expiration=3600)
+    else:
+        url = request.build_absolute_uri(issue.screenshot.url)
+
+    return Response({"url": url}, status=status.HTTP_200_OK)
+
+
 class IssueViewSet(viewsets.ModelViewSet):
     """
     Issue View Set
@@ -174,31 +254,43 @@ class IssueViewSet(viewsets.ModelViewSet):
         if issue is None:
             return {}
 
-        # Check if there is an image in the `screenshot` field of the Issue table
-        if issue.screenshot:
-            # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
-            screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
-                request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()
-            ]
-        else:
-            # If no image exists in the Issue table, return only the images from IssueScreenshot
-            screenshots = [request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()]
+        # 1) Use IssueScreenshotSerializer so it can build correct URL
+        screenshot_qs = issue.screenshots.all().order_by("created")
+        screenshot_serializer = IssueScreenshotSerializer(
+            screenshot_qs,
+            many=True,
+            context={"request": request},  # 👈 important for get_url()
+        )
+        # If you want screenshots to be just URLs (like before):
+        screenshot_urls = [obj["url"] for obj in screenshot_serializer.data]
 
+        # 2) Legacy single `Issue.screenshot`:
+        #    only prepend it for *public* issues, never for hidden ones
+        if issue.screenshot and not issue.is_hidden:
+            screenshot_urls = [request.build_absolute_uri(issue.screenshot.url)] + screenshot_urls
+
+        # 3) Upvote / flag info
         is_upvoted = False
         is_flagged = False
         if request.user.is_authenticated:
-            is_upvoted = request.user.userprofile.issue_upvoted.filter(id=issue.id).exists()
-            is_flagged = request.user.userprofile.issue_flaged.filter(id=issue.id).exists()
+            profile = request.user.userprofile
+            is_upvoted = profile.issue_upvoted.filter(id=issue.id).exists()
+            is_flagged = profile.issue_flaged.filter(id=issue.id).exists()
 
+        # 4) Tags
         tag_serializer = TagSerializer(issue.tags.all(), many=True)
         tags = tag_serializer.data
 
+        # 5) Issue data – pass request in context as well
+        issue_data = IssueSerializer(issue, context={"request": request}).data
+
+        # 6) Final response structure
         return {
-            **IssueSerializer(issue).data,
+            **issue_data,
             "closed_by": issue.closed_by.username if issue.closed_by else None,
             "flagged": is_flagged,
             "flags": issue.flaged.count(),
-            "screenshots": screenshots,
+            "screenshots": screenshot_urls,  # now based on serializer
             "upvotes": issue.upvoted.count(),
             "upvotted": is_upvoted,
             "tags": tags,
@@ -233,7 +325,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                     tags = [item for sublist in tags for item in sublist]
 
                 del request.data["tags"]
-        except (ValueError, MultiValueDictKeyError) as e:
+        except (ValueError, MultiValueDictKeyError):
             return Response({"error": "Invalid tags format."}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             request.data._mutable = False
@@ -254,10 +346,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             if image_validator(screenshot):
                 filename = screenshot.name
                 screenshot.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
-                file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-
-                # Create the IssueScreenshot object and associate it with the issue
-                IssueScreenshot.objects.create(image=file_path, issue=issue)
+                IssueScreenshot.objects.create(image=screenshot, issue=issue)
             else:
                 return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
 

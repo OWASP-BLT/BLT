@@ -283,6 +283,7 @@ if "DYNO" in os.environ:  # for Heroku
     # logging.basicConfig(level=logging.DEBUG)
 
     GS_BUCKET_NAME = "bhfiles"
+    GS_PRIVATE_BUCKET_NAME = os.getenv("GS_PRIVATE_BUCKET_NAME", "bhfiles-private")
 
     GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
 
@@ -297,6 +298,13 @@ if "DYNO" in os.environ:  # for Heroku
             "OPTIONS": {
                 "credentials": GS_CREDENTIALS,
                 "bucket_name": GS_BUCKET_NAME,
+            },
+        },
+        "private": {
+            "BACKEND": "website.storage.PrivateGoogleCloudStorage",
+            "OPTIONS": {
+                "credentials": GS_CREDENTIALS,
+                "bucket_name": GS_PRIVATE_BUCKET_NAME,
             },
         },
         "staticfiles": {

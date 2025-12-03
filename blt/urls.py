@@ -10,7 +10,7 @@ from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
@@ -44,6 +44,8 @@ from website.api.views import (
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
+    issue_screenshot_signed_url_view,
+    screenshot_signed_url_view,
     trademark_search_api,
 )
 from website.feeds import ActivityFeed
@@ -786,6 +788,16 @@ urlpatterns = [
     re_path(r"^report/$", IssueCreate.as_view(), name="report"),
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
     re_path(r"^api/v1/", include(router.urls)),
+    path(
+        "api/v1/screenshots/<int:pk>/url/",
+        screenshot_signed_url_view,
+        name="screenshot-url",
+    ),
+    path(
+        "api/v1/screenshots/<int:pk>/screenshot-url/",
+        issue_screenshot_signed_url_view,
+        name="issue-screenshot-url",
+    ),
     re_path(r"^api/v1/stats/$", StatsApiViewset.as_view(), name="get_score"),
     re_path(r"^api/v1/urlcheck/$", UrlCheckApiViewset.as_view(), name="url_check"),
     re_path(r"^api/v1/hunt/$", BugHuntApiViewset.as_view(), name="hunt_details"),

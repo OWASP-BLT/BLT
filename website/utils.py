@@ -7,6 +7,7 @@ import re
 import socket
 import time
 from collections import deque
+from datetime import timedelta
 from ipaddress import ip_address
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
@@ -21,6 +22,7 @@ from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from google.cloud import storage
 from openai import OpenAI
 from PIL import Image
 
@@ -1129,3 +1131,23 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
+
+
+def generate_signed_url(blob_name: str, expiration: int = 3600) -> str:
+    client = storage.Client()
+    bucket_name = getattr(
+        settings,
+        "GS_PRIVATE_BUCKET_NAME",
+        getattr(settings, "GS_BUCKET_NAME", None),
+    )
+    if not bucket_name:
+        raise RuntimeError("No GCS bucket configured for signed URL generation")
+
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+
+    return blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(seconds=expiration),
+        method="GET",
+    )
