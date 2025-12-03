@@ -249,16 +249,18 @@ class UserProfileVisitCounterTest(TestCase):
 
     def test_update_visit_counter_different_days(self):
         """Test that visits on different days increment both counters"""
+        from website.models import UserProfile
+
         # First visit
         self.profile.update_visit_counter()
         self.profile.refresh_from_db()
         first_daily_count = self.profile.daily_visit_count
         first_visit_count = self.profile.visit_count
 
-        # Manually set the last_visit_day to yesterday to simulate a different day visit
+        # Set the last_visit_day to yesterday using atomic update
         yesterday = timezone.now().date() - timedelta(days=1)
-        self.profile.last_visit_day = yesterday
-        self.profile.save()
+        UserProfile.objects.filter(pk=self.profile.pk).update(last_visit_day=yesterday)
+        self.profile.refresh_from_db()
 
         # Visit on current day (which is different from yesterday)
         self.profile.update_visit_counter()
