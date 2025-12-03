@@ -709,19 +709,27 @@ def search(request, template="search.html"):
                         + repos.count()
                     )
                 elif search_type == "issues":
-                    result_count = issues.count()
+                    # Use context value if available (from elif block), otherwise use local variable
+                    issues_qs = context.get("issues", issues) if "issues" in context else issues
+                    result_count = issues_qs.count() if hasattr(issues_qs, "count") else 0
                 elif search_type == "domains":
-                    result_count = domains.count()
+                    domains_qs = context.get("domains", domains) if "domains" in context else domains
+                    result_count = domains_qs.count() if hasattr(domains_qs, "count") else 0
                 elif search_type == "users":
-                    result_count = users.count()
+                    users_qs = context.get("users", users) if "users" in context else users
+                    result_count = users_qs.count() if hasattr(users_qs, "count") else 0
                 elif search_type == "labels":
-                    result_count = issues.count()
+                    issues_qs = context.get("issues", issues) if "issues" in context else issues
+                    result_count = issues_qs.count() if hasattr(issues_qs, "count") else 0
                 elif search_type == "organizations":
-                    result_count = organizations.count()
+                    orgs_qs = context.get("organizations", organizations) if "organizations" in context else organizations
+                    result_count = orgs_qs.count() if hasattr(orgs_qs, "count") else 0
                 elif search_type == "projects":
-                    result_count = projects.count()
+                    projects_qs = context.get("projects", projects) if "projects" in context else projects
+                    result_count = projects_qs.count() if hasattr(projects_qs, "count") else 0
                 elif search_type == "repos":
-                    result_count = repos.count()
+                    repos_qs = context.get("repos", repos) if "repos" in context else repos
+                    result_count = repos_qs.count() if hasattr(repos_qs, "count") else 0
                 elif search_type == "tags":
                     tags = Tag.objects.filter(name__icontains=query)
                     matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
@@ -737,8 +745,8 @@ def search(request, template="search.html"):
                         + matching_repos.count()
                     )
                 elif search_type == "languages":
-                    repos = Repo.objects.filter(primary_language__icontains=query)
-                    result_count = repos.count()
+                    repos_qs = context.get("repos", repos) if "repos" in context else Repo.objects.filter(primary_language__icontains=query)
+                    result_count = repos_qs.count() if hasattr(repos_qs, "count") else 0
             except (AttributeError, NameError, TypeError) as e:
                 # Fallback in case of unexpected errors
                 logger.warning("Error calculating result_count for search_type %s: %s", search_type, e)
