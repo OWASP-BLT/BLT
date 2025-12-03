@@ -1225,6 +1225,39 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.created}"
 
 
+class SearchHistory(models.Model):
+    """Track user search queries for displaying recent searches."""
+
+    SEARCH_TYPE_CHOICES = [
+        ("all", "All"),
+        ("issues", "Issues"),
+        ("domains", "Domains"),
+        ("users", "Users"),
+        ("labels", "Labels"),
+        ("organizations", "Organizations"),
+        ("projects", "Projects"),
+        ("repos", "Repositories"),
+        ("tags", "Tags"),
+        ("languages", "Languages"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="search_history")
+    query = models.CharField(max_length=255)
+    search_type = models.CharField(max_length=50, choices=SEARCH_TYPE_CHOICES, default="all")
+    result_count = models.PositiveIntegerField(null=True, blank=True, help_text="Number of results returned")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user", "-timestamp"], name="search_hist_user_time_idx"),
+        ]
+        verbose_name_plural = "Search Histories"
+
+    def __str__(self):
+        return f"{self.user.username}: {self.query} ({self.search_type}) at {self.timestamp}"
+
+
 class ForumCategory(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
