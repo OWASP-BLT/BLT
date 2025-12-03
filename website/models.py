@@ -988,15 +988,22 @@ class UserProfile(models.Model):
         """
         today = timezone.now().date()
 
+        # Use atomic database operations to avoid transaction errors
         # If no previous visit or last visit was on a different day
         if not self.last_visit_day or today > self.last_visit_day:
-            self.daily_visit_count += 1
-            self.last_visit_day = today
-            self.save()
-
-        # Always increment the general visit_count regardless of day
-        self.visit_count += 1
-        self.save(update_fields=["visit_count"])
+            # Update both daily count, last visit day, and general visit count in one atomic operation
+            UserProfile.objects.filter(pk=self.pk).update(
+                daily_visit_count=F("daily_visit_count") + 1,
+                last_visit_day=today,
+                visit_count=F("visit_count") + 1,
+            )
+            # Refresh from database to get updated values
+            self.refresh_from_db(fields=["daily_visit_count", "last_visit_day", "visit_count"])
+        else:
+            # Only increment the general visit_count
+            UserProfile.objects.filter(pk=self.pk).update(visit_count=F("visit_count") + 1)
+            # Refresh from database to get updated value
+            self.refresh_from_db(fields=["visit_count"])
 
         return self.daily_visit_count
 

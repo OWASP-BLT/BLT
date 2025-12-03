@@ -9,6 +9,8 @@ class VisitTrackingMiddleware:
                 profile = request.user.userprofile
                 profile.update_visit_counter()
             except Exception:
+                # Silently ignore any errors to prevent middleware from breaking requests
+                # This includes TransactionManagementError during test teardown
                 pass
 
         response = self.get_response(request)
