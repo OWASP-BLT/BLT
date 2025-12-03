@@ -997,7 +997,8 @@ class UserProfile(models.Model):
         today = timezone.now().date()
 
         # Skip if transaction is marked for rollback to avoid TransactionManagementError
-        # This commonly occurs during test teardown when a transaction has encountered an error
+        # This commonly occurs during Django test teardown when a transaction has
+        # encountered an error and is being rolled back
         try:
             if transaction.get_rollback():
                 return None
