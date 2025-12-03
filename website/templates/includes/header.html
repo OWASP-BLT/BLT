@@ -1219,29 +1219,29 @@
                     });
             };
         
-            function clearChat() {
-                loading.classList.remove('hidden');
-                fetch('/api/chatbot/conversation/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ question: "exit" }),
-                })
+          function clearChat() {
+                    chatInput.value = "";
+                    chatInput.focus();
+                    loading.classList.remove('hidden');
+
+                    fetch('/api/chatbot/conversation/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ question: "exit" })
+                    })
                     .then(response => response.json())
                     .then(data => {
                         chatLog.innerHTML = '';
                         loading.classList.add('hidden');
                     })
-                    .catch((error) => {
+                    .catch(error => {
                         console.error('Error:', error);
                         loading.classList.add('hidden');
                     });
             }
-        
-            chatClear.onclick = clearChat;
-            chatClose.onclick = clearChat;
-        
+                chatClear.onclick = clearChat;
+                chatClose.onclick = clearChat;
+
             chatInput.addEventListener('keyup', function (event) {
                 if (event.keyCode === 13) {  // Enter key
                     chatSubmit.click();
