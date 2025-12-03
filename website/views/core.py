@@ -733,14 +733,23 @@ def search(request, template="search.html"):
                 # When query is present, page shows generic results, so use generic repos count
                 result_count = repos.count()
 
-            # Avoid logging duplicate consecutive searches
-            last_search = SearchHistory.objects.filter(user=request.user).order_by("-timestamp").first()
-            if not last_search or last_search.query != query or last_search.search_type != search_type:
-                # Atomic operation: create entry and cleanup excess entries in same transaction
-                with transaction.atomic():
+            # Atomic operation: check for duplicates, create entry, and cleanup excess entries
+            # Use select_for_update to prevent race conditions in concurrent requests
+            truncated_query = query[:255]  # Ensure query doesn't exceed max_length
+            with transaction.atomic():
+                # Check for duplicate consecutive searches within transaction
+                # Use select_for_update to lock the row and prevent concurrent modifications
+                last_search = (
+                    SearchHistory.objects.filter(user=request.user)
+                    .select_for_update()
+                    .order_by("-timestamp")
+                    .first()
+                )
+                # Compare truncated query to stored query (which is also truncated)
+                if not last_search or last_search.query != truncated_query or last_search.search_type != search_type:
                     SearchHistory.objects.create(
                         user=request.user,
-                        query=query[:255],  # Ensure query doesn't exceed max_length
+                        query=truncated_query,
                         search_type=search_type,
                         result_count=result_count,
                     )
