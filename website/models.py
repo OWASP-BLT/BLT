@@ -32,6 +32,8 @@ from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
 
+from website.services.leaderboard_scoring import LeaderboardScoringService
+
 logger = logging.getLogger(__name__)
 
 
@@ -957,6 +959,32 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+
+    leaderboard_score = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0, help_text="Cached total leaderboard score (0-100)"
+    )
+
+    quality_score = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0, help_text="Cached quality component score (0-100)"
+    )
+
+    check_in_count = models.IntegerField(default=0, help_text="Total check-ins recorded for leaderboard calculation")
+
+    last_score_update = models.DateTimeField(
+        null=True, blank=True, help_text="When the leaderboard score was last recalculated"
+    )
+
+    def calculate_leaderboard_score(self):
+        score, breakdown = LeaderboardScoringService.calculate_for_user(self.user)
+
+        self.leaderboard_score = score
+        self.quality_score = breakdown["goals"]  # cache important metric
+        self.check_in_count = DailyStatusReport.objects.filter(user=self.user).count()
+        self.last_score_update = timezone.now()
+
+        self.save(update_fields=["leaderboard_score", "quality_score", "check_in_count", "last_score_update"])
+
+        return score, breakdown
 
     def check_team_membership(self):
         return self.team is not None

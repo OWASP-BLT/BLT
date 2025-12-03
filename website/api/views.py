@@ -61,6 +61,7 @@ from website.serializers import (
     RepoSerializer,
     SearchHistorySerializer,
     TagSerializer,
+    TeamMemberLeaderboardSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
 )
@@ -1561,3 +1562,26 @@ class FindSimilarBugsApiView(APIView):
                 {"error": "An error occurred while searching for similar bugs"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+from rest_framework.authentication import SessionAuthentication
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return  # Disable CSRF
+
+
+class TeamMemberLeaderboardAPIView(APIView):
+    authentication_classes = [BasicAuthentication, CsrfExemptSessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        team = request.user.userprofile.team
+        if not team:
+            return Response({"detail": "User has no team"}, status=400)
+
+        members = UserProfile.objects.filter(team=team).order_by("-leaderboard_score", "-current_streak")
+
+        serializer = TeamMemberLeaderboardSerializer(members, many=True)
+        return Response(serializer.data)

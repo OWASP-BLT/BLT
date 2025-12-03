@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <div class="container mt-4">
+        <h2 class="mb-4">Team Member Leaderboard</h2>
+        {% if not members %}
+            <div class="alert alert-info">No team members found.</div>
+        {% else %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>User</th>
+                        <th>Score</th>
+                        <th>Streak</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in members %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <a href="{% url 'profile' m.user.username %}">{{ m.user.username }}</a>
+                            </td>
+                            <td>{{ m.leaderboard_score }}</td>
+                            <td>{{ m.current_streak }} days</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+{% endblock %}

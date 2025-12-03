@@ -40,6 +40,7 @@ from website.api.views import (
     SearchHistoryApiView,
     StatsApiViewset,
     TagApiViewset,
+    TeamMemberLeaderboardAPIView,
     TimeLogViewSet,
     UrlCheckApiViewset,
     UserIssueViewSet,
@@ -316,6 +317,7 @@ from website.views.teams import (
     GiveKudosView,
     TeamChallenges,
     TeamLeaderboard,
+    TeamMemberLeaderboardView,
     TeamOverview,
     add_member,
     create_team,
@@ -1221,6 +1223,8 @@ urlpatterns = [
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
+    path("api/team/member-leaderboard/", TeamMemberLeaderboardAPIView.as_view(), name="api_team_leaderboard"),
+    path("teams/member-leaderboard/", TeamMemberLeaderboardView.as_view(), name="team_member_leaderboard"),
 ]
 
 if settings.DEBUG:
