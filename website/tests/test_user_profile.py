@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -246,7 +248,6 @@ class UserProfileVisitCounterTest(TestCase):
         """Test that update_visit_counter uses atomic operations to prevent transaction errors"""
         # This test ensures the method doesn't use multiple save() calls
         # which can cause TransactionManagementError
-        from unittest.mock import patch
 
         # Mock the save method to ensure it's not called
         with patch.object(self.profile, "save") as mock_save:
