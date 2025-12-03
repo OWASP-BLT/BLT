@@ -814,7 +814,7 @@ class twitter:
                 status = api.update_status(status=message)
 
             # Get tweet URL
-            tweet_url = f"https://twitter.com/user/status/{status.id}"
+            tweet_url = f"https://x.com/user/status/{status.id}"
 
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
