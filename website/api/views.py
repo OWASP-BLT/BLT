@@ -312,8 +312,6 @@ class IssueViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
-
-        # Since the tags field is json encoded we need to decode it
         tags = None
         try:
             if "tags" in request.data:
@@ -331,31 +329,37 @@ class IssueViewSet(viewsets.ModelViewSet):
         finally:
             request.data._mutable = False
 
-        screenshot_count = len(self.request.FILES.getlist("screenshots"))
+        # ---- Collect and count screenshots once ----
+        screenshot_files = list(self.request.FILES.getlist("screenshots"))
+        screenshot_count = len(screenshot_files)
+
         if screenshot_count == 0:
             return Response({"error": "Upload at least one image!"}, status=status.HTTP_400_BAD_REQUEST)
         elif screenshot_count > 5:
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # ---- Validate *all* screenshots before creating the Issue ----
+        for uploaded in screenshot_files:
+            result = image_validator(uploaded)
+            # image_validator returns True or an error string
+            if result is not True:
+                msg = result or "Invalid image"
+                return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ---- Now it’s safe to create the Issue ----
         data = super().create(request, *args, **kwargs).data
         issue = Issue.objects.filter(id=data["id"]).first()
 
         if tags:
             issue.tags.add(*tags)
 
-        for uploaded in self.request.FILES.getlist("screenshots"):
-            result = image_validator(uploaded)
-
-            # image_validator returns True or an error string
-            if result is not True:
-                # Either use the specific error or a generic one
-                msg = result or "Invalid image"
-                return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
-
-            # If we got here, validation passed
+        # ---- Create IssueScreenshot rows for each validated file ----
+        for uploaded in screenshot_files:
             filename = uploaded.name
             uploaded.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
             IssueScreenshot.objects.create(image=uploaded, issue=issue)
+
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class LikeIssueApiView(APIView):
