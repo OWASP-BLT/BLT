@@ -14,6 +14,7 @@ from website.models import (
     Points,
     Project,
     Repo,
+    SearchHistory,
     Tag,
     TimeLog,
     Trademark,
@@ -293,3 +294,12 @@ class TrademarkSerializer(serializers.ModelSerializer):
             "description",
             "owners",
         ]
+
+
+class SearchHistorySerializer(serializers.ModelSerializer):
+    """Serializer for SearchHistory model"""
+
+    class Meta:
+        model = SearchHistory
+        fields = ["id", "query", "search_type", "timestamp", "result_count"]
+        read_only_fields = ["id", "timestamp"]
