@@ -76,7 +76,7 @@ def reverse_migration(apps, schema_editor):
 
     WARNING: Users deleted by this migration cannot be recovered.
     """
-    logger.warning("Reversing migration 0259_make_email_unique: Deleted users cannot be restored.")
+    logger.warning("Reversing migration 0260_make_email_unique: Deleted users cannot be restored.")
 
 
 def create_email_unique_index(apps, schema_editor):
@@ -170,7 +170,7 @@ class Migration(migrations.Migration):
     atomic = True
 
     dependencies = [
-        ("website", "0258_add_slackchannel_model"),
+        ("website", "0259_add_search_history"),
         ("auth", "0012_alter_user_first_name_max_length"),
     ]
 

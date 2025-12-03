@@ -12,7 +12,7 @@ from django.db.models import Count
 
 
 class Command(BaseCommand):
-    help = "Analyze duplicate email addresses before running migration 0259"
+    help = "Analyze duplicate email addresses before running migration 0260"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -46,7 +46,7 @@ class Command(BaseCommand):
 
         if not duplicate_emails and empty_email_count <= 1 and null_email_count <= 1:
             self.stdout.write(self.style.SUCCESS("✓ No duplicate emails found!"))
-            self.stdout.write("Migration 0259 can be run safely.\n")
+            self.stdout.write("Migration 0260 can be run safely.\n")
             return
 
         total_to_delete = sum(d["email_count"] - 1 for d in duplicate_emails)
@@ -126,7 +126,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Users to be DELETED: {total_to_delete}")
         self.stdout.write(f"Users with empty email (''): {empty_email_count}")
         self.stdout.write(f"Users with NULL email: {null_email_count}")
-        self.stdout.write("\n" + self.style.WARNING("Migration 0259 will:"))
+        self.stdout.write("\n" + self.style.WARNING("Migration 0260 will:"))
         self.stdout.write("  1. Keep the first user (lowest ID) for each duplicate non-empty email")
         self.stdout.write("  2. DELETE all other users with that non-empty email")
         self.stdout.write("  3. NOT delete users with empty or NULL emails (multiple allowed)")
