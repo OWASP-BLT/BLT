@@ -5,7 +5,7 @@ import re
 import smtplib
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
@@ -1993,7 +1993,7 @@ def newsletter_unsubscribe(request, token):
 
         # Add token creation time validation for extra security
         if subscriber.token_created_at:
-            max_token_age = timezone.now() - timezone.timedelta(days=90)
+            max_token_age = timezone.now() - timedelta(days=90)
             if subscriber.token_created_at < max_token_age:
                 # Token too old - refresh it and show warning
                 subscriber.refresh_token()
