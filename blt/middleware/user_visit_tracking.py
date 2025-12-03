@@ -15,7 +15,7 @@ class VisitTrackingMiddleware:
                 profile.update_visit_counter()
             except Exception as e:
                 # Log the exception to help with debugging
-                logger.debug("Failed to update visit counter: %s", str(e))
+                logger.debug("Failed to update visit counter: %s", type(e).__name__)
                 # Silently ignore any errors to prevent middleware from breaking requests
                 # This includes TransactionManagementError during test teardown
                 pass

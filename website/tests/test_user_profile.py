@@ -271,9 +271,9 @@ class UserProfileVisitCounterTest(TestCase):
         self.assertEqual(self.profile.last_visit_day, timezone.now().date())
 
     def test_update_visit_counter_atomic_operations(self):
-        """Test that update_visit_counter uses atomic operations to prevent transaction errors"""
-        # This test ensures the method works within a transaction without calling save()
-        # which would cause TransactionManagementError in certain scenarios
+        """Test that update_visit_counter uses QuerySet.update() with F() expressions"""
+        # This test ensures the method uses atomic database-level updates (QuerySet.update with F())
+        # instead of calling save(), which would cause TransactionManagementError in certain scenarios
 
         initial_visit_count = self.profile.visit_count
 
