@@ -402,9 +402,6 @@ class RepoDetailView(DetailView):
                 if "errors" in data:
                     logger.error(f"GraphQL errors: {data['errors']}")
                     return []
-                if "errors" in data:
-                    logger.error(f"GraphQL errors: {data['errors']}")
-                    return []
                 if "data" in data and data["data"] and "repository" in data["data"]:
                     projects = data["data"]["repository"]["projectsV2"]["nodes"]
                     
