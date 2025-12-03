@@ -4,8 +4,13 @@ on:
   issues:
     types: [labeled]
 
+permissions: {}
+
 jobs:
   record-timed-bounty:
+    permissions:
+      contents: read
+      issues: read
     if: >-
       ${{ github.event.label && github.event.label.name &&
           startsWith(github.event.label.name, '$') }}
