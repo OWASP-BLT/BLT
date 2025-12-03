@@ -2130,6 +2130,9 @@ def newsletter_resend_confirmation(request):
             logger.info(f"Confirmation resend attempted for non-existent subscription: {email}")
             return JsonResponse({"success": True})  # Return success even if email doesn't exist
 
+        # Apply same timing delay for success path to prevent timing-based email enumeration
+        remaining = max(0, 2 - (time.time() - start_time))
+        time.sleep(remaining)
         return JsonResponse({"success": True})
     except Exception:
         logger.exception("Error in newsletter_resend_confirmation")
