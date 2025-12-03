@@ -740,10 +740,7 @@ def search(request, template="search.html"):
                 # Check for duplicate consecutive searches within transaction
                 # Use select_for_update to lock the row and prevent concurrent modifications
                 last_search = (
-                    SearchHistory.objects.filter(user=request.user)
-                    .select_for_update()
-                    .order_by("-timestamp")
-                    .first()
+                    SearchHistory.objects.filter(user=request.user).select_for_update().order_by("-timestamp").first()
                 )
                 # Compare truncated query to stored query (which is also truncated)
                 if not last_search or last_search.query != truncated_query or last_search.search_type != search_type:
