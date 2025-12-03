@@ -5,12 +5,104 @@ import secrets
 
 import requests
 from django.http import JsonResponse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from website.models import GitHubIssue, Repo
 
 logger = logging.getLogger(__name__)
+
+
+def _coerce_to_bool(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes", "on"}
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return False
+
+
+@csrf_exempt
+@require_POST
+def timed_bounty(request):
+    """Record timed bounty metadata supplied by GitHub Actions."""
+
+    try:
+        expected_token = os.environ.get("BLT_API_TOKEN")
+        if not expected_token:
+            logger.error("BLT_API_TOKEN environment variable is missing")
+            return JsonResponse({"status": "error", "message": "Server configuration error"}, status=500)
+
+        received_token = request.headers.get("X-BLT-API-TOKEN")
+        if not received_token or not secrets.compare_digest(received_token, expected_token):
+            logger.warning("Invalid or missing API token for timed_bounty")
+            return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON in timed_bounty request body")
+            return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
+
+        required_fields = ["issue_number", "repo", "owner", "bounty_expiry_date"]
+        if not all(field in data for field in required_fields):
+            logger.warning(f"Missing required fields in timed_bounty request: {data}")
+            return JsonResponse({"status": "error", "message": "Missing required fields"}, status=400)
+
+        try:
+            issue_number = int(data["issue_number"])
+        except (ValueError, TypeError):
+            logger.warning("Invalid issue_number in timed_bounty request")
+            return JsonResponse({"status": "error", "message": "Invalid issue number"}, status=400)
+
+        repo_name = data["repo"]
+        owner_name = data["owner"]
+
+        repo = Repo.objects.filter(name=repo_name, organization__name=owner_name).first()
+        if not repo:
+            logger.error(f"Repo not found for timed bounty: {owner_name}/{repo_name}")
+            return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
+
+        github_issue = GitHubIssue.objects.filter(issue_id=issue_number, repo=repo).first()
+        if not github_issue:
+            logger.error(f"Issue #{issue_number} not found for timed bounty in {owner_name}/{repo_name}")
+            return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+
+        expiry_raw = data["bounty_expiry_date"]
+        expiry_dt = parse_datetime(expiry_raw)
+        if not expiry_dt:
+            logger.warning(f"Unable to parse bounty_expiry_date '{expiry_raw}' for issue #{issue_number}")
+            return JsonResponse({"status": "error", "message": "Invalid bounty_expiry_date"}, status=400)
+
+        if timezone.is_naive(expiry_dt):
+            expiry_dt = timezone.make_aware(expiry_dt, timezone.utc)
+
+        github_issue.bounty_expiry_date = expiry_dt
+        github_issue.save(update_fields=["bounty_expiry_date"])
+
+        logger.info(
+            "Stored timed bounty expiry for issue #%s in %s/%s at %s",
+            issue_number,
+            owner_name,
+            repo_name,
+            expiry_dt.isoformat(),
+        )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": "Timed bounty recorded",
+                "issue_number": issue_number,
+                "bounty_expiry_date": expiry_dt.isoformat(),
+            }
+        )
+
+    except Exception:
+        logger.exception("Unexpected error in timed_bounty")
+        return JsonResponse({"status": "error", "message": "An unexpected error occurred"}, status=500)
 
 
 @csrf_exempt
@@ -57,6 +149,7 @@ def bounty_payout(request):
         repo_name = data["repo"]
         owner_name = data["owner"]
         contributor_username = data["contributor_username"]
+        is_timed_bounty = _coerce_to_bool(data.get("is_timed_bounty"))
 
         # Look up repository and issue
         repo = Repo.objects.filter(name=repo_name, organization__name=owner_name).first()
@@ -68,6 +161,35 @@ def bounty_payout(request):
         if not github_issue:
             logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+
+        # Validate timed bounty expiry if applicable
+        if is_timed_bounty:
+            expiry = github_issue.bounty_expiry_date
+            if not expiry:
+                logger.warning(
+                    "Timed bounty flag provided but no bounty_expiry_date stored for issue #%s in %s/%s",
+                    issue_number,
+                    owner_name,
+                    repo_name,
+                )
+                return JsonResponse(
+                    {"status": "error", "message": "Timed bounty metadata missing for this issue"},
+                    status=400,
+                )
+
+            now = timezone.now()
+            if now > expiry:
+                logger.info(
+                    "Timed bounty expired for issue #%s in %s/%s (expiry %s)",
+                    issue_number,
+                    owner_name,
+                    repo_name,
+                    expiry.isoformat(),
+                )
+                return JsonResponse(
+                    {"status": "error", "message": "Timed bounty has expired"},
+                    status=400,
+                )
 
         # Check for duplicate payment
         if github_issue.sponsors_tx_id:
