@@ -687,8 +687,7 @@ def search(request, template="search.html"):
             "repos": Repo.objects.filter(primary_language__icontains=query),
         }
     if request.user.is_authenticated:
-        wallet, _ = Wallet.objects.get_or_create(user=request.user)
-        context["wallet"] = wallet
+        context["wallet"] = Wallet.objects.get(user=request.user)
         # Log search history for authenticated users
         if query:
             search_type = stype if stype else "all"
