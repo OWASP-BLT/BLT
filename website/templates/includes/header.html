@@ -1185,13 +1185,13 @@
                         return;
                     }
                 }
-        
+
                 fetch('/api/chatbot/conversation/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ question: message }),
+                    body: JSON.stringify({ message: message }),
                 })
                     .then(response => {
                         if (!response.ok) {
@@ -1203,7 +1203,7 @@
                         return response.json();
                     })
                     .then(data => {
-                        const escapedAnswer = escapeHtml(data.answer);
+                        const escapedAnswer = escapeHtml(data.message || "Sorry, I didn’t understand that.");
                         chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
                         chatLog.scrollTop = chatLog.scrollHeight;
                         loading.classList.add('hidden');

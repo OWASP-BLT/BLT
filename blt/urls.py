@@ -46,6 +46,7 @@ from website.api.views import (
     UserProfileViewSet,
     trademark_search_api,
 )
+from website.bot import chatbot_conversation
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.views.banned_apps import BannedAppsView, search_banned_apps
@@ -1032,9 +1033,7 @@ urlpatterns = [
         update_bch_address,
         name="update_bch_address",
     ),
-    # path(
-    #     "api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"
-    # ),
+    path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
