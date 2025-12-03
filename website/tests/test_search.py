@@ -131,9 +131,12 @@ class SearchViewTests(TestCase):
         SearchHistory.objects.create(user=self.user, query="test1", search_type="all")
         SearchHistory.objects.create(user=self.user, query="test2", search_type="issues")
 
-        request = self.factory.get(reverse("search") + "?query=new&type=all")
-        request.user = self.user
-        response = search(request)
+        # Use test client to access context properly
+        from django.test import Client
+
+        client = Client()
+        client.force_login(self.user)
+        response = client.get(reverse("search") + "?query=new&type=all")
         self.assertEqual(response.status_code, 200)
 
         # Check that recent_searches is in context
