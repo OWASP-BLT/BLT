@@ -116,6 +116,8 @@ def create_email_unique_index(apps, schema_editor):
     elif vendor == "mysql":
         # MySQL doesn't support partial indexes with WHERE clause
         # Convert empty emails to NULL first (MySQL allows multiple NULLs in unique indexes)
+        # WARNING: This makes the migration irreversible on MySQL because we cannot
+        # distinguish original NULLs from converted empty strings during rollback
         schema_editor.execute("UPDATE auth_user SET email = NULL WHERE email = '';")
         sql = """
             CREATE UNIQUE INDEX auth_user_email_unique 
@@ -145,27 +147,16 @@ def drop_email_unique_index(apps, schema_editor):
     elif vendor == "sqlite":
         sql = "DROP INDEX IF EXISTS auth_user_email_unique;"
     elif vendor == "mysql":
-        # MySQL doesn't support IF EXISTS in DROP INDEX
-        # Check if index exists before dropping
-        with schema_editor.connection.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT COUNT(1) 
-                FROM information_schema.statistics 
-                WHERE table_schema = DATABASE() 
-                AND table_name = 'auth_user' 
-                AND index_name = 'auth_user_email_unique'
-            """
-            )
-            index_exists = cursor.fetchone()[0] > 0
+        # MySQL migration is not reversible because we cannot distinguish between:
+        # 1. Original NULL emails (legitimate)
+        # 2. Empty strings converted to NULL by the forward migration
+        # Attempting to reverse would cause data loss. Rollback must be done manually.
+        from django.db.migrations.exceptions import IrreversibleError
 
-        if index_exists:
-            sql = "DROP INDEX auth_user_email_unique ON auth_user;"
-            # After dropping index, convert NULL emails back to empty strings
-            # to restore original state
-            schema_editor.execute("UPDATE auth_user SET email = '' WHERE email IS NULL;")
-        else:
-            sql = None
+        raise IrreversibleError(
+            "Cannot reverse migration on MySQL: empty string emails were converted to NULL "
+            "and cannot be safely restored. Manual rollback required."
+        )
     else:
         sql = None
 
