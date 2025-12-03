@@ -1152,6 +1152,12 @@
                                             <tbody class="flex flex-col gap-2">
                                                 {% for i in bookmarks %}
                                                     <tr class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-3">
+                                                        <img src="https://www.google.com/s2/favicons?domain={{ i.domain_name }}&sz=32"
+                                                             height="32"
+                                                             width="32"
+                                                             class="rounded-full size-[32px]"
+                                                             alt="Domain favicon"
+                                                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                                         <div class="flex items-center justify-between w-full">
                                                             <div class="flex flex-col">
                                                                 <a href="{{ i.get_absolute_url }}"
