@@ -140,13 +140,17 @@ def chatbot_conversation(request):
     user_message = request.data.get("message", "").strip()
 
     if not user_message:
-        return Response({"message": "Please type something."}, status=status.HTTP_200_OK)
-
+        return Response({"message": "Please type something."}, status=status.HTTP_400_BAD_REQUEST)
+        
     safe_message = user_message
     vector_store = load_vector_store()
 
     if vector_store:
         try:
+            cached_answer = cache.get(safe_message)
+            if cached_answer:
+                log_chat("info", "Cache hit for message")
+                return Response({"message": cached_answer}, status=status.HTTP_200_OK)
             chain = conversation_chain(vector_store)
             result = chain.invoke({"input": safe_message})
             answer = result.get("answer") or result.get("output") or "Sorry, I couldn't find an answer."
