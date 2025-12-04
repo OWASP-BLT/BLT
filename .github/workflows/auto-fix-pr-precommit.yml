@@ -7,7 +7,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  issues: write
+  checks: write
 
 jobs:
   check-and-fix-pr:
@@ -116,6 +116,16 @@ jobs:
           echo "## ✅ Auto-fix Applied Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Pre-commit fixes have been automatically applied to this PR." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Changes committed:**" >> $GITHUB_STEP_SUMMARY
+          git log -1 --pretty=format:"- %s (%h)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Success summary (no fixes needed)
+        if: steps.precommit.outcome == 'success'
+        run: |
+          echo "## ✅ Pre-commit Checks Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All pre-commit checks passed successfully. No fixes needed!" >> $GITHUB_STEP_SUMMARY
 
       - name: Notify on failure
         if: steps.precommit.outcome == 'failure' && steps.check_fixes.outputs.fixes_needed == 'false'
@@ -124,64 +134,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Pre-commit checks failed but no auto-fixes could be applied." >> $GITHUB_STEP_SUMMARY
           echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Syntax errors in Python code" >> $GITHUB_STEP_SUMMARY
+          echo "- Invalid Django template syntax" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing required imports" >> $GITHUB_STEP_SUMMARY
+          echo "- Test failures" >> $GITHUB_STEP_SUMMARY
           echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
           exit 1
-
-  # Separate job for fork PRs - provides guidance without running hooks
-  fork-pr-guidance:
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.full_name != github.repository
-    
-    steps:
-      - name: Comment on fork PR with instructions
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Check if the bot has already commented guidance on this PR
-          EXISTING_COMMENT=$(gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
-            --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | contains("Since this PR is from a fork")) | .id')
-          if [ -z "$EXISTING_COMMENT" ]; then
-            gh pr comment ${{ github.event.pull_request.number }} \
-              --repo ${{ github.repository }} \
-              --body "👋 **Thank you for your contribution!**
-
-            Since this PR is from a fork, our automated pre-commit fixes cannot run for security reasons.
-
-            Please ensure your code passes pre-commit checks before requesting review:
-
-            ### Running Pre-commit Locally
-
-            \`\`\`bash
-            # Install dependencies
-            poetry install --with dev
-
-            # Run pre-commit checks
-            poetry run pre-commit run --all-files
-
-            # If fixes are applied, commit them
-            git add .
-            git commit -m \"Apply pre-commit fixes\"
-            git push
-            \`\`\`
-
-            ### What Gets Checked
-
-            - ✅ Black code formatting
-            - ✅ isort import sorting
-            - ✅ ruff linting fixes
-            - ✅ djLint template formatting
-            - ✅ Django collectstatic
-            - ✅ Django tests
-
-            **Note:** Pre-commit hooks often auto-fix issues on the first run. If checks fail, run the command again.
-
-            Once your code passes pre-commit checks, a maintainer will review your PR. Thank you for helping improve OWASP BLT! 🙏"
-          fi
-
-      - name: Add fork PR summary
-        run: |
-          echo "## 📝 Fork PR Detected" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "This PR is from a fork. For security reasons, pre-commit hooks are not executed automatically." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The contributor has been notified to run pre-commit checks locally." >> $GITHUB_STEP_SUMMARY
