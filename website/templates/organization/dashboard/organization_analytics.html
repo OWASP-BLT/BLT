@@ -21,7 +21,7 @@
     {% block edit_link %}
         <div class="bg-gray-50 dark:bg-gray-900 flex float-end gap-4 mr-10">
             <a class="text-black dark:text-white"
-               href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_analytics.html">
+               href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/dashboard/organization_analytics.html">
                 <i class="fab fa-github fa-2x"></i>
             </a>
             <a class="text-black dark:text-white"
@@ -39,7 +39,7 @@
                 <span>Edit Profile</span>
             </a>
         </div>
-        <div class="flex flex-col lg:flex-row gap-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
+        <div class="flex flex-col lg:flex-row gap-x-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
             <div class="flex justify-center items-center bg-white shadow-md dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-105 transition-all">
                 <div class="flex justify-evenly items-center w-[100%] h-[70%]">
                     <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
@@ -285,10 +285,11 @@
                     <a href="{% url 'organization_social_redirect' org_id=organization platform='twitter' %}"
                        target="_blank"
                        rel="noopener noreferrer"
-                       aria-label="Visit organization Twitter profile ({{ social_stats.twitter_clicks }} visits)"
+                       aria-label="Visit organization Facebook profile ({{ social_stats.facebook_clicks }} visits)"
                        class="block bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
                     {% else %}
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50">
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50 cursor-not-allowed"
+                             aria-disabled="true">
                         {% endif %}
                         <div class="flex items-center justify-between mb-4">
                             <i class="fab fa-twitter fa-2x text-blue-500"></i>
@@ -313,6 +314,7 @@
                     <a href="{% url 'organization_social_redirect' org_id=organization platform='github' %}"
                        target="_blank"
                        rel="noopener noreferrer"
+                       aria-label="Visit organization GitHub profile ({{ social_stats.github_clicks }} visits)"
                        class="block bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
                     {% else %}
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50">
@@ -340,6 +342,7 @@
                     <a href="{% url 'organization_social_redirect' org_id=organization platform='linkedin' %}"
                        target="_blank"
                        rel="noopener noreferrer"
+                       aria-label="Visit organization LinkedIn profile ({{ social_stats.linkedin_clicks }} visits)"
                        class="block bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
                     {% else %}
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50">
@@ -367,6 +370,7 @@
                     <a href="{% url 'organization_social_redirect' org_id=organization platform='facebook' %}"
                        target="_blank"
                        rel="noopener noreferrer"
+                       aria-label="Visit organization Facebook profile ({{ social_stats.facebook_clicks }} visits)"
                        class="block bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
                     {% else %}
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50">
