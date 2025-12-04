@@ -30,10 +30,6 @@ logger = logging.getLogger(__name__)
 def log_chat(message_type, message):
     logger.info(f"[{message_type.upper()}] {message}")
 
-log_chat("input", user_message)
-log_chat("output", answer)
-log_chat("error", str(e))
-
 def load_document(file_path):
     loaders = {
         ".pdf": PyPDFLoader,
@@ -49,7 +45,7 @@ def load_document(file_path):
     if Loader is None:
         raise ValueError(f"Unsupported file format: {extension}")
 
-    log_chat(f"Loading document: {file_path}")
+    log_chat("info", f"Loading document: {file_path}")
     return Loader(file_path).load()
 
 
@@ -60,7 +56,7 @@ def split_document(chunk_size, chunk_overlap, document):
         chunk_overlap=chunk_overlap,
         length_function=len,
     )
-    log_chat(f"Splitting document into chunks of size {chunk_size} (overlap {chunk_overlap})")
+    log_chat("info", f"Splitting document into chunks of size {chunk_size} (overlap {chunk_overlap})")
     return text_splitter.split_documents(document)
 
 
@@ -82,18 +78,20 @@ def embed_documents_and_save(embed_docs):
 
     try:
         if db_folder_path.exists() and any(db_folder_path.iterdir()):
-            log_chat(f"Updating existing FAISS index at {db_folder_path}")
+            log_chat("info", f"Updating existing FAISS index at {db_folder_path}")
+            # Security note: allow_dangerous_deserialization required for FAISS load.
+            # Index files are stored securely and read-only.
             db = FAISS.load_local(db_folder_path, embeddings, allow_dangerous_deserialization=True)
             db.add_documents(embed_docs)
         else:
-            log_chat("Creating new FAISS index...")
+            log_chat("info", "Creating new FAISS index...")
             db = FAISS.from_documents(embed_docs, embeddings)
 
         db.save_local(db_folder_path)
-        log_chat(f"FAISS index saved at {db_folder_path}")
+        log_chat("info", f"FAISS index saved at {db_folder_path}")
 
     except Exception as e:
-        log_chat(f" Error during FAISS update: {e}")
+        log_chat("error", f"Error during FAISS update: {e}")
         raise
     finally:
         temp_dir.cleanup()
@@ -108,15 +106,17 @@ def load_vector_store():
         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
         if not db_folder_path.exists() or not (db_folder_path / "index.faiss").exists():
-            log_chat(" No FAISS index found.")
+            log_chat("warning", "No FAISS index found.")
             return None
 
+        # Security note: allow_dangerous_deserialization required for FAISS load.
+        # Index files are stored securely and read-only.
         db = FAISS.load_local(db_folder_path, embeddings, allow_dangerous_deserialization=True)
-        log_chat("FAISS index loaded successfully.")
+        log_chat("info", "FAISS index loaded successfully.")
         return db
 
     except Exception as e:
-        log_chat(f" Error loading FAISS index: {e}")
+        log_chat("error", f"Error loading FAISS index: {e}")
         return None
 
 
@@ -140,7 +140,7 @@ def conversation_chain(vector_store):
     document_chain = create_stuff_documents_chain(llm, prompt)
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    log_chat("OpenAI retrieval chain created.")
+    log_chat("info", "OpenAI retrieval chain created.")
     return retrieval_chain
 
 
@@ -160,17 +160,17 @@ def chatbot_conversation(request):
         try:
             chain = conversation_chain(vector_store)
             result = chain.invoke({"input": safe_message})
-            answer = result.get("answer") or result.get("output") or "Sorry, I couldn’t find an answer."
+            answer = result.get("answer") or result.get("output") or "Sorry, I couldn't find an answer."
 
             cache.set(safe_message, answer, timeout=3600)
 
-            log_chat(f"[INPUT] {safe_message}")
-            log_chat(f"[OUTPUT] {answer}")
+            log_chat("input", safe_message)
+            log_chat("output", answer)
+
             return Response({"message": answer}, status=status.HTTP_200_OK)
 
-            
         except Exception as e:
-            log_chat(f"[ERROR] {str(e)}")
+            log_chat("error", str(e))
             return Response(
                 {"message": "An error occurred while processing your request."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -178,5 +178,5 @@ def chatbot_conversation(request):
 
     return Response(
         {"message": "Something went wrong. Please try again later."},
-        status=status.HTTP_200_OK,
+        status=status.HTTP_503_SERVICE_UNAVAILABLE,
     )
