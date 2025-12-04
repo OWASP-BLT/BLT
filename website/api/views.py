@@ -67,7 +67,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import generate_signed_url, image_validator
+from website.utils import generate_signed_url, image_validator , SignedUrlError
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -151,13 +151,6 @@ class DomainViewSet(viewsets.ModelViewSet):
 def screenshot_signed_url_view(request, pk: int):
     """
     Return a signed (or direct) URL for a single IssueScreenshot.
-
-    - If the issue is hidden, only allow:
-      * the issue reporter
-      * staff/superuser
-      * team members (if used)
-    - If GCS is in use, return a time-limited signed URL.
-    - Otherwise (local filesystem), return the normal media URL.
     """
     screenshot = get_object_or_404(IssueScreenshot, pk=pk)
     issue = screenshot.issue
@@ -165,11 +158,12 @@ def screenshot_signed_url_view(request, pk: int):
     # Basic permission check for hidden issues
     if issue.is_hidden:
         user = request.user
-
         is_owner = user.is_authenticated and issue.user_id == user.id
         is_staff = user.is_authenticated and user.is_staff
-        # if team_members is a M2M, you can also add:
-        is_team_member = request.user.is_authenticated and issue.team_members.filter(id=request.user.id).exists()
+        is_team_member = (
+            user.is_authenticated
+            and issue.team_members.filter(id=user.id).exists()
+        )
 
         if not (is_owner or is_staff or is_team_member):
             return Response(
@@ -179,8 +173,24 @@ def screenshot_signed_url_view(request, pk: int):
 
     # Decide what URL to return
     if is_using_gcs():
-        # GCS: generate a time-limited signed URL
-        url = generate_signed_url(screenshot.image.name, expiration=3600)
+        try:
+            url = generate_signed_url(screenshot.image.name, expiration=3600)
+        except SignedUrlError as e:
+            if e.kind == "not_found":
+                return Response(
+                    {"detail": "Screenshot not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            elif e.kind == "config":
+                return Response(
+                    {"detail": "Storage configuration error."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            else:  # "storage" or anything else
+                return Response(
+                    {"detail": "Error accessing screenshot."},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
     else:
         # Local/dev: just give the normal media URL
         url = request.build_absolute_uri(screenshot.image.url)
@@ -202,7 +212,10 @@ def issue_screenshot_signed_url_view(request, pk: int):
         user = request.user
         is_owner = user.is_authenticated and issue.user_id == user.id
         is_staff = user.is_authenticated and user.is_staff
-        is_team_member = request.user.is_authenticated and issue.team_members.filter(id=request.user.id).exists()
+        is_team_member = (
+            user.is_authenticated
+            and issue.team_members.filter(id=user.id).exists()
+        )
 
         if not (is_owner or is_staff or is_team_member):
             return Response(
@@ -217,12 +230,28 @@ def issue_screenshot_signed_url_view(request, pk: int):
         )
 
     if is_using_gcs():
-        url = generate_signed_url(issue.screenshot.name, expiration=3600)
+        try:
+            url = generate_signed_url(issue.screenshot.name, expiration=3600)
+        except SignedUrlError as e:
+            if e.kind == "not_found":
+                return Response(
+                    {"detail": "Screenshot not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            elif e.kind == "config":
+                return Response(
+                    {"detail": "Storage configuration error."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            else:
+                return Response(
+                    {"detail": "Error accessing screenshot."},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
     else:
         url = request.build_absolute_uri(issue.screenshot.url)
 
     return Response({"url": url}, status=status.HTTP_200_OK)
-
 
 class IssueViewSet(viewsets.ModelViewSet):
     """

@@ -871,8 +871,18 @@ def _move_image(name, storage, is_hidden):
         target_storage = storages["private"]
 
     # Copy file to new location
-    with storage.open(name, "rb") as f:
-        new_name = target_storage.save(f"{target_prefix}/{filename}", f)
+    try:
+        with storage.open(name, "rb") as f:
+            new_name = target_storage.save(f"{target_prefix}/{filename}", f)
+    except Exception as e:
+        logger.error(
+            "Failed to move screenshot '%s' from storage '%s' to '%s': %s",
+            name,
+            getattr(storage, "bucket_name", repr(storage)),
+            getattr(target_storage, "bucket_name", repr(target_storage)),
+            e,
+        )
+        raise
 
     # Delete old file (best effort)
     if new_name != name:
