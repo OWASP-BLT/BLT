@@ -141,7 +141,7 @@ jobs:
           - **Message**: \`${COMMIT_MESSAGE}\`
 
           \`\`\`
-          $COMMIT_MSG
+          ${COMMIT_MESSAGE}
           \`\`\`
 
           ### 📋 Files Changed:
