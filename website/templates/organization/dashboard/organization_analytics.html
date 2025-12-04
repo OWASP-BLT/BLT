@@ -439,7 +439,7 @@
                         usePointStyle: true,
                         pointStyle: 'circle',
                         font: { size: 13, weight: '500' },
-                        color: '#374151',
+                        color: isDarkMode ? '#D1D5DB' : '#374151',
                         boxWidth: 12,
                         boxHeight: 12,
                         generateLabels: function(chart) {
@@ -470,7 +470,7 @@
                                         lineWidth: isHidden ? 1 : dataset.borderWidth,
                                         hidden: false, // Always show in legend
                                         index: i,
-                                        fontColor: isHidden ? '#9CA3AF' : '#374151',
+                                        fontColor: isHidden ? '#9CA3AF' : (isDarkMode ? '#D1D5DB' : '#374151'),
                                         textDecoration: isHidden ? 'line-through' : 'none'
                                     };
                                 });
