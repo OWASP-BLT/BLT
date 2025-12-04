@@ -52,9 +52,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry lock
           poetry install --with dev --no-interaction
-
       - name: Install pre-commit
         run: |
           pip install pre-commit
@@ -138,7 +136,7 @@ jobs:
           This PR contains automatic formatting and linting fixes applied to the **\`main\`** branch.
 
           ### 🔧 Changes Applied:
-          - ✅ ruff code formatting
+          - ✅ Black code formatting
           - ✅ isort import sorting  
           - ✅ ruff linting fixes
           - ✅ djLint template formatting
