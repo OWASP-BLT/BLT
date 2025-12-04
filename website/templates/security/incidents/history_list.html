@@ -69,7 +69,7 @@
                         <div>
                             <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">
                                 {% with unique_editors=incident.history.all|dictsort:"changed_by"|slice:"0:5" %}
-                                    {{ unique_editors|length }}
+                                    {{ unique_editors_count }}
                                 {% endwith %}
                             </div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">Unique Editors</div>
@@ -334,21 +334,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const exportBtn = document.getElementById('export-history');
     if (exportBtn) {
         exportBtn.addEventListener('click', function() {
-            const historyData = {
-                incident: "{{ incident.title }}",
-                id: "{{ incident.id }}",
-                changes: [
-                    {% for h in incident.history.all %}
-                    {
-                        field: "{{ h.field_name }}",
-                        oldValue: "{{ h.old_value }}",
-                        newValue: "{{ h.new_value }}",
-                        changedAt: "{{ h.changed_at|date:'c' }}",
-                        changedBy: "{{ h.changed_by.username|default:'System' }}"
-                    },
-                    {% endfor %}
-                ]
-            };
+            const historyData = JSON.parse(document.getElementById('history-data').textContent);
             
             // Create downloadable JSON file
             const dataStr = JSON.stringify(historyData, null, 2);
@@ -511,12 +497,16 @@ document.addEventListener("DOMContentLoaded", function() {
         };
         
         toast.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-y-full`;
-        toast.innerHTML = `
-            <div class="flex items-center gap-3">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-                <span>${message}</span>
-            </div>
-        `;
+         const iconClass = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+        const icon = document.createElement('i');
+        icon.className = `fas fa-${iconClass}`;
+        const span = document.createElement('span');
+        span.textContent = message;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex items-center gap-3';
+        wrapper.appendChild(icon);
+        wrapper.appendChild(span);
+        toast.appendChild(wrapper);
         
         document.body.appendChild(toast);
         

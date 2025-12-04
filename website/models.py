@@ -3553,6 +3553,10 @@ class SecurityIncident(models.Model):
         default=Status.OPEN,
     )
     affected_systems = models.TextField(blank=True)
+    description = models.TextField(blank=True, help_text="Detailed description of the incident")
+    reporter = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="reported_incidents"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
 
