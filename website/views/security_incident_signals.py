@@ -1,5 +1,6 @@
 from threading import local
 
+from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
@@ -23,23 +24,26 @@ def get_current_user():
 @receiver(pre_save, sender=SecurityIncident)
 def capture_old_incident_state(sender, instance, **kwargs):
     """
-    Before saving, store the current DB state on the instance
-    so post_save can compare changes.
+    Capture the current DB state using SELECT ... FOR UPDATE
+    to prevent race conditions on concurrent updates.
     """
     if not instance.pk:
-        # New object → no history to compare
+        # New object → no previous state
         instance._old_state = None
         return
 
+    # Ensure row-level locking using a transaction
     try:
-        old = sender.objects.get(pk=instance.pk)
-        instance._old_state = {
-            "title": old.title,
-            "severity": old.severity,
-            "status": old.status,
-            "affected_systems": old.affected_systems,
-            "resolved_at": old.resolved_at,
-        }
+        with transaction.atomic():
+            old = sender.objects.select_for_update().get(pk=instance.pk)  # <-- row lock
+
+            instance._old_state = {
+                "title": old.title,
+                "severity": old.severity,
+                "status": old.status,
+                "affected_systems": old.affected_systems,
+                "resolved_at": old.resolved_at,
+            }
     except sender.DoesNotExist:
         instance._old_state = None
 
@@ -48,8 +52,7 @@ def capture_old_incident_state(sender, instance, **kwargs):
 @receiver(post_save, sender=SecurityIncident)
 def log_incident_changes(sender, instance, created, **kwargs):
     """
-    After saving, compare fields and store a history record
-    for each changed field.
+    Capture old state with a row lock to avoid race conditions.
     """
     if created:
         # Don't log creation event

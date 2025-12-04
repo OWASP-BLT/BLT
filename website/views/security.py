@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import timedelta
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Case, Count, IntegerField, Value, When
@@ -73,8 +73,11 @@ def _escape_csv_formula(value):
     return value
 
 
-class SecurityDashboardView(LoginRequiredMixin, TemplateView):
+class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "security/dashboard.html"
+
+    def test_func(self):
+        return self.request.user.is_superuser
 
     def get(self, request, *args, **kwargs):
         if request.GET.get("export") == "csv":
@@ -82,11 +85,40 @@ class SecurityDashboardView(LoginRequiredMixin, TemplateView):
         return super().get(request, *args, **kwargs)
 
     def export_csv(self):
-        # Check rate limit
-        if is_csv_rate_limited(self.request.user.id):
+        user = self.request.user
+
+        # Authorization
+        if not user.is_superuser:
+            return HttpResponse("Forbidden", status=403)
+
+        # Rate limit
+        if is_csv_rate_limited(user.id):
             return HttpResponse(
                 "CSV export rate limit exceeded. Please try again in a minute.", status=429, content_type="text/plain"
             )
+
+        queryset = SecurityIncident.objects.all().order_by("-created_at")
+        queryset = self.apply_filters(queryset)
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = "attachment; filename=security_incidents.csv"
+
+        writer = csv.writer(response)
+        writer.writerow(["ID", "Title", "Severity", "Status", "Created At", "Affected Systems"])
+
+        for incident in queryset:
+            writer.writerow(
+                [
+                    incident.id,
+                    _escape_csv_formula(incident.title),
+                    incident.severity,
+                    incident.status,
+                    incident.created_at,
+                    _escape_csv_formula(incident.affected_systems or ""),
+                ]
+            )
+
+        return response
 
         queryset = SecurityIncident.objects.all().order_by("-created_at")
         queryset = self.apply_filters(queryset)
