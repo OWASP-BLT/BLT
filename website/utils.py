@@ -7,7 +7,6 @@ import re
 import socket
 import time
 from collections import deque
-from datetime import timedelta
 from ipaddress import ip_address
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
@@ -22,11 +21,13 @@ from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from google.api_core.exceptions import GoogleAPIError, NotFound
 from google.cloud import storage
 from openai import OpenAI
 from PIL import Image
-from google.api_core.exceptions import NotFound, GoogleAPIError
-from website.models import DailyStats,is_using_gcs
+
+from website.models import DailyStats, is_using_gcs
+
 from .models import PRAnalysisReport
 
 # Only initialize OpenAI client if API key is available and valid
@@ -1155,9 +1156,7 @@ def generate_signed_url(blob_name: str, expiration: int = 3600) -> str:
 
     client = storage.Client()
 
-    bucket_name = getattr(settings, "GS_PRIVATE_BUCKET_NAME", None) or getattr(
-        settings, "GS_BUCKET_NAME", None
-    )
+    bucket_name = getattr(settings, "GS_PRIVATE_BUCKET_NAME", None) or getattr(settings, "GS_BUCKET_NAME", None)
     if not bucket_name:
         raise SignedUrlError("config", "No GCS bucket configured")
 
@@ -1175,4 +1174,4 @@ def generate_signed_url(blob_name: str, expiration: int = 3600) -> str:
         raise SignedUrlError("not_found", f"Blob '{blob_name}' not found") from e
     except GoogleAPIError as e:
         # GCS client/storage error
-        raise SignedUrlError("storage", f"Error generating signed URL") from e
+        raise SignedUrlError("storage", "Error generating signed URL") from e
