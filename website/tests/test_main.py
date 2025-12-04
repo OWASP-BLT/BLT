@@ -150,9 +150,9 @@ class MySeleniumTests(LiveServerTestCase):
 
         # Log in
         self.selenium.get(f"{self.live_server_url}/accounts/login/")
-        self.selenium.find_element("name", "login").send_keys("bugbug")
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "password").send_keys("secret")
+        self.selenium.find_element(By.NAME, "login_button").click()
 
         # Ensure login is complete before proceeding
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
@@ -179,9 +179,9 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element(By.NAME, "reportbug_button").click()
 
         # Verify that the bug report was submitted successfully
-        self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
+        self.selenium.get(f"{self.live_server_url}/all_activity/")
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
+        body = self.selenium.find_element(By.TAG_NAME, "body")
         self.assertIn("XSS Attack on Google", body.text)
 
     @override_settings(DEBUG=True, IS_TEST=True)
@@ -190,9 +190,9 @@ class MySeleniumTests(LiveServerTestCase):
 
         # Log in
         self.selenium.get(f"{self.live_server_url}/accounts/login/")
-        self.selenium.find_element("name", "login").send_keys("bugbug")
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "password").send_keys("secret")
+        self.selenium.find_element(By.NAME, "login_button").click()
 
         # Ensure login is complete before proceeding
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
@@ -219,32 +219,33 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element(By.NAME, "reportbug_button").click()
 
         # Wait for form submission and page transition
-        # The form should either redirect or show a confirmation
         WebDriverWait(self.selenium, 30).until(
-            lambda d: "/report" not in d.current_url
-            or "error" in d.page_source.lower()
-            or "success" in d.page_source.lower()
+            lambda d: (
+                "/report" not in d.current_url
+                and ("error" in d.page_source.lower() or "success" in d.page_source.lower())
+            )
         )
 
-        time.sleep(2)
+        # Ensure page has fully loaded before checking content
+        WebDriverWait(self.selenium, 30).until(lambda d: d.execute_script("return document.readyState") == "complete")
 
         # Verify that the bug report was submitted successfully
-        # Navigate to all_activity to see the bug report
         self.selenium.get(f"{self.live_server_url}/all_activity/")
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
-        # Check page status - if it's a 500 error, the transaction was broken
-        page_content = self.selenium.page_source
-        if "500" in page_content or "Server Error" in page_content or "TransactionManagementError" in page_content:
-            # If we hit a transaction error, the bug might still be created but we can't verify it
-            # This is acceptable behavior for the test - the submission worked even if the confirmation page had an error
-            return
-
         body = self.selenium.find_element(By.TAG_NAME, "body")
-        # The bug may or may not appear due to signal handler issues, but the test should not crash
-        # Instead, we verify that we didn't hit a critical error
-        self.assertNotIn("500", body.text)
-        self.assertNotIn("TransactionManagementError", body.text)
+        page_content = body.text
+
+        # Check for server errors
+        self.assertNotIn("500", page_content, "Server error encountered on /all_activity/")
+        self.assertNotIn("TransactionManagementError", page_content, "Transaction error encountered")
+        self.assertNotIn("Server Error", page_content, "Server error encountered")
+
+        # Verify the bug was actually created in the database
+        from website.models import Issue
+
+        bug_exists = Issue.objects.filter(user__username="bugbug", description="XSS Attack on Google").exists()
+        self.assertTrue(bug_exists, "Bug report was not found in database after submission")
 
     def setUp(self):
         super().setUp()

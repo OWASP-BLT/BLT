@@ -137,57 +137,51 @@ def giveBacon(user, instance=None, action_type=None, amt=None):
         return 1
 
 
+def _safe_assign_badge(user, badge_name):
+    """Safely assign a badge to a user, logging any errors."""
+    try:
+        assign_first_action_badge(user, badge_name)
+    except Exception as e:
+        logger.warning(f"Failed to assign badge '{badge_name}' to user: {str(e)}", exc_info=True)
+
+
+def _safe_create_activity(instance, action_type):
+    """Safely create an activity, logging any errors."""
+    try:
+        create_activity(instance, action_type)
+    except Exception as e:
+        logger.warning(
+            f"Failed to create activity for {instance._meta.model_name}: {str(e)}",
+            exc_info=True,
+        )
+
+
+def _safe_give_bacon(user, instance=None, action_type=None):
+    """Safely award Bacon, logging any errors."""
+    try:
+        giveBacon(user, instance=instance, action_type=action_type)
+    except Exception as e:
+        logger.warning(f"Failed to give Bacon to user: {str(e)}", exc_info=True)
+
+
 @receiver(post_save)
 def handle_post_save(sender, instance, created, **kwargs):
     """Generic handler for post_save signal."""
     try:
         if sender == IpReport and created:  # Track first IP report
-            try:
-                assign_first_action_badge(instance.user, "First IP Reported")
-            except Exception as e:
-                logger.warning(f"Failed to assign badge for IP Report: {str(e)}", exc_info=True)
-
-            try:
-                giveBacon(instance.user, instance=instance, action_type="created")
-            except Exception as e:
-                logger.warning(f"Failed to give Bacon for IP Report: {str(e)}", exc_info=True)
-
-            try:
-                create_activity(instance, "created")
-            except Exception as e:
-                logger.warning(f"Failed to create activity for IP Report: {str(e)}", exc_info=True)
+            _safe_assign_badge(instance.user, "First IP Reported")
+            _safe_give_bacon(instance.user, instance=instance, action_type="created")
+            _safe_create_activity(instance, "created")
 
         elif sender == Post and created:  # Track first blog post
-            try:
-                assign_first_action_badge(instance.author, "First Blog Posted")
-            except Exception as e:
-                logger.warning(f"Failed to assign badge for Post: {str(e)}", exc_info=True)
-
-            try:
-                create_activity(instance, "created")
-            except Exception as e:
-                logger.warning(f"Failed to create activity for Post: {str(e)}", exc_info=True)
-
-            try:
-                giveBacon(instance.author, instance=instance, action_type="created")
-            except Exception as e:
-                logger.warning(f"Failed to give Bacon for Post: {str(e)}", exc_info=True)
+            _safe_assign_badge(instance.author, "First Blog Posted")
+            _safe_create_activity(instance, "created")
+            _safe_give_bacon(instance.author, instance=instance, action_type="created")
 
         elif sender == Issue and created:  # Track first bug report
-            try:
-                assign_first_action_badge(instance.user, "First Bug Reported")
-            except Exception as e:
-                logger.warning(f"Failed to assign badge for Issue: {str(e)}", exc_info=True)
-
-            try:
-                create_activity(instance, "created")
-            except Exception as e:
-                logger.warning(f"Failed to create activity for Issue: {str(e)}", exc_info=True)
-
-            try:
-                giveBacon(instance.user, instance=instance, action_type="created")
-            except Exception as e:
-                logger.warning(f"Failed to give Bacon for Issue: {str(e)}", exc_info=True)
+            _safe_assign_badge(instance.user, "First Bug Reported")
+            _safe_create_activity(instance, "created")
+            _safe_give_bacon(instance.user, instance=instance, action_type="created")
 
         elif sender == Hunt and created:  # Track first bug bounty
             # Attempt to get the user from Domain managers or Organization
@@ -201,52 +195,19 @@ def handle_post_save(sender, instance, created, **kwargs):
 
             # Assign badge and activity if a user is found
             if user:
-                try:
-                    assign_first_action_badge(user, "First Bug Bounty")
-                except Exception as e:
-                    logger.warning(f"Failed to assign badge for Hunt: {str(e)}", exc_info=True)
-
-                try:
-                    create_activity(instance, "created")
-                except Exception as e:
-                    logger.warning(f"Failed to create activity for Hunt: {str(e)}", exc_info=True)
-
-                try:
-                    giveBacon(user, instance=instance, action_type="created")
-                except Exception as e:
-                    logger.warning(f"Failed to give Bacon for Hunt: {str(e)}", exc_info=True)
+                _safe_assign_badge(user, "First Bug Bounty")
+                _safe_create_activity(instance, "created")
+                _safe_give_bacon(user, instance=instance, action_type="created")
 
         elif sender == ForumPost and created:  # Track first forum post
-            try:
-                assign_first_action_badge(instance.user, "First Forum Post")
-            except Exception as e:
-                logger.warning(f"Failed to assign badge for ForumPost: {str(e)}", exc_info=True)
-
-            try:
-                create_activity(instance, "created")
-            except Exception as e:
-                logger.warning(f"Failed to create activity for ForumPost: {str(e)}", exc_info=True)
-
-            try:
-                giveBacon(instance.user, instance=instance, action_type="created")
-            except Exception as e:
-                logger.warning(f"Failed to give Bacon for ForumPost: {str(e)}", exc_info=True)
+            _safe_assign_badge(instance.user, "First Forum Post")
+            _safe_create_activity(instance, "created")
+            _safe_give_bacon(instance.user, instance=instance, action_type="created")
 
         elif sender == Bid and created:  # Track first bid placed
-            try:
-                assign_first_action_badge(instance.user, "First Bid Placed")
-            except Exception as e:
-                logger.warning(f"Failed to assign badge for Bid: {str(e)}", exc_info=True)
-
-            try:
-                create_activity(instance, "placed")
-            except Exception as e:
-                logger.warning(f"Failed to create activity for Bid: {str(e)}", exc_info=True)
-
-            try:
-                giveBacon(instance.user, instance=instance, action_type="placed")
-            except Exception as e:
-                logger.warning(f"Failed to give Bacon for Bid: {str(e)}", exc_info=True)
+            _safe_assign_badge(instance.user, "First Bid Placed")
+            _safe_create_activity(instance, "placed")
+            _safe_give_bacon(instance.user, instance=instance, action_type="placed")
 
         elif sender is User and created:  # Handle user sign-up
             try:
@@ -260,7 +221,8 @@ def handle_post_save(sender, instance, created, **kwargs):
                 )
             except Exception as e:
                 logger.warning(
-                    f"Failed to create signup activity for User {instance.username}: {str(e)}", exc_info=True
+                    f"Failed to create signup activity for User {instance.username}: {str(e)}",
+                    exc_info=True,
                 )
     except Exception as e:
         logger.error(f"Unexpected error in handle_post_save signal: {str(e)}", exc_info=True)
