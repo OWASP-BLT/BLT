@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterPanels = document.querySelectorAll('.filter-panel');
     
     if (!tableBody) {
-        console.error('Status table body not found!');
         return;
     }
     
@@ -171,7 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data && data.data !== undefined) {
                 updateTable(data.data);
             } else {
-                console.error('Invalid data format:', data);
                 throw new Error('Invalid data format received');
             }
         })
@@ -181,7 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            console.error('Error fetching data:', error);
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" class="px-6 py-12 text-center">
@@ -218,8 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const targetPanel = document.getElementById(`${tabName}-panel`);
         if (targetPanel) {
             targetPanel.classList.remove('hidden');
-        } else {
-            console.error(`Panel ${tabName}-panel not found`);
         }
         
         if (currentTab !== tabName) {
