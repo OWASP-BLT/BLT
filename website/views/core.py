@@ -354,7 +354,17 @@ def status_page(request):
             for proc in psutil.process_iter(["pid", "name", "memory_info"]):
                 try:
                     proc_info = proc.info
-                    proc_info["memory_info"] = proc_info["memory_info"]._asdict()
+                    mem = proc_info.get("memory_info")
+                    if mem is None:
+                        proc_info["memory_info"] = {"rss": 0, "vms": 0, "shared": 0}
+                    elif hasattr(mem, "_asdict"):
+                        proc_info["memory_info"] = mem._asdict()
+                    else:
+                        proc_info["memory_info"] = {
+                            "rss": getattr(mem, "rss", 0),
+                            "vms": getattr(mem, "vms", 0),
+                            "shared": getattr(mem, "shared", 0),
+                        }
                     status_data["top_memory_consumers"].append(proc_info)
                 except (
                     psutil.NoSuchProcess,
