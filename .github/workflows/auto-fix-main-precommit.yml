@@ -8,7 +8,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  issues: write
 
 jobs:
   check-and-fix-main:
@@ -21,6 +20,14 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref }}
+
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -96,6 +103,7 @@ jobs:
         id: create_pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           echo "🔄 Creating pull request..."
           
@@ -106,44 +114,41 @@ jobs:
           ... and more files"
           fi
           
-          # Store commit message safely
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
-          
           # Write PR body to a temporary file to avoid escaping issues
           PR_BODY_FILE=$(mktemp)
           cat > "$PR_BODY_FILE" <<EOF
-## 🤖 Automated Pre-Commit Fixes
+          ## 🤖 Automated Pre-Commit Fixes
 
-This PR contains automatic formatting and linting fixes applied to the **\`main\`** branch.
+          This PR contains automatic formatting and linting fixes applied to the **\`main\`** branch.
 
-### 🔧 Changes Applied:
-- ✅ Black code formatting
-- ✅ isort import sorting  
-- ✅ ruff linting fixes
-- ✅ djLint template formatting
+          ### 🔧 Changes Applied:
+          - ✅ Black code formatting
+          - ✅ isort import sorting  
+          - ✅ ruff linting fixes
+          - ✅ djLint template formatting
 
-### 📝 Commit that triggered this:
-- **SHA**: \`${{ github.sha }}\`
-- **Author**: @${{ github.actor }}
-- **Message**:
+          ### 📝 Commit that triggered this:
+          - **SHA**: \`${{ github.sha }}\`
+          - **Author**: @${{ github.actor }}
+          - **Message**: \`${COMMIT_MESSAGE}\`
 
-\`\`\`
-$COMMIT_MSG
-\`\`\`
+          \`\`\`
+          $COMMIT_MSG
+          \`\`\`
 
-### 📋 Files Changed:
-\`\`\`
-${CHANGED_FILES}
-\`\`\`
+          ### 📋 Files Changed:
+          \`\`\`
+          ${CHANGED_FILES}
+          \`\`\`
 
-### 🏷️ Labels
-Please manually add these labels: \`automated-fix\`, \`pre-commit\`
+          ### 🏷️ Labels
+          Please manually add these labels: \`automated-fix\`, \`pre-commit\`
 
----
-**⚠️ Please review these changes before merging.**
+          ---
+          **⚠️ Please review these changes before merging.**
 
-_This PR was automatically created by the auto-fix-main-precommit workflow._
-EOF
+          _This PR was automatically created by the auto-fix-main-precommit workflow._
+          EOF
           
           # Create PR using the body file
           PR_URL=$(gh pr create \
@@ -202,3 +207,4 @@ EOF
           echo "Pre-commit checks failed but no auto-fixes could be applied." >> $GITHUB_STEP_SUMMARY
           echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
           echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
+          exit 1
