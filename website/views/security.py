@@ -66,10 +66,10 @@ def _escape_csv_formula(value):
     if not value:
         return value
 
-    dangerous_chars = "=+-@\t\r\n"
-    if value and value[0] in dangerous_chars:
-        logger.warning("CSV formula injection attempt detected. Value: %r", original)
+    # Include all OWASP-recommended dangerous chars
+    if value[0] in ("=", "+", "-", "@", "\t", "\r", "\n"):
         return "'" + value
+
     return value
 
 
