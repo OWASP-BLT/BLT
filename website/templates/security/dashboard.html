@@ -68,7 +68,7 @@
                 <a href="{{ request.get_full_path }}"
                    class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded shadow text-sm font-medium">🔄 Refresh</a>
                 <!-- Export CSV -->
-                <a href="?export=csv{% if current_severity %}&severity={{ current_severity }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_range %}&range={{ current_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}"
+                <a href="?export=csv{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_severity %}&severity={{ current_severity }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_range %}&range={{ current_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}"
                    class="bg-blue-600 text-white px-4 py-2 rounded shadow text-sm font-medium">📄 Export CSV</a>
                 <!-- Add Incident (Next PR) -->
                 <!-- Add Incident -->
