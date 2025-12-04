@@ -51,7 +51,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --no-interaction
+          poetry install --no-interaction --with dev
 
       - name: Run pre-commit checks
         id: precommit
