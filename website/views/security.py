@@ -19,8 +19,6 @@ CSV_RATE_LIMIT_WINDOW = 60  # per 60 seconds
 
 logger = logging.getLogger(__name__)
 
-SECURITY_LABEL = 4
-
 # Severity ranking for correct sorting
 SEVERITY_ORDER = Case(
     When(severity="critical", then=Value(4)),
@@ -202,7 +200,7 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context["incidents"] = page_obj.object_list
 
         # Related Issues (label=4)
-        context["security_issues"] = Issue.objects.filter(label=SECURITY_LABEL).order_by("-created")[:10]
+        context["security_issues"] = Issue.objects.filter(label="Security").order_by("-created")[:10]
 
         # Summary
         context["incident_count"] = filtered_queryset.count()
