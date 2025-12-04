@@ -475,7 +475,7 @@ class Domain(models.Model):
 
         validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
         try:
-            twitter_url = "https://twitter.com/%s" % (name)
+            twitter_url = "https://x.com/%s" % (name)
             validate(twitter_url)
             self.twitter = name
             self.save()

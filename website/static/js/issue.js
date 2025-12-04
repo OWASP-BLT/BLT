@@ -11,7 +11,7 @@ window.twttr = (function (d, s, id) {
     if (d.getElementById(id)) return t;
     js = d.createElement(s);
     js.id = id;
-    js.src = "https://platform.twitter.com/widgets.js";
+    js.src = "https://platform.x.com/widgets.js";
     fjs.parentNode.insertBefore(js, fjs);
     t._e = [];
 

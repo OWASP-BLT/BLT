@@ -134,7 +134,7 @@
             </div>
         {% endif %}
     </button>
-    <a href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
+    <a href="https://x.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
        target="_blank"
        rel="noopener noreferrer"
        class="border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] hover:text-[#3e3446] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 px-4 py-3 shadow-sm">Tweet &nbsp;<i class="fa-brands fa-x-twitter fa-lg"></i></a>
