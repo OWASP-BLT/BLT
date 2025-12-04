@@ -53,9 +53,6 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --with dev --no-interaction
-      - name: Install pre-commit
-        run: |
-          pip install pre-commit
 
       - name: Run pre-commit checks
         id: precommit
@@ -121,23 +118,24 @@ jobs:
         run: |
           echo "🔄 Creating pull request..."
           
-          # Get list of changed files
-          # Get list of changed files, handle errors explicitly
-          CHANGED_FILES_RAW=$(git diff --name-only ${{ steps.create_branch.outputs.base_branch }}..${{ steps.create_branch.outputs.branch_name }} 2>/dev/null)
-          if [ $? -ne 0 ]; then
-            CHANGED_FILES="Error retrieving changed files"
-          else
+          # Get list of changed files with better error handling
+          if CHANGED_FILES_RAW=$(git diff --name-only ${{ steps.create_branch.outputs.base_branch }}..${{ steps.create_branch.outputs.branch_name }} 2>&1); then
             FILE_COUNT=$(echo "$CHANGED_FILES_RAW" | wc -l)
             if [ "$FILE_COUNT" -gt 20 ]; then
               CHANGED_FILES=$(echo "$CHANGED_FILES_RAW" | head -20)
               CHANGED_FILES="${CHANGED_FILES}
-          ... and more files"
+          ... and $((FILE_COUNT - 20)) more files"
             else
               CHANGED_FILES="$CHANGED_FILES_RAW"
             fi
+            SHOW_FILES_SECTION=true
+          else
+            # If git diff fails, don't show the files section
+            echo "⚠️ Warning: Unable to retrieve changed files list"
+            SHOW_FILES_SECTION=false
           fi
           
-          # Write PR body to a temporary file to avoid escaping issues
+          # Write PR body to a temporary file
           PR_BODY_FILE=$(mktemp)
           cat > "$PR_BODY_FILE" <<EOF
           ## 🤖 Automated Pre-Commit Fixes
@@ -154,11 +152,26 @@ jobs:
           - **SHA**: \`${{ github.sha }}\`
           - **Author**: @${{ github.actor }}
           - **Message**: \`${COMMIT_MESSAGE}\`
+          EOF
+          
+          # Only add files section if we successfully retrieved the list
+          if [ "$SHOW_FILES_SECTION" = true ]; then
+            cat >> "$PR_BODY_FILE" <<EOF
 
           ### 📋 Files Changed:
           \`\`\`
           ${CHANGED_FILES}
           \`\`\`
+          EOF
+          else
+            cat >> "$PR_BODY_FILE" <<EOF
+
+          ### 📋 Files Changed:
+          _(Unable to retrieve changed files list. Check the commit diff in the PR for details.)_
+          EOF
+          fi
+          
+          cat >> "$PR_BODY_FILE" <<EOF
 
           ### 🏷️ Labels
           Please manually add these labels: \`automated-fix\`, \`pre-commit\`
