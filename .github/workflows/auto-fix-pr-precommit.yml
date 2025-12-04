@@ -36,13 +36,11 @@ jobs:
           python-version: '3.11.2'
 
       - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        run: pip install poetry
 
       - name: Install dependencies
         run: |
-          poetry install --no-interaction
+          poetry install --with dev --no-interaction
 
       - name: Run pre-commit checks
         id: precommit
