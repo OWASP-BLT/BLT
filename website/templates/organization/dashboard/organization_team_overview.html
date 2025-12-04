@@ -74,7 +74,7 @@
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
                             {% if team_members %}
                                 {% for member in team_members %}
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 {% if member.user_avatar %}
@@ -115,7 +115,7 @@
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <a href="/profile/{{ member.user.username }}"
-                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
+                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-700 dark:border dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-medium text-sm"
                                                title="View Profile">
                                                 <svg class="w-4 h-4 mr-1.5"
                                                      fill="none"
@@ -191,7 +191,7 @@
                             <i class="fas fa-user-circle text-[#e74c3c] mr-2"></i>Select Team Member
                         </label>
                         <select id="user-filter"
-                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                             <option value="">All Members</option>
                             {% for member in team_members %}<option value="{{ member.user.id }}">{{ member.user.username }}</option>{% endfor %}
                         </select>
@@ -202,14 +202,14 @@
                         </label>
                         <input type="date"
                                id="date-filter"
-                               class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                               class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                     </div>
                     <div id="goal-panel" class="filter-panel hidden">
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             <i class="fas fa-flag-checkered text-[#e74c3c] mr-2"></i>Goal Status
                         </label>
                         <select id="goal-filter"
-                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                             <option value="">All Goals</option>
                             <option value="true">✅ Accomplished</option>
                             <option value="false">❌ Not Accomplished</option>
@@ -222,7 +222,7 @@
                         <input type="text"
                                id="task-filter"
                                placeholder="Type to search in previous work..."
-                               class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                               class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                     </div>
                 </div>
                 <!-- Reports Table -->
@@ -244,7 +244,7 @@
                                data-initial-count="{{ daily_status_reports|length }}">
                             {% if daily_status_reports %}
                                 {% for report in daily_status_reports %}
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer"
                                         onclick="toggleRow(this)">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
