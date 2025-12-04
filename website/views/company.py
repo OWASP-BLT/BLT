@@ -896,9 +896,9 @@ class OrganizationSocialRedirectView(View):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
             return redirect("organization_analytics", id=org_id)
 
-        # Atomically increment the click counter
-        # Note: This uses read-modify-write which may have minor race conditions under high concurrency,
-        # but is acceptable for click tracking. For strict atomicity, use select_for_update() or database-level operations.
+        # Increment the click counter
+        # Note: This accepts potential race conditions for performance. Click counts don't need strict accuracy.
+        # For critical counters requiring strict atomicity, use select_for_update() or database-level atomic operations.
         with transaction.atomic():
             # Get organization without locking
             organization = Organization.objects.get(id=org_id)
@@ -927,6 +927,17 @@ class OrganizationProfileEditView(View):
             return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
         return []
 
+    def _get_social_stats(self, organization):
+        """Helper method to get social media click statistics for an organization."""
+        social_clicks = organization.social_clicks or {}
+        return {
+            "twitter_clicks": social_clicks.get("twitter", 0),
+            "facebook_clicks": social_clicks.get("facebook", 0),
+            "github_clicks": social_clicks.get("github", 0),
+            "linkedin_clicks": social_clicks.get("linkedin", 0),
+            "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
+        }
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         from website.forms import OrganizationProfileForm
@@ -939,14 +950,7 @@ class OrganizationProfileEditView(View):
         form = OrganizationProfileForm(instance=organization)
 
         # Get social media click statistics
-        social_clicks = organization.social_clicks or {}
-        social_stats = {
-            "twitter_clicks": social_clicks.get("twitter", 0),
-            "facebook_clicks": social_clicks.get("facebook", 0),
-            "github_clicks": social_clicks.get("github", 0),
-            "linkedin_clicks": social_clicks.get("linkedin", 0),
-            "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
-        }
+        social_stats = self._get_social_stats(organization)
 
         context = {
             "organization": id,
@@ -975,14 +979,7 @@ class OrganizationProfileEditView(View):
             organizations = self._get_user_organizations(request.user)
 
             # Get social media click statistics for error case
-            social_clicks = organization.social_clicks or {}
-            social_stats = {
-                "twitter_clicks": social_clicks.get("twitter", 0),
-                "facebook_clicks": social_clicks.get("facebook", 0),
-                "github_clicks": social_clicks.get("github", 0),
-                "linkedin_clicks": social_clicks.get("linkedin", 0),
-                "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
-            }
+            social_stats = self._get_social_stats(organization)
 
             context = {
                 "organization": id,
