@@ -211,11 +211,38 @@ For temporary debugging during development, comment out console statements befor
 
 ## Testing
 
-When adding new features or fixing bugs, please include appropriate tests. Run the tests with:
+When adding new features or fixing bugs, please include appropriate tests.
+
+### Running Tests
+
+Run all non-Selenium tests (fast tests):
+
+```bash
+python manage.py test --exclude-tag=selenium
+```
+
+Run all tests including Selenium tests (slower):
 
 ```bash
 python manage.py test
 ```
+
+Run only Selenium tests:
+
+```bash
+python manage.py test --tag=selenium
+```
+
+### Test Organization
+
+- **Regular tests**: Fast unit and integration tests that run in the main CI/CD pipeline
+- **Selenium tests**: Browser-based tests that navigate through pages, run in a separate GitHub Actions workflow for better performance
+
+Selenium tests are tagged with `@tag("selenium", "slow")` and run:
+- On every pull request (in parallel with main tests)
+- On pushes to the main branch
+- Weekly via scheduled workflow
+- Manually via workflow dispatch
 
 ## Documentation
 
