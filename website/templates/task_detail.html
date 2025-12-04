@@ -353,8 +353,8 @@ document.getElementById('simulation-form')?.addEventListener('submit', function(
         resultDiv.classList.remove('hidden');
         messageDiv.textContent = data.message;
         messageDiv.className = data.correct
-            ? 'p-3 rounded-md bg-green-100 text-green-800 hover:text-gray-900 dark:hover:text-white'
-            : 'p-3 rounded-md bg-red-100 text-red-800 hover:text-gray-900 dark:hover:text-white';
+            ? 'text-sm font-medium text-green-600'
+            : 'text-sm font-medium text-red-600';;
     })
     .catch(error => {
         console.error('Error:', error);
