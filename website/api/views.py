@@ -67,7 +67,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import generate_signed_url, image_validator , SignedUrlError
+from website.utils import SignedUrlError, generate_signed_url, image_validator
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -158,13 +158,9 @@ def screenshot_signed_url_view(request, pk: int):
     # Basic permission check for hidden issues
     if issue.is_hidden:
         user = request.user
-        is_owner = user.is_authenticated and issue.user_id == user.id
-        is_staff = user.is_authenticated and user.is_staff
-        is_team_member = (
-            user.is_authenticated
-            and issue.team_members.filter(id=user.id).exists()
-        )
-
+        is_owner = issue.user_id == user.id
+        is_staff = user.is_staff
+        is_team_member = issue.team_members.filter(id=user.id).exists()
         if not (is_owner or is_staff or is_team_member):
             return Response(
                 {"detail": "You do not have permission to view this screenshot."},
@@ -212,10 +208,7 @@ def issue_screenshot_signed_url_view(request, pk: int):
         user = request.user
         is_owner = user.is_authenticated and issue.user_id == user.id
         is_staff = user.is_authenticated and user.is_staff
-        is_team_member = (
-            user.is_authenticated
-            and issue.team_members.filter(id=user.id).exists()
-        )
+        is_team_member = user.is_authenticated and issue.team_members.filter(id=user.id).exists()
 
         if not (is_owner or is_staff or is_team_member):
             return Response(
@@ -252,6 +245,7 @@ def issue_screenshot_signed_url_view(request, pk: int):
         url = request.build_absolute_uri(issue.screenshot.url)
 
     return Response({"url": url}, status=status.HTTP_200_OK)
+
 
 class IssueViewSet(viewsets.ModelViewSet):
     """
