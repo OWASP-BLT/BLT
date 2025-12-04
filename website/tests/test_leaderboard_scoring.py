@@ -79,10 +79,9 @@ class UserProfileLeaderboardScoreTest(TestCase):
         mock_calc.return_value = (Decimal("75.00"), {"goals": Decimal("80.00")})
         mock_objects.filter.return_value.count.return_value = 10
 
-        # Mock save to raise exception
-        with patch.object(self.user_profile, "save") as mock_save:
-            mock_save.side_effect = Exception("Database error")
-
+        # Since calculate_leaderboard_score() uses locked_self.save() not self.save(),
+        # we need to patch the model's save method
+        with patch("website.models.UserProfile.save", side_effect=Exception("Database error")):
             with self.assertRaises(Exception) as context:
                 self.user_profile.calculate_leaderboard_score()
 

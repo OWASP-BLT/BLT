@@ -14,17 +14,16 @@ logger = logging.getLogger(__name__)
 def update_leaderboard_on_dsr_save(sender, instance, created, **kwargs):
     user = instance.user
 
-    try:
-        profile = UserProfile.objects.select_for_update().get(user=user)
-    except UserProfile.DoesNotExist:
-        return
-
     if getattr(instance, "_skip_leaderboard_update", False):
         return
 
-    with transaction.atomic():
-        profile.update_streak_and_award_points()
-        profile.calculate_leaderboard_score()
+    try:
+        with transaction.atomic():
+            profile = UserProfile.objects.select_for_update().get(user=user)
+            profile.update_streak_and_award_points()
+            profile.calculate_leaderboard_score()
+    except UserProfile.DoesNotExist:
+        return
 
     team = profile.team
     if team:
