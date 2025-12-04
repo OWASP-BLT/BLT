@@ -56,16 +56,17 @@ def is_csv_rate_limited(user_id):
 
 
 def _escape_csv_formula(value):
-    """Escape formula characters while preserving all original user data."""
+    """Escape leading formula characters to mitigate CSV formula injection."""
     if not isinstance(value, str):
         return value
 
-    stripped = value.lstrip()  # Do NOT modify original; only inspect
+    value = value.strip()  # Prevent whitespace bypass
+    if not value:
+        return value
 
-    # If the first non-space character is dangerous, escape the original string
-    if stripped and stripped[0] in ("=", "+", "-", "@", "\t", "\r", "\n"):
-        logger.warning("CSV formula injection detected; value begins with %r", stripped[0])
-        return "'" + value  # Prefix original, preserving whitespace
+    # Include all OWASP-recommended dangerous chars
+    if value[0] in ("=", "+", "-", "@", "\t", "\r", "\n"):
+        return "'" + value
 
     return value
 
