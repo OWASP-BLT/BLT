@@ -1220,7 +1220,10 @@
             };
         
             function clearChat() {
-                loading.classList.remove('hidden');
+                    chatInput.value = "";
+                    chatInput.focus();
+                    loading.classList.remove('hidden');
+
                 fetch('/api/chatbot/conversation/', {
                     method: 'POST',
                     headers: {
