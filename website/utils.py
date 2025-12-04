@@ -25,9 +25,8 @@ from django.shortcuts import redirect
 from google.cloud import storage
 from openai import OpenAI
 from PIL import Image
-
-from website.models import DailyStats
-
+from google.api_core.exceptions import NotFound, GoogleAPIError
+from website.models import DailyStats,is_using_gcs
 from .models import PRAnalysisReport
 
 # Only initialize OpenAI client if API key is available and valid
@@ -1133,28 +1132,47 @@ def get_default_bacon_score(model_name, is_security=False):
     return score
 
 
+class SignedUrlError(Exception):
+    """Base error for signed URL generation."""
+
+    def __init__(self, kind: str, message: str | None = None):
+        self.kind = kind
+        super().__init__(message or kind)
+
+
 def generate_signed_url(blob_name: str, expiration: int = 3600) -> str:
     """
     Generate a signed URL for a GCS object.
 
-    This helper assumes that GCS is correctly configured and that is_using_gcs()
-    has already been checked by the caller. If the bucket configuration is
-    missing or invalid, a RuntimeError is raised to surface the misconfiguration.
+    Assumes GCS is configured and is_using_gcs() was checked by the caller.
+    Raises SignedUrlError with kind:
+      - "not_found"   → blob does not exist
+      - "storage"     → generic storage/client error
+      - "config"      → configuration/credentials issue
     """
+    if not is_using_gcs():
+        raise SignedUrlError("config", "GCS is not configured")
+
     client = storage.Client()
-    bucket_name = getattr(
-        settings,
-        "GS_PRIVATE_BUCKET_NAME",
-        getattr(settings, "GS_BUCKET_NAME", None),
+
+    bucket_name = getattr(settings, "GS_PRIVATE_BUCKET_NAME", None) or getattr(
+        settings, "GS_BUCKET_NAME", None
     )
     if not bucket_name:
-        raise RuntimeError("No GCS bucket configured for signed URL generation")
+        raise SignedUrlError("config", "No GCS bucket configured")
 
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
 
-    return blob.generate_signed_url(
-        version="v4",
-        expiration=timedelta(seconds=expiration),
-        method="GET",
-    )
+    try:
+        return blob.generate_signed_url(
+            version="v4",
+            expiration=expiration,
+            method="GET",
+        )
+    except NotFound as e:
+        # Blob is missing
+        raise SignedUrlError("not_found", f"Blob '{blob_name}' not found") from e
+    except GoogleAPIError as e:
+        # GCS client/storage error
+        raise SignedUrlError("storage", f"Error generating signed URL") from e
