@@ -3,6 +3,8 @@ import tempfile
 from pathlib import Path
 
 from django.conf import settings
+from django.core.cache import cache
+from django.utils.html import escape
 from dotenv import find_dotenv, load_dotenv
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
@@ -25,10 +27,12 @@ BASE_DIR = Path(settings.BASE_DIR)
 
 logger = logging.getLogger(__name__)
 
+def log_chat(message_type, message):
+    logger.info(f"[{message_type.upper()}] {message}")
 
-def log_chat(message):
-    logger.info(f"LOG: {message}")
-
+log_chat("input", user_message)
+log_chat("output", answer)
+log_chat("error", str(e))
 
 def load_document(file_path):
     loaders = {
@@ -149,16 +153,24 @@ def chatbot_conversation(request):
     if not user_message:
         return Response({"message": "Please type something."}, status=status.HTTP_200_OK)
 
+    safe_message = escape(user_message)
+
     vector_store = load_vector_store()
     if vector_store:
         try:
             chain = conversation_chain(vector_store)
-            result = chain.invoke({"input": user_message})
+            result = chain.invoke({"input": safe_message})
             answer = result.get("answer") or result.get("output") or "Sorry, I couldn’t find an answer."
-            log_chat(f"Q: {user_message} | A: {answer}")
+
+            cache.set(safe_message, answer, timeout=3600)
+
+            log_chat(f"[INPUT] {safe_message}")
+            log_chat(f"[OUTPUT] {answer}")
             return Response({"message": answer}, status=status.HTTP_200_OK)
+
+            
         except Exception as e:
-            log_chat(f"Error during chatbot conversation: {e}")
+            log_chat(f"[ERROR] {str(e)}")
             return Response(
                 {"message": "An error occurred while processing your request."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
