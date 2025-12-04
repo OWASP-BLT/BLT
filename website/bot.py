@@ -142,7 +142,7 @@ def chatbot_conversation(request):
     if not user_message:
         return Response({"message": "Please type something."}, status=status.HTTP_200_OK)
 
-    safe_message = escape(user_message)
+    safe_message = user_message
     vector_store = load_vector_store()
 
     if vector_store:
