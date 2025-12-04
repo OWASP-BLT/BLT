@@ -137,41 +137,46 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr comment ${{ github.event.pull_request.number }} \
-            --repo ${{ github.repository }} \
-            --body "👋 **Thank you for your contribution!**
+          # Check if the bot has already commented guidance on this PR
+          EXISTING_COMMENT=$(gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | contains("Since this PR is from a fork")) | .id')
+          if [ -z "$EXISTING_COMMENT" ]; then
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} \
+              --body "👋 **Thank you for your contribution!**
 
-          Since this PR is from a fork, our automated pre-commit fixes cannot run for security reasons.
+            Since this PR is from a fork, our automated pre-commit fixes cannot run for security reasons.
 
-          Please ensure your code passes pre-commit checks before requesting review:
+            Please ensure your code passes pre-commit checks before requesting review:
 
-          ### Running Pre-commit Locally
+            ### Running Pre-commit Locally
 
-          \`\`\`bash
-          # Install dependencies
-          poetry install --with dev
+            \`\`\`bash
+            # Install dependencies
+            poetry install --with dev
 
-          # Run pre-commit checks
-          poetry run pre-commit run --all-files
+            # Run pre-commit checks
+            poetry run pre-commit run --all-files
 
-          # If fixes are applied, commit them
-          git add .
-          git commit -m \"Apply pre-commit fixes\"
-          git push
-          \`\`\`
+            # If fixes are applied, commit them
+            git add .
+            git commit -m \"Apply pre-commit fixes\"
+            git push
+            \`\`\`
 
-          ### What Gets Checked
+            ### What Gets Checked
 
-          - ✅ Black code formatting
-          - ✅ isort import sorting
-          - ✅ ruff linting fixes
-          - ✅ djLint template formatting
-          - ✅ Django collectstatic
-          - ✅ Django tests
+            - ✅ Black code formatting
+            - ✅ isort import sorting
+            - ✅ ruff linting fixes
+            - ✅ djLint template formatting
+            - ✅ Django collectstatic
+            - ✅ Django tests
 
-          **Note:** Pre-commit hooks often auto-fix issues on the first run. If checks fail, run the command again.
+            **Note:** Pre-commit hooks often auto-fix issues on the first run. If checks fail, run the command again.
 
-          Once your code passes pre-commit checks, a maintainer will review your PR. Thank you for helping improve OWASP BLT! 🙏"
+            Once your code passes pre-commit checks, a maintainer will review your PR. Thank you for helping improve OWASP BLT! 🙏"
+          fi
 
       - name: Add fork PR summary
         run: |
