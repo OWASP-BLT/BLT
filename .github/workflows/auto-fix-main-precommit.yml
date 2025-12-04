@@ -155,10 +155,6 @@ jobs:
           - **Author**: @${{ github.actor }}
           - **Message**: \`${COMMIT_MESSAGE}\`
 
-          \`\`\`
-          ${COMMIT_MESSAGE}
-          \`\`\`
-
           ### 📋 Files Changed:
           \`\`\`
           ${CHANGED_FILES}

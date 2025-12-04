@@ -36,9 +36,11 @@ jobs:
           path: |
             ~/.cache/pypoetry
             ~/.cache/pip
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
