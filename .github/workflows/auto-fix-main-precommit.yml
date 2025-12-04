@@ -30,6 +30,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pre-commit-
 
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
+            ${{ runner.os }}-poetry-
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -172,6 +184,8 @@ jobs:
           echo "✅ PR created successfully: $PR_URL"
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           echo "📋 PR Number: #$PR_NUMBER"
+
+          rm -f "$PR_BODY_FILE"
 
       - name: Comment on original commit
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.create_pr.outputs.pr_url != ''
