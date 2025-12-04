@@ -1,45 +1,4 @@
-import logging
-
-from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-from website.management.base import LoggedBaseCommand
-from website.models import DailyStatusReport, Issue, UserProfile
-
-logger = logging.getLogger(__name__)
-
-
-class Command(LoggedBaseCommand):
-    help = "Update user based on number of bugs"
-
-    def handle(self, *args, **options):
-        all_user_prof = UserProfile.objects.all()
-        all_user = User.objects.all()
-        for user_ in all_user:
-            user_prof = UserProfile.objects.get(user=user_)
-            total_issues = Issue.objects.filter(user=user_).count()
-            if total_issues <= 10:
-                user_prof.title = 1
-            elif total_issues <= 50:
-                user_prof.title = 2
-            elif total_issues <= 200:
-                user_prof.title = 3
-            else:
-                user_prof.title = 4
-
-            user_prof.save()
-
-        return str("All users updated.")
-
-
-from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-from website.models import DailyStatusReport, UserProfile
+from django.db import transaction
 
 
 @receiver(post_save, sender=DailyStatusReport)
@@ -57,14 +16,18 @@ def update_leaderboard_on_dsr_save(sender, instance, created, **kwargs):
     if getattr(instance, "_skip_leaderboard_update", False):
         return
 
-    # Update streak BEFORE score recalculation
-    profile.update_streak_and_award_points()
+    # Wrap all profile updates in a transactional row-level lock
+    with transaction.atomic():
+        locked_profile = UserProfile.objects.select_for_update().get(pk=profile.pk)
 
-    # Recalculate the score
-    try:
-        profile.calculate_leaderboard_score()
-    except Exception as e:
-        logger.exception("Failed to recalculate leaderboard score for user %s: %s", user.id, e)
+        # Update streak BEFORE score recalculation
+        locked_profile.update_streak_and_award_points()
+
+        # Recalculate the score safely under lock
+        try:
+            locked_profile.calculate_leaderboard_score()
+        except Exception as e:
+            logger.exception("Failed to recalc leaderboard score for user %s: %s", user.id, e)
 
     # -------- CACHE INVALIDATION --------
     team = profile.team
@@ -73,8 +36,7 @@ def update_leaderboard_on_dsr_save(sender, instance, created, **kwargs):
         try:
             cache.delete_pattern(pattern)
         except Exception:
-            # LocMemCache doesn't support delete_pattern
-            # Manual brute force: iterate all possible pages
+            # LocMemCache fallback
             for order in ("score", "streak", "quality"):
                 for page in range(1, 20):
                     cache_key = f"team_lb:{team.id}:{order}:{page}:20"

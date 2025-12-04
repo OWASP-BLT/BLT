@@ -978,14 +978,25 @@ class UserProfile(models.Model):
     )
 
     def calculate_leaderboard_score(self):
-        score, breakdown = LeaderboardScoringService.calculate_for_user(self.user)
+        # Lock the row to prevent concurrent updates
+        with transaction.atomic():
+            locked_self = self.__class__.objects.select_for_update().get(pk=self.pk)
 
-        self.leaderboard_score = score
-        self.quality_score = breakdown["goals"]  # cache important metric
-        self.check_in_count = DailyStatusReport.objects.filter(user=self.user).count()
-        self.last_score_update = timezone.now()
+            score, breakdown = LeaderboardScoringService.calculate_for_user(locked_self.user)
 
-        self.save(update_fields=["leaderboard_score", "quality_score", "check_in_count", "last_score_update"])
+            locked_self.leaderboard_score = score
+            locked_self.quality_score = breakdown["goals"]
+            locked_self.check_in_count = DailyStatusReport.objects.filter(user=locked_self.user).count()
+            locked_self.last_score_update = timezone.now()
+
+            locked_self.save(
+                update_fields=[
+                    "leaderboard_score",
+                    "quality_score",
+                    "check_in_count",
+                    "last_score_update",
+                ]
+            )
 
         return score, breakdown
 

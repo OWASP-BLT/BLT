@@ -1,6 +1,9 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.utils import timezone
+
+from website.models import UserProfile
 
 
 class LeaderboardScoringService:
