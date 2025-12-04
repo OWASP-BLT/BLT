@@ -37,6 +37,7 @@ from website.api.views import (
     OrganizationViewSet,
     ProjectViewSet,
     PublicJobListViewSet,
+    SearchHistoryApiView,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -1231,6 +1232,7 @@ urlpatterns = [
     ),
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
+    path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
 ]
 
 if settings.DEBUG:

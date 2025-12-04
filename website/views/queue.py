@@ -95,7 +95,7 @@ def queue_list(request):
                 queue_item.launch(current_time)
 
                 # Create Twitter intent URL
-                base_url = "https://twitter.com/intent/tweet"
+                base_url = "https://x.com/intent/tweet"
                 params = {
                     "text": queue_item.message,
                 }
@@ -105,7 +105,7 @@ def queue_list(request):
 
                 # Redirect directly to Twitter in a new tab
                 response = redirect(tweet_url)
-                response["Content-Security-Policy"] = "frame-ancestors https://twitter.com"
+                response["Content-Security-Policy"] = "frame-ancestors https://x.com"
                 return response
             else:
                 # Just update the timestamp if already launched
