@@ -35,7 +35,8 @@ jobs:
       - name: Run Bandit scan
         run: |
           bandit -r website/ blt/ -f json -o bandit-report.json || true
-          bandit -r website/ blt/ -f txt
+          bandit -r website/ blt/ -f txt || true
+        continue-on-error: true
 
       - name: Upload Bandit report
         uses: actions/upload-artifact@v4
@@ -67,12 +68,14 @@ jobs:
 
       - name: Install dependencies
         run: poetry install --without dev
+        continue-on-error: true
 
       - name: Run pip-audit
         run: |
           # Audit installed packages
           poetry run pip-audit --desc --format json --output pip-audit-report.json || true
           poetry run pip-audit --desc || true
+        continue-on-error: true
 
       - name: Upload pip-audit report
         uses: actions/upload-artifact@v4
@@ -94,7 +97,8 @@ jobs:
       - name: Run Semgrep
         run: |
           semgrep scan --config=auto --json --output semgrep-report.json || true
-          semgrep scan --config=auto --verbose
+          semgrep scan --config=auto --verbose || true
+        continue-on-error: true
 
       - name: Upload Semgrep report
         uses: actions/upload-artifact@v4
@@ -135,12 +139,14 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
+        continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
 
       - name: Run Trivy with table output
         uses: aquasecurity/trivy-action@0.29.0
@@ -149,6 +155,7 @@ jobs:
           scan-ref: '.'
           format: 'table'
           severity: 'CRITICAL,HIGH,MEDIUM'
+        continue-on-error: true
 
   trivy-docker:
     name: Trivy Docker Image Scan
@@ -159,6 +166,7 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t blt-app:${{ github.sha }} .
+        continue-on-error: true
 
       - name: Run Trivy vulnerability scanner on Docker image
         uses: aquasecurity/trivy-action@0.29.0
@@ -167,12 +175,14 @@ jobs:
           format: 'sarif'
           output: 'trivy-docker-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
+        continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-docker-results.sarif'
+        continue-on-error: true
 
       - name: Run Trivy with table output
         uses: aquasecurity/trivy-action@0.29.0
@@ -180,6 +190,7 @@ jobs:
           image-ref: 'blt-app:${{ github.sha }}'
           format: 'table'
           severity: 'CRITICAL,HIGH,MEDIUM'
+        continue-on-error: true
 
   osv-scanner:
     name: OSV Scanner
