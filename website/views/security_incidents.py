@@ -22,7 +22,7 @@ class SecurityIncidentCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form_title"] = "Create Security Incident"
-        context["unique_editor_count"] = incident.history.values("changed_by").distinct().count()
+        context["unique_editor_count"] = self.object.history.values("changed_by").distinct().count()
         return context
 
 
