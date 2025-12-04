@@ -288,8 +288,8 @@
                        aria-label="Visit organization Twitter profile ({{ social_stats.twitter_clicks }} visits)"
                        class="block bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-6 rounded-lg hover:shadow-lg transition-shadow">
                     {% else %}
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50 cursor-not-allowed"
-                             aria-disabled="true">
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-6 rounded-lg opacity-50 cursor-not-allowed">
+                            <span class="sr-only">Twitter profile not configured</span>
                         {% endif %}
                         <div class="flex items-center justify-between mb-4">
                             <i class="fab fa-twitter fa-2x text-blue-500"></i>
