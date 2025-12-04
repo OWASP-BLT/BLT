@@ -6,7 +6,7 @@
 {% load i18n %}
 {% load custom_tags %}
 <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
 <nav class="fixed top-0 z-[10100] w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-zinc-200 dark:border-gray-700 border-b md:px-4 md:py-1.5 py-2 px-1 transition-colors duration-300">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
@@ -548,9 +548,9 @@
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Social Links</h3>
                                 <ul class="space-y-2">
                                     <li>
-                                        <a href="https://twitter.com/owasp_blt"
+                                        <a href="https://x.com/owasp_blt"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 dark:text-gray-300 hover:text-[#e74c3c]"><i class="fab fa-twitter w-5 mr-2"></i>Twitter</a>
+                                           class="flex items-center text-gray-700 dark:text-gray-300 hover:text-[#e74c3c]"><i class="fab fa-x-twitter w-5 mr-2"></i>Twitter</a>
                                     </li>
                                     <li>
                                         <a href="https://www.facebook.com/groups/owaspfoundation/"
@@ -667,7 +667,7 @@
                                     </button>
                                     <button id="organizations-btn"
                                             type="button"
-                                            class="flex items-center h-full px-4 text-gray-700 dark:text-gray-300 hover:bg-red-50 transition-colors duration-200 focus:outline-none">
+                                            class="flex items-center h-full px-4 text-gray-700 dark:text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200 focus:outline-none">
                                         <i id="selected-icon" class="fas fa-check mr-2 text-red-500"></i>
                                         <span id="selected-filter" class="hidden md:inline">{% trans "All" %}</span>
                                         <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
@@ -677,49 +677,49 @@
                                         <ul class="flex flex-col gap-2 px-4 py-2">
                                             <li>
                                                 <button data-value="all"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option hover:bg-gray-700 transition-colors duration-200">
                                                     <i class="fa fa-check mr-2 text-red-500"></i>
                                                     {% trans "All" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="organizations"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option hover:bg-gray-700 transition-colors duration-200">
                                                     <i class="fa fa-building fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Organizations" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="issues"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option hover:bg-gray-700 transition-colors duration-200">
                                                     <i class="fa fa-bug fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Issues" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="domains"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option hover:bg-gray-700 transition-colors duration-200">
                                                     <i class="fa fa-globe fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Domains" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="users"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option hover:bg-gray-700 transition-colors duration-200">
                                                     <i class="fa fa-user-group fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Users" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="projects"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option hover:bg-gray-700 transition-colors duration-200">
                                                     <i class="fa fa-box fa-fw mr-2 text-red-500">
                                                     </i> {% trans "Projects" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="repos"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option hover:bg-gray-700 transition-colors duration-200">
                                                     <i class="fa-brands fa-github fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Repos" %}
                                                 </button>
@@ -1220,7 +1220,10 @@
             };
         
             function clearChat() {
-                loading.classList.remove('hidden');
+                    chatInput.value = "";
+                    chatInput.focus();
+                    loading.classList.remove('hidden');
+
                 fetch('/api/chatbot/conversation/', {
                     method: 'POST',
                     headers: {
