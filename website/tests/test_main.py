@@ -226,9 +226,6 @@ class MySeleniumTests(LiveServerTestCase):
             or "success" in d.page_source.lower()
         )
 
-        # Give the page a moment to stabilize after any redirects
-        import time
-
         time.sleep(2)
 
         # Verify that the bug report was submitted successfully
