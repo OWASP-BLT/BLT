@@ -12,6 +12,7 @@ permissions:
 jobs:
   check-and-fix-pr:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
     
     steps:
       - name: Checkout PR branch
@@ -71,19 +72,8 @@ jobs:
             echo "❌ Pre-commit failed but no auto-fixes available"
           fi
 
-      - name: Check if PR is from fork
-        id: check_fork
-        run: |
-          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
-            echo "is_fork=true" >> $GITHUB_OUTPUT
-            echo "🔀 PR is from a fork"
-          else
-            echo "is_fork=false" >> $GITHUB_OUTPUT
-            echo "🏠 PR is from the same repository"
-          fi
-
-      - name: Commit and push fixes (same repo)
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_fork.outputs.is_fork == 'false'
+      - name: Commit and push fixes
+        if: steps.check_fixes.outputs.fixes_needed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -102,8 +92,8 @@ jobs:
           git push origin ${{ github.event.pull_request.head.ref }}
           echo "✅ Fixes pushed to PR branch"
 
-      - name: Comment on PR with fixes (same repo)
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_fork.outputs.is_fork == 'false'
+      - name: Comment on PR with fixes
+        if: steps.check_fixes.outputs.fixes_needed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -120,81 +110,8 @@ jobs:
 
           The fixes have been committed directly to this PR branch."
 
-      - name: Comment on PR for fork
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_fork.outputs.is_fork == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Get list of changed files
-          CHANGED_FILES=$(git diff --name-only HEAD)
-          
-          # Create diff patch
-          git diff > fixes.patch
-          
-          # Comment with instructions and patch
-          gh pr comment ${{ github.event.pull_request.number }} \
-            --body "🤖 **Pre-commit Fixes Available**
-
-          Your PR has formatting issues that can be automatically fixed.
-
-          Since this PR is from a fork, I cannot push fixes directly. Please apply the fixes manually:
-
-          ### Option 1: Download and apply the patch
-          #### Method A: GitHub UI
-          1. Go to the "Actions" tab for this repository.
-          2. Find the workflow run for this PR (look for "Auto-Fix Pre-Commit Issues on PRs").
-          3. Download the artifact named `pre-commit-fixes-${{ github.event.pull_request.number }}`.
-          4. Extract `fixes.patch` from the downloaded artifact.
-          5. Apply the patch:
-          \`\`\`bash
-          git apply fixes.patch
-          git add .
-          git commit -m "Apply pre-commit fixes"
-          git push
-          \`\`\`
-          #### Method B: GitHub CLI (recommended)
-          \`\`\`bash
-          gh run download ${{ github.run_id }} -n pre-commit-fixes-${{ github.event.pull_request.number }}
-          git apply fixes.patch
-          git add .
-          git commit -m "Apply pre-commit fixes"
-          git push
-          \`\`\`
-
-          ### Option 2: Run pre-commit locally
-          \`\`\`bash
-          poetry run pre-commit run --all-files
-          git add .
-          git commit -m "Apply pre-commit fixes"
-          git push
-          \`\`\`
-
-          ### Files that need fixing:
-          \`\`\`
-          $CHANGED_FILES
-          \`\`\`
-
-          ⚠️ **Please apply these fixes to pass CI checks.**"
-
-      - name: Upload patch artifact (fork PRs)
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_fork.outputs.is_fork == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: pre-commit-fixes-${{ github.event.pull_request.number }}
-          path: fixes.patch
-
-      - name: Fail if fixes needed but not applied (fork)
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_fork.outputs.is_fork == 'true'
-        run: |
-          echo "## ⚠️ Pre-commit Fixes Required" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "This PR has pre-commit issues. Since it's from a fork, fixes must be applied manually." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Please check the PR comment for instructions." >> $GITHUB_STEP_SUMMARY
-          exit 1
-
-      - name: Success summary (same repo)
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_fork.outputs.is_fork == 'false'
+      - name: Success summary
+        if: steps.check_fixes.outputs.fixes_needed == 'true'
         run: |
           echo "## ✅ Auto-fix Applied Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -209,3 +126,57 @@ jobs:
           echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
           echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
           exit 1
+
+  # Separate job for fork PRs - provides guidance without running hooks
+  fork-pr-guidance:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    
+    steps:
+      - name: Comment on fork PR with instructions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "👋 **Thank you for your contribution!**
+
+          Since this PR is from a fork, our automated pre-commit fixes cannot run for security reasons.
+
+          Please ensure your code passes pre-commit checks before requesting review:
+
+          ### Running Pre-commit Locally
+
+          \`\`\`bash
+          # Install dependencies
+          poetry install --with dev
+
+          # Run pre-commit checks
+          poetry run pre-commit run --all-files
+
+          # If fixes are applied, commit them
+          git add .
+          git commit -m \"Apply pre-commit fixes\"
+          git push
+          \`\`\`
+
+          ### What Gets Checked
+
+          - ✅ Black code formatting
+          - ✅ isort import sorting
+          - ✅ ruff linting fixes
+          - ✅ djLint template formatting
+          - ✅ Django collectstatic
+          - ✅ Django tests
+
+          **Note:** Pre-commit hooks often auto-fix issues on the first run. If checks fail, run the command again.
+
+          Once your code passes pre-commit checks, a maintainer will review your PR. Thank you for helping improve OWASP BLT! 🙏"
+
+      - name: Add fork PR summary
+        run: |
+          echo "## 📝 Fork PR Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This PR is from a fork. For security reasons, pre-commit hooks are not executed automatically." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The contributor has been notified to run pre-commit checks locally." >> $GITHUB_STEP_SUMMARY
