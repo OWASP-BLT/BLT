@@ -39,7 +39,7 @@ class Command(BaseCommand):
 
                     locked_profile.leaderboard_score = score
                     locked_profile.quality_score = breakdown.get("goals", 0)
-                    locked_profile.check_in_count = DailyStatusReport.objects.filter(user=locked_profile.user).coun()
+                    locked_profile.check_in_count = DailyStatusReport.objects.filter(user=locked_profile.user).count()
                     locked_profile.last_score_update = timezone.now()
                     locked_profile.save(
                         update_fields=[
