@@ -1,6 +1,5 @@
 from threading import local
 
-from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
@@ -32,18 +31,16 @@ def capture_old_incident_state(sender, instance, **kwargs):
         instance._old_state = None
         return
 
-    # Ensure row-level locking using a transaction
+    # Capture current DB state for diffing (locking should be handled at a higher level if needed)
     try:
-        with transaction.atomic():
-            old = sender.objects.select_for_update().get(pk=instance.pk)  # <-- row lock
-
-            instance._old_state = {
-                "title": old.title,
-                "severity": old.severity,
-                "status": old.status,
-                "affected_systems": old.affected_systems,
-                "resolved_at": old.resolved_at,
-            }
+        old = sender.objects.get(pk=instance.pk)
+        instance._old_state = {
+            "title": old.title,
+            "severity": old.severity,
+            "status": old.status,
+            "affected_systems": old.affected_systems,
+            "resolved_at": old.resolved_at,
+        }
     except sender.DoesNotExist:
         instance._old_state = None
 

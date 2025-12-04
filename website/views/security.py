@@ -56,19 +56,16 @@ def is_csv_rate_limited(user_id):
 
 
 def _escape_csv_formula(value):
-    """Escape leading formula characters to mitigate CSV formula injection."""
+    """Escape formula characters while preserving all original user data."""
     if not isinstance(value, str):
         return value
 
-    original = value
-    value = value.strip()
+    stripped = value.lstrip()  # Do NOT modify original; only inspect
 
-    if not value:
-        return value
-
-    # Include all OWASP-recommended dangerous chars
-    if value[0] in ("=", "+", "-", "@", "\t", "\r", "\n"):
-        return "'" + value
+    # If the first non-space character is dangerous, escape the original string
+    if stripped and stripped[0] in ("=", "+", "-", "@", "\t", "\r", "\n"):
+        logger.warning("CSV formula injection detected; value begins with %r", stripped[0])
+        return "'" + value  # Prefix original, preserving whitespace
 
     return value
 
@@ -96,29 +93,6 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
             return HttpResponse(
                 "CSV export rate limit exceeded. Please try again in a minute.", status=429, content_type="text/plain"
             )
-
-        queryset = SecurityIncident.objects.all().order_by("-created_at")
-        queryset = self.apply_filters(queryset)
-
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = "attachment; filename=security_incidents.csv"
-
-        writer = csv.writer(response)
-        writer.writerow(["ID", "Title", "Severity", "Status", "Created At", "Affected Systems"])
-
-        for incident in queryset:
-            writer.writerow(
-                [
-                    incident.id,
-                    _escape_csv_formula(incident.title),
-                    incident.severity,
-                    incident.status,
-                    incident.created_at,
-                    _escape_csv_formula(incident.affected_systems or ""),
-                ]
-            )
-
-        return response
 
         queryset = SecurityIncident.objects.all().order_by("-created_at")
         queryset = self.apply_filters(queryset)
