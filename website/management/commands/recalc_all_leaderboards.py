@@ -28,17 +28,20 @@ class Command(BaseCommand):
 
             try:
                 with transaction.atomic():
+                    # Lock the row before updating
+                    locked_profile = UserProfile.objects.select_for_update().get(pk=profile.pk)
+
                     # Update streak first
-                    profile.update_streak_and_award_points()
+                    locked_profile.update_streak_and_award_points()
 
                     # Calculate score
-                    score, breakdown = LeaderboardScoringService.calculate_for_user(user)
+                    score, breakdown = LeaderboardScoringService.calculate_for_user(locked_profile.user)
 
-                    profile.leaderboard_score = score
-                    profile.quality_score = breakdown.get("goals", 0)
-                    profile.check_in_count = DailyStatusReport.objects.filter(user=user).count()
-                    profile.last_score_update = timezone.now()
-                    profile.save(
+                    locked_profile.leaderboard_score = score
+                    locked_profile.quality_score = breakdown.get("goals", 0)
+                    locked_profile.check_in_count = DailyStatusReport.objects.filter(user=locked_profile.user).coun()
+                    locked_profile.last_score_update = timezone.now()
+                    locked_profile.save(
                         update_fields=[
                             "leaderboard_score",
                             "quality_score",
