@@ -159,17 +159,17 @@ jobs:
           EOF
           
           # Create PR using the body file
-          PR_URL=$(gh pr create \
+          PR_DATA=$(gh pr create \
             --base "${{ steps.create_branch.outputs.base_branch }}" \
             --head "${{ steps.create_branch.outputs.branch_name }}" \
             --title "🤖 Auto-fix: Apply pre-commit fixes to main" \
-            --body-file "$PR_BODY_FILE")
+            --body-file "$PR_BODY_FILE" \
+            --json url,number)
           
+          PR_URL=$(echo "$PR_DATA" | jq -r '.url')
+          PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number')
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
           echo "✅ PR created successfully: $PR_URL"
-          
-          # Extract and save PR number
-          PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]*$')
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           echo "📋 PR Number: #$PR_NUMBER"
 
