@@ -30,6 +30,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pre-commit-
 
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -130,8 +139,8 @@ jobs:
 
           ### Option 1: Download and apply the patch
           #### Method A: GitHub UI
-          1. Go to the **Actions** tab in this repository.
-          2. Find the workflow run for your PR.
+          1. Go to the "Actions" tab for this repository.
+          2. Find the workflow run for this PR (look for "Auto-Fix Pre-Commit Issues on PRs").
           3. Download the artifact named `pre-commit-fixes-${{ github.event.pull_request.number }}`.
           4. Extract `fixes.patch` from the downloaded artifact.
           5. Apply the patch:
@@ -154,7 +163,7 @@ jobs:
           \`\`\`bash
           poetry run pre-commit run --all-files
           git add .
-          git commit -m \"Apply pre-commit fixes\"
+          git commit -m "Apply pre-commit fixes"
           git push
           \`\`\`
 
