@@ -24,14 +24,14 @@
             <i class="fab fa-figma text-xl"></i>
         </a>
     </div> {% endcomment %}
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <!-- Header Section -->
         <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Team Overview</h1>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             Manage your organization's team members and their status reports
                         </p>
                     </div>
@@ -138,7 +138,7 @@
                                                 <i class="fas fa-users text-gray-400 dark:text-gray-600 text-2xl"></i>
                                             </div>
                                             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Members Found</h3>
-                                            <p class="text-gray-500 dark:text-gray-500 mb-4">Start building your team by adding members</p>
+                                            <p class="text-gray-500 dark:text-gray-400 mb-4">Start building your team by adding members</p>
                                             <a href="{% url 'team_overview' %}"
                                                class="inline-flex items-center gap-2 px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white font-medium rounded-lg transition-all duration-200">
                                                 <i class="fas fa-plus"></i>
@@ -161,7 +161,7 @@
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Status Reports</h2>
-                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Showing {{ daily_status_reports|length }} report{{ daily_status_reports|length|pluralize }} from {{ team_members|length }} member{{ team_members|length|pluralize }}
                         </p>
                     </div>
@@ -313,7 +313,7 @@
                                                 </svg>
                                             </div>
                                             <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No Reports Found</h3>
-                                            <p class="text-sm text-gray-500 dark:text-gray-500">Daily status reports will appear here when submitted</p>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">Daily status reports will appear here when submitted</p>
                                         </div>
                                     </td>
                                 </tr>
