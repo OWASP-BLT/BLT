@@ -39,5 +39,5 @@ def update_leaderboard_on_dsr_save(sender, instance, created, **kwargs):
             # LocMemCache fallback
             for order in ("score", "streak", "quality"):
                 for page in range(1, 20):
-                    cache_key = f"team_lb:{team.id}:{order}:{page}:20"
+                    cache_key = f"team_lb:{team.id}:{order}:{page}:{page_size}"
                     cache.delete(cache_key)

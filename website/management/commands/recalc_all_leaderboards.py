@@ -37,6 +37,7 @@ class Command(BaseCommand):
                     profile.leaderboard_score = score
                     profile.quality_score = breakdown.get("goals", 0)
                     profile.check_in_count = DailyStatusReport.objects.filter(user=user).count()
+                    profile.last_score_update = timezone.now()
                     profile.save(
                         update_fields=[
                             "leaderboard_score",
