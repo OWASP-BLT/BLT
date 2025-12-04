@@ -105,30 +105,31 @@ class IPRestrictMiddleware:
         """
         Increment the block count for a specific IP, network, or user agent in the Blocked model.
         """
-        with transaction.atomic():
-            if ip:
-                blocked_entry = Blocked.objects.select_for_update().filter(address=ip).first()
-            elif network:
-                blocked_entry = Blocked.objects.select_for_update().filter(ip_network=network).first()
-            elif user_agent:
-                # Correct lookup: find if any user_agent_string is a substring of the user_agent
-                blocked_entry = (
-                    Blocked.objects.select_for_update()
-                    .filter(
-                        user_agent_string__in=[
-                            agent
-                            for agent in Blocked.objects.values_list("user_agent_string", flat=True)
-                            if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
-                        ]
-                    )
-                    .first()
-                )
-            else:
-                return  # Nothing to increment
+        try:
+            with transaction.atomic():
+                # Check if we're in a broken transaction
+                if transaction.get_rollback():
+                    logger.warning("Skipping block count increment - transaction marked for rollback")
+                    return
 
-            if blocked_entry:
-                blocked_entry.count = models.F("count") + 1
-                blocked_entry.save(update_fields=["count"])
+                # Use atomic QuerySet.update() with F() instead of save()
+                if ip:
+                    Blocked.objects.filter(address=ip).update(count=models.F("count") + 1)
+                elif network:
+                    Blocked.objects.filter(ip_network=network).update(count=models.F("count") + 1)
+                elif user_agent:
+                    # Find matching user agents and update them
+                    matching_agents = [
+                        agent
+                        for agent in Blocked.objects.values_list("user_agent_string", flat=True)
+                        if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
+                    ]
+                    if matching_agents:
+                        Blocked.objects.filter(user_agent_string__in=matching_agents).update(
+                            count=models.F("count") + 1
+                        )
+        except Exception as e:
+            logger.error(f"Error incrementing block count: {str(e)}", exc_info=True)
 
     async def record_ip_async(self, ip, agent, path):
         """
@@ -143,29 +144,37 @@ class IPRestrictMiddleware:
         """
         Helper method to record IP information
         """
-        with transaction.atomic():
-            # create unique entry for every unique (ip,path) tuple
-            # if this tuple already exists, we just increment the count.
-            ip_records = IP.objects.select_for_update().filter(address=ip, path=path)
-            if ip_records.exists():
-                ip_record = ip_records.first()
+        try:
+            with transaction.atomic():
+                # Check if we're in a broken transaction
+                if transaction.get_rollback():
+                    logger.warning(f"Skipping IP recording for {ip} - transaction marked for rollback")
+                    return
 
-                # Calculate the new count and ensure it doesn't exceed the MAX_COUNT
-                new_count = ip_record.count + 1
-                if new_count > MAX_COUNT:
-                    new_count = MAX_COUNT
+                # Try to update existing record using atomic QuerySet.update() with F()
+                updated = IP.objects.filter(address=ip, path=path).update(
+                    agent=agent,
+                    count=models.Case(
+                        models.When(count__lt=MAX_COUNT, then=models.F("count") + 1),
+                        default=models.Value(MAX_COUNT),
+                        output_field=models.BigIntegerField(),
+                    ),
+                )
 
-                ip_record.agent = agent
-                ip_record.count = new_count
-                if ip_record.pk:
-                    ip_record.save(update_fields=["agent", "count"])
+                # If no record was updated, create a new one
+                if updated == 0:
+                    IP.objects.create(address=ip, agent=agent, count=1, path=path)
 
-                # Check if a transaction is already active before starting a new one
-                if not transaction.get_autocommit():
-                    ip_records.exclude(pk=ip_record.pk).delete()
-            else:
-                # If no record exists, create a new one
-                IP.objects.create(address=ip, agent=agent, count=1, path=path)
+                # Clean up any duplicate records (should be rare)
+                # Use a separate query to avoid issues with the atomic block
+                duplicates = IP.objects.filter(address=ip, path=path).order_by("created")[1:]
+                if duplicates.exists():
+                    duplicate_ids = list(duplicates.values_list("id", flat=True))
+                    IP.objects.filter(id__in=duplicate_ids).delete()
+
+        except Exception as e:
+            # Log the error but don't let it break the request
+            logger.error(f"Error recording IP {ip}: {str(e)}", exc_info=True)
 
     def __call__(self, request):
         return self.process_request_sync(request)

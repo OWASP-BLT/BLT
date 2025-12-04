@@ -24,7 +24,9 @@ from website.api.views import (
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
+    CheckDuplicateBugApiView,
     DomainViewSet,
+    FindSimilarBugsApiView,
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
@@ -35,6 +37,7 @@ from website.api.views import (
     OrganizationViewSet,
     ProjectViewSet,
     PublicJobListViewSet,
+    SearchHistoryApiView,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -250,6 +253,7 @@ from website.views.organization import (
     hunt_results,
     join_room,
     like_activity,
+    link_slack_channel_to_project,
     load_more_issues,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -261,6 +265,7 @@ from website.views.organization import (
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
+    slack_channels_list,
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
@@ -281,12 +286,14 @@ from website.views.ossh import (
 )
 from website.views.project import (
     ProjectBadgeView,
+    ProjectCompactListView,
     ProjectsDetailView,
     ProjectView,
     RepoBadgeView,
     RepoDetailView,
     blt_tomato,
     create_project,
+    delete_project,
     distribute_bacon,
     repo_activity_data,
     select_contribution,
@@ -536,6 +543,16 @@ urlpatterns = [
     ),
     re_path(r"^dashboard/organization/domains$", DomainList.as_view(), name="domain_list"),
     re_path(
+        r"^dashboard/organization/slack-channels$",
+        slack_channels_list,
+        name="slack_channels_list",
+    ),
+    path(
+        "dashboard/organization/slack-channels/link",
+        link_slack_channel_to_project,
+        name="link_slack_channel_to_project",
+    ),
+    re_path(
         r"^dashboard/organization/settings$",
         OrganizationSettings.as_view(),
         name="organization-settings",
@@ -682,6 +699,7 @@ urlpatterns = [
         name="googleplayapp",
     ),
     re_path(r"^projects/$", ProjectView.as_view(), name="project_list"),
+    re_path(r"^projects/compact/$", ProjectCompactListView.as_view(), name="project_compact_list"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -1084,6 +1102,7 @@ urlpatterns = [
     path("staking/leaderboard/", staking_leaderboard, name="staking_leaderboard"),
     path("staking/create/", create_staking_pool, name="create_staking_pool"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
+    path("project/<slug:slug>/delete/", delete_project, name="delete_project"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
@@ -1193,6 +1212,15 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
+    # Duplicate Bug Checking API
+    path(
+        "duplicate-check-example/",
+        TemplateView.as_view(template_name="duplicate_check_example.html"),
+        name="duplicate_check_example",
+    ),
+    path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
+    path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
+    path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
 ]
 
 if settings.DEBUG:
