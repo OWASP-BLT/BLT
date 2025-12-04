@@ -304,6 +304,8 @@ class SearchHistorySerializer(serializers.ModelSerializer):
         model = SearchHistory
         fields = ["id", "query", "search_type", "timestamp", "result_count"]
         read_only_fields = ["id", "timestamp"]
+
+
 class SecurityIncidentSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecurityIncident
