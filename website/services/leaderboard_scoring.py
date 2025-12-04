@@ -3,12 +3,12 @@ from decimal import Decimal
 
 from django.utils import timezone
 
-from website.models import UserProfile
-
 
 class LeaderboardScoringService:
     @staticmethod
     def calculate_for_user(user):
+        from website.models import UserProfile
+
         """
         Returns:
             score (float)
