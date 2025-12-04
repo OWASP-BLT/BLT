@@ -323,11 +323,12 @@
 {% block scripts %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
+        // Support dark mode for chart text colors
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        
         // Chart.js default configuration
         if (typeof Chart !== 'undefined') {
             Chart.defaults.font.family = "'Inter', 'system-ui', '-apple-system', 'sans-serif'";
-            // Support dark mode for chart text colors
-            const isDarkMode = document.documentElement.classList.contains('dark');
             Chart.defaults.color = isDarkMode ? '#D1D5DB' : '#4B5563';
             Chart.defaults.elements.arc.borderWidth = 3;
             Chart.defaults.elements.arc.borderColor = isDarkMode ? '#374151' : '#ffffff';
