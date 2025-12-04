@@ -1,5 +1,4 @@
 import logging
-import tempfile
 from pathlib import Path
 
 from django.conf import settings
@@ -14,23 +13,24 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from rest_framework import status
-
-# Django REST Framework imports
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-# Load environment
+# Load environment variables
 load_dotenv(find_dotenv(), override=True)
 
 BASE_DIR = Path(settings.BASE_DIR)
-
 logger = logging.getLogger(__name__)
 
+
 def log_chat(message_type, message):
+    """Unified logging for chatbot events."""
     logger.info(f"[{message_type.upper()}] {message}")
 
+
 def load_document(file_path):
+    """Load document using the appropriate loader based on file extension."""
     loaders = {
         ".pdf": PyPDFLoader,
         ".docx": Docx2txtLoader,
@@ -50,7 +50,7 @@ def load_document(file_path):
 
 
 def split_document(chunk_size, chunk_overlap, document):
-    """Split document text into chunks for embedding."""
+    """Split document text into smaller chunks for embedding."""
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -60,27 +60,19 @@ def split_document(chunk_size, chunk_overlap, document):
     return text_splitter.split_documents(document)
 
 
-def get_temp_db_path(db_folder_path):
-    """Create temporary directory for FAISS operations."""
-    temp_dir = tempfile.TemporaryDirectory()
-    db_folder_path = Path(db_folder_path)
-    temp_db_path = Path(temp_dir.name) / db_folder_path.name
-    temp_db_path.mkdir(parents=True, exist_ok=True)
-    return temp_dir, temp_db_path
-
-
 def embed_documents_and_save(embed_docs):
     """Embed and save documents to FAISS index using OpenAI embeddings."""
     db_folder_path = BASE_DIR / "faiss_index"
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    temp_dir, temp_db_path = get_temp_db_path(db_folder_path)
-
     try:
         if db_folder_path.exists() and any(db_folder_path.iterdir()):
             log_chat("info", f"Updating existing FAISS index at {db_folder_path}")
-            # Security note: allow_dangerous_deserialization required for FAISS load.
-            # Index files are stored securely and read-only.
+
+            # Security note:
+            # allow_dangerous_deserialization is required for FAISS load
+            # since FAISS uses pickle-based serialization.
+            # Index files are stored securely and not user-uploaded.
             db = FAISS.load_local(db_folder_path, embeddings, allow_dangerous_deserialization=True)
             db.add_documents(embed_docs)
         else:
@@ -93,14 +85,12 @@ def embed_documents_and_save(embed_docs):
     except Exception as e:
         log_chat("error", f"Error during FAISS update: {e}")
         raise
-    finally:
-        temp_dir.cleanup()
 
     return db
 
 
 def load_vector_store():
-    """Load existing FAISS index."""
+    """Load existing FAISS index from disk."""
     try:
         db_folder_path = Path(BASE_DIR) / "faiss_index"
         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
@@ -109,8 +99,7 @@ def load_vector_store():
             log_chat("warning", "No FAISS index found.")
             return None
 
-        # Security note: allow_dangerous_deserialization required for FAISS load.
-        # Index files are stored securely and read-only.
+        # Security note: required for FAISS load (safe in trusted environment)
         db = FAISS.load_local(db_folder_path, embeddings, allow_dangerous_deserialization=True)
         log_chat("info", "FAISS index loaded successfully.")
         return db
@@ -121,7 +110,7 @@ def load_vector_store():
 
 
 def conversation_chain(vector_store):
-    """Create conversational retrieval chain with OpenAI."""
+    """Create a retrieval-based conversation chain using OpenAI."""
     retriever = vector_store.as_retriever(search_kwargs={"k": 5})
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.4)
 
@@ -147,15 +136,15 @@ def conversation_chain(vector_store):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def chatbot_conversation(request):
-    """Main chatbot endpoint for user messages."""
+    """Main chatbot endpoint that handles user messages."""
     user_message = request.data.get("message", "").strip()
 
     if not user_message:
         return Response({"message": "Please type something."}, status=status.HTTP_200_OK)
 
     safe_message = escape(user_message)
-
     vector_store = load_vector_store()
+
     if vector_store:
         try:
             chain = conversation_chain(vector_store)
@@ -166,7 +155,6 @@ def chatbot_conversation(request):
 
             log_chat("input", safe_message)
             log_chat("output", answer)
-
             return Response({"message": answer}, status=status.HTTP_200_OK)
 
         except Exception as e:
