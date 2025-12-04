@@ -61,7 +61,7 @@ jobs:
         id: precommit
         continue-on-error: true
         run: |
-          pre-commit run --all-files
+          poetry run pre-commit run --all-files
 
       - name: Check if fixes are needed
         id: check_fixes
