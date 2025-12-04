@@ -103,7 +103,7 @@ class IssueScreenshotSerializer(serializers.ModelSerializer):
 
 class IssueSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    screenshots = IssueScreenshotSerializer(many=True, required=False)
+    screenshots = IssueScreenshotSerializer(many=True, read_only=True)
     screenshot = serializers.SerializerMethodField()
 
     class Meta:

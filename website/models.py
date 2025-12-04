@@ -878,8 +878,13 @@ def _move_image(name, storage, is_hidden):
     if new_name != name:
         try:
             storage.delete(name)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(
+                "Failed to delete old screenshot '%s' from storage '%s': %s",
+                name,
+                getattr(storage, "bucket_name", repr(storage)),
+                e,
+            )
 
     return new_name
 

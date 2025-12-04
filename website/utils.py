@@ -816,7 +816,7 @@ class twitter:
                 status = api.update_status(status=message)
 
             # Get tweet URL
-            tweet_url = f"https://x.com/user/status/{status.id}"
+            tweet_url = f"https://twitter.com/user/status/{status.id}"
 
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
@@ -1135,11 +1135,11 @@ def get_default_bacon_score(model_name, is_security=False):
 
 def generate_signed_url(blob_name: str, expiration: int = 3600) -> str:
     """
-    Generate a time-limited signed URL for the given blob name.
+    Generate a signed URL for a GCS object.
 
-    When GCS is configured, this returns a signed URL valid for the
-    specified number of seconds. If GCS is not configured, a RuntimeError
-    is raised and callers should fall back to the normal media URL.
+    This helper assumes that GCS is correctly configured and that is_using_gcs()
+    has already been checked by the caller. If the bucket configuration is
+    missing or invalid, a RuntimeError is raised to surface the misconfiguration.
     """
     client = storage.Client()
     bucket_name = getattr(
