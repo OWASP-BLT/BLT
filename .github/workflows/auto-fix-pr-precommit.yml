@@ -141,10 +141,8 @@ jobs:
 
           ### Option 1: Download and apply the patch
           #### Method A: GitHub UI
-          # Download the patch:
-          # 1. Go to the "Actions" tab for this repository.
-          # 2. Find the workflow run for this PR (look for "Auto-Fix Pre-Commit Issues on PRs").
-          # 3. Scroll down to the "Artifacts" section and download "fixes.patch".
+          1. Go to the "Actions" tab for this repository.
+          2. Find the workflow run for this PR (look for "Auto-Fix Pre-Commit Issues on PRs").
           3. Download the artifact named `pre-commit-fixes-${{ github.event.pull_request.number }}`.
           4. Extract `fixes.patch` from the downloaded artifact.
           5. Apply the patch:
@@ -167,7 +165,7 @@ jobs:
           \`\`\`bash
           poetry run pre-commit run --all-files
           git add .
-          git commit -m \"Apply pre-commit fixes\"
+          git commit -m "Apply pre-commit fixes"
           git push
           \`\`\`
 
