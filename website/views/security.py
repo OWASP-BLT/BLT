@@ -28,6 +28,8 @@ SEVERITY_ORDER = Case(
     output_field=IntegerField(),
 )
 
+SECURITY_LABEL_ID = 4
+
 
 def is_csv_rate_limited(user_id):
     """
@@ -202,7 +204,7 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context["incidents"] = page_obj.object_list
 
         # Hardcoding label 4 is not allowed because label IDs can change.
-        context["security_issues"] = Issue.objects.filter(label="Security").order_by("-created")[:10]
+        context["security_issues"] = Issue.objects.filter(label=SECURITY_LABEL_ID).order_by("-created")[:10]
 
         # Summary
         context["incident_count"] = filtered_queryset.count()

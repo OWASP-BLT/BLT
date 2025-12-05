@@ -40,7 +40,7 @@ class SecurityIncidentForm(forms.ModelForm):
         }
 
     def clean_affected_systems(self):
-        """Optional: normalize comma-separated list."""
+        """Strip leading/trailing whitespace from affected_systems."""
         value = self.cleaned_data.get("affected_systems", "")
         if value:
             return value.strip()
