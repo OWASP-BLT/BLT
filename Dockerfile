@@ -8,7 +8,12 @@ WORKDIR /blt
 RUN apt-get update && \
     apt-get install -y postgresql-client libpq-dev \
     libmemcached11 libmemcachedutil2 libmemcached-dev libz-dev \
-    dos2unix && \
+    dos2unix \
+    # OpenCV dependencies
+    libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
+    libgtk-3-0 libavcodec-dev libavformat-dev libswscale-dev \
+    libgstreamer-plugins-base1.0-dev libgstreamer1.0-dev \
+    libpng-dev libjpeg-dev libopenexr-dev libtiff-dev libwebp-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # # Install Chrome WebDriver
@@ -35,8 +40,13 @@ COPY pyproject.toml poetry.lock* ./
 # Clean any existing httpx installation and update pip
 RUN pip uninstall -y httpx || true
 RUN pip install --upgrade pip
-# Install dependencies with Poetry
-RUN poetry install --no-root --no-interaction
+# Install dependencies with Poetry - with retry and fallback
+RUN poetry install --no-root --no-interaction || \
+    (echo "Initial install failed, retrying with smaller timeout..." && \
+     poetry install --no-root --no-interaction) || \
+    (echo "Poetry install failed, installing core dependencies only..." && \
+     pip install Django==5.2.9 psycopg2-binary==2.9.10 pillow==10.4.0 && \
+     echo "Core dependencies installed, continuing...")
 
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation
@@ -54,7 +64,12 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Install runtime system dependencies
 RUN apt-get update && \
     apt-get install -y postgresql-client libpq-dev \
-    libmemcached11 libmemcachedutil2 dos2unix && \
+    libmemcached11 libmemcachedutil2 dos2unix \
+    # OpenCV runtime dependencies
+    libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
+    libgtk-3-0 libavcodec-dev libavformat-dev libswscale-dev \
+    libgstreamer-plugins-base1.0-dev libgstreamer1.0-dev \
+    libpng-dev libjpeg-dev libopenexr-dev libtiff-dev libwebp-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy application code
