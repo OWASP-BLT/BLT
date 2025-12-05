@@ -40,6 +40,8 @@ jobs:
             --json createdAt \
             --jq '[.[] | select((.createdAt | fromdateiso8601) > (now - 3600))] | length')
 
+          RECENT_PRS=${RECENT_PRS:-0}
+
           if [ "$RECENT_PRS" -ge 3 ]; then
             echo "throttled=true" >> "$GITHUB_OUTPUT"
             echo "⚠️ Rate limit hit: $RECENT_PRS auto-fix PRs in the last hour."
@@ -61,6 +63,7 @@ jobs:
           OPEN_FIX_PRS=$(gh pr list \
             --label "automated-fix" \
             --state open \
+            --head "${{ github.event.pull_request.head.ref }}" \
             --json number \
             --jq 'length')
 
@@ -81,7 +84,7 @@ jobs:
         id: bot_check
         run: |
           LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
-          if [[ "$LAST_COMMIT_MSG" == *"🤖 Auto-fix"* ]]; then
+          if [[ "$LAST_COMMIT_MSG" == *"🤖 Auto-fix:"* ]]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "🔁 Detected auto-fix commit; skipping to avoid loop."
           else
@@ -172,7 +175,7 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true'
         run: |
           FILE_COUNT=$(git diff --name-only | wc -l)
-          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= files)' || echo "0")
+          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= files?)' || echo "0")
 
           echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
           echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
