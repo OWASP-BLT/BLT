@@ -11,6 +11,7 @@ class SecurityIncidentForm(forms.ModelForm):
             "severity",
             "status",
             "affected_systems",
+            "description",
         ]
 
         widgets = {
@@ -27,6 +28,13 @@ class SecurityIncidentForm(forms.ModelForm):
                     "class": "form-control",
                     "placeholder": "List affected systems (comma-separated)",
                     "rows": 4,
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Detailed description of the incident",
+                    "rows": 6,
                 }
             ),
         }
