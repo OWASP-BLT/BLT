@@ -41,7 +41,7 @@ jobs:
             --json createdAt \
             --jq '[.[] | select((.createdAt | fromdateiso8601) > (now - 3600))] | length')
 
-            RECENT_PRS=${RECENT_PRS:-0}
+          RECENT_PRS=${RECENT_PRS:-0}
 
           if [ "$RECENT_PRS" -ge 3 ]; then
             echo "throttled=true" >> "$GITHUB_OUTPUT"
@@ -124,23 +124,11 @@ jobs:
             sleep "$delay"
           done
 
-      - name: Run pre-commit checks (with retry)
+      - name: Run pre-commit checks
         id: precommit
         continue-on-error: true
         run: |
-          max_retries=3
-          delay=10
-          attempt=1
-
-          until poetry run pre-commit run --all-files; do
-            if [ "$attempt" -ge "$max_retries" ]; then
-              echo "❌ pre-commit failed after $max_retries attempts"
-              exit 1
-            fi
-            echo "⚠️ pre-commit failed (attempt $attempt). Retrying in $delay seconds..."
-            attempt=$((attempt+1))
-            sleep "$delay"
-          done
+          poetry run pre-commit run --all-files
 
       - name: Check if fixes are needed
         id: check_fixes
