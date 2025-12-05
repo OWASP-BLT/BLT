@@ -102,16 +102,20 @@
         btn.classList.remove(
             'bg-[#e74c3c]', 
             'text-white',
+            'hover:bg-[#e74c3c]',
             'bg-white',
             'dark:bg-gray-800',
+            'hover:bg-gray-100',
+            'active:bg-gray-200',
+            'dark:hover:bg-gray-700'
         );
 
         // restore default
-        btn.classList.add('bg-white', 'dark:bg-gray-800' , 'hover:bg-gray-100');
+        btn.classList.add('bg-white', 'dark:bg-gray-800' , 'hover:bg-gray-100' , 'active:bg-gray-200' , 'dark:hover:bg-gray-700');
     });
 
-    button.classList.remove('bg-white', 'dark:bg-gray-800' , 'hover:bg-gray-100');
-    button.classList.add('bg-[#e74c3c]', 'text-white' , 'hover:bg-[#e74c3c]');
+    button.classList.remove('bg-white', 'dark:bg-gray-800' , 'hover:bg-gray-100' , 'active:bg-gray-200' , 'dark:hover:bg-gray-700');
+    button.classList.add('bg-[#e74c3c]', 'text-white' , 'hover:bg-[#e74c3c]','active:bg-[#e74c3c]');
     }
     
     function hideAllAddresses() {
