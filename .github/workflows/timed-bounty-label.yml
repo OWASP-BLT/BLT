@@ -41,8 +41,15 @@ jobs:
             }
 
             const durationHours = parseInt(timedMatch[2], 10);
+            const MAX_DURATION_HOURS = 720;
+
             if (Number.isNaN(durationHours) || durationHours <= 0) {
               console.log(`Invalid duration detected in label "${labelName}".`);
+              return;
+            }
+
+            if (durationHours > MAX_DURATION_HOURS) {
+              console.log(`Duration ${durationHours} hours exceeds maximum of ${MAX_DURATION_HOURS} hours (30 days).`);
               return;
             }
 
