@@ -147,8 +147,8 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true'
         run: |
           FILE_COUNT=$(git diff --name-only | wc -l)
-          INSERTIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= insertion)' || echo "0")
-          DELETIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= deletion)' || echo "0")
+          INSERTIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= insertions?)' || echo "0")
+          DELETIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= deletions?)' || echo "0")
           TOTAL_CHANGES=$((INSERTIONS + DELETIONS))
 
           echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
