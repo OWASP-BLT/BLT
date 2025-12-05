@@ -232,7 +232,7 @@ def handle_post_save(sender, instance, created, **kwargs):
 def handle_pre_delete(sender, instance, **kwargs):
     """Generic handler for pre_delete signal."""
     if sender in [Issue, Hunt, IpReport, Post]:
-        create_activity(instance, "deleted")
+        _safe_create_activity(instance, "deleted")
 
 
 @receiver(post_save, sender=TimeLog)
@@ -256,8 +256,8 @@ def handle_organization_creation(sender, instance, created, **kwargs):
     """Give bacon to user when they create an organization"""
     if created and instance.admin:
         # Create an activity first so it's included in the AI analysis
-        create_activity(instance, "created")
+        _safe_create_activity(instance, "created")
         # Give bacon tokens using AI analysis or fallback to default (10)
-        giveBacon(instance.admin, instance=instance, action_type="created")
+        _safe_give_bacon(instance.admin, instance=instance, action_type="created")
         # Give first organization badge
-        assign_first_action_badge(instance.admin, "First Organization Created")
+        _safe_assign_badge(instance.admin, "First Organization Created")
