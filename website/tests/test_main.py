@@ -241,9 +241,10 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertNotIn("TransactionManagementError", page_content, "Transaction error encountered")
         self.assertNotIn("Server Error", page_content, "Server error encountered")
 
-        # Verify the bug was actually created in the database
-        from website.models import Issue
+        # Verify the bug appears in the UI
+        self.assertIn("XSS Attack on Google", page_content, "Bug was not found in activity feed UI")
 
+        # Verify the bug was actually created in the database
         bug_exists = Issue.objects.filter(user__username="bugbug", description="XSS Attack on Google").exists()
         self.assertTrue(bug_exists, "Bug report was not found in database after submission")
 
