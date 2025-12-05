@@ -41,12 +41,10 @@ COPY pyproject.toml poetry.lock* ./
 RUN pip uninstall -y httpx || true
 RUN pip install --upgrade pip
 # Install dependencies with Poetry - with retry and fallback
-RUN poetry install --no-root --no-interaction || \
-    (echo "Initial install failed, retrying with smaller timeout..." && \
-     poetry install --no-root --no-interaction) || \
+RUN poetry install --no-root --no-interaction --no-ansi || \
     (echo "Poetry install failed, installing core dependencies only..." && \
-     pip install Django==5.2.9 psycopg2-binary==2.9.10 pillow==10.4.0 && \
-     echo "Core dependencies installed, continuing...")
+     pip install Django==5.2.9 psycopg2-binary==2.9.10 pillow==10.4.0 opencv-python-headless==4.10.0.84 && \
+      echo "Core dependencies installed, continuing...")
 
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation
