@@ -45,9 +45,12 @@ def webhook_rate_limit(max_calls=10, period=60):
             try:
                 current = cache.incr(cache_key)
             except ValueError:
-                # Key doesn't exist, initialize it
-                cache.set(cache_key, 1, timeout=period)
-                current = 1
+                # Key doesn't exist, initialize it atomically
+                if cache.add(cache_key, 1, timeout=period):
+                    current = 1
+                else:
+                    # Another thread initialized; increment
+                    current = cache.incr(cache_key)
 
             if current > max_calls:
                 logger.warning(f"Webhook rate limit exceeded for {func.__name__} from {ip}")
