@@ -94,29 +94,32 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
             return HttpResponse(
                 "CSV export rate limit exceeded. Please try again in a minute.", status=429, content_type="text/plain"
             )
+        try:
+            queryset = SecurityIncident.objects.all().order_by("-created_at")
+            queryset = self.apply_filters(queryset)
 
-        queryset = SecurityIncident.objects.all().order_by("-created_at")
-        queryset = self.apply_filters(queryset)
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = "attachment; filename=security_incidents.csv"
 
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = "attachment; filename=security_incidents.csv"
+            writer = csv.writer(response)
+            writer.writerow(["ID", "Title", "Severity", "Status", "Created At", "Affected Systems"])
 
-        writer = csv.writer(response)
-        writer.writerow(["ID", "Title", "Severity", "Status", "Created At", "Affected Systems"])
+            for incident in queryset:
+                writer.writerow(
+                    [
+                        incident.id,
+                        _escape_csv_formula(incident.title),
+                        incident.severity,
+                        incident.status,
+                        incident.created_at,
+                        _escape_csv_formula(incident.affected_systems or ""),
+                    ]
+                )
 
-        for incident in queryset:
-            writer.writerow(
-                [
-                    incident.id,
-                    _escape_csv_formula(incident.title),
-                    incident.severity,
-                    incident.status,
-                    incident.created_at,
-                    _escape_csv_formula(incident.affected_systems or ""),
-                ]
-            )
-
-        return response
+            return response
+        except Exception:  # noqa: BLE001 – log and surface a controlled error
+            logger.exception("Error while generating SecurityIncident CSV export")
+            return HttpResponse("Error generating CSV export.", status=500, content_type="text/plain")
 
     def apply_filters(self, queryset):
         """
@@ -203,7 +206,7 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context["page_obj"] = page_obj
         context["incidents"] = page_obj.object_list
 
-        # Hardcoding label 4 is not allowed because label IDs can change.
+        # 4 is the "Security" label in Issue.label choices; keep in sync with Issue model.
         context["security_issues"] = Issue.objects.filter(label=SECURITY_LABEL_ID).order_by("-created")[:10]
 
         # Summary

@@ -40,8 +40,8 @@ class SecurityIncidentForm(forms.ModelForm):
         }
 
     def clean_affected_systems(self):
-        """Strip leading/trailing whitespace from affected_systems."""
-        value = self.cleaned_data.get("affected_systems", "")
-        if value:
-            return value.strip()
-        return value
+        """Normalize comma-separated affected_systems (strip items, drop empties)."""
+        raw = self.cleaned_data.get("affected_systems", "") or ""
+        parts = [p.strip() for p in raw.split(",")]
+        normalized = ", ".join(p for p in parts if p)
+        return normalized
