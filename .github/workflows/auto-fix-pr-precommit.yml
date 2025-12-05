@@ -175,14 +175,16 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true'
         run: |
           FILE_COUNT=$(git diff --name-only | wc -l)
-          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= files?)' || echo "0")
+          INSERTIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= insertion)' || echo "0")
+          DELETIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= deletion)' || echo "0")
+          TOTAL_CHANGES=$((INSERTIONS + DELETIONS))
 
           echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
           echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
 
           if [ "${FILE_COUNT:-0}" -gt 100 ] || [ "${TOTAL_CHANGES:-0}" -gt 1000 ]; then
             echo "too_large=true" >> $GITHUB_OUTPUT
-            echo "⚠️ Diff too large: $FILE_COUNT files / $TOTAL_CHANGES changes"
+            echo "⚠️ Diff too large: $FILE_COUNT files / $TOTAL_CHANGES line changes" 
           else
             echo "too_large=false" >> $GITHUB_OUTPUT
           fi
