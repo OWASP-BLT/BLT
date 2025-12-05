@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0259_add_search_history"),
         ("website", "0259_githubissue_bounty_expiry_date"),
