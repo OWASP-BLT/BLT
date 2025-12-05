@@ -16,6 +16,7 @@ concurrency:
 jobs:
   check-and-fix-main:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: |
       !endsWith(github.actor, '[bot]') &&
       github.event.head_commit != null && !contains(github.event.head_commit.message, '🤖 Auto-fix:')
@@ -104,15 +105,39 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Install dependencies
+      - name: Install dependencies (with retry)
         run: |
-          poetry install --with dev --no-interaction
+          max_retries=3
+          delay=10
+          attempt=1
 
-      - name: Run pre-commit checks
+          until poetry install --with dev --no-interaction; do
+            if [ "$attempt" -ge "$max_retries" ]; then
+              echo "❌ poetry install failed after $max_retries attempts"
+              exit 1
+            fi
+            echo "⚠️ poetry install failed (attempt $attempt). Retrying in $delay seconds..."
+            attempt=$((attempt+1))
+            sleep "$delay"
+          done
+
+      - name: Run pre-commit checks (with retry)
         id: precommit
         continue-on-error: true
         run: |
-          poetry run pre-commit run --all-files
+          max_retries=3
+          delay=10
+          attempt=1
+
+          until poetry run pre-commit run --all-files; do
+            if [ "$attempt" -ge "$max_retries" ]; then
+              echo "❌ pre-commit failed after $max_retries attempts"
+              exit 1
+            fi
+            echo "⚠️ pre-commit failed (attempt $attempt). Retrying in $delay seconds..."
+            attempt=$((attempt+1))
+            sleep "$delay"
+          done
 
       - name: Check if fixes are needed
         id: check_fixes
