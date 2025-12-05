@@ -12,7 +12,7 @@ permissions:
 jobs:
   check-and-fix-main:
     runs-on: ubuntu-latest
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '🤖 Auto-fix:')
     
     steps:
       - name: Checkout branch
