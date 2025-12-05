@@ -1,180 +1,56 @@
-# BugHeist Platform Features
+# OWASP BLT — Features (Up to Date)
 
-## 🐛 Core Features
+This document summarizes BLT features implemented or surfaced in the current codebase. Use website/templates/features.html as the UI source-of-truth and the referenced code files for implementation details.
 
-### Bug Bounty Platform
-- **Bug Reporting System**
-  - Detailed bug submission forms
-  - File attachment support
-  - Bug categorization and tagging
-  - Severity level classification
-  - Bug status tracking
-  - Comment and discussion system
+Core
+- Backend: Django (project root blt/) with views, management commands, REST endpoints.
+- Frontend: Django templates + Tailwind CSS. Static JS lives under website/static/.
+- Real-time: Django Channels + Redis used for WebSocket consumers.
+- Data: PostgreSQL for primary data; Redis for cache/queues.
 
-- **Bounty Management**
-  - Bounty creation and management
-  - Bidding system for bug fixes
-  - Bounty payout processing
-  - Payment tracking and history
-  - Multiple payment method support
+Authentication & Access
+- Local accounts and OAuth providers supported.
+- Teams, Organizations, Projects, and Repository membership modeled and surfaced in UI.
 
-### User Management
-- **User Profiles**
-  - Customizable user profiles
-  - Achievement badges
-  - Skill showcase
-  - Activity history
-  - Social media integration
+Reporting & Discovery
+- Bug discovery, reporting, and issue tracking UIs implemented.
+- Repository discovery and basic scanning logic implemented in website/management/commands/fetch_os_repos.py.
 
-- **Authentication & Security**
-  - Multi-factor authentication
-  - OAuth integration (GitHub, Google)
-  - IP tracking and reporting
-  - Account security settings
-  - Privacy controls
+Automation & Bots
+- BLT Slack Bot and related setup documented (docs/bot-setup.md) and has UI pages.
+- Some automation features (GitHub integration, GitHub Actions links) are surfaced in the UI.
 
-### Community Features
-- **Social Interaction**
-  - Real-time messaging
-  - Team collaboration
-  - Friend system
-  - Activity feed
-  - Comment and discussion threads
+Gamification & Rewards
+- BACON token / rewards system present (templates and pages).
+- Points, badges, leaderboards, and streak systems are implemented or surfaced.
 
-- **Leaderboards & Gamification**
-  - Global leaderboard
-  - Monthly rankings
-  - Team leaderboards
-  - Achievement system
-  - Point-based rewards
+AI & Advanced Tools (evolving)
+- Chat Bot, AI Issue Generator, PR Review, Similarity-scan, AI-Assisted Coder appear as UI cards. Many are in-progress or have partial backend support; treat them as feature-flagged or experimental until code is audited.
 
-## 🎯 Specialized Features
+Time Tracking & Productivity
+- Sizzle (time tracking) templates and pages exist.
 
-### Bug Hunting Tools
-- **Bug Scanner**
-  - OWASP compliance checking
-  - Similarity scanning
-  - Domain analysis
-  - IP tracking
-  - Automated vulnerability detection
+Analytics & Dashboards
+- Stats Dashboard and Website Stats pages are present.
 
-- **GitHub Integration**
-  - Issue tracking
-  - Pull request analysis
-  - Repository integration
-  - Issue synchronization
-  - Code review tools
+Developer Tools & Templates
+- Template List and developer API/Swagger surfaced.
+- Trademark Search and other utilities are available as UI cards.
 
-### Organization Features
-- **Team Management**
-  - Team creation and management
-  - Role-based access control
-  - Team challenges
-  - Team statistics
-  - Member management
+Seeded Content & Educational Features
+- Seeded "adventures" and tasks are created via website/management/commands/seed_adventures.py.
 
-- **Project Management**
-  - Project tracking
-  - Bug assignment
-  - Progress monitoring
-  - Project analytics
-  - Custom project settings
+Docs & Contribution
+- Contribution guide enforces Poetry, pre-commit, Black/isort/ruff, djLint, and JS console rule. Follow CONTRIBUTING.md for development workflow and CI rules.
 
-### Educational Resources
-- **Learning Platform**
-  - Educational content
-  - Tutorials and guides
-  - Best practices
-  - Security guidelines
-  - Training materials
+How to verify implementation
+- UI cards: website/templates/features.html
+- Seeded adventures: website/management/commands/seed_adventures.py
+- Repo discovery: website/management/commands/fetch_os_repos.py
+- Roadmap/feature metadata: website/views/core.py (RoadmapView)
+- Slack Bot docs: docs/bot-setup.md
+- Contribution rules and linters: CONTRIBUTING.md
 
-- **Hackathons & Challenges**
-  - Hackathon hosting
-  - Challenge creation
-  - Competition management
-  - Results tracking
-  - Prize distribution
-
-## 🛠️ Technical Features
-
-### Platform Infrastructure
-- **Real-time Features**
-  - WebSocket support
-  - Live notifications
-  - Real-time chat
-  - Instant updates
-  - Video conferencing
-
-- **API & Integration**
-  - RESTful API
-  - Third-party integrations
-  - Webhook support
-  - Custom integrations
-  - API documentation
-
-### Analytics & Reporting
-- **Statistics & Analytics**
-  - User statistics
-  - Bug tracking metrics
-  - Project analytics
-  - Performance monitoring
-  - Custom reports
-
-- **Dashboard & Monitoring**
-  - Custom dashboards
-  - Status monitoring
-  - Performance tracking
-  - System health checks
-  - Usage analytics
-
-## 🌐 Additional Features
-
-### Content Management
-- **Blog & Documentation**
-  - Blog platform
-  - Documentation system
-  - Knowledge base
-  - FAQ management
-  - Content versioning
-
-- **Search & Discovery**
-  - Advanced search
-  - Filtering options
-  - Tag-based navigation
-  - Content categorization
-  - Search history
-
-### Security & Compliance
-- **Security Features**
-  - IP tracking
-  - Banned apps management
-  - Security scanning
-  - Compliance checking
-  - Privacy controls
-
-- **Legal & Compliance**
-  - Terms of service
-  - Privacy policy
-  - Trademark management
-  - Legal documentation
-  - Compliance tracking
-
-## 🚀 Future Features (Roadmap)
-- Enhanced mobile support
-- Advanced AI-powered bug detection
-- Expanded payment options
-- Improved collaboration tools
-- Advanced analytics dashboard
-- Extended API capabilities
-- Enhanced security features
-- More integration options
-
-## 🔧 Technical Stack
-- Backend: Django
-- Frontend: Tailwind CSS
-- Database: SQLite/PostgreSQL
-- Real-time: WebSocket
-- Authentication: OAuth2
-- Payment Processing: Multiple providers
-- API: RESTful
-- Deployment: Docker support 
+Notes
+- Many AI features are UI-first. Before enabling in production, audit the backend and any external services they depend on.
+- Keep this doc updated when adding new feature cards or exposing experimental features in the UI.
