@@ -81,7 +81,7 @@ jobs:
           echo "📍 Current branch: $CURRENT_BRANCH"
           
           # Create unique branch name
-          BRANCH_NAME="fix/pre-commit-main-$(date +%Y%m%d-%H%M%S)-$(openssl rand -hex 4)"
+          BRANCH_NAME="fix/pre-commit-main-$(date +%Y%m%d-%H%M%S)-${{ github.run_id }}"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "base_branch=$CURRENT_BRANCH" >> $GITHUB_OUTPUT
           echo "🌿 New branch: $BRANCH_NAME"
@@ -119,7 +119,7 @@ jobs:
           echo "🔄 Creating pull request..."
           
           # Get list of changed files with better error handling
-          if CHANGED_FILES_RAW=$(git diff --name-only ${{ steps.create_branch.outputs.base_branch }}..${{ steps.create_branch.outputs.branch_name }} 2>&1); then
+          if CHANGED_FILES_RAW=$(git diff --name-only ${{ steps.create_branch.outputs.base_branch }}...${{ steps.create_branch.outputs.branch_name }} 2>&1); then
             FILE_COUNT=$(echo "$CHANGED_FILES_RAW" | wc -l)
             if [ "$FILE_COUNT" -gt 20 ]; then
               CHANGED_FILES=$(echo "$CHANGED_FILES_RAW" | head -20)
