@@ -147,7 +147,7 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true'
         run: |
           FILE_COUNT=$(git diff --name-only | wc -l)
-          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= file)' || echo "0")
+          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= files)' || echo "0")
 
           echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
           echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
@@ -312,18 +312,19 @@ jobs:
       - name: Verify pre-commit passes after fixes
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.push_fixes.outputs.push_successful == 'true'
         id: verify_precommit
-        continue-on-error: true
         run: |
+          set +e
           echo "🔍 Verifying pre-commit passes after fixes..."
           poetry run pre-commit run --all-files
-          
-          if [ $? -eq 0 ]; then
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -eq 0 ]; then
             echo "✅ Pre-commit verification passed!"
             echo "precommit_verified=true" >> $GITHUB_OUTPUT
           else
             echo "❌ Pre-commit still failing after auto-fixes"
             echo "precommit_verified=false" >> $GITHUB_OUTPUT
           fi
+          exit 0
 
       - name: Fail if pre-commit still failing
         if: steps.check_fixes.outputs.fixes_needed == 'true' &&
@@ -339,6 +340,25 @@ jobs:
           echo "::error::Pre-commit still failing after auto-fixes. Manual intervention required."
           exit 1
 
+      - name: Ensure labels exist
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.push_fixes.outputs.push_successful == 'true' &&
+            steps.verify_precommit.outputs.precommit_verified == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create or update labels; --force makes this idempotent
+          gh label create "automated-fix" \
+            --color "0ea16" \
+            --description "Automated fixes applied" \
+            --force || true
+
+          gh label create "pre-commit" \
+            --color "1d76db" \
+            --description "Pre-commit related" \
+            --force || true
+
       - name: Add labels to PR
         if: steps.check_fixes.outputs.fixes_needed == 'true' &&
             steps.check_diff_size.outputs.too_large != 'true' &&
@@ -347,7 +367,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr edit ${{ github.event.pull_request.number }} --add-label "automated-fix,pre-commit"
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --add-label "automated-fix" \
+            --add-label "pre-commit"
 
       - name: Comment on PR with fixes
         if: steps.check_fixes.outputs.fixes_needed == 'true' &&

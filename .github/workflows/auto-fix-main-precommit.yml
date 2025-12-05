@@ -298,12 +298,32 @@ jobs:
           Please review and merge the PR to apply the fixes to the main branch." \
             || echo "⚠️ Could not add comment to commit"
 
+      - name: Ensure labels exist
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.create_pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create or update labels; --force makes these idempotent
+          gh label create "automated-fix" \
+            --color "0ea16" \
+            --description "Automated fixes applied" \
+            --force || true
+
+          gh label create "pre-commit" \
+            --color "1d76db" \
+            --description "Pre-commit related" \
+            --force || true
+
       - name: Add labels to PR
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.create_pr.outputs.pr_number != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr edit ${{ steps.create_pr.outputs.pr_number }} --add-label "automated-fix,pre-commit"
+          gh pr edit ${{ steps.create_pr.outputs.pr_number }} \
+            --add-label "automated-fix" \
+            --add-label "pre-commit"
 
       - name: Summary
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
