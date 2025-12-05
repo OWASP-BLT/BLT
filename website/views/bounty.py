@@ -42,14 +42,19 @@ def webhook_rate_limit(max_calls=10, period=60):
             ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR")
             cache_key = f"webhook_ratelimit_{func.__name__}_{ip}"
 
-            current = cache.get(cache_key, 0)
-            if current >= max_calls:
+            try:
+                current = cache.incr(cache_key)
+            except ValueError:
+                # Key doesn't exist, initialize it
+                cache.set(cache_key, 1, timeout=period)
+                current = 1
+
+            if current > max_calls:
                 logger.warning(f"Webhook rate limit exceeded for {func.__name__} from {ip}")
                 return JsonResponse(
                     {"status": "error", "message": "Rate limit exceeded. Please try again later."}, status=429
                 )
 
-            cache.set(cache_key, current + 1, timeout=period)
             return func(request, *args, **kwargs)
 
         return wrapper
