@@ -16,7 +16,9 @@ concurrency:
 jobs:
   check-and-fix-main:
     runs-on: ubuntu-latest
-    if: github.actor != 'github-actions[bot]' && (github.event.head_commit == null || !contains(github.event.head_commit.message || '', '🤖 Auto-fix:'))
+    if: |
+      !endsWith(github.actor, '[bot]') &&
+      (github.event.head_commit == null || !contains(github.event.head_commit.message || '', '🤖 Auto-fix:'))
     
     steps:
       - name: Checkout branch
@@ -129,7 +131,7 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true'
         run: |
           FILE_COUNT=$(git diff --name-only | wc -l)
-          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= file)')
+          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= files)')
 
           echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
           echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
