@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       !endsWith(github.actor, '[bot]') &&
-      (github.event.head_commit == null || !contains(github.event.head_commit.message || '', '🤖 Auto-fix:'))
+      github.event.head_commit != null && !contains(github.event.head_commit.message, '🤖 Auto-fix:')
     
     steps:
       - name: Checkout branch
@@ -309,7 +309,7 @@ jobs:
         run: |
           # Create or update labels; --force makes these idempotent
           gh label create "automated-fix" \
-            --color "0ea16" \
+            --color "0e8a16" \
             --description "Automated fixes applied" \
             --force || true
 

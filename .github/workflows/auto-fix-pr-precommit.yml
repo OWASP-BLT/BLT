@@ -350,7 +350,7 @@ jobs:
         run: |
           # Create or update labels; --force makes this idempotent
           gh label create "automated-fix" \
-            --color "0ea16" \
+            --color "0e8a16" \
             --description "Automated fixes applied" \
             --force || true
 
