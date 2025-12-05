@@ -774,11 +774,12 @@ def get_page_votes(template_name):
 def validate_screenshot_hash(screenshot_hash):
     """
     Validate that the screenshot_hash only contains alphanumeric characters,
-    hyphens, or underscores.
+    hyphens, underscores, or a single dot (for file extension).
+    Prevents path traversal by disallowing consecutive dots and ensuring exactly one extension.
     """
-    if not re.match(r"^[a-zA-Z0-9_-]+$", screenshot_hash):
+    if ".." in screenshot_hash or not re.match(r"^[a-zA-Z0-9_-]+\.[a-zA-Z0-9]+$", screenshot_hash):
         raise ValidationError(
-            "Invalid screenshot hash. Only alphanumeric characters, hyphens, and underscores are allowed."
+            "Invalid screenshot hash. Must contain alphanumeric characters, hyphens, underscores, and exactly one extension."
         )
 
 
