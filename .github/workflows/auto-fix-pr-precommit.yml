@@ -78,9 +78,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          git add .
-          git commit -m "🤖 Auto-fix: Apply pre-commit fixes
 
           This commit automatically applies formatting and linting fixes:
           - Black code formatting

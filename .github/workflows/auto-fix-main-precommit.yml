@@ -117,7 +117,7 @@ jobs:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           echo "🔄 Creating pull request..."
-          
+
           # Get list of changed files with better error handling
           if CHANGED_FILES_RAW=$(git diff --name-only ${{ steps.create_branch.outputs.base_branch }}...${{ steps.create_branch.outputs.branch_name }} 2>&1); then
             FILE_COUNT=$(echo "$CHANGED_FILES_RAW" | wc -l)
@@ -134,9 +134,10 @@ jobs:
             echo "⚠️ Warning: Unable to retrieve changed files list"
             SHOW_FILES_SECTION=false
           fi
-          
+
           # Write PR body to a temporary file
           PR_BODY_FILE=$(mktemp)
+          trap 'rm -f "$PR_BODY_FILE"' EXIT
           cat > "$PR_BODY_FILE" <<EOF
           ## 🤖 Automated Pre-Commit Fixes
 
@@ -153,7 +154,7 @@ jobs:
           - **Author**: @${{ github.actor }}
           - **Message**: \`${COMMIT_MESSAGE}\`
           EOF
-          
+
           # Only add files section if we successfully retrieved the list
           if [ "$SHOW_FILES_SECTION" = true ]; then
             cat >> "$PR_BODY_FILE" <<EOF
@@ -170,7 +171,7 @@ jobs:
           _(Unable to retrieve changed files list. Check the commit diff in the PR for details.)_
           EOF
           fi
-          
+
           cat >> "$PR_BODY_FILE" <<EOF
 
           ### 🏷️ Labels
@@ -181,7 +182,7 @@ jobs:
 
           _This PR was automatically created by the auto-fix-main-precommit workflow._
           EOF
-          
+
           # Create PR using the body file
           PR_DATA=$(gh pr create \
             --base "${{ steps.create_branch.outputs.base_branch }}" \
@@ -189,15 +190,13 @@ jobs:
             --title "🤖 Auto-fix: Apply pre-commit fixes to main" \
             --body-file "$PR_BODY_FILE" \
             --json url,number)
-          
+
           PR_URL=$(echo "$PR_DATA" | jq -r '.url')
           PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number')
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
           echo "✅ PR created successfully: $PR_URL"
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           echo "📋 PR Number: #$PR_NUMBER"
-
-          rm -f "$PR_BODY_FILE"
 
       - name: Comment on original commit
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.create_pr.outputs.pr_url != ''
