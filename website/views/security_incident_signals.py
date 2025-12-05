@@ -23,8 +23,7 @@ def get_current_user():
 @receiver(pre_save, sender=SecurityIncident)
 def capture_old_incident_state(sender, instance, **kwargs):
     """
-    Capture the current DB state using SELECT ... FOR UPDATE
-    to prevent race conditions on concurrent updates.
+    Capture the persisted state for comparison (locking handled in caller if needed)
     """
     if not instance.pk:
         # New object → no previous state

@@ -151,6 +151,8 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         elif date_range == "30d":
             queryset = queryset.filter(created_at__gte=now - timedelta(days=30))
         elif start_date and end_date:
+            if start_date > end_date:
+                start_date, end_date = end_date, start_date
             queryset = queryset.filter(created_at__date__gte=start_date, created_at__date__lte=end_date)
 
         # Sorting
@@ -199,7 +201,7 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context["page_obj"] = page_obj
         context["incidents"] = page_obj.object_list
 
-        # Related Issues (label=4)
+        # Hardcoding label 4 is not allowed because label IDs can change.
         context["security_issues"] = Issue.objects.filter(label="Security").order_by("-created")[:10]
 
         # Summary
