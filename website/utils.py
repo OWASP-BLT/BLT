@@ -1320,7 +1320,7 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
         # Reset file pointer for potential reuse
         try:
             image_file.seek(0)
-        except:
+        except (AttributeError, IOError, ValueError):
             pass
 
 
