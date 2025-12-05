@@ -816,7 +816,7 @@ class twitter:
                 status = api.update_status(status=message)
 
             # Get tweet URL
-            tweet_url = f"https://x.com/user/status/{status.id}"
+            tweet_url = f"https://x.com/{status.user.screen_name}/status/{status.id}"
 
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
@@ -1276,9 +1276,6 @@ def overlay_faces(image, color=(0, 0, 0)):
             logging.info(f"Successfully overlaid {len(faces)} face(s) in image")
         else:
             logging.info("No faces detected in image")
-            # For testing: add a small black square in the top-left to verify processing occurred
-            cv2.rectangle(image, (10, 10), (50, 50), (0, 0, 0), thickness=cv2.FILLED)
-            logging.info("Added test marker (no faces found)")
 
         return image
 
@@ -1387,12 +1384,6 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
             # Convert to RGB if necessary
             if pil_image.mode != "RGB":
                 pil_image = pil_image.convert("RGB")
-
-            # Add a small black rectangle in corner to indicate processing occurred
-            from PIL import ImageDraw
-
-            draw = ImageDraw.Draw(pil_image)
-            draw.rectangle([10, 10, 50, 50], fill=(0, 0, 0))
 
             # Save as JPEG
             output_buffer = io.BytesIO()
