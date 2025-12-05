@@ -9,6 +9,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: auto-fix-main
+  cancel-in-progress: true
+
 jobs:
   check-and-fix-main:
     runs-on: ubuntu-latest
@@ -21,6 +25,54 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref }}
+
+      - name: Check recent auto-fix PRs (rate limit)
+        id: throttle_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RECENT_PRS=$(gh pr list \
+            --label "automated-fix" \
+            --state open \
+            --json createdAt \
+            --jq '[.[] | select((.createdAt | fromdateiso8601) > (now - 3600))] | length')
+
+          if [ "$RECENT_PRS" -ge 3 ]; then
+            echo "throttled=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Rate limit hit: $RECENT_PRS auto-fix PRs in the last hour."
+          else
+            echo "throttled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if throttled
+        if: steps.throttle_check.outputs.throttled == 'true'
+        run: |
+          echo "⚠️ Rate limit reached. Skipping auto-fix to prevent spam."
+          exit 0
+
+      - name: Check for existing auto-fix PR
+        id: existing_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_FIX_PRS=$(gh pr list \
+            --label "automated-fix" \
+            --state open \
+            --json number \
+            --jq 'length')
+
+          if [ "$OPEN_FIX_PRS" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Open auto-fix PR already exists."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if auto-fix PR already exists
+        if: steps.existing_pr.outputs.exists == 'true'
+        run: |
+          echo "⚠️ Auto-fix PR already open; skipping to avoid duplicates."
+          exit 0
 
       - name: Cache pre-commit hooks
         uses: actions/cache@v4
@@ -72,8 +124,37 @@ jobs:
             echo "❌ Pre-commit failed but no auto-fixes available"
           fi
 
-      - name: Create fix branch and commit
+      - name: Check diff size
+        id: check_diff_size
         if: steps.check_fixes.outputs.fixes_needed == 'true'
+        run: |
+          FILE_COUNT=$(git diff --name-only | wc -l)
+          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= file)')
+
+          echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
+          echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
+
+          if [ "${FILE_COUNT:-0}" -gt 100 ] || [ "${TOTAL_CHANGES:-0}" -gt 1000 ]; then
+            echo "too_large=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Diff too large: $FILE_COUNT files / $TOTAL_CHANGES changes"
+          else
+            echo "too_large=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if diff too large
+        if: steps.check_diff_size.outputs.too_large == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## ⚠️ Auto-fix Skipped: Diff Too Large" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Changed files: ${{ steps.check_diff_size.outputs.files_changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "Total changes: ${{ steps.check_diff_size.outputs.total_changes }}" >> $GITHUB_STEP_SUMMARY
+          echo "Auto-fix would modify too many files. Manual review recommended." >> $GITHUB_STEP_SUMMARY
+          exit 0
+
+      - name: Create fix branch and commit
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
         id: create_branch
         run: |
           # Get current branch name
@@ -88,13 +169,13 @@ jobs:
           
           # Configure git
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
           # Create and switch to new branch
           git checkout -b $BRANCH_NAME
           
           # Commit changes
-          git add .
+          git add -u
           git commit -m "🤖 Auto-fix: Apply pre-commit fixes to main
 
           This commit automatically applies formatting and linting fixes:
@@ -110,7 +191,7 @@ jobs:
           echo "✅ Branch pushed successfully"
 
       - name: Create Pull Request
-        if: steps.check_fixes.outputs.fixes_needed == 'true'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
         id: create_pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -175,7 +256,7 @@ jobs:
           cat >> "$PR_BODY_FILE" <<EOF
 
           ### 🏷️ Labels
-          Please manually add these labels: \`automated-fix\`, \`pre-commit\`
+          Labels applied automatically: \`automated-fix\`, \`pre-commit\`
 
           ---
           **⚠️ Please review these changes before merging.**
@@ -199,7 +280,7 @@ jobs:
           echo "📋 PR Number: #$PR_NUMBER"
 
       - name: Comment on original commit
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.create_pr.outputs.pr_url != ''
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.create_pr.outputs.pr_url != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -217,8 +298,15 @@ jobs:
           Please review and merge the PR to apply the fixes to the main branch." \
             || echo "⚠️ Could not add comment to commit"
 
+      - name: Add labels to PR
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.create_pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit ${{ steps.create_pr.outputs.pr_number }} --add-label "automated-fix,pre-commit"
+
       - name: Summary
-        if: steps.check_fixes.outputs.fixes_needed == 'true'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
         run: |
           echo "## 🎉 Auto-fix Workflow Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -233,7 +321,8 @@ jobs:
           echo "👉 **Next Steps**: Review and merge the PR to apply fixes" >> $GITHUB_STEP_SUMMARY
 
       - name: Notify on failure
-        if: steps.precommit.outcome == 'failure' && steps.check_fixes.outputs.fixes_needed == 'false'
+        if: steps.precommit.outcome == 'failure' &&
+            steps.check_fixes.outputs.fixes_needed == 'false'
         run: |
           echo "## ❌ Pre-commit Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

@@ -15,18 +15,80 @@ concurrency:
 jobs:
   check-and-fix-pr:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.full_name == github.repository
-    
+    if: |
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'github-actions[bot]'
+
     steps:
-      - name: Checkout PR branch
+      - name: Checkout branch
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+
+      - name: Check recent auto-fix PRs (rate limit)
+        id: throttle_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RECENT_PRS=$(gh pr list \
+            --label "automated-fix" \
+            --state open \
+            --json createdAt \
+            --jq '[.[] | select((.createdAt | fromdateiso8601) > (now - 3600))] | length')
+
+          if [ "$RECENT_PRS" -ge 3 ]; then
+            echo "throttled=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Rate limit hit: $RECENT_PRS auto-fix PRs in the last hour."
+          else
+            echo "throttled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if throttled
+        if: steps.throttle_check.outputs.throttled == 'true'
+        run: |
+          echo "⚠️ Rate limit reached. Skipping auto-fix to prevent spam."
+          exit 0
+
+      - name: Check for existing auto-fix PR
+        id: existing_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_FIX_PRS=$(gh pr list \
+            --label "automated-fix" \
+            --state open \
+            --json number \
+            --jq 'length')
+
+          if [ "$OPEN_FIX_PRS" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Open auto-fix PR already exists."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if auto-fix PR already exists
+        if: steps.existing_pr.outputs.exists == 'true'
+        run: |
+          echo "⚠️ Auto-fix PR already open; skipping to avoid duplicates."
+          exit 0
+
+      - name: Check if triggered by bot commit
+        id: bot_check
+        run: |
+          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LAST_COMMIT_MSG" == *"🤖 Auto-fix"* ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "🔁 Detected auto-fix commit; skipping to avoid loop."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Cache pre-commit hooks
+        if: steps.bot_check.outputs.skip == 'false'
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
@@ -35,6 +97,7 @@ jobs:
             ${{ runner.os }}-pre-commit-
 
       - name: Cache Poetry dependencies
+        if: steps.bot_check.outputs.skip == 'false'
         uses: actions/cache@v4
         with:
           path: |
@@ -46,26 +109,30 @@ jobs:
             ${{ runner.os }}-poetry-
 
       - name: Set up Python
+        if: steps.bot_check.outputs.skip == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11.2'
 
       - name: Install Poetry
+        if: steps.bot_check.outputs.skip == 'false'
         run: pip install poetry
 
       - name: Install dependencies
+        if: steps.bot_check.outputs.skip == 'false'
         run: |
           poetry install --with dev --no-interaction
 
       - name: Run pre-commit checks
+        if: steps.bot_check.outputs.skip == 'false'
         id: precommit
         continue-on-error: true
         run: |
           poetry run pre-commit run --all-files
 
       - name: Check if fixes are needed
+        if: steps.bot_check.outputs.skip == 'false' && steps.precommit.outcome == 'failure'
         id: check_fixes
-        if: steps.precommit.outcome == 'failure'
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo "fixes_needed=true" >> $GITHUB_OUTPUT
@@ -75,9 +142,38 @@ jobs:
             echo "❌ Pre-commit failed but no auto-fixes available"
           fi
 
-      - name: Detect conflicting commits with retry
-        id: detect_conflict
+      - name: Check diff size
+        id: check_diff_size
         if: steps.check_fixes.outputs.fixes_needed == 'true'
+        run: |
+          FILE_COUNT=$(git diff --name-only | wc -l)
+          TOTAL_CHANGES=$(git diff --stat | tail -1 | grep -oP '\d+(?= file)' || echo "0")
+
+          echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
+          echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
+
+          if [ "${FILE_COUNT:-0}" -gt 100 ] || [ "${TOTAL_CHANGES:-0}" -gt 1000 ]; then
+            echo "too_large=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Diff too large: $FILE_COUNT files / $TOTAL_CHANGES changes"
+          else
+            echo "too_large=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if diff too large
+        if: steps.check_diff_size.outputs.too_large == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## ⚠️ Auto-fix Skipped: Diff Too Large" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Changed files: ${{ steps.check_diff_size.outputs.files_changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "Total changes: ${{ steps.check_diff_size.outputs.total_changes }}" >> $GITHUB_STEP_SUMMARY
+          echo "Auto-fix would modify too many files. Manual review recommended." >> $GITHUB_STEP_SUMMARY
+          exit 0
+
+      - name: Detect conflicting commits with retry
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
+        id: detect_conflict
         env:
           BRANCH_REF: ${{ github.event.pull_request.head.ref }}
           MAX_RETRIES: 3
@@ -118,7 +214,7 @@ jobs:
           exit 1
 
       - name: Handle conflicting commits
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.detect_conflict.outputs.conflict_detected == 'true'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.detect_conflict.outputs.conflict_detected == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -141,7 +237,7 @@ jobs:
           exit 0
 
       - name: Commit and push fixes with retry
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.detect_conflict.outputs.conflict_detected == 'false'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.detect_conflict.outputs.conflict_detected == 'false'
         id: push_fixes
         env:
           BRANCH_REF: ${{ github.event.pull_request.head.ref }}
@@ -151,7 +247,7 @@ jobs:
           set +e
           
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
           for attempt in $(seq 1 $MAX_RETRIES); do
             echo "Attempt $attempt/$MAX_RETRIES: Attempting to push fixes..."
@@ -214,7 +310,7 @@ jobs:
           exit 1
 
       - name: Verify pre-commit passes after fixes
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.push_fixes.outputs.push_successful == 'true'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.push_fixes.outputs.push_successful == 'true'
         id: verify_precommit
         continue-on-error: true
         run: |
@@ -230,7 +326,10 @@ jobs:
           fi
 
       - name: Fail if pre-commit still failing
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.push_fixes.outputs.push_successful == 'true' && steps.verify_precommit.outputs.precommit_verified == 'false'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.push_fixes.outputs.push_successful == 'true' &&
+            steps.verify_precommit.outputs.precommit_verified == 'false'
         run: |
           echo "## ❌ Auto-fix Applied But Pre-commit Still Failing" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -241,15 +340,20 @@ jobs:
           exit 1
 
       - name: Add labels to PR
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.push_fixes.outputs.push_successful == 'true' && steps.verify_precommit.outputs.precommit_verified == 'true'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.push_fixes.outputs.push_successful == 'true' &&
+            steps.verify_precommit.outputs.precommit_verified == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr edit ${{ github.event.pull_request.number }} \
-            --add-label "automated-fix,pre-commit"
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "automated-fix,pre-commit"
 
       - name: Comment on PR with fixes
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.push_fixes.outputs.push_successful == 'true' && steps.verify_precommit.outputs.precommit_verified == 'true'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.push_fixes.outputs.push_successful == 'true' &&
+            steps.verify_precommit.outputs.precommit_verified == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -269,7 +373,7 @@ jobs:
           The fixes have been committed directly to this PR branch and verified."
 
       - name: Success summary (fixes applied)
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.push_fixes.outputs.push_successful == 'true' && steps.verify_precommit.outputs.precommit_verified == 'true'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.push_fixes.outputs.push_successful == 'true' && steps.verify_precommit.outputs.precommit_verified == 'true'
         run: |
           echo "## ✅ Auto-fix Applied and Verified Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -288,7 +392,7 @@ jobs:
           echo "All pre-commit checks passed successfully. No fixes needed!" >> $GITHUB_STEP_SUMMARY
 
       - name: Failure summary (push failed)
-        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.push_fixes.outputs.push_successful == 'false'
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.push_fixes.outputs.push_successful == 'false'
         run: |
           echo "## ⚠️ Auto-fix Failed to Push" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -306,7 +410,8 @@ jobs:
           exit 1
 
       - name: Notify on precommit failure
-        if: steps.precommit.outcome == 'failure' && steps.check_fixes.outputs.fixes_needed == 'false'
+        if: steps.precommit.outcome == 'failure' &&
+            steps.check_fixes.outputs.fixes_needed == 'false'
         run: |
           echo "## ❌ Pre-commit Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
