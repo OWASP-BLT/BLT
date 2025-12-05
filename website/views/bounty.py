@@ -2,8 +2,10 @@ import json
 import logging
 import os
 import secrets
+from functools import wraps
 
 import requests
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -25,10 +27,43 @@ def _coerce_to_bool(value):
     return False
 
 
+def webhook_rate_limit(max_calls=10, period=60):
+    """
+    Rate limit decorator for webhook endpoints.
+    Args:
+        max_calls: Maximum number of calls allowed
+        period: Time period in seconds
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(request, *args, **kwargs):
+            # Use IP-based rate limiting for webhooks
+            ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR")
+            cache_key = f"webhook_ratelimit_{func.__name__}_{ip}"
+
+            current = cache.get(cache_key, 0)
+            if current >= max_calls:
+                logger.warning(f"Webhook rate limit exceeded for {func.__name__} from {ip}")
+                return JsonResponse(
+                    {"status": "error", "message": "Rate limit exceeded. Please try again later."}, status=429
+                )
+
+            cache.set(cache_key, current + 1, timeout=period)
+            return func(request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 @csrf_exempt
 @require_POST
+@webhook_rate_limit(max_calls=10, period=60)
 def timed_bounty(request):
     """Record timed bounty metadata supplied by GitHub Actions."""
+
+    MAX_DURATION_HOURS = 720
 
     try:
         expected_token = os.environ.get("BLT_API_TOKEN")
@@ -80,6 +115,28 @@ def timed_bounty(request):
         if timezone.is_naive(expiry_dt):
             expiry_dt = timezone.make_aware(expiry_dt, timezone.utc)
 
+        # Validate duration is reasonable
+        now = timezone.now()
+        duration_seconds = (expiry_dt - now).total_seconds()
+        duration_hours = duration_seconds / 3600
+
+        if duration_hours > MAX_DURATION_HOURS:
+            logger.warning(
+                f"Bounty duration {duration_hours:.1f} hours exceeds maximum {MAX_DURATION_HOURS} hours "
+                f"for issue #{issue_number}"
+            )
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Bounty duration exceeds maximum of {MAX_DURATION_HOURS} hours (30 days)",
+                },
+                status=400,
+            )
+
+        if duration_hours < 0:
+            logger.warning(f"Bounty expiry date is in the past for issue #{issue_number}")
+            return JsonResponse({"status": "error", "message": "Bounty expiry date cannot be in the past"}, status=400)
+
         github_issue.bounty_expiry_date = expiry_dt
         github_issue.save(update_fields=["bounty_expiry_date"])
 
@@ -107,11 +164,13 @@ def timed_bounty(request):
 
 @csrf_exempt
 @require_POST
+@webhook_rate_limit(max_calls=20, period=60)
 def bounty_payout(request):
     """
     Minimal working version: Handle bounty payout webhook from GitHub Action.
     Processes payment and updates issue with comment and labels.
     """
+
     try:
         # Validate API token using constant-time comparison
         expected_token = os.environ.get("BLT_API_TOKEN")
