@@ -71,11 +71,13 @@ from website.models import (
     IssueScreenshot,
     Points,
     Repo,
+    SpamDetection,
     User,
     UserProfile,
     Wallet,
 )
 from website.utils import (
+    check_for_spam_llm,
     get_client_ip,
     get_email_from_domain,
     get_page_votes,
@@ -83,6 +85,7 @@ from website.utils import (
     is_valid_https_url,
     rebuild_safe_url,
     safe_redirect_request,
+    send_spam_notification_email,
     validate_screenshot_hash,
 )
 
@@ -1111,6 +1114,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
 
+            # Check for spam in description and markdown_description using LLM
+            combined_text = f"{obj.description or ''} {obj.markdown_description or ''}"
+            is_spam, spam_reason, confidence = check_for_spam_llm(combined_text, user=obj.user, request=self.request)
+
+            # If flagged as spam, save the issue but create a spam detection record
+            if is_spam and confidence > 0.6:  # Only flag if confidence is high enough
+                logger.warning(
+                    f"Spam detected in issue creation by {obj.user.username if obj.user else 'anonymous'}: {spam_reason} (confidence: {confidence})"
+                )
+
             parsed_url = urlparse(obj.url)
             clean_domain = parsed_url.netloc
             clean_domain_no_www = clean_domain.replace("www.", "")
@@ -1391,6 +1404,45 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.team_members.set(team_members_id)
 
             obj.save()
+
+            # Handle spam detection - create record and notify admins if flagged
+            if is_spam and confidence > 0.6:
+                # Determine the user for spam detection record
+                spam_user = (
+                    obj.user if obj.user else (self.request.user if self.request.user.is_authenticated else None)
+                )
+
+                # Only create spam detection if we have a valid user
+                if spam_user:
+                    spam_detection = SpamDetection.objects.create(
+                        content_type="issue",
+                        content_id=obj.id,
+                        user=spam_user,
+                        text_content=combined_text[:5000],  # Truncate if too long
+                        detection_reason=spam_reason,
+                        confidence_score=confidence,
+                        status="pending",
+                    )
+
+                    # Send email to admins using helper function
+                    send_spam_notification_email(
+                        spam_detection=spam_detection,
+                        content_type="issue",
+                        content_id=obj.id,
+                        user=spam_user,
+                        text_preview=combined_text,
+                        confidence=confidence,
+                        reason=spam_reason,
+                    )
+
+                # Show user a message that their submission is under review
+                messages.success(
+                    self.request,
+                    "Thank you for your submission! Your report is under review and will be published once approved.",
+                )
+            else:
+                # Normal success message for non-spam content
+                messages.success(self.request, "Bug added!")
 
             if not report_anonymous:
                 if self.request.user.is_authenticated:
