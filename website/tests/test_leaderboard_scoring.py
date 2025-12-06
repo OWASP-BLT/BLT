@@ -1,11 +1,11 @@
 import datetime
+import sys
 from datetime import timedelta
 from decimal import Decimal
 from io import StringIO
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.management import call_command
 from django.test import TestCase

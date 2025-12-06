@@ -1592,16 +1592,23 @@ class TeamMemberLeaderboardAPIView(APIView):
         if not team:
             return Response({"detail": "User has no team"}, status=400)
 
-        # -------- Sorting --------
+        # Sorting with validation
         sort_param = request.GET.get("order_by", "score")
         ordering_map = {
             "score": "-leaderboard_score",
             "streak": "-current_streak",
             "quality": "-quality_score",
         }
-        ordering = ordering_map.get(sort_param, "-leaderboard_score")
 
-        # -------- Pagination --------
+        # Validate order_by parameter
+        if sort_param not in ordering_map:
+            return Response(
+                {"detail": "Invalid order_by parameter. Allowed values: score, streak, quality"}, status=400
+            )
+
+        ordering = ordering_map[sort_param]
+
+        # Pagination
         try:
             page = int(request.GET.get("page", 1))
             page_size = int(request.GET.get("page_size", 20))
@@ -1612,14 +1619,14 @@ class TeamMemberLeaderboardAPIView(APIView):
         if page < 1 or page_size < 1 or page_size > 100:
             return Response({"detail": "Invalid pagination parameters"}, status=400)
 
-        # -------- Cache Key --------
+        #  Cache Key
         cache_key = f"team_lb:{team.id}:{sort_param}:{page}:{page_size}"
         cached_value = cache.get(cache_key)
 
         if cached_value:
             return Response(cached_value)
 
-        # -------- Queryset --------
+        # Queryset
         queryset = UserProfile.objects.filter(team=team).select_related("user").order_by(ordering)
 
         total_count = queryset.count()
@@ -1639,7 +1646,7 @@ class TeamMemberLeaderboardAPIView(APIView):
             "ordering": sort_param,
         }
 
-        # -------- Store in Cache for 5 minutes --------
+        # Store in Cache for 5 minutes
         cache.set(cache_key, response_data, timeout=300)
 
         return Response(response_data)
