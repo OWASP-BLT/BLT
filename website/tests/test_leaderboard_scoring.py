@@ -29,20 +29,20 @@ class LeaderboardSignalTest(TestCase):
         with patch("website.leaderboard.transaction.atomic"):
             with patch.object(UserProfile, "update_streak_and_award_points") as mock_update:
                 with patch.object(UserProfile, "calculate_leaderboard_score") as mock_calc:
-                    # Create DSR
-                    dsr = DailyStatusReport.objects.create(
-                        user=self.user, date=timezone.now().date(), goal_accomplished=True
-                    )
+                    # Reset mocks to ensure clean state
+                    mock_update.reset_mock()
+                    mock_calc.reset_mock()
 
-                    # Trigger signal
-                    update_leaderboard_on_dsr_save(sender=DailyStatusReport, instance=dsr, created=True)
+                    # Create DSR - this will trigger save() and the signal
+                    DailyStatusReport.objects.create(user=self.user, date=timezone.now().date(), goal_accomplished=True)
 
+                    # The signal should have been triggered by save()
                     mock_update.assert_called_once()
                     mock_calc.assert_called_once()
 
     def test_signal_respects_skip_flag(self):
         """Test that signal skips when flag is set"""
-        dsr = DailyStatusReport.objects.create(user=self.user, goal_accomplished=True)
+        dsr = DailyStatusReport.objects.create(user=self.user, date=timezone.now().date(), goal_accomplished=True)
         dsr._skip_leaderboard_update = True
 
         with patch("website.leaderboard.transaction.atomic") as mock_atomic:
@@ -148,8 +148,8 @@ class UserProfileLeaderboardScoreTest(TestCase):
 
         # First call
         self.user_profile.calculate_leaderboard_score()
+        self.user_profile.refresh_from_db()
         first_update_time = self.user_profile.last_score_update
-
         # Second call with different values
         mock_calculate.return_value = (Decimal("90.00"), {"goals": Decimal("95.00")})
         self.user_profile.calculate_leaderboard_score()

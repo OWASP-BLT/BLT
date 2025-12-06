@@ -23,10 +23,12 @@ class LeaderboardScoringEdgeCaseTest(TestCase):
 
     def test_perfect_frequency(self):
         """Test 100% frequency score"""
+        current_time = timezone.now()
         # Create 22 reports (perfect frequency)
         for i in range(22):
             DailyStatusReport.objects.create(
                 user=self.user,
+                date=current_time.date(),
                 created=timezone.now() - timedelta(days=i),
                 goal_accomplished=True,
                 previous_work="Work",
@@ -40,8 +42,16 @@ class LeaderboardScoringEdgeCaseTest(TestCase):
 
     def test_empty_fields(self):
         """Test reports with missing/empty fields"""
+        current_time = timezone.now()
         DailyStatusReport.objects.create(
-            user=self.user, goal_accomplished=False, previous_work="", next_plan="", blockers="", current_mood=""
+            user=self.user,
+            date=current_time.date(),
+            created=current_time,
+            goal_accomplished=False,
+            previous_work="",
+            next_plan="",
+            blockers="",
+            current_mood="",
         )
 
         score, breakdown = LeaderboardScoringService.calculate_for_user(self.user)
