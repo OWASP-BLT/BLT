@@ -449,7 +449,7 @@
         const toggleButton = document.getElementById('toggleToken');
         const tokenInput = document.getElementById('bot_token');
         const eyeIcon = document.getElementById('eyeIcon');
-        
+
         toggleButton.addEventListener('click', function() {
             if (tokenInput.type === 'password') {
                 tokenInput.type = 'text';
@@ -505,16 +505,16 @@
         // Update preview with Slack markdown rendering - XSS safe using DOM manipulation
         function updatePreview() {
             const text = welcomeTextarea.value || 'No message set';
-            
+
             // Clear previous content
             previewContent.textContent = '';
-            
+
             // Parse text into lines
             const lines = text.split('\n');
-            
+
             lines.forEach((line, index) => {
                 const lineContainer = document.createElement('div');
-                
+
                 // Check for quote
                 if (line.startsWith('>')) {
                     const blockquote = document.createElement('blockquote');
@@ -524,23 +524,23 @@
                 } else {
                     parseInlineFormatting(line, lineContainer);
                 }
-                
+
                 previewContent.appendChild(lineContainer);
-                
+
                 // Add spacing between lines except last
                 if (index < lines.length - 1 && line.trim() !== '') {
                     previewContent.appendChild(document.createElement('br'));
                 }
             });
         }
-        
+
         // Parse inline formatting (bold, italic, code, etc.) safely using DOM
         function parseInlineFormatting(text, container) {
             if (!text) {
                 container.textContent = '';
                 return;
             }
-            
+
             // Regex patterns for Slack markdown
             const patterns = [
                 { regex: /\*([^*]+)\*/g, tag: 'strong' },  // *bold*
@@ -548,9 +548,9 @@
                 { regex: /~([^~]+)~/g, tag: 'del' },       // ~strikethrough~
                 { regex: /`([^`]+)`/g, tag: 'code', className: 'bg-gray-100 px-1 py-0.5 rounded text-xs text-[#e74c3c]' }  // `code`
             ];
-            
+
             let segments = [{ text: text, type: 'text' }];
-            
+
             // Apply each pattern
             patterns.forEach(pattern => {
                 const newSegments = [];
@@ -559,40 +559,40 @@
                         newSegments.push(segment);
                         return;
                     }
-                    
+
                     let lastIndex = 0;
                     let match;
                     const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
-                    
+
                     while ((match = regex.exec(segment.text)) !== null) {
                         // Add text before match
                         if (match.index > lastIndex) {
-                            newSegments.push({ 
-                                text: segment.text.substring(lastIndex, match.index), 
+                            newSegments.push({
+                                text: segment.text.substring(lastIndex, match.index),
                                 type: 'text'
                             });
                         }
                         // Add formatted match
-                        newSegments.push({ 
-                            text: match[1], 
+                        newSegments.push({
+                            text: match[1],
                             type: 'formatted',
                             tag: pattern.tag,
                             className: pattern.className
                         });
                         lastIndex = regex.lastIndex;
                     }
-                    
+
                     // Add remaining text
                     if (lastIndex < segment.text.length) {
-                        newSegments.push({ 
-                            text: segment.text.substring(lastIndex), 
+                        newSegments.push({
+                            text: segment.text.substring(lastIndex),
                             type: 'text'
                         });
                     }
                 });
                 segments = newSegments;
             });
-            
+
             // Build DOM elements safely using textContent
             segments.forEach(segment => {
                 if (segment.type === 'formatted') {
@@ -617,14 +617,14 @@
                 const start = textarea.selectionStart;
                 const end = textarea.selectionEnd;
                 const selectedText = textarea.value.substring(start, end) || 'text';
-                
+
                 let formattedText;
                 if (format === '>') {
                     formattedText = '>' + selectedText;
                 } else {
                     formattedText = format + selectedText + format;
                 }
-                
+
                 textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
                 textarea.focus();
                 textarea.setSelectionRange(start + format.length, start + format.length + selectedText.length);
@@ -690,14 +690,14 @@
             const start = welcomeTextarea.selectionStart;
             const end = welcomeTextarea.selectionEnd;
             const text = welcomeTextarea.value;
-            
+
             welcomeTextarea.value = text.substring(0, start) + emoji + text.substring(end);
             welcomeTextarea.focus();
-            
+
             // Set cursor position after emoji
             const newPosition = start + emoji.length;
             welcomeTextarea.setSelectionRange(newPosition, newPosition);
-            
+
             updateCharCount();
         }
 
@@ -706,7 +706,7 @@
         testIntegrationBtn.addEventListener('click', async function() {
             const btn = this;
             const originalContent = btn.innerHTML;
-            
+
             // Show loading state
             btn.disabled = true;
             btn.innerHTML = `
@@ -716,7 +716,7 @@
                 </svg>
                 Testing...
             `;
-            
+
             try {
                 const response = await fetch('{% url "test_slack_integration" organization %}', {
                     method: 'POST',
@@ -725,9 +725,9 @@
                         'X-CSRFToken': '{{ csrf_token }}'
                     }
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
                     btn.classList.add('bg-green-50', 'text-green-700', 'border-green-300');
@@ -747,7 +747,7 @@
                         ${data.message}
                     `;
                 }
-                
+
                 // Reset button after 3 seconds
                 setTimeout(() => {
                     btn.disabled = false;
@@ -764,7 +764,7 @@
                     </svg>
                     Connection Error
                 `;
-                
+
                 setTimeout(() => {
                     btn.className = 'inline-flex items-center px-4 py-2.5 bg-white text-gray-700 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 shadow-sm';
                     btn.innerHTML = originalContent;
@@ -777,22 +777,22 @@
         const userIdInput = document.getElementById('slack_user_id');
         const userResultContainer = document.getElementById('userResultContainer');
         const userErrorContainer = document.getElementById('userErrorContainer');
-        
+
         lookupUserBtn.addEventListener('click', async function() {
             const userId = userIdInput.value.trim();
-            
+
             if (!userId) {
                 showUserError('Please enter a Slack User ID');
                 return;
             }
-            
+
             const btn = this;
             const originalContent = btn.innerHTML;
-            
+
             // Hide previous results
             userResultContainer.classList.add('hidden');
             userErrorContainer.classList.add('hidden');
-            
+
             // Show loading state
             btn.disabled = true;
             btn.innerHTML = `
@@ -802,7 +802,7 @@
                 </svg>
                 Searching...
             `;
-            
+
             try {
                 const response = await fetch('{% url "lookup_slack_user" organization %}', {
                     method: 'POST',
@@ -812,9 +812,9 @@
                     },
                     body: JSON.stringify({ user_id: userId })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showUserResult(data.user);
                 } else {
@@ -827,14 +827,14 @@
                 btn.innerHTML = originalContent;
             }
         });
-        
+
         // Allow Enter key to trigger search
         userIdInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 lookupUserBtn.click();
             }
         });
-        
+
         function showUserResult(user) {
             userErrorContainer.classList.add('hidden');
 
@@ -889,7 +889,7 @@
 
             userResultContainer.classList.remove('hidden');
         }
-        
+
         function showUserError(message) {
             userResultContainer.classList.add('hidden');
             document.getElementById('userErrorMessage').textContent = message;

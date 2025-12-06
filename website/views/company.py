@@ -44,6 +44,9 @@ from website.utils import check_security_txt, format_timedelta, is_valid_https_u
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
 
+# Slack user ID validation pattern
+SLACK_USER_ID_PATTERN = r"^U[A-Z0-9]+$"
+
 
 def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
@@ -1574,11 +1577,11 @@ class TestSlackIntegrationView(View):
 
             try:
                 response = app.client.auth_test()
-                
+
                 if response.get("ok"):
                     team_name = response.get("team", "Unknown")
                     bot_user = response.get("user", "Unknown")
-                    
+
                     return JsonResponse(
                         {
                             "success": True,
@@ -1649,7 +1652,7 @@ class LookupSlackUserView(View):
                 )
 
             # Validate user ID format (Slack user IDs start with U and are alphanumeric)
-            if not re.match(r"^U[A-Z0-9]+$", user_id):
+            if not re.match(SLACK_USER_ID_PATTERN, user_id):
                 return JsonResponse(
                     {
                         "success": False,
@@ -1660,14 +1663,14 @@ class LookupSlackUserView(View):
 
             # Lookup user using users.info API
             app = App(token=slack_integration.bot_access_token)
-            
+
             try:
                 response = app.client.users_info(user=user_id)
-                
+
                 if response.get("ok") and response.get("user"):
                     user = response.get("user")
                     profile = user.get("profile", {})
-                    
+
                     return JsonResponse(
                         {
                             "success": True,
