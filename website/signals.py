@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=DailyStatusReport)
-def update_leaderboard_on_dsr_save(sender, instance, created, **kwargs):
+def update_leaderboard_on_dsr_save(_sender, instance, created, **_kwargs):
     user = instance.user
 
     if getattr(instance, "_skip_leaderboard_update", False):
@@ -29,5 +29,5 @@ def update_leaderboard_on_dsr_save(sender, instance, created, **kwargs):
     if team:
         try:
             cache.delete_pattern(f"team_lb:{team.id}:*")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Cache pattern deletion failed (expected for LocMemCache): {e}")
