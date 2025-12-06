@@ -56,6 +56,17 @@
                                 </div>
                             </div>
                         </div>
+                        <button type="button"
+                                id="testIntegrationBtn"
+                                class="inline-flex items-center px-4 py-2.5 bg-white text-gray-700 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 shadow-sm">
+                            <svg class="w-5 h-5 mr-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Test Integration
+                        </button>
                     </div>
                 </div>
             </div>
@@ -116,6 +127,75 @@
                                         </svg>
                                         Token is securely stored and cannot be modified
                                     </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- User Lookup Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">User Lookup</h2>
+                        <p class="text-sm text-gray-500 mt-1">Search for a Slack user by their User ID</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="max-w-2xl">
+                            <div class="flex gap-3">
+                                <div class="flex-1">
+                                    <label for="slack_user_id"
+                                           class="block text-sm font-medium text-gray-900 mb-2">Slack User ID</label>
+                                    <input type="text"
+                                           id="slack_user_id"
+                                           placeholder="e.g., U01234ABCDE"
+                                           class="block w-full rounded-lg border border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm px-4 py-3 bg-white"
+                                           maxlength="15" />
+                                    <p class="mt-2 text-sm text-gray-500">Enter a Slack user ID to lookup their username and profile</p>
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button"
+                                            id="lookupUserBtn"
+                                            class="inline-flex items-center px-4 py-3 bg-[#e74c3c] text-white rounded-lg font-medium hover:bg-red-700 transition-all duration-200 shadow-sm">
+                                        <svg class="w-5 h-5 mr-2"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                        Search
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- User Result Display -->
+                            <div id="userResultContainer" class="mt-4 hidden">
+                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200">
+                                    <div class="flex items-start gap-4">
+                                        <div id="userAvatar" class="w-12 h-12 bg-gray-300 rounded-lg flex-shrink-0"></div>
+                                        <div class="flex-1">
+                                            <h3 id="userName" class="text-base font-semibold text-gray-900"></h3>
+                                            <p id="userRealName" class="text-sm text-gray-600 mt-1"></p>
+                                            <div class="mt-2 space-y-1">
+                                                <p class="text-xs text-gray-500">
+                                                    <span class="font-medium">User ID:</span>
+                                                    <span id="userIdDisplay" class="font-mono"></span>
+                                                </p>
+                                                <p id="userEmail" class="text-xs text-gray-500"></p>
+                                                <p id="userTimezone" class="text-xs text-gray-500"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="userErrorContainer" class="mt-4 hidden">
+                                <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                    <div class="flex items-start gap-3">
+                                        <svg class="w-5 h-5 text-red-500 flex-shrink-0"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <p id="userErrorMessage" class="text-sm text-red-700"></p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -619,6 +699,179 @@
             welcomeTextarea.setSelectionRange(newPosition, newPosition);
             
             updateCharCount();
+        }
+
+        // Test Integration Button
+        const testIntegrationBtn = document.getElementById('testIntegrationBtn');
+        testIntegrationBtn.addEventListener('click', async function() {
+            const btn = this;
+            const originalContent = btn.innerHTML;
+            
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-2 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Testing...
+            `;
+            
+            try {
+                const response = await fetch('{% url "test_slack_integration" organization %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+                    btn.classList.add('bg-green-50', 'text-green-700', 'border-green-300');
+                    btn.innerHTML = `
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        ${data.message}
+                    `;
+                } else {
+                    btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+                    btn.classList.add('bg-red-50', 'text-red-700', 'border-red-300');
+                    btn.innerHTML = `
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        ${data.message}
+                    `;
+                }
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.className = 'inline-flex items-center px-4 py-2.5 bg-white text-gray-700 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 shadow-sm';
+                    btn.innerHTML = originalContent;
+                }, 3000);
+            } catch (error) {
+                btn.disabled = false;
+                btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+                btn.classList.add('bg-red-50', 'text-red-700', 'border-red-300');
+                btn.innerHTML = `
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Connection Error
+                `;
+                
+                setTimeout(() => {
+                    btn.className = 'inline-flex items-center px-4 py-2.5 bg-white text-gray-700 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 shadow-sm';
+                    btn.innerHTML = originalContent;
+                }, 3000);
+            }
+        });
+
+        // User Lookup Button
+        const lookupUserBtn = document.getElementById('lookupUserBtn');
+        const userIdInput = document.getElementById('slack_user_id');
+        const userResultContainer = document.getElementById('userResultContainer');
+        const userErrorContainer = document.getElementById('userErrorContainer');
+        
+        lookupUserBtn.addEventListener('click', async function() {
+            const userId = userIdInput.value.trim();
+            
+            if (!userId) {
+                showUserError('Please enter a Slack User ID');
+                return;
+            }
+            
+            const btn = this;
+            const originalContent = btn.innerHTML;
+            
+            // Hide previous results
+            userResultContainer.classList.add('hidden');
+            userErrorContainer.classList.add('hidden');
+            
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Searching...
+            `;
+            
+            try {
+                const response = await fetch('{% url "lookup_slack_user" organization %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showUserResult(data.user);
+                } else {
+                    showUserError(data.message);
+                }
+            } catch (error) {
+                showUserError('Failed to lookup user. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        });
+        
+        // Allow Enter key to trigger search
+        userIdInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                lookupUserBtn.click();
+            }
+        });
+        
+        function showUserResult(user) {
+            userErrorContainer.classList.add('hidden');
+            
+            // Update avatar
+            const avatar = document.getElementById('userAvatar');
+            if (user.avatar) {
+                avatar.innerHTML = `<img src="${user.avatar}" alt="${user.name}" class="w-12 h-12 rounded-lg">`;
+            } else {
+                avatar.innerHTML = `<div class="w-12 h-12 bg-[#e74c3c] rounded-lg flex items-center justify-center text-white font-bold">${user.name.charAt(0).toUpperCase()}</div>`;
+            }
+            
+            // Update user info
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userRealName').textContent = user.real_name || 'No real name set';
+            document.getElementById('userIdDisplay').textContent = user.id;
+            
+            if (user.email) {
+                document.getElementById('userEmail').innerHTML = `<span class="font-medium">Email:</span> ${user.email}`;
+                document.getElementById('userEmail').classList.remove('hidden');
+            } else {
+                document.getElementById('userEmail').classList.add('hidden');
+            }
+            
+            if (user.timezone) {
+                document.getElementById('userTimezone').innerHTML = `<span class="font-medium">Timezone:</span> ${user.timezone}`;
+                document.getElementById('userTimezone').classList.remove('hidden');
+            } else {
+                document.getElementById('userTimezone').classList.add('hidden');
+            }
+            
+            userResultContainer.classList.remove('hidden');
+        }
+        
+        function showUserError(message) {
+            userResultContainer.classList.add('hidden');
+            document.getElementById('userErrorMessage').textContent = message;
+            userErrorContainer.classList.remove('hidden');
         }
     </script>
 {% endblock body %}
